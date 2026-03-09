@@ -200,6 +200,9 @@ importers:
       '@shikijs/markdown-it':
         specifier: workspace:*
         version: link:compat/upstream/shiki/packages/markdown-it
+      '@shikijs/primitive':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/primitive
       '@shikijs/rehype':
         specifier: workspace:*
         version: link:compat/upstream/shiki/packages/rehype
@@ -269,6 +272,9 @@ importers:
       tsx:
         specifier: catalog:cli
         version: 4.21.0
+      twoslash:
+        specifier: catalog:integrations
+        version: 0.3.6(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -284,6 +290,9 @@ importers:
       vitest:
         specifier: catalog:testing
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(jiti@2.6.1)(terser@5.39.0)(tsx@4.21.0)(yaml@2.8.2)
+      vue:
+        specifier: catalog:docs
+        version: 3.5.27(typescript@5.9.3)
 
   compat/upstream/shiki/packages/colorized-brackets:
     dependencies:

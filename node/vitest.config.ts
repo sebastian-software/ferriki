@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
@@ -6,19 +5,55 @@ function compatPackage(entry: string) {
   return new URL(`./compat/upstream/shiki/packages/${entry}`, import.meta.url).pathname
 }
 
-function compatChunkAliases(packageName: string, packageJsonPath: string) {
-  const pkg = JSON.parse(readFileSync(new URL(packageJsonPath, import.meta.url), 'utf8'))
-  return Object.entries<string>(pkg.exports)
-    .filter(([key, value]) => key !== '.' && key !== './package.json' && typeof value === 'string' && value.startsWith('./dist/'))
-    .map(([key, value]) => ({
-      find: new RegExp(`^${packageName}${key.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
-      replacement: new URL(`./ferriki/dist/chunks/${value.slice('./dist/'.length)}`, import.meta.url).pathname,
-    }))
+const ferrikiEntry = new URL('./ferriki/index.mjs', import.meta.url).pathname
+const virtualLangPrefix = '\0ferriki:lang:'
+const virtualThemePrefix = '\0ferriki:theme:'
+
+function defaultExportInteropExpression(source: string) {
+  return [
+    `${source}.default`,
+    `Object.values(${source}).find(value => value && typeof value === 'object' && 'default' in value)?.default`,
+    `Object.values(${source}).find(value => Array.isArray(value))`,
+    `${source}`,
+  ].join(' ?? ')
 }
 
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
+    {
+      name: 'ferriki-compat-subpath-loader',
+      resolveId(id) {
+        if (id.startsWith('@shikijs/langs/'))
+          return `${virtualLangPrefix}${id.slice('@shikijs/langs/'.length)}`
+        if (id.startsWith('@shikijs/themes/'))
+          return `${virtualThemePrefix}${id.slice('@shikijs/themes/'.length)}`
+      },
+      load(id) {
+        if (id.startsWith(virtualLangPrefix)) {
+          const lang = id.slice(virtualLangPrefix.length)
+          return `
+import { bundledLanguages } from ${JSON.stringify(ferrikiEntry)}
+const loader = bundledLanguages[${JSON.stringify(lang)}]
+if (!loader)
+  throw new Error(${JSON.stringify(`Unknown Ferriki bundled language: ${lang}`)})
+const loaded = await loader()
+export default ${defaultExportInteropExpression('loaded')}
+`
+        }
+        if (id.startsWith(virtualThemePrefix)) {
+          const theme = id.slice(virtualThemePrefix.length)
+          return `
+import { bundledThemes } from ${JSON.stringify(ferrikiEntry)}
+const loader = bundledThemes[${JSON.stringify(theme)}]
+if (!loader)
+  throw new Error(${JSON.stringify(`Unknown Ferriki bundled theme: ${theme}`)})
+const loaded = await loader()
+export default ${defaultExportInteropExpression('loaded')}
+`
+        }
+      },
+    },
   ],
   resolve: {
     alias: [
@@ -28,7 +63,11 @@ export default defineConfig({
       },
       {
         find: /^@shikijs\/primitive$/,
-        replacement: new URL('./compat/harness/shiki-primitive-entry.ts', import.meta.url).pathname,
+        replacement: compatPackage('primitive/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\/primitive\/textmate$/,
+        replacement: compatPackage('primitive/src/textmate/index.ts'),
       },
       {
         find: /^@shikijs\/core$/,
@@ -70,12 +109,6 @@ export default defineConfig({
         find: /^@shikijs\/vitepress-twoslash$/,
         replacement: compatPackage('vitepress-twoslash/src/index.ts'),
       },
-      {
-        find: /^@shikijs\/langs\/js$/,
-        replacement: new URL('./ferriki/dist/chunks/javascript.mjs', import.meta.url).pathname,
-      },
-      ...compatChunkAliases('@shikijs/langs', './compat/upstream/shiki/packages/langs/package.json'),
-      ...compatChunkAliases('@shikijs/themes', './compat/upstream/shiki/packages/themes/package.json'),
       {
         find: /^ferriki$/,
         replacement: new URL('./ferriki/index.mjs', import.meta.url).pathname,

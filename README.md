@@ -56,6 +56,13 @@ pnpm run build:native
 pnpm run test:ferriki-compat:core
 ```
 
+Optional ecosystem checks stay outside the release gate:
+
+```sh
+cd node
+pnpm run test:ferriki-compat:adapters
+```
+
 ## Compatibility
 
 Ferriki tracks one approved Shiki release tag at a time.
@@ -70,7 +77,7 @@ Ferriki is in active restructuring. The core direction is fixed:
 
 - Rust owns runtime behavior
 - Node is the compatibility and host layer
-- optional ecosystem adapters do not define the core product boundary
+- optional ecosystem adapters do not define the core product boundary or release gate
 
 ## License
 

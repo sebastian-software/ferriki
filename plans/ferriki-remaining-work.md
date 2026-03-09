@@ -28,6 +28,13 @@ Not done yet:
 Goal: make the core compatibility lane fail only on deliberate scope decisions,
 not on missing functionality or transitional breakage.
 
+Core lane means only:
+
+- [`node/compat/upstream/shiki/packages/core/test`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki/packages/core/test)
+- [`node/compat/upstream/shiki/packages/shiki/test`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki/packages/shiki/test)
+
+It explicitly excludes optional adapter suites.
+
 Priority items:
 
 - restore the missing primitive/highlighter compatibility surface used by the mirrored core tests
@@ -35,6 +42,10 @@ Priority items:
   - `createShikiPrimitiveAsync`
   - any related sync/async helpers still expected by mirrored core code
 - remove remaining import-resolution quirks that come from mirrored package layout rather than Ferriki behavior
+- resolve or consciously classify the remaining `bundle-full` snapshot drift
+  - current mirrored expectation: `350`
+  - current mirrored runtime result: `346`
+  - this currently reproduces in Ferriki and in the directly imported mirrored Shiki bundle code
 - re-establish the intended behavior for:
   - theme loading
   - language loading and aliases
@@ -97,6 +108,7 @@ Separate and decide:
   - direct outputs
   - core compatibility surface
 - optional adapter lanes:
+  - transformers
   - markdown-it
   - rehype
   - vitepress-twoslash
