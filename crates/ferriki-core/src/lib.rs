@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
-pub use asset_catalog::{LanguageAssetCatalog, ThemeAssetCatalog};
+pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
 
 #[napi(js_name = "ferrikiVersion")]
 pub fn ferriki_version() -> String {
@@ -22,6 +22,7 @@ pub fn ferriki_version() -> String {
 #[napi]
 pub struct FerrikiHighlighter {
   _options_json: String,
+  standard_assets: Option<StandardAssetCatalogs>,
   grammars: HashMap<String, Value>,
   aliases: HashMap<String, String>,
   themes: HashMap<String, ThemeData>,
@@ -340,6 +341,11 @@ fn parse_initial_state_from_options(options_json: &str) -> Option<Vec<StateFrame
 fn parse_grammar_context_code(options_json: &str) -> Option<String> {
   let parsed: Value = serde_json::from_str(options_json).ok()?;
   parsed.get("grammarContextCode")?.as_str().map(str::to_owned)
+}
+
+fn parse_standard_asset_root(options_json: &str) -> Option<String> {
+  let parsed: Value = serde_json::from_str(options_json).ok()?;
+  parsed.get("standardAssetRoot")?.as_str().map(str::to_owned)
 }
 
 fn parse_string_array(value: Option<&Value>) -> Vec<String> {
@@ -3760,6 +3766,51 @@ impl FerrikiHighlighter {
     Ok(())
   }
 
+  #[napi(js_name = "loadStandardTheme")]
+  pub fn load_standard_theme(&mut self, theme_name: String) -> Result<bool> {
+    let Some(catalogs) = &self.standard_assets else {
+      return Ok(false);
+    };
+    let Some(asset) = catalogs.themes.load_asset(&theme_name)? else {
+      return Ok(false);
+    };
+    let theme = parse_theme_registration(&asset.theme_json)?;
+    self.themes.insert(theme.name.clone(), theme);
+    Ok(true)
+  }
+
+  #[napi(js_name = "loadStandardGrammar")]
+  pub fn load_standard_grammar(&mut self, lang_or_scope: String) -> Result<Option<String>> {
+    let Some(catalogs) = &self.standard_assets else {
+      return Ok(None);
+    };
+    let Some(asset) = catalogs.languages.load_asset(&lang_or_scope)? else {
+      return Ok(None);
+    };
+    let grammar = serde_json::from_str::<Value>(&asset.grammar_json)
+      .map_err(|err| Error::from_reason(format!("Failed to parse standard grammar JSON: {err}")))?;
+    let scope_name = asset.scope_name.clone();
+
+    self.aliases.retain(|_, scope| scope != &scope_name);
+    for alias in &asset.aliases {
+      self.aliases.insert(alias.clone(), scope_name.clone());
+    }
+    self.grammars.insert(scope_name.clone(), grammar);
+    self.compiled_grammars.borrow_mut().remove(&scope_name);
+
+    if !asset.inject_to.is_empty() {
+      for target_scope in &asset.inject_to {
+        let entry = self.injection_map.entry(target_scope.clone()).or_default();
+        if !entry.contains(&scope_name) {
+          entry.push(scope_name.clone());
+        }
+        self.compiled_grammars.borrow_mut().remove(target_scope);
+      }
+    }
+
+    Ok(Some(scope_name))
+  }
+
   #[napi(js_name = "resolveGrammarScope")]
   pub fn resolve_grammar_scope(&self, lang_or_scope: String) -> Option<String> {
     self.resolve_registered_scope(&lang_or_scope)
@@ -3848,9 +3899,12 @@ pub fn create_highlighter(options_json: String) -> FerrikiHighlighter {
   regexec::onig_set_retry_limit_in_match(50_000);
   regexec::onig_set_retry_limit_in_search(50_000);
   regexec::onig_set_match_stack_limit(10_000);
+  let standard_assets = parse_standard_asset_root(&options_json)
+    .and_then(|root| StandardAssetCatalogs::load_from_root(std::path::Path::new(&root)).ok());
 
   FerrikiHighlighter {
     _options_json: options_json,
+    standard_assets,
     grammars: HashMap::new(),
     aliases: HashMap::new(),
     themes: HashMap::new(),
@@ -3862,6 +3916,18 @@ pub fn create_highlighter(options_json: String) -> FerrikiHighlighter {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use ferriki_asset_gen::{AssetSourceRef, generate_catalogs_from_upstream};
+  use std::fs;
+  use std::path::Path;
+  use std::time::{SystemTime, UNIX_EPOCH};
+
+  fn temp_output_dir(label: &str) -> std::path::PathBuf {
+    let nanos = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .expect("clock")
+      .as_nanos();
+    std::env::temp_dir().join(format!("ferriki-{label}-{nanos}"))
+  }
 
   #[test]
   fn test_scope_component_matches_exact() {
@@ -4004,5 +4070,38 @@ mod tests {
     assert!(reg.get(id1).is_some());
     assert!(reg.get(id2).is_none()); // Not yet stored
     assert!(reg.get(END_RULE_ID).is_none()); // Negative
+  }
+
+  #[test]
+  fn create_highlighter_can_load_standard_assets_from_root() {
+    let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+    let output_dir = temp_output_dir("standard-asset-root");
+    generate_catalogs_from_upstream(
+      &upstream_dir,
+      &output_dir,
+      AssetSourceRef {
+        upstream: "textmate-grammars-themes".to_owned(),
+        version: Some("1.0.0".to_owned()),
+        commit: Some("abc123".to_owned()),
+      },
+    )
+    .expect("generate");
+
+    let mut highlighter = create_highlighter(
+      json!({ "standardAssetRoot": output_dir.display().to_string() }).to_string(),
+    );
+
+    assert!(highlighter.load_standard_theme("vitesse-light".to_owned()).expect("theme"));
+    assert_eq!(
+      highlighter.load_standard_grammar("js".to_owned()).expect("grammar"),
+      Some("source.js".to_owned())
+    );
+    assert_eq!(
+      highlighter.resolve_grammar_scope("mjs".to_owned()),
+      Some("source.js".to_owned())
+    );
+
+    fs::remove_dir_all(output_dir).expect("cleanup");
   }
 }

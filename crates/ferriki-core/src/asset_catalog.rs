@@ -17,6 +17,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+pub struct StandardAssetCatalogs {
+  pub languages: LanguageAssetCatalog,
+  pub themes: ThemeAssetCatalog,
+}
+
+impl StandardAssetCatalogs {
+  pub fn load_from_root(root_dir: &Path) -> Result<Self, Error> {
+    Ok(Self {
+      languages: LanguageAssetCatalog::load_from_dir(&root_dir.join("languages"))?,
+      themes: ThemeAssetCatalog::load_from_dir(&root_dir.join("themes"))?,
+    })
+  }
+}
+
 pub struct LanguageAssetCatalog {
   asset_dir: PathBuf,
   manifest: LanguageManifest,
@@ -191,6 +205,29 @@ mod tests {
     let second = catalog.load_asset("vitesse-light").expect("asset").expect("present");
     assert!(Arc::ptr_eq(&first, &second));
     assert_eq!(first.theme_type.as_deref(), Some("light"));
+
+    fs::remove_dir_all(output_dir).expect("cleanup");
+  }
+
+  #[test]
+  fn standard_catalogs_load_both_catalogs_from_root() {
+    let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+    let output_dir = temp_output_dir("standard-asset-catalogs");
+    generate_catalogs_from_upstream(
+      &upstream_dir,
+      &output_dir,
+      AssetSourceRef {
+        upstream: "textmate-grammars-themes".to_owned(),
+        version: Some("1.0.0".to_owned()),
+        commit: Some("abc123".to_owned()),
+      },
+    )
+    .expect("generate");
+
+    let catalogs = StandardAssetCatalogs::load_from_root(&output_dir).expect("catalogs");
+    assert_eq!(catalogs.languages.resolve_id("js"), Some("javascript"));
+    assert!(catalogs.themes.load_asset("vitesse-light").expect("theme").is_some());
 
     fs::remove_dir_all(output_dir).expect("cleanup");
   }
