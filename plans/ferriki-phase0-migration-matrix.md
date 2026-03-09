@@ -9,7 +9,7 @@ Status: Drafted from current repo state
 
 - End-state public products:
   - `crates/ferriki-core`
-  - `npm/ferriki`
+  - `node/ferriki`
 - `ferroni` is an external dependency of `crates/ferriki-core`, not a repository-owned product path.
 - The vendored `packages/shiki-rust/vendor/ferroni` has been removed; consumers now target the official `ferroni` crate.
 - Historical JavaScript/TypeScript tests remain valuable primarily as a compatibility corpus against the Node API, not as a reason to preserve the old package topology.
@@ -132,7 +132,7 @@ These tests remain useful, but old package names, exports, or package boundaries
 | `test/exports.test.ts`                        | KEEP-REWIRE | Replace multi-package snapshotting with `ferriki` export snapshot plus any retained crate/npm metadata checks.      |
 | `test/exports/*.yaml`                         | KEEP-REWIRE | Regenerate around Ferriki package shape; old `@shikijs/*` manifests should not survive.                             |
 | `test/shiki-backend-entry.ts`                 | DROP        | Transitional env-router for `SHIKI_BACKEND`; unnecessary once `ferriki` is the default Node package.                |
-| `packages/cli/test/cli.test.ts`               | KEEP-REWIRE | Optional adapter lane. Keep only if CLI becomes a `bin` inside `npm/ferriki`; otherwise drop with package deletion. |
+| `packages/cli/test/cli.test.ts`               | KEEP-REWIRE | Optional adapter lane. Keep only if CLI becomes a `bin` inside `node/ferriki`; otherwise drop with package deletion. |
 | `packages/shiki/test/bundle.test.ts`          | KEEP-REWIRE | Old bundle package topology disappears; keep only if Ferriki still promises bundled entrypoints.                    |
 | `packages/shiki/test/dist.test.ts`            | KEEP-REWIRE | Reframe around Ferriki package distribution, not old `packages/shiki` dist layout.                                  |
 | `packages/shiki/test/get-highlighter.test.ts` | KEEP-REWIRE | Remove JS/WASM engine assertions; keep singleton/highlighter lifecycle behavior if still public.                    |
@@ -148,7 +148,7 @@ These tests are valuable, but they are currently written against the transitiona
 Default rule:
 
 - If the test validates runtime semantics, move it to Rust integration tests in `crates/ferriki-core`.
-- If the test validates Node API shape, binding behavior, or JSON/grammar-state marshalling, keep it as Node product tests under `npm/ferriki`.
+- If the test validates Node API shape, binding behavior, or JSON/grammar-state marshalling, keep it as Node product tests under `node/ferriki`.
 
 | Path                                                                         | Disposition           | Notes                                                                                          |
 | ---------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
@@ -204,7 +204,7 @@ These are not part of the compatibility suite, but they still express useful pro
 
 | Path                                          | Disposition | Notes                                                                                                                                |
 | --------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/engine-ferroni/test/smoke.test.ts`  | PORT-NODE   | Move to `npm/ferriki` low-level binding smoke tests if a low-level scanner API remains exposed.                                      |
+| `packages/engine-ferroni/test/smoke.test.ts`  | PORT-NODE   | Move to `node/ferriki` low-level binding smoke tests if a low-level scanner API remains exposed.                                     |
 | `packages/engine-ferroni/test/parity.test.ts` | PORT-RUST   | Convert to crate-level Ferroni parity tests against known reference behavior, not against `engine-oniguruma` package infrastructure. |
 
 ## E. Tests To Drop With JS/WASM Runtime Removal
@@ -256,14 +256,14 @@ These tests live under internal packages that are unlikely to survive in their c
 
 The current `packages/shiki-rust/src/index.ts` still contains a large amount of runtime logic that should move to Rust or disappear with the old bridge package.
 
-### Binding-only or near-binding code that can survive in `npm/ferriki`
+### Binding-only or near-binding code that can survive in `node/ferriki`
 
 | Lines       | Functionality                              | Target                                                          |
 | ----------- | ------------------------------------------ | --------------------------------------------------------------- |
 | `13-22`     | backend/version/native availability probes | Keep only insofar as Node package needs addon discovery.        |
 | `31-37`     | JSON marshalling helper                    | Keep in Node binding.                                           |
 | `362-368`   | native error wrappers                      | Keep in Node binding, rename to Ferriki branding.               |
-| `1383-1411` | highlighter creation and addon hookup      | Keep structurally, but point at `npm/ferriki` + `ferriki-core`. |
+| `1383-1411` | highlighter creation and addon hookup      | Keep structurally, but point at `node/ferriki` + `ferriki-core`. |
 
 ### Runtime/business logic that should move into Rust
 

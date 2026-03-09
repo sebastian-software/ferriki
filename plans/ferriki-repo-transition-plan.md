@@ -6,10 +6,10 @@ Goal: move Ferriki into `git@github.com:sebastian-software/ferriki.git` as a sta
 
 - [x] Define the final Ferriki-owned path set to export:
   - [x] `crates/ferriki-core`
-  - [x] `npm/ferriki`
-  - [x] `compat/harness`
-  - [x] selected `scripts/`
-  - [x] selected `docs/`
+  - [x] `node/ferriki`
+  - [x] `node/compat/harness`
+  - [x] selected `node/scripts/`
+  - [x] selected planning docs
 - [x] Explicitly mark legacy paths that must not be exported.
 - [x] Decide which Ferriki-owned paths are worth carrying filtered history for.
 - [ ] Write down the active Shiki compatibility baseline policy:
@@ -25,23 +25,23 @@ First-pass export set summary:
 
 - export:
   - `crates/ferriki-core`
-  - `npm/ferriki`
-  - `compat/harness`
-  - selected root build and test config
-  - selected `scripts/`
+  - `node/ferriki`
+  - `node/compat/harness`
+  - selected root Rust config plus selected `node/` workspace config
+  - selected `node/scripts/`
   - planning docs needed to preserve transition rationale
 - import fresh in new repo:
-  - `compat/upstream/shiki`
+  - `node/compat/upstream/shiki`
 - do not export:
   - `packages/**`
   - broad Shiki docs and blog content
-  - generated npm bundle artifacts
+  - generated Node workspace artifacts outside the supported package surface
   - vendored or placeholder Ferroni paths
   - workbench-only diagnostics and engine-js reporting artifacts
 
 Important normalization rule:
 
-- exported root config files such as `Cargo.toml`, `package.json`, `pnpm-workspace.yaml`, and `vitest.config.ts` are inputs to the new repo, not guaranteed final forms
+ - exported root config files such as `Cargo.toml` and the `node/` workspace configs are inputs to the new repo, not guaranteed final forms
 - during cutover they must be reduced so the new repository no longer references removed `packages/*` paths
 
 Exit criteria:
@@ -65,8 +65,8 @@ Exit criteria:
 
 - [ ] Enumerate the exact upstream Shiki paths that must be mirrored.
 - [ ] Include all dependent fixtures, snapshots, themes, grammars, and helpers required by those tests.
-- [ ] Create a metadata format for imported compatibility baselines, for example `compat/upstream/shiki/.source.json`.
-- [ ] Decide how the harness maps upstream imports onto `npm/ferriki`.
+- [ ] Create a metadata format for imported compatibility baselines, for example `node/compat/upstream/shiki/.source.json`.
+- [ ] Decide how the harness maps upstream imports onto `node/ferriki`.
 
 Exit criteria:
 
@@ -75,7 +75,7 @@ Exit criteria:
 
 ## Phase 3 - Build the sync tooling
 
-- [ ] Add a script to import the approved Shiki release tag into `compat/upstream/shiki`.
+- [ ] Add a script to import the approved Shiki release tag into `node/compat/upstream/shiki`.
 - [ ] Make the script record:
   - [ ] upstream tag
   - [ ] upstream commit SHA
@@ -95,18 +95,18 @@ Exit criteria:
 - [x] Export tooling exists for the Ferriki-owned path boundary.
 - [ ] Export Ferriki-owned paths from the workbench repo into the new repository.
 - [ ] Preserve filtered history only for the selected Ferriki-owned paths.
-- [ ] Import the Shiki compatibility mirror fresh into `compat/upstream/shiki`.
+- [ ] Import the Shiki compatibility mirror fresh into `node/compat/upstream/shiki`.
 - [ ] Bring over the compatibility harness and wire it to the mirrored suite.
 
-Current export tool:
+Current export tools:
 
-- `node ./scripts/export-ferriki-repo.mjs --target-dir <path>`
+- `node ./node/scripts/export-ferriki-repo.mjs --target-dir <path>`
 - reads `plans/ferriki-repo-export-boundary.json`
 - copies the approved first-pass export set into a target directory outside the workbench repo
 - writes `.ferriki-export.json` metadata into the target by default
 - follow with:
-  - `node ./scripts/normalize-exported-ferriki-repo.mjs --target-dir <path>`
-  - this rewrites exported root configs and harness files away from workbench-specific `packages/*` assumptions
+  - `node ./node/scripts/normalize-exported-ferriki-repo.mjs --target-dir <path>`
+  - this rewrites exported `node/` workspace files and harness files away from workbench-specific `packages/*` assumptions
 
 Exit criteria:
 
@@ -115,7 +115,7 @@ Exit criteria:
 
 ## Phase 5 - Re-establish validation in the new repo
 
-- [ ] Restore native build commands for `npm/ferriki`.
+- [ ] Restore native build commands for `node/ferriki`.
 - [ ] Restore Rust crate test commands for `crates/ferriki-core`.
 - [ ] Restore the mirrored Shiki compatibility suite against the Ferriki harness.
 - [ ] Add a dedicated command for updating the approved Shiki baseline.
@@ -154,13 +154,13 @@ Exit criteria:
 
 - [ ] `ferroni` remains an external dependency.
 - [ ] Upstream compatibility content is mirrored, not adapted in place.
-- [ ] Ferriki-specific glue lives only outside `compat/upstream/shiki`.
+- [ ] Ferriki-specific glue lives only outside `node/compat/upstream/shiki`.
 - [ ] Only one approved Shiki release tag is active at a time.
 - [ ] `main` may be observed, but it does not define compatibility policy.
 
 ## Immediate Next Work Items
 
 - [x] Restore any branch-local Shiki test files to the official upstream state before export.
-- [x] Carve out `compat/harness` as a first-class path in the current workbench repo.
+- [x] Carve out `node/compat/harness` as a first-class path in the current workbench repo.
 - [x] Prototype the Shiki-tag import script against the currently approved baseline.
 - [x] Decide the exact filtered-history export set for the first migration pass.

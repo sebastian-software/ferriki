@@ -29,12 +29,12 @@ Exit criteria:
 
 - [x] Add a top-level Cargo workspace as the primary repository root.
 - [x] Create or normalize:
-  - [x] `crates/ferroni`
   - [x] `crates/ferriki-core`
-  - [x] `npm/ferriki`
+  - [x] `node/ferriki`
+- [x] Keep `ferroni` external rather than repository-owned.
 - [ ] Move build and release ownership toward the Rust workspace first.
-- [ ] Reduce the root JavaScript workspace to support the single npm package and compatibility tests only.
-- [ ] Decide whether `pnpm-workspace.yaml` remains temporarily as migration scaffolding or is collapsed immediately to a minimal Node setup.
+- [x] Reduce the root JavaScript workspace into a dedicated `node/` area that supports the single npm package and compatibility tests only.
+- [ ] Decide whether `node/pnpm-workspace.yaml` remains temporarily as migration scaffolding or is collapsed further.
 
 Exit criteria:
 
@@ -43,8 +43,8 @@ Exit criteria:
 
 ## Phase 2 - Consolidate the npm surface
 
-- [ ] Make `npm/ferriki` the only supported Node package.
-- [ ] Port the existing native-loader and addon build flow into `npm/ferriki`.
+- [ ] Make `node/ferriki` the only supported Node package.
+- [ ] Port the existing native-loader and addon build flow into `node/ferriki`.
 - [ ] Rename package exports, errors, docs, and metadata from Shiki to Ferriki.
 - [ ] Keep only the minimum TypeScript needed for:
   - [ ] addon loading
@@ -67,7 +67,7 @@ Exit criteria:
 - [ ] Move grammar state and stack serialization into `ferriki-core`.
 - [ ] Move direct render pipelines into `ferriki-core` so outputs like HTML are defined natively rather than through mandatory JS post-processing.
 - [ ] Keep Node-side code free of policy and fallback logic that belongs in Rust.
-- [ ] Define a clear native interface from `npm/ferriki` into `ferriki-core`.
+- [ ] Define a clear native interface from `node/ferriki` into `ferriki-core`.
 - [ ] Add Rust-first tests for every behavior moved out of TypeScript.
 
 Exit criteria:
@@ -146,8 +146,8 @@ Exit criteria:
 ## First Concrete Work Items
 
 - [x] Create the top-level Cargo workspace manifest.
-- [x] Decide final locations for `ferroni` and `ferriki-core`.
-- [x] Create `npm/ferriki` as the canonical package location.
+- [x] Decide the final split between external `ferroni` and in-repo `ferriki-core`.
+- [x] Create `node/ferriki` as the canonical package location.
 - [ ] Enumerate all current tests referencing `engine-javascript`, `engine-oniguruma`, `wasm`, or `SHIKI_BACKEND`.
 - [ ] Produce a migration matrix mapping each test file to keep, rewire, or delete.
 - [ ] Audit `packages/shiki-rust/src/index.ts` into:
