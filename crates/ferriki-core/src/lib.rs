@@ -68,6 +68,10 @@ struct HtmlThemeProfile {
   pre_style: Option<String>,
   theme_name: String,
   dark_theme_name: Option<String>,
+  fg: Option<String>,
+  bg: Option<String>,
+  dark_fg: Option<String>,
+  dark_bg: Option<String>,
   disable_token_coloring: bool,
 }
 
@@ -3059,6 +3063,10 @@ fn resolve_html_theme_profile(options_json: &str, fallback_theme: &str, themes: 
       )),
       theme_name: light_profile.theme_name,
       dark_theme_name: Some(dark_profile.theme_name),
+      fg: Some(light_fg),
+      bg: Some(light_bg),
+      dark_fg: Some(dark_fg),
+      dark_bg: Some(dark_bg),
       disable_token_coloring: light == "none",
     };
   }
@@ -3070,6 +3078,10 @@ fn resolve_html_theme_profile(options_json: &str, fallback_theme: &str, themes: 
     pre_style: profile.pre_style,
     theme_name: profile.theme_name,
     dark_theme_name: None,
+    fg: profile.fg,
+    bg: profile.bg,
+    dark_fg: None,
+    dark_bg: None,
     disable_token_coloring,
   }
 }
@@ -3389,6 +3401,219 @@ fn merge_leading_whitespace_tokens(line: &[StyledJsonToken]) -> Vec<StyledJsonTo
   merged
 }
 
+fn split_whitespace_tokens(line: &[StyledJsonToken]) -> Vec<StyledJsonToken> {
+  let mut split = Vec::with_capacity(line.len());
+
+  for token in line {
+    let content = token.content.as_str();
+    if !content.chars().any(char::is_whitespace) || content.chars().all(char::is_whitespace) {
+      split.push(token.clone());
+      continue;
+    }
+
+    let leading_len = content.chars().take_while(|ch| ch.is_whitespace()).count();
+    let trailing_len = content.chars().rev().take_while(|ch| ch.is_whitespace()).count();
+    if leading_len == 0 && trailing_len == 0 {
+      split.push(token.clone());
+      continue;
+    }
+
+    let total_len = content.chars().count();
+    let content_len = total_len.saturating_sub(leading_len + trailing_len);
+    let mut utf16_offset = token.offset_utf16;
+
+    if leading_len > 0 {
+      let leading: String = content.chars().take(leading_len).collect();
+      split.push(StyledJsonToken {
+        content_utf16_len: leading.encode_utf16().count(),
+        content: leading,
+        offset_utf16: utf16_offset,
+        color: Arc::<str>::from(""),
+        font_style: 0,
+        dark_color: None,
+      });
+      utf16_offset += split.last().expect("leading token").content_utf16_len;
+    }
+
+    if content_len > 0 {
+      let middle: String = content.chars().skip(leading_len).take(content_len).collect();
+      split.push(StyledJsonToken {
+        content_utf16_len: middle.encode_utf16().count(),
+        content: middle,
+        offset_utf16: utf16_offset,
+        color: token.color.clone(),
+        font_style: token.font_style,
+        dark_color: token.dark_color.clone(),
+      });
+      utf16_offset += split.last().expect("middle token").content_utf16_len;
+    }
+
+    if trailing_len > 0 {
+      let trailing: String = content.chars().skip(leading_len + content_len).collect();
+      split.push(StyledJsonToken {
+        content_utf16_len: trailing.encode_utf16().count(),
+        content: trailing,
+        offset_utf16: utf16_offset,
+        color: Arc::<str>::from(""),
+        font_style: 0,
+        dark_color: None,
+      });
+    }
+  }
+
+  split
+}
+
+fn merge_adjacent_styled_tokens(line: &[StyledJsonToken]) -> Vec<StyledJsonToken> {
+  let mut merged: Vec<StyledJsonToken> = Vec::with_capacity(line.len());
+
+  for token in line {
+    if let Some(previous) = merged.last_mut() {
+      let prev_decorated = previous.font_style & 4 != 0 || previous.font_style & 8 != 0;
+      let current_decorated = token.font_style & 4 != 0 || token.font_style & 8 != 0;
+      if !prev_decorated
+        && !current_decorated
+        && previous.color == token.color
+        && previous.font_style == token.font_style
+        && previous.dark_color == token.dark_color
+      {
+        previous.content.push_str(&token.content);
+        previous.content_utf16_len += token.content_utf16_len;
+        continue;
+      }
+    }
+    merged.push(token.clone());
+  }
+
+  merged
+}
+
+fn parse_merge_whitespaces_mode(options: &Value) -> i8 {
+  match options.get("mergeWhitespaces") {
+    Some(Value::String(value)) if value == "never" => -1,
+    Some(Value::Bool(false)) => 0,
+    _ => 1,
+  }
+}
+
+fn parse_merge_same_style_tokens(options: &Value) -> bool {
+  matches!(options.get("mergeSameStyleTokens"), Some(Value::Bool(true)))
+}
+
+fn apply_render_line_options(lines: Vec<Vec<StyledJsonToken>>, options: &Value) -> Vec<Vec<StyledJsonToken>> {
+  let merge_whitespace_mode = parse_merge_whitespaces_mode(options);
+  let merge_same_style = parse_merge_same_style_tokens(options);
+
+  lines.into_iter().map(|line| {
+    let line = match merge_whitespace_mode {
+      -1 => split_whitespace_tokens(&line),
+      1 => merge_leading_whitespace_tokens(&line),
+      _ => line,
+    };
+    if merge_same_style {
+      merge_adjacent_styled_tokens(&line)
+    } else {
+      line
+    }
+  }).collect()
+}
+
+fn collect_color_replacements_from_source(
+  target: &mut HashMap<String, String>,
+  source: Option<&Value>,
+  theme_name: &str,
+) {
+  let Some(Value::Object(map)) = source else {
+    return;
+  };
+
+  for (key, value) in map {
+    if let Some(replacement) = value.as_str() {
+      target.insert(normalize_hex_color(key), replacement.to_owned());
+      continue;
+    }
+
+    if key != theme_name {
+      continue;
+    }
+
+    let Some(scoped) = value.as_object() else {
+      continue;
+    };
+    for (scoped_key, scoped_value) in scoped {
+      if let Some(replacement) = scoped_value.as_str() {
+        target.insert(normalize_hex_color(scoped_key), replacement.to_owned());
+      }
+    }
+  }
+}
+
+fn resolve_color_replacements(options: &Value, theme_name: &str) -> HashMap<String, String> {
+  let mut replacements = HashMap::new();
+  collect_color_replacements_from_source(
+    &mut replacements,
+    options.get("colorReplacements"),
+    theme_name,
+  );
+  replacements
+}
+
+fn apply_color_replacement_value(color: &str, replacements: &HashMap<String, String>) -> String {
+  replacements
+    .get(&normalize_hex_color(color))
+    .cloned()
+    .unwrap_or_else(|| color.to_owned())
+}
+
+fn apply_color_replacements_to_lines(lines: &mut [Vec<StyledJsonToken>], replacements: &HashMap<String, String>) {
+  if replacements.is_empty() {
+    return;
+  }
+
+  for line in lines {
+    for token in line {
+      token.color = Arc::<str>::from(apply_color_replacement_value(&token.color, replacements));
+      if let Some(dark_color) = token.dark_color.as_ref() {
+        token.dark_color = Some(Arc::<str>::from(apply_color_replacement_value(dark_color, replacements)));
+      }
+    }
+  }
+}
+
+fn apply_color_replacements_to_json_theme_profile(theme: &mut JsonThemeProfile, replacements: &HashMap<String, String>) {
+  if replacements.is_empty() {
+    return;
+  }
+
+  theme.fg = theme.fg.as_ref().map(|fg| apply_color_replacement_value(fg, replacements));
+  theme.bg = theme.bg.as_ref().map(|bg| apply_color_replacement_value(bg, replacements));
+  theme.pre_style = match (&theme.fg, &theme.bg) {
+    (Some(fg), Some(bg)) => Some(format!("background-color:{bg};color:{fg}")),
+    _ => theme.pre_style.clone(),
+  };
+}
+
+fn apply_color_replacements_to_html_theme_profile(theme: &mut HtmlThemeProfile, replacements: &HashMap<String, String>) {
+  if replacements.is_empty() {
+    return;
+  }
+
+  theme.fg = theme.fg.as_ref().map(|fg| apply_color_replacement_value(fg, replacements));
+  theme.bg = theme.bg.as_ref().map(|bg| apply_color_replacement_value(bg, replacements));
+  theme.dark_fg = theme.dark_fg.as_ref().map(|fg| apply_color_replacement_value(fg, replacements));
+  theme.dark_bg = theme.dark_bg.as_ref().map(|bg| apply_color_replacement_value(bg, replacements));
+
+  theme.pre_style = if let (Some(fg), Some(bg)) = (&theme.fg, &theme.bg) {
+    if let (Some(dark_fg), Some(dark_bg)) = (&theme.dark_fg, &theme.dark_bg) {
+      Some(format!("background-color:{bg};--shiki-dark-bg:{dark_bg};color:{fg};--shiki-dark:{dark_fg}"))
+    } else {
+      Some(format!("background-color:{bg};color:{fg}"))
+    }
+  } else {
+    theme.pre_style.clone()
+  };
+}
+
 fn apply_dark_theme_inherit(mut styled: Vec<StyledJsonToken>) -> Vec<StyledJsonToken> {
   for token in &mut styled {
     token.dark_color = Some(Arc::<str>::from(COLOR_INHERIT));
@@ -3452,33 +3677,12 @@ fn render_styled_html_lines(
       for token in line {
         if unstyled_spans {
           html.push_str("<span>");
-        }
-        else {
-          html.push_str("<span style=\"color:");
-          html.push_str(&token.color);
-          if let Some(dark_color) = &token.dark_color {
-            html.push_str(";--shiki-dark:");
-            html.push_str(dark_color);
-          }
-          if token.font_style & 1 != 0 {
-            html.push_str(";font-style:italic");
-          }
-          if token.font_style & 2 != 0 {
-            html.push_str(";font-weight:bold");
-          }
-          if token.font_style & 4 != 0 || token.font_style & 8 != 0 {
-            html.push_str(";text-decoration:");
-            if token.font_style & 4 != 0 {
-              html.push_str("underline");
-            }
-            if token.font_style & 8 != 0 {
-              if token.font_style & 4 != 0 {
-                html.push(' ');
-              }
-              html.push_str("line-through");
-            }
-          }
+        } else if let Some(style) = styled_token_style_string(token) {
+          html.push_str("<span style=\"");
+          html.push_str(&style);
           html.push_str("\">");
+        } else {
+          html.push_str("<span>");
         }
         html.push_str(&escape_html(&token.content));
         html.push_str("</span>");
@@ -4087,6 +4291,11 @@ fn render_json_html(code: &str, options_json: &str, themes: &HashMap<String, The
 
   let fallback_light = default_theme_data(&html_theme.theme_name);
   let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToHtml options JSON: {err}")))?;
+  let replacements = resolve_color_replacements(&options, &html_theme.theme_name);
+  let mut html_theme = html_theme;
+  apply_color_replacements_to_html_theme_profile(&mut html_theme, &replacements);
   let tokens = merge_adjacent_json_punct_tokens(tokenize_json_with_ferroni(code)?);
   let mut styled = style_json_tokens(&tokens, light_theme);
   if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
@@ -4101,7 +4310,9 @@ fn render_json_html(code: &str, options_json: &str, themes: &HashMap<String, The
     }
   }
   let default_fg = light_theme.fg.clone();
-  let lines = styled_json_lines(&styled)
+  let mut lines = styled_json_lines(&styled);
+  apply_color_replacements_to_lines(&mut lines, &replacements);
+  let lines = apply_render_line_options(lines, &options)
     .into_iter()
     .map(|line| merge_line_for_html(&line, &default_fg))
     .collect::<Vec<_>>();
@@ -4109,12 +4320,17 @@ fn render_json_html(code: &str, options_json: &str, themes: &HashMap<String, The
 }
 
 fn render_json_tokens_json(code: &str, options_json: &str, themes: &HashMap<String, ThemeData>) -> Result<String> {
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToTokens options JSON: {err}")))?;
   let tokens = merge_adjacent_json_punct_tokens(tokenize_json_with_ferroni(code)?);
-  let theme = resolve_json_theme(options_json, themes);
+  let mut theme = resolve_json_theme(options_json, themes);
   let fallback = default_theme_data(&theme.theme_name);
   let theme_data = resolve_theme_data(&theme.theme_name, themes).unwrap_or(&fallback);
+  let replacements = resolve_color_replacements(&options, &theme.theme_name);
+  apply_color_replacements_to_json_theme_profile(&mut theme, &replacements);
   let styled = style_json_tokens(&tokens, theme_data);
-  let lines = styled_json_lines(&styled);
+  let mut lines = styled_json_lines(&styled);
+  apply_color_replacements_to_lines(&mut lines, &replacements);
   render_styled_tokens_json(lines, theme)
 }
 
@@ -4122,6 +4338,11 @@ fn render_json_hast_json(code: &str, options_json: &str, themes: &HashMap<String
   let html_theme = resolve_html_theme_profile(options_json, "ferriki-json", themes);
   let fallback_light = default_theme_data(&html_theme.theme_name);
   let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToHast options JSON: {err}")))?;
+  let replacements = resolve_color_replacements(&options, &html_theme.theme_name);
+  let mut html_theme = html_theme;
+  apply_color_replacements_to_html_theme_profile(&mut html_theme, &replacements);
   let tokens = merge_adjacent_json_punct_tokens(tokenize_json_with_ferroni(code)?);
   let mut styled = style_json_tokens(&tokens, light_theme);
   if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
@@ -4135,7 +4356,9 @@ fn render_json_hast_json(code: &str, options_json: &str, themes: &HashMap<String
       styled = apply_dark_theme_palette(styled, &dark_styled);
     }
   }
-  let lines = styled_json_lines(&styled);
+  let mut lines = styled_json_lines(&styled);
+  apply_color_replacements_to_lines(&mut lines, &replacements);
+  let lines = apply_render_line_options(lines, &options);
   render_styled_hast_payload_json(&lines, options_json, &html_theme, None)
 }
 
@@ -4167,6 +4390,8 @@ fn render_grammar_html(
   root_scope: Option<&str>,
   themes: &HashMap<String, ThemeData>,
 ) -> Result<String> {
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToHtml options JSON: {err}")))?;
   let html_theme = resolve_html_theme_profile(options_json, "ferriki-grammar", themes);
   if html_theme.disable_token_coloring {
     return Ok(render_unstyled_html(code, &html_theme));
@@ -4174,6 +4399,9 @@ fn render_grammar_html(
 
   let fallback_light = default_theme_data(&html_theme.theme_name);
   let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let replacements = resolve_color_replacements(&options, &html_theme.theme_name);
+  let mut html_theme = html_theme;
+  apply_color_replacements_to_html_theme_profile(&mut html_theme, &replacements);
   let initial_stack = resolve_initial_stack(options_json, code, compiled, root_scope, light_theme)?;
   let (mut styled, _) = tokenize_with_grammar_skeleton(code, compiled, root_scope, light_theme, initial_stack)?;
   if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
@@ -4192,9 +4420,10 @@ fn render_grammar_html(
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
   normalize_astro_tag_tokens(&mut lines, root_scope, light_theme);
-  let lines = lines
+  apply_color_replacements_to_lines(&mut lines, &replacements);
+  let lines = apply_render_line_options(lines, &options)
     .into_iter()
-    .map(|line| merge_line_for_html(&merge_leading_whitespace_tokens(&line), &default_fg))
+    .map(|line| merge_line_for_html(&line, &default_fg))
     .collect::<Vec<_>>();
   Ok(render_styled_html_lines(&lines, &html_theme, false))
 }
@@ -4206,14 +4435,19 @@ fn render_grammar_tokens_json(
   root_scope: Option<&str>,
   themes: &HashMap<String, ThemeData>,
 ) -> Result<String> {
-  let theme = resolve_theme_profile(options_json, "ferriki-grammar", themes);
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToTokens options JSON: {err}")))?;
+  let mut theme = resolve_theme_profile(options_json, "ferriki-grammar", themes);
   let fallback = default_theme_data(&theme.theme_name);
   let theme_data = resolve_theme_data(&theme.theme_name, themes).unwrap_or(&fallback);
+  let replacements = resolve_color_replacements(&options, &theme.theme_name);
+  apply_color_replacements_to_json_theme_profile(&mut theme, &replacements);
   let initial_stack = resolve_initial_stack(options_json, code, compiled, root_scope, theme_data)?;
   let (styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, theme_data, initial_stack)?;
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, theme_data);
   normalize_astro_tag_tokens(&mut lines, root_scope, theme_data);
+  apply_color_replacements_to_lines(&mut lines, &replacements);
   render_styled_tokens_json_with_state(lines, theme, &final_stack, root_scope)
 }
 
@@ -4224,9 +4458,14 @@ fn render_grammar_hast_json(
   root_scope: Option<&str>,
   themes: &HashMap<String, ThemeData>,
 ) -> Result<String> {
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToHast options JSON: {err}")))?;
   let html_theme = resolve_html_theme_profile(options_json, "ferriki-grammar", themes);
   let fallback_light = default_theme_data(&html_theme.theme_name);
   let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let replacements = resolve_color_replacements(&options, &html_theme.theme_name);
+  let mut html_theme = html_theme;
+  apply_color_replacements_to_html_theme_profile(&mut html_theme, &replacements);
   let initial_stack = resolve_initial_stack(options_json, code, compiled, root_scope, light_theme)?;
   let (mut styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, light_theme, initial_stack)?;
   if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
@@ -4244,10 +4483,8 @@ fn render_grammar_hast_json(
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
   normalize_astro_tag_tokens(&mut lines, root_scope, light_theme);
-  let lines = lines
-    .into_iter()
-    .map(|line| merge_leading_whitespace_tokens(&line))
-    .collect::<Vec<_>>();
+  apply_color_replacements_to_lines(&mut lines, &replacements);
+  let lines = apply_render_line_options(lines, &options);
   let rust_state = serialize_state_frames(&final_stack, root_scope);
   render_styled_hast_payload_json(&lines, options_json, &html_theme, Some(rust_state))
 }

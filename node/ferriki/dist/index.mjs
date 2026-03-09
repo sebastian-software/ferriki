@@ -13715,13 +13715,7 @@ function createParityAdapter(highlighter, native) {
             if (isNoneThemeRender(options))
               return renderTokensPayloadToHtml(code, options, buildPlainTokensPayload(code, options));
             const nativeOpts = prepareNativeOptions(options);
-            const html = native.codeToHtml(code, toJson(nativeOpts));
-            const themeState = parseThemeState(options);
-            const replacements = resolveNativeColorReplacements(
-              options,
-              themeState.theme
-            );
-            return applyColorReplacementsToHtml(html, replacements);
+            return native.codeToHtml(code, toJson(nativeOpts));
           } catch (error) {
             throw nativeFailure("codeToHtml", error);
           }
@@ -13749,25 +13743,19 @@ function createParityAdapter(highlighter, native) {
             const payload = native.codeToTokens(code, toJson(nativeOpts));
             const parsed = JSON.parse(payload);
             const parsedObj = asRecord(parsed);
-            const themeName = typeof parsedObj?.themeName === "string" ? parsedObj.themeName : parseThemeState(options).theme;
-            const replacements = resolveNativeColorReplacements(
-              options,
-              themeName
-            );
-            const withReplacements = applyColorReplacementsToTokens(parsed, replacements);
             const rustState = parsedObj?._rustState;
             let grammarState;
             if (rustState && typeof rustState === "object" && !isPlainLang(resolvedLang) && resolvedLang !== "ansi") {
               grammarState = buildNativeGrammarStateFromRustState(
                 rustState,
                 resolvedLang,
-                themeNames[0] || themeName || "",
-                themeNames.length > 0 ? themeNames : themeName ? [themeName] : []
+                themeNames[0] || (typeof parsedObj?.themeName === "string" ? parsedObj.themeName : parseThemeState(options).theme) || "",
+                themeNames.length > 0 ? themeNames : typeof parsedObj?.themeName === "string" ? [parsedObj.themeName] : parseThemeState(options).theme ? [parseThemeState(options).theme] : []
               );
             } else if (!isPlainLang(resolvedLang) && resolvedLang !== "ansi") {
               grammarState = buildFallbackGrammarState(resolvedLang, options, native, target);
             }
-            return normalizeNativeCodeToTokensPayload(withReplacements, grammarState);
+            return normalizeNativeCodeToTokensPayload(parsed, grammarState);
           } catch (error) {
             throw nativeFailure("codeToTokens", error);
           }
@@ -13778,8 +13766,7 @@ function createParityAdapter(highlighter, native) {
           const opts = asRecord(options);
           const hasDecorations = Array.isArray(opts?.decorations) && opts.decorations.length > 0;
           const hasTransformers = Array.isArray(opts?.transformers) && opts.transformers.length > 0;
-          const hasColorReplacements = !!asRecord(opts?.colorReplacements) && Object.keys(asRecord(opts.colorReplacements)).length > 0;
-          if (hasDecorations || hasTransformers || hasColorReplacements || opts?.mergeWhitespaces === "never" || opts?.mergeSameStyleTokens)
+          if (hasDecorations || hasTransformers)
             return value.call(target, code, options);
           try {
             ensureNativeStandardAssets(native, target, options);

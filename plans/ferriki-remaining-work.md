@@ -77,6 +77,10 @@ Remaining direction:
   - addon loading
   - public API wiring
   - compatibility-only harness glue
+- already moved into the native path:
+  - `colorReplacements`
+  - `mergeWhitespaces`
+  - `mergeSameStyleTokens`
 - replace the transitional JS bundle-driven asset layer with a Ferriki-owned
   asset pipeline
   - Shiki-derived grammars, language metadata, aliases, embedded-language
@@ -116,6 +120,9 @@ Separate and decide:
   - highlighting runtime
   - direct outputs
   - core compatibility surface
+- still-open native-vs-JS fallback boundary:
+  - `decorations`
+  - `transformers`
 - optional adapter lanes:
   - transformers
   - twoslash
