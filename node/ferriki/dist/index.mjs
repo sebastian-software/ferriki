@@ -9118,34 +9118,51 @@ function makeSingletonHighlighterCore(createHighlighter) {
   return createHighlighterReuseCache(createHighlighter);
 }
 const getSingletonHighlighterCore = /* @__PURE__ */ makeSingletonHighlighterCore(createHighlighterCore);
+function resolveBundledLanguageInput(lang, bundledLanguages, langAlias) {
+  if (typeof lang !== "string")
+    return lang;
+  const resolvedLang = langAlias?.[lang] || lang;
+  if (isSpecialLang(resolvedLang))
+    return [];
+  const bundle = bundledLanguages[resolvedLang];
+  if (!bundle)
+    throw new ShikiError$2(`Language \`${resolvedLang}\` is not included in this bundle. You may want to load it from external source.`);
+  return bundle;
+}
+function resolveBundledThemeInput(theme, bundledThemes) {
+  if (isSpecialTheme(theme))
+    return "none";
+  if (typeof theme !== "string")
+    return theme;
+  const bundle = bundledThemes[theme];
+  if (!bundle)
+    throw new ShikiError$2(`Theme \`${theme}\` is not included in this bundle. You may want to load it from external source.`);
+  return bundle;
+}
+function wrapBundledHighlighter(core, bundledLanguages, bundledThemes, resolveLang, resolveTheme) {
+  return {
+    ...core,
+    loadLanguage(...langs) {
+      return core.loadLanguage(...langs.map(resolveLang));
+    },
+    loadTheme(...themes) {
+      return core.loadTheme(...themes.map(resolveTheme));
+    },
+    getBundledLanguages() {
+      return bundledLanguages;
+    },
+    getBundledThemes() {
+      return bundledThemes;
+    }
+  };
+}
 function createBundledHighlighter(options) {
   const bundledLanguages = options.langs;
   const bundledThemes = options.themes;
   const engine = options.engine;
   async function createHighlighter(options2) {
-    function resolveLang(lang) {
-      if (typeof lang === "string") {
-        lang = options2.langAlias?.[lang] || lang;
-        if (isSpecialLang(lang))
-          return [];
-        const bundle = bundledLanguages[lang];
-        if (!bundle)
-          throw new ShikiError$2(`Language \`${lang}\` is not included in this bundle. You may want to load it from external source.`);
-        return bundle;
-      }
-      return lang;
-    }
-    function resolveTheme(theme) {
-      if (isSpecialTheme(theme))
-        return "none";
-      if (typeof theme === "string") {
-        const bundle = bundledThemes[theme];
-        if (!bundle)
-          throw new ShikiError$2(`Theme \`${theme}\` is not included in this bundle. You may want to load it from external source.`);
-        return bundle;
-      }
-      return theme;
-    }
+    const resolveLang = (lang) => resolveBundledLanguageInput(lang, bundledLanguages, options2.langAlias);
+    const resolveTheme = (theme) => resolveBundledThemeInput(theme, bundledThemes);
     const _themes = (options2.themes ?? []).map((i) => resolveTheme(i));
     const langs = (options2.langs ?? []).map((i) => resolveLang(i));
     const core = await createHighlighterCore({
@@ -9154,21 +9171,7 @@ function createBundledHighlighter(options) {
       themes: _themes,
       langs
     });
-    return {
-      ...core,
-      loadLanguage(...langs2) {
-        return core.loadLanguage(...langs2.map(resolveLang));
-      },
-      loadTheme(...themes) {
-        return core.loadTheme(...themes.map(resolveTheme));
-      },
-      getBundledLanguages() {
-        return bundledLanguages;
-      },
-      getBundledThemes() {
-        return bundledThemes;
-      }
-    };
+    return wrapBundledHighlighter(core, bundledLanguages, bundledThemes, resolveLang, resolveTheme);
   }
   return createHighlighter;
 }
