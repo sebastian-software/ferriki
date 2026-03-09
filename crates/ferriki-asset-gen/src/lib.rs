@@ -1,5 +1,6 @@
 pub mod generate;
 pub mod import;
+pub mod pipeline;
 pub mod schema;
 
 pub use generate::{
@@ -17,6 +18,7 @@ pub use import::{
   UpstreamThemeCatalog,
   UpstreamThemeMeta,
 };
+pub use pipeline::{GeneratedCatalogSet, generate_catalogs_from_upstream};
 pub use schema::{
   decode_language_asset,
   decode_language_manifest,
