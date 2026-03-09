@@ -9899,11 +9899,14 @@ async function createOnigurumaEngine(options) {
   };
 }
 
-const createHighlighter = /* @__PURE__ */ createBundledHighlighter({
+const createBundledHighlighterDefault = /* @__PURE__ */ createBundledHighlighter({
   langs: bundledLanguages,
   themes: bundledThemes,
   engine: () => createOnigurumaEngine(import('./chunks/wasm2.mjs'))
 });
+async function createHighlighter(...args) {
+  return createHighlighterWithBackend(...args);
+}
 const {
   codeToHtml,
   codeToHast,
@@ -9913,7 +9916,7 @@ const {
   getSingletonHighlighter,
   getLastGrammarState
 } = /* @__PURE__ */ createSingletonShorthands(
-  createHighlighter,
+  createBundledHighlighterDefault,
   { guessEmbeddedLanguages }
 );
 
@@ -13857,7 +13860,7 @@ async function createHighlighterWithBackend(...args) {
       throw new Error("[shiki-rust] Rust backend requested but native binding is unavailable.");
     nativeHighlighter = native.createHighlighter(toJson(withStandardAssetRoot(args[0])));
   }
-  const highlighter = await createHighlighter(...args);
+  const highlighter = await createBundledHighlighterDefault(...args);
   if (backend === "rust" && nativeHighlighter) {
     tryLoadStandardLanguages(nativeHighlighter, args[0]?.langs);
     tryLoadStandardThemes(nativeHighlighter, args[0]?.themes);
