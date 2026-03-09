@@ -13,6 +13,7 @@ path = "src/lib.rs"
 
 [dependencies]
 ferroni = { workspace = true }
+ferriki-asset-gen = { path = "../ferriki-asset-gen" }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }

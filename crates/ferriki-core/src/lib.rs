@@ -1,3 +1,5 @@
+mod asset_catalog;
+
 use ferroni::regexec;
 use ferroni::scanner::{OnigString, Scanner, ScannerFindOptions};
 use napi::bindgen_prelude::*;
@@ -9,6 +11,8 @@ use std::hash::{BuildHasherDefault, Hasher};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
+
+pub use asset_catalog::{LanguageAssetCatalog, ThemeAssetCatalog};
 
 #[napi(js_name = "ferrikiVersion")]
 pub fn ferriki_version() -> String {
