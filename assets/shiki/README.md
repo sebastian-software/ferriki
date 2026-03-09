@@ -2,6 +2,9 @@
 
 Ferriki-owned runtime assets will be generated into this directory.
 
+The binary on-disk format is documented in
+[`docs/asset-format.md`](/Users/sebastian/Workspace/oss-released/ferriki/docs/asset-format.md).
+
 Planned catalogs:
 
 - `languages/`
