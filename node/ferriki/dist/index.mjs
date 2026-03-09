@@ -1,8 +1,10 @@
 import process$1 from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { t as tryLoadFerrikiNativeBinding } from './shared/ferriki.A3vE1mkO.mjs';
 import 'node:module';
 import 'node:path';
-import 'node:url';
+
+const STANDARD_ASSET_ROOT = fileURLToPath(new URL('../assets/shiki/', import.meta.url));
 
 let ShikiError$2 = class ShikiError extends Error {
   constructor(message) {
@@ -15310,6 +15312,37 @@ function collectLoadedThemeNames(highlighter) {
     return [];
   }
 }
+function withStandardAssetRoot(options) {
+  const normalized = options && typeof options === "object" ? { ...options } : {};
+  if (typeof normalized.standardAssetRoot !== "string") {
+    normalized.standardAssetRoot = STANDARD_ASSET_ROOT;
+  }
+  return normalized;
+}
+function tryLoadStandardThemes(native, themes) {
+  if (!native?.loadStandardTheme || !Array.isArray(themes))
+    return;
+  for (const theme of themes) {
+    if (typeof theme !== "string" || theme === "none")
+      continue;
+    try {
+      native.loadStandardTheme(theme);
+    } catch {
+    }
+  }
+}
+function tryLoadStandardLanguages(native, langs) {
+  if (!native?.loadStandardGrammar || !Array.isArray(langs))
+    return;
+  for (const lang of langs) {
+    if (typeof lang !== "string")
+      continue;
+    try {
+      native.loadStandardGrammar(lang);
+    } catch {
+    }
+  }
+}
 function registerGrammars(native, registrations) {
   for (const registration of registrations) {
     try {
@@ -15552,6 +15585,7 @@ function createParityAdapter(highlighter, native) {
         return async (...langs) => {
           const result = Reflect.apply(value, target, langs);
           await result;
+          tryLoadStandardLanguages(native, langs);
           syncLanguageRegistry(native, target, langs);
           return result;
         };
@@ -15559,6 +15593,7 @@ function createParityAdapter(highlighter, native) {
       if (prop === "loadLanguageSync" && typeof value === "function") {
         return (...langs) => {
           const result = Reflect.apply(value, target, langs);
+          tryLoadStandardLanguages(native, langs);
           syncLanguageRegistry(native, target, langs);
           return result;
         };
@@ -15567,6 +15602,7 @@ function createParityAdapter(highlighter, native) {
         return async (...themes) => {
           const result = Reflect.apply(value, target, themes);
           await result;
+          tryLoadStandardThemes(native, themes);
           syncThemeRegistry(native, target, collectLoadedThemeNames(target));
           return result;
         };
@@ -15574,6 +15610,7 @@ function createParityAdapter(highlighter, native) {
       if (prop === "loadThemeSync" && typeof value === "function") {
         return (...themes) => {
           const result = Reflect.apply(value, target, themes);
+          tryLoadStandardThemes(native, themes);
           syncThemeRegistry(native, target, collectLoadedThemeNames(target));
           return result;
         };
@@ -15603,10 +15640,12 @@ async function createHighlighterWithBackend(...args) {
     const native = tryLoadFerrikiNativeBinding();
     if (!native)
       throw new Error("[shiki-rust] Rust backend requested but native binding is unavailable.");
-    nativeHighlighter = native.createHighlighter(toJson(args[0]));
+    nativeHighlighter = native.createHighlighter(toJson(withStandardAssetRoot(args[0])));
   }
   const highlighter = await createHighlighter(...args);
   if (backend === "rust" && nativeHighlighter) {
+    tryLoadStandardLanguages(nativeHighlighter, args[0]?.langs);
+    tryLoadStandardThemes(nativeHighlighter, args[0]?.themes);
     syncLanguageRegistry(nativeHighlighter, highlighter, [args[0]?.langs]);
     syncThemeRegistry(nativeHighlighter, highlighter, collectLoadedThemeNames(highlighter));
   }
