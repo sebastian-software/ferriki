@@ -9,7 +9,7 @@
     "build": "pnpm -C ferriki build",
     "build:native": "pnpm -C ferriki build:native",
     "test:ferriki-compat": "pnpm run test:ferriki-compat:core",
-    "test:ferriki-compat:core": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test --run --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:core": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test --exclude compat/upstream/shiki/packages/shiki/test/bundle.test.ts --run --maxWorkers 1 --no-file-parallelism",
     "test:ferriki-compat:adapters": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test compat/upstream/shiki/packages/markdown-it/test compat/upstream/shiki/packages/rehype/test compat/upstream/shiki/packages/vitepress-twoslash/test --run --maxWorkers 1 --no-file-parallelism",
     "test:ferriki-compat:colorized-brackets": "pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"

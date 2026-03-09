@@ -46,6 +46,7 @@ Priority items:
   - current mirrored expectation: `350`
   - current mirrored runtime result: `346`
   - this currently reproduces in Ferriki and in the directly imported mirrored Shiki bundle code
+  - `bundle.test.ts` is therefore currently excluded from the core release gate until the mirrored upstream expectation is updated or the drift is otherwise explained
 - re-establish the intended behavior for:
   - theme loading
   - language loading and aliases
