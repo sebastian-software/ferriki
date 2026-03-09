@@ -6,7 +6,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use serde_json::{Value, json};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasherDefault, Hasher};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -3724,15 +3724,44 @@ impl FerrikiHighlighter {
   }
 
   fn ensure_standard_grammar_loaded(&self, lang_or_scope: &str) -> Result<Option<String>> {
+    let mut visiting = HashSet::new();
+    self.ensure_standard_grammar_loaded_inner(lang_or_scope, &mut visiting)
+  }
+
+  fn ensure_standard_grammar_loaded_inner(
+    &self,
+    lang_or_scope: &str,
+    visiting: &mut HashSet<String>,
+  ) -> Result<Option<String>> {
+    if self.grammars.borrow().contains_key(lang_or_scope) {
+      return Ok(Some(lang_or_scope.to_owned()));
+    }
+    if let Some(scope) = self.aliases.borrow().get(lang_or_scope).cloned() {
+      return Ok(Some(scope));
+    }
+
     let Some(catalogs) = &self.standard_assets else {
       return Ok(None);
     };
     let Some(asset) = catalogs.languages.load_asset(lang_or_scope)? else {
       return Ok(None);
     };
+    let scope_name = asset.scope_name.clone();
+    if self.grammars.borrow().contains_key(&scope_name) {
+      return Ok(Some(scope_name));
+    }
+
+    let asset_id = asset.id.clone();
+    if !visiting.insert(asset_id.clone()) {
+      return Ok(Some(scope_name));
+    }
+
+    for dependency in asset.embedded_langs.iter().chain(asset.embedded_langs_lazy.iter()) {
+      let _ = self.ensure_standard_grammar_loaded_inner(dependency, visiting)?;
+    }
+
     let grammar = serde_json::from_str::<Value>(&asset.grammar_json)
       .map_err(|err| Error::from_reason(format!("Failed to parse standard grammar JSON: {err}")))?;
-    let scope_name = asset.scope_name.clone();
 
     self.aliases.borrow_mut().retain(|_, scope| scope != &scope_name);
     {
@@ -3755,6 +3784,7 @@ impl FerrikiHighlighter {
       }
     }
 
+    visiting.remove(&asset_id);
     Ok(Some(scope_name))
   }
 
@@ -4163,5 +4193,26 @@ mod tests {
     );
 
     fs::remove_dir_all(output_dir).expect("cleanup");
+  }
+
+  #[test]
+  fn load_standard_grammar_recursively_registers_embedded_standard_dependencies() {
+    let asset_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../../assets/shiki");
+
+    let mut highlighter = create_highlighter(
+      json!({ "standardAssetRoot": asset_root.display().to_string() }).to_string(),
+    );
+
+    assert_eq!(
+      highlighter.load_standard_grammar("vue".to_owned()).expect("grammar"),
+      Some("text.html.vue".to_owned())
+    );
+
+    let scopes = highlighter.get_loaded_grammar_scopes();
+    assert!(scopes.contains(&"text.html.vue".to_owned()));
+    assert!(scopes.contains(&"text.html.basic".to_owned()));
+    assert!(scopes.contains(&"source.js".to_owned()));
+    assert!(scopes.contains(&"source.ts".to_owned()));
   }
 }
