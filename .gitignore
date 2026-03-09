@@ -24,5 +24,7 @@ node/scripts/compares
 tm-grammars-themes
 target
 Cargo.lock
-node/ferriki/dist
 node/ferriki/*.node
+node/ferriki/dist/*.node
+!node/ferriki/dist/
+!node/ferriki/dist/**/*.mjs

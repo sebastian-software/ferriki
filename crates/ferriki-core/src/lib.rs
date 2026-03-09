@@ -2604,6 +2604,21 @@ fn render_plain_tokens_json(code: &str, options_json: &str, themes: &HashMap<Str
   Ok(out)
 }
 
+fn render_plain_hast_json(code: &str, options_json: &str, themes: &HashMap<String, ThemeData>) -> Result<String> {
+  let theme = resolve_html_theme_profile(options_json, "ferriki-plain", themes);
+  let utf16_len = code.encode_utf16().count();
+  let styled = vec![StyledJsonToken {
+    content: code.to_owned(),
+    content_utf16_len: utf16_len,
+    offset_utf16: 0,
+    color: Arc::<str>::from(COLOR_DEFAULT_FG),
+    font_style: 0,
+    dark_color: None,
+  }];
+  let lines = styled_json_lines(&styled);
+  render_styled_hast_payload_json(&lines, options_json, &theme, None)
+}
+
 fn line_start_offsets_utf16(input: &str) -> Vec<usize> {
   let mut starts = vec![0usize];
   let mut offset = 0usize;
@@ -3206,6 +3221,196 @@ fn render_styled_html_lines(
   html
 }
 
+fn styled_token_style_string(token: &StyledJsonToken) -> Option<String> {
+  let mut style = String::new();
+
+  if !token.color.is_empty() {
+    style.push_str("color:");
+    style.push_str(&token.color);
+  }
+  if let Some(dark_color) = &token.dark_color {
+    if !style.is_empty() {
+      style.push(';');
+    }
+    style.push_str("--shiki-dark:");
+    style.push_str(dark_color);
+  }
+  if token.font_style & 1 != 0 {
+    if !style.is_empty() {
+      style.push(';');
+    }
+    style.push_str("font-style:italic");
+  }
+  if token.font_style & 2 != 0 {
+    if !style.is_empty() {
+      style.push(';');
+    }
+    style.push_str("font-weight:bold");
+  }
+  if token.font_style & 4 != 0 || token.font_style & 8 != 0 {
+    if !style.is_empty() {
+      style.push(';');
+    }
+    style.push_str("text-decoration:");
+    if token.font_style & 4 != 0 {
+      style.push_str("underline");
+    }
+    if token.font_style & 8 != 0 {
+      if token.font_style & 4 != 0 {
+        style.push(' ');
+      }
+      style.push_str("line-through");
+    }
+  }
+
+  if style.is_empty() {
+    None
+  } else {
+    Some(style)
+  }
+}
+
+fn hast_text_node(value: &str) -> Value {
+  json!({
+    "type": "text",
+    "value": value,
+  })
+}
+
+fn hast_element_node(
+  tag_name: &str,
+  properties: serde_json::Map<String, Value>,
+  children: Vec<Value>,
+  data: Option<Value>,
+) -> Value {
+  let mut node = serde_json::Map::new();
+  node.insert("type".to_owned(), Value::String("element".to_owned()));
+  node.insert("tagName".to_owned(), Value::String(tag_name.to_owned()));
+  node.insert("properties".to_owned(), Value::Object(properties));
+  node.insert("children".to_owned(), Value::Array(children));
+  if let Some(data_value) = data {
+    node.insert("data".to_owned(), data_value);
+  }
+  Value::Object(node)
+}
+
+fn parse_hast_structure(options: &Value) -> &'static str {
+  match options.get("structure").and_then(Value::as_str) {
+    Some("inline") => "inline",
+    _ => "classic",
+  }
+}
+
+fn parse_hast_tabindex(options: &Value) -> Option<String> {
+  match options.get("tabindex") {
+    Some(Value::Bool(false)) | Some(Value::Null) => None,
+    Some(Value::String(value)) => Some(value.clone()),
+    Some(Value::Number(value)) => Some(value.to_string()),
+    Some(Value::Bool(value)) => Some(value.to_string()),
+    _ => Some("0".to_owned()),
+  }
+}
+
+fn resolve_hast_root_style(options: &Value, theme: &HtmlThemeProfile) -> Option<String> {
+  match options.get("rootStyle") {
+    Some(Value::Bool(false)) => None,
+    Some(Value::String(value)) => Some(value.clone()),
+    Some(Value::Null) => theme.pre_style.clone(),
+    _ => theme.pre_style.clone(),
+  }
+}
+
+fn render_styled_hast_payload_json(
+  lines: &[Vec<StyledJsonToken>],
+  options_json: &str,
+  theme: &HtmlThemeProfile,
+  rust_state: Option<Value>,
+) -> Result<String> {
+  let options: Value = serde_json::from_str(options_json)
+    .map_err(|err| Error::from_reason(format!("Failed to parse codeToHast options JSON: {err}")))?;
+  let structure = parse_hast_structure(&options);
+  let tabindex = parse_hast_tabindex(&options);
+  let root_style = resolve_hast_root_style(&options, theme);
+
+  let mut pre_properties = serde_json::Map::new();
+  pre_properties.insert("class".to_owned(), Value::String(theme.pre_class.clone()));
+  if let Some(style) = root_style {
+    pre_properties.insert("style".to_owned(), Value::String(style));
+  }
+  if let Some(tabindex) = tabindex {
+    pre_properties.insert("tabindex".to_owned(), Value::String(tabindex));
+  }
+  if let Some(meta) = options.get("meta").and_then(Value::as_object) {
+    for (key, value) in meta {
+      if !key.starts_with('_') {
+        pre_properties.insert(key.clone(), value.clone());
+      }
+    }
+  }
+
+  let mut root_children = Vec::new();
+  let mut code_children = Vec::new();
+
+  for (line_index, line) in lines.iter().enumerate() {
+    if line_index > 0 {
+      if structure == "inline" {
+        root_children.push(hast_element_node("br", serde_json::Map::new(), Vec::new(), None));
+      } else {
+        code_children.push(hast_text_node("\n"));
+      }
+    }
+
+    let mut line_children = Vec::new();
+    for token in line {
+      let mut token_properties = serde_json::Map::new();
+      if let Some(style) = styled_token_style_string(token) {
+        token_properties.insert("style".to_owned(), Value::String(style));
+      }
+      let token_node = hast_element_node(
+        "span",
+        token_properties,
+        vec![hast_text_node(&token.content)],
+        None,
+      );
+      if structure == "inline" {
+        root_children.push(token_node);
+      } else {
+        line_children.push(token_node);
+      }
+    }
+
+    if structure == "classic" {
+      let mut line_properties = serde_json::Map::new();
+      line_properties.insert("class".to_owned(), Value::String("line".to_owned()));
+      code_children.push(hast_element_node("span", line_properties, line_children, None));
+    }
+  }
+
+  if structure == "classic" {
+    let code_node = hast_element_node("code", serde_json::Map::new(), code_children, None);
+    let pre_node = hast_element_node(
+      "pre",
+      pre_properties,
+      vec![code_node],
+      options.get("data").cloned(),
+    );
+    root_children.push(pre_node);
+  }
+
+  let mut root_node = serde_json::Map::new();
+  root_node.insert("type".to_owned(), Value::String("root".to_owned()));
+  root_node.insert("children".to_owned(), Value::Array(root_children));
+
+  let mut payload = serde_json::Map::new();
+  payload.insert("hast".to_owned(), Value::Object(root_node));
+  if let Some(rust_state) = rust_state {
+    payload.insert("_rustState".to_owned(), rust_state);
+  }
+
+  serde_json::to_string(&Value::Object(payload))
+    .map_err(|err| Error::from_reason(format!("Failed to serialize codeToHast payload: {err}")))
+}
+
 fn render_styled_tokens_json(lines: Vec<Vec<StyledJsonToken>>, theme: JsonThemeProfile) -> Result<String> {
   // Manual JSON construction — avoids serde_json::Value heap allocations
   let mut out = String::with_capacity(lines.len() * 128);
@@ -3346,6 +3551,27 @@ fn render_json_tokens_json(code: &str, options_json: &str, themes: &HashMap<Stri
   render_styled_tokens_json(lines, theme)
 }
 
+fn render_json_hast_json(code: &str, options_json: &str, themes: &HashMap<String, ThemeData>) -> Result<String> {
+  let html_theme = resolve_html_theme_profile(options_json, "ferriki-json", themes);
+  let fallback_light = default_theme_data(&html_theme.theme_name);
+  let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let tokens = merge_adjacent_json_punct_tokens(tokenize_json_with_ferroni(code)?);
+  let mut styled = style_json_tokens(&tokens, light_theme);
+  if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
+    if dark_theme_name == "none" {
+      styled = apply_dark_theme_inherit(styled);
+    }
+    else {
+      let fallback_dark = default_theme_data(dark_theme_name);
+      let dark_theme = resolve_theme_data(dark_theme_name, themes).unwrap_or(&fallback_dark);
+      let dark_styled = style_json_tokens(&tokens, dark_theme);
+      styled = apply_dark_theme_palette(styled, &dark_styled);
+    }
+  }
+  let lines = styled_json_lines(&styled);
+  render_styled_hast_payload_json(&lines, options_json, &html_theme, None)
+}
+
 fn resolve_initial_stack(
   options_json: &str,
   code: &str,
@@ -3417,6 +3643,35 @@ fn render_grammar_tokens_json(
   let (styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, theme_data, initial_stack)?;
   let lines = styled_json_lines(&styled);
   render_styled_tokens_json_with_state(lines, theme, &final_stack, root_scope)
+}
+
+fn render_grammar_hast_json(
+  code: &str,
+  options_json: &str,
+  compiled: &mut CompiledGrammar,
+  root_scope: Option<&str>,
+  themes: &HashMap<String, ThemeData>,
+) -> Result<String> {
+  let html_theme = resolve_html_theme_profile(options_json, "ferriki-grammar", themes);
+  let fallback_light = default_theme_data(&html_theme.theme_name);
+  let light_theme = resolve_theme_data(&html_theme.theme_name, themes).unwrap_or(&fallback_light);
+  let initial_stack = resolve_initial_stack(options_json, code, compiled, root_scope, light_theme)?;
+  let (mut styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, light_theme, initial_stack)?;
+  if let Some(dark_theme_name) = html_theme.dark_theme_name.as_deref() {
+    if dark_theme_name == "none" {
+      styled = apply_dark_theme_inherit(styled);
+    }
+    else {
+      let fallback_dark = default_theme_data(dark_theme_name);
+      let dark_theme = resolve_theme_data(dark_theme_name, themes).unwrap_or(&fallback_dark);
+      let dark_initial = resolve_initial_stack(options_json, code, compiled, root_scope, dark_theme)?;
+      let (dark_styled, _) = tokenize_with_grammar_skeleton(code, compiled, root_scope, dark_theme, dark_initial)?;
+      styled = apply_dark_theme_palette(styled, &dark_styled);
+    }
+  }
+  let lines = styled_json_lines(&styled);
+  let rust_state = serialize_state_frames(&final_stack, root_scope);
+  render_styled_hast_payload_json(&lines, options_json, &html_theme, Some(rust_state))
 }
 
 #[napi]
@@ -3556,6 +3811,23 @@ impl FerrikiHighlighter {
         let compiled = cache.get_mut(&scope)
           .ok_or_else(|| Error::from_reason("Ferriki compiled grammar not found after compilation."))?;
         render_grammar_tokens_json(&code, &options_json, compiled, root_scope, &self.themes)
+      }
+    }
+  }
+
+  #[napi(js_name = "codeToHast")]
+  pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
+    match self.resolve_lang_mode(&options_json)? {
+      LangMode::Plaintext => render_plain_hast_json(&code, &options_json, &self.themes),
+      LangMode::Json => render_json_hast_json(&code, &options_json, &self.themes),
+      LangMode::Grammar => {
+        let scope = self.resolve_grammar_scope_from_options(&options_json)?;
+        self.get_or_compile_grammar(&scope)?;
+        let root_scope = Some(scope.as_str());
+        let mut cache = self.compiled_grammars.borrow_mut();
+        let compiled = cache.get_mut(&scope)
+          .ok_or_else(|| Error::from_reason("Ferriki compiled grammar not found after compilation."))?;
+        render_grammar_hast_json(&code, &options_json, compiled, root_scope, &self.themes)
       }
     }
   }
