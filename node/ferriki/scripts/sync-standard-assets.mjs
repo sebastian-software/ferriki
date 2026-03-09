@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, stat } from 'node:fs/promises';
+import { cp, rm, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +15,6 @@ if (!(await existsDir(sourceDir))) {
 }
 
 await rm(destDir, { recursive: true, force: true });
-await mkdir(destDir, { recursive: true });
 await cp(sourceDir, destDir, { recursive: true });
 console.log(`[ferriki] Standard assets synced: ${sourceDir} -> ${destDir}`);
 

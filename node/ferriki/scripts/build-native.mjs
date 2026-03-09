@@ -10,6 +10,7 @@ const manifestPath = join(repoRoot, 'crates', 'ferriki-core', 'Cargo.toml')
 const addonOut = join(pkgDir, 'shiki-rust.node')
 const distAddonOut = join(pkgDir, 'dist', 'shiki-rust.node')
 const syncAssetsScript = join(pkgDir, 'scripts', 'sync-standard-assets.mjs')
+const generateCatalogScript = join(pkgDir, 'scripts', 'generate-standard-catalog.mjs')
 
 const cargo = spawnSync('cargo', ['build', '--release', '--manifest-path', manifestPath], {
   cwd: repoRoot,
@@ -53,6 +54,14 @@ if (!selectedInput) {
 
 await cp(selectedInput, addonOut)
 await cp(selectedInput, distAddonOut)
+const generateCatalog = spawnSync('node', [generateCatalogScript], {
+  cwd: repoRoot,
+  stdio: 'inherit',
+})
+
+if (generateCatalog.status !== 0)
+  process.exit(generateCatalog.status ?? 1)
+
 const syncAssets = spawnSync('node', [syncAssetsScript], {
   cwd: repoRoot,
   stdio: 'inherit',
