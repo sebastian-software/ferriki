@@ -15343,6 +15343,16 @@ function tryLoadStandardLanguages(native, langs) {
     }
   }
 }
+function ensureNativeStandardAssets(native, highlighter, options) {
+  const themeNames = resolveThemesForGrammarState(options);
+  if (themeNames.length > 0) {
+    tryLoadStandardThemes(native, themeNames);
+  }
+  const resolvedLang = resolveGrammarStateLang(asRecord(options), highlighter) || asRecord(options)?.lang;
+  if (typeof resolvedLang === "string" && !isPlainLang(resolvedLang) && resolvedLang !== "ansi") {
+    tryLoadStandardLanguages(native, [resolvedLang]);
+  }
+}
 function registerGrammars(native, registrations) {
   for (const registration of registrations) {
     try {
@@ -15468,6 +15478,7 @@ function createParityAdapter(highlighter, native) {
           if (hasDecorations || hasTransformers || opts?.lang === "astro")
             return value.call(target, code, options);
           try {
+            ensureNativeStandardAssets(native, target, options);
             if (parseThemesRenderSpec(options)) {
               const themesPayload = buildNativeThemesMapPayload(code, options, native);
               return renderTokensPayloadToHtml(code, options, themesPayload);
@@ -15493,6 +15504,7 @@ function createParityAdapter(highlighter, native) {
           if (unsupportedReason)
             throw nativeUnsupported("codeToTokens", unsupportedReason);
           try {
+            ensureNativeStandardAssets(native, target, options);
             const resolvedLang = resolveGrammarStateLang(asRecord(options), target) || asRecord(options)?.lang || "";
             const themeNames = resolveThemesForGrammarState(options);
             if (parseThemesRenderSpec(options)) {
@@ -15541,6 +15553,7 @@ function createParityAdapter(highlighter, native) {
           if (hasDecorations || hasTransformers || hasColorReplacements || opts?.lang === "astro" || opts?.mergeWhitespaces === "never" || opts?.mergeSameStyleTokens)
             return value.call(target, code, options);
           try {
+            ensureNativeStandardAssets(native, target, options);
             if (parseThemesRenderSpec(options) || isNoneThemeRender(options))
               return value.call(target, code, options);
             const resolvedLang = resolveGrammarStateLang(opts, target) || opts?.lang || "";
