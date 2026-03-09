@@ -23,12 +23,12 @@ pub fn ferriki_version() -> String {
 pub struct FerrikiHighlighter {
   _options_json: String,
   standard_assets: Option<StandardAssetCatalogs>,
-  grammars: HashMap<String, Value>,
-  aliases: HashMap<String, String>,
-  themes: HashMap<String, ThemeData>,
+  grammars: RefCell<HashMap<String, Value>>,
+  aliases: RefCell<HashMap<String, String>>,
+  themes: RefCell<HashMap<String, ThemeData>>,
   compiled_grammars: RefCell<HashMap<String, CompiledGrammar>>,
   /// Maps target scope → list of injecting grammar scope names
-  injection_map: HashMap<String, Vec<String>>,
+  injection_map: RefCell<HashMap<String, Vec<String>>>,
 }
 
 #[derive(Clone, Copy)]
@@ -3687,10 +3687,75 @@ fn render_grammar_hast_json(
 #[napi]
 impl FerrikiHighlighter {
   fn resolve_registered_scope(&self, lang_or_scope: &str) -> Option<String> {
-    if self.grammars.contains_key(lang_or_scope) {
+    if self.grammars.borrow().contains_key(lang_or_scope) {
       return Some(lang_or_scope.to_owned());
     }
-    self.aliases.get(lang_or_scope).cloned()
+    if let Some(scope) = self.aliases.borrow().get(lang_or_scope).cloned() {
+      return Some(scope);
+    }
+    self.ensure_standard_grammar_loaded(lang_or_scope).ok().flatten()
+  }
+
+  fn ensure_standard_theme_loaded(&self, theme_name: &str) -> Result<bool> {
+    if self.themes.borrow().contains_key(theme_name) {
+      return Ok(true);
+    }
+    let Some(catalogs) = &self.standard_assets else {
+      return Ok(false);
+    };
+    let Some(asset) = catalogs.themes.load_asset(theme_name)? else {
+      return Ok(false);
+    };
+    let theme = parse_theme_registration(&asset.theme_json)?;
+    self.themes.borrow_mut().insert(theme.name.clone(), theme);
+    Ok(true)
+  }
+
+  fn ensure_standard_themes_for_options(&self, options_json: &str) -> Result<()> {
+    if let Some((light, dark)) = parse_dual_themes(options_json) {
+      self.ensure_standard_theme_loaded(&light)?;
+      self.ensure_standard_theme_loaded(&dark)?;
+      return Ok(());
+    }
+    if let Some(theme) = parse_theme(options_json) {
+      self.ensure_standard_theme_loaded(&theme)?;
+    }
+    Ok(())
+  }
+
+  fn ensure_standard_grammar_loaded(&self, lang_or_scope: &str) -> Result<Option<String>> {
+    let Some(catalogs) = &self.standard_assets else {
+      return Ok(None);
+    };
+    let Some(asset) = catalogs.languages.load_asset(lang_or_scope)? else {
+      return Ok(None);
+    };
+    let grammar = serde_json::from_str::<Value>(&asset.grammar_json)
+      .map_err(|err| Error::from_reason(format!("Failed to parse standard grammar JSON: {err}")))?;
+    let scope_name = asset.scope_name.clone();
+
+    self.aliases.borrow_mut().retain(|_, scope| scope != &scope_name);
+    {
+      let mut aliases = self.aliases.borrow_mut();
+      for alias in &asset.aliases {
+        aliases.insert(alias.clone(), scope_name.clone());
+      }
+    }
+    self.grammars.borrow_mut().insert(scope_name.clone(), grammar);
+    self.compiled_grammars.borrow_mut().remove(&scope_name);
+
+    if !asset.inject_to.is_empty() {
+      let mut injection_map = self.injection_map.borrow_mut();
+      for target_scope in &asset.inject_to {
+        let entry = injection_map.entry(target_scope.clone()).or_default();
+        if !entry.contains(&scope_name) {
+          entry.push(scope_name.clone());
+        }
+        self.compiled_grammars.borrow_mut().remove(target_scope);
+      }
+    }
+
+    Ok(Some(scope_name))
   }
 
   fn resolve_lang_mode(&self, options_json: &str) -> Result<LangMode> {
@@ -3722,7 +3787,7 @@ impl FerrikiHighlighter {
   pub fn register_theme(&mut self, payload_json: String) -> Result<()> {
     let theme = parse_theme_registration(&payload_json)?;
     let name = theme.name.clone();
-    self.themes.insert(name, theme);
+    self.themes.borrow_mut().insert(name, theme);
     Ok(())
   }
 
@@ -3734,17 +3799,19 @@ impl FerrikiHighlighter {
       Some(registration.grammar)
     }
     else {
-      self.grammars.get(&scope_name).cloned()
+      self.grammars.borrow().get(&scope_name).cloned()
     };
 
     self.aliases
+      .borrow_mut()
       .retain(|_, scope| scope != &scope_name);
     for alias in &registration.aliases {
       self.aliases
+        .borrow_mut()
         .insert(alias.clone(), scope_name.clone());
     }
     if let Some(grammar) = grammar {
-      self.grammars.insert(scope_name.clone(), grammar);
+      self.grammars.borrow_mut().insert(scope_name.clone(), grammar);
     }
 
     // Invalidate compiled grammar cache for this scope
@@ -3753,7 +3820,8 @@ impl FerrikiHighlighter {
     // Build external injection map entries
     if !registration.inject_to.is_empty() {
       for target_scope in &registration.inject_to {
-        let entry = self.injection_map.entry(target_scope.clone()).or_default();
+        let mut injection_map = self.injection_map.borrow_mut();
+        let entry = injection_map.entry(target_scope.clone()).or_default();
         if !entry.contains(&scope_name) {
           entry.push(scope_name.clone());
         }
@@ -3768,47 +3836,12 @@ impl FerrikiHighlighter {
 
   #[napi(js_name = "loadStandardTheme")]
   pub fn load_standard_theme(&mut self, theme_name: String) -> Result<bool> {
-    let Some(catalogs) = &self.standard_assets else {
-      return Ok(false);
-    };
-    let Some(asset) = catalogs.themes.load_asset(&theme_name)? else {
-      return Ok(false);
-    };
-    let theme = parse_theme_registration(&asset.theme_json)?;
-    self.themes.insert(theme.name.clone(), theme);
-    Ok(true)
+    self.ensure_standard_theme_loaded(&theme_name)
   }
 
   #[napi(js_name = "loadStandardGrammar")]
   pub fn load_standard_grammar(&mut self, lang_or_scope: String) -> Result<Option<String>> {
-    let Some(catalogs) = &self.standard_assets else {
-      return Ok(None);
-    };
-    let Some(asset) = catalogs.languages.load_asset(&lang_or_scope)? else {
-      return Ok(None);
-    };
-    let grammar = serde_json::from_str::<Value>(&asset.grammar_json)
-      .map_err(|err| Error::from_reason(format!("Failed to parse standard grammar JSON: {err}")))?;
-    let scope_name = asset.scope_name.clone();
-
-    self.aliases.retain(|_, scope| scope != &scope_name);
-    for alias in &asset.aliases {
-      self.aliases.insert(alias.clone(), scope_name.clone());
-    }
-    self.grammars.insert(scope_name.clone(), grammar);
-    self.compiled_grammars.borrow_mut().remove(&scope_name);
-
-    if !asset.inject_to.is_empty() {
-      for target_scope in &asset.inject_to {
-        let entry = self.injection_map.entry(target_scope.clone()).or_default();
-        if !entry.contains(&scope_name) {
-          entry.push(scope_name.clone());
-        }
-        self.compiled_grammars.borrow_mut().remove(target_scope);
-      }
-    }
-
-    Ok(Some(scope_name))
+    self.ensure_standard_grammar_loaded(&lang_or_scope)
   }
 
   #[napi(js_name = "resolveGrammarScope")]
@@ -3818,7 +3851,7 @@ impl FerrikiHighlighter {
 
   #[napi(js_name = "getLoadedGrammarScopes")]
   pub fn get_loaded_grammar_scopes(&self) -> Vec<String> {
-    let mut scopes = self.grammars.keys().cloned().collect::<Vec<_>>();
+    let mut scopes = self.grammars.borrow().keys().cloned().collect::<Vec<_>>();
     scopes.sort();
     scopes
   }
@@ -3826,11 +3859,14 @@ impl FerrikiHighlighter {
   fn get_or_compile_grammar(&self, scope: &str) -> Result<()> {
     let needs_compile = !self.compiled_grammars.borrow().contains_key(scope);
     if needs_compile {
-      let grammar = self
-        .grammars
-        .get(scope)
-        .ok_or_else(|| Error::from_reason("Ferriki grammar not found in registry."))?;
-      let compiled = compile_grammar(grammar, &self.grammars, &self.injection_map)?;
+      let compiled = {
+        let grammars = self.grammars.borrow();
+        let injection_map = self.injection_map.borrow();
+        let grammar = grammars
+          .get(scope)
+          .ok_or_else(|| Error::from_reason("Ferriki grammar not found in registry."))?;
+        compile_grammar(grammar, &grammars, &injection_map)?
+      };
       self.compiled_grammars.borrow_mut().insert(scope.to_owned(), compiled);
     }
     Ok(())
@@ -3838,51 +3874,75 @@ impl FerrikiHighlighter {
 
   #[napi(js_name = "codeToHtml")]
   pub fn code_to_html(&self, code: String, options_json: String) -> Result<String> {
+    self.ensure_standard_themes_for_options(&options_json)?;
     match self.resolve_lang_mode(&options_json)? {
-      LangMode::Plaintext => Ok(render_plain_html(&code, &options_json, &self.themes)),
-      LangMode::Json => render_json_html(&code, &options_json, &self.themes),
+      LangMode::Plaintext => {
+        let themes = self.themes.borrow();
+        Ok(render_plain_html(&code, &options_json, &themes))
+      }
+      LangMode::Json => {
+        let themes = self.themes.borrow();
+        render_json_html(&code, &options_json, &themes)
+      }
       LangMode::Grammar => {
         let scope = self.resolve_grammar_scope_from_options(&options_json)?;
         self.get_or_compile_grammar(&scope)?;
         let root_scope = Some(scope.as_str());
+        let themes = self.themes.borrow();
         let mut cache = self.compiled_grammars.borrow_mut();
         let compiled = cache.get_mut(&scope)
           .ok_or_else(|| Error::from_reason("Ferriki compiled grammar not found after compilation."))?;
-        render_grammar_html(&code, &options_json, compiled, root_scope, &self.themes)
+        render_grammar_html(&code, &options_json, compiled, root_scope, &themes)
       }
     }
   }
 
   #[napi(js_name = "codeToTokens")]
   pub fn code_to_tokens(&self, code: String, options_json: String) -> Result<String> {
+    self.ensure_standard_themes_for_options(&options_json)?;
     match self.resolve_lang_mode(&options_json)? {
-      LangMode::Plaintext => render_plain_tokens_json(&code, &options_json, &self.themes),
-      LangMode::Json => render_json_tokens_json(&code, &options_json, &self.themes),
+      LangMode::Plaintext => {
+        let themes = self.themes.borrow();
+        render_plain_tokens_json(&code, &options_json, &themes)
+      }
+      LangMode::Json => {
+        let themes = self.themes.borrow();
+        render_json_tokens_json(&code, &options_json, &themes)
+      }
       LangMode::Grammar => {
         let scope = self.resolve_grammar_scope_from_options(&options_json)?;
         self.get_or_compile_grammar(&scope)?;
         let root_scope = Some(scope.as_str());
+        let themes = self.themes.borrow();
         let mut cache = self.compiled_grammars.borrow_mut();
         let compiled = cache.get_mut(&scope)
           .ok_or_else(|| Error::from_reason("Ferriki compiled grammar not found after compilation."))?;
-        render_grammar_tokens_json(&code, &options_json, compiled, root_scope, &self.themes)
+        render_grammar_tokens_json(&code, &options_json, compiled, root_scope, &themes)
       }
     }
   }
 
   #[napi(js_name = "codeToHast")]
   pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
+    self.ensure_standard_themes_for_options(&options_json)?;
     match self.resolve_lang_mode(&options_json)? {
-      LangMode::Plaintext => render_plain_hast_json(&code, &options_json, &self.themes),
-      LangMode::Json => render_json_hast_json(&code, &options_json, &self.themes),
+      LangMode::Plaintext => {
+        let themes = self.themes.borrow();
+        render_plain_hast_json(&code, &options_json, &themes)
+      }
+      LangMode::Json => {
+        let themes = self.themes.borrow();
+        render_json_hast_json(&code, &options_json, &themes)
+      }
       LangMode::Grammar => {
         let scope = self.resolve_grammar_scope_from_options(&options_json)?;
         self.get_or_compile_grammar(&scope)?;
         let root_scope = Some(scope.as_str());
+        let themes = self.themes.borrow();
         let mut cache = self.compiled_grammars.borrow_mut();
         let compiled = cache.get_mut(&scope)
           .ok_or_else(|| Error::from_reason("Ferriki compiled grammar not found after compilation."))?;
-        render_grammar_hast_json(&code, &options_json, compiled, root_scope, &self.themes)
+        render_grammar_hast_json(&code, &options_json, compiled, root_scope, &themes)
       }
     }
   }
@@ -3905,11 +3965,11 @@ pub fn create_highlighter(options_json: String) -> FerrikiHighlighter {
   FerrikiHighlighter {
     _options_json: options_json,
     standard_assets,
-    grammars: HashMap::new(),
-    aliases: HashMap::new(),
-    themes: HashMap::new(),
+    grammars: RefCell::new(HashMap::new()),
+    aliases: RefCell::new(HashMap::new()),
+    themes: RefCell::new(HashMap::new()),
     compiled_grammars: RefCell::new(HashMap::new()),
-    injection_map: HashMap::new(),
+    injection_map: RefCell::new(HashMap::new()),
   }
 }
 
