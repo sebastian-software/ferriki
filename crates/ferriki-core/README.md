@@ -18,6 +18,23 @@ The design target is that runtime behavior is defined here first. JavaScript is
 there to load the addon, expose the public API, and keep compatibility stable,
 not to reimplement the highlighter.
 
+## Scope Boundary
+
+`ferriki-core` is the native home of the highlighting runtime.
+It does not currently implement ecosystem adapters like `twoslash`,
+`markdown-it`, `rehype`, `vitepress-twoslash`, or `colorized-brackets`.
+
+That boundary is intentional. Ferriki would rather keep those areas out of the
+product than rebuild the old JS-heavy architecture around the core again.
+
+If Ferriki expands into higher-level features later, the preferred direction is
+to build them as native lanes here instead of treating Rust as a token producer
+and JavaScript as the real runtime.
+
+`Twoslash` is the strongest candidate for a later native lane, but it is also
+the hardest one because it depends on TypeScript compiler and language-service
+behavior, not just on highlighted output.
+
 ## Current Status
 
 This crate is repository-owned but not yet positioned as a separately published

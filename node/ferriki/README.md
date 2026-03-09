@@ -15,6 +15,29 @@ product.
 - Leaner runtime shape with less product complexity in JavaScript
 - Compatibility checked against a mirrored upstream Shiki suite
 
+## What This Package Includes
+
+`ferriki` is the Node package for the highlighting runtime itself.
+
+Included now:
+
+- `createHighlighter`
+- `codeToHtml`
+- `codeToTokens`
+- `codeToHast`
+- the Node binding layer for the Rust core
+
+Not included as product features:
+
+- `twoslash`
+- `markdown-it`
+- `rehype`
+- `vitepress-twoslash`
+- `colorized-brackets`
+- other ecosystem adapters mirrored only for compatibility tracking
+
+Those areas may still appear in the mirrored upstream workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki), but they are not part of the supported Ferriki package surface.
+
 ## Repository Status
 
 This package is the canonical Node package path inside the Ferriki repository.
@@ -39,6 +62,17 @@ Ferriki is built around the same high-level contract people expect from Shiki:
 
 Internally, those outputs are intended to be defined by the Rust core, not by a
 thick JavaScript orchestration layer.
+
+## Future Extension Direction
+
+Ferriki is not trying to become a pile of JS wrappers around the Rust core.
+If Ferriki adopts higher-level extensions later, the preferred direction is to
+move the heavy lifting into Rust as well.
+
+`Twoslash` is the most plausible future candidate, but it is not trivial:
+its current model depends heavily on TypeScript compiler and language-service
+behavior. Any Ferriki-native version would need a deliberate architecture of
+its own instead of a thin copy of the existing JS integration.
 
 ## License
 
