@@ -16,6 +16,7 @@
   "types": "./index.d.mts",
   "files": [
     "*.node",
+    "assets",
     "dist",
     "index.d.mts",
     "index.mjs",

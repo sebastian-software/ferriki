@@ -9,6 +9,7 @@ const repoRoot = join(pkgDir, '..', '..')
 const manifestPath = join(repoRoot, 'crates', 'ferriki-core', 'Cargo.toml')
 const addonOut = join(pkgDir, 'shiki-rust.node')
 const distAddonOut = join(pkgDir, 'dist', 'shiki-rust.node')
+const syncAssetsScript = join(pkgDir, 'scripts', 'sync-standard-assets.mjs')
 
 const cargo = spawnSync('cargo', ['build', '--release', '--manifest-path', manifestPath], {
   cwd: repoRoot,
@@ -52,5 +53,13 @@ if (!selectedInput) {
 
 await cp(selectedInput, addonOut)
 await cp(selectedInput, distAddonOut)
+const syncAssets = spawnSync('node', [syncAssetsScript], {
+  cwd: repoRoot,
+  stdio: 'inherit',
+})
+
+if (syncAssets.status !== 0)
+  process.exit(syncAssets.status ?? 1)
+
 console.log(`[ferriki] Native addon ready: ${addonOut}`)
 console.log(`[ferriki] Bundled native addon ready: ${distAddonOut}`)
