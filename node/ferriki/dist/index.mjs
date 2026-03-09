@@ -9916,7 +9916,7 @@ const {
   getSingletonHighlighter,
   getLastGrammarState
 } = /* @__PURE__ */ createSingletonShorthands(
-  createBundledHighlighterDefault,
+  createHighlighter,
   { guessEmbeddedLanguages }
 );
 
@@ -13560,11 +13560,35 @@ function ensureNativeStandardAssets(native, highlighter, options) {
 }
 function registerGrammars(native, registrations) {
   for (const registration of registrations) {
+    if (nativeAlreadyHasGrammar(native, registration))
+      continue;
     try {
       native.registerGrammar(toJson(registration));
     } catch {
     }
   }
+}
+function nativeAlreadyHasGrammar(native, registration) {
+  if (!native?.resolveGrammarScope || !registration || typeof registration !== "object")
+    return false;
+  const scopeName = typeof registration.scopeName === "string" ? registration.scopeName : void 0;
+  if (!scopeName)
+    return false;
+  const probes = [scopeName];
+  if (Array.isArray(registration.aliases)) {
+    for (const alias of registration.aliases) {
+      if (typeof alias === "string")
+        probes.push(alias);
+    }
+  }
+  for (const probe of probes) {
+    try {
+      if (native.resolveGrammarScope(probe) === scopeName)
+        return true;
+    } catch {
+    }
+  }
+  return false;
 }
 function resolveLanguageRegistration(highlighter, lang) {
   const maybeGetLanguage = highlighter.getLanguage;

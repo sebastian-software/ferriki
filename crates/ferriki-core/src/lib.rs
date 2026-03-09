@@ -199,6 +199,8 @@ enum Rule {
 struct CompiledScanner {
   scanner: Scanner,
   rule_ids: Vec<RuleId>, // match index → RuleId
+  regexes: Vec<String>,
+  single_scanners: Vec<Option<Scanner>>,
 }
 
 struct StateFrame {
@@ -1387,7 +1389,17 @@ fn build_scanner_for_rule(
     // For large pattern sets, try building the scanner directly
     let regex_refs: Vec<&str> = regexes.iter().map(String::as_str).collect();
     match Scanner::new(&regex_refs) {
-      Ok(scanner) => Some(CompiledScanner { scanner, rule_ids }),
+      Ok(scanner) => {
+        let single_scanners = std::iter::repeat_with(|| None)
+          .take(regexes.len())
+          .collect();
+        Some(CompiledScanner {
+          scanner,
+          rule_ids,
+          regexes,
+          single_scanners,
+        })
+      }
       Err(_) => None,
     }
   } else {
@@ -1407,10 +1419,65 @@ fn build_scanner_for_rule(
 
     let regex_refs: Vec<&str> = valid_regexes.iter().map(String::as_str).collect();
     match Scanner::new(&regex_refs) {
-      Ok(scanner) => Some(CompiledScanner { scanner, rule_ids: valid_ids }),
+      Ok(scanner) => {
+        let single_scanners = std::iter::repeat_with(|| None)
+          .take(valid_regexes.len())
+          .collect();
+        Some(CompiledScanner {
+          scanner,
+          rule_ids: valid_ids,
+          regexes: valid_regexes,
+          single_scanners,
+        })
+      }
       Err(_) => None,
     }
   }
+}
+
+fn find_next_match_ordered(
+  compiled_scanner: &mut CompiledScanner,
+  input: &OnigString,
+  line_str_id: u64,
+  cursor: usize,
+  find_options: ScannerFindOptions,
+) -> Option<ferroni::scanner::ScannerMatch> {
+  let best = compiled_scanner
+    .scanner
+    .find_next_match_utf16_with_id(input, line_str_id, cursor, find_options)?;
+  let mut best_match = best;
+  let mut best_start = best_match
+    .capture_indices
+    .first()
+    .map(|capture| capture.start)
+    .unwrap_or(usize::MAX);
+
+  for index in 0..best_match.index {
+    if compiled_scanner.single_scanners[index].is_none() {
+      compiled_scanner.single_scanners[index] =
+        Scanner::new(&[compiled_scanner.regexes[index].as_str()]).ok();
+    }
+    let Some(scanner) = compiled_scanner.single_scanners[index].as_mut() else {
+      continue;
+    };
+    let Some(candidate) = scanner.find_next_match_utf16_with_id(input, line_str_id, cursor, find_options) else {
+      continue;
+    };
+    let candidate_start = candidate
+      .capture_indices
+      .first()
+      .map(|capture| capture.start)
+      .unwrap_or(usize::MAX);
+    if candidate_start < best_start || candidate_start == best_start {
+      best_start = candidate_start;
+      best_match = candidate;
+      if best_start == cursor {
+        break;
+      }
+    }
+  }
+
+  Some(best_match)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1749,6 +1816,97 @@ fn resolve_pattern_backrefs(
   out
 }
 
+fn resolve_capture_name_backrefs(
+  pattern: &str,
+  capture_indices: &[ferroni::scanner::CaptureIndex],
+  utf16_map: &[usize],
+  code: &str,
+) -> String {
+  let mut out = String::with_capacity(pattern.len());
+  let chars = pattern.as_bytes();
+  let mut index = 0usize;
+
+  while index < chars.len() {
+    if chars[index] != b'$' {
+      out.push(chars[index] as char);
+      index += 1;
+      continue;
+    }
+
+    if index + 1 >= chars.len() {
+      out.push('$');
+      index += 1;
+      continue;
+    }
+
+    if chars[index + 1] == b'{' {
+      let mut cursor = index + 2;
+      let mut digits = String::new();
+      while cursor < chars.len() && chars[cursor].is_ascii_digit() {
+        digits.push(chars[cursor] as char);
+        cursor += 1;
+      }
+
+      let mut transform = None;
+      if cursor + 2 < chars.len() && chars[cursor] == b':' && chars[cursor + 1] == b'/' {
+        cursor += 2;
+        let start = cursor;
+        while cursor < chars.len() && chars[cursor] != b'}' {
+          cursor += 1;
+        }
+        if cursor <= chars.len() {
+          transform = std::str::from_utf8(&chars[start..cursor]).ok();
+        }
+      }
+
+      if cursor < chars.len() && chars[cursor] == b'}' {
+        if let Some(captured) = resolve_capture_reference(&digits, capture_indices, utf16_map, code) {
+          match transform {
+            Some("downcase") => out.push_str(&captured.to_lowercase()),
+            Some("upcase") => out.push_str(&captured.to_uppercase()),
+            _ => out.push_str(&captured),
+          }
+          index = cursor + 1;
+          continue;
+        }
+      }
+    }
+
+    let mut cursor = index + 1;
+    let mut digits = String::new();
+    while cursor < chars.len() && chars[cursor].is_ascii_digit() {
+      digits.push(chars[cursor] as char);
+      cursor += 1;
+    }
+    if let Some(captured) = resolve_capture_reference(&digits, capture_indices, utf16_map, code) {
+      out.push_str(&captured);
+      index = cursor;
+      continue;
+    }
+
+    out.push('$');
+    index += 1;
+  }
+
+  out
+}
+
+fn resolve_capture_reference(
+  digits: &str,
+  capture_indices: &[ferroni::scanner::CaptureIndex],
+  utf16_map: &[usize],
+  code: &str,
+) -> Option<String> {
+  let index = digits.parse::<usize>().ok()?;
+  let range = capture_indices.get(index)?;
+  if range.end <= range.start || range.start >= utf16_map.len() || range.end >= utf16_map.len() {
+    return None;
+  }
+  let start_byte = utf16_map[range.start];
+  let end_byte = utf16_map[range.end];
+  code.get(start_byte..end_byte).map(str::to_owned)
+}
+
 fn build_scope_stack_from_frames(stack: &[StateFrame], root_scope: Option<&str>) -> Vec<String> {
   let mut scopes = Vec::new();
   if let Some(root) = root_scope {
@@ -1899,6 +2057,7 @@ fn tokenize_with_grammar_skeleton(
     let mut cursor: usize = 0; // line-local cursor (UTF-16 units)
     let mut zero_width_count = 0usize;
     let mut last_zero_width_pos = usize::MAX;
+    let mut last_zero_width_generation = u64::MAX;
 
     // While-condition check at start of each line (except first)
     if line_idx > 0 && !stack.is_empty() {
@@ -1964,7 +2123,13 @@ fn tokenize_with_grammar_skeleton(
                 if range.end <= range.start { continue; }
                 if range.start < while_start || range.end > while_end { continue; }
                 let (cap_color, cap_fs) = if let Some(name) = capture.name.as_deref() {
-                  resolve_color_with_extra_scope(scope_stack, name, theme, &mut theme_cache)
+                  let resolved_name = resolve_capture_name_backrefs(
+                    name,
+                    &found_while.capture_indices,
+                    &line_utf16_map,
+                    line_str,
+                  );
+                  resolve_color_with_extra_scope(scope_stack, &resolved_name, theme, &mut theme_cache)
                 } else {
                   (cached_color.clone(), cached_font_style)
                 };
@@ -1984,7 +2149,13 @@ fn tokenize_with_grammar_skeleton(
                 if range.end <= range.start { continue; }
                 if range.start < while_start || range.end > while_end { continue; }
                 let (cap_color, cap_fs) = if let Some(name) = capture.name.as_deref() {
-                  resolve_color_with_extra_scope(&cached_scope_stack, name, theme, &mut theme_cache)
+                  let resolved_name = resolve_capture_name_backrefs(
+                    name,
+                    &found_while.capture_indices,
+                    &line_utf16_map,
+                    line_str,
+                  );
+                  resolve_color_with_extra_scope(&cached_scope_stack, &resolved_name, theme, &mut theme_cache)
                 } else {
                   (cached_color.clone(), cached_font_style)
                 };
@@ -2102,7 +2273,8 @@ fn tokenize_with_grammar_skeleton(
 
       // Scanner uses line-local OnigString and cursor
       let main_match = if let Some(cached_scanner) = compiled.scanner_cache.get_mut(cache_key) {
-        let m = cached_scanner.scanner.find_next_match_utf16_with_id(
+        let m = find_next_match_ordered(
+          cached_scanner,
           &line_input,
           line_str_id,
           cursor,
@@ -2217,7 +2389,13 @@ fn tokenize_with_grammar_skeleton(
           if range.end <= range.start { continue; }
           if range.start < start_local || range.end > end_local { continue; }
           let (cap_color, cap_fs) = if let Some(name) = capture.name.as_deref() {
-            resolve_color_with_extra_scope(scope_stack, name, theme, &mut theme_cache)
+            let resolved_name = resolve_capture_name_backrefs(
+              name,
+              &found.capture_indices,
+              &line_utf16_map,
+              line_str,
+            );
+            resolve_color_with_extra_scope(scope_stack, &resolved_name, theme, &mut theme_cache)
           } else {
             (inherited_color.clone(), inherited_font_style)
           };
@@ -2249,7 +2427,13 @@ fn tokenize_with_grammar_skeleton(
               if range.end <= range.start { continue; }
               if range.start < start_local || range.end > end_local { continue; }
               let (cap_color, cap_fs) = if let Some(n) = capture.name.as_deref() {
-                resolve_color_with_extra_scope(scope_stack, n, theme, &mut theme_cache)
+                let resolved_name = resolve_capture_name_backrefs(
+                  n,
+                  &found.capture_indices,
+                  &line_utf16_map,
+                  line_str,
+                );
+                resolve_color_with_extra_scope(scope_stack, &resolved_name, theme, &mut theme_cache)
               } else {
                 (color.clone(), font_style)
               };
@@ -2282,7 +2466,13 @@ fn tokenize_with_grammar_skeleton(
               if range.end <= range.start { continue; }
               if range.start < start_local || range.end > end_local { continue; }
               let (cap_color, cap_fs) = if let Some(n) = capture.name.as_deref() {
-                resolve_color_with_extra_scope(scope_stack, n, theme, &mut theme_cache)
+                let resolved_name = resolve_capture_name_backrefs(
+                  n,
+                  &found.capture_indices,
+                  &line_utf16_map,
+                  line_str,
+                );
+                resolve_color_with_extra_scope(scope_stack, &resolved_name, theme, &mut theme_cache)
               } else {
                 (color.clone(), font_style)
               };
@@ -2331,7 +2521,13 @@ fn tokenize_with_grammar_skeleton(
               if range.end <= range.start { continue; }
               if range.start < start_local || range.end > end_local { continue; }
               let (cap_color, cap_fs) = if let Some(n) = capture.name.as_deref() {
-                resolve_color_with_extra_scope(scope_stack, n, theme, &mut theme_cache)
+                let resolved_name = resolve_capture_name_backrefs(
+                  n,
+                  &found.capture_indices,
+                  &line_utf16_map,
+                  line_str,
+                );
+                resolve_color_with_extra_scope(scope_stack, &resolved_name, theme, &mut theme_cache)
               } else {
                 (color.clone(), font_style)
               };
@@ -2370,7 +2566,7 @@ fn tokenize_with_grammar_skeleton(
 
       // Zero-width loop detection
       if end_local == cursor {
-        if cursor == last_zero_width_pos {
+        if cursor == last_zero_width_pos && stack_generation == last_zero_width_generation {
           zero_width_count += 1;
           if zero_width_count > 3 {
             cursor = cursor.saturating_add(1);
@@ -2379,6 +2575,7 @@ fn tokenize_with_grammar_skeleton(
           }
         } else {
           last_zero_width_pos = cursor;
+          last_zero_width_generation = stack_generation;
           zero_width_count = 1;
         }
       } else {
@@ -2452,14 +2649,19 @@ fn find_injection_match(
       let ids: Vec<RuleId> = pattern_pairs.iter().map(|(_, id)| *id).collect();
       let regex_refs: Vec<&str> = regexes.iter().map(String::as_str).collect();
       let Ok(scanner) = Scanner::new(&regex_refs) else { continue };
-      compiled.injection_scanner_cache.insert(*rule_id, CompiledScanner { scanner, rule_ids: ids });
+      let single_scanners = std::iter::repeat_with(|| None)
+        .take(regexes.len())
+        .collect();
+      compiled.injection_scanner_cache.insert(*rule_id, CompiledScanner {
+        scanner,
+        rule_ids: ids,
+        regexes,
+        single_scanners,
+      });
     }
 
     let Some(cached) = compiled.injection_scanner_cache.get_mut(rule_id) else { continue };
-    let Some(found) = cached
-      .scanner
-      .find_next_match_utf16_with_id(input, line_str_id, cursor, find_options)
-    else {
+    let Some(found) = find_next_match_ordered(cached, input, line_str_id, cursor, find_options) else {
       continue;
     };
 
@@ -4007,6 +4209,7 @@ pub fn create_highlighter(options_json: String) -> FerrikiHighlighter {
 mod tests {
   use super::*;
   use ferriki_asset_gen::{AssetSourceRef, generate_catalogs_from_upstream};
+  use ferroni::scanner::{OnigString, Scanner, ScannerFindOptions};
   use std::fs;
   use std::path::Path;
   use std::time::{SystemTime, UNIX_EPOCH};
@@ -4214,5 +4417,109 @@ mod tests {
     assert!(scopes.contains(&"text.html.basic".to_owned()));
     assert!(scopes.contains(&"source.js".to_owned()));
     assert!(scopes.contains(&"source.ts".to_owned()));
+  }
+
+  #[test]
+  fn standard_js_function_calls_and_whitespace_match_expected_theme_scopes() {
+    let asset_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../../assets/shiki");
+
+    let highlighter = create_highlighter(
+      json!({ "standardAssetRoot": asset_root.display().to_string() }).to_string(),
+    );
+    assert!(highlighter.ensure_standard_theme_loaded("nord").expect("theme"));
+    let themes = highlighter.themes.borrow();
+    let nord = themes.get("Nord").or_else(|| themes.get("nord")).expect("nord theme");
+    let direct_function_style = resolve_token_style(&["source.js", "entity.name.function.js"], nord);
+    assert_eq!(direct_function_style.foreground.as_deref(), Some("#88C0D0"));
+    let nested_function_style = resolve_token_style(
+      &["source.js", "meta.function-call.js", "entity.name.function.js"],
+      nord,
+    );
+    assert_eq!(nested_function_style.foreground.as_deref(), Some("#88C0D0"));
+    drop(themes);
+
+    let generated_catalogs = StandardAssetCatalogs::load_from_root(&asset_root).expect("catalogs");
+    let generated_js_asset = generated_catalogs
+      .languages
+      .load_asset("javascript")
+      .expect("asset")
+      .expect("present");
+    let js_grammar: Value = serde_json::from_str(&generated_js_asset.grammar_json).expect("grammar json");
+    let function_call_begin = js_grammar["repository"]["function-call"]["patterns"][0]["begin"]
+      .as_str()
+      .expect("function-call begin");
+    let mut function_call_scanner = Scanner::new(&[function_call_begin]).expect("scanner");
+    let function_call_match = function_call_scanner.find_next_match_utf16(
+      &OnigString::new("console.log("),
+      0,
+      ScannerFindOptions::from_bits(0),
+    );
+    assert!(
+      function_call_match.is_some(),
+      "Ferroni should match the JavaScript function-call begin rule for console.log("
+    );
+
+    let js_tokens = highlighter
+      .code_to_tokens(
+        "console.log(\"Hi\")".to_owned(),
+        json!({
+          "lang": "javascript",
+          "theme": "nord",
+        })
+        .to_string(),
+      )
+      .expect("tokens");
+    let js_payload: Value = serde_json::from_str(&js_tokens).expect("json");
+    let js_line = js_payload["tokens"][0].as_array().expect("line");
+
+    let js_pairs = js_line
+      .iter()
+      .map(|token| {
+        (
+          token["content"].as_str().unwrap().to_owned(),
+          token["color"].as_str().unwrap().to_owned(),
+        )
+      })
+      .collect::<Vec<_>>();
+    assert_eq!(
+      js_pairs,
+      vec![
+        ("console".to_owned(), "#D8DEE9".to_owned()),
+        (".".to_owned(), "#ECEFF4".to_owned()),
+        ("log".to_owned(), "#88C0D0".to_owned()),
+        ("(".to_owned(), "#D8DEE9FF".to_owned()),
+        ("\"".to_owned(), "#ECEFF4".to_owned()),
+        ("Hi".to_owned(), "#A3BE8C".to_owned()),
+        ("\"".to_owned(), "#ECEFF4".to_owned()),
+        (")".to_owned(), "#D8DEE9FF".to_owned()),
+      ]
+    );
+
+    let whitespace_html = highlighter
+      .code_to_html(
+        "  space()\n\t\ttab()".to_owned(),
+        json!({
+          "lang": "javascript",
+          "theme": "vitesse-light",
+        })
+        .to_string(),
+      )
+      .expect("html");
+    assert_eq!(
+      whitespace_html,
+      "<pre class=\"shiki vitesse-light\" style=\"background-color:#ffffff;color:#393a34\" tabindex=\"0\"><code><span class=\"line\"><span style=\"color:#59873A\">  space</span><span style=\"color:#999999\">()</span></span>\n<span class=\"line\"><span style=\"color:#59873A\">\t\ttab</span><span style=\"color:#999999\">()</span></span></code></pre>"
+    );
+  }
+
+  #[test]
+  fn ferroni_matches_simple_after_tag_lookbehind() {
+    let mut scanner = Scanner::new(&["(?<=>)"]).expect("scanner");
+    let matched = scanner.find_next_match_utf16(
+      &OnigString::new(">\n"),
+      1,
+      ScannerFindOptions::from_bits(0),
+    );
+    assert!(matched.is_some(), "Ferroni should match (?<=>) after a tag close.");
   }
 }
