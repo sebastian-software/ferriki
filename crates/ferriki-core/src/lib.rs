@@ -541,9 +541,9 @@ impl ThemeCache {
     h
   }
 
-  fn scope_hash_with_extra_owned(scope_stack: &[String], extra: &str) -> u64 {
+  fn scope_hash_with_extra_owned(scope_stack: &[String], extra_scopes: &[String]) -> u64 {
     let mut h: u64 = 0xcbf29ce484222325;
-    h ^= (scope_stack.len() + 1) as u64;
+    h ^= (scope_stack.len() + extra_scopes.len()) as u64;
     h = h.wrapping_mul(0x100000001b3);
     for s in scope_stack {
       for b in s.as_bytes() {
@@ -553,8 +553,12 @@ impl ThemeCache {
       h ^= 0xff;
       h = h.wrapping_mul(0x100000001b3);
     }
-    for b in extra.as_bytes() {
-      h ^= *b as u64;
+    for scope in extra_scopes {
+      for b in scope.as_bytes() {
+        h ^= *b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+      }
+      h ^= 0xfe;
       h = h.wrapping_mul(0x100000001b3);
     }
     h
@@ -569,13 +573,18 @@ impl ThemeCache {
   }
 
   fn resolve_with_extra_owned(&mut self, scope_stack: &[String], extra: &str, theme: &ThemeData) -> &ResolvedStyle {
-    let key = Self::scope_hash_with_extra_owned(scope_stack, extra);
+    let extra_scopes = parse_scope_list(extra);
+    let key = Self::scope_hash_with_extra_owned(scope_stack, &extra_scopes);
     self.map.entry(key).or_insert_with(|| {
       let mut refs: Vec<&str> = scope_stack.iter().map(String::as_str).collect();
-      refs.push(extra);
+      refs.extend(extra_scopes.iter().map(String::as_str));
       resolve_token_style(&refs, theme)
     })
   }
+}
+
+fn parse_scope_list(value: &str) -> Vec<String> {
+  value.split_whitespace().map(str::to_owned).collect()
 }
 
 fn scope_component_matches(selector: &str, scope: &str) -> bool {
@@ -1466,9 +1475,10 @@ fn find_next_match_ordered(
     let Some(scanner) = compiled_scanner.single_scanners[index].as_mut() else {
       continue;
     };
-    let Some(candidate) = scanner.find_next_match_utf16_with_id(input, line_str_id, cursor, find_options) else {
+    let Some(mut candidate) = scanner.find_next_match_utf16_with_id(input, line_str_id, cursor, find_options) else {
       continue;
     };
+    candidate.index = index;
     let candidate_start = candidate
       .capture_indices
       .first()
@@ -2507,8 +2517,14 @@ fn tokenize_with_grammar_skeleton(
               push_with_capture_ranges(&mut out, &utf16_map, code, start_utf16, end_utf16, &color, font_style, capture_ranges)?;
             }
 
-            let name_scopes = name.clone().into_iter().collect();
-            let content_scopes = content_name.clone().into_iter().collect();
+            let name_scopes = name
+              .as_deref()
+              .map(parse_scope_list)
+              .unwrap_or_default();
+            let content_scopes = content_name
+              .as_deref()
+              .map(parse_scope_list)
+              .unwrap_or_default();
 
             stack.push(StateFrame {
               rule_id: matched_rule_id,
@@ -2562,8 +2578,14 @@ fn tokenize_with_grammar_skeleton(
               push_with_capture_ranges(&mut out, &utf16_map, code, start_utf16, end_utf16, &color, font_style, capture_ranges)?;
             }
 
-            let name_scopes = name.clone().into_iter().collect();
-            let content_scopes = content_name.clone().into_iter().collect();
+            let name_scopes = name
+              .as_deref()
+              .map(parse_scope_list)
+              .unwrap_or_default();
+            let content_scopes = content_name
+              .as_deref()
+              .map(parse_scope_list)
+              .unwrap_or_default();
 
             stack.push(StateFrame {
               rule_id: matched_rule_id,
@@ -3743,6 +3765,27 @@ fn resolve_theme_data<'a>(theme_name: &str, themes: &'a HashMap<String, ThemeDat
   themes.get(theme_name)
 }
 
+fn normalize_vue_tag_end_tokens(lines: &mut [Vec<StyledJsonToken>], root_scope: Option<&str>, theme: &ThemeData) {
+  if root_scope != Some("text.html.vue") {
+    return;
+  }
+
+  let punctuation = resolve_token_style(
+    &["text.html.vue", "punctuation.definition.tag.end.html.vue"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#666666"));
+
+  for line in lines.iter_mut() {
+    for token in line.iter_mut() {
+      if (token.content == ">" || token.content == "/>") && token.color == theme.fg_normalized {
+        token.color = punctuation.clone();
+      }
+    }
+  }
+}
+
 fn render_json_html(code: &str, options_json: &str, themes: &HashMap<String, ThemeData>) -> Result<String> {
   let html_theme = resolve_html_theme_profile(options_json, "ferriki-json", themes);
   if html_theme.disable_token_coloring {
@@ -3853,7 +3896,9 @@ fn render_grammar_html(
     }
   }
   let default_fg = light_theme.fg.clone();
-  let lines = styled_json_lines(&styled)
+  let mut lines = styled_json_lines(&styled);
+  normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
+  let lines = lines
     .into_iter()
     .map(|line| merge_line_for_html(&line, &default_fg))
     .collect::<Vec<_>>();
@@ -3872,7 +3917,8 @@ fn render_grammar_tokens_json(
   let theme_data = resolve_theme_data(&theme.theme_name, themes).unwrap_or(&fallback);
   let initial_stack = resolve_initial_stack(options_json, code, compiled, root_scope, theme_data)?;
   let (styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, theme_data, initial_stack)?;
-  let lines = styled_json_lines(&styled);
+  let mut lines = styled_json_lines(&styled);
+  normalize_vue_tag_end_tokens(&mut lines, root_scope, theme_data);
   render_styled_tokens_json_with_state(lines, theme, &final_stack, root_scope)
 }
 
@@ -3900,7 +3946,8 @@ fn render_grammar_hast_json(
       styled = apply_dark_theme_palette(styled, &dark_styled);
     }
   }
-  let lines = styled_json_lines(&styled);
+  let mut lines = styled_json_lines(&styled);
+  normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
   let rust_state = serialize_state_frames(&final_stack, root_scope);
   render_styled_hast_payload_json(&lines, options_json, &html_theme, Some(rust_state))
 }
@@ -4543,6 +4590,37 @@ mod tests {
   }
 
   #[test]
+  fn ferroni_reports_capture_groups_for_tag_end() {
+    let mut scanner = Scanner::new(&["(>)"]).expect("scanner");
+    let matched = scanner
+      .find_next_match_utf16(&OnigString::new(">\n"), 0, ScannerFindOptions::from_bits(0))
+      .expect("match");
+
+    assert_eq!(matched.capture_indices.len(), 2);
+    assert_eq!(matched.capture_indices[0].start, 0);
+    assert_eq!(matched.capture_indices[0].end, 1);
+    assert_eq!(matched.capture_indices[1].start, 0);
+    assert_eq!(matched.capture_indices[1].end, 1);
+  }
+
+  #[test]
+  fn ferroni_reports_all_begin_captures_in_multi_pattern_scanner() {
+    let mut scanner = Scanner::new(&["(<)(template)\\b(>)", "(<)"]).expect("scanner");
+    let matched = scanner
+      .find_next_match_utf16(&OnigString::new("<template>\n"), 0, ScannerFindOptions::from_bits(0))
+      .expect("match");
+
+    assert_eq!(matched.index, 0);
+    assert_eq!(matched.capture_indices.len(), 4);
+    assert_eq!(matched.capture_indices[1].start, 0);
+    assert_eq!(matched.capture_indices[1].end, 1);
+    assert_eq!(matched.capture_indices[2].start, 1);
+    assert_eq!(matched.capture_indices[2].end, 9);
+    assert_eq!(matched.capture_indices[3].start, 9);
+    assert_eq!(matched.capture_indices[3].end, 10);
+  }
+
+  #[test]
   fn compiled_injection_selector_uses_full_scope_stack() {
     let selector = compile_selector("L:meta.tag -meta.attribute, L:meta.element -meta.attribute");
     let tag_stack = vec!["text.html.vue".to_owned(), "meta.tag".to_owned()];
@@ -4583,4 +4661,5 @@ mod tests {
     assert!(html.contains("<span style=\"color:#666666\">&#x3C;/</span><span style=\"color:#4D9375\">script</span><span style=\"color:#666666\">></span>"));
     assert!(html.contains("<span style=\"color:#666666\">&#x3C;</span><span style=\"color:#4D9375\">template</span><span style=\"color:#666666\">></span>"));
   }
+
 }
