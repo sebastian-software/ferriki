@@ -25,6 +25,7 @@ tm-grammars-themes
 target
 Cargo.lock
 node/ferriki/*.node
+node/ferriki/assets/
 node/ferriki/dist/*.node
 !node/ferriki/dist/
 !node/ferriki/dist/**/*.mjs

@@ -1,0 +1,388 @@
+{
+  "themes": [
+    {
+      "id": "andromeeda",
+      "theme_file": "andromeeda.json",
+      "display_name": "andromeeda",
+      "theme_type": "dark"
+    },
+    {
+      "id": "aurora-x",
+      "theme_file": "aurora-x.json",
+      "display_name": "aurora-x",
+      "theme_type": "dark"
+    },
+    {
+      "id": "ayu-dark",
+      "theme_file": "ayu-dark.json",
+      "display_name": "ayu-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "ayu-light",
+      "theme_file": "ayu-light.json",
+      "display_name": "ayu-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "ayu-mirage",
+      "theme_file": "ayu-mirage.json",
+      "display_name": "ayu-mirage",
+      "theme_type": "dark"
+    },
+    {
+      "id": "catppuccin-frappe",
+      "theme_file": "catppuccin-frappe.json",
+      "display_name": "catppuccin-frappe",
+      "theme_type": "dark"
+    },
+    {
+      "id": "catppuccin-latte",
+      "theme_file": "catppuccin-latte.json",
+      "display_name": "catppuccin-latte",
+      "theme_type": "light"
+    },
+    {
+      "id": "catppuccin-macchiato",
+      "theme_file": "catppuccin-macchiato.json",
+      "display_name": "catppuccin-macchiato",
+      "theme_type": "dark"
+    },
+    {
+      "id": "catppuccin-mocha",
+      "theme_file": "catppuccin-mocha.json",
+      "display_name": "catppuccin-mocha",
+      "theme_type": "dark"
+    },
+    {
+      "id": "dark-plus",
+      "theme_file": "dark-plus.json",
+      "display_name": "dark-plus",
+      "theme_type": "dark"
+    },
+    {
+      "id": "dracula",
+      "theme_file": "dracula.json",
+      "display_name": "dracula",
+      "theme_type": "dark"
+    },
+    {
+      "id": "dracula-soft",
+      "theme_file": "dracula-soft.json",
+      "display_name": "dracula-soft",
+      "theme_type": "dark"
+    },
+    {
+      "id": "everforest-dark",
+      "theme_file": "everforest-dark.json",
+      "display_name": "everforest-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "everforest-light",
+      "theme_file": "everforest-light.json",
+      "display_name": "everforest-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "github-dark",
+      "theme_file": "github-dark.json",
+      "display_name": "github-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "github-dark-default",
+      "theme_file": "github-dark-default.json",
+      "display_name": "github-dark-default",
+      "theme_type": "dark"
+    },
+    {
+      "id": "github-dark-dimmed",
+      "theme_file": "github-dark-dimmed.json",
+      "display_name": "github-dark-dimmed",
+      "theme_type": "dark"
+    },
+    {
+      "id": "github-dark-high-contrast",
+      "theme_file": "github-dark-high-contrast.json",
+      "display_name": "github-dark-high-contrast",
+      "theme_type": "dark"
+    },
+    {
+      "id": "github-light",
+      "theme_file": "github-light.json",
+      "display_name": "github-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "github-light-default",
+      "theme_file": "github-light-default.json",
+      "display_name": "github-light-default",
+      "theme_type": "light"
+    },
+    {
+      "id": "github-light-high-contrast",
+      "theme_file": "github-light-high-contrast.json",
+      "display_name": "github-light-high-contrast",
+      "theme_type": "light"
+    },
+    {
+      "id": "gruvbox-dark-hard",
+      "theme_file": "gruvbox-dark-hard.json",
+      "display_name": "gruvbox-dark-hard",
+      "theme_type": "dark"
+    },
+    {
+      "id": "gruvbox-dark-medium",
+      "theme_file": "gruvbox-dark-medium.json",
+      "display_name": "gruvbox-dark-medium",
+      "theme_type": "dark"
+    },
+    {
+      "id": "gruvbox-dark-soft",
+      "theme_file": "gruvbox-dark-soft.json",
+      "display_name": "gruvbox-dark-soft",
+      "theme_type": "dark"
+    },
+    {
+      "id": "gruvbox-light-hard",
+      "theme_file": "gruvbox-light-hard.json",
+      "display_name": "gruvbox-light-hard",
+      "theme_type": "light"
+    },
+    {
+      "id": "gruvbox-light-medium",
+      "theme_file": "gruvbox-light-medium.json",
+      "display_name": "gruvbox-light-medium",
+      "theme_type": "light"
+    },
+    {
+      "id": "gruvbox-light-soft",
+      "theme_file": "gruvbox-light-soft.json",
+      "display_name": "gruvbox-light-soft",
+      "theme_type": "light"
+    },
+    {
+      "id": "horizon",
+      "theme_file": "horizon.json",
+      "display_name": "horizon",
+      "theme_type": "dark"
+    },
+    {
+      "id": "houston",
+      "theme_file": "houston.json",
+      "display_name": "houston",
+      "theme_type": "dark"
+    },
+    {
+      "id": "kanagawa-dragon",
+      "theme_file": "kanagawa-dragon.json",
+      "display_name": "kanagawa-dragon",
+      "theme_type": "dark"
+    },
+    {
+      "id": "kanagawa-lotus",
+      "theme_file": "kanagawa-lotus.json",
+      "display_name": "kanagawa-lotus",
+      "theme_type": "light"
+    },
+    {
+      "id": "kanagawa-wave",
+      "theme_file": "kanagawa-wave.json",
+      "display_name": "kanagawa-wave",
+      "theme_type": "dark"
+    },
+    {
+      "id": "laserwave",
+      "theme_file": "laserwave.json",
+      "display_name": "laserwave",
+      "theme_type": "dark"
+    },
+    {
+      "id": "light-plus",
+      "theme_file": "light-plus.json",
+      "display_name": "light-plus",
+      "theme_type": "light"
+    },
+    {
+      "id": "material-theme",
+      "theme_file": "material-theme.json",
+      "display_name": "material-theme",
+      "theme_type": "dark"
+    },
+    {
+      "id": "material-theme-darker",
+      "theme_file": "material-theme-darker.json",
+      "display_name": "material-theme-darker",
+      "theme_type": "dark"
+    },
+    {
+      "id": "material-theme-lighter",
+      "theme_file": "material-theme-lighter.json",
+      "display_name": "material-theme-lighter",
+      "theme_type": "light"
+    },
+    {
+      "id": "material-theme-ocean",
+      "theme_file": "material-theme-ocean.json",
+      "display_name": "material-theme-ocean",
+      "theme_type": "dark"
+    },
+    {
+      "id": "material-theme-palenight",
+      "theme_file": "material-theme-palenight.json",
+      "display_name": "material-theme-palenight",
+      "theme_type": "dark"
+    },
+    {
+      "id": "min-dark",
+      "theme_file": "min-dark.json",
+      "display_name": "min-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "min-light",
+      "theme_file": "min-light.json",
+      "display_name": "min-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "monokai",
+      "theme_file": "monokai.json",
+      "display_name": "monokai",
+      "theme_type": "dark"
+    },
+    {
+      "id": "night-owl",
+      "theme_file": "night-owl.json",
+      "display_name": "night-owl",
+      "theme_type": "dark"
+    },
+    {
+      "id": "night-owl-light",
+      "theme_file": "night-owl-light.json",
+      "display_name": "night-owl-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "nord",
+      "theme_file": "nord.json",
+      "display_name": "nord",
+      "theme_type": "dark"
+    },
+    {
+      "id": "one-dark-pro",
+      "theme_file": "one-dark-pro.json",
+      "display_name": "one-dark-pro",
+      "theme_type": "dark"
+    },
+    {
+      "id": "one-light",
+      "theme_file": "one-light.json",
+      "display_name": "one-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "plastic",
+      "theme_file": "plastic.json",
+      "display_name": "plastic",
+      "theme_type": "dark"
+    },
+    {
+      "id": "poimandres",
+      "theme_file": "poimandres.json",
+      "display_name": "poimandres",
+      "theme_type": "dark"
+    },
+    {
+      "id": "red",
+      "theme_file": "red.json",
+      "display_name": "red",
+      "theme_type": "dark"
+    },
+    {
+      "id": "rose-pine",
+      "theme_file": "rose-pine.json",
+      "display_name": "rose-pine",
+      "theme_type": "dark"
+    },
+    {
+      "id": "rose-pine-dawn",
+      "theme_file": "rose-pine-dawn.json",
+      "display_name": "rose-pine-dawn",
+      "theme_type": "light"
+    },
+    {
+      "id": "rose-pine-moon",
+      "theme_file": "rose-pine-moon.json",
+      "display_name": "rose-pine-moon",
+      "theme_type": "dark"
+    },
+    {
+      "id": "slack-dark",
+      "theme_file": "slack-dark.json",
+      "display_name": "slack-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "slack-ochin",
+      "theme_file": "slack-ochin.json",
+      "display_name": "slack-ochin",
+      "theme_type": "light"
+    },
+    {
+      "id": "snazzy-light",
+      "theme_file": "snazzy-light.json",
+      "display_name": "snazzy-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "solarized-dark",
+      "theme_file": "solarized-dark.json",
+      "display_name": "solarized-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "solarized-light",
+      "theme_file": "solarized-light.json",
+      "display_name": "solarized-light",
+      "theme_type": "light"
+    },
+    {
+      "id": "synthwave-84",
+      "theme_file": "synthwave-84.json",
+      "display_name": "synthwave-84",
+      "theme_type": "dark"
+    },
+    {
+      "id": "tokyo-night",
+      "theme_file": "tokyo-night.json",
+      "display_name": "tokyo-night",
+      "theme_type": "dark"
+    },
+    {
+      "id": "vesper",
+      "theme_file": "vesper.json",
+      "display_name": "vesper",
+      "theme_type": "dark"
+    },
+    {
+      "id": "vitesse-black",
+      "theme_file": "vitesse-black.json",
+      "display_name": "vitesse-black",
+      "theme_type": "dark"
+    },
+    {
+      "id": "vitesse-dark",
+      "theme_file": "vitesse-dark.json",
+      "display_name": "vitesse-dark",
+      "theme_type": "dark"
+    },
+    {
+      "id": "vitesse-light",
+      "theme_file": "vitesse-light.json",
+      "display_name": "vitesse-light",
+      "theme_type": "light"
+    }
+  ]
+}

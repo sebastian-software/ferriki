@@ -17,3 +17,10 @@ Current mirror workflow:
    [`scripts/sync-textmate-grammars-themes.mjs`](/Users/sebastian/Workspace/oss-released/ferriki/scripts/sync-textmate-grammars-themes.mjs).
 2. Generate Ferriki-owned binary catalogs from that normalized upstream layout
    with `cargo run -p ferriki-asset-gen -- generate ...`.
+
+Bootstrap workflow:
+
+- When only the mirrored Shiki workspace is available, use
+  [`scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs`](/Users/sebastian/Workspace/oss-released/ferriki/scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs)
+  to derive a normalized upstream layout plus Ferriki binary catalogs from the
+  checked-in Shiki mirror.
