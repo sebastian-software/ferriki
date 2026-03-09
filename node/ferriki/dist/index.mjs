@@ -9086,26 +9086,36 @@ function createHighlighterCoreSync(options) {
     getInternalContext: () => internal
   };
 }
-function makeSingletonHighlighterCore(createHighlighter) {
-  let _shiki;
-  async function getSingletonHighlighterCore2(options) {
-    if (!_shiki) {
-      _shiki = createHighlighter({
+function createHighlighterReuseCache(createHighlighter) {
+  let highlighterPromise;
+  let warmupQueue = Promise.resolve();
+  async function getCachedHighlighter(options = {}) {
+    if (!highlighterPromise) {
+      highlighterPromise = Promise.resolve().then(() => createHighlighter({
         ...options,
-        themes: options.themes || [],
-        langs: options.langs || []
+        themes: [],
+        langs: []
+      }));
+      highlighterPromise.catch(() => {
+        highlighterPromise = void 0;
       });
-      return _shiki;
-    } else {
-      const s = await _shiki;
-      await Promise.all([
-        s.loadTheme(...options.themes || []),
-        s.loadLanguage(...options.langs || [])
-      ]);
-      return s;
     }
+    const highlighter = await highlighterPromise;
+    const themes = options.themes || [];
+    const langs = options.langs || [];
+    warmupQueue = warmupQueue.then(async () => {
+      await Promise.all([
+        themes.length ? highlighter.loadTheme(...themes) : void 0,
+        langs.length ? highlighter.loadLanguage(...langs) : void 0
+      ]);
+      return highlighter;
+    });
+    return warmupQueue;
   }
-  return getSingletonHighlighterCore2;
+  return getCachedHighlighter;
+}
+function makeSingletonHighlighterCore(createHighlighter) {
+  return createHighlighterReuseCache(createHighlighter);
 }
 const getSingletonHighlighterCore = /* @__PURE__ */ makeSingletonHighlighterCore(createHighlighterCore);
 function createBundledHighlighter(options) {
@@ -9163,30 +9173,7 @@ function createBundledHighlighter(options) {
   return createHighlighter;
 }
 function makeSingletonHighlighter(createHighlighter) {
-  let _shiki;
-  async function getSingletonHighlighter(options = {}) {
-    if (!_shiki) {
-      _shiki = createHighlighter({
-        ...options,
-        themes: [],
-        langs: []
-      });
-      const s = await _shiki;
-      await Promise.all([
-        s.loadTheme(...options.themes || []),
-        s.loadLanguage(...options.langs || [])
-      ]);
-      return s;
-    } else {
-      const s = await _shiki;
-      await Promise.all([
-        s.loadTheme(...options.themes || []),
-        s.loadLanguage(...options.langs || [])
-      ]);
-      return s;
-    }
-  }
-  return getSingletonHighlighter;
+  return createHighlighterReuseCache(createHighlighter);
 }
 function createSingletonShorthands(createHighlighter, config) {
   const getSingletonHighlighter = makeSingletonHighlighter(createHighlighter);
