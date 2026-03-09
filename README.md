@@ -12,6 +12,7 @@ to ship.
 
 - Shiki-compatible where it matters: existing highlighting-oriented Node APIs stay recognizable.
 - Rust-first by design: grammar handling, theme application, state management, and rendering belong in the native core.
+- Shiki-derived standard assets should ship with Ferriki, but load lazily instead of living as an always-on bundled runtime catalog.
 - Leaner runtime shape: no product dependency on the historical JS/WASM engine stack.
 - Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite.
 

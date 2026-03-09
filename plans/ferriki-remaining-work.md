@@ -77,6 +77,14 @@ Remaining direction:
   - addon loading
   - public API wiring
   - compatibility-only harness glue
+- replace the transitional JS bundle-driven asset layer with a Ferriki-owned
+  asset pipeline
+  - Shiki-derived grammars, language metadata, aliases, embedded-language
+    metadata, and standard themes should be mirrored as data assets
+  - assets should be shipped, but registered and compiled lazily
+  - the Rust core should own efficient caching after registration
+  - external grammars and themes should keep using the same conceptual loading
+    path as shipped standard assets
 
 Exit criteria:
 
@@ -138,6 +146,8 @@ Remove when replacement coverage is in place:
 - Oniguruma/WASM runtime paths
 - obsolete compatibility shims that only existed during the migration
 - old package-topology references that are no longer part of the product
+- transitional JS bundle assets under [`node/ferriki/dist`](/Users/sebastian/Workspace/oss-released/ferriki/node/ferriki/dist)
+  once the Ferriki-owned asset pipeline replaces them
 
 Exit criteria:
 
