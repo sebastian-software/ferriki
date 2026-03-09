@@ -30,13 +30,18 @@ Included now:
 Not included as product features:
 
 - `twoslash`
-- `markdown-it`
-- `rehype`
-- `vitepress-twoslash`
 - `colorized-brackets`
 - other ecosystem adapters mirrored only for compatibility tracking
 
-Those areas may still appear in the mirrored upstream workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki), but they are not part of the supported Ferriki package surface.
+Explicitly out of scope:
+
+- `markdown-it`
+- `rehype`
+- `vitepress-twoslash`
+
+Those integrations sit on top of outputs Ferriki already provides, especially `codeToHtml` and `codeToHast`. Ferriki therefore does not treat them as package responsibilities.
+
+These areas may still appear in the mirrored upstream workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki), but they are not part of the supported Ferriki package surface.
 
 ## Repository Status
 

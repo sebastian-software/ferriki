@@ -27,7 +27,8 @@ Ferriki is intentionally narrow right now.
 | --- | --- | --- |
 | Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-compatible highlighting API |
 | Direct outputs like `codeToHtml`, `codeToTokens`, `codeToHast` | Integrated | Part of the main product surface |
-| `transformers`, `markdown-it`, `rehype`, `vitepress-twoslash`, `twoslash`, `colorized-brackets` | Not integrated | These may exist in the mirrored compatibility workspace, but they are not part of the Ferriki product boundary |
+| `transformers`, `twoslash`, `colorized-brackets` | Not integrated | These may exist in the mirrored compatibility workspace, but they are not part of the Ferriki product boundary |
+| `markdown-it`, `rehype`, `vitepress-twoslash` | Out of scope | These are adapters on top of `codeToHtml` / `codeToHast`, so Ferriki does not treat them as product features |
 | Future native extension lanes | Possible later | If Ferriki takes on these areas, the preferred direction is Rust-native ownership, not a permanent JS wrapper stack |
 
 The mirrored Shiki workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
@@ -84,7 +85,7 @@ Ferriki tracks one approved Shiki release tag at a time.
 - Upstream-derived files under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki) are mirrored, not hand-edited.
 - Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/harness) and the Ferriki product paths.
 - “Shiki-compatible” in this repository means compatibility is intended to be checked, not just claimed.
-- Compatibility coverage is broader than product scope. Ferriki tests optional upstream adapters separately, but that does not mean those adapters are first-class Ferriki features.
+- Compatibility coverage is broader than product scope. Ferriki may still test selected optional upstream adapters separately, but that does not make them first-class Ferriki features.
 
 ## Status
 

@@ -125,7 +125,7 @@ jobs:
       - name: Install
         run: nci
 
-      - name: Ferriki adapter compat
+      - name: Ferriki optional adapter compat
         run: pnpm run test:ferriki-compat:adapters
 
   native-smoke:

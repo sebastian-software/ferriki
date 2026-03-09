@@ -86,14 +86,6 @@ export default ${defaultExportInteropExpression('loaded')}
         replacement: compatPackage('engine-oniguruma/src/index.ts'),
       },
       {
-        find: /^@shikijs\/markdown-it$/,
-        replacement: compatPackage('markdown-it/src/index.ts'),
-      },
-      {
-        find: /^@shikijs\/rehype$/,
-        replacement: compatPackage('rehype/src/index.ts'),
-      },
-      {
         find: /^@shikijs\/transformers$/,
         replacement: compatPackage('transformers/src/index.ts'),
       },
@@ -104,10 +96,6 @@ export default ${defaultExportInteropExpression('loaded')}
       {
         find: /^@shikijs\/types$/,
         replacement: compatPackage('types/src/index.ts'),
-      },
-      {
-        find: /^@shikijs\/vitepress-twoslash$/,
-        replacement: compatPackage('vitepress-twoslash/src/index.ts'),
       },
       {
         find: /^ferriki$/,

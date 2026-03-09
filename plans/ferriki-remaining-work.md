@@ -118,12 +118,21 @@ Separate and decide:
   - core compatibility surface
 - optional adapter lanes:
   - transformers
-  - markdown-it
-  - rehype
-  - vitepress-twoslash
   - twoslash
   - colorized-brackets
   - any further ecosystem packages
+
+Already decided out of scope:
+
+- `markdown-it`
+- `rehype`
+- `vitepress-twoslash`
+
+Reason:
+
+- these are adapters on top of Ferriki outputs such as `codeToHtml` and `codeToHast`
+- they do not define the highlighting runtime itself
+- they can live outside Ferriki without weakening the core product
 
 For each optional lane:
 
