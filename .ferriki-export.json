@@ -1,0 +1,40 @@
+{
+  "sourceRepo": "/Users/sebastian/Workspace/oss-released/ferriki",
+  "sourceCommit": "aa27f4eaf3fe14c6a741b24111162d96b2d97d44",
+  "boundaryFile": "plans/ferriki-repo-export-boundary.json",
+  "exportedAt": "2026-03-09T07:20:18.532Z",
+  "fileCount": 343,
+  "freshImportInNewRepo": [
+    "compat/upstream/shiki"
+  ],
+  "carryFilteredHistoryFor": [
+    "crates/ferriki-core",
+    "npm/ferriki",
+    "compat/harness",
+    "scripts/sync-shiki-compat.mjs",
+    "scripts/utils.ts",
+    "Cargo.toml",
+    "package.json",
+    "vitest.config.ts",
+    ".github/workflows/ci.yml"
+  ],
+  "normalizedAt": "2026-03-09T07:20:24.120Z",
+  "normalization": {
+    "rootConfigs": [
+      "Cargo.toml",
+      "package.json",
+      "pnpm-workspace.yaml",
+      "tsconfig.json",
+      "vitest.config.ts",
+      "eslint.config.js"
+    ],
+    "harness": [
+      "compat/harness/shiki-backend-entry.ts",
+      "compat/harness/shiki-primitive-entry.ts"
+    ],
+    "packageTypes": [
+      "npm/ferriki/index.d.mts",
+      "npm/ferriki/native.d.mts"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+[package]
+name = "ferriki-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+build = "build.rs"
+
+[lib]
+name = "ferriki_core"
+crate-type = [ "cdylib" ]
+path = "src/lib.rs"
+
+[dependencies]
+ferroni = { workspace = true }
+napi = { workspace = true }
+napi-derive = { workspace = true }
+serde_json = { workspace = true }
+
+[build-dependencies]
+napi-build = { workspace = true }

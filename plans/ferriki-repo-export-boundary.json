@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "include_files": [
+    ".gitattributes",
+    ".gitignore",
+    "Cargo.lock",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+    "eslint.config.js",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.json",
+    "vitest.config.ts",
+    "compat/upstream/README.md",
+    "compat/upstream/shiki-core-paths.json",
+    "compat/upstream/shiki-optional-paths.json",
+    "compat/upstream/shiki-paths.json",
+    "docs/plans/2026-03-06-ferriki-rust-first-repo-design.md",
+    "docs/plans/2026-03-08-ferriki-repo-transition-design.md",
+    "plans/ferriki-phase0-migration-matrix.md",
+    "plans/ferriki-repo-export-boundary.json",
+    "plans/ferriki-repo-transition-plan.md",
+    "plans/ferriki-rust-first-repo-implementation-plan.md"
+  ],
+  "include_dirs": [
+    ".github/workflows",
+    "compat/harness",
+    "crates/ferriki-core",
+    "npm/ferriki",
+    "scripts"
+  ],
+  "exclude_globs": [
+    "compat/upstream/shiki/**",
+    "docs/**",
+    "examples/**",
+    "packages/**",
+    "playground/**",
+    "npm/ferriki/*.node",
+    "scripts/report-engine-js-compat.json",
+    "scripts/report-engine-js-compat.ts",
+    "crates/ferroni/**",
+    "isolate-*.log"
+  ],
+  "fresh_import_in_new_repo": [
+    "compat/upstream/shiki"
+  ],
+  "carry_filtered_history_for": [
+    "crates/ferriki-core",
+    "npm/ferriki",
+    "compat/harness",
+    "scripts/sync-shiki-compat.mjs",
+    "scripts/utils.ts",
+    "Cargo.toml",
+    "package.json",
+    "vitest.config.ts",
+    ".github/workflows/ci.yml"
+  ],
+  "notes": [
+    "The new repo is centered on the Ferriki core runtime and Node bindings.",
+    "Framework adapters and ecosystem packages remain outside the first export boundary unless promoted later.",
+    "The upstream Shiki mirror is imported fresh in the new repo and must not inherit workbench-only drift.",
+    "Exported root config files are transitional inputs and must be normalized during cutover to remove remaining packages/* references.",
+    "npm/ferriki/dist is included as a transitional export input because the current npm package still resolves through built ESM output."
+  ]
+}

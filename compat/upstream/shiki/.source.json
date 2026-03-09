@@ -1,0 +1,23 @@
+{
+  "source": "shikijs/shiki",
+  "ref": "v4.0.1",
+  "commit": "69bec642a6f3a794398b308ff123f5d6e38f4617",
+  "importedAt": "2026-03-09T07:23:59.778Z",
+  "paths": [
+    "packages/core",
+    "packages/primitive",
+    "packages/shiki",
+    "packages/markdown-it",
+    "packages/rehype",
+    "packages/transformers",
+    "packages/twoslash",
+    "packages/vitepress-twoslash",
+    "packages/colorized-brackets",
+    "packages/types",
+    "packages/langs",
+    "packages/themes",
+    "packages/engine-ferroni",
+    "packages/engine-javascript",
+    "packages/engine-oniguruma"
+  ]
+}

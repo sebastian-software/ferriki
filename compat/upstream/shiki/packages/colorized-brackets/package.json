@@ -1,0 +1,42 @@
+{
+  "name": "@shikijs/colorized-brackets",
+  "type": "module",
+  "version": "4.0.1",
+  "description": "VSCode-style colorized brackets transformer for Shiki",
+  "author": "Michael Moore <mscottmoore@pm.me>",
+  "license": "MIT",
+  "homepage": "https://github.com/shikijs/shiki#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shikijs/shiki.git",
+    "directory": "packages/colorized-brackets"
+  },
+  "bugs": "https://github.com/shikijs/shiki/issues",
+  "keywords": [
+    "shiki",
+    "@shikijs/colorized-brackets"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepare": "tsx scripts/prepare.ts",
+    "prepublishOnly": "nr build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "shiki": "workspace:*"
+  }
+}

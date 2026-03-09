@@ -1,0 +1,33 @@
+{
+  "name": "ferriki",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rust-first syntax highlighting for Node.js powered by Ferroni",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./index.mjs",
+    "./native": "./native.mjs",
+    "./package.json": "./package.json"
+  },
+  "main": "./index.mjs",
+  "module": "./index.mjs",
+  "types": "./index.d.mts",
+  "files": [
+    "*.node",
+    "dist",
+    "index.d.mts",
+    "index.mjs",
+    "native.d.mts",
+    "native.mjs"
+  ],
+  "scripts": {
+    "build": "node ./scripts/verify-wrapper.mjs",
+    "dev": "node ./scripts/verify-wrapper.mjs",
+    "build:native": "node ./scripts/build-native.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:types"
+  }
+}

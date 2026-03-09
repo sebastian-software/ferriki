@@ -1,0 +1,17 @@
+[
+  "packages/core",
+  "packages/primitive",
+  "packages/shiki",
+  "packages/markdown-it",
+  "packages/rehype",
+  "packages/transformers",
+  "packages/twoslash",
+  "packages/vitepress-twoslash",
+  "packages/colorized-brackets",
+  "packages/types",
+  "packages/langs",
+  "packages/themes",
+  "packages/engine-ferroni",
+  "packages/engine-javascript",
+  "packages/engine-oniguruma"
+]

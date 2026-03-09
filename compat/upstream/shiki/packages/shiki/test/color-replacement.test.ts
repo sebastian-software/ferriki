@@ -1,0 +1,118 @@
+import type { ThemeRegistrationResolved } from '../src'
+import { expect, it } from 'vitest'
+import { codeToHtml } from '../src'
+
+it('flat colorReplacements', async () => {
+  const result = await codeToHtml('console.log("hi")', {
+    lang: 'js',
+    themes: {
+      light: 'vitesse-light',
+      dark: 'material-theme-palenight',
+    },
+    colorReplacements: {
+      '#393a34': 'var(---replaced-1)',
+      '#b07d48': 'var(---replaced-2)',
+    },
+  })
+
+  expect(result).toContain('var(---replaced-1)')
+  expect(result).toContain('var(---replaced-2)')
+
+  expect(result.replace(/>/g, '>\n'))
+    .toMatchInlineSnapshot(`
+      "<pre class="shiki shiki-themes vitesse-light material-theme-palenight" style="background-color:#ffffff;--shiki-dark-bg:#292D3E;color:var(---replaced-1);--shiki-dark:#babed8" tabindex="0">
+      <code>
+      <span class="line">
+      <span style="color:var(---replaced-2);--shiki-dark:#BABED8">
+      console</span>
+      <span style="color:#999999;--shiki-dark:#89DDFF">
+      .</span>
+      <span style="color:#59873A;--shiki-dark:#82AAFF">
+      log</span>
+      <span style="color:#999999;--shiki-dark:#BABED8">
+      (</span>
+      <span style="color:#B5695977;--shiki-dark:#89DDFF">
+      "</span>
+      <span style="color:#B56959;--shiki-dark:#C3E88D">
+      hi</span>
+      <span style="color:#B5695977;--shiki-dark:#89DDFF">
+      "</span>
+      <span style="color:#999999;--shiki-dark:#BABED8">
+      )</span>
+      </span>
+      </code>
+      </pre>
+      "
+    `)
+})
+
+it('single theme colorReplacements', async () => {
+  const result = await codeToHtml('console.log("hi")', {
+    lang: 'js',
+    theme: 'vitesse-light',
+    colorReplacements: {
+      '#393a34': 'var(---replaced-1)',
+      '#b07d48': 'var(---replaced-2)',
+    },
+  })
+
+  expect(result).toContain('var(---replaced-1)')
+  expect(result).toContain('var(---replaced-2)')
+})
+
+it('scoped colorReplacements', async () => {
+  const customLightTheme: ThemeRegistrationResolved = {
+    name: 'custom-light',
+    type: 'light',
+    settings: [
+      { scope: 'string', settings: { foreground: '#a3be8c' } },
+    ],
+    fg: '#393a34',
+    bg: '#b07d48',
+  }
+  const customDarkTheme: ThemeRegistrationResolved = {
+    ...customLightTheme,
+    type: 'dark',
+    name: 'custom-dark',
+  }
+
+  const result = await codeToHtml('console.log("hi")', {
+    lang: 'js',
+    themes: {
+      light: customLightTheme,
+      dark: customDarkTheme,
+    },
+    colorReplacements: {
+      'custom-dark': {
+        '#b07d48': 'var(---replaced-1)',
+      },
+      'custom-light': {
+        '#393a34': 'var(---replaced-2)',
+        '#b07d48': 'var(---replaced-3)',
+      },
+      '#393a34': 'var(---replaced-4)',
+    },
+  })
+
+  expect(result).toContain('var(---replaced-1)')
+  expect(result).not.toContain('var(---replaced-2)')
+  expect(result).toContain('var(---replaced-3)')
+  expect(result).toContain('var(---replaced-4)')
+
+  expect(result.replace(/>/g, '>\n'))
+    .toMatchInlineSnapshot(`
+      "<pre class="shiki shiki-themes custom-light custom-dark" style="background-color:var(---replaced-3);--shiki-dark-bg:var(---replaced-1);color:var(---replaced-4);--shiki-dark:var(---replaced-4)" tabindex="0">
+      <code>
+      <span class="line">
+      <span style="color:var(---replaced-4);--shiki-dark:var(---replaced-4)">
+      console.log(</span>
+      <span style="color:#A3BE8C;--shiki-dark:#A3BE8C">
+      "hi"</span>
+      <span style="color:var(---replaced-4);--shiki-dark:var(---replaced-4)">
+      )</span>
+      </span>
+      </code>
+      </pre>
+      "
+    `)
+})

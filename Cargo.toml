@@ -1,0 +1,15 @@
+[workspace]
+members = [
+  "crates/ferriki-core",
+]
+resolver = "2"
+
+[workspace.dependencies]
+ferroni = "1.2.8"
+napi = { version = "2", default-features = false, features = [ "napi8" ] }
+napi-build = "2"
+napi-derive = "2"
+serde_json = "1"
+
+[profile.release]
+debug = true

@@ -1,0 +1,13 @@
+[
+  "packages/core",
+  "packages/primitive",
+  "packages/shiki",
+  "packages/transformers",
+  "packages/twoslash",
+  "packages/types",
+  "packages/langs",
+  "packages/themes",
+  "packages/engine-ferroni",
+  "packages/engine-javascript",
+  "packages/engine-oniguruma"
+]

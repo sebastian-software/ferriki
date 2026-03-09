@@ -1,0 +1,58 @@
+{
+  "name": "@shikijs/twoslash",
+  "type": "module",
+  "version": "4.0.1",
+  "description": "Shiki transformer for twoslash",
+  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/shikijs/shiki#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shikijs/shiki.git",
+    "directory": "packages/twoslash"
+  },
+  "bugs": "https://github.com/shikijs/shiki/issues",
+  "keywords": [
+    "shiki",
+    "twoslash"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./core": "./dist/core.mjs",
+    "./style-rich.css": "./style-rich.css",
+    "./style-classic.css": "./style-classic.css",
+    "./*": "./dist/*"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "*.css",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepublishOnly": "nr build",
+    "test": "vitest"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.5.0"
+  },
+  "dependencies": {
+    "@shikijs/core": "workspace:*",
+    "@shikijs/types": "workspace:*",
+    "twoslash": "catalog:integrations"
+  },
+  "devDependencies": {
+    "@iconify-json/carbon": "catalog:icons",
+    "@iconify-json/codicon": "catalog:icons",
+    "@shikijs/twoslash": "workspace:*",
+    "hast-util-from-html": "catalog:inlined",
+    "typescript": "catalog:cli"
+  }
+}

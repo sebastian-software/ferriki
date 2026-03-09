@@ -1,0 +1,6 @@
+[
+  "packages/markdown-it",
+  "packages/rehype",
+  "packages/vitepress-twoslash",
+  "packages/colorized-brackets"
+]

@@ -1,0 +1,53 @@
+{
+  "name": "@shikijs/rehype",
+  "type": "module",
+  "version": "4.0.1",
+  "description": "rehype integration for shiki",
+  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/shikijs/shiki#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shikijs/shiki.git",
+    "directory": "packages/rehype"
+  },
+  "bugs": "https://github.com/shikijs/shiki/issues",
+  "keywords": [
+    "shiki",
+    "rehype"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./core": "./dist/core.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepublishOnly": "nr build"
+  },
+  "dependencies": {
+    "@shikijs/types": "workspace:*",
+    "@types/hast": "catalog:types",
+    "hast-util-to-string": "catalog:inlined",
+    "shiki": "workspace:*",
+    "unified": "catalog:integrations",
+    "unist-util-visit": "catalog:integrations"
+  },
+  "devDependencies": {
+    "@shikijs/transformers": "workspace:*",
+    "rehype-raw": "catalog:integrations",
+    "rehype-stringify": "catalog:integrations",
+    "remark-parse": "catalog:integrations",
+    "remark-rehype": "catalog:integrations"
+  }
+}
