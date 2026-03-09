@@ -634,7 +634,7 @@ fn resolve_token_style(scope_stack: &[&str], theme: &ThemeData) -> ResolvedStyle
 
     for parts in &rule.scope_parts {
       if let Some(score) = selector_matches_presplit(parts, scope_stack) {
-        if score > best_score {
+        if score >= best_score {
           best_score = score;
           best_fg = rule.foreground.clone().or(best_fg);
           best_font_style = rule.font_style;
@@ -705,14 +705,14 @@ fn parse_injection_clause_priority(clause: &str) -> (InjectionPriority, &str) {
   (priority, rest.trim())
 }
 
-fn scope_token_matches_root(token: &str, root_scope: &str) -> bool {
+fn scope_token_matches_scope(token: &str, scope: &str) -> bool {
   if token.is_empty() {
     return false;
   }
-  if token == "*" || token == "$self" || token == root_scope {
+  if token == "*" || token == "$self" || token == scope {
     return true;
   }
-  if root_scope
+  if scope
     .strip_prefix(token)
     .map(|rest| rest.is_empty() || rest.starts_with('.'))
     .unwrap_or(false)
@@ -720,6 +720,12 @@ fn scope_token_matches_root(token: &str, root_scope: &str) -> bool {
     return true;
   }
   false
+}
+
+fn scope_token_matches_stack(token: &str, scope_stack: &[String]) -> bool {
+  scope_stack
+    .iter()
+    .any(|scope| scope_token_matches_scope(token, scope))
 }
 
 fn parse_injection_term(term: &str) -> (bool, &str) {
@@ -908,16 +914,16 @@ fn compile_selector(selector: &str) -> CompiledSelector {
 
 fn selector_disjunct_matches_compiled(
   disjunct: &CompiledSelectorDisjunct,
-  root_scope: &str,
+  scope_stack: &[String],
 ) -> bool {
   let mut has_term = false;
   for term in &disjunct.terms {
     has_term = true;
     let matches = match &term.expr {
-      CompiledSelectorExpr::Token(token) => scope_token_matches_root(token, root_scope),
+      CompiledSelectorExpr::Token(token) => scope_token_matches_stack(token, scope_stack),
       CompiledSelectorExpr::AnyOf(branches) => branches
         .iter()
-        .any(|branch| selector_disjunct_matches_compiled(branch, root_scope)),
+        .any(|branch| selector_disjunct_matches_compiled(branch, scope_stack)),
     };
 
     if term.negate {
@@ -932,12 +938,12 @@ fn selector_disjunct_matches_compiled(
   has_term
 }
 
-fn selector_matches_compiled(selector: &CompiledSelector, root_scope: &str) -> bool {
+fn selector_matches_compiled(selector: &CompiledSelector, scope_stack: &[String]) -> bool {
   selector.clauses.iter().any(|clause| {
     clause
       .disjuncts
       .iter()
-      .any(|disjunct| selector_disjunct_matches_compiled(disjunct, root_scope))
+      .any(|disjunct| selector_disjunct_matches_compiled(disjunct, scope_stack))
   })
 }
 
@@ -2103,11 +2109,6 @@ fn tokenize_with_grammar_skeleton(
                 stack_generation += 1;
                 // Don't skip line — continue tokenizing it with the new stack
               }
-            } else if while_end <= while_start {
-              if stack.len() > 1 {
-                stack.pop();
-                stack_generation += 1;
-              }
             } else {
               // While matched — handle captures and advance cursor
               let while_captures: &[GrammarCapture] = if let Some(Rule::BeginWhile { while_captures, .. }) = compiled.registry.get(top_rule_id) {
@@ -2166,7 +2167,9 @@ fn tokenize_with_grammar_skeleton(
                   font_style: cap_fs,
                 });
               }
-              push_with_capture_ranges(&mut out, &utf16_map, code, global_while_start, global_while_end, &cached_color, cached_font_style, cap_ranges_global)?;
+              if global_while_end > global_while_start {
+                push_with_capture_ranges(&mut out, &utf16_map, code, global_while_start, global_while_end, &cached_color, cached_font_style, cap_ranges_global)?;
+              }
               cursor = while_end;
             }
           } else if stack.len() > 1 {
@@ -2249,20 +2252,14 @@ fn tokenize_with_grammar_skeleton(
         active_injections.clear();
         for (idx, injection) in compiled.injections.iter().enumerate() {
           let scope_cache = &mut selector_scope_match_cache[idx];
-          let mut matches_scope = false;
-          for scope in scope_stack.iter().rev() {
-            let scope_matches = if let Some(cached) = scope_cache.get(scope) {
-              *cached
-            } else {
-              let parsed = selector_matches_compiled(&injection.compiled_selector, scope);
-              scope_cache.insert(scope.clone(), parsed);
-              parsed
-            };
-            if scope_matches {
-              matches_scope = true;
-              break;
-            }
-          }
+          let scope_key = scope_stack.join("\u{1f}");
+          let matches_scope = if let Some(cached) = scope_cache.get(&scope_key) {
+            *cached
+          } else {
+            let parsed = selector_matches_compiled(&injection.compiled_selector, scope_stack);
+            scope_cache.insert(scope_key, parsed);
+            parsed
+          };
 
           if matches_scope {
             active_injections.push((injection.rule_id, injection.priority));
@@ -2404,7 +2401,29 @@ fn tokenize_with_grammar_skeleton(
             end: range.end + global_offset_utf16,
             color: cap_color,
             font_style: cap_fs,
-          });
+              });
+        }
+        if capture_ranges.is_empty() && end_captures.len() == 1 && end_utf16 > start_utf16 {
+          if let Some(name) = end_captures[0].name.as_deref() {
+            let resolved_name = resolve_capture_name_backrefs(
+              name,
+              &found.capture_indices,
+              &line_utf16_map,
+              line_str,
+            );
+            let (cap_color, cap_fs) = resolve_color_with_extra_scope(
+              scope_stack,
+              &resolved_name,
+              theme,
+              &mut theme_cache,
+            );
+            capture_ranges.push(CaptureRange {
+              start: start_utf16,
+              end: end_utf16,
+              color: cap_color,
+              font_style: cap_fs,
+            });
+          }
         }
         push_with_capture_ranges(&mut out, &utf16_map, code, start_utf16, end_utf16, inherited_color, inherited_font_style, capture_ranges)?;
         if stack.len() > 1 {
@@ -4521,5 +4540,47 @@ mod tests {
       ScannerFindOptions::from_bits(0),
     );
     assert!(matched.is_some(), "Ferroni should match (?<=>) after a tag close.");
+  }
+
+  #[test]
+  fn compiled_injection_selector_uses_full_scope_stack() {
+    let selector = compile_selector("L:meta.tag -meta.attribute, L:meta.element -meta.attribute");
+    let tag_stack = vec!["text.html.vue".to_owned(), "meta.tag".to_owned()];
+    let attr_stack = vec![
+      "text.html.vue".to_owned(),
+      "meta.tag".to_owned(),
+      "meta.attribute".to_owned(),
+    ];
+    let element_stack = vec!["text.html.vue".to_owned(), "meta.element".to_owned()];
+
+    assert!(selector_matches_compiled(&selector, &tag_stack));
+    assert!(selector_matches_compiled(&selector, &element_stack));
+    assert!(!selector_matches_compiled(&selector, &attr_stack));
+  }
+
+  #[test]
+  fn vue_script_setup_while_assertions_keep_embedded_ts_active() {
+    let asset_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../../assets/shiki");
+
+    let highlighter = create_highlighter(
+      json!({ "standardAssetRoot": asset_root.display().to_string() }).to_string(),
+    );
+
+    let html = highlighter
+      .code_to_html(
+        "<script setup lang=\"ts\">\nimport { ref } from 'vue'\nconst count = ref(0)\n</script>\n\n<template>\n  <div>\n    <h1 v-if=\"count == 1 ? true : 'str'.toUpperCase()\">{{ count * 2 }}</h1>\n  </div>\n</template>\n".to_owned(),
+        json!({
+          "lang": "vue",
+          "theme": "vitesse-dark",
+        })
+        .to_string(),
+      )
+      .expect("html");
+
+    assert!(html.contains("<span style=\"color:#4D9375\">import</span>"));
+    assert!(html.contains("<span style=\"color:#CB7676\">const </span>"));
+    assert!(html.contains("<span style=\"color:#666666\">&#x3C;/</span><span style=\"color:#4D9375\">script</span><span style=\"color:#666666\">></span>"));
+    assert!(html.contains("<span style=\"color:#666666\">&#x3C;</span><span style=\"color:#4D9375\">template</span><span style=\"color:#666666\">></span>"));
   }
 }
