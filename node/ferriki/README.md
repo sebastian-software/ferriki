@@ -29,7 +29,6 @@ Included now:
 
 Not included as product features:
 
-- `twoslash`
 - `colorized-brackets`
 - other ecosystem adapters mirrored only for compatibility tracking
 
@@ -37,7 +36,7 @@ Explicitly out of scope:
 
 - `markdown-it`
 - `rehype`
-- `vitepress-twoslash`
+- `VitePress integrations`
 
 Those integrations sit on top of outputs Ferriki already provides, especially `codeToHtml` and `codeToHast`. Ferriki therefore does not treat them as package responsibilities.
 
@@ -74,10 +73,9 @@ Ferriki is not trying to become a pile of JS wrappers around the Rust core.
 If Ferriki adopts higher-level extensions later, the preferred direction is to
 move the heavy lifting into Rust as well.
 
-`Twoslash` is the most plausible future candidate, but it is not trivial:
-its current model depends heavily on TypeScript compiler and language-service
-behavior. Any Ferriki-native version would need a deliberate architecture of
-its own instead of a thin copy of the existing JS integration.
+If Ferriki adopts higher-level extensions later, they should be designed as
+native lanes with clear ownership and narrow scope, not as a new pile of
+JavaScript wrappers around the core.
 
 ## License
 

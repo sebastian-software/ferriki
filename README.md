@@ -27,8 +27,8 @@ Ferriki is intentionally narrow right now.
 | --- | --- | --- |
 | Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-compatible highlighting API |
 | Direct outputs like `codeToHtml`, `codeToTokens`, `codeToHast` | Integrated | Part of the main product surface |
-| `transformers`, `twoslash`, `colorized-brackets` | Not integrated | These may exist in the mirrored compatibility workspace, but they are not part of the Ferriki product boundary |
-| `markdown-it`, `rehype`, `vitepress-twoslash` | Out of scope | These are adapters on top of `codeToHtml` / `codeToHast`, so Ferriki does not treat them as product features |
+| `transformers`, `colorized-brackets` | Not integrated | These may exist in the mirrored compatibility workspace, but they are not part of the Ferriki product boundary |
+| `markdown-it`, `rehype`, `VitePress integrations` | Out of scope | These are adapters on top of `codeToHtml` / `codeToHast`, so Ferriki does not treat them as product features |
 | Future native extension lanes | Possible later | If Ferriki takes on these areas, the preferred direction is Rust-native ownership, not a permanent JS wrapper stack |
 
 The mirrored Shiki workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.

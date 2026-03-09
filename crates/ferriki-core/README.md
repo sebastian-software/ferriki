@@ -21,8 +21,8 @@ not to reimplement the highlighter.
 ## Scope Boundary
 
 `ferriki-core` is the native home of the highlighting runtime.
-It does not currently implement ecosystem adapters like `twoslash`,
-`markdown-it`, `rehype`, `vitepress-twoslash`, or `colorized-brackets`.
+It does not currently implement ecosystem adapters like `markdown-it`,
+`rehype`, VitePress-facing integrations, or `colorized-brackets`.
 
 That boundary is intentional. Ferriki would rather keep those areas out of the
 product than rebuild the old JS-heavy architecture around the core again.
@@ -31,9 +31,8 @@ If Ferriki expands into higher-level features later, the preferred direction is
 to build them as native lanes here instead of treating Rust as a token producer
 and JavaScript as the real runtime.
 
-`Twoslash` is the strongest candidate for a later native lane, but it is also
-the hardest one because it depends on TypeScript compiler and language-service
-behavior, not just on highlighted output.
+Any future higher-level lane should be added only if it can stay true to the
+same Rust-first boundary, instead of reintroducing a JS-heavy runtime split.
 
 ## Current Status
 
