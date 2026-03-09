@@ -1,5 +1,13 @@
+pub mod generate;
 pub mod schema;
 
+pub use generate::{
+  GeneratedCatalog,
+  LanguageSourceRecord,
+  ThemeSourceRecord,
+  write_language_catalog,
+  write_theme_catalog,
+};
 pub use schema::{
   decode_language_asset,
   decode_language_manifest,
