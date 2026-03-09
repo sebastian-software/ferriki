@@ -186,7 +186,7 @@ mod tests {
   fn write_language_catalog_emits_manifest_and_assets() {
     let output_dir = temp_output_dir("language-catalog");
     let source = AssetSourceRef {
-      upstream: "tm-grammars".to_owned(),
+      upstream: "textmate-grammars-themes".to_owned(),
       version: Some("1.0.0".to_owned()),
       commit: Some("abc123".to_owned()),
     };
@@ -220,7 +220,7 @@ mod tests {
   fn write_theme_catalog_emits_manifest_and_assets() {
     let output_dir = temp_output_dir("theme-catalog");
     let source = AssetSourceRef {
-      upstream: "tm-themes".to_owned(),
+      upstream: "textmate-grammars-themes".to_owned(),
       version: Some("2.0.0".to_owned()),
       commit: Some("def456".to_owned()),
     };

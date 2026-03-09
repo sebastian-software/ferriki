@@ -5,8 +5,7 @@ into its own asset catalogs.
 
 Planned upstream mirrors:
 
-- `tm-grammars`
-- `tm-themes`
+- `textmate-grammars-themes`
 
 These sources are not the product runtime format. Ferriki converts them into
 its own asset representation under `assets/shiki/`.

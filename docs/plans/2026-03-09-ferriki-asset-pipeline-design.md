@@ -20,8 +20,11 @@ truth.
 
 Instead:
 
-- Shiki remains the upstream source for standard grammars, language metadata,
-  aliases, embedded-language metadata, and standard themes.
+- `textmate-grammars-themes` becomes the primary upstream source for raw
+  grammar and theme data.
+- Shiki remains the upstream source for compatibility tests and curated
+  metadata such as aliases, embedded-language metadata, and the supported
+  standard catalog shape.
 - Ferriki converts those upstream inputs into its own asset format.
 - The converted assets live under
   [`assets/shiki/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki).
@@ -54,16 +57,20 @@ given process. The asset model therefore optimizes for:
 
 ## Data Flow
 
-1. Shiki is mirrored into
+1. `textmate-grammars-themes` is mirrored into
+   [`assets/upstream/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/upstream)
+   as Ferriki's raw asset source.
+2. Shiki is mirrored into
    [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki)
-   through the existing sync flow.
-2. A Rust generator crate reads the mirrored language and theme packages.
-3. The generator emits Ferriki-owned assets under
+   as the compatibility and metadata reference.
+3. A Rust generator crate reads the mirrored grammar/theme data plus the
+   curated metadata it needs.
+4. The generator emits Ferriki-owned assets under
    [`assets/shiki/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki).
-4. [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core)
+5. [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core)
    uses manifests plus embedded bytes to lazy-load and compile requested
    grammars and themes.
-5. The Node package exposes the standard Shiki-compatible API, but no longer
+6. The Node package exposes the standard Shiki-compatible API, but no longer
    depends on Shiki chunk files as the catalog source of truth.
 
 ## Runtime Behavior
@@ -120,9 +127,11 @@ The asset pipeline must be covered by dedicated tests:
 ## Migration Shape
 
 1. Introduce a Rust asset generator crate.
-2. Generate Ferriki-owned theme and language assets from the mirrored Shiki
-   packages.
-3. Add lazy Rust loaders and caches for both catalogs.
-4. Point the Node-facing standard catalog at Ferriki assets instead of
+2. Mirror raw grammar and theme data from `textmate-grammars-themes` under
+   `assets/upstream/`.
+3. Generate Ferriki-owned theme and language assets from that upstream plus
+   selected Shiki metadata.
+4. Add lazy Rust loaders and caches for both catalogs.
+5. Point the Node-facing standard catalog at Ferriki assets instead of
    `node/ferriki/dist/chunks`.
-5. Remove transitional JS bundle assets once parity and packaging are covered.
+6. Remove transitional JS bundle assets once parity and packaging are covered.

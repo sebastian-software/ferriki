@@ -1,0 +1,14 @@
+{
+  "languages": [
+    {
+      "id": "javascript",
+      "grammar_file": "javascript.json",
+      "scope_name": "source.js",
+      "display_name": "JavaScript",
+      "aliases": ["js", "mjs"],
+      "embedded_langs": ["regex"],
+      "embedded_langs_lazy": ["css"],
+      "inject_to": ["text.html.markdown"]
+    }
+  ]
+}

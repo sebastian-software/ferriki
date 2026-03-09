@@ -1,0 +1,10 @@
+{
+  "themes": [
+    {
+      "id": "vitesse-light",
+      "theme_file": "vitesse-light.json",
+      "display_name": "Vitesse Light",
+      "theme_type": "light"
+    }
+  ]
+}

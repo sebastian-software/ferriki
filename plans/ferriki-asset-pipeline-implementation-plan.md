@@ -15,12 +15,14 @@ catalogs for languages and themes.
   - per-theme binary payload
 - add roundtrip tests for the binary format
 
-## Phase 2: Import From Mirrored Shiki Data
+## Phase 2: Import From Raw Upstream Data
 
-- read language inputs from
-  [`node/compat/upstream/shiki/packages/langs`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki/packages/langs)
-- read theme inputs from
-  [`node/compat/upstream/shiki/packages/themes`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki/packages/themes)
+- mirror raw language and theme inputs under
+  [`assets/upstream/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/upstream)
+  from `textmate-grammars-themes`
+- read grammar/theme JSON from that upstream mirror
+- supplement missing aliases and embedded-language metadata from
+  [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki)
 - generate Ferriki-owned outputs under
   [`assets/shiki/languages`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki/languages)
   and

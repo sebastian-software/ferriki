@@ -1,4 +1,5 @@
 pub mod generate;
+pub mod import;
 pub mod schema;
 
 pub use generate::{
@@ -7,6 +8,14 @@ pub use generate::{
   ThemeSourceRecord,
   write_language_catalog,
   write_theme_catalog,
+};
+pub use import::{
+  load_language_records_from_upstream,
+  load_theme_records_from_upstream,
+  UpstreamLanguageCatalog,
+  UpstreamLanguageMeta,
+  UpstreamThemeCatalog,
+  UpstreamThemeMeta,
 };
 pub use schema::{
   decode_language_asset,
