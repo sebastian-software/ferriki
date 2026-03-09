@@ -3,6 +3,10 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, wri
 import path from 'node:path'
 import process from 'node:process'
 
+const scriptDir = path.dirname(new URL(import.meta.url).pathname)
+const workspaceRoot = path.resolve(scriptDir, '..')
+const repoRoot = path.resolve(workspaceRoot, '..')
+
 function fail(message) {
   console.error(`[export-ferriki-repo] ${message}`)
   process.exit(1)
@@ -10,7 +14,7 @@ function fail(message) {
 
 function parseArgs(argv) {
   const args = {
-    boundaryFile: path.join(process.cwd(), 'plans/ferriki-repo-export-boundary.json'),
+    boundaryFile: path.join(repoRoot, 'plans/ferriki-repo-export-boundary.json'),
     dryRun: false,
     targetDir: '',
     writeMetadata: true,
@@ -42,7 +46,7 @@ function printHelp() {
   console.log(`Usage: node ./scripts/export-ferriki-repo.mjs --target-dir <path> [options]
 
 Options:
-  --boundary-file <path>  Export boundary manifest (default: plans/ferriki-repo-export-boundary.json)
+  --boundary-file <path>  Export boundary manifest (default: ../plans/ferriki-repo-export-boundary.json)
   --dry-run               Print the export plan without writing files
   --no-metadata           Do not write .ferriki-export.json into the target
   --help                  Show this help
@@ -217,7 +221,6 @@ if (args.help) {
   process.exit(0)
 }
 
-const repoRoot = process.cwd()
 if (args.targetDir) {
   const relativeTarget = path.relative(repoRoot, args.targetDir)
   if (relativeTarget === '' || (!relativeTarget.startsWith('..') && !path.isAbsolute(relativeTarget)))

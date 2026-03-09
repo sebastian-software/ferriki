@@ -3,7 +3,7 @@ shellEmulator: true
 trustPolicy: no-downgrade
 
 packages:
-  - npm/*
+  - ferriki
   - compat/upstream/shiki/packages/*
 catalogs:
   bundling:

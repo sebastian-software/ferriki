@@ -10,6 +10,6 @@ Phase 1 status:
 
 The intent is to converge on:
 
-- `npm/ferriki` as the only npm package
+- `node/ferriki` as the only npm package
 - `crates/ferriki-core` as the runtime behind it
 - `crates/ferroni` as the regex engine dependency

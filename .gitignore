@@ -20,9 +20,9 @@ packages/shiki/src/themes
 cache
 .eslintcache
 report-engine-js-compat.json
-scripts/compares
+node/scripts/compares
 tm-grammars-themes
 target
 Cargo.lock
-npm/ferriki/dist
-npm/ferriki/*.node
+node/ferriki/dist
+node/ferriki/*.node

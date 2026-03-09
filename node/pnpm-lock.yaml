@@ -508,7 +508,7 @@ importers:
         specifier: catalog:docs
         version: 3.5.27(typescript@5.9.3)
 
-  npm/ferriki:
+  ferriki:
     devDependencies:
       '@types/node':
         specifier: catalog:types

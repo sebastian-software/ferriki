@@ -17,11 +17,11 @@ export default defineConfig({
       },
       {
         find: /^ferriki$/,
-        replacement: new URL('./npm/ferriki/index.mjs', import.meta.url).pathname,
+        replacement: new URL('./ferriki/index.mjs', import.meta.url).pathname,
       },
       {
         find: /^ferriki\/native$/,
-        replacement: new URL('./npm/ferriki/native.mjs', import.meta.url).pathname,
+        replacement: new URL('./ferriki/native.mjs', import.meta.url).pathname,
       },
     ],
   },

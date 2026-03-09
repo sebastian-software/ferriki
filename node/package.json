@@ -6,16 +6,16 @@
   "scripts": {
     "lint": "eslint . --cache",
     "typecheck": "tsc --noEmit",
-    "build": "pnpm -C npm/ferriki build",
-    "build:native": "pnpm -C npm/ferriki build:native",
+    "build": "pnpm -C ferriki build",
+    "build:native": "pnpm -C ferriki build:native",
     "test:ferriki-compat": "pnpm run test:ferriki-compat:core",
-    "test:ferriki-compat:core": "pnpm -C npm/ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --run --maxWorkers 1 --no-file-parallelism",
-    "test:ferriki-compat:adapters": "pnpm -C npm/ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/markdown-it/test compat/upstream/shiki/packages/rehype/test compat/upstream/shiki/packages/vitepress-twoslash/test --run --maxWorkers 1 --no-file-parallelism",
-    "test:ferriki-compat:colorized-brackets": "pnpm -C npm/ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
+    "test:ferriki-compat:core": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --run --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:adapters": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/markdown-it/test compat/upstream/shiki/packages/rehype/test compat/upstream/shiki/packages/vitepress-twoslash/test --run --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:colorized-brackets": "pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
     "export:ferriki-repo": "node ./scripts/export-ferriki-repo.mjs",
     "export:ferriki-repo:dry-run": "node ./scripts/export-ferriki-repo.mjs --dry-run",
     "normalize:exported-ferriki-repo": "node ./scripts/normalize-exported-ferriki-repo.mjs",
-    "publish:ci": "pnpm -C npm/ferriki publish --access public --no-git-checks"
+    "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "catalog:bundling",

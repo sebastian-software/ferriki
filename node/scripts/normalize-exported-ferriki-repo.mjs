@@ -58,22 +58,22 @@ function writeJson(targetDir, relativePath, value) {
 }
 
 function normalizePackageJson(targetDir) {
-  const pkg = readJson(targetDir, 'package.json')
+  const pkg = readJson(targetDir, 'node/package.json')
   pkg.name = 'ferriki-workbench'
   pkg.private = true
   pkg.scripts = {
     'lint': 'eslint . --cache',
     'typecheck': 'tsc --noEmit',
-    'build': 'pnpm -C npm/ferriki build',
-    'build:native': 'pnpm -C npm/ferriki build:native',
+    'build': 'pnpm -C ferriki build',
+    'build:native': 'pnpm -C ferriki build:native',
     'test:ferriki-compat': 'pnpm run test:ferriki-compat:core',
-    'test:ferriki-compat:core': 'pnpm -C npm/ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --run --maxWorkers 1 --no-file-parallelism',
-    'test:ferriki-compat:adapters': 'pnpm -C npm/ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/markdown-it/test compat/upstream/shiki/packages/rehype/test compat/upstream/shiki/packages/vitepress-twoslash/test --run --maxWorkers 1 --no-file-parallelism',
-    'test:ferriki-compat:colorized-brackets': 'pnpm -C npm/ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs',
+    'test:ferriki-compat:core': 'pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --run --maxWorkers 1 --no-file-parallelism',
+    'test:ferriki-compat:adapters': 'pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/markdown-it/test compat/upstream/shiki/packages/rehype/test compat/upstream/shiki/packages/vitepress-twoslash/test --run --maxWorkers 1 --no-file-parallelism',
+    'test:ferriki-compat:colorized-brackets': 'pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs',
     'export:ferriki-repo': 'node ./scripts/export-ferriki-repo.mjs',
     'export:ferriki-repo:dry-run': 'node ./scripts/export-ferriki-repo.mjs --dry-run',
     'normalize:exported-ferriki-repo': 'node ./scripts/normalize-exported-ferriki-repo.mjs',
-    'publish:ci': 'pnpm -C npm/ferriki publish --access public --no-git-checks',
+    'publish:ci': 'pnpm -C ferriki publish --access public --no-git-checks',
   }
   pkg.devDependencies = {
     '@antfu/eslint-config': 'catalog:cli',
@@ -90,7 +90,7 @@ function normalizePackageJson(targetDir) {
   }
   delete pkg['simple-git-hooks']
   delete pkg['lint-staged']
-  writeJson(targetDir, 'package.json', pkg)
+  writeJson(targetDir, 'node/package.json', pkg)
 }
 
 function normalizePnpmWorkspace(targetDir) {
@@ -99,7 +99,7 @@ shellEmulator: true
 trustPolicy: no-downgrade
 
 packages:
-  - npm/*
+  - ferriki
 catalogs:
   bundling:
     vite: ^7.3.1
@@ -116,7 +116,7 @@ catalogs:
 onlyBuiltDependencies:
   - esbuild
 `
-  writeText(targetDir, 'pnpm-workspace.yaml', contents)
+  writeText(targetDir, 'node/pnpm-workspace.yaml', contents)
 }
 
 function normalizeCargoToml(targetDir) {
@@ -168,7 +168,7 @@ function normalizeTsconfig(targetDir) {
   ]
 }
 `
-  writeText(targetDir, 'tsconfig.json', contents)
+  writeText(targetDir, 'node/tsconfig.json', contents)
 }
 
 function normalizeVitestConfig(targetDir) {
@@ -183,19 +183,19 @@ export default defineConfig({
     alias: [
       {
         find: /^shiki$/,
-        replacement: new URL('./compat/harness/shiki-backend-entry.ts', import.meta.url).pathname,
+        replacement: new URL('./node/compat/harness/shiki-backend-entry.ts', import.meta.url).pathname,
       },
       {
         find: /^@shikijs\\/primitive$/,
-        replacement: new URL('./compat/harness/shiki-primitive-entry.ts', import.meta.url).pathname,
+        replacement: new URL('./node/compat/harness/shiki-primitive-entry.ts', import.meta.url).pathname,
       },
       {
         find: /^ferriki$/,
-        replacement: new URL('./npm/ferriki/index.mjs', import.meta.url).pathname,
+        replacement: new URL('./node/ferriki/index.mjs', import.meta.url).pathname,
       },
       {
         find: /^ferriki\\/native$/,
-        replacement: new URL('./npm/ferriki/native.mjs', import.meta.url).pathname,
+        replacement: new URL('./node/ferriki/native.mjs', import.meta.url).pathname,
       },
     ],
   },
@@ -208,7 +208,7 @@ export default defineConfig({
   },
 })
 `
-  writeText(targetDir, 'vitest.config.ts', contents)
+  writeText(targetDir, 'node/vitest.config.ts', contents)
 }
 
 function normalizeEslintConfig(targetDir) {
@@ -222,7 +222,7 @@ export default antfu(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
-      'compat/upstream/shiki/**',
+      'node/compat/upstream/shiki/**',
     ],
   },
   {
@@ -233,14 +233,14 @@ export default antfu(
   },
 )
 `
-  writeText(targetDir, 'eslint.config.js', contents)
+  writeText(targetDir, 'node/eslint.config.js', contents)
 }
 
 function normalizeHarness(targetDir) {
-  const backendEntry = `export * from '../../npm/ferriki/index.mjs'
+  const backendEntry = `export * from '../../ferriki/index.mjs'
 export {
   createHighlighterWithBackend as createHighlighter,
-} from '../../npm/ferriki/index.mjs'
+} from '../../ferriki/index.mjs'
 `
 
   const primitiveEntry = `import process from 'node:process'
@@ -297,13 +297,13 @@ export function alignThemesTokenization(...themes) {
 void process
 `
 
-  writeText(targetDir, 'compat/harness/shiki-backend-entry.ts', backendEntry)
-  writeText(targetDir, 'compat/harness/shiki-primitive-entry.ts', primitiveEntry)
+  writeText(targetDir, 'node/compat/harness/shiki-backend-entry.ts', backendEntry)
+  writeText(targetDir, 'node/compat/harness/shiki-primitive-entry.ts', primitiveEntry)
 }
 
 function normalizeFerrikiTypes(targetDir) {
-  writeText(targetDir, 'npm/ferriki/index.d.mts', `export * from './index.mjs'\n`)
-  writeText(targetDir, 'npm/ferriki/native.d.mts', `export * from './native.mjs'\n`)
+  writeText(targetDir, 'node/ferriki/index.d.mts', `export * from './index.mjs'\n`)
+  writeText(targetDir, 'node/ferriki/native.d.mts', `export * from './native.mjs'\n`)
 }
 
 function annotateExportMetadata(targetDir) {
@@ -316,19 +316,19 @@ function annotateExportMetadata(targetDir) {
   metadata.normalization = {
     rootConfigs: [
       'Cargo.toml',
-      'package.json',
-      'pnpm-workspace.yaml',
-      'tsconfig.json',
-      'vitest.config.ts',
-      'eslint.config.js',
+      'node/package.json',
+      'node/pnpm-workspace.yaml',
+      'node/tsconfig.json',
+      'node/vitest.config.ts',
+      'node/eslint.config.js',
     ],
     harness: [
-      'compat/harness/shiki-backend-entry.ts',
-      'compat/harness/shiki-primitive-entry.ts',
+      'node/compat/harness/shiki-backend-entry.ts',
+      'node/compat/harness/shiki-primitive-entry.ts',
     ],
     packageTypes: [
-      'npm/ferriki/index.d.mts',
-      'npm/ferriki/native.d.mts',
+      'node/ferriki/index.d.mts',
+      'node/ferriki/native.d.mts',
     ],
   }
   writeJson(targetDir, '.ferriki-export.json', metadata)
