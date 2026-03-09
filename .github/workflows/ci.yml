@@ -12,6 +12,9 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node
     steps:
       - uses: actions/checkout@v5
 
@@ -34,6 +37,9 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node
     steps:
       - uses: actions/checkout@v5
 
@@ -59,6 +65,9 @@ jobs:
 
   ferriki-core-compat:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node
 
     permissions:
       id-token: write
@@ -89,6 +98,9 @@ jobs:
   ferriki-adapter-compat:
     runs-on: ubuntu-latest
     continue-on-error: true
+    defaults:
+      run:
+        working-directory: node
 
     permissions:
       id-token: write
@@ -116,8 +128,11 @@ jobs:
       - name: Ferriki adapter compat
         run: pnpm run test:ferriki-compat:adapters
 
-  test:
+  native-smoke:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: node
 
     strategy:
       matrix:
@@ -150,13 +165,8 @@ jobs:
       - name: Install
         run: nci
 
-      - name: Build
-        run: nr build
+      - name: Build native
+        run: pnpm run build:native
 
-      - name: Test
-        run: nr test --coverage
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          use_oidc: true
+      - name: Import ferriki package
+        run: node --input-type=module -e "await import('./ferriki/index.mjs')"

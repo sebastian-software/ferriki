@@ -185,6 +185,39 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: catalog:bundling
         version: 16.0.3(rollup@4.57.0)
+      '@shikijs/core':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/core
+      '@shikijs/engine-javascript':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/engine-javascript
+      '@shikijs/engine-oniguruma':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/engine-oniguruma
+      '@shikijs/langs':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/langs
+      '@shikijs/markdown-it':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/markdown-it
+      '@shikijs/rehype':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/rehype
+      '@shikijs/themes':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/themes
+      '@shikijs/transformers':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/transformers
+      '@shikijs/twoslash':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/twoslash
+      '@shikijs/types':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/types
+      '@shikijs/vitepress-twoslash':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/vitepress-twoslash
       '@types/fs-extra':
         specifier: catalog:types
         version: 11.0.4
@@ -203,6 +236,12 @@ importers:
       fs-extra:
         specifier: catalog:testing
         version: 11.3.4
+      hast-util-to-html:
+        specifier: catalog:inlined
+        version: 9.0.5
+      markdown-it:
+        specifier: catalog:integrations
+        version: 14.1.0
       pathe:
         specifier: catalog:bundling
         version: 2.0.3
@@ -233,6 +272,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      unist-util-visit:
+        specifier: catalog:integrations
+        version: 5.1.0
       vite:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@24.10.9)(jiti@2.6.1)(terser@5.39.0)(tsx@4.21.0)(yaml@2.8.2)

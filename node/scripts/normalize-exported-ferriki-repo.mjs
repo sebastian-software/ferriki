@@ -76,10 +76,24 @@ function normalizePackageJson(targetDir) {
     'publish:ci': 'pnpm -C ferriki publish --access public --no-git-checks',
   }
   pkg.devDependencies = {
+    '@shikijs/core': 'workspace:*',
+    '@shikijs/engine-javascript': 'workspace:*',
+    '@shikijs/engine-oniguruma': 'workspace:*',
+    '@shikijs/langs': 'workspace:*',
+    '@shikijs/markdown-it': 'workspace:*',
+    '@shikijs/rehype': 'workspace:*',
+    '@shikijs/themes': 'workspace:*',
+    '@shikijs/transformers': 'workspace:*',
+    '@shikijs/twoslash': 'workspace:*',
+    '@shikijs/types': 'workspace:*',
+    '@shikijs/vitepress-twoslash': 'workspace:*',
     '@antfu/eslint-config': 'catalog:cli',
     '@types/node': 'catalog:types',
     'eslint': 'catalog:cli',
+    'hast-util-to-html': 'catalog:inlined',
+    'markdown-it': 'catalog:integrations',
     'typescript': 'catalog:cli',
+    'unist-util-visit': 'catalog:integrations',
     'vite': 'catalog:bundling',
     'vite-tsconfig-paths': 'catalog:bundling',
     'vitest': 'catalog:testing',
@@ -172,8 +186,23 @@ function normalizeTsconfig(targetDir) {
 }
 
 function normalizeVitestConfig(targetDir) {
-  const contents = `import tsconfigPaths from 'vite-tsconfig-paths'
+  const contents = `import { readFileSync } from 'node:fs'
+import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
+
+function compatPackage(entry) {
+  return new URL(\`./node/compat/upstream/shiki/packages/\${entry}\`, import.meta.url).pathname
+}
+
+function compatChunkAliases(packageName, packageJsonPath) {
+  const pkg = JSON.parse(readFileSync(new URL(packageJsonPath, import.meta.url), 'utf8'))
+  return Object.entries(pkg.exports)
+    .filter(([key, value]) => key !== '.' && key !== './package.json' && typeof value === 'string' && value.startsWith('./dist/'))
+    .map(([key, value]) => ({
+      find: new RegExp(\`^\${packageName}\${key.slice(1).replace(/[.*+?^\\\${}()|[\\]\\\\]/g, '\\\\$&')}$\`),
+      replacement: new URL(\`./node/ferriki/dist/chunks/\${value.slice('./dist/'.length)}\`, import.meta.url).pathname,
+    }))
+}
 
 export default defineConfig({
   plugins: [
@@ -189,6 +218,52 @@ export default defineConfig({
         find: /^@shikijs\\/primitive$/,
         replacement: new URL('./node/compat/harness/shiki-primitive-entry.ts', import.meta.url).pathname,
       },
+      {
+        find: /^@shikijs\\/core$/,
+        replacement: compatPackage('core/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/core\\/textmate$/,
+        replacement: compatPackage('core/src/textmate.ts'),
+      },
+      {
+        find: /^@shikijs\\/engine-javascript$/,
+        replacement: compatPackage('engine-javascript/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/engine-oniguruma$/,
+        replacement: compatPackage('engine-oniguruma/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/markdown-it$/,
+        replacement: compatPackage('markdown-it/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/rehype$/,
+        replacement: compatPackage('rehype/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/transformers$/,
+        replacement: compatPackage('transformers/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/twoslash$/,
+        replacement: compatPackage('twoslash/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/types$/,
+        replacement: compatPackage('types/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/vitepress-twoslash$/,
+        replacement: compatPackage('vitepress-twoslash/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\\/langs\\/js$/,
+        replacement: new URL('./node/ferriki/dist/chunks/javascript.mjs', import.meta.url).pathname,
+      },
+      ...compatChunkAliases('@shikijs/langs', './node/compat/upstream/shiki/packages/langs/package.json'),
+      ...compatChunkAliases('@shikijs/themes', './node/compat/upstream/shiki/packages/themes/package.json'),
       {
         find: /^ferriki$/,
         replacement: new URL('./node/ferriki/index.mjs', import.meta.url).pathname,
