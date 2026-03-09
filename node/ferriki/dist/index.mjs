@@ -13704,7 +13704,7 @@ function createParityAdapter(highlighter, native) {
           const opts = asRecord(options);
           const hasDecorations = Array.isArray(opts?.decorations) && opts.decorations.length > 0;
           const hasTransformers = Array.isArray(opts?.transformers) && opts.transformers.length > 0;
-          if (hasDecorations || hasTransformers || opts?.lang === "astro")
+          if (hasDecorations || hasTransformers)
             return value.call(target, code, options);
           try {
             ensureNativeStandardAssets(native, target, options);
@@ -13779,7 +13779,7 @@ function createParityAdapter(highlighter, native) {
           const hasDecorations = Array.isArray(opts?.decorations) && opts.decorations.length > 0;
           const hasTransformers = Array.isArray(opts?.transformers) && opts.transformers.length > 0;
           const hasColorReplacements = !!asRecord(opts?.colorReplacements) && Object.keys(asRecord(opts.colorReplacements)).length > 0;
-          if (hasDecorations || hasTransformers || hasColorReplacements || opts?.lang === "astro" || opts?.mergeWhitespaces === "never" || opts?.mergeSameStyleTokens)
+          if (hasDecorations || hasTransformers || hasColorReplacements || opts?.mergeWhitespaces === "never" || opts?.mergeSameStyleTokens)
             return value.call(target, code, options);
           try {
             ensureNativeStandardAssets(native, target, options);

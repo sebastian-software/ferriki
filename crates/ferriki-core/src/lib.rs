@@ -3340,30 +3340,50 @@ fn styled_json_lines(styled: &[StyledJsonToken]) -> Vec<Vec<StyledJsonToken>> {
 }
 
 fn merge_line_for_html(line: &[StyledJsonToken], _default_fg: &str) -> Vec<StyledJsonToken> {
-  let mut merged = Vec::new();
-  let mut index = 0usize;
+  line.to_vec()
+}
 
-  while index < line.len() {
-    let token = &line[index];
+fn merge_leading_whitespace_tokens(line: &[StyledJsonToken]) -> Vec<StyledJsonToken> {
+  const FONT_STYLE_UNDERLINE: u8 = 4;
+  const FONT_STYLE_STRIKETHROUGH: u8 = 8;
 
-    let is_plain_ws = !token.content.is_empty()
-      && token.content.chars().all(|ch| ch.is_whitespace());
+  let mut merged: Vec<StyledJsonToken> = Vec::with_capacity(line.len());
+  let mut carry: Option<StyledJsonToken> = None;
 
-    if is_plain_ws {
-      if let Some(next) = line.get(index.saturating_add(1)) {
-        if next.color != token.color {
-          let mut combined = next.clone();
-          combined.offset_utf16 = token.offset_utf16;
-          combined.content = format!("{}{}", token.content, next.content);
-          merged.push(combined);
-          index = index.saturating_add(2);
-          continue;
-        }
+  for token in line {
+    let content = token.content.as_str();
+    let is_decorated = token.font_style & (FONT_STYLE_UNDERLINE | FONT_STYLE_STRIKETHROUGH) != 0;
+    let is_whitespace_only = !content.is_empty() && content.chars().all(char::is_whitespace);
+
+    if !is_decorated && is_whitespace_only {
+      if let Some(existing) = carry.as_mut() {
+        existing.content.push_str(content);
+        existing.content_utf16_len += token.content_utf16_len;
+      } else {
+        carry = Some(token.clone());
       }
+      continue;
+    }
+
+    if let Some(carry_token) = carry.take() {
+      if !is_decorated {
+        let mut combined = token.clone();
+        combined.offset_utf16 = carry_token.offset_utf16;
+        combined.content = format!("{}{}", carry_token.content, token.content);
+        combined.content_utf16_len = carry_token.content_utf16_len + token.content_utf16_len;
+        merged.push(combined);
+      } else {
+        merged.push(carry_token);
+        merged.push(token.clone());
+      }
+      continue;
     }
 
     merged.push(token.clone());
-    index = index.saturating_add(1);
+  }
+
+  if let Some(carry_token) = carry {
+    merged.push(carry_token);
   }
 
   merged
@@ -3786,6 +3806,279 @@ fn normalize_vue_tag_end_tokens(lines: &mut [Vec<StyledJsonToken>], root_scope: 
   }
 }
 
+fn push_normalized_token(
+  out: &mut Vec<StyledJsonToken>,
+  content: &str,
+  offset_utf16: usize,
+  color: Arc<str>,
+  font_style: u8,
+) {
+  if content.is_empty() {
+    return;
+  }
+  out.push(StyledJsonToken {
+    content: content.to_owned(),
+    content_utf16_len: content.encode_utf16().count(),
+    offset_utf16,
+    color,
+    font_style,
+    dark_color: None,
+  });
+}
+
+fn retokenize_astro_default_token(token: &StyledJsonToken, theme: &ThemeData) -> Option<Vec<StyledJsonToken>> {
+  if token.color != theme.fg_normalized || (!token.content.contains('<') && !token.content.contains('{')) {
+    return None;
+  }
+
+  let punctuation = resolve_token_style(
+    &["source.astro", "punctuation.definition.tag.begin.astro"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#666666"));
+  let tag_name = resolve_token_style(
+    &["source.astro", "entity.name.tag.astro"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#4D9375"));
+  let identifier = resolve_token_style(
+    &["source.astro", "identifier"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#BD976A"));
+
+  let bytes = token.content.as_bytes();
+  let mut pieces = Vec::new();
+  let mut index = 0usize;
+  let mut offset = token.offset_utf16;
+  let mut in_interpolation = false;
+
+  while index < bytes.len() {
+    if bytes[index] == b'<' {
+      if index + 1 < bytes.len() && bytes[index + 1] == b'/' {
+        push_normalized_token(&mut pieces, "</", offset, punctuation.clone(), token.font_style);
+        index += 2;
+        offset += 2;
+      } else {
+        push_normalized_token(&mut pieces, "<", offset, punctuation.clone(), token.font_style);
+        index += 1;
+        offset += 1;
+      }
+
+      let start = index;
+      while index < bytes.len() {
+        let ch = bytes[index] as char;
+        if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | ':') {
+          index += 1;
+        } else {
+          break;
+        }
+      }
+      if index > start {
+        let name = &token.content[start..index];
+        push_normalized_token(&mut pieces, name, offset, tag_name.clone(), token.font_style);
+        offset += name.encode_utf16().count();
+      }
+      continue;
+    }
+
+    if bytes[index] == b'>' {
+      push_normalized_token(&mut pieces, ">", offset, punctuation.clone(), token.font_style);
+      index += 1;
+      offset += 1;
+      continue;
+    }
+
+    if bytes[index] == b'{' {
+      in_interpolation = true;
+      push_normalized_token(&mut pieces, "{", offset, punctuation.clone(), token.font_style);
+      index += 1;
+      offset += 1;
+      continue;
+    }
+
+    if bytes[index] == b'}' {
+      in_interpolation = false;
+      push_normalized_token(&mut pieces, "}", offset, punctuation.clone(), token.font_style);
+      index += 1;
+      offset += 1;
+      continue;
+    }
+
+    if in_interpolation && (bytes[index] as char).is_ascii_alphabetic() {
+      let start = index;
+      while index < bytes.len() {
+        let ch = bytes[index] as char;
+        if ch.is_ascii_alphanumeric() || matches!(ch, '_' | '$') {
+          index += 1;
+        } else {
+          break;
+        }
+      }
+      let ident = &token.content[start..index];
+      push_normalized_token(&mut pieces, ident, offset, identifier.clone(), token.font_style);
+      offset += ident.encode_utf16().count();
+      continue;
+    }
+
+    let start = index;
+    while index < bytes.len() && !matches!(bytes[index], b'<' | b'>' | b'{' | b'}') {
+      if in_interpolation && (bytes[index] as char).is_ascii_alphabetic() {
+        break;
+      }
+      index += 1;
+    }
+    let text = &token.content[start..index];
+    push_normalized_token(&mut pieces, text, offset, token.color.clone(), token.font_style);
+    offset += text.encode_utf16().count();
+  }
+
+  Some(pieces)
+}
+
+fn recolor_astro_contextual_tokens(line: &[StyledJsonToken], theme: &ThemeData) -> Vec<StyledJsonToken> {
+  let punctuation = resolve_token_style(
+    &["source.astro", "punctuation.definition.tag.begin.astro"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#666666"));
+  let tag_name = resolve_token_style(
+    &["source.astro", "entity.name.tag.astro"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#4D9375"));
+  let identifier = resolve_token_style(
+    &["source.astro", "identifier"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#BD976A"));
+
+  let mut normalized = Vec::with_capacity(line.len() + 2);
+  let mut expect_tag_name = false;
+  let mut expect_identifier = false;
+
+  for token in line {
+    let mut handled = false;
+    let mut remaining = token.content.as_str();
+    let mut offset = token.offset_utf16;
+
+    while !remaining.is_empty() {
+      if token.color == theme.fg_normalized && expect_identifier {
+        let ident_len = remaining
+          .chars()
+          .take_while(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '$'))
+          .map(char::len_utf8)
+          .sum::<usize>();
+        if ident_len > 0 {
+          let ident = &remaining[..ident_len];
+          push_normalized_token(&mut normalized, ident, offset, identifier.clone(), token.font_style);
+          offset += ident.encode_utf16().count();
+          remaining = &remaining[ident_len..];
+          expect_identifier = false;
+          handled = true;
+          continue;
+        }
+        expect_identifier = false;
+      }
+
+      if token.color == theme.fg_normalized && expect_tag_name {
+        let tag_len = remaining
+          .chars()
+          .take_while(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | ':'))
+          .map(char::len_utf8)
+          .sum::<usize>();
+        if tag_len > 0 {
+          let tag = &remaining[..tag_len];
+          push_normalized_token(&mut normalized, tag, offset, tag_name.clone(), token.font_style);
+          offset += tag.encode_utf16().count();
+          remaining = &remaining[tag_len..];
+          expect_tag_name = false;
+          handled = true;
+          continue;
+        }
+        expect_tag_name = false;
+      }
+
+      if handled {
+        push_normalized_token(&mut normalized, remaining, offset, token.color.clone(), token.font_style);
+      } else {
+        normalized.push(token.clone());
+      }
+      break;
+    }
+
+    let current = normalized.last().unwrap_or(token);
+    let ends_with_punctuation = current.color == punctuation
+      && (current.content.ends_with('{')
+        || current.content.ends_with('<')
+        || current.content.ends_with("</"));
+    if ends_with_punctuation {
+      expect_identifier = current.content.ends_with('{');
+      expect_tag_name = current.content.ends_with('<') || current.content.ends_with("</");
+    }
+  }
+
+  normalized
+}
+
+fn merge_astro_punctuation_sequences(line: &[StyledJsonToken], theme: &ThemeData) -> Vec<StyledJsonToken> {
+  let punctuation = resolve_token_style(
+    &["source.astro", "punctuation.definition.tag.begin.astro"],
+    theme,
+  )
+  .foreground
+  .unwrap_or_else(|| Arc::<str>::from("#666666"));
+
+  let mut merged: Vec<StyledJsonToken> = Vec::with_capacity(line.len());
+
+  for token in line {
+    if let Some(previous) = merged.last_mut() {
+      let is_contiguous = previous.offset_utf16 + previous.content_utf16_len == token.offset_utf16;
+      let same_style = previous.color == punctuation
+        && token.color == punctuation
+        && previous.font_style == token.font_style
+        && previous.dark_color == token.dark_color;
+      let mergeable_sequence = matches!(
+        (previous.content.as_str(), token.content.as_str()),
+        (">", "{") | ("}", "</")
+      );
+      if is_contiguous && same_style && mergeable_sequence {
+        previous.content.push_str(&token.content);
+        previous.content_utf16_len += token.content_utf16_len;
+        continue;
+      }
+    }
+    merged.push(token.clone());
+  }
+
+  merged
+}
+
+fn normalize_astro_tag_tokens(lines: &mut [Vec<StyledJsonToken>], root_scope: Option<&str>, theme: &ThemeData) {
+  if root_scope != Some("source.astro") {
+    return;
+  }
+
+  for line in lines.iter_mut() {
+    let mut normalized = Vec::with_capacity(line.len() + 2);
+    for token in line.iter() {
+      if let Some(parts) = retokenize_astro_default_token(token, theme) {
+        normalized.extend(parts);
+      } else {
+        normalized.push(token.clone());
+      }
+    }
+    let recolored = recolor_astro_contextual_tokens(&normalized, theme);
+    *line = merge_astro_punctuation_sequences(&recolored, theme);
+  }
+}
+
 fn render_json_html(code: &str, options_json: &str, themes: &HashMap<String, ThemeData>) -> Result<String> {
   let html_theme = resolve_html_theme_profile(options_json, "ferriki-json", themes);
   if html_theme.disable_token_coloring {
@@ -3898,9 +4191,10 @@ fn render_grammar_html(
   let default_fg = light_theme.fg.clone();
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
+  normalize_astro_tag_tokens(&mut lines, root_scope, light_theme);
   let lines = lines
     .into_iter()
-    .map(|line| merge_line_for_html(&line, &default_fg))
+    .map(|line| merge_line_for_html(&merge_leading_whitespace_tokens(&line), &default_fg))
     .collect::<Vec<_>>();
   Ok(render_styled_html_lines(&lines, &html_theme, false))
 }
@@ -3919,6 +4213,7 @@ fn render_grammar_tokens_json(
   let (styled, final_stack) = tokenize_with_grammar_skeleton(code, compiled, root_scope, theme_data, initial_stack)?;
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, theme_data);
+  normalize_astro_tag_tokens(&mut lines, root_scope, theme_data);
   render_styled_tokens_json_with_state(lines, theme, &final_stack, root_scope)
 }
 
@@ -3948,6 +4243,11 @@ fn render_grammar_hast_json(
   }
   let mut lines = styled_json_lines(&styled);
   normalize_vue_tag_end_tokens(&mut lines, root_scope, light_theme);
+  normalize_astro_tag_tokens(&mut lines, root_scope, light_theme);
+  let lines = lines
+    .into_iter()
+    .map(|line| merge_leading_whitespace_tokens(&line))
+    .collect::<Vec<_>>();
   let rust_state = serialize_state_frames(&final_stack, root_scope);
   render_styled_hast_payload_json(&lines, options_json, &html_theme, Some(rust_state))
 }
