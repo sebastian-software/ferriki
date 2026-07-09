@@ -1020,13 +1020,13 @@ fn init_grammar(grammar: &Value, base_grammar: Option<&Value>) -> Value {
 
 /// Check if a pattern string contains back-references like \1, \2, etc.
 fn has_back_references(pattern: &str) -> bool {
-  let mut chars = pattern.chars().peekable();
+  let mut chars = pattern.chars();
   while let Some(ch) = chars.next() {
     if ch == '\\' {
-      if let Some(next) = chars.peek() {
-        if next.is_ascii_digit() && *next != '0' {
-          return true;
-        }
+      match chars.next() {
+        Some(next) if next.is_ascii_digit() && next != '0' => return true,
+        Some(_) => {}
+        None => break,
       }
     }
   }
@@ -1203,20 +1203,6 @@ fn compile_rule_inner(
   Some(id)
 }
 
-/// Port of vscode-textmate _compilePatterns().
-/// Resolves include references and returns a Vec of RuleIds.
-fn compile_patterns(
-  patterns: Option<&Value>,
-  registry: &mut RuleRegistry,
-  compiled_map: &mut HashMap<String, RuleId>,
-  repository: &serde_json::Map<String, Value>,
-  grammar_pool: &HashMap<String, Value>,
-  parent_key: &str,
-  host_grammar: Option<&Value>,
-) -> Vec<RuleId> {
-  compile_patterns_inner(patterns, registry, compiled_map, repository, grammar_pool, parent_key, host_grammar, 0)
-}
-
 /// Stable identifier for a repository, using the pointer address of the Map.
 /// This ensures that the same repo key name in different grammars gets a distinct cache key.
 fn repo_id(repository: &serde_json::Map<String, Value>) -> usize {
@@ -1363,9 +1349,7 @@ fn build_scanner_for_rule(
   let mut pattern_pairs: Vec<(String, RuleId)> = Vec::new();
 
   // Collect child patterns
-  let Some(rule) = registry.get(rule_id) else {
-    return None;
-  };
+  let rule = registry.get(rule_id)?;
 
   let child_patterns = match rule {
     Rule::IncludeOnly { patterns, .. } => patterns.clone(),
@@ -1488,7 +1472,11 @@ fn find_next_match_ordered(
       .first()
       .map(|capture| capture.start)
       .unwrap_or(usize::MAX);
-    if candidate_start < best_start || candidate_start == best_start {
+    // On a tie in start position the lower pattern index wins (TextMate
+    // declaration order); candidates are visited in ascending index order.
+    if candidate_start < best_start
+      || (candidate_start == best_start && candidate.index < best_match.index)
+    {
       best_start = candidate_start;
       best_match = candidate;
       if best_start == cursor {
@@ -1955,20 +1943,6 @@ fn resolve_color_with_extra_scope(scope_stack: &[String], extra: &str, theme: &T
   (color, style.font_style)
 }
 
-fn is_line_start_utf16(cursor_utf16: usize, utf16_map: &[usize], code: &str) -> bool {
-  if cursor_utf16 == 0 {
-    return true;
-  }
-  if cursor_utf16 >= utf16_map.len() {
-    return false;
-  }
-  let byte_idx = utf16_map[cursor_utf16];
-  if byte_idx == 0 {
-    return true;
-  }
-  code.as_bytes().get(byte_idx.saturating_sub(1)) == Some(&b'\n')
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Main tokenization loop (port of vscode-textmate _tokenizeString)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2053,17 +2027,15 @@ fn tokenize_with_grammar_skeleton(
     // Build line text with trailing \n (except last line)
     let has_newline = line_idx < lines.len() - 1;
     let line_with_nl: String;
-    let line_str: &str;
-    if has_newline {
+    let line_str: &str = if has_newline {
       let mut buf = String::with_capacity(line_text.len() + 1);
       buf.push_str(line_text);
       buf.push('\n');
       line_with_nl = buf;
-      line_str = &line_with_nl;
+      &line_with_nl
     } else {
-      line_with_nl = String::new(); // unused
-      line_str = line_text;
-    }
+      line_text
+    };
     let line_input = OnigString::new(line_str);
     let line_str_id = NEXT_ONIG_STR_ID.fetch_add(1, Ordering::Relaxed);
     let line_utf16_map = utf16_to_byte_map(line_str);
@@ -2097,9 +2069,14 @@ fn tokenize_with_grammar_skeleton(
 
         if let Some(while_re) = while_re {
           let while_matched = {
-            let scanner = compiled.while_scanner_cache
-              .entry(while_re.clone())
-              .or_insert_with(|| Scanner::new(&[while_re.as_str()]).expect("while scanner compile"));
+            let scanner = match compiled.while_scanner_cache.entry(while_re.clone()) {
+              std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
+              std::collections::hash_map::Entry::Vacant(entry) => {
+                let scanner = Scanner::new(&[while_re.as_str()])
+                  .map_err(|err| Error::from_reason(format!("Failed to compile while pattern: {err}")))?;
+                entry.insert(scanner)
+              }
+            };
             scanner.find_next_match_utf16(&line_input, 0, find_options)
           };
 
@@ -2206,7 +2183,6 @@ fn tokenize_with_grammar_skeleton(
             let (c, fs) = resolve_color_for_scope_stack_owned(&cached_scope_stack, theme, &mut theme_cache);
             cached_color = c;
             cached_font_style = fs;
-            cached_generation = stack_generation;
           }
           push_styled_slice(&mut out, &utf16_map, code, remaining_global, total_utf16, &cached_color, cached_font_style)?;
         }
@@ -2334,9 +2310,7 @@ fn tokenize_with_grammar_skeleton(
         (Some((main_found, main_id)), Some((inj_found, inj_id, inj_prio))) => {
           let main_start = main_found.capture_indices.first().map(|c| c.start).unwrap_or(usize::MAX);
           let inj_start = inj_found.capture_indices.first().map(|c| c.start).unwrap_or(usize::MAX);
-          if inj_start < main_start {
-            (inj_found, inj_id)
-          } else if inj_start == main_start && inj_prio == InjectionPriority::Left {
+          if inj_start < main_start || (inj_start == main_start && inj_prio == InjectionPriority::Left) {
             (inj_found, inj_id)
           } else {
             (main_found, main_id)
@@ -2634,7 +2608,6 @@ fn tokenize_with_grammar_skeleton(
           let (c, fs) = resolve_color_for_scope_stack_owned(&cached_scope_stack, theme, &mut theme_cache);
           cached_color = c;
           cached_font_style = fs;
-          cached_generation = stack_generation;
         }
         push_styled_slice(&mut out, &utf16_map, code, end_utf16, total_utf16, &cached_color, cached_font_style)?;
         break 'line_loop;
@@ -3188,10 +3161,9 @@ fn push_usize(out: &mut String, n: usize) {
 }
 
 fn normalize_hex_color(color: &str) -> String {
-  if color.starts_with('#') {
-    format!("#{}", color[1..].to_uppercase())
-  } else {
-    color.to_owned()
+  match color.strip_prefix('#') {
+    Some(rest) => format!("#{}", rest.to_uppercase()),
+    None => color.to_owned(),
   }
 }
 
