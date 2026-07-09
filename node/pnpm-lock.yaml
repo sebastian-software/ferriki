@@ -185,6 +185,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: catalog:bundling
         version: 16.0.3(rollup@4.57.0)
+      '@shikijs/colorized-brackets':
+        specifier: workspace:*
+        version: link:compat/upstream/shiki/packages/colorized-brackets
       '@shikijs/core':
         specifier: workspace:*
         version: link:compat/upstream/shiki/packages/core

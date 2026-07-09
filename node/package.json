@@ -21,6 +21,7 @@
     "@rollup/plugin-commonjs": "catalog:bundling",
     "@rollup/plugin-json": "catalog:bundling",
     "@rollup/plugin-node-resolve": "catalog:bundling",
+    "@shikijs/colorized-brackets": "workspace:*",
     "@shikijs/core": "workspace:*",
     "@shikijs/engine-javascript": "workspace:*",
     "@shikijs/engine-oniguruma": "workspace:*",
