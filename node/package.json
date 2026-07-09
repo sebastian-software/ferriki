@@ -9,10 +9,11 @@
     "typecheck": "tsc --noEmit",
     "build": "pnpm -C ferriki build",
     "build:native": "pnpm -C ferriki build:native",
+    "build:compat": "pnpm --filter './compat/upstream/shiki/packages/*' run --if-present build",
     "test:ferriki-compat": "pnpm run test:ferriki-compat:core",
-    "test:ferriki-compat:core": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test --exclude compat/upstream/shiki/packages/shiki/test/bundle.test.ts --run --maxWorkers 1 --no-file-parallelism",
-    "test:ferriki-compat:adapters": "pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --exclude compat/upstream/shiki/packages/twoslash/test/markdown-it.test.ts --run --maxWorkers 1 --no-file-parallelism",
-    "test:ferriki-compat:colorized-brackets": "pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
+    "test:ferriki-compat:core": "pnpm run build:compat && pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test --exclude compat/upstream/shiki/packages/shiki/test/bundle.test.ts --run --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:adapters": "pnpm run build:compat && pnpm -C ferriki build:native && SHIKI_BACKEND=rust vitest compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --exclude compat/upstream/shiki/packages/twoslash/test/markdown-it.test.ts --run --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:colorized-brackets": "pnpm run build:compat && pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },
   "devDependencies": {
