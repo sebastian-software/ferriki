@@ -40,17 +40,17 @@ Explicitly out of scope:
 
 Those integrations sit on top of outputs Ferriki already provides, especially `codeToHtml` and `codeToHast`. Ferriki therefore does not treat them as package responsibilities.
 
-These areas may still appear in the mirrored upstream workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki), but they are not part of the supported Ferriki package surface.
+These areas may still appear in the mirrored upstream workspace under [`node/compat/upstream/shiki`](../compat/upstream/shiki), but they are not part of the supported Ferriki package surface.
 
 ## Repository Status
 
 This package is the canonical Node package path inside the Ferriki repository.
-It builds its native addon against [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core).
+It builds its native addon against [`crates/ferriki-core`](../../crates/ferriki-core).
 
-Current expected workflow:
+Current expected workflow (from the repository root):
 
 ```sh
-cd /Users/sebastian/Workspace/oss-released/ferriki/node
+cd node
 pnpm install
 pnpm run build:native
 ```
@@ -70,12 +70,9 @@ thick JavaScript orchestration layer.
 ## Future Extension Direction
 
 Ferriki is not trying to become a pile of JS wrappers around the Rust core.
-If Ferriki adopts higher-level extensions later, the preferred direction is to
-move the heavy lifting into Rust as well.
-
 If Ferriki adopts higher-level extensions later, they should be designed as
-native lanes with clear ownership and narrow scope, not as a new pile of
-JavaScript wrappers around the core.
+native lanes with clear ownership and narrow scope, with the heavy lifting
+moving into Rust as well.
 
 ## License
 

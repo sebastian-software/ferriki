@@ -31,28 +31,28 @@ Ferriki is intentionally narrow right now.
 | `markdown-it`, `rehype`, `VitePress integrations` | Out of scope | These are adapters on top of `codeToHtml` / `codeToHast`, so Ferriki does not treat them as product features |
 | Future native extension lanes | Possible later | If Ferriki takes on these areas, the preferred direction is Rust-native ownership, not a permanent JS wrapper stack |
 
-The mirrored Shiki workspace under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
+The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
 
 ## Products
 
 This repository currently has two primary product surfaces:
 
-- [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core): the Rust runtime and N-API host layer
-- [`node/ferriki`](/Users/sebastian/Workspace/oss-released/ferriki/node/ferriki): the Node-facing package surface
+- [`crates/ferriki-core`](crates/ferriki-core): the Rust runtime and N-API host layer
+- [`node/ferriki`](node/ferriki): the Node-facing package surface
 
 Everything else exists to support validation, compatibility, and repository
 maintenance.
 
 ## Repository Layout
 
-- [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core): native runtime
-- [`node/ferriki`](/Users/sebastian/Workspace/oss-released/ferriki/node/ferriki): Node package
-- [`node/compat/harness`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/harness): Ferriki-specific compatibility glue
-- [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki): strict upstream Shiki mirror
-- [`adr`](/Users/sebastian/Workspace/oss-released/ferriki/adr): architecture decision records
+- [`crates/ferriki-core`](crates/ferriki-core): native runtime
+- [`node/ferriki`](node/ferriki): Node package
+- [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue
+- [`node/compat/upstream/shiki`](node/compat/upstream/shiki): strict upstream Shiki mirror
+- [`adr`](adr): architecture decision records
 
 The repository root is intentionally Rust-first. All Node, npm, and upstream
-compatibility machinery lives under [`node`](/Users/sebastian/Workspace/oss-released/ferriki/node).
+compatibility machinery lives under [`node`](node).
 
 ## Quick Start
 
@@ -82,8 +82,8 @@ pnpm run test:ferriki-compat:adapters
 
 Ferriki tracks one approved Shiki release tag at a time.
 
-- Upstream-derived files under [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki) are mirrored, not hand-edited.
-- Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/harness) and the Ferriki product paths.
+- Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
+- Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](node/compat/harness) and the Ferriki product paths.
 - “Shiki-compatible” in this repository means compatibility is intended to be checked, not just claimed.
 - Compatibility coverage is broader than product scope. Ferriki may still test selected optional upstream adapters separately, but that does not make them first-class Ferriki features.
 

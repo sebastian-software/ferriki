@@ -103,7 +103,7 @@ async function bootstrapFromShikiMirror({ shikiRoot, upstreamDir, outputDir, sou
     path.join(upstreamDir, '.source.json'),
     `${JSON.stringify({
       source: 'shiki-mirror-bootstrap',
-      shikiRoot,
+      shikiRoot: path.relative(process.cwd(), shikiRoot) || '.',
       sourceVersion,
       sourceCommit
     }, null, 2)}\n`,

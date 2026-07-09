@@ -104,8 +104,8 @@ async function syncTextmateGrammarsThemes({ textmateRepo, shikiRoot, outputDir }
   await writeFile(
     path.join(outputDir, '.source.json'),
     `${JSON.stringify({
-      textmateRepo,
-      shikiRoot
+      textmateRepo: path.relative(process.cwd(), textmateRepo) || '.',
+      shikiRoot: path.relative(process.cwd(), shikiRoot) || '.'
     }, null, 2)}\n`,
     'utf8'
   );

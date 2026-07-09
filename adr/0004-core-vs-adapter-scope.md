@@ -30,4 +30,4 @@ separately and do not define the core release boundary by default.
 - Optional integrations can remain supported without dictating core
   architecture.
 - Specific adapter integrations that stay outside Ferriki are captured in
-  [`adr/0007-adapter-integrations-stay-outside-ferriki.md`](/Users/sebastian/Workspace/oss-released/ferriki/adr/0007-adapter-integrations-stay-outside-ferriki.md).
+  [`adr/0007-adapter-integrations-stay-outside-ferriki.md`](../adr/0007-adapter-integrations-stay-outside-ferriki.md).

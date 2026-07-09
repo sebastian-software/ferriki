@@ -1,5 +1,8 @@
 # Ferriki Asset Pipeline Implementation Plan
 
+Status: phases 1–4 are implemented. Phase 5 (removing the transitional
+`dist/chunks` bundle truth) is still open.
+
 ## Goal
 
 Replace the transitional JS bundle catalog with Ferriki-owned lazy-loaded asset
@@ -7,7 +10,7 @@ catalogs for languages and themes.
 
 ## Phase 1: Generator Skeleton
 
-- add [`crates/ferriki-asset-gen`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-asset-gen)
+- add [`crates/ferriki-asset-gen`](../crates/ferriki-asset-gen)
 - define Ferriki asset schemas for:
   - language manifest
   - theme manifest
@@ -18,23 +21,23 @@ catalogs for languages and themes.
 ## Phase 2: Import From Raw Upstream Data
 
 - mirror raw language and theme inputs under
-  [`assets/upstream/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/upstream)
+  [`assets/upstream/`](../assets/upstream)
   from `textmate-grammars-themes`
 - read grammar/theme JSON from that upstream mirror
 - supplement missing aliases and embedded-language metadata from
-  [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki)
+  [`node/compat/upstream/shiki`](../node/compat/upstream/shiki)
 - generate Ferriki-owned outputs under
-  [`assets/shiki/languages`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki/languages)
+  [`assets/shiki/languages`](../assets/shiki/languages)
   and
-  [`assets/shiki/themes`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki/themes)
+  [`assets/shiki/themes`](../assets/shiki/themes)
 - add deterministic golden tests for generated manifests and sample assets
 
 ## Phase 3: Rust Lazy Loaders
 
 - add language asset loader in
-  [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core)
+  [`crates/ferriki-core`](../crates/ferriki-core)
 - add theme asset loader in
-  [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core)
+  [`crates/ferriki-core`](../crates/ferriki-core)
 - keep catalogs separate, but use shared infrastructure where useful
 - cache decoded and compiled runtime structures after first load
 
@@ -48,7 +51,7 @@ catalogs for languages and themes.
 ## Phase 5: Remove Transitional Bundle Truth
 
 - stop treating
-  [`node/ferriki/dist`](/Users/sebastian/Workspace/oss-released/ferriki/node/ferriki/dist)
+  [`node/ferriki/dist`](../node/ferriki/dist)
   as the standard catalog source
 - reduce or remove `dist/chunks/*.mjs` once the Ferriki asset pipeline replaces
   them

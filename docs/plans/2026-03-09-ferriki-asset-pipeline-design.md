@@ -1,11 +1,12 @@
 # Ferriki Asset Pipeline Design
 
 Date: 2026-03-09
+Status: implemented (see [`plans/ferriki-asset-pipeline-implementation-plan.md`](../../plans/ferriki-asset-pipeline-implementation-plan.md); phase 5, the `dist/chunks` removal, is still open)
 
 ## Goal
 
 Replace the transitional Shiki-JS bundle assets under
-[`node/ferriki/dist`](/Users/sebastian/Workspace/oss-released/ferriki/node/ferriki/dist)
+[`node/ferriki/dist`](../../node/ferriki/dist)
 with a Ferriki-owned asset pipeline that is:
 
 - Rust-first
@@ -27,7 +28,7 @@ Instead:
   standard catalog shape.
 - Ferriki converts those upstream inputs into its own asset format.
 - The converted assets live under
-  [`assets/shiki/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki).
+  [`assets/shiki/`](../../assets/shiki).
 - The Rust core loads those assets lazily and caches compiled results.
 - External themes and grammars remain first-class via `registerTheme(...)` and
   `registerGrammar(...)`, including through the Node binding.
@@ -58,16 +59,16 @@ given process. The asset model therefore optimizes for:
 ## Data Flow
 
 1. `textmate-grammars-themes` is mirrored into
-   [`assets/upstream/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/upstream)
+   [`assets/upstream/`](../../assets/upstream)
    as Ferriki's raw asset source.
 2. Shiki is mirrored into
-   [`node/compat/upstream/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/node/compat/upstream/shiki)
+   [`node/compat/upstream/shiki`](../../node/compat/upstream/shiki)
    as the compatibility and metadata reference.
 3. A Rust generator crate reads the mirrored grammar/theme data plus the
    curated metadata it needs.
 4. The generator emits Ferriki-owned assets under
-   [`assets/shiki/`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki).
-5. [`crates/ferriki-core`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core)
+   [`assets/shiki/`](../../assets/shiki).
+5. [`crates/ferriki-core`](../../crates/ferriki-core)
    uses manifests plus embedded bytes to lazy-load and compile requested
    grammars and themes.
 6. The Node package exposes the standard Shiki-compatible API, but no longer

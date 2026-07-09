@@ -1,7 +1,7 @@
 # Ferriki Asset Format
 
 Ferriki stores generated standard language and theme catalogs in a compact
-binary format under [`assets/shiki`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki).
+binary format under [`assets/shiki`](../assets/shiki).
 
 This format is currently an internal Ferriki implementation detail. It exists
 to decouple the runtime from upstream JS build artifacts and to give the Rust
@@ -16,8 +16,8 @@ core a stable generator/loader contract.
 - Encoding: `serde` + `bincode`
 - Current format version: `1`
 - Source of truth for structs and roundtrip tests:
-  - [`crates/ferriki-asset-gen/src/schema.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-asset-gen/src/schema.rs)
-  - [`crates/ferriki-core/src/asset_catalog.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core/src/asset_catalog.rs)
+  - [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
+  - [`crates/ferriki-core/src/asset_catalog.rs`](../crates/ferriki-core/src/asset_catalog.rs)
 
 There is currently no custom magic header or checksum layer. The loader relies
 on the file extension, the enclosing catalog path, and successful `bincode`
@@ -27,12 +27,12 @@ decode into the expected Rust structs.
 
 Language catalog:
 
-- [`assets/shiki/languages/manifest.fkindex`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki/languages/manifest.fkindex)
+- [`assets/shiki/languages/manifest.fkindex`](../assets/shiki/languages/manifest.fkindex)
 - one `.fkgram` file per language
 
 Theme catalog:
 
-- [`assets/shiki/themes/manifest.fkindex`](/Users/sebastian/Workspace/oss-released/ferriki/assets/shiki/themes/manifest.fkindex)
+- [`assets/shiki/themes/manifest.fkindex`](../assets/shiki/themes/manifest.fkindex)
 - one `.fktheme` file per theme
 
 The manifest is loaded first. It maps logical IDs to asset filenames and carries
@@ -156,7 +156,7 @@ Notes:
 ## Loader Behavior
 
 Current runtime behavior in
-[`crates/ferriki-core/src/asset_catalog.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core/src/asset_catalog.rs):
+[`crates/ferriki-core/src/asset_catalog.rs`](../crates/ferriki-core/src/asset_catalog.rs):
 
 - read manifest bytes from disk
 - decode with `bincode`
@@ -190,11 +190,11 @@ best-effort decoding.
 Current test coverage includes:
 
 - schema roundtrip stability in
-  [`crates/ferriki-asset-gen/src/schema.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-asset-gen/src/schema.rs)
+  [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
 - catalog load and cache behavior in
-  [`crates/ferriki-core/src/asset_catalog.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-core/src/asset_catalog.rs)
+  [`crates/ferriki-core/src/asset_catalog.rs`](../crates/ferriki-core/src/asset_catalog.rs)
 - generator normalization tests in
-  [`crates/ferriki-asset-gen/src/import.rs`](/Users/sebastian/Workspace/oss-released/ferriki/crates/ferriki-asset-gen/src/import.rs)
+  [`crates/ferriki-asset-gen/src/import.rs`](../crates/ferriki-asset-gen/src/import.rs)
 
 If the format becomes externally consumed later, the next step should be adding
 an explicit binary header and stronger compatibility guarantees.
