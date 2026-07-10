@@ -103,7 +103,6 @@ jobs:
 
   ferriki-adapter-compat:
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: node
