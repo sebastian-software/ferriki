@@ -1,7 +1,7 @@
 {
   "name": "ferriki",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shiki-compatible syntax highlighting for Node.js with a native Rust core",
   "license": "MIT",
   "homepage": "https://github.com/sebastian-software/ferriki#readme",
