@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      force-publish:
+        description: Publish current main even without a new release
+        type: boolean
+        default: false
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -13,142 +19,24 @@ permissions:
   contents: read
 
 jobs:
-  release-please:
-    runs-on: ubuntu-latest
+  release:
+    uses: sebastian-software/ferramenta/.github/workflows/release-node-native.yml@main
     permissions:
       contents: write
       issues: write
       pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Run release-please
-        id: release
-        uses: googleapis/release-please-action@v4
-        with:
-          config-file: .release-please-config.json
-          manifest-file: .release-please-manifest.json
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
-
-  build-native:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: node
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-x64
-          - os: ubuntu-24.04-arm
-            target: linux-arm64
-          - os: macos-latest
-            target: darwin-arm64
-          - os: macos-13
-            target: darwin-x64
-          - os: windows-latest
-            target: win32-x64
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: node/package.json
-
-      - name: Set node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22.x
-
-      - name: Set Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Build native addon
-        run: pnpm run build:native
-
-      - name: Smoke test package import
-        run: |
-          node --input-type=module -e "import('./ferriki/index.mjs').then(async (m) => { const html = await m.codeToHtml('const x = 1', { lang: 'js', theme: 'nord' }); if (!html.includes('<pre')) throw new Error('unexpected output') })"
-        env:
-          SHIKI_BACKEND: rust
-
-      - name: Upload platform binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-${{ matrix.target }}
-          path: node/ferriki/dist/ferriki.${{ matrix.target }}.node
-          if-no-files-found: error
-
-  publish-npm:
-    needs:
-      - release-please
-      - build-native
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
       id-token: write
-    defaults:
-      run:
-        working-directory: node
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: node/package.json
-
-      - name: Set node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
-      - name: Set Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Build native addon and package assets
-        run: pnpm run build:native
-
-      - name: Collect platform binaries
-        uses: actions/download-artifact@v4
-        with:
-          pattern: native-*
-          merge-multiple: true
-          path: node/ferriki/dist
-
-      - name: Verify platform binaries
-        run: |
-          count="$(ls ferriki/dist/ferriki.*.node | wc -l)"
-          ls -la ferriki/dist/ferriki.*.node
-          if [ "$count" -lt 5 ]; then
-            echo "Expected 5 platform binaries, found $count" >&2
-            exit 1
-          fi
-
-      # npm trusted publishing (OIDC) via id-token: write; no token secret.
-      - name: Publish to npm
-        run: pnpm run publish:ci
+    with:
+      workspace-dir: node
+      package-dir: node/ferriki
+      addon-name: ferriki
+      config-file: .release-please-config.json
+      manifest-file: .release-please-manifest.json
+      force-publish: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish }}
+      smoke-script: >-
+        process.env.SHIKI_BACKEND = 'rust';
+        import('./ferriki/index.mjs').then(async (m) => {
+        const html = await m.codeToHtml('const x = 1', { lang: 'js', theme: 'nord' });
+        if (!html.includes('<pre')) throw new Error('unexpected output')
+        })
+    secrets: inherit
