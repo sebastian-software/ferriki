@@ -85,7 +85,8 @@ jobs:
         run: pnpm run build:native
 
       - name: Smoke test package import
-        run: node --input-type=module -e "import('./ferriki/index.mjs').then(async (m) => { const html = await m.codeToHtml('const x = 1', { lang: 'js', theme: 'nord' }); if (!html.includes('<pre')) throw new Error('unexpected output') })"
+        run: |
+          node --input-type=module -e "import('./ferriki/index.mjs').then(async (m) => { const html = await m.codeToHtml('const x = 1', { lang: 'js', theme: 'nord' }); if (!html.includes('<pre')) throw new Error('unexpected output') })"
         env:
           SHIKI_BACKEND: rust
 
