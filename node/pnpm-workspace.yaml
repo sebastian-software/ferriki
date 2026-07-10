@@ -66,7 +66,9 @@ catalogs:
     '@types/fs-extra': ^11.0.4
     '@types/hast': ^3.0.4
     '@types/markdown-it': ^14.1.2
-    '@types/node': ^24.10.9
+    # Pinned to the exact version resolved by the mirrored shiki release tag
+    # (v4.0.1); the twoslash compat snapshots embed @types/node JSDoc hovers.
+    '@types/node': 25.3.3
 onlyBuiltDependencies:
   - esbuild
   - sharp
