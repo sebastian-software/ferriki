@@ -38,8 +38,8 @@
   "types": "./index.d.mts",
   "files": [
     "assets",
-    "dist",
-    "!dist/shiki-rust.node",
+    "dist/**/*.mjs",
+    "dist/ferriki.*.node",
     "index.d.mts",
     "index.mjs",
     "native.d.mts",
