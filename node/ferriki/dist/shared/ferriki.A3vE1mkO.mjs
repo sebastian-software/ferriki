@@ -1,8 +1,10 @@
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const candidates = [
+  `ferriki.${process.platform}-${process.arch}.node`,
   "shiki-rust.node",
   "index.node",
   join("native", "shiki-rust.node"),

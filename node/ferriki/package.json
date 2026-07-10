@@ -2,27 +2,52 @@
   "name": "ferriki",
   "type": "module",
   "version": "0.1.0",
-  "private": true,
-  "description": "Rust-first syntax highlighting for Node.js powered by Ferroni",
+  "description": "Shiki-compatible syntax highlighting for Node.js with a native Rust core",
   "license": "MIT",
+  "homepage": "https://github.com/sebastian-software/ferriki#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-software/ferriki.git",
+    "directory": "node/ferriki"
+  },
+  "bugs": {
+    "url": "https://github.com/sebastian-software/ferriki/issues"
+  },
+  "keywords": [
+    "shiki",
+    "syntax-highlighting",
+    "highlighter",
+    "textmate",
+    "rust",
+    "napi"
+  ],
   "sideEffects": false,
   "exports": {
-    ".": "./index.mjs",
-    "./native": "./native.mjs",
+    ".": {
+      "types": "./index.d.mts",
+      "default": "./index.mjs"
+    },
+    "./native": {
+      "types": "./native.d.mts",
+      "default": "./native.mjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "./index.mjs",
   "module": "./index.mjs",
   "types": "./index.d.mts",
   "files": [
-    "*.node",
     "assets",
     "dist",
+    "!dist/shiki-rust.node",
     "index.d.mts",
     "index.mjs",
     "native.d.mts",
     "native.mjs"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "node ./scripts/verify-wrapper.mjs",
     "dev": "node ./scripts/verify-wrapper.mjs",
