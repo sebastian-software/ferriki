@@ -115,9 +115,9 @@ Exit criteria:
 
 ## 4. Decide Adapter Support Explicitly
 
-Status: largely done — ADR 0004 and ADR 0007 record the decisions, and the
-adapter lanes are outside the release gate. The native-vs-JS boundary below is
-still open.
+Status: done — ADR 0004 and ADR 0007 record the adapter decisions, the
+adapter lanes are outside the release gate, and ADR 0008 assigns
+`decorations` and `transformers` to the JS layer.
 
 Goal: stop treating historical integrations as implicit product requirements.
 
@@ -127,7 +127,7 @@ Separate and decide:
   - highlighting runtime
   - direct outputs
   - core compatibility surface
-- still-open native-vs-JS fallback boundary:
+- native-vs-JS boundary (decided in ADR 0008):
   - `decorations`
   - `transformers`
 - optional adapter lanes:
