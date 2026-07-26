@@ -87,8 +87,9 @@ pnpm run test:ferriki-compat:colorized-brackets
 
 The Node package chooses its engine via `FERRIKI_BACKEND`:
 
-- `FERRIKI_BACKEND=rust`: native Rust core (what the compat lanes test)
-- `FERRIKI_BACKEND=js`: bundled JS engine (current default when unset)
+- unset: native Rust core when the addon is available, JS engine otherwise
+- `FERRIKI_BACKEND=rust`: force the native Rust core (what the compat lanes test)
+- `FERRIKI_BACKEND=js`: force the bundled JS engine
 
 `SHIKI_BACKEND` keeps working as a deprecated alias; `FERRIKI_BACKEND`
 takes precedence.

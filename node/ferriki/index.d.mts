@@ -6,6 +6,11 @@
  * tighten as the TypeScript source of the Node layer is restored.
  */
 
+// Upstream Shiki type surface: re-exported wholesale so type-only imports
+// like `import type { ShikiTransformer } from 'ferriki'` resolve. Local
+// declarations below take precedence where names overlap.
+export type * from '@shikijs/types'
+
 // ─── Core data shapes ────────────────────────────────────────────────────────
 
 export type BundledLanguage = string
@@ -131,13 +136,13 @@ export declare function getLastGrammarState(...args: unknown[]): unknown
 
 // ─── Ferriki-specific backend API ────────────────────────────────────────────
 
-/** Which backend the current process requested via FERRIKI_BACKEND (or the deprecated SHIKI_BACKEND alias). */
+/** Backend for the current process: FERRIKI_BACKEND (or deprecated SHIKI_BACKEND) if set, otherwise "rust" when the native binding loads, else "js". */
 export declare function getRequestedBackend(): 'rust' | 'js'
 /** Whether the native Rust addon could be loaded on this platform. */
 export declare function isRustBackendAvailable(): boolean
 /** Version string reported by the native addon, if available. */
 export declare function getFerrikiVersion(): string | undefined
-/** Like createHighlighter, but honors FERRIKI_BACKEND=rust (or the deprecated SHIKI_BACKEND alias) by pairing the highlighter with the native core. */
+/** Like createHighlighter, but pairs the highlighter with the native core when the resolved backend is "rust" (the default when the native binding is available). */
 export declare function createHighlighterWithBackend(options?: HighlighterOptions): Promise<Highlighter>
 export declare function getFerrikiNativeHandle(highlighter: unknown): unknown
 export declare const kFerrikiNative: unique symbol

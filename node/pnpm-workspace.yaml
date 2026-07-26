@@ -75,3 +75,5 @@ onlyBuiltDependencies:
   - simple-git-hooks
   - unrs-resolver
   - workerd
+catalog:
+  '@shikijs/types': ^4.0.1

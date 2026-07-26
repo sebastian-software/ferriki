@@ -12730,15 +12730,23 @@ function createJavaScriptRegexEngine(options = {}) {
 
 const kFerrikiNative = /* @__PURE__ */ Symbol.for("ferriki.native");
 const kFerrikiNativeHandle = /* @__PURE__ */ Symbol.for("ferriki.native-handle");
+let cachedNativeAvailability;
+function isNativeBindingAvailable() {
+  if (cachedNativeAvailability === void 0)
+    cachedNativeAvailability = Boolean(tryLoadFerrikiNativeBinding());
+  return cachedNativeAvailability;
+}
 function getRequestedBackend() {
   const requested = process$1.env.FERRIKI_BACKEND ?? process$1.env.SHIKI_BACKEND;
-  return requested === "rust" ? "rust" : "js";
+  if (requested === "rust" || requested === "js")
+    return requested;
+  return isNativeBindingAvailable() ? "rust" : "js";
 }
 function getFerrikiVersion() {
   return tryLoadFerrikiNativeBinding()?.ferrikiVersion();
 }
 function isRustBackendAvailable() {
-  return Boolean(tryLoadFerrikiNativeBinding());
+  return isNativeBindingAvailable();
 }
 function asRecord(value) {
   if (!value || typeof value !== "object")
