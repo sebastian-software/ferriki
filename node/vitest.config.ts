@@ -1,3 +1,4 @@
+import process from 'node:process'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
@@ -18,9 +19,31 @@ function defaultExportInteropExpression(source: string) {
   ].join(' ?? ')
 }
 
+const backendEntry = new URL('./compat/harness/shiki-backend-entry.ts', import.meta.url).pathname
+
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
+    {
+      // Honest-alias mode (FERRIKI_HONEST_ALIAS=1): route the mirrored
+      // tests' remaining upstream entry points through the ferriki backend
+      // entry, so the compat lane exercises the native path instead of
+      // upstream JS against upstream JS (migration plan, Finding 0).
+      name: 'ferriki-honest-alias',
+      enforce: 'pre' as const,
+      resolveId(source: string, importer?: string) {
+        if (!process.env.FERRIKI_HONEST_ALIAS)
+          return
+        if (source === 'shiki/bundle/full' || source === 'shiki/core')
+          return backendEntry
+        if (source === '../src' && importer && (
+          importer.includes('/compat/upstream/shiki/packages/shiki/test/')
+          || importer.includes('/compat/upstream/shiki/packages/core/test/')
+        )) {
+          return backendEntry
+        }
+      },
+    },
     {
       name: 'ferriki-compat-subpath-loader',
       resolveId(id) {
