@@ -2,7 +2,10 @@
 
 ## Status
 
-Draft
+Parked (2026-07-26). Twoslash is an optional adapter lane outside the
+core product boundary (ADR 0004/0007), and the runtime is moving to
+native-only (ADR 0009) with the tokenizer re-port tracked in #30.
+Re-evaluate after that migration; until then this stays exploratory.
 
 ## Summary
 

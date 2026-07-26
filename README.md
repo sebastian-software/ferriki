@@ -49,7 +49,10 @@ maintenance.
 - [`node/ferriki`](node/ferriki): Node package
 - [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue
 - [`node/compat/upstream/shiki`](node/compat/upstream/shiki): strict upstream Shiki mirror
-- [`adr`](adr): architecture decision records
+- [`adr`](adr): architecture decision records ([index](adr/README.md))
+
+Contributor workflow, test lanes, and the mirror rules are documented in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 The repository root is intentionally Rust-first. All Node, npm, and upstream
 compatibility machinery lives under [`node`](node).
