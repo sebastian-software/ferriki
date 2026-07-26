@@ -25,9 +25,6 @@ dist
 # Native addon artifacts (rebuilt by build:native)
 node/ferriki/*.node
 node/ferriki/assets/
-node/ferriki/dist/*.node
-!node/ferriki/dist/
-!node/ferriki/dist/**/*.mjs
 
 # Generated inside the upstream mirror (prepare scripts at install time)
 node/compat/upstream/shiki/packages/colorized-brackets/src/themes.ts

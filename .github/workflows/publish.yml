@@ -34,9 +34,8 @@ jobs:
       manifest-file: .release-please-manifest.json
       force-publish: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish }}
       smoke-script: >-
-        process.env.FERRIKI_BACKEND = 'rust';
-        import('./ferriki/index.mjs').then(async (m) => {
-        const html = await m.codeToHtml('const x = 1', { lang: 'js', theme: 'nord' });
-        if (!html.includes('<pre')) throw new Error('unexpected output')
+        import('./ferriki/index.mjs').then((m) => {
+        const version = m.ferrikiVersion();
+        if (!version) throw new Error('native binding did not load')
         })
     secrets: inherit

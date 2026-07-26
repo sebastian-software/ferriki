@@ -183,6 +183,26 @@ Shiki compat mirror carry over; the current core remains as a reference
 implementation until parity. The theme-resolver findings (classes 1–2)
 double as a known-issues list for the interim native path.
 
+## Teardown executed (2026-07-26)
+
+Following the gate verdict, the transitional stack was removed in one
+sweep rather than kept as scaffolding (there are no external consumers to
+protect, and the upstream mirror — not the fork-era code — is the
+behavioral reference):
+
+- the vendored JS engine (`dist/` bundle + 297 chunks), the parity
+  adapter, the Shiki subpath re-exports, and `FERRIKI_BACKEND` are gone;
+  the npm package is an honest placeholder exposing `ferrikiVersion()`
+- the fork-era tokenizer modules in `crates/ferriki-core` are gone;
+  the crate retains the asset catalogs and the napi entry point
+- the compat lanes are suspended in CI and return as #30 port milestones
+  (run them with `FERRIKI_HONEST_ALIAS=1` from then on)
+- last full pre-teardown state: commit `e9c01db` on main
+
+This supersedes the sequence below where it assumed the JS engine stays
+until after the re-port; the remaining G-items become acceptance criteria
+for the #30/#31 rebuild instead of migration steps.
+
 ## Suggested sequence
 
 1. **Done:** the compat-lane aliasing fix exists as the opt-in
