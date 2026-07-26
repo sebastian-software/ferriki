@@ -1,3 +1,4 @@
+import process from 'node:process'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
@@ -38,8 +39,9 @@ export default defineConfig({
         if (source === '../src' && importer && (
           importer.includes('/compat/upstream/shiki/packages/shiki/test/')
           || importer.includes('/compat/upstream/shiki/packages/core/test/')
-        ))
+        )) {
           return backendEntry
+        }
       },
     },
     {
