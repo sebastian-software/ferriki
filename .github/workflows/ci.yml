@@ -88,73 +88,10 @@ jobs:
       - name: Typecheck
         run: nr typecheck
 
-  ferriki-core-compat:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: node
-
-    permissions:
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: node/package.json
-
-      - name: Set node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22.x
-
-      - name: Set Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Ferriki core compat
-        run: pnpm run test:ferriki-compat:core
-
-  ferriki-adapter-compat:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: node
-
-    permissions:
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: node/package.json
-
-      - name: Set node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22.x
-
-      - name: Set Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup
-        run: npm i -g @antfu/ni
-
-      - name: Install
-        run: nci
-
-      - name: Ferriki optional adapter compat
-        run: pnpm run test:ferriki-compat:adapters
+  # The compat lanes are suspended during the native-only rebuild: the
+  # placeholder package has no highlighting runtime until the
+  # vscode-textmate re-port lands (#30). They return as port milestones
+  # against the mirrored suite (plans/native-only-migration.md).
 
   native-smoke:
     runs-on: ${{ matrix.os }}
@@ -198,5 +135,5 @@ jobs:
       - name: Build native
         run: pnpm run build:native
 
-      - name: Import ferriki package
-        run: node --input-type=module -e "await import('./ferriki/index.mjs')"
+      - name: Import ferriki package and load the native binding
+        run: node --input-type=module -e "const m = await import('./ferriki/index.mjs'); const v = m.ferrikiVersion(); if (!v) throw new Error('native binding did not load'); console.log('ferriki native core', v)"

@@ -14,9 +14,10 @@
 
 - **Never edit anything under `node/compat/upstream/`** — it is a
   mechanical mirror of Shiki v4.0.1. Glue goes in `node/compat/harness/`.
-- `crates/ferriki-core`'s tokenizer is a frozen reference implementation
-  pending the #30 re-port — fix bugs only when a release needs it, do not
-  invest in polish there.
+- The fork-era tokenizer and the vendored JS engine were removed
+  (teardown per ADR 0009); the last full state is commit `e9c01db` in
+  main's history. The npm package is a placeholder until the #30 re-port
+  lands. Behavioral reference is the upstream mirror, not old code.
 - Project language is US English (code, comments, commits, docs).
 - Conventional commits without exception; release-please depends on them.
 
@@ -25,21 +26,15 @@
 ```sh
 cargo test --workspace                       # Rust (also: fmt --check, clippy -D warnings)
 cd node && pnpm install && pnpm run build:native
-pnpm run test:ferriki-compat:core            # release gate, FERRIKI_BACKEND=rust
-pnpm run test:ferriki-compat:adapters        # release gate
-FERRIKI_HONEST_ALIAS=1 ...                   # honest mode: routes ALL mirrored imports through ferriki (known failures)
+# Compat lanes are suspended until the #30 port produces a runtime;
+# they then run with FERRIKI_HONEST_ALIAS=1 as the honest gate.
 ```
 
-Rerun `build:native` after any Rust change before Node lanes. The
-compat lanes without `FERRIKI_HONEST_ALIAS` do NOT fully exercise the
-native path (see plan, Finding 0).
+Rerun `build:native` after any Rust change before Node checks.
 
 ## Package facts
 
 - Publishable package: `node/ferriki` (npm `ferriki`), ESM-only,
-  Node >= 20. `dist/` is currently a checked-in bundle without sources
-  (#10) — edit it only via scripted, verifiable transformations.
-- Backend selection: `FERRIKI_BACKEND=rust|js` (default: rust when the
-  addon loads). `SHIKI_BACKEND` is a deprecated alias.
+  Node >= 20 — currently a placeholder exposing only `ferrikiVersion()`.
 - Publishing runs `pnpm publish` (catalog: specifiers must be rewritten;
   plain `npm publish` would leak them).

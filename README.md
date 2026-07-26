@@ -75,30 +75,11 @@ package):
 cd node
 pnpm install
 pnpm run build:native
-pnpm run test:ferriki-compat:core
 ```
 
-Optional ecosystem checks stay outside the release gate:
-
-```sh
-cd node
-pnpm run test:ferriki-compat:adapters
-pnpm run test:ferriki-compat:colorized-brackets
-```
-
-### Backend selection
-
-The Node package chooses its engine via `FERRIKI_BACKEND`:
-
-- unset: native Rust core when the addon is available, JS engine otherwise
-- `FERRIKI_BACKEND=rust`: force the native Rust core (what the compat lanes test)
-- `FERRIKI_BACKEND=js`: force the bundled JS engine (deprecated per
-  [ADR 0009](adr/0009-native-only-runtime.md) — Ferriki is a native-only
-  runtime; the JS engine will be removed once multi-platform binaries
-  have shipped)
-
-`SHIKI_BACKEND` keeps working as a deprecated alias; `FERRIKI_BACKEND`
-takes precedence.
+The compat lanes (`pnpm run test:ferriki-compat:*`) are suspended during
+the rebuild — they return as milestones of the #30 re-port against the
+mirrored suite.
 
 ## Compatibility
 
@@ -113,10 +94,16 @@ Ferriki tracks one approved Shiki release tag at a time — currently
 
 ## Status
 
-Ferriki is in active restructuring. The core direction is fixed:
+Ferriki is mid-rebuild as a native-only runtime (ADR 0009). The
+transitional JS engine, its parity adapter, and the fork-era tokenizer
+were removed; the last full pre-teardown state is commit `e9c01db` in
+main's history. The tokenizer returns as a mechanical 1:1 port of
+vscode-textmate onto ferroni's Scanner API (#30), followed by the thin
+napi facade and cut-over work (#31). The npm package is an honest
+placeholder until then. The core direction is fixed:
 
 - Rust owns runtime behavior
-- Node is the compatibility and host layer
+- Node is the thin facade and compatibility layer
 - optional ecosystem adapters do not define the core product boundary or release gate
 
 ## License

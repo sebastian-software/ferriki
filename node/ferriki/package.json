@@ -2,7 +2,7 @@
   "name": "ferriki",
   "type": "module",
   "version": "0.2.0",
-  "description": "Shiki-compatible syntax highlighting for Node.js with a native Rust core",
+  "description": "Placeholder while ferriki is rebuilt as a native-only Shiki-compatible highlighter (Rust core via napi)",
   "license": "MIT",
   "homepage": "https://github.com/sebastian-software/ferriki#readme",
   "repository": {
@@ -27,30 +27,6 @@
       "types": "./index.d.mts",
       "default": "./index.mjs"
     },
-    "./core": {
-      "types": "./core.d.mts",
-      "default": "./core.mjs"
-    },
-    "./langs": {
-      "types": "./langs.d.mts",
-      "default": "./langs.mjs"
-    },
-    "./themes": {
-      "types": "./themes.d.mts",
-      "default": "./themes.mjs"
-    },
-    "./types": {
-      "types": "./types.d.mts",
-      "default": "./types.mjs"
-    },
-    "./engine/javascript": {
-      "types": "./engine-javascript.d.mts",
-      "default": "./engine-javascript.mjs"
-    },
-    "./engine/oniguruma": {
-      "types": "./engine-oniguruma.d.mts",
-      "default": "./engine-oniguruma.mjs"
-    },
     "./native": {
       "types": "./native.d.mts",
       "default": "./native.mjs"
@@ -62,25 +38,11 @@
   "types": "./index.d.mts",
   "files": [
     "CHANGELOG.md",
-    "assets",
-    "core.d.mts",
-    "core.mjs",
-    "dist/**/*.mjs",
     "dist/ferriki.*.node",
-    "engine-javascript.d.mts",
-    "engine-javascript.mjs",
-    "engine-oniguruma.d.mts",
-    "engine-oniguruma.mjs",
     "index.d.mts",
     "index.mjs",
-    "langs.d.mts",
-    "langs.mjs",
     "native.d.mts",
-    "native.mjs",
-    "themes.d.mts",
-    "themes.mjs",
-    "types.d.mts",
-    "types.mjs"
+    "native.mjs"
   ],
   "engines": {
     "node": ">=20"
@@ -89,9 +51,6 @@
     "build": "node ./scripts/verify-wrapper.mjs",
     "dev": "node ./scripts/verify-wrapper.mjs",
     "build:native": "node ./scripts/build-native.mjs"
-  },
-  "dependencies": {
-    "@shikijs/types": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:types"

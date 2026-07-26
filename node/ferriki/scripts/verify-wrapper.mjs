@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 const pkgDir = dirname(dirname(fileURLToPath(import.meta.url)))
 const required = [
-  join(pkgDir, 'dist', 'index.mjs'),
-  join(pkgDir, 'dist', 'native.mjs'),
+  join(pkgDir, 'index.mjs'),
+  join(pkgDir, 'native.mjs'),
 ]
 
 for (const file of required)

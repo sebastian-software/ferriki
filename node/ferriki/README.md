@@ -1,89 +1,37 @@
 # ferriki
 
-Shiki-compatible syntax highlighting for Node.js with a native Rust core.
+**Placeholder release.** Ferriki — a Shiki-compatible syntax highlighter
+with a native Rust core — is currently being rebuilt as a native-only
+runtime, and this package version intentionally ships no highlighting
+API.
 
-Ferriki keeps the Shiki API you already use — `createHighlighter`,
-`codeToHtml`, `codeToHast`, `codeToTokens` — and moves the highlighting
-runtime into Rust. Compatibility is verified against a mirrored upstream
-Shiki test suite on every change.
+## What is happening
 
-## Install
+The original incremental port kept a bundled JavaScript engine as
+scaffolding. An honest compatibility measurement against the mirrored
+upstream Shiki suite showed structural defects in that transitional
+tokenizer, so the core is being re-ported properly: a mechanical 1:1
+port of [vscode-textmate](https://github.com/microsoft/vscode-textmate)
+onto [ferroni](https://github.com/sebastian-software/ferroni)'s
+Oniguruma-compatible Scanner API, verified against the upstream test
+suites.
 
-```sh
-npm install ferriki
-```
+- Decision record: [ADR 0009 — native-only runtime](https://github.com/sebastian-software/ferriki/blob/main/adr/0009-native-only-runtime.md)
+- Re-port: [sebastian-software/ferriki#30](https://github.com/sebastian-software/ferriki/issues/30)
+- Facade and cut-over: [sebastian-software/ferriki#31](https://github.com/sebastian-software/ferriki/issues/31)
 
-Requires Node.js >= 20 (matching upstream shiki@4). The package is ESM-only.
-
-## Quick start
+## What this version provides
 
 ```js
-import { codeToHtml } from 'ferriki'
+import { ferrikiVersion } from 'ferriki'
 
-const html = await codeToHtml('const x = 1', {
-  lang: 'js',
-  theme: 'nord',
-})
+ferrikiVersion() // version of the bundled native core, if a platform binary loads
 ```
 
-All bundled Shiki languages and themes are available out of the box.
-
-## Backend selection
-
-Ferriki ships two engines: the native Rust core and a JS fallback. The
-backend is selected via an environment variable:
-
-| Setting | Effect |
-| --- | --- |
-| unset | Native Rust core when a platform binary is available, JS engine otherwise (default) |
-| `FERRIKI_BACKEND=rust` | Force the native Rust core (throws if no platform binary loads) |
-| `FERRIKI_BACKEND=js` | Force the bundled JS engine (deprecated, see below) |
-
-`SHIKI_BACKEND` is supported as a deprecated alias; `FERRIKI_BACKEND`
-takes precedence.
-
-## Platform support
-
-Native binaries are built for linux-x64, linux-arm64, darwin-x64,
-darwin-arm64, and win32-x64. On other platforms the bundled JS engine
-currently keeps everything working — highlighting output is identical,
-just slower. The JS engine is deprecated: Ferriki is a native-only
-runtime by decision
-([ADR 0009](https://github.com/sebastian-software/ferriki/blob/main/adr/0009-native-only-runtime.md)),
-and the JS fallback will be removed once multi-platform binaries have
-shipped; platforms outside the prebuild matrix will then get a clear
-error, with a WebAssembly build of the Rust core as the intended
-long-term answer.
-
-## Shiki compatibility
-
-- Compatibility target: the upstream Shiki 4.0.x line (mirrored suite:
-  [v4.0.1](https://github.com/sebastian-software/ferriki/tree/main/node/compat/upstream/shiki)).
-- The main entry (`import ... from 'ferriki'`) covers the full `shiki`
-  main-entry surface.
-- Supported subpaths for drop-in aliasing: `ferriki/core`, `ferriki/langs`,
-  `ferriki/themes`, `ferriki/types`, `ferriki/engine/javascript`,
-  `ferriki/engine/oniguruma`. Not exposed: `shiki/wasm`, `shiki/textmate`,
-  and the `shiki/bundle/*` entries.
-- Ecosystem adapters (`markdown-it`, `rehype`, VitePress integrations,
-  `colorized-brackets`) are intentionally out of package scope — they sit
-  on top of `codeToHtml`/`codeToHast` and keep working against those
-  outputs.
-
-## Bundler note
-
-Ferriki is a Node-only package that loads a native addon and reads asset
-catalogs from disk. Keep it external in bundlers (e.g. Vite/Rollup
-`external`, Next.js `serverExternalPackages`).
-
-## Development
-
-Ferriki is developed in the
-[sebastian-software/ferriki](https://github.com/sebastian-software/ferriki)
-repository (Rust core in `crates/`, this package under `node/ferriki`).
-Build and test instructions live in the repository README; architectural
-decisions are documented as
-[ADRs](https://github.com/sebastian-software/ferriki/tree/main/adr).
+Nothing else — use [shiki](https://www.npmjs.com/package/shiki) until the
+native runtime ships. The Shiki-compatible API (`codeToHtml`,
+`codeToHast`, `codeToTokens`, `createHighlighter`) returns with the
+re-port, verified against the mirrored Shiki v4.0.x suite.
 
 ## License
 
