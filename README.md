@@ -14,7 +14,7 @@ to ship.
 - Rust-first by design: grammar handling, theme application, state management, and rendering belong in the native core.
 - Shiki-derived standard assets should ship with Ferriki, but load lazily instead of living as an always-on bundled runtime catalog.
 - Leaner runtime shape: no product dependency on the historical JS/WASM engine stack.
-- Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite.
+- Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite, while the tokenizer is checked against a pinned vscode-textmate oracle.
 
 Ferriki is for teams that like the Shiki contract, but want a cleaner native
 foundation under it.
@@ -49,6 +49,7 @@ maintenance.
 - [`node/ferriki`](node/ferriki): Node package
 - [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue
 - [`node/compat/upstream/shiki`](node/compat/upstream/shiki): strict upstream Shiki mirror
+- [`node/compat/upstream/vscode-textmate`](node/compat/upstream/vscode-textmate): strict tokenizer source and test oracle
 - [`adr`](adr): architecture decision records ([index](adr/README.md))
 
 Contributor workflow, test lanes, and the mirror rules are documented in
@@ -88,6 +89,7 @@ Ferriki tracks one approved Shiki release tag at a time — currently
 [`node/compat/upstream/shiki/.source.json`](node/compat/upstream/shiki/.source.json)).
 
 - Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
+- vscode-textmate source and tests under [`node/compat/upstream/vscode-textmate`](node/compat/upstream/vscode-textmate) are likewise pinned and never hand-edited.
 - Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](node/compat/harness) and the Ferriki product paths.
 - “Shiki-compatible” in this repository means compatibility is intended to be checked, not just claimed.
 - Compatibility coverage is broader than product scope. Ferriki may still test selected optional upstream adapters separately, but that does not make them first-class Ferriki features.
