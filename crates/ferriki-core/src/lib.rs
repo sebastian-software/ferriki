@@ -1514,7 +1514,7 @@ fn build_scanner_for_rule(
         // For smaller sets, validate each regex individually
         let mut valid_regexes = Vec::new();
         let mut valid_ids = Vec::new();
-        for (regex, rule_id) in regexes.into_iter().zip(rule_ids.into_iter()) {
+        for (regex, rule_id) in regexes.into_iter().zip(rule_ids) {
             if Scanner::new(&[regex.as_str()]).is_ok() {
                 valid_regexes.push(regex);
                 valid_ids.push(rule_id);
@@ -2802,7 +2802,6 @@ fn tokenize_with_grammar_skeleton(
                         end_re,
                         end_has_back_references,
                         begin_captures,
-                        apply_end_pattern_last: _,
                         ..
                     }) => {
                         let resolved_end_re = if *end_has_back_references {
