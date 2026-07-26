@@ -11,10 +11,14 @@ the time of the audit; the bundle is `dist/index.mjs`).
 
 Before any migration work: the vitest alias in `node/vitest.config.ts`
 only redirects the exact specifier `shiki` to the ferriki package. Of the
-18 files in the mirrored `shiki/test`, only four import bare `'shiki'`
-(`alias`, `astro`, `get-highlighter`, `hast`); the rest import `'../src'`
-or `'shiki/bundle/full'` — i.e. they test upstream JS against upstream JS,
-regardless of `FERRIKI_BACKEND`. The whole of `core/test` does the same.
+18 files in the mirrored `shiki/test`, only five import bare `'shiki'`
+(`alias`, `astro`, `get-highlighter`, `hast`, `injections` — the last of
+which then calls the JS-only `createHighlighterCore`); the rest import
+`'../src'` (9 files), `'shiki/bundle/full'` (2), or `'shiki/core'` (1) —
+i.e. they test upstream JS against upstream JS, regardless of
+`FERRIKI_BACKEND`. The whole of `core/test` does the same. The alias fix
+therefore needs to cover the subpath specifiers and decide how to handle
+the `'../src'` imports, not just the bare specifier.
 "The core lane passes" therefore does not mean "the Rust backend passes".
 
 **First step of the migration: extend the aliasing so the compat lane
