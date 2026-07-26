@@ -85,7 +85,7 @@ mirrored suite.
 ## Compatibility
 
 Ferriki tracks one approved Shiki release tag at a time — currently
-**Shiki v4.0.1** (machine-readable source of truth:
+**Shiki v4.3.1** (machine-readable source of truth:
 [`node/compat/upstream/shiki/.source.json`](node/compat/upstream/shiki/.source.json)).
 
 - Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
