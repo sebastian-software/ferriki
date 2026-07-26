@@ -5,6 +5,11 @@
 
 pub mod matcher;
 pub mod raw_grammar;
+pub mod theme;
 
 pub use matcher::{create_matchers, Matcher, MatcherPriority, MatcherWithPriority};
 pub use raw_grammar::{Location, RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
+pub use theme::{
+    font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
+    RawThemeSetting, RawThemeStyle, ScopeStack, StyleAttributes, Theme, ThemeError,
+};
