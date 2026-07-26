@@ -30,8 +30,9 @@ Not done yet:
   back the JS engine path
 - the Node package source of truth is the checked-in `dist` bundle; there is
   no TS source for it in the repo
-- release hardening is incomplete (`private: true` vs. the tag-driven
-  publish workflow, no multi-platform binary strategy, no typings)
+- the shipped `index.d.mts` types most of the compat surface as `any`
+  (see #10); the release flow itself (multi-platform binaries via the
+  shared ferramenta workflow, npm Trusted Publishing) is in place
 
 ## 1. Fix Core Compatibility Gaps
 
@@ -180,18 +181,23 @@ Exit criteria:
 
 Goal: make the repo easy to build, test, and release without historical context.
 
+Already resolved:
+
+- publishing goes through `publish.yml`, which delegates to the shared
+  `sebastian-software/ferramenta` release workflow: release-please for
+  versioning, `build:native` on five platform targets, binary
+  verification, and npm Trusted Publishing
+- the workspace root is `private: true`; the publishable package is
+  [`node/ferriki`](../node/ferriki)
+- Rust checks (fmt, clippy, tests) run in CI
+
 Remaining work:
 
-- finalize npm release flow for [`node/ferriki`](../node/ferriki)
-  - the package is `private: true` while `release.yml` publishes on tags —
-    decide and align
-  - the release workflow does not run `build:native`, so a published tarball
-    would ship without the native binary and without assets
-  - there is no multi-platform binary strategy (napi platform packages or
-    prebuilds)
-  - the shipped `index.d.mts` re-exports itself and provides no types
+- replace the provisional `index.d.mts` (most exports are still typed
+  `any`, see #10) — ideally by re-exporting `@shikijs/types` for the
+  compat surface
 - decide whether and when `ferriki-core` becomes a separately published crate
-- document the normal local workflow for:
+- add a CONTRIBUTING.md documenting the normal local workflow:
   - Rust checks
   - native build
   - core compatibility lane
