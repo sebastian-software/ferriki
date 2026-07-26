@@ -7,6 +7,7 @@ pub mod include_reference;
 pub mod matcher;
 pub mod raw_grammar;
 pub mod regexp;
+pub mod rule;
 pub mod theme;
 
 pub use include_reference::{parse_include, IncludeReference};
@@ -15,6 +16,10 @@ pub use raw_grammar::{Location, RawCaptures, RawGrammar, RawRepository, RawRule,
 pub use regexp::{
     has_captures, replace_captures, CaptureIndex, CompiledRule, FindNextMatchResult, OnigString,
     RegExpSource, RegExpSourceList, ScannerFindOptions,
+};
+pub use rule::{
+    BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
+    CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry, RuleScannerId,
 };
 pub use theme::{
     font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
