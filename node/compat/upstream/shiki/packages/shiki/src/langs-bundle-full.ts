@@ -112,6 +112,14 @@ export const bundledLanguagesInfo: BundledLanguageInfo[] = [
     'import': (() => import('@shikijs/langs/bicep')) as DynamicImportLanguageRegistration
   },
   {
+    'id': 'bird2',
+    'name': 'BIRD2 Configuration',
+    'aliases': [
+      'bird'
+    ],
+    'import': (() => import('@shikijs/langs/bird2')) as DynamicImportLanguageRegistration
+  },
+  {
     'id': 'blade',
     'name': 'Blade',
     'import': (() => import('@shikijs/langs/blade')) as DynamicImportLanguageRegistration
@@ -634,6 +642,11 @@ export const bundledLanguagesInfo: BundledLanguageInfo[] = [
     'import': (() => import('@shikijs/langs/julia')) as DynamicImportLanguageRegistration
   },
   {
+    'id': 'just',
+    'name': 'Just',
+    'import': (() => import('@shikijs/langs/just')) as DynamicImportLanguageRegistration
+  },
+  {
     'id': 'kdl',
     'name': 'KDL',
     'import': (() => import('@shikijs/langs/kdl')) as DynamicImportLanguageRegistration
@@ -789,6 +802,11 @@ export const bundledLanguagesInfo: BundledLanguageInfo[] = [
       'nf'
     ],
     'import': (() => import('@shikijs/langs/nextflow')) as DynamicImportLanguageRegistration
+  },
+  {
+    'id': 'nextflow-groovy',
+    'name': 'Nextflow Groovy',
+    'import': (() => import('@shikijs/langs/nextflow-groovy')) as DynamicImportLanguageRegistration
   },
   {
     'id': 'nginx',
@@ -1437,6 +1455,8 @@ export type BundledLanguage =
   | 'berry'
   | 'bibtex'
   | 'bicep'
+  | 'bird'
+  | 'bird2'
   | 'blade'
   | 'bsl'
   | 'c'
@@ -1559,6 +1579,7 @@ export type BundledLanguage =
   | 'jssm'
   | 'jsx'
   | 'julia'
+  | 'just'
   | 'kdl'
   | 'kotlin'
   | 'kql'
@@ -1600,6 +1621,7 @@ export type BundledLanguage =
   | 'nar'
   | 'narrat'
   | 'nextflow'
+  | 'nextflow-groovy'
   | 'nf'
   | 'nginx'
   | 'nim'

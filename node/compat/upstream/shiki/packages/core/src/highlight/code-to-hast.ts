@@ -20,6 +20,10 @@ import { addClassToHast, getTokenStyleObject, stringifyTokenStyle } from '../uti
 import { getTransformers } from './_get-transformers'
 import { codeToTokens } from './code-to-tokens'
 
+const RE_WHITESPACE_ONLY = /^\s+$/
+// eslint-disable-next-line regexp/no-super-linear-backtracking
+const RE_LEADING_TRAILING_WHITESPACE = /^(\s*)(.*?)(\s*)$/
+
 export function codeToHast(
   primitive: ShikiPrimitive,
   code: string,
@@ -302,7 +306,7 @@ function mergeWhitespaceTokens(tokens: ThemedToken[][]): ThemedToken[][] {
         || (token.fontStyle & FontStyle.Strikethrough)
       )
       const couldMerge = !isDecorated
-      if (couldMerge && token.content.match(/^\s+$/) && line[idx + 1]) {
+      if (couldMerge && RE_WHITESPACE_ONLY.test(token.content) && line[idx + 1]) {
         if (firstOffset === undefined)
           firstOffset = token.offset
         carryOnContent += token.content
@@ -340,10 +344,9 @@ function mergeWhitespaceTokens(tokens: ThemedToken[][]): ThemedToken[][] {
 function splitWhitespaceTokens(tokens: ThemedToken[][]): ThemedToken[][] {
   return tokens.map((line) => {
     return line.flatMap((token) => {
-      if (token.content.match(/^\s+$/))
+      if (RE_WHITESPACE_ONLY.test(token.content))
         return token
-      // eslint-disable-next-line regexp/no-super-linear-backtracking
-      const match = token.content.match(/^(\s*)(.*?)(\s*)$/)
+      const match = token.content.match(RE_LEADING_TRAILING_WHITESPACE)
       if (!match)
         return token
       const [, leading, content, trailing] = match
@@ -381,7 +384,7 @@ function mergeAdjacentStyledTokens(tokens: ThemedToken[][]): ThemedToken[][] {
         continue
       }
 
-      const prevToken = newLine[newLine.length - 1]
+      const prevToken = newLine.at(-1)!
       const prevStyle = stringifyTokenStyle(prevToken.htmlStyle || getTokenStyleObject(prevToken))
       const currentStyle = stringifyTokenStyle(token.htmlStyle || getTokenStyleObject(token))
       const isPrevDecorated = prevToken.fontStyle && (

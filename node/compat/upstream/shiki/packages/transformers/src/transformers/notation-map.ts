@@ -2,6 +2,8 @@ import type { ShikiTransformer } from '@shikijs/types'
 import type { MatchAlgorithmOptions } from '../shared/notation-transformer'
 import { createCommentNotationTransformer } from '../shared/notation-transformer'
 
+const RE_ESCAPE_SPECIAL = /[.*+?^${}()|[\]\\]/g
+
 export interface TransformerNotationMapOptions extends MatchAlgorithmOptions {
   classMap?: Record<string, string | string[]>
   /**
@@ -15,7 +17,7 @@ export interface TransformerNotationMapOptions extends MatchAlgorithmOptions {
 }
 
 function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return str.replace(RE_ESCAPE_SPECIAL, '\\$&')
 }
 
 export function transformerNotationMap(

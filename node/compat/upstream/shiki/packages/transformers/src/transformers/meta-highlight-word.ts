@@ -1,15 +1,18 @@
 import type { ShikiTransformer } from '@shikijs/types'
 
+const RE_WORD_MATCH = /\/((?:\\.|[^/])+)\//g
+const RE_ESCAPE_BACKSLASH = /\\(.)/g
+
 export function parseMetaHighlightWords(meta: string): string[] {
   if (!meta)
     return []
 
   // https://regex101.com/r/BHS5fd/1
-  const match = Array.from(meta.matchAll(/\/((?:\\.|[^/])+)\//g))
+  const match = [...meta.matchAll(RE_WORD_MATCH)]
 
   return match
     // Escape backslashes
-    .map(v => v[1].replace(/\\(.)/g, '$1'))
+    .map(v => v[1].replace(RE_ESCAPE_BACKSLASH, '$1'))
 }
 
 export interface TransformerMetaWordHighlightOptions {

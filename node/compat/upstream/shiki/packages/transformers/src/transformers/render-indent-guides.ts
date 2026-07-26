@@ -1,6 +1,9 @@
 import type { ShikiTransformer } from '@shikijs/types'
 import type { Element } from 'hast'
 
+const RE_INDENT_META = /\{indent:(\d+|false)\}/
+const RE_NON_BLANK = /[^ \t]/
+
 export interface TransformerRenderIndentGuidesOptions {
   indent?: number | false
 }
@@ -17,7 +20,7 @@ export function transformerRenderIndentGuides(
     code(hast) {
       const indent = Number(
         this.options.meta?.indent
-        ?? this.options.meta?.__raw?.match(/\{indent:(\d+|false)\}/)?.[1]
+        ?? this.options.meta?.__raw?.match(RE_INDENT_META)?.[1]
         ?? options.indent
         ?? 2,
       )
@@ -42,7 +45,7 @@ export function transformerRenderIndentGuides(
         }
 
         const text = first.children[0]
-        const blanks = text.value.split(/[^ \t]/, 1)[0]
+        const blanks = text.value.split(RE_NON_BLANK, 1)[0]
 
         const ranges: [number, number][] = []
         for (const match of blanks.matchAll(indentRegex)) {

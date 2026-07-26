@@ -14,6 +14,7 @@ export function codeToTokensWithThemes(
   primitive: ShikiPrimitive,
   code: string,
   options: CodeToTokensWithThemesOptions,
+  codeToTokensBaseFn: typeof codeToTokensBase = codeToTokensBase,
 ): ThemedTokenWithVariants[][] {
   const themes = Object
     .entries(options.themes)
@@ -21,7 +22,7 @@ export function codeToTokensWithThemes(
     .map(i => ({ color: i[0], theme: i[1]! }))
 
   const themedTokens = themes.map((t) => {
-    const tokens = codeToTokensBase(primitive, code, {
+    const tokens = codeToTokensBaseFn(primitive, code, {
       ...options,
       theme: t.theme,
     })

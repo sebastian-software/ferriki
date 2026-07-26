@@ -93,7 +93,7 @@ export function transformerDecorations(): ShikiTransformer {
         return
       const ctx = getContext(this)
 
-      const lines = Array.from(codeEl.children).filter(i => i.type === 'element' && i.tagName === 'span') as Element[]
+      const lines = [...codeEl.children].filter(i => i.type === 'element' && i.tagName === 'span') as Element[]
 
       if (lines.length !== ctx.converter.lines.length)
         throw new ShikiError(`Number of lines in code element (${lines.length}) does not match the number of lines in the source (${ctx.converter.lines.length}). Failed to apply decorations.`)

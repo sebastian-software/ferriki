@@ -44,3 +44,13 @@ Done in 15.7s`, { theme: 'dark-plus', lang: 'ansi' })
 
   await expect(out).toMatchFileSnapshot('./out/ansi-dark-plus.html')
 })
+
+// https://github.com/shikijs/shiki/issues/1257
+it('renders ansi with multiple themes', async () => {
+  const out = await codeToHtml('\x1B[32mhello\x1B[0m', {
+    lang: 'ansi',
+    themes: { light: 'github-light', dark: 'github-dark' },
+  })
+
+  await expect(out).toMatchFileSnapshot('./out/ansi-multi-themes.html')
+})

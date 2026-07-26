@@ -130,7 +130,7 @@ export class Registry extends TextMateRegistry {
     for (const lang of langs)
       this.resolveEmbeddedLanguages(lang)
 
-    const langsGraphArray = Array.from(this._langGraph.entries())
+    const langsGraphArray = [...this._langGraph.entries()]
 
     const missingLangs = langsGraphArray.filter(([_, lang]) => !lang)
     if (missingLangs.length) {

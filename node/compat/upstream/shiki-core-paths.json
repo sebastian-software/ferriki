@@ -7,7 +7,6 @@
   "packages/types",
   "packages/langs",
   "packages/themes",
-  "packages/engine-ferroni",
   "packages/engine-javascript",
   "packages/engine-oniguruma"
 ]

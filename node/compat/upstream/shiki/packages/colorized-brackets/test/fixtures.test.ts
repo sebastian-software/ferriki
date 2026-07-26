@@ -42,9 +42,7 @@ describe('file-driven tests', async () => {
         && lstatSync(join(import.meta.dirname, 'fixtures', fileName)).isFile(),
     )
     .map<[string]>(fileName => [fileName])
-  const langs = Array.from(
-    new Set(testCaseFiles.map(fileName => fileName[0].split(sep)[0])),
-  )
+  const langs = [...new Set(testCaseFiles.map(fileName => fileName[0].split(sep)[0]))]
   const highlighter = await createHighlighter({
     langs,
     themes: ['dark-plus'],

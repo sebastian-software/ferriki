@@ -9,6 +9,9 @@ import { createAnsiSequenceParser, createColorPalette, namedColors } from 'ansi-
 
 import { applyColorReplacements, resolveColorReplacements, splitLines } from '../utils'
 
+const RE_HEX_COLOR = /#([0-9a-f]{3,8})/i
+const RE_CSS_VAR_ANSI = /var\((--[\w-]+-ansi-[\w-]+)\)/
+
 /**
  * Default ANSI palette (VSCode compatible fallbacks)
  * Used when the theme does not define terminal.ansi* colors.
@@ -100,7 +103,7 @@ export function tokenizeAnsiWithTheme(
  * Adds 50% alpha to a hex color string or the "-dim" postfix to a CSS variable
  */
 function dimColor(color: string): string {
-  const hexMatch = color.match(/#([0-9a-f]{3,8})/i)
+  const hexMatch = color.match(RE_HEX_COLOR)
   if (hexMatch) {
     const hex = hexMatch[1]
     if (hex.length === 8) {
@@ -136,7 +139,7 @@ function dimColor(color: string): string {
     }
   }
 
-  const cssVarMatch = color.match(/var\((--[\w-]+-ansi-[\w-]+)\)/)
+  const cssVarMatch = color.match(RE_CSS_VAR_ANSI)
   if (cssVarMatch)
     return `var(${cssVarMatch[1]}-dim)`
 

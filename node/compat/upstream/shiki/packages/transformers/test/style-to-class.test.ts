@@ -2,6 +2,8 @@ import { createHighlighter } from 'shiki'
 import { expect, it } from 'vitest'
 import { transformerStyleToClass } from '../src/transformers/style-to-class'
 
+const RE_SPAN_TAG = /<span/g
+
 it('transformerStyleToClass', async () => {
   using shiki = await createHighlighter({
     themes: ['vitesse-dark', 'vitesse-light', 'nord'],
@@ -25,7 +27,7 @@ it('transformerStyleToClass', async () => {
     transformers: [transformer],
   })
 
-  expect(result.replace(/<span/g, '\n<span'))
+  expect(result.replace(RE_SPAN_TAG, '\n<span'))
     .toMatchInlineSnapshot(`
       "<pre class="shiki shiki-themes vitesse-dark vitesse-light nord __shiki_uywmyh" tabindex="0"><code>
       <span class="line">

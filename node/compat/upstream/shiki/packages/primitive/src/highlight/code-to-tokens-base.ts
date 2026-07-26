@@ -21,6 +21,9 @@ import { EncodedTokenMetadata, INITIAL } from '@shikijs/vscode-textmate'
 import { getGrammarStack, getLastGrammarStateFromMap, GrammarState as GrammarStateImpl, setLastGrammarStateToMap } from '../textmate/grammar-state'
 import { applyColorReplacements, isNoneTheme, isPlainLang, resolveColorReplacements, splitLines } from '../utils'
 
+const RE_COMMA = /,/
+const RE_SPACE = / /
+
 /**
  * Code to tokens, with a simple theme.
  */
@@ -131,6 +134,7 @@ function _tokenizeWithTheme(
   const {
     tokenizeMaxLineLength = 0,
     tokenizeTimeLimit = 500,
+    includeExplanation = false,
   } = options
 
   const lines = splitLines(code)
@@ -178,7 +182,7 @@ function _tokenizeWithTheme(
     let tokensWithScopes
     let tokensWithScopesIndex
 
-    if (options.includeExplanation) {
+    if (includeExplanation && includeExplanation !== 'tokenType') {
       resultWithScopes = grammar.tokenizeLine(line, stateStack, tokenizeTimeLimit)
       tokensWithScopes = resultWithScopes.tokens
       tokensWithScopesIndex = 0
@@ -207,15 +211,18 @@ function _tokenizeWithTheme(
         fontStyle,
       }
 
-      if (options.includeExplanation) {
+      if (includeExplanation === 'tokenType') {
+        token.type = EncodedTokenMetadata.getTokenType(metadata)
+      }
+      else if (includeExplanation) {
         const themeSettingsSelectors: ThemeSettingsSelectors[] = []
 
-        if (options.includeExplanation !== 'scopeName') {
+        if (includeExplanation !== 'scopeName') {
           for (const setting of theme.settings) {
             let selectors: string[]
             switch (typeof setting.scope) {
               case 'string':
-                selectors = setting.scope.split(/,/).map(scope => scope.trim())
+                selectors = setting.scope.split(RE_COMMA).map(scope => scope.trim())
                 break
               case 'object':
                 selectors = setting.scope
@@ -226,7 +233,7 @@ function _tokenizeWithTheme(
 
             themeSettingsSelectors.push({
               settings: setting,
-              selectors: selectors.map(selector => selector.split(/ /)),
+              selectors: selectors.map(selector => selector.split(RE_SPACE)),
             })
           }
         }
@@ -243,7 +250,7 @@ function _tokenizeWithTheme(
           offset += tokenWithScopesText.length
           token.explanation.push({
             content: tokenWithScopesText,
-            scopes: options.includeExplanation === 'scopeName'
+            scopes: includeExplanation === 'scopeName'
               ? explainThemeScopesNameOnly(
                   tokenWithScopes.scopes,
                 )
@@ -301,7 +308,7 @@ function matches(
   scope: string,
   parentScopes: string[],
 ): boolean {
-  if (!matchesOne(selectors[selectors.length - 1], scope))
+  if (!matchesOne(selectors.at(-1)!, scope))
     return false
 
   let selectorParentIndex = selectors.length - 2

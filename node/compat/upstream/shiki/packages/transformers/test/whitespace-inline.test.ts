@@ -2,6 +2,8 @@ import { createHighlighter } from 'shiki'
 import { expect, it } from 'vitest'
 import { transformerRenderWhitespace } from '../src/transformers/render-whitespace'
 
+const RE_SPAN_TAG = /<span/g
+
 it('transformerRenderWhitespace', async () => {
   using shiki = await createHighlighter({
     themes: ['vitesse-dark', 'vitesse-light', 'nord'],
@@ -26,7 +28,7 @@ it('transformerRenderWhitespace', async () => {
     structure: 'inline',
   })
 
-  expect(result.replace(/<span/g, '\n<span'))
+  expect(result.replace(RE_SPAN_TAG, '\n<span'))
     .toMatchInlineSnapshot(`
       "
       <span style="--shiki-dark:#CB7676;--shiki-light:#AB5959;--shiki-nord:#81A1C1">const</span>

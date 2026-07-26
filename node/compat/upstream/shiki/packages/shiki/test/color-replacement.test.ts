@@ -2,6 +2,8 @@ import type { ThemeRegistrationResolved } from '../src'
 import { expect, it } from 'vitest'
 import { codeToHtml } from '../src'
 
+const RE_GT = />/g
+
 it('flat colorReplacements', async () => {
   const result = await codeToHtml('console.log("hi")', {
     lang: 'js',
@@ -18,7 +20,7 @@ it('flat colorReplacements', async () => {
   expect(result).toContain('var(---replaced-1)')
   expect(result).toContain('var(---replaced-2)')
 
-  expect(result.replace(/>/g, '>\n'))
+  expect(result.replace(RE_GT, '>\n'))
     .toMatchInlineSnapshot(`
       "<pre class="shiki shiki-themes vitesse-light material-theme-palenight" style="background-color:#ffffff;--shiki-dark-bg:#292D3E;color:var(---replaced-1);--shiki-dark:#babed8" tabindex="0">
       <code>
@@ -99,7 +101,7 @@ it('scoped colorReplacements', async () => {
   expect(result).toContain('var(---replaced-3)')
   expect(result).toContain('var(---replaced-4)')
 
-  expect(result.replace(/>/g, '>\n'))
+  expect(result.replace(RE_GT, '>\n'))
     .toMatchInlineSnapshot(`
       "<pre class="shiki shiki-themes custom-light custom-dark" style="background-color:var(---replaced-3);--shiki-dark-bg:var(---replaced-1);color:var(---replaced-4);--shiki-dark:var(---replaced-4)" tabindex="0">
       <code>

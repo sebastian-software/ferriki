@@ -1,8 +1,8 @@
 {
   "source": "shikijs/shiki",
-  "ref": "v4.0.1",
-  "commit": "69bec642a6f3a794398b308ff123f5d6e38f4617",
-  "importedAt": "2026-03-09T07:23:59.778Z",
+  "ref": "v4.3.1",
+  "commit": "fdff6e2384b8d97afd3f33aa82ce52700d58972e",
+  "importedAt": "2026-07-26T21:34:45.943Z",
   "paths": [
     "packages/core",
     "packages/primitive",
@@ -16,7 +16,6 @@
     "packages/types",
     "packages/langs",
     "packages/themes",
-    "packages/engine-ferroni",
     "packages/engine-javascript",
     "packages/engine-oniguruma"
   ]
