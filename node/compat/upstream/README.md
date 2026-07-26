@@ -9,7 +9,7 @@ Rules:
 - Ferriki-specific glue lives outside this directory, under `node/compat/harness`
 
 The mirror is `node/compat/upstream/shiki`, sourced from the official
-Shiki repository at a single approved release tag — currently v4.0.1
+Shiki repository at a single approved release tag — currently v4.3.1
 (see `shiki/.source.json` for the exact tag and commit).
 
 Path manifests:

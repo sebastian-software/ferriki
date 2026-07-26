@@ -31,7 +31,7 @@ ferrikiVersion() // version of the bundled native core, if a platform binary loa
 Nothing else — use [shiki](https://www.npmjs.com/package/shiki) until the
 native runtime ships. The Shiki-compatible API (`codeToHtml`,
 `codeToHast`, `codeToTokens`, `createHighlighter`) returns with the
-re-port, verified against the mirrored Shiki v4.0.x suite.
+re-port, verified against the mirrored Shiki v4.3.1 suite.
 
 ## License
 
