@@ -61,24 +61,24 @@ pub struct RawRule {
     pub content_name: Option<String>,
     #[serde(default, rename = "match", skip_serializing_if = "Option::is_none")]
     pub match_pattern: Option<String>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub captures: RawCaptures,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub begin: Option<String>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub begin_captures: RawCaptures,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub begin_captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<String>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub end_captures: RawCaptures,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_captures: Option<RawCaptures>,
     #[serde(default, rename = "while", skip_serializing_if = "Option::is_none")]
     pub while_pattern: Option<String>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub while_captures: RawCaptures,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub patterns: Vec<RawRule>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub repository: RawRepository,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub while_captures: Option<RawCaptures>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patterns: Option<Vec<RawRule>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<RawRepository>,
     #[serde(default)]
     pub apply_end_pattern_last: bool,
     #[serde(
@@ -99,6 +99,8 @@ pub struct Location {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::{Location, RawGrammar};
 
     #[test]
@@ -135,5 +137,48 @@ mod tests {
                 character: 4,
             })
         );
+    }
+
+    #[test]
+    fn preserves_absent_and_explicitly_empty_rule_fields() {
+        let grammar: RawGrammar = serde_json::from_str(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [
+                    { "include": "#implicit" },
+                    {
+                        "patterns": [],
+                        "captures": {},
+                        "beginCaptures": {},
+                        "endCaptures": {},
+                        "whileCaptures": {},
+                        "repository": {}
+                    }
+                ]
+            }"##,
+        )
+        .expect("raw grammar should deserialize");
+
+        let implicit = &grammar.patterns[0];
+        assert!(implicit.patterns.is_none());
+        assert!(implicit.captures.is_none());
+        assert!(implicit.repository.is_none());
+
+        let explicit = &grammar.patterns[1];
+        assert_eq!(explicit.patterns.as_deref(), Some(&[][..]));
+        assert!(explicit.captures.as_ref().is_some_and(BTreeMap::is_empty));
+        assert!(explicit
+            .begin_captures
+            .as_ref()
+            .is_some_and(BTreeMap::is_empty));
+        assert!(explicit
+            .end_captures
+            .as_ref()
+            .is_some_and(BTreeMap::is_empty));
+        assert!(explicit
+            .while_captures
+            .as_ref()
+            .is_some_and(BTreeMap::is_empty));
+        assert!(explicit.repository.as_ref().is_some_and(BTreeMap::is_empty));
     }
 }
