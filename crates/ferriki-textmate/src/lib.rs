@@ -3,6 +3,7 @@
 //! The module boundaries intentionally follow the pinned upstream source so
 //! semantic changes remain reviewable against the oracle mirror.
 
+pub mod encoded_token_attributes;
 pub mod include_reference;
 pub mod matcher;
 pub mod raw_grammar;
@@ -11,6 +12,10 @@ pub mod rule;
 pub mod rule_factory;
 pub mod theme;
 
+pub use encoded_token_attributes::{
+    to_optional_token_type, EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType,
+    StandardTokenType,
+};
 pub use include_reference::{parse_include, IncludeReference};
 pub use matcher::{create_matchers, Matcher, MatcherPriority, MatcherWithPriority};
 pub use raw_grammar::{Location, RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};

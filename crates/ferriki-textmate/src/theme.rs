@@ -60,6 +60,11 @@ impl FontStyle {
     pub const STRIKETHROUGH: Self = Self(8);
 
     #[must_use]
+    pub const fn from_bits(value: i32) -> Self {
+        Self(value)
+    }
+
+    #[must_use]
     pub const fn bits(self) -> i32 {
         self.0
     }
