@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -19,8 +20,8 @@ impl RuleId {
     }
 }
 
-pub type RawRepository = BTreeMap<String, RawRule>;
-pub type RawCaptures = BTreeMap<String, RawRule>;
+pub type RawRepository = BTreeMap<String, Arc<RawRule>>;
+pub type RawCaptures = BTreeMap<String, Arc<RawRule>>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,9 +30,9 @@ pub struct RawGrammar {
     pub repository: RawRepository,
     pub scope_name: String,
     #[serde(default)]
-    pub patterns: Vec<RawRule>,
+    pub patterns: Vec<Arc<RawRule>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub injections: BTreeMap<String, RawRule>,
+    pub injections: BTreeMap<String, Arc<RawRule>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub injection_selector: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -76,7 +77,7 @@ pub struct RawRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub while_captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub patterns: Option<Vec<RawRule>>,
+    pub patterns: Option<Vec<Arc<RawRule>>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<RawRepository>,
     #[serde(default)]
@@ -100,6 +101,7 @@ pub struct Location {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
+    use std::sync::Arc;
 
     use super::{Location, RawGrammar};
 
@@ -180,5 +182,8 @@ mod tests {
             .as_ref()
             .is_some_and(BTreeMap::is_empty));
         assert!(explicit.repository.as_ref().is_some_and(BTreeMap::is_empty));
+
+        let cloned = grammar.clone();
+        assert!(Arc::ptr_eq(&grammar.patterns[0], &cloned.patterns[0]));
     }
 }
