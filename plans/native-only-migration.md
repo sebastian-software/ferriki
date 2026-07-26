@@ -110,10 +110,26 @@ about the tokenizer. What the gate measures is **tokenization
 correctness**: do scopes, token boundaries, and theme resolution match
 upstream on the cases the mirrored suite actually asserts?
 
-- **Mostly green on tokenization** → the tokenizer is semantically sound.
-  Keep `ferriki-core`, continue this plan as written. A re-port would
-  discard working, now well-modularized code for no gain.
-- **Broadly red on tokenization** → the incremental fork-era port carried
+Concrete gate criteria (measured on the tokenization-asserting cases of
+the honestly-aliased core lane, after excluding tests that fail solely
+due to cataloged G-gaps):
+
+- **Keep** when the native pass rate is >= 90% and no failure class is
+  structural — i.e. no systematic wrongness in begin/end nesting,
+  while-rules, injections, or scope-stack handling; isolated failures are
+  point-fixable.
+- **Re-port** when the pass rate is below 90%, or any structural failure
+  class shows up, regardless of the overall rate — those are
+  architecture, not bugs.
+- **In between**: one timeboxed point-fix iteration; if the rate does not
+  converge above the threshold within it, re-port. Do not iterate twice.
+
+Rationale for the two branches:
+
+- **Keep `ferriki-core`** → the tokenizer is semantically sound; continue
+  this plan as written. A re-port would discard working, now
+  well-modularized code for no gain.
+- **Re-port** → the incremental fork-era port carried
   over structural drift, and patching it case by case is the losing move.
   Then restart the core the way ferroni was built: a mechanical 1:1 port
   of **vscode-textmate** (the actual hard part — Shiki above it is thin
