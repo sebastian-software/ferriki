@@ -21,11 +21,11 @@ Already true:
 - the core compatibility lane passes (with `bundle.test.ts` consciously
   excluded, see item 1)
 - adapter scope is decided and documented (ADR 0004/0007)
+- transitional naming is resolved: the addon is `ferriki.node`, the backend
+  switch is `FERRIKI_BACKEND` (with `SHIKI_BACKEND` as a deprecated alias)
 
 Not done yet:
 
-- transitional naming still leaks through the Node layer (`shiki-rust.node`,
-  `SHIKI_BACKEND`)
 - the transitional JS bundle assets under `node/ferriki/dist/chunks` still
   back the JS engine path
 - the Node package source of truth is the checked-in `dist` bundle; there is
@@ -101,10 +101,9 @@ Goal: make [`node/ferriki`](../node/ferriki) the only supported Node product sur
 
 Remaining work:
 
-- remove any remaining transitional naming or wrapper behavior that still reflects the old Shiki-shaped internals
-  - the native addon is still called `shiki-rust.node`
-  - backend selection still reads `SHIKI_BACKEND`
-  - error messages and symbols still use the `[shiki-rust]` prefix
+- transitional naming is done: the addon is `ferriki.node`, backend selection
+  reads `FERRIKI_BACKEND` (with `SHIKI_BACKEND` as a deprecated alias), and
+  errors/symbols use the `[ferriki]`/`ferriki.*` prefixes
 - keep the public API Shiki-compatible where intended, but Ferriki-branded
 - ensure optional adapters do not silently become core product requirements
 
