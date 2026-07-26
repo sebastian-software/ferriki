@@ -3,6 +3,12 @@ import fg from 'fast-glob'
 import fs from 'fs-extra'
 import { grammars, injections } from 'tm-grammars'
 
+const RE_NON_WORD = /\W/g
+const RE_MULTIPLE_NEWLINES = /\n{2,}/g
+const RE_IMPORT_PLACEHOLDER = /"__|__"/g
+const RE_DOUBLE_QUOTE = /"/g
+const RE_VALID_FILENAME = /^[\w-]+$/
+
 /**
  * Document-like languages that have embedded langs
  */
@@ -122,18 +128,18 @@ export async function prepareLangs() {
       console.log(json.name, json.embeddedLangs)
 
     const depsStr = [
-      ...deps.map(i => `...${i.replace(/\W/g, '_')}`),
+      ...deps.map(i => `...${i.replace(RE_NON_WORD, '_')}`),
       'lang',
     ].join(',\n') || ''
 
     await fs.writeFile(
       `./dist/${json.name}.mjs`,
-      `${deps.map(i => `import ${i.replace(/\W/g, '_')} from './${i}.mjs'`).join('\n')}
+      `${deps.map(i => `import ${i.replace(RE_NON_WORD, '_')} from './${i}.mjs'`).join('\n')}
 
 const lang = Object.freeze(JSON.parse(${JSON.stringify(JSON.stringify(json))}))
 
 export default [\n${depsStr}\n]
-`.replace(/\n{2,}/g, '\n\n').trimStart(),
+`.replace(RE_MULTIPLE_NEWLINES, '\n\n').trimStart(),
       'utf-8',
     )
 
@@ -222,7 +228,7 @@ export const languageAliasNames: string[]
       }
     }
 
-    const bundled = Array.from(bundledIds).map(id => grammars.find(i => i.name === id)!).filter(Boolean)
+    const bundled = Array.from(bundledIds, id => grammars.find(i => i.name === id)!).filter(Boolean)
 
     const info = bundled
       .map(i => ({
@@ -242,7 +248,7 @@ export const languageAliasNames: string[]
       `${COMMENT_HEAD}
 import type { DynamicImportLanguageRegistration, BundledLanguageInfo } from '@shikijs/types'
 
-export const bundledLanguagesInfo: BundledLanguageInfo[] = ${JSON.stringify(info, null, 2).replace(/"__|__"/g, '').replace(/"/g, '\'')}
+export const bundledLanguagesInfo: BundledLanguageInfo[] = ${JSON.stringify(info, null, 2).replace(RE_IMPORT_PLACEHOLDER, '').replace(RE_DOUBLE_QUOTE, '\'')}
 
 export const bundledLanguagesBase = Object.fromEntries(bundledLanguagesInfo.map(i => [i.id, i.import]))
 
@@ -274,5 +280,5 @@ export const bundledLanguages = {
 }
 
 function isInvalidFilename(filename: string) {
-  return !filename.match(/^[\w-]+$/)
+  return !filename.match(RE_VALID_FILENAME)
 }

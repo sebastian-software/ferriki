@@ -8,7 +8,7 @@ export function resolveLangAlias(name: string, alias?: Record<string, string>): 
     while (alias[name]) {
       name = alias[name]
       if (resolved.has(name))
-        throw new ShikiError(`Circular alias \`${Array.from(resolved).join(' -> ')} -> ${name}\``)
+        throw new ShikiError(`Circular alias \`${[...resolved].join(' -> ')} -> ${name}\``)
       resolved.add(name)
     }
   }

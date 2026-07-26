@@ -1,10 +1,12 @@
 import type { ShikiTransformer } from '@shikijs/types'
 
+const RE_HIGHLIGHT_LINES = /\{([\d,-]+)\}/
+
 export function parseMetaHighlightString(meta: string): number[] | null {
   if (!meta)
     return null
 
-  const match = meta.match(/\{([\d,-]+)\}/)
+  const match = meta.match(RE_HIGHLIGHT_LINES)
   if (!match)
     return null
 

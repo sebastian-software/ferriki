@@ -124,6 +124,14 @@ export interface TokenBase {
    */
   offset: number
   /**
+   * The type of the token
+   * 0 - other
+   * 1 - comment
+   * 2 - string
+   * 3 - regex
+   */
+  type?: number
+  /**
    * Explanation of
    *
    * - token text's matching scopes
@@ -173,7 +181,7 @@ export interface TokenizeWithThemeOptions {
    *
    * @default false
    */
-  includeExplanation?: boolean | 'scopeName'
+  includeExplanation?: boolean | 'scopeName' | 'tokenType'
 
   /**
    * A map of color names to new color values.

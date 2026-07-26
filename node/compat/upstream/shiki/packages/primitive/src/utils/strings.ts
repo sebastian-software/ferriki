@@ -14,13 +14,15 @@
  * // => [['hello\n', 0], ['world', 6]]
  * ```
  */
+const RE_NEWLINE = /(\r?\n)/g
+
 export function splitLines(code: string, preserveEnding = false): [string, number][] {
   // Handle empty string edge case
   if (code.length === 0) {
     return [['', 0]]
   }
 
-  const parts = code.split(/(\r?\n)/g)
+  const parts = code.split(RE_NEWLINE)
   let index = 0
   const lines: [string, number][] = []
 

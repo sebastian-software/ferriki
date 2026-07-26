@@ -62,13 +62,11 @@ export function defaultJavaScriptRegexConstructor(pattern: string, options?: ToR
  * Set `forgiving` to `true` to ignore these errors and skip any unsupported or invalid patterns.
  */
 export function createJavaScriptRegexEngine(options: JavaScriptRegexEngineOptions = {}): RegexEngine {
-  const _options: JavaScriptRegexEngineOptions = Object.assign(
-    {
-      target: 'auto',
-      cache: new Map(),
-    },
-    options,
-  )
+  const _options: JavaScriptRegexEngineOptions = {
+    target: 'auto',
+    cache: new Map(),
+    ...options,
+  }
   _options.regexConstructor ||= pattern => defaultJavaScriptRegexConstructor(pattern, { target: _options.target })
 
   return {

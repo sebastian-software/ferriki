@@ -171,6 +171,12 @@ export const bundledThemesInfo: BundledThemeInfo[] = [
     "import": (() => import('@shikijs/themes/horizon')) as unknown as DynamicImportThemeRegistration
   },
   {
+    "id": "horizon-bright",
+    "displayName": "Horizon Bright",
+    "type": "light",
+    "import": (() => import('@shikijs/themes/horizon-bright')) as unknown as DynamicImportThemeRegistration
+  },
+  {
     "id": "houston",
     "displayName": "Houston",
     "type": "dark",
@@ -417,6 +423,7 @@ export type BundledTheme =
   | 'gruvbox-light-medium'
   | 'gruvbox-light-soft'
   | 'horizon'
+  | 'horizon-bright'
   | 'houston'
   | 'kanagawa-dragon'
   | 'kanagawa-lotus'

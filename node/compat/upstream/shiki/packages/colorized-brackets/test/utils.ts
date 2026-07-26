@@ -1,5 +1,11 @@
 import c from 'ansis'
 
+const RE_IMPLICIT_INDEX = /[RYPB]/g
+const RE_EXPLICIT_INDEX = /(\d+)(?:-(\d+))?=([RYPB])/g
+const RE_SPAN_COLOR
+  // eslint-disable-next-line regexp/no-super-linear-backtracking -- this is only run on input we control, so DoS is not a concern
+  = /<span style="color:([RYPB])">\s*(&#x[0-9A-F]+;|..?)\s*<\/span>/g
+
 interface ColoredBracket {
   bracket: string
   color: string
@@ -8,14 +14,12 @@ interface ColoredBracket {
 export function parseExpectedBrackets(content: string): ColoredBracket[] {
   const brackets: ColoredBracket[] = []
   const lines = content.split('\n')
-  const implicitIndexRegex = /[RYPB]/g
-  const explicitIndexRegex = /(\d+)(?:-(\d+))?=([RYPB])/g
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     if (line.includes('@colors')) {
       const prev = lines[i - 1]
       const [implicitIndexPart, explicitIndexPart] = line.split('@colors')
-      for (const match of explicitIndexPart.matchAll(explicitIndexRegex)) {
+      for (const match of explicitIndexPart.matchAll(RE_EXPLICIT_INDEX)) {
         const start = Number.parseInt(match[1])
         const end = Number.parseInt(match[2] || match[1]) + 1
         const color = match[3]
@@ -24,7 +28,7 @@ export function parseExpectedBrackets(content: string): ColoredBracket[] {
           color,
         })
       }
-      for (const match of implicitIndexPart.matchAll(implicitIndexRegex)) {
+      for (const match of implicitIndexPart.matchAll(RE_IMPLICIT_INDEX)) {
         const index = match.index
         const color = match[0]
         brackets.push({ bracket: prev[index], color })
@@ -35,21 +39,16 @@ export function parseExpectedBrackets(content: string): ColoredBracket[] {
 }
 
 export function parseActualBrackets(html: string): ColoredBracket[] {
-  const spanRegex
-    // eslint-disable-next-line regexp/no-super-linear-backtracking -- this is only run on input we control, so DoS is not a concern
-    = /<span style="color:([RYPB])">\s*(&#x[0-9A-F]+;|..?)\s*<\/span>/g
-  const brackets = Array.from(html.matchAll(spanRegex)).map<ColoredBracket>(
-    (match) => {
-      const color = match[1]
-      let bracket = match[2]
-      if (bracket.startsWith('&#x')) {
-        bracket = String.fromCharCode(
-          Number.parseInt(bracket.substring(3, bracket.length - 1), 16),
-        )
-      }
-      return { color, bracket }
-    },
-  )
+  const brackets = Array.from(html.matchAll(RE_SPAN_COLOR), (match) => {
+    const color = match[1]
+    let bracket = match[2]
+    if (bracket.startsWith('&#x')) {
+      bracket = String.fromCharCode(
+        Number.parseInt(bracket.substring(3, bracket.length - 1), 16),
+      )
+    }
+    return { color, bracket }
+  })
   return brackets
 }
 

@@ -1,6 +1,10 @@
 import type { Element, ElementContent } from 'hast'
 import type { MatchAlgorithm } from './notation-transformer'
 
+const RE_SPLIT_COMMENT = /(\s+\/\/)/
+const RE_V1_END_COMMENT_PREFIX = /(?:\/\/|["'#]|;{1,2}|%{1,2}|--)(\s*)$/
+const RE_V3_END_COMMENT_PREFIX = /(?:\/\/|#|;{1,2}|%{1,2}|--)(\s*)$/
+
 export type ParsedComments = {
   line: Element
   token: Element
@@ -52,7 +56,7 @@ export function parseComments(
         const isComment = matchToken(token.value, isLast)
         if (!isComment)
           return element
-        const rawSplits = token.value.split(/(\s+\/\/)/)
+        const rawSplits = token.value.split(RE_SPLIT_COMMENT)
         if (rawSplits.length <= 1)
           return element
 
@@ -205,7 +209,7 @@ function matchToken(text: string, isLast: boolean): [prefix: string, content: st
  * For matchAlgorithm v1
  */
 export function v1ClearEndCommentPrefix(text: string): string {
-  const match = text.match(/(?:\/\/|["'#]|;{1,2}|%{1,2}|--)(\s*)$/)
+  const match = text.match(RE_V1_END_COMMENT_PREFIX)
 
   if (match && match[1].trim().length === 0) {
     return text.slice(0, match.index)
@@ -220,7 +224,7 @@ export function v1ClearEndCommentPrefix(text: string): string {
  * For matchAlgorithm v3
  */
 export function v3ClearEndCommentPrefix(text: string): string {
-  const match = text.match(/(?:\/\/|#|;{1,2}|%{1,2}|--)(\s*)$/)
+  const match = text.match(RE_V3_END_COMMENT_PREFIX)
 
   if (match && match[1].trim().length === 0) {
     return text.slice(0, match.index).trimEnd()

@@ -43,7 +43,8 @@ export function createMarkdownFenceSourceCodec(mapper: MarkdownFencesSourceMappe
 
     // start injection, process in descending order to preserve offsets
     let newCode = code
-    const injectAts = Array.from(injects.keys()).sort((a, b) => b - a)
+
+    const injectAts = [...injects.keys()].sort((a, b) => b - a)
     for (const at of injectAts) {
       const sourceMap = injects.get(at)!
       const data = stringifyFenceSourceMap(sourceMap)

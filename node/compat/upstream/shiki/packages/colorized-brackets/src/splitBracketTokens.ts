@@ -2,6 +2,9 @@ import type { ThemedToken } from 'shiki'
 import type { TransformerColorizedBracketsOptions } from './types'
 import { escapeRegExp, getEmbeddedLang, resolveConfig, shouldIgnoreToken } from './utils'
 
+const RE_LEADING_SPACES = /^\s*/
+const RE_TRAILING_SPACES = /\s*$/
+
 export default function splitBracketTokens(
   rawToken: ThemedToken,
   config: TransformerColorizedBracketsOptions,
@@ -73,13 +76,13 @@ export default function splitBracketTokens(
       }
       else if (i === 0) {
         length
-          = (rawToken.content.match(/^\s*/)?.[0].length ?? 0)
+          = (rawToken.content.match(RE_LEADING_SPACES)?.[0].length ?? 0)
             + explanation.content.trimStart().length
       }
       else if (i === explanations.length - 1) {
         length
           = explanation.content.trimEnd().length
-            + (rawToken.content.match(/\s*$/)?.[0].length ?? 0)
+            + (rawToken.content.match(RE_TRAILING_SPACES)?.[0].length ?? 0)
       }
       currentExplanationStart += length
       return {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { codeToHtml, codeToTokensBase } from '../src'
 
+const RE_INVALID_LANG_ERROR = /Language `invalid` is not included in this bundle/
+
 describe('should', () => {
   it('codeToHtml', async () => {
     expect(await codeToHtml('console.log("hello")', { lang: 'js', theme: 'vitesse-light' }))
@@ -76,7 +78,7 @@ describe('should', () => {
     // First call with invalid language should throw
     await expect(codeToHtml(code, { lang, theme }))
       .rejects
-      .toThrow(/Language `invalid` is not included in this bundle/)
+      .toThrow(RE_INVALID_LANG_ERROR)
 
     // Subsequent call with valid language should succeed
     const result = await codeToHtml(code, { lang: 'javascript', theme })

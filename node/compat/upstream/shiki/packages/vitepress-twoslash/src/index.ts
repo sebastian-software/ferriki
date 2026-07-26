@@ -9,6 +9,10 @@ import { rendererFloatingVue } from './renderer-floating-vue'
 export * from './renderer-floating-vue'
 export * from './types'
 
+const RE_NEWLINE = /\n/g
+const RE_TWOSLASH = /\btwoslash\b/
+const RE_LEFT_BRACE = /\{/g
+
 /**
  * Create a Shiki transformer for VitePress to enable twoslash integration
  *
@@ -23,7 +27,7 @@ export function transformerTwoslash(options: VitePressPluginTwoslashOptions = {}
     const isCI = typeof process !== 'undefined' && process?.env?.CI
     const isDev = typeof process !== 'undefined' && process?.env?.NODE_ENV === 'development'
     const shouldThrow = (options.throws || isCI || !isDev) && options.throws !== false
-    console.error(`\n\n--------\nTwoslash error in code:\n--------\n${code.split(/\n/g).slice(0, 15).join('\n').trim()}\n--------\n`)
+    console.error(`\n\n--------\nTwoslash error in code:\n--------\n${code.split(RE_NEWLINE).slice(0, 15).join('\n').trim()}\n--------\n`)
     if (shouldThrow)
       throw error
     else
@@ -44,7 +48,7 @@ export function transformerTwoslash(options: VitePressPluginTwoslashOptions = {}
 
   const trigger = explicitTrigger instanceof RegExp
     ? explicitTrigger
-    : /\btwoslash\b/
+    : RE_TWOSLASH
 
   return {
     ...twoslash,
@@ -65,7 +69,7 @@ export function transformerTwoslash(options: VitePressPluginTwoslashOptions = {}
     },
     postprocess(html) {
       if (this.meta.twoslash)
-        return html.replace(/\{/g, '&#123;')
+        return html.replace(RE_LEFT_BRACE, '&#123;')
     },
   }
 }

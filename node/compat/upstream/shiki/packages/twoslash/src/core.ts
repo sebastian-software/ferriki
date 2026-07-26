@@ -18,6 +18,8 @@ export * from './renderer-classic'
 export * from './renderer-rich'
 export * from './types'
 
+const RE_TWOSLASH = /\btwoslash\b/
+
 // internal
 type _CacheableTwoslashShikiFunction = (code: string, lang?: string, options?: TwoslashExecuteOptions, meta?: ShikiTransformerContextMeta) => TwoslashShikiReturn
 
@@ -69,7 +71,7 @@ export function createTransformerFactory(
 
     const trigger = explicitTrigger instanceof RegExp
       ? explicitTrigger
-      : /\btwoslash\b/
+      : RE_TWOSLASH
 
     if (!renderer)
       throw new ShikiTwoslashError('Missing renderer')

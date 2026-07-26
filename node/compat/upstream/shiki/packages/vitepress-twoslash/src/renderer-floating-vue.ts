@@ -8,6 +8,9 @@ import { defaultHandlers, toHast } from 'mdast-util-to-hast'
 
 export { defaultHoverInfoProcessor }
 
+const RE_JSDOC_LINK = /\{@link ([^}]*)\}/g
+const RE_PARAM_NAME = /^([\w$-]+)/
+
 export interface TwoslashFloatingVueOptions {
   classCopyIgnore?: string
   classFloatingPanel?: string
@@ -127,7 +130,7 @@ function vPre<T extends ElementContent>(el: T): T {
 
 function renderMarkdown(this: ShikiTransformerContextCommon, md: string): ElementContent[] {
   const mdast = fromMarkdown(
-    md.replace(/\{@link ([^}]*)\}/g, '$1'), // replace jsdoc links
+    md.replace(RE_JSDOC_LINK, '$1'), // replace jsdoc links
     { mdastExtensions: [gfmFromMarkdown()] },
   )
 
@@ -162,7 +165,7 @@ function renderMarkdown(this: ShikiTransformerContextCommon, md: string): Elemen
 
 function renderMarkdownInline(this: ShikiTransformerContextCommon, md: string, context?: string): ElementContent[] {
   if (context === 'tag:param')
-    md = md.replace(/^([\w$-]+)/, '`$1` ')
+    md = md.replace(RE_PARAM_NAME, '`$1` ')
 
   const children = renderMarkdown.call(this, md)
   if (children.length === 1 && children[0].type === 'element' && children[0].tagName === 'p')

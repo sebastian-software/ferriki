@@ -44,9 +44,7 @@ export default function colorizeBracketTokens(
       openerStack.push(token)
     }
     else if (closers.has(token.content.trim())) {
-      const opener = openerStack
-        .slice()
-        .reverse()
+      const opener = openerStack.toReversed()
         .find(t => t.content.trim() === closerToOpener[token.content.trim()])
       if (opener) {
         while (openerStack.at(-1) !== opener) {
@@ -158,7 +156,7 @@ function getColor(
 
   const isUnexpected = level === -1
   if (isUnexpected) {
-    return colors[colors.length - 1]
+    return colors.at(-1)!
   }
   else {
     return colors[level % (colors.length - 1)]

@@ -42,11 +42,12 @@ export function codeToTokens(
       primitive,
       code,
       options,
+      codeToTokensBase,
     )
 
     grammarState = getLastGrammarStateFromMap(themeTokens)
 
-    if (defaultColor && DEFAULT_COLOR_LIGHT_DARK !== defaultColor && !themes.find(t => t.color === defaultColor))
+    if (defaultColor && DEFAULT_COLOR_LIGHT_DARK !== defaultColor && !themes.some(t => t.color === defaultColor))
       throw new ShikiError(`\`themes\` option must contain the defaultColor key \`${defaultColor}\``)
 
     const themeRegs = themes.map(t => primitive.getTheme(t.theme))

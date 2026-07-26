@@ -2,6 +2,8 @@ import type { Element, Root } from 'hast'
 import type { RehypeShikiCoreOptions } from './types'
 import { toString } from 'hast-util-to-string'
 
+const RE_TAILING_CURLY_COLON = /(.+)\{:([\w-]+)\}$/
+
 type Truthy<T> = T extends false | '' | 0 | null | undefined ? never : T
 
 export type RehypeShikiHandler = (
@@ -17,7 +19,7 @@ export type RehypeShikiHandler = (
 export const InlineCodeHandlers: Record<Truthy<RehypeShikiCoreOptions['inline']>, RehypeShikiHandler> = {
   'tailing-curly-colon': (_tree, node) => {
     const raw = toString(node)
-    const match = raw.match(/(.+)\{:([\w-]+)\}$/)
+    const match = raw.match(RE_TAILING_CURLY_COLON)
     if (!match)
       return
 

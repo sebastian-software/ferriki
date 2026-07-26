@@ -7,6 +7,9 @@ import { unified } from 'unified'
 import { expect, it } from 'vitest'
 import rehypeShiki from '../src'
 
+const RE_NORMAL_KEY = /^[A-Z0-9]+$/i
+const RE_LINE_CLASS = /class="line"/g
+
 it('lang-alias', async () => {
   const file = await unified()
     .use(remarkParse)
@@ -39,7 +42,7 @@ it('run', async () => {
       parseMetaString: (str) => {
         return Object.fromEntries(str.split(' ').reduce((prev: [string, boolean | string][], curr: string) => {
           const [key, value] = curr.split('=')
-          const isNormalKey = /^[A-Z0-9]+$/i.test(key)
+          const isNormalKey = RE_NORMAL_KEY.test(key)
           if (isNormalKey)
             prev = [...prev, [key, value || true]]
           return prev
@@ -107,6 +110,6 @@ it('does not add extra trailing blank line', async () => {
     .use(rehypeStringify)
     .process('```\nthis should only have one .line\n```')
 
-  const lineCount = file.toString().match(/class="line"/g)?.length ?? 0
+  const lineCount = file.toString().match(RE_LINE_CLASS)?.length ?? 0
   expect(lineCount).toEqual(1)
 })

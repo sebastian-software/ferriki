@@ -192,6 +192,8 @@ function extend(extension: HastExtension | undefined, node: Element): Element {
   }
 }
 
+const RE_WHITESPACE_CHAR = /\s/g
+
 function renderMarkdownPassThrough(markdown: string): ElementContent[] {
   return [
     {
@@ -437,7 +439,7 @@ export function rendererRich(options: RendererRichOptions = {}): TwoslashRendere
                 ? [<Element>{
                   type: 'element',
                   tagName: 'span',
-                  properties: { class: `twoslash-completions-icon completions-${kind.replace(/\s/g, '-')}` },
+                  properties: { class: `twoslash-completions-icon completions-${kind.replace(RE_WHITESPACE_CHAR, '-')}` },
                   children: [
                     completionIcons[kind] || completionIcons.property,
                   ].filter(Boolean),
@@ -703,7 +705,10 @@ export function rendererRich(options: RendererRichOptions = {}): TwoslashRendere
   }
 }
 
-const regexType = /^[A-Z]\w*(<[^>]*>)?:/
+const RE_LEADING_MODIFIER = /^\(([\w-]+)\)\s+/gm
+const RE_IMPORT_STATEMENT = /\nimport .*$/
+const RE_INTERFACE_NAMESPACE = /^(interface|namespace) \w+$/gm
+const regexType = /^[A-Z]\w*(?:<[^>]*>)?:/
 const regexFunction = /^\w*\(/
 
 /**
@@ -712,17 +717,17 @@ const regexFunction = /^\w*\(/
 export function defaultHoverInfoProcessor(type: string): string {
   let content = type
     // remove leading `(property)` or `(method)` on each line
-    .replace(/^\(([\w-]+)\)\s+/gm, '')
+    .replace(RE_LEADING_MODIFIER, '')
     // remove import statement
-    .replace(/\nimport .*$/, '')
+    .replace(RE_IMPORT_STATEMENT, '')
     // remove interface or namespace lines with only the name
-    .replace(/^(interface|namespace) \w+$/gm, '')
+    .replace(RE_INTERFACE_NAMESPACE, '')
     .trim()
 
   // Add `type` or `function` keyword if needed
-  if (content.match(regexType))
+  if (regexType.test(content))
     content = `type ${content}`
-  else if (content.match(regexFunction))
+  else if (regexFunction.test(content))
     content = `function ${content}`
 
   return content

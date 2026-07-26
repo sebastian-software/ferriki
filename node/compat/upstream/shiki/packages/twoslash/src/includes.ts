@@ -1,3 +1,5 @@
+const RE_INCLUDE_MARKER = /\/\/ @include: (.*)$/gm
+
 export class TwoslashIncludesManager {
   constructor(
     public map: Map<string, string> = new Map(),
@@ -21,19 +23,17 @@ export class TwoslashIncludesManager {
   }
 
   applyInclude(code: string): string {
-    const reMarker = /\/\/ @include: (.*)$/gm
-
     // Basically run a regex over the code replacing any // @include: thing with
     // 'thing' from the map
 
     const toReplace: [index: number, length: number, replacementCode: string][] = []
 
-    for (const match of code.matchAll(reMarker)) {
+    for (const match of code.matchAll(RE_INCLUDE_MARKER)) {
       const key = match[1]
       const replaceWith = this.map.get(key)
 
       if (!replaceWith) {
-        const msg = `Could not find an include with the key: '${key}'.\nThere is: ${Array.from(this.map.keys())}.`
+        const msg = `Could not find an include with the key: '${key}'.\nThere is: ${[...this.map.keys()]}.`
         throw new Error(msg)
       }
       else {

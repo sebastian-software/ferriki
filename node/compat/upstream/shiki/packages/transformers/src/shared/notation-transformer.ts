@@ -1,7 +1,7 @@
 import type { ShikiTransformer, ShikiTransformerContext } from '@shikijs/core'
 import type { Element, Text } from 'hast'
 import type { ParsedComments } from './parse-comments'
-import { parseComments, v1ClearEndCommentPrefix } from './parse-comments'
+import { parseComments, v1ClearEndCommentPrefix, v3ClearEndCommentPrefix } from './parse-comments'
 
 export type MatchAlgorithm = 'v1' | 'v3'
 
@@ -28,9 +28,7 @@ export function createCommentNotationTransformer(
   ) => boolean,
   matchAlgorithm: MatchAlgorithm | undefined,
 ): ShikiTransformer {
-  if (matchAlgorithm == null) {
-    matchAlgorithm = 'v3'
-  }
+  matchAlgorithm ??= 'v3'
 
   return {
     name,
@@ -69,6 +67,8 @@ export function createCommentNotationTransformer(
 
         if (matchAlgorithm === 'v1')
           comment.info[1] = v1ClearEndCommentPrefix(comment.info[1])
+        else if (matchAlgorithm === 'v3')
+          comment.info[1] = v3ClearEndCommentPrefix(comment.info[1])
 
         const isEmpty = comment.info[1].trim().length === 0
         // ignore comment node

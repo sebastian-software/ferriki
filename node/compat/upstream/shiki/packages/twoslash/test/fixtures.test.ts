@@ -3,6 +3,8 @@ import { rendererRich, transformerTwoslash } from '@shikijs/twoslash'
 import { codeToHast, hastToHtml } from 'shiki'
 import { describe, expect, it } from 'vitest'
 
+const RE_THEME_DIRECTIVE = /\/\/\s+@theme:\s+(\S*)\n/
+
 const files = import.meta.glob<string>('./fixtures/*.*', { query: '?raw', import: 'default', eager: true })
 
 describe('fixtures', () => {
@@ -13,7 +15,7 @@ describe('fixtures', () => {
       const ext = file.split('.').pop()!
 
       let theme = 'vitesse-dark'
-      code = code.replace(/\/\/\s+@theme:\s+(\S*)\n/, (_, t) => {
+      code = code.replace(RE_THEME_DIRECTIVE, (_, t) => {
         theme = t
         return ''
       })

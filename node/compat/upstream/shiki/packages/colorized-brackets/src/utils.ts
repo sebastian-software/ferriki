@@ -1,9 +1,12 @@
 import type { ThemedToken } from 'shiki'
 import type { TransformerColorizedBracketsOptions } from './types'
 
+const RE_SOURCE_SCOPE = /^source.\w+$/
+const RE_ESCAPE_REGEXP = /[.*+?^${}()|[\]\\]/g
+
 export function getEmbeddedLang(token: ThemedToken): string | undefined {
   return token.explanation?.[0].scopes
-    .findLast(scope => scope.scopeName.match(/^source.\w+$/))
+    .findLast(scope => scope.scopeName.match(RE_SOURCE_SCOPE))
     ?.scopeName
     .split('.')[1]
 }
@@ -20,7 +23,7 @@ export function resolveConfig(
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
 export function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
+  return string.replace(RE_ESCAPE_REGEXP, '\\$&') // $& means the whole matched string
 }
 
 export function shouldIgnoreToken(

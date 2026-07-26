@@ -7,6 +7,9 @@ import { defineConfig } from 'rollup'
 import dts from 'rollup-plugin-dts'
 import esbuild from 'rollup-plugin-esbuild'
 
+const RE_SRC_DIR = /src[\\/]/
+const RE_CIRCULAR_EMPTY = /Circular|an empty chunk/
+
 const entries = [
   'src/index.ts',
   'src/wasm-inlined.ts',
@@ -50,7 +53,7 @@ export default defineConfig([
       dir: 'dist',
       format: 'esm',
       chunkFileNames: 'chunk-[name].d.mts',
-      entryFileNames: f => `${f.name.replace(/src[\\/]/, '')}.d.mts`,
+      entryFileNames: f => `${f.name.replace(RE_SRC_DIR, '')}.d.mts`,
     },
     plugins: [
       dts({
@@ -64,7 +67,7 @@ export default defineConfig([
       },
     ],
     onwarn: (warning, warn) => {
-      if (!/Circular|an empty chunk/.test(warning.message))
+      if (!RE_CIRCULAR_EMPTY.test(warning.message))
         warn(warning)
     },
     external,

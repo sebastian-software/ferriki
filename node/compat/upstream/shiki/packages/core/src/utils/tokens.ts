@@ -48,9 +48,7 @@ export function splitTokens<
   tokens: T[][],
   breakpoints: number[] | Set<number>,
 ): T[][] {
-  const sorted = Array
-    .from(breakpoints instanceof Set ? breakpoints : new Set(breakpoints))
-    .sort((a, b) => a - b)
+  const sorted = [...(breakpoints instanceof Set ? breakpoints : new Set(breakpoints))].sort((a, b) => a - b)
 
   if (!sorted.length)
     return tokens
