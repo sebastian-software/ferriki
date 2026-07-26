@@ -11,12 +11,10 @@ logs
 node_modules
 temp
 tmp
-packages/colorized-brackets/src/themes.ts
-packages/shiki/src/langs
-packages/shiki/src/themes
-packages/shiki/src/*.json
-packages/shiki/src/langs
-packages/shiki/src/themes
+node/compat/upstream/shiki/packages/colorized-brackets/src/themes.ts
+node/compat/upstream/shiki/packages/shiki/src/langs
+node/compat/upstream/shiki/packages/shiki/src/themes
+node/compat/upstream/shiki/packages/shiki/src/*.json
 cache
 .eslintcache
 report-engine-js-compat.json
