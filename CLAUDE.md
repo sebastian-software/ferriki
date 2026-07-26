@@ -5,6 +5,7 @@
 - Read [`adr/README.md`](adr/README.md) for the decision index. The two
   load-bearing ones: ADR 0003 (the upstream mirror is never hand-edited)
   and ADR 0009 (native-only runtime; the bundled JS engine is deprecated).
+  ADR 0010 defines the mechanical vscode-textmate port and crate boundary.
 - The execution backlog lives in
   [`plans/native-only-migration.md`](plans/native-only-migration.md) —
   including the measured decision to re-port the tokenizer (#30) and the
@@ -12,8 +13,9 @@
 
 ## Hard rules
 
-- **Never edit anything under `node/compat/upstream/`** — it is a
-  mechanical mirror of Shiki v4.0.1. Glue goes in `node/compat/harness/`.
+- **Never edit anything under `node/compat/upstream/`** — it contains
+  mechanical mirrors of Shiki and vscode-textmate. Glue and Rust test adapters
+  stay outside the mirrors.
 - The fork-era tokenizer and the vendored JS engine were removed
   (teardown per ADR 0009); the last full state is commit `e9c01db` in
   main's history. The npm package is a placeholder until the #30 re-port

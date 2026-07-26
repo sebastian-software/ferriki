@@ -14,6 +14,7 @@ records refine earlier ones where noted.
 | [0007](0007-adapter-integrations-stay-outside-ferriki.md) | Adapter integrations stay outside Ferriki |
 | [0008](0008-transformers-and-decorations-stay-in-js.md) | Transformers and decorations stay in the JS layer |
 | [0009](0009-native-only-runtime.md) | Native-only runtime — JS is a facade, WASM is the future fallback |
+| [0010](0010-mechanical-vscode-textmate-port.md) | Mechanically port vscode-textmate into a separate Rust crate |
 
 ## Adding a record
 

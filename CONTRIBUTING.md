@@ -39,14 +39,21 @@ mirrored tests' remaining upstream imports through Ferriki as well — this
 is the honest measurement mode used by the native-only migration (see
 `plans/native-only-migration.md`); expect known failures there.
 
-## The mirror is never hand-edited
+## The upstream mirrors are never hand-edited
 
-Everything under `node/compat/upstream/` is a mechanical mirror of an
-approved upstream release (currently Shiki v4.0.1; source of truth:
-`node/compat/upstream/shiki/.source.json`). Do not edit mirrored files —
-Ferriki-specific glue lives in `node/compat/harness/`. To update or
-verify the mirror, use `node/scripts/sync-shiki-compat.mjs` (it has a
-`--check` mode). ADR 0003 records the policy.
+Everything under `node/compat/upstream/` is a mechanical mirror of an approved
+upstream release. Do not edit mirrored files; Ferriki-specific glue and Rust
+test adapters live outside the mirrors.
+
+- Shiki's source of truth is `node/compat/upstream/shiki/.source.json`; use
+  `node/scripts/sync-shiki-compat.mjs` to update or verify it.
+- vscode-textmate's source of truth is
+  `node/compat/upstream/vscode-textmate/.source.json`; use
+  `node/scripts/sync-vscode-textmate-oracle.mjs` with a local upstream checkout
+  to update it or with `--check` to verify it.
+
+ADR 0003 records the general strict-mirror policy. ADR 0010 applies it to the
+mechanical tokenizer port.
 
 ## Commits and releases
 
