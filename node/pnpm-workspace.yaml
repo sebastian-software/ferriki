@@ -5,6 +5,8 @@ trustPolicy: no-downgrade
 packages:
   - ferriki
   - compat/upstream/shiki/packages/*
+catalog:
+  '@shikijs/types': ^4.0.1
 catalogs:
   bundling:
     '@rollup/plugin-commonjs': ^29.0.0
@@ -75,5 +77,3 @@ onlyBuiltDependencies:
   - simple-git-hooks
   - unrs-resolver
   - workerd
-catalog:
-  '@shikijs/types': ^4.0.1
