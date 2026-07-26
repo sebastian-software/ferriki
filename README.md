@@ -89,7 +89,10 @@ The Node package chooses its engine via `FERRIKI_BACKEND`:
 
 - unset: native Rust core when the addon is available, JS engine otherwise
 - `FERRIKI_BACKEND=rust`: force the native Rust core (what the compat lanes test)
-- `FERRIKI_BACKEND=js`: force the bundled JS engine
+- `FERRIKI_BACKEND=js`: force the bundled JS engine (deprecated per
+  [ADR 0009](adr/0009-native-only-runtime.md) — Ferriki is a native-only
+  runtime; the JS engine will be removed once multi-platform binaries
+  have shipped)
 
 `SHIKI_BACKEND` keeps working as a deprecated alias; `FERRIKI_BACKEND`
 takes precedence.

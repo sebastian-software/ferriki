@@ -37,7 +37,7 @@ backend is selected via an environment variable:
 | --- | --- |
 | unset | Native Rust core when a platform binary is available, JS engine otherwise (default) |
 | `FERRIKI_BACKEND=rust` | Force the native Rust core (throws if no platform binary loads) |
-| `FERRIKI_BACKEND=js` | Force the JS engine |
+| `FERRIKI_BACKEND=js` | Force the bundled JS engine (deprecated, see below) |
 
 `SHIKI_BACKEND` is supported as a deprecated alias; `FERRIKI_BACKEND`
 takes precedence.
@@ -45,8 +45,15 @@ takes precedence.
 ## Platform support
 
 Native binaries are built for linux-x64, linux-arm64, darwin-x64,
-darwin-arm64, and win32-x64. On other platforms the JS engine keeps
-everything working — highlighting output is identical, just slower.
+darwin-arm64, and win32-x64. On other platforms the bundled JS engine
+currently keeps everything working — highlighting output is identical,
+just slower. The JS engine is deprecated: Ferriki is a native-only
+runtime by decision
+([ADR 0009](https://github.com/sebastian-software/ferriki/blob/main/adr/0009-native-only-runtime.md)),
+and the JS fallback will be removed once multi-platform binaries have
+shipped; platforms outside the prebuild matrix will then get a clear
+error, with a WebAssembly build of the Rust core as the intended
+long-term answer.
 
 ## Shiki compatibility
 
