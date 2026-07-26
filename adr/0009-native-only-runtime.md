@@ -27,12 +27,14 @@ justification as a product component.
 
 ## Decision
 
-Ferriki is a native-only runtime.
+Ferriki is a native-only runtime. This describes the target state the
+cut-over release ships; until then the deprecated JS engine remains in
+the package solely as the fallback for platforms without a binary.
 
-- The published package executes highlighting exclusively in the Rust
-  core. JavaScript remains only as a thin facade: addon loading, public
-  API wiring, hast-level transformation (transformers and decorations per
-  ADR 0008), and the type surface.
+- Target state: the published package executes highlighting exclusively
+  in the Rust core. JavaScript remains only as a thin facade: addon
+  loading, public API wiring, hast-level transformation (transformers and
+  decorations per ADR 0008), and the type surface.
 - The bundled JS engine is deprecated as of this decision and will be
   removed once the multi-platform binaries have shipped in a published
   release. `FERRIKI_BACKEND=js` is deprecated with it and will be removed
