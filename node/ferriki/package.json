@@ -37,14 +37,14 @@
   "module": "./index.mjs",
   "types": "./index.d.mts",
   "files": [
+    "CHANGELOG.md",
     "assets",
     "dist/**/*.mjs",
     "dist/ferriki.*.node",
     "index.d.mts",
     "index.mjs",
     "native.d.mts",
-    "native.mjs",
-    "CHANGELOG.md"
+    "native.mjs"
   ],
   "engines": {
     "node": ">=18"
