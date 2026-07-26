@@ -56,7 +56,7 @@ compatibility machinery lives under [`node`](node).
 
 ## Quick Start
 
-Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 18, and pnpm
+Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 20, and pnpm
 (the pinned version in `node/package.json` is picked up via corepack).
 
 Rust:

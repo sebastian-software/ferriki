@@ -83,7 +83,7 @@
     "types.mjs"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "build": "node ./scripts/verify-wrapper.mjs",

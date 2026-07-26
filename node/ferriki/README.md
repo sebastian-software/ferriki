@@ -13,7 +13,7 @@ Shiki test suite on every change.
 npm install ferriki
 ```
 
-Requires Node.js >= 18. The package is ESM-only.
+Requires Node.js >= 20 (matching upstream shiki@4). The package is ESM-only.
 
 ## Quick start
 
