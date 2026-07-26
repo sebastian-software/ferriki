@@ -27,7 +27,7 @@ Already true:
 Not done yet:
 
 - the transitional JS bundle assets under `node/ferriki/dist/chunks` still
-  back the JS engine path
+  back the JS engine path (removal decided in ADR 0009)
 - the Node package source of truth is the checked-in `dist` bundle; there is
   no TS source for it in the repo
 - the shipped `index.d.mts` types most of the compat surface as `any`
