@@ -8,6 +8,7 @@ pub mod matcher;
 pub mod raw_grammar;
 pub mod regexp;
 pub mod rule;
+pub mod rule_factory;
 pub mod theme;
 
 pub use include_reference::{parse_include, IncludeReference};
@@ -21,6 +22,7 @@ pub use rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
     CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry, RuleScannerId,
 };
+pub use rule_factory::{initialize_grammar, GrammarProvider, GrammarStore, RuleFactory};
 pub use theme::{
     font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
     RawThemeSetting, RawThemeStyle, ScopeStack, StyleAttributes, Theme, ThemeError,

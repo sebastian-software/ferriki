@@ -585,10 +585,13 @@ impl RuleRegistry {
 
     #[must_use]
     pub fn get_rule(&self, id: RuleId) -> &Rule {
-        self.rules
-            .get(rule_index(id))
-            .and_then(Option::as_ref)
+        self.try_get_rule(id)
             .expect("registered rule identity must be initialized")
+    }
+
+    #[must_use]
+    pub fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
+        self.rules.get(rule_index(id)).and_then(Option::as_ref)
     }
 
     #[must_use]
