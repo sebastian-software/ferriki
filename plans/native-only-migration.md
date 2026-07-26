@@ -97,10 +97,59 @@ surface; L ≈ architectural decision required.
 | G19 | `includeExplanation` / token `explanation` / `bgColor` provenance through the tokenizer | L |
 | G20 | Engine exports (`createOnigurumaEngine`, `createJavaScriptRegexEngine`, `loadWasm`): removal is a public API break; the mirrored suite imports them | L |
 
+## Decision gate — keep the tokenizer or re-port it
+
+The honest pass rate produced by the aliasing fix (Finding 0) decides a
+strategic question that stays open until then: whether `ferriki-core`'s
+tokenizer is kept, or whether the core is re-ported from scratch.
+
+Judge the failures by class, not by count. Gaps already cataloged below
+(themes-map rendering, `ansi`, `codeToTokensBase`, transformer routing,
+raw registration — the G-items) are expected failures and say nothing
+about the tokenizer. What the gate measures is **tokenization
+correctness**: do scopes, token boundaries, and theme resolution match
+upstream on the cases the mirrored suite actually asserts?
+
+Concrete gate criteria (measured on the tokenization-asserting cases of
+the honestly-aliased core lane, after excluding tests that fail solely
+due to cataloged G-gaps):
+
+- **Keep** when the native pass rate is >= 90% and no failure class is
+  structural — i.e. no systematic wrongness in begin/end nesting,
+  while-rules, injections, or scope-stack handling; isolated failures are
+  point-fixable.
+- **Re-port** when the pass rate is below 90%, or any structural failure
+  class shows up, regardless of the overall rate — those are
+  architecture, not bugs.
+- **In between**: one timeboxed point-fix iteration; if the rate does not
+  converge above the threshold within it, re-port. Do not iterate twice.
+
+Rationale for the two branches:
+
+- **Keep `ferriki-core`** → the tokenizer is semantically sound; continue
+  this plan as written. A re-port would discard working, now
+  well-modularized code for no gain.
+- **Re-port** → the incremental fork-era port carried
+  over structural drift, and patching it case by case is the losing move.
+  Then restart the core the way ferroni was built: a mechanical 1:1 port
+  of **vscode-textmate** (the actual hard part — Shiki above it is thin
+  orchestration) onto ferroni's vscode-oniguruma-compatible Scanner API,
+  with vscode-textmate's own upstream test suite mirrored as the oracle,
+  following the same pinned-mirror tooling this repo already has. The
+  asset pipeline (`ferriki-asset-gen`, binary catalogs) and the Shiki
+  compat mirror carry over unchanged; the current core stays available as
+  a reference implementation until parity is reached.
+
+Both paths end in the identical ADR 0009 target state — Rust core plus a
+thin napi facade, no JS engine. The only variable is the provenance of
+the tokenizer core, and that choice should be made from the measured pass
+rate, not from sentiment about the fork era.
+
 ## Suggested sequence
 
 1. **Fix the compat-lane aliasing** (Finding 0) — makes the true native
-   pass rate visible; expect new failures, which become the work list.
+   pass rate visible; expect new failures, which become the work list and
+   feed the decision gate above.
 2. Fix the standalone bugs above (silent `grammarState` drop, error
    rewrapping, alias clobbering, catalog diagnostics).
 3. Land the S-gaps (G1–G7).
