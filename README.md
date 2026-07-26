@@ -56,13 +56,17 @@ compatibility machinery lives under [`node`](node).
 
 ## Quick Start
 
+Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 18, and pnpm
+(the pinned version in `node/package.json` is picked up via corepack).
+
 Rust:
 
 ```sh
 cargo check -p ferriki-core
 ```
 
-Node:
+Node (`build:native` compiles the Rust core and copies the addon into the
+package):
 
 ```sh
 cd node
@@ -76,11 +80,24 @@ Optional ecosystem checks stay outside the release gate:
 ```sh
 cd node
 pnpm run test:ferriki-compat:adapters
+pnpm run test:ferriki-compat:colorized-brackets
 ```
+
+### Backend selection
+
+The Node package chooses its engine via `FERRIKI_BACKEND`:
+
+- `FERRIKI_BACKEND=rust`: native Rust core (what the compat lanes test)
+- `FERRIKI_BACKEND=js`: bundled JS engine (current default when unset)
+
+`SHIKI_BACKEND` keeps working as a deprecated alias; `FERRIKI_BACKEND`
+takes precedence.
 
 ## Compatibility
 
-Ferriki tracks one approved Shiki release tag at a time.
+Ferriki tracks one approved Shiki release tag at a time — currently
+**Shiki v4.0.1** (machine-readable source of truth:
+[`node/compat/upstream/shiki/.source.json`](node/compat/upstream/shiki/.source.json)).
 
 - Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
 - Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](node/compat/harness) and the Ferriki product paths.

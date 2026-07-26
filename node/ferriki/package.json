@@ -43,7 +43,8 @@
     "index.d.mts",
     "index.mjs",
     "native.d.mts",
-    "native.mjs"
+    "native.mjs",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18"
