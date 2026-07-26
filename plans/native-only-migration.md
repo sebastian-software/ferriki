@@ -145,11 +145,49 @@ thin napi facade, no JS engine. The only variable is the provenance of
 the tokenizer core, and that choice should be made from the measured pass
 rate, not from sentiment about the fork era.
 
+## Gate result (measured 2026-07-26)
+
+The honest-alias mode exists (`FERRIKI_HONEST_ALIAS=1` in
+`node/vitest.config.ts`, off by default) and the gate has been measured.
+Raw result: 63/91 tests pass natively. Classification of the 28 failures
+(each root-caused, with a `FERRIKI_BACKEND=js` control run to separate
+facade artifacts from native defects): 14 cataloged G-gaps/facade bugs,
+6 test-infrastructure artifacts of the aliasing itself, and **8
+tokenization-structural failures**.
+
+Gate metric: 63 of 71 tokenization-asserting cases = **88.7%**, below
+the 90% threshold — and four distinct structural failure classes exist,
+all on content the vendored JS engine renders correctly from identical
+assets:
+
+1. Theme resolution ignores ancestor scopes (rules matching
+   `meta.function-call` or `string.quoted` via the scope stack resolve to
+   the default color natively).
+2. `fontStyle` inheritance is broken (NotSet semantics: a
+   foreground-only specific rule drops the italic/bold a broader rule
+   provides).
+3. While-rule / capture scope-stack handling fails in markdown
+   (mid-line `markup.quote` loss with token-boundary drift, heading `#`
+   captures not split, begin-captures losing `entity.name.tag`).
+4. Embedded-language delegation never enters `source.js` inside markdown
+   fences or `source.css.scss` inside Vue `<style>` blocks, while
+   html→js `<script>` embedding works — an inconsistency in the
+   contentName/include machinery.
+
+Classes 3 and 4 are squarely in the structural set the gate names;
+classes 1 and 2 are systematic theme-resolver semantics. **Both re-port
+conditions are met. Decision: re-port the core** as a mechanical 1:1
+port of vscode-textmate onto ferroni's Scanner API, with the upstream
+vscode-textmate suite mirrored as the oracle. The asset pipeline and the
+Shiki compat mirror carry over; the current core remains as a reference
+implementation until parity. The theme-resolver findings (classes 1–2)
+double as a known-issues list for the interim native path.
+
 ## Suggested sequence
 
-1. **Fix the compat-lane aliasing** (Finding 0) — makes the true native
-   pass rate visible; expect new failures, which become the work list and
-   feed the decision gate above.
+1. **Done:** the compat-lane aliasing fix exists as the opt-in
+   honest-alias mode, and the decision gate has been measured (see Gate
+   result above); outcome: re-port.
 2. Fix the standalone bugs above (silent `grammarState` drop, error
    rewrapping, alias clobbering, catalog diagnostics).
 3. Land the S-gaps (G1–G7).
