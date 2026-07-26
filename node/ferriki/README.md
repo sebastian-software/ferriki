@@ -13,7 +13,7 @@ Shiki test suite on every change.
 npm install ferriki
 ```
 
-Requires Node.js >= 18. The package is ESM-only.
+Requires Node.js >= 20 (matching upstream shiki@4). The package is ESM-only.
 
 ## Quick start
 
@@ -35,9 +35,9 @@ backend is selected via an environment variable:
 
 | Setting | Effect |
 | --- | --- |
-| `FERRIKI_BACKEND=rust` | Use the native Rust core (requires a platform binary) |
+| unset | Native Rust core when a platform binary is available, JS engine otherwise (default) |
+| `FERRIKI_BACKEND=rust` | Force the native Rust core (throws if no platform binary loads) |
 | `FERRIKI_BACKEND=js` | Force the JS engine |
-| unset | JS engine (current default) |
 
 `SHIKI_BACKEND` is supported as a deprecated alias; `FERRIKI_BACKEND`
 takes precedence.
@@ -54,7 +54,10 @@ everything working — highlighting output is identical, just slower.
   [v4.0.1](https://github.com/sebastian-software/ferriki/tree/main/node/compat/upstream/shiki)).
 - The main entry (`import ... from 'ferriki'`) covers the full `shiki`
   main-entry surface.
-- Subpath imports (`shiki/core`, `shiki/types`, ...) are not exposed yet.
+- Supported subpaths for drop-in aliasing: `ferriki/core`, `ferriki/langs`,
+  `ferriki/themes`, `ferriki/types`, `ferriki/engine/javascript`,
+  `ferriki/engine/oniguruma`. Not exposed: `shiki/wasm`, `shiki/textmate`,
+  and the `shiki/bundle/*` entries.
 - Ecosystem adapters (`markdown-it`, `rehype`, VitePress integrations,
   `colorized-brackets`) are intentionally out of package scope — they sit
   on top of `codeToHtml`/`codeToHast` and keep working against those

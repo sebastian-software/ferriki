@@ -49,6 +49,10 @@ catalogs:
     tsx:
       specifier: ^4.21.0
       version: 4.21.0
+  default:
+    '@shikijs/types':
+      specifier: ^4.0.1
+      version: 4.3.1
   docs:
     floating-vue:
       specifier: ^5.2.2
@@ -554,6 +558,10 @@ importers:
         version: 3.5.27(typescript@5.9.3)
 
   ferriki:
+    dependencies:
+      '@shikijs/types':
+        specifier: 'catalog:'
+        version: 4.3.1
     devDependencies:
       '@types/node':
         specifier: catalog:types
@@ -1369,6 +1377,10 @@ packages:
     resolution: {integrity: sha512-Zv7v6q6aV+VslnpwzqKAmrk5JdVkLUzok2208ZXGipjb+msxBr/fJPZyeEXiFgH7k62Ak0SLIfxQRZQvTuf7rQ==}
     cpu: [x64]
     os: [win32]
+
+  '@shikijs/types@4.3.1':
+    resolution: {integrity: sha512-CHFxE0jztBIZRHH6gxXE7DXUCFXjReEGxZ/j0rfSLGKZuwp2xBYycEP14875DSa9KLL/6700oxIq6oO6ef9K2g==}
+    engines: {node: '>=20'}
 
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
@@ -3990,6 +4002,11 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.57.0':
     optional: true
+
+  '@shikijs/types@4.3.1':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
 
   '@shikijs/vscode-textmate@10.0.2': {}
 
