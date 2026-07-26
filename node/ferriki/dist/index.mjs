@@ -12728,10 +12728,11 @@ function createJavaScriptRegexEngine(options = {}) {
   };
 }
 
-const kFerrikiNative = /* @__PURE__ */ Symbol.for("shiki-rust.ferriki-native");
-const kFerrikiNativeHandle = /* @__PURE__ */ Symbol.for("shiki-rust.ferriki-native-handle");
+const kFerrikiNative = /* @__PURE__ */ Symbol.for("ferriki.native");
+const kFerrikiNativeHandle = /* @__PURE__ */ Symbol.for("ferriki.native-handle");
 function getRequestedBackend() {
-  return process$1.env.SHIKI_BACKEND === "rust" ? "rust" : "js";
+  const requested = process$1.env.FERRIKI_BACKEND ?? process$1.env.SHIKI_BACKEND;
+  return requested === "rust" ? "rust" : "js";
 }
 function getFerrikiVersion() {
   return tryLoadFerrikiNativeBinding()?.ferrikiVersion();
@@ -12985,10 +12986,10 @@ function prepareNativeOptions(options, theme) {
 }
 function nativeFailure(method, error) {
   const details = error instanceof Error ? error.message : String(error);
-  return new Error(`[shiki-rust] Native ${method} failed: ${details}`);
+  return new Error(`[ferriki] Native ${method} failed: ${details}`);
 }
 function nativeUnsupported(method, reason) {
-  return new Error(`[shiki-rust] Rust backend does not support ${method} for ${reason}.`);
+  return new Error(`[ferriki] Rust backend does not support ${method} for ${reason}.`);
 }
 const DEFAULT_COLOR_LIGHT_DARK = "light-dark()";
 const COLOR_KEYS = /* @__PURE__ */ new Set(["color", "background-color"]);
@@ -13256,10 +13257,10 @@ function renderTokensPayloadToHtml(code, options, payload) {
     meta: {},
     options: renderOptions,
     codeToHast: () => {
-      throw new Error("[shiki-rust] transformer codeToHast callback is not available in native themes-map mode.");
+      throw new Error("[ferriki] transformer codeToHast callback is not available in native themes-map mode.");
     },
     codeToTokens: () => {
-      throw new Error("[shiki-rust] transformer codeToTokens callback is not available in native themes-map mode.");
+      throw new Error("[ferriki] transformer codeToTokens callback is not available in native themes-map mode.");
     },
     get source() {
       return code;
@@ -13334,7 +13335,7 @@ function isNoneThemeRender(options) {
 function buildNativeThemesMapPayload(code, options, native) {
   const spec = parseThemesRenderSpec(options);
   if (!spec)
-    throw new Error("[shiki-rust] Expected themes-map options for native themes rendering.");
+    throw new Error("[ferriki] Expected themes-map options for native themes rendering.");
   const themedPayloads = spec.orderedEntries.map((entry) => {
     if (entry.theme === "none")
       return buildPlainTokensPayload(code, { theme: "none" });
@@ -13868,7 +13869,7 @@ async function createHighlighterWithBackend(...args) {
   if (backend === "rust") {
     const native = tryLoadFerrikiNativeBinding();
     if (!native)
-      throw new Error("[shiki-rust] Rust backend requested but native binding is unavailable.");
+      throw new Error("[ferriki] Rust backend requested but native binding is unavailable.");
     nativeHighlighter = native.createHighlighter(toJson(withStandardAssetRoot(args[0])));
   }
   const highlighter = await createBundledHighlighterDefault(...args);

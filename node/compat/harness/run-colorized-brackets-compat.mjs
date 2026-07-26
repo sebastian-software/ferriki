@@ -17,7 +17,7 @@ for (const file of files) {
       stdio: 'inherit',
       env: {
         ...process.env,
-        SHIKI_BACKEND: 'rust',
+        FERRIKI_BACKEND: 'rust',
       },
     },
   )

@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const candidates = [
   `ferriki.${process.platform}-${process.arch}.node`,
-  "shiki-rust.node",
+  "ferriki.node",
   "index.node",
-  join("native", "shiki-rust.node"),
+  join("native", "ferriki.node"),
   join("native", "index.node")
 ];
 function loadFerrikiNativeBinding() {
@@ -23,7 +23,7 @@ function loadFerrikiNativeBinding() {
     }
   }
   throw new Error([
-    "[shiki-rust] Failed to load native Ferriki binding.",
+    "[ferriki] Failed to load native Ferriki binding.",
     "This package is currently Node.js-only and requires a built .node addon.",
     "Tried:",
     ...errors.map((e) => `- ${e}`)

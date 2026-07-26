@@ -131,13 +131,13 @@ export declare function getLastGrammarState(...args: unknown[]): unknown
 
 // ─── Ferriki-specific backend API ────────────────────────────────────────────
 
-/** Which backend the current process requested via SHIKI_BACKEND. */
+/** Which backend the current process requested via FERRIKI_BACKEND (or the deprecated SHIKI_BACKEND alias). */
 export declare function getRequestedBackend(): 'rust' | 'js'
 /** Whether the native Rust addon could be loaded on this platform. */
 export declare function isRustBackendAvailable(): boolean
 /** Version string reported by the native addon, if available. */
 export declare function getFerrikiVersion(): string | undefined
-/** Like createHighlighter, but honors SHIKI_BACKEND=rust by pairing the highlighter with the native core. */
+/** Like createHighlighter, but honors FERRIKI_BACKEND=rust (or the deprecated SHIKI_BACKEND alias) by pairing the highlighter with the native core. */
 export declare function createHighlighterWithBackend(options?: HighlighterOptions): Promise<Highlighter>
 export declare function getFerrikiNativeHandle(highlighter: unknown): unknown
 export declare const kFerrikiNative: unique symbol
