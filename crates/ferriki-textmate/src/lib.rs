@@ -12,6 +12,7 @@ pub mod raw_grammar;
 pub mod regexp;
 pub mod rule;
 pub mod rule_factory;
+pub mod state_stack;
 pub mod theme;
 
 pub use attributed_scope_stack::{
@@ -37,6 +38,7 @@ pub use rule::{
     CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry, RuleScannerId,
 };
 pub use rule_factory::{initialize_grammar, GrammarProvider, GrammarStore, RuleFactory};
+pub use state_stack::{StateStack, StateStackFrame};
 pub use theme::{
     font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
     RawThemeSetting, RawThemeStyle, ScopeStack, StyleAttributes, Theme, ThemeError,
