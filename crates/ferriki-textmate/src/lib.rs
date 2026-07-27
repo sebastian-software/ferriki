@@ -3,6 +3,7 @@
 //! The module boundaries intentionally follow the pinned upstream source so
 //! semantic changes remain reviewable against the oracle mirror.
 
+pub mod basic_scope_attributes;
 pub mod encoded_token_attributes;
 pub mod include_reference;
 pub mod matcher;
@@ -12,6 +13,9 @@ pub mod rule;
 pub mod rule_factory;
 pub mod theme;
 
+pub use basic_scope_attributes::{
+    BasicScopeAttributes, BasicScopeAttributesProvider, EmbeddedLanguages,
+};
 pub use encoded_token_attributes::{
     to_optional_token_type, EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType,
     StandardTokenType,
