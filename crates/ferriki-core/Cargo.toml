@@ -8,13 +8,16 @@ build = "build.rs"
 
 [lib]
 name = "ferriki_core"
-crate-type = [ "cdylib" ]
+crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
 ferriki-asset-gen = { path = "../ferriki-asset-gen" }
+ferriki-textmate = { path = "../ferriki-textmate" }
 napi = { workspace = true }
 napi-derive = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [build-dependencies]
 napi-build = { workspace = true }
