@@ -8,7 +8,10 @@ use std::array;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
+use ferroni::api::Regex;
 use ferroni::error::RegexError;
+use ferroni::oniguruma::{OnigRegion, ONIG_OPTION_CAPTURE_GROUP, ONIG_OPTION_NONE};
+use ferroni::regexec::onig_search;
 pub use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerMatch};
 
@@ -487,15 +490,30 @@ impl<T: Copy> RegExpSourceList<T> {
 
 pub struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
+    direct_fallbacks: Vec<Option<Regex>>,
     reg_exps: Vec<String>,
     rules: Vec<T>,
 }
 
 impl<T: Copy> CompiledRule<T> {
     fn new(reg_exps: Vec<String>, rules: Vec<T>) -> Result<Self, RegexError> {
-        let patterns: Vec<_> = reg_exps.iter().map(String::as_str).collect();
+        let compiled_reg_exps: Vec<_> = reg_exps
+            .iter()
+            .map(|pattern| normalize_ferroni_pattern(pattern))
+            .collect();
+        let patterns: Vec<_> = compiled_reg_exps.iter().map(String::as_str).collect();
+        let direct_fallbacks = compiled_reg_exps
+            .iter()
+            .map(|pattern| {
+                Regex::builder(&stabilize_ferroni_captures(pattern))
+                    .option(ONIG_OPTION_CAPTURE_GROUP)
+                    .build()
+                    .ok()
+            })
+            .collect();
         Ok(Self {
             scanner: Mutex::new(Scanner::new(&patterns)?),
+            direct_fallbacks,
             reg_exps,
             rules,
         })
@@ -508,19 +526,251 @@ impl<T: Copy> CompiledRule<T> {
         start_position: usize,
         options: ScannerFindOptions,
     ) -> Option<FindNextMatchResult<T>> {
-        let ScannerMatch {
-            index,
-            capture_indices,
-        } = self
+        let scanner_match = self
             .scanner
             .lock()
             .expect("compiled scanner lock poisoned")
-            .find_next_match_utf16(string, start_position, options)?;
+            .find_next_match_utf16(string, start_position, options);
+        let mut best = scanner_match.map(|matched| ScannerMatch {
+            index: matched.index,
+            capture_indices: matched.capture_indices,
+        });
+
+        if options == ScannerFindOptions::NONE {
+            // Ferroni 1.3's RegSet path can miss a valid lookaround match or
+            // return a later start for some extended-mode TextMate patterns.
+            // Verify its candidate with the same engine's direct search path
+            // until the Scanner oracle covers those cases itself.
+            for (index, regex) in self.direct_fallbacks.iter().enumerate() {
+                let Some(regex) = regex else {
+                    continue;
+                };
+                let Some(capture_indices) = find_direct_fallback(regex, string, start_position)
+                else {
+                    continue;
+                };
+                if capture_indices[0].start == string.utf16_len() {
+                    continue;
+                }
+                let should_replace = best.as_ref().is_none_or(|best| {
+                    let best_start = best.capture_indices[0].start;
+                    let candidate_start = capture_indices[0].start;
+                    candidate_start < best_start
+                        || (candidate_start == best_start && index <= best.index)
+                });
+                if should_replace {
+                    best = Some(ScannerMatch {
+                        index,
+                        capture_indices: capture_indices.into(),
+                    });
+                }
+            }
+        }
+
+        let ScannerMatch {
+            index,
+            capture_indices,
+        } = best?;
         Some(FindNextMatchResult {
             rule_id: self.rules[index],
             capture_indices: capture_indices.into_vec(),
         })
     }
+}
+
+fn normalize_ferroni_pattern(pattern: &str) -> String {
+    let mut result = String::with_capacity(pattern.len());
+    let bytes = pattern.as_bytes();
+    let mut position = 0;
+    let mut in_character_class = false;
+
+    while position < bytes.len() {
+        if bytes[position] == b'\\' {
+            result.push('\\');
+            position += 1;
+            if let Some(character) = pattern[position..].chars().next() {
+                result.push(character);
+                position += character.len_utf8();
+            }
+            continue;
+        }
+        match bytes[position] {
+            b'[' => in_character_class = true,
+            b']' => in_character_class = false,
+            b'{' if !in_character_class
+                && !starts_valid_interval(&pattern[position..])
+                && !starts_special_brace_expression(pattern, position) =>
+            {
+                result.push('\\');
+            }
+            _ => {}
+        }
+        let character = pattern[position..]
+            .chars()
+            .next()
+            .expect("pattern position must be on a character boundary");
+        result.push(character);
+        position += character.len_utf8();
+    }
+    result
+}
+
+fn starts_valid_interval(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let mut position = 1;
+    let first_digits = take_ascii_digits(bytes, &mut position);
+    if bytes.get(position) == Some(&b'}') {
+        return first_digits;
+    }
+    if bytes.get(position) != Some(&b',') {
+        return false;
+    }
+    position += 1;
+    let second_digits = take_ascii_digits(bytes, &mut position);
+    bytes.get(position) == Some(&b'}') && (first_digits || second_digits)
+}
+
+fn take_ascii_digits(bytes: &[u8], position: &mut usize) -> bool {
+    let start = *position;
+    while bytes.get(*position).is_some_and(u8::is_ascii_digit) {
+        *position += 1;
+    }
+    *position != start
+}
+
+fn starts_special_brace_expression(pattern: &str, position: usize) -> bool {
+    pattern.get(..position).is_some_and(|prefix| {
+        ["\\p", "\\P", "\\x", "\\o", "(?"]
+            .iter()
+            .any(|marker| prefix.ends_with(marker))
+    })
+}
+
+fn stabilize_ferroni_captures(pattern: &str) -> String {
+    let mut result = String::with_capacity(pattern.len());
+    let bytes = pattern.as_bytes();
+    let mut position = 0;
+    let mut in_character_class = false;
+
+    while position < bytes.len() {
+        if bytes[position] == b'\\' {
+            result.push('\\');
+            position += 1;
+            if let Some(character) = pattern[position..].chars().next() {
+                result.push(character);
+                position += character.len_utf8();
+            }
+            continue;
+        }
+        match bytes[position] {
+            b'[' => in_character_class = true,
+            b']' => in_character_class = false,
+            b'(' if !in_character_class => {
+                if let Some(opener_end) = named_capture_opener_end(pattern, position) {
+                    result.push_str(&pattern[position..opener_end]);
+                    result.push_str("(?=)");
+                    position = opener_end;
+                    continue;
+                }
+                if bytes.get(position + 1) != Some(&b'?') {
+                    result.push_str("((?=)");
+                    position += 1;
+                    continue;
+                }
+            }
+            _ => {}
+        }
+        let character = pattern[position..]
+            .chars()
+            .next()
+            .expect("pattern position must be on a character boundary");
+        result.push(character);
+        position += character.len_utf8();
+    }
+    result
+}
+
+fn named_capture_opener_end(pattern: &str, position: usize) -> Option<usize> {
+    let remainder = pattern.get(position..)?;
+    if remainder.starts_with("(?<")
+        && !remainder.starts_with("(?<=")
+        && !remainder.starts_with("(?<!")
+    {
+        return remainder.find('>').map(|end| position + end + 1);
+    }
+    if let Some(name) = remainder.strip_prefix("(?'") {
+        return name.find('\'').map(|end| position + 3 + end + 1);
+    }
+    if remainder.starts_with("(?P<") {
+        return remainder.find('>').map(|end| position + end + 1);
+    }
+    None
+}
+
+fn find_direct_fallback(
+    regex: &Regex,
+    string: &OnigString,
+    start_position: usize,
+) -> Option<Vec<CaptureIndex>> {
+    let text = string.content().as_bytes();
+    let start = utf16_to_utf8_offset(string.content(), start_position);
+    let (result, region) = onig_search(
+        regex.as_raw(),
+        text,
+        text.len(),
+        start,
+        text.len(),
+        Some(OnigRegion::new()),
+        ONIG_OPTION_NONE,
+    );
+    if result < 0 {
+        return None;
+    }
+    let region = region?;
+    Some(
+        region
+            .beg
+            .iter()
+            .zip(&region.end)
+            .map(|(&start, &end)| {
+                if start < 0 || end < 0 {
+                    return CaptureIndex {
+                        start: 0,
+                        end: 0,
+                        length: 0,
+                    };
+                }
+                let start = utf8_to_utf16_offset(string.content(), start as usize);
+                let end = utf8_to_utf16_offset(string.content(), end as usize);
+                CaptureIndex {
+                    start,
+                    end,
+                    length: end.saturating_sub(start),
+                }
+            })
+            .collect(),
+    )
+}
+
+fn utf16_to_utf8_offset(value: &str, target: usize) -> usize {
+    let mut utf16_position = 0;
+    for (byte_position, character) in value.char_indices() {
+        if utf16_position >= target {
+            return byte_position;
+        }
+        utf16_position += character.len_utf16();
+        if utf16_position > target {
+            return byte_position + character.len_utf8();
+        }
+    }
+    value.len()
+}
+
+fn utf8_to_utf16_offset(value: &str, target: usize) -> usize {
+    value[..target.min(value.len())]
+        .chars()
+        .map(char::len_utf16)
+        .sum()
 }
 
 impl<T: fmt::Debug> fmt::Display for CompiledRule<T> {
@@ -546,8 +796,8 @@ mod tests {
     use std::sync::Arc;
 
     use super::{
-        has_captures, replace_captures, CaptureIndex, OnigString, RegExpSource, RegExpSourceList,
-        ScannerFindOptions,
+        has_captures, normalize_ferroni_pattern, replace_captures, stabilize_ferroni_captures,
+        CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions,
     };
 
     #[test]
@@ -634,6 +884,108 @@ mod tests {
         assert_eq!(result.rule_id, 10);
         assert_eq!(result.capture_indices[0].start, 4);
         assert_eq!(result.capture_indices[0].end, 5);
+    }
+
+    #[test]
+    fn scanner_finds_later_anchored_patterns_after_earlier_misses() {
+        let line = OnigString::new(" ok, cool\n");
+        for pattern in [
+            r"^ ",
+            r"^[ \t]*",
+            r"^[ \t]*(?=\S)",
+            r"^([ \t]*)",
+            r"^([ \t]*)(?=\S)",
+        ] {
+            let mut single_source = RegExpSourceList::new();
+            single_source.push(RegExpSource::new(pattern, 2_u32));
+            let single_scanner = single_source.compile().unwrap();
+            assert!(
+                single_scanner
+                    .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                    .is_some(),
+                "pattern {pattern:?} should match"
+            );
+        }
+
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(r"^\s*(•).*$\n?", 1_u32));
+        sources.push(RegExpSource::new(r"^([ \t]*)(?=\S)", 2_u32));
+        let scanner = sources.compile().unwrap();
+
+        let result = scanner
+            .find_next_match(&line, 0, ScannerFindOptions::NONE)
+            .unwrap();
+
+        assert_eq!(result.rule_id, 2);
+        assert_eq!(result.capture_indices[0].start, 0);
+        assert_eq!(result.capture_indices[0].end, 1);
+    }
+
+    #[test]
+    fn preserves_captures_when_direct_search_beats_regset() {
+        let pattern = r"(?x)
+            ( (https?|s?ftp|ftps|file|smb|afp|nfs|(x-)?man(-page)?|gopher|txmt|issue)://|mailto:)
+            [-:@a-zA-Z0-9_.,~%+/?=&#;]+(?<![-.,?:#;])
+        ";
+        let direct = ferroni::api::Regex::new(&stabilize_ferroni_captures(pattern)).unwrap();
+        let captures = direct.captures("https://github.com\n").unwrap();
+        assert_eq!(captures.get(2).unwrap().as_str(), "https");
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(pattern, 1_u32));
+        let scanner = sources.compile().unwrap();
+
+        let result = scanner
+            .find_next_match(
+                &OnigString::new("https://github.com\n"),
+                0,
+                ScannerFindOptions::NONE,
+            )
+            .unwrap();
+
+        assert_eq!(result.capture_indices[2].start, 0);
+        assert_eq!(result.capture_indices[2].end, 5);
+    }
+
+    #[test]
+    fn preserves_captures_after_named_recursive_groups() {
+        let pattern = r"(?x)
+            (?<ft>
+                map\s*<\s*\g<ft>\s*,\s*\g<ft>\s*> |
+                set\s*<\s*\g<ft>\s*> |
+                list\s*<\s*\g<ft>\s*>\s*(cpp_type(?!\S))? |
+                [a-zA-Z_][\w.]*
+            )[ \t]*
+            (?:([a-zA-Z_][\w.]*)[ \t]*)?
+        ";
+        let stabilized = stabilize_ferroni_captures(pattern);
+        let direct = ferroni::api::Regex::builder(&stabilized)
+            .option(ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP)
+            .build()
+            .unwrap();
+        let captures = direct.captures("string message\n").unwrap();
+
+        assert_eq!(captures.get(1).unwrap().as_str(), "string");
+        assert_eq!(captures.get(3).unwrap().as_str(), "message");
+    }
+
+    #[test]
+    fn escapes_invalid_interval_braces_for_ferroni() {
+        assert_eq!(
+            normalize_ferroni_pattern(r"(:)\s*(?!(\s*{))"),
+            r"(:)\s*(?!(\s*\{))"
+        );
+        for pattern in [
+            r"a{1}",
+            r"a{1,}",
+            r"a{1,3}",
+            r"a{,3}",
+            r"\p{Greek}",
+            r"\x{20}",
+            r"[{}]",
+            r"(?{callout})",
+        ] {
+            assert_eq!(normalize_ferroni_pattern(pattern), pattern);
+        }
     }
 
     #[test]
