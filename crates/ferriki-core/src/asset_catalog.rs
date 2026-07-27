@@ -1,7 +1,7 @@
 use ferriki_asset_gen::{
     decode_language_asset, decode_language_manifest, decode_theme_asset, decode_theme_manifest,
     LanguageAsset, LanguageAssetEntry, LanguageManifest, ThemeAsset, ThemeAssetEntry,
-    ThemeManifest,
+    ThemeManifest, FORMAT_VERSION,
 };
 use napi::Error;
 use std::cell::RefCell;
@@ -39,6 +39,7 @@ impl LanguageAssetCatalog {
         let manifest = decode_language_manifest(&read_bytes(&manifest_path)?).map_err(|err| {
             Error::from_reason(format!("Failed to decode language manifest: {err}"))
         })?;
+        validate_format_version("language manifest", manifest.format_version)?;
         let mut entries_by_id = HashMap::with_capacity(manifest.entries.len());
         let mut ids_by_scope = HashMap::with_capacity(manifest.entries.len());
         let mut aliases = HashMap::new();
@@ -106,6 +107,10 @@ impl LanguageAssetCatalog {
                     "Failed to decode language asset `{resolved_id}`: {err}"
                 ))
             })?;
+        validate_format_version(
+            &format!("language asset `{resolved_id}`"),
+            asset.format_version,
+        )?;
         let asset = Arc::new(asset);
         self.cache
             .borrow_mut()
@@ -126,6 +131,7 @@ impl ThemeAssetCatalog {
         let manifest_path = asset_dir.join("manifest.fkindex");
         let manifest = decode_theme_manifest(&read_bytes(&manifest_path)?)
             .map_err(|err| Error::from_reason(format!("Failed to decode theme manifest: {err}")))?;
+        validate_format_version("theme manifest", manifest.format_version)?;
         let mut entries_by_id = HashMap::with_capacity(manifest.entries.len());
         for entry in &manifest.entries {
             entries_by_id.insert(entry.id.clone(), entry.clone());
@@ -155,6 +161,7 @@ impl ThemeAssetCatalog {
             .map_err(|err| {
                 Error::from_reason(format!("Failed to decode theme asset `{requested}`: {err}"))
             })?;
+        validate_format_version(&format!("theme asset `{requested}`"), asset.format_version)?;
         let asset = Arc::new(asset);
         self.cache
             .borrow_mut()
@@ -166,6 +173,15 @@ impl ThemeAssetCatalog {
 fn read_bytes(path: &Path) -> Result<Vec<u8>, Error> {
     fs::read(path)
         .map_err(|err| Error::from_reason(format!("Failed to read `{}`: {err}", path.display())))
+}
+
+fn validate_format_version(kind: &str, actual: u32) -> Result<(), Error> {
+    if actual == FORMAT_VERSION {
+        return Ok(());
+    }
+    Err(Error::from_reason(format!(
+        "Unsupported Ferriki {kind} format version {actual}; expected {FORMAT_VERSION}."
+    )))
 }
 
 #[cfg(test)]
