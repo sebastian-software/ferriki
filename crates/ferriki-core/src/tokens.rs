@@ -26,7 +26,7 @@ pub struct HighlightToken {
     pub offset: usize,
     pub color: String,
     pub font_style: i32,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<u8>,
 }
 
@@ -34,7 +34,9 @@ pub struct HighlightToken {
 #[serde(rename_all = "camelCase")]
 pub struct HighlightTokensResult {
     pub tokens: Vec<Vec<HighlightToken>>,
+    #[serde(rename = "fg")]
     pub foreground: String,
+    #[serde(rename = "bg")]
     pub background: String,
     pub theme_name: String,
 }

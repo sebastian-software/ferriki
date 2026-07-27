@@ -10,6 +10,7 @@
 
 mod asset_catalog;
 mod highlighter;
+mod render;
 mod theme_data;
 mod tokens;
 
@@ -17,6 +18,7 @@ use napi_derive::napi;
 
 pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
 pub use highlighter::HighlighterCore;
+pub use render::{render_hast, render_html, RenderOptions};
 pub use theme_data::{parse_theme_data, ThemeData};
 pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};
 
