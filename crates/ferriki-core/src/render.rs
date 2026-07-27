@@ -275,7 +275,15 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
         HighlighterCore::with_standard_assets(&root)
             .expect("highlighter")
-            .tokenize(code, "javascript", "nord", &TokenizeOptions::default())
+            .tokenize(
+                code,
+                "javascript",
+                "nord",
+                &TokenizeOptions {
+                    time_limit_millis: 0,
+                    ..TokenizeOptions::default()
+                },
+            )
             .expect("tokens")
     }
 

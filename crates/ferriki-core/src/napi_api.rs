@@ -191,6 +191,7 @@ mod tests {
             "lang": "javascript",
             "theme": "nord",
             "includeExplanation": "tokenType",
+            "tokenizeTimeLimit": 0,
         })
         .to_string();
 

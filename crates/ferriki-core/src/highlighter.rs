@@ -336,6 +336,13 @@ mod tests {
         HighlighterCore::with_standard_assets(&root).expect("highlighter")
     }
 
+    fn unlimited_tokenize_options() -> TokenizeOptions {
+        TokenizeOptions {
+            time_limit_millis: 0,
+            ..TokenizeOptions::default()
+        }
+    }
+
     #[test]
     fn loads_standard_language_dependencies_and_aliases() {
         let mut highlighter = standard_highlighter();
@@ -462,7 +469,7 @@ mod tests {
                 "console.log(\"Hi\")",
                 "javascript",
                 "nord",
-                &TokenizeOptions::default(),
+                &unlimited_tokenize_options(),
             )
             .expect("tokens");
 
@@ -502,6 +509,7 @@ mod tests {
                 "javascript",
                 "nord",
                 &TokenizeOptions {
+                    time_limit_millis: 0,
                     include_token_type: true,
                     ..TokenizeOptions::default()
                 },
