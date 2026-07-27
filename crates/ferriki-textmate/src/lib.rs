@@ -5,6 +5,7 @@
 
 pub mod attributed_scope_stack;
 pub mod basic_scope_attributes;
+pub mod diff_state_stacks;
 pub mod encoded_token_attributes;
 pub mod grammar;
 pub mod include_reference;
@@ -25,6 +26,7 @@ pub use attributed_scope_stack::{
 pub use basic_scope_attributes::{
     BasicScopeAttributes, BasicScopeAttributesProvider, EmbeddedLanguages,
 };
+pub use diff_state_stacks::{apply_state_stack_diff, diff_state_stacks_ref_eq, StackDiff};
 pub use encoded_token_attributes::{
     to_optional_token_type, EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType,
     StandardTokenType,
