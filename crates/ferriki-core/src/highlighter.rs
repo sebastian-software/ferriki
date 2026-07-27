@@ -107,11 +107,7 @@ impl HighlighterCore {
             return Ok(Some(asset.scope_name));
         }
 
-        for dependency in asset
-            .embedded_langs
-            .iter()
-            .chain(asset.embedded_langs_lazy.iter())
-        {
+        for dependency in &asset.embedded_langs {
             self.load_standard_language_inner(dependency, visiting)?;
         }
 
@@ -362,6 +358,7 @@ mod tests {
             .loaded_languages()
             .contains(&"javascript".to_owned()));
         assert!(highlighter.loaded_languages().contains(&"js".to_owned()));
+        assert!(!highlighter.loaded_languages().contains(&"scss".to_owned()));
         assert!(highlighter
             .grammar_for_language("vue")
             .expect("grammar")
