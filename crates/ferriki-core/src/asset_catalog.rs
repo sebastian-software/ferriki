@@ -28,6 +28,7 @@ pub struct LanguageAssetCatalog {
     asset_dir: PathBuf,
     manifest: LanguageManifest,
     entries_by_id: HashMap<String, LanguageAssetEntry>,
+    ids_by_scope: HashMap<String, String>,
     aliases: HashMap<String, String>,
     cache: RefCell<HashMap<String, Arc<LanguageAsset>>>,
 }
@@ -39,12 +40,14 @@ impl LanguageAssetCatalog {
             Error::from_reason(format!("Failed to decode language manifest: {err}"))
         })?;
         let mut entries_by_id = HashMap::with_capacity(manifest.entries.len());
+        let mut ids_by_scope = HashMap::with_capacity(manifest.entries.len());
         let mut aliases = HashMap::new();
 
         for entry in &manifest.entries {
             for alias in &entry.aliases {
                 aliases.insert(alias.clone(), entry.id.clone());
             }
+            ids_by_scope.insert(entry.scope_name.clone(), entry.id.clone());
             entries_by_id.insert(entry.id.clone(), entry.clone());
         }
 
@@ -52,6 +55,7 @@ impl LanguageAssetCatalog {
             asset_dir: asset_dir.to_path_buf(),
             manifest,
             entries_by_id,
+            ids_by_scope,
             aliases,
             cache: RefCell::new(HashMap::new()),
         })
@@ -65,7 +69,23 @@ impl LanguageAssetCatalog {
         if let Some((resolved_id, _entry)) = self.entries_by_id.get_key_value(requested) {
             return Some(resolved_id.as_str());
         }
+        if let Some(resolved_id) = self.ids_by_scope.get(requested) {
+            return Some(resolved_id);
+        }
         self.aliases.get(requested).map(String::as_str)
+    }
+
+    pub fn entries_injecting_into(&self, target_scope: &str) -> Vec<&LanguageAssetEntry> {
+        self.manifest
+            .entries
+            .iter()
+            .filter(|entry| {
+                entry
+                    .inject_to
+                    .iter()
+                    .any(|candidate| candidate == target_scope)
+            })
+            .collect()
     }
 
     pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>, Error> {
@@ -181,6 +201,7 @@ mod tests {
         let catalog =
             LanguageAssetCatalog::load_from_dir(&output_dir.join("languages")).expect("catalog");
         assert_eq!(catalog.resolve_id("js"), Some("javascript"));
+        assert_eq!(catalog.resolve_id("source.js"), Some("javascript"));
 
         let first = catalog.load_asset("js").expect("asset").expect("present");
         let second = catalog
@@ -189,6 +210,32 @@ mod tests {
             .expect("present");
         assert!(Arc::ptr_eq(&first, &second));
         assert_eq!(first.scope_name, "source.js");
+
+        fs::remove_dir_all(output_dir).expect("cleanup");
+    }
+
+    #[test]
+    fn language_catalog_finds_external_injections_by_target_scope() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let output_dir = temp_output_dir("language-catalog-injections");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &output_dir,
+            AssetSourceRef {
+                upstream: "textmate-grammars-themes".to_owned(),
+                version: Some("1.0.0".to_owned()),
+                commit: Some("abc123".to_owned()),
+            },
+        )
+        .expect("generate");
+
+        let catalog =
+            LanguageAssetCatalog::load_from_dir(&output_dir.join("languages")).expect("catalog");
+        let injecting = catalog.entries_injecting_into("text.html.markdown");
+
+        assert_eq!(injecting.len(), 1);
+        assert_eq!(injecting[0].id, "javascript");
 
         fs::remove_dir_all(output_dir).expect("cleanup");
     }
