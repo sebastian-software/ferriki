@@ -16,6 +16,8 @@ pub struct HighlighterCore {
     registry: SyncRegistry,
     aliases: BTreeMap<String, String>,
     loaded_language_ids: BTreeSet<String>,
+    loaded_language_order: Vec<String>,
+    language_aliases: BTreeMap<String, Vec<String>>,
     injections: BTreeMap<String, Vec<String>>,
     themes: BTreeMap<String, ThemeData>,
     active_theme: Option<String>,
@@ -28,6 +30,8 @@ impl HighlighterCore {
             registry: SyncRegistry::new(None, None).map_err(theme_error)?,
             aliases: BTreeMap::new(),
             loaded_language_ids: BTreeSet::new(),
+            loaded_language_order: Vec::new(),
+            language_aliases: BTreeMap::new(),
             injections: BTreeMap::new(),
             themes: BTreeMap::new(),
             active_theme: None,
@@ -163,7 +167,11 @@ impl HighlighterCore {
             }
             self.refresh_injections(target);
         }
-        self.loaded_language_ids.insert(asset.id.clone());
+        if self.loaded_language_ids.insert(asset.id.clone()) {
+            self.loaded_language_order.push(asset.id.clone());
+        }
+        self.language_aliases
+            .insert(asset.id.clone(), asset.aliases.clone());
     }
 
     fn refresh_injections(&mut self, target_scope: &str) {
@@ -186,9 +194,21 @@ impl HighlighterCore {
     }
 
     pub fn loaded_scopes(&self) -> Vec<String> {
-        self.loaded_language_ids
+        self.loaded_language_order
             .iter()
             .filter_map(|id| self.aliases.get(id).cloned())
+            .collect()
+    }
+
+    pub fn loaded_languages(&self) -> Vec<String> {
+        self.loaded_language_order
+            .iter()
+            .cloned()
+            .chain(
+                self.loaded_language_order
+                    .iter()
+                    .flat_map(|id| self.language_aliases.get(id).into_iter().flatten().cloned()),
+            )
             .collect()
     }
 
@@ -222,6 +242,30 @@ impl HighlighterCore {
             .activate_theme(theme_id)?
             .ok_or_else(|| Error::from_reason(format!("Unknown theme `{theme_id}`.")))?
             .clone();
+        if is_plain_language(language) || language == "ansi" {
+            let tokens = split_lines(code)
+                .into_iter()
+                .map(|(line, offset)| {
+                    if line.is_empty() {
+                        Vec::new()
+                    } else {
+                        vec![HighlightToken {
+                            content: line.to_owned(),
+                            offset,
+                            color: None,
+                            font_style: None,
+                            token_type: None,
+                        }]
+                    }
+                })
+                .collect();
+            return Ok(HighlightTokensResult {
+                tokens,
+                foreground: theme.foreground,
+                background: theme.background,
+                theme_name: theme.name,
+            });
+        }
         let grammar = self
             .grammar_for_language(language)?
             .ok_or_else(|| Error::from_reason(format!("Unknown language `{language}`.")))?;
@@ -239,8 +283,8 @@ impl HighlighterCore {
                 output_lines.push(vec![HighlightToken {
                     content: line.to_owned(),
                     offset: line_offset,
-                    color: String::new(),
-                    font_style: 0,
+                    color: Some(String::new()),
+                    font_style: Some(0),
                     token_type: options.include_token_type.then_some(0),
                 }]);
                 continue;
@@ -292,6 +336,10 @@ fn scope_matches(candidate: &str, scope_name: &str) -> bool {
             .is_some_and(|suffix| suffix.starts_with('.'))
 }
 
+fn is_plain_language(language: &str) -> bool {
+    matches!(language, "text" | "txt" | "plain" | "plaintext")
+}
+
 fn theme_error(error: ferriki_textmate::ThemeError) -> Error {
     Error::from_reason(format!("Failed to resolve TextMate theme: {error}"))
 }
@@ -323,6 +371,10 @@ mod tests {
         assert!(highlighter
             .loaded_scopes()
             .contains(&"text.html.basic".to_owned()));
+        assert!(highlighter
+            .loaded_languages()
+            .contains(&"javascript".to_owned()));
+        assert!(highlighter.loaded_languages().contains(&"js".to_owned()));
         assert!(highlighter
             .grammar_for_language("vue")
             .expect("grammar")
@@ -368,7 +420,12 @@ mod tests {
 
         let pairs = result.tokens[0]
             .iter()
-            .map(|token| (token.content.as_str(), token.color.as_str()))
+            .map(|token| {
+                (
+                    token.content.as_str(),
+                    token.color.as_deref().expect("styled token"),
+                )
+            })
             .collect::<Vec<_>>();
         assert_eq!(
             pairs,
@@ -407,5 +464,19 @@ mod tests {
         assert_eq!(result.tokens[1][0].offset, 6);
         assert_eq!(result.tokens[1][0].token_type, Some(1));
         assert!(result.tokens[2].is_empty());
+    }
+
+    #[test]
+    fn emits_unstyled_plaintext_tokens_without_loading_a_grammar() {
+        let mut highlighter = standard_highlighter();
+        let result = highlighter
+            .tokenize("plain\n", "text", "nord", &TokenizeOptions::default())
+            .expect("tokens");
+
+        assert_eq!(result.tokens.len(), 2);
+        assert_eq!(result.tokens[0][0].content, "plain");
+        assert_eq!(result.tokens[0][0].color, None);
+        assert_eq!(result.tokens[0][0].font_style, None);
+        assert!(result.tokens[1].is_empty());
     }
 }
