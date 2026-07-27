@@ -115,6 +115,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn defaults_to_shiki_tokenization_limits() {
+        assert_eq!(
+            TokenizeOptions::default(),
+            TokenizeOptions {
+                time_limit_millis: 500,
+                max_line_length: 0,
+                include_token_type: false,
+            }
+        );
+    }
+
+    #[test]
     fn splits_crlf_lines_with_global_utf16_offsets() {
         assert_eq!(
             split_lines("😀a\r\nb\n"),
