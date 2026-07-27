@@ -15,12 +15,17 @@ use crate::rule::{
 /// Supplies raw grammars referenced by top-level `include` expressions.
 pub trait GrammarProvider {
     fn lookup(&self, scope_name: &str) -> Option<Arc<RawGrammar>>;
+
+    fn injections(&self, _scope_name: &str) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// An in-memory grammar provider suitable for registries and tests.
 #[derive(Default)]
 pub struct GrammarStore {
     grammars: BTreeMap<String, Arc<RawGrammar>>,
+    injections: BTreeMap<String, Vec<String>>,
 }
 
 impl GrammarStore {
@@ -37,11 +42,23 @@ impl GrammarStore {
     pub fn insert_shared(&mut self, grammar: Arc<RawGrammar>) -> Option<Arc<RawGrammar>> {
         self.grammars.insert(grammar.scope_name.clone(), grammar)
     }
+
+    pub fn set_injections(
+        &mut self,
+        scope_name: impl Into<String>,
+        injections: Vec<String>,
+    ) -> Option<Vec<String>> {
+        self.injections.insert(scope_name.into(), injections)
+    }
 }
 
 impl GrammarProvider for GrammarStore {
     fn lookup(&self, scope_name: &str) -> Option<Arc<RawGrammar>> {
         self.grammars.get(scope_name).cloned()
+    }
+
+    fn injections(&self, scope_name: &str) -> Vec<String> {
+        self.injections.get(scope_name).cloned().unwrap_or_default()
     }
 }
 
@@ -122,6 +139,19 @@ impl<'a> RuleFactory<'a> {
 
     pub fn compile_raw_rule(&mut self, rule: Arc<RawRule>, repository: &RawRepository) -> RuleId {
         self.get_compiled_rule_id(rule, RepositoryContext::new(repository))
+    }
+
+    pub fn compile_external_grammar(
+        &mut self,
+        scope_name: &str,
+    ) -> Option<(Arc<RawGrammar>, RuleId)> {
+        let root_repository = self.root_grammar.repository.clone();
+        let root_repository = RepositoryContext::new(&root_repository);
+        let grammar = self.get_external_grammar(scope_name, &root_repository)?;
+        let repository = RepositoryContext::new(&grammar.repository);
+        let rule = repository.get("$self")?;
+        let rule_id = self.get_compiled_rule_id(rule, repository);
+        Some((grammar, rule_id))
     }
 
     #[must_use]

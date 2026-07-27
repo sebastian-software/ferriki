@@ -6,6 +6,7 @@
 pub mod attributed_scope_stack;
 pub mod basic_scope_attributes;
 pub mod encoded_token_attributes;
+pub mod grammar;
 pub mod include_reference;
 pub mod line_output;
 pub mod matcher;
@@ -28,6 +29,7 @@ pub use encoded_token_attributes::{
     to_optional_token_type, EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType,
     StandardTokenType,
 };
+pub use grammar::{Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2};
 pub use include_reference::{parse_include, IncludeReference};
 pub use line_output::{
     BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
