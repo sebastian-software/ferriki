@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ferriki_textmate::{
-    apply_state_stack_diff, diff_state_stacks_ref_eq, Grammar, GrammarConfiguration,
-    GrammarProvider, GrammarStore, RawGrammar, StateStack, Theme,
+    apply_state_stack_diff, diff_state_stacks_ref_eq, parse_raw_grammar, Grammar,
+    GrammarConfiguration, GrammarProvider, GrammarStore, StateStack, Theme,
 };
 use serde::Deserialize;
 
@@ -37,6 +37,16 @@ fn matches_first_mate_tokenization_oracle() {
     assert_tokenization_suite(&oracle_root().join("test-cases/first-mate/tests.json"));
 }
 
+#[test]
+fn matches_suite_one_tokenization_oracle() {
+    assert_tokenization_suite(&oracle_root().join("test-cases/suite1/tests.json"));
+}
+
+#[test]
+fn matches_while_rule_tokenization_oracle() {
+    assert_tokenization_suite(&oracle_root().join("test-cases/suite1/whileTests.json"));
+}
+
 fn assert_tokenization_suite(test_location: &Path) {
     let tests: Vec<RawTest> =
         serde_json::from_slice(&fs::read(test_location).expect("oracle suite should be readable"))
@@ -57,8 +67,8 @@ fn perform_test(test_location: &Path, test: &RawTest) {
     for grammar_path in &test.grammars {
         let content = fs::read_to_string(fixture_root.join(grammar_path))
             .expect("oracle grammar should be readable");
-        let raw_grammar: RawGrammar =
-            serde_json::from_str(&content).expect("JSON oracle grammar should deserialize");
+        let raw_grammar = parse_raw_grammar(&content, Some(grammar_path))
+            .expect("oracle grammar should deserialize");
         if test.grammar_scope_name.is_none() && test.grammar_path.as_deref() == Some(grammar_path) {
             inferred_scope_name = Some(raw_grammar.scope_name.clone());
         }
