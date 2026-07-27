@@ -203,6 +203,20 @@ This supersedes the sequence below where it assumed the JS engine stays
 until after the re-port; the remaining G-items become acceptance criteria
 for the #30/#31 rebuild instead of migration steps.
 
+## Implementation update (2026-07-27)
+
+Issue #30 is complete. The placeholder package and suspended compatibility
+lane described in the teardown snapshot have been replaced by:
+
+- a mechanical `ferriki-textmate` port of pinned vscode-textmate v9.3.2
+- the native asset, rendering, N-API, and focused Node package integration
+- an exact green vscode-textmate oracle
+- a green, honestly aliased Shiki v4.3.1 structural gate covering the four
+  failure classes that triggered the re-port
+
+The remaining facade breadth in the sequence below belongs to issue #31.
+ADR 0010 records the interpreter boundary and the final #30 validation result.
+
 ## Suggested sequence
 
 1. **Done:** the compat-lane aliasing fix exists as the opt-in

@@ -52,3 +52,32 @@ named `ferriki-textmate`.
   parity audit; tracking upstream `main` directly is ruled out.
 - The repository carries the upstream test corpus as development-only data.
   It is not included in the published Node package.
+
+## Validation Outcome
+
+Issue #30 implements this decision against two immutable upstream references:
+
+- vscode-textmate v9.3.2, pinned by
+  `node/compat/upstream/vscode-textmate/.source.json`
+- Shiki v4.3.1, pinned by `node/compat/upstream/shiki/.source.json`
+
+The inner gate is `cargo test -p ferriki-textmate`. It passes the Rust unit
+suite and all mirrored tokenization cases: 91 First Mate cases, 20 Suite 1
+cases, and 9 while-rule cases.
+
+The outer gate is `pnpm run test:ferriki-compat:textmate` from `node/`. It runs
+unchanged Shiki tests with `FERRIKI_HONEST_ALIAS=1`; 20 behavior tests pass and
+7 API- and error-contract tests are outside this structural gate. The passing
+behavior set covers:
+
+- ancestor-scope theme and `fontStyle` inheritance
+- begin/end, while, capture, and persistent state stacks
+- JavaScript/TypeScript and Markdown embedded grammars
+- Vue external injections and explicitly loaded lazy SCSS embeddings
+- language aliases, dependencies, dynamic loading, HTML, HAST, and token output
+
+The broader mirrored Shiki suite still contains facade requirements owned by
+issue #31, including multi-theme output, explanation objects, grammar-state
+continuation, ANSI parsing, and transformers. Those exclusions do not change
+the interpreter boundary or the zero-structural-failure gate established by
+this decision.
