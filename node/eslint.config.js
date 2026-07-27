@@ -8,7 +8,8 @@ export default antfu(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
-      'compat/upstream/shiki/**',
+      'compat/upstream/**',
+      'pnpm-workspace.yaml',
     ],
   },
   {
