@@ -36,6 +36,11 @@ impl FerrikiHighlighter {
         self.core.borrow().loaded_scopes()
     }
 
+    #[napi(js_name = "getLoadedLanguages")]
+    pub fn get_loaded_languages(&self) -> Vec<String> {
+        self.core.borrow().loaded_languages()
+    }
+
     #[napi(js_name = "codeToTokens")]
     pub fn code_to_tokens(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;

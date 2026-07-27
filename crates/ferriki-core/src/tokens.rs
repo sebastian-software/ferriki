@@ -24,8 +24,10 @@ impl Default for TokenizeOptions {
 pub struct HighlightToken {
     pub content: String,
     pub offset: usize,
-    pub color: String,
-    pub font_style: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub font_style: Option<i32>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<u8>,
 }
@@ -61,11 +63,13 @@ pub(crate) fn token_from_metadata(
     Some(HighlightToken {
         content: line.get(start_byte..end_byte)?.to_owned(),
         offset: line_offset + start_index,
-        color: color_map
-            .get(attributes.foreground() as usize)
-            .cloned()
-            .unwrap_or_default(),
-        font_style: attributes.font_style().bits(),
+        color: Some(
+            color_map
+                .get(attributes.foreground() as usize)
+                .cloned()
+                .unwrap_or_default(),
+        ),
+        font_style: Some(attributes.font_style().bits()),
         token_type: include_token_type.then_some(attributes.token_type() as u8),
     })
 }

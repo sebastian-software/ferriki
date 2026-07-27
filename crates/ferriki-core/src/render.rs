@@ -152,8 +152,8 @@ fn merge_whitespace_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightT
                         offset: first_offset
                             .take()
                             .expect("carried whitespace has an offset"),
-                        color: String::new(),
-                        font_style: 0,
+                        color: None,
+                        font_style: None,
                         token_type: None,
                     });
                     output.push(token.clone());
@@ -190,10 +190,10 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 
 fn token_style(token: &HighlightToken) -> String {
     let mut declarations = Vec::new();
-    if !token.color.is_empty() {
-        declarations.push(format!("color:{}", token.color));
+    if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
+        declarations.push(format!("color:{color}"));
     }
-    let style = FontStyle::from_bits(token.font_style);
+    let style = FontStyle::from_bits(token.font_style.unwrap_or_default());
     if style.contains(FontStyle::ITALIC) {
         declarations.push("font-style:italic".to_owned());
     }
@@ -214,7 +214,7 @@ fn token_style(token: &HighlightToken) -> String {
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
-    let style = FontStyle::from_bits(token.font_style);
+    let style = FontStyle::from_bits(token.font_style.unwrap_or_default());
     style.contains(FontStyle::UNDERLINE) || style.contains(FontStyle::STRIKETHROUGH)
 }
 
