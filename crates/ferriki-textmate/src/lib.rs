@@ -11,6 +11,8 @@ pub mod grammar;
 pub mod include_reference;
 pub mod line_output;
 pub mod matcher;
+pub mod parse_raw_grammar;
+pub mod plist;
 pub mod raw_grammar;
 pub mod regexp;
 pub mod rule;
@@ -37,6 +39,8 @@ pub use line_output::{
     BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
 };
 pub use matcher::{create_matchers, Matcher, MatcherPriority, MatcherWithPriority};
+pub use parse_raw_grammar::{parse_raw_grammar, ParseRawGrammarError};
+pub use plist::{parse_plist, PlistError};
 pub use raw_grammar::{Location, RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
 pub use regexp::{
     has_captures, replace_captures, CaptureIndex, CompiledRule, FindNextMatchResult, OnigString,
