@@ -88,10 +88,37 @@ jobs:
       - name: Typecheck
         run: nr typecheck
 
-  # The compat lanes are suspended during the native-only rebuild: the
-  # placeholder package has no highlighting runtime until the
-  # vscode-textmate re-port lands (#30). They return as port milestones
-  # against the mirrored suite (plans/native-only-migration.md).
+  textmate-compat:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          package_json_file: node/package.json
+
+      - name: Set node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build native
+        run: pnpm run build:native
+
+      - name: Run native TextMate compatibility gate
+        run: pnpm run test:ferriki-compat:textmate
 
   native-smoke:
     runs-on: ${{ matrix.os }}
@@ -105,8 +132,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - node: 20.x
-            os: ubuntu-latest
-          - node: 18.x
             os: ubuntu-latest
       fail-fast: false
 
