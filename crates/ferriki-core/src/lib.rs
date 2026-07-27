@@ -9,11 +9,13 @@
 // entry point.
 
 mod asset_catalog;
+mod highlighter;
 mod theme_data;
 
 use napi_derive::napi;
 
 pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
+pub use highlighter::HighlighterCore;
 pub use theme_data::{parse_theme_data, ThemeData};
 
 #[napi(js_name = "ferrikiVersion")]
