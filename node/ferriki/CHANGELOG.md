@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/sebastian-software/ferriki/compare/v0.2.0...v0.3.0) (2026-07-27)
+
+
+### Features
+
+* **node:** default to the native backend and expose Shiki subpaths ([453a550](https://github.com/sebastian-software/ferriki/commit/453a550640f57f71fee3e85537df507e5383c45b))
+* **node:** default to the native backend and expose Shiki subpaths ([e237380](https://github.com/sebastian-software/ferriki/commit/e237380cc8fbbf4398b19a9ef71f8d779a4991b1))
+* **node:** restore native shiki facade ([6485a78](https://github.com/sebastian-software/ferriki/commit/6485a78a6f059e993598632d46905867e5ac7a13))
+* **node:** type native highlighter api ([8381ded](https://github.com/sebastian-software/ferriki/commit/8381dedd6a5489c62c698baf5f77d291821e2971))
+
+
+### Bug Fixes
+
+* **node:** preserve core function signatures ([c29bbf1](https://github.com/sebastian-software/ferriki/commit/c29bbf127b439b0b2f7eb692eb4ff03429fbd0ff))
+* **node:** replace transitional shiki-rust naming and re-guard the workspace root ([f9802ae](https://github.com/sebastian-software/ferriki/commit/f9802aef272cd2c90775ec63d63f0c12e828a35f))
+* **node:** replace transitional shiki-rust naming with ferriki ([4b75c7c](https://github.com/sebastian-software/ferriki/commit/4b75c7c2ff489f1d398edcf416cf1c6557969268))
+* **node:** ship standard assets ([bfb2f08](https://github.com/sebastian-software/ferriki/commit/bfb2f08b5de0a8af32cbb58c0411eb5332c1e837))
+* require Node 20, matching upstream shiki@4 and @shikijs/types ([e56d084](https://github.com/sebastian-software/ferriki/commit/e56d0844392cd7ec7c444b1fc6296af01a2fcded))
+* sort the npm files array for jsonc lint ([7bf465a](https://github.com/sebastian-software/ferriki/commit/7bf465a6a5d0ad5bf13831b75e1f9e6eece4243f))
+
 ## [0.2.0](https://github.com/sebastian-software/ferriki/compare/v0.1.0...v0.2.0) (2026-07-10)
 
 
