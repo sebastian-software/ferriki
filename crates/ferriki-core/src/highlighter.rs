@@ -400,6 +400,64 @@ mod tests {
     }
 
     #[test]
+    fn tokenizes_vue_directives_with_embedded_typescript() {
+        let mut highlighter = standard_highlighter();
+        let grammar = highlighter
+            .grammar_for_language("vue")
+            .expect("grammar")
+            .expect("vue grammar");
+        let line = r#"<h1 v-if="count == 1 ? true : 'str'.toUpperCase()"></h1>"#;
+
+        let result = grammar.tokenize_line(line, None, 0).expect("tokens");
+        let actual = result
+            .tokens
+            .iter()
+            .map(|token| {
+                (
+                    &line[token.start_index..token.end_index],
+                    token.scopes.last().map(String::as_str),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            actual,
+            [
+                ("<", Some("punctuation.definition.tag.begin.html.vue")),
+                ("h1", Some("entity.name.tag.h1.html.vue")),
+                (" ", Some("meta.tag-stuff")),
+                ("v-if", Some("keyword.control.conditional.vue")),
+                ("=", Some("punctuation.separator.key-value.html.vue")),
+                ("\"", Some("punctuation.definition.string.begin.html.vue")),
+                ("count", Some("variable.other.readwrite.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                ("==", Some("keyword.operator.comparison.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                ("1", Some("constant.numeric.decimal.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                ("?", Some("keyword.operator.ternary.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                ("true", Some("constant.language.boolean.true.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                (":", Some("keyword.operator.ternary.ts")),
+                (" ", Some("source.ts.embedded.html.vue")),
+                ("'", Some("punctuation.definition.string.begin.ts")),
+                ("str", Some("string.quoted.single.ts")),
+                ("'", Some("punctuation.definition.string.end.ts")),
+                (".", Some("punctuation.accessor.ts")),
+                ("toUpperCase", Some("entity.name.function.ts")),
+                ("(", Some("meta.brace.round.ts")),
+                (")", Some("meta.brace.round.ts")),
+                ("\"", Some("punctuation.definition.string.end.html.vue")),
+                (">", Some("punctuation.definition.tag.end.html.vue")),
+                ("</", Some("punctuation.definition.tag.begin.html.vue")),
+                ("h1", Some("entity.name.tag.h1.html.vue")),
+                (">", Some("punctuation.definition.tag.end.html.vue")),
+            ]
+        );
+    }
+
+    #[test]
     fn tokenizes_standard_javascript_with_textmate_theme_metadata() {
         let mut highlighter = standard_highlighter();
         let result = highlighter

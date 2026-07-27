@@ -568,7 +568,7 @@ impl<T: Copy> CompiledRule<T> {
                 let Some(fallback) = regex else {
                     continue;
                 };
-                let Some(capture_indices) =
+                let Some(mut capture_indices) =
                     find_direct_fallback(&fallback.regex, string, start_position)
                 else {
                     continue;
@@ -584,6 +584,23 @@ impl<T: Copy> CompiledRule<T> {
                         || (candidate_start == best_start && index <= best.index)
                 });
                 if should_replace {
+                    if let Some(existing) = best.as_ref().filter(|best| best.index == index) {
+                        let full_match_end = capture_indices[0].end;
+                        for (capture, existing_capture) in capture_indices
+                            .iter_mut()
+                            .zip(&existing.capture_indices)
+                            .skip(1)
+                        {
+                            // Ferroni's CAPTURE_GROUP compatibility mode can
+                            // retain a competing pattern's end position for an
+                            // unmatched alternative. RegSet keeps that
+                            // sentinel correct, while the direct path retains
+                            // the participating capture groups.
+                            if capture.end > full_match_end {
+                                *capture = existing_capture.clone();
+                            }
+                        }
+                    }
                     best = Some(ScannerMatch {
                         index,
                         capture_indices: capture_indices.into(),
@@ -932,6 +949,44 @@ mod tests {
         assert_eq!(result.rule_id, 10);
         assert_eq!(result.capture_indices[0].start, 4);
         assert_eq!(result.capture_indices[0].end, 5);
+    }
+
+    #[test]
+    fn preserves_unmatched_alternative_capture_groups() {
+        let line = OnigString::new(r#"<h1 v-if="condition">"#);
+        let pattern = r"(?:(v-for)|(v-(?:if|else-if|else)))(?=[)/=>\s])";
+
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(r"(?=/>)|(>)", 0_u32));
+        sources.push(RegExpSource::new(pattern, 1_u32));
+        sources.push(RegExpSource::new(r"[^>\s]+", 2_u32));
+        let compiled = sources.compile().unwrap();
+
+        let result = compiled
+            .find_next_match(&line, 3, ScannerFindOptions::NONE)
+            .unwrap();
+
+        assert_eq!(result.rule_id, 1);
+        assert_eq!(
+            result.capture_indices,
+            [
+                CaptureIndex {
+                    start: 4,
+                    end: 8,
+                    length: 4,
+                },
+                CaptureIndex {
+                    start: 0,
+                    end: 0,
+                    length: 0,
+                },
+                CaptureIndex {
+                    start: 4,
+                    end: 8,
+                    length: 4,
+                },
+            ]
+        );
     }
 
     #[test]
