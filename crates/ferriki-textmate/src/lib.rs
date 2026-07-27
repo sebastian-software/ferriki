@@ -16,6 +16,7 @@ pub mod parse_raw_grammar;
 pub mod plist;
 pub mod raw_grammar;
 pub mod regexp;
+pub mod registry;
 pub mod rule;
 pub mod rule_factory;
 pub mod state_stack;
@@ -50,6 +51,7 @@ pub use regexp::{
     has_captures, replace_captures, CaptureIndex, CompiledRule, FindNextMatchResult, OnigString,
     RegExpSource, RegExpSourceList, ScannerFindOptions,
 };
+pub use registry::SyncRegistry;
 pub use rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
     CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry, RuleScannerId,
