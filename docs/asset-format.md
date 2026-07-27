@@ -14,7 +14,7 @@ core a stable generator/loader contract.
   - `.fktheme`: one theme asset
   - `.fkindex`: one manifest for a catalog
 - Encoding: `serde` + `bincode`
-- Current format version: `1`
+- Current format version: `2`
 - Source of truth for structs and roundtrip tests:
   - [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
   - [`crates/ferriki-core/src/asset_catalog.rs`](../crates/ferriki-core/src/asset_catalog.rs)
@@ -118,12 +118,11 @@ pub struct LanguageAsset {
 
 Notes:
 
-- `grammar_json` contains Ferriki-normalized grammar JSON, not upstream JS
-  module code.
-- Generation may apply compatibility patches before encoding. Today that
-  includes:
-  - JS/TS function-call regex normalization for Ferroni
-  - selected Vue grammar begin-pattern normalization
+- `grammar_json` contains the upstream TextMate grammar JSON, compactly
+  serialized after validation, not upstream JS module code.
+- Generation does not rewrite grammar rules. Regex compatibility belongs in
+  the mechanical vscode-textmate runtime adapter so the same grammar reaches
+  Ferriki and the upstream oracle.
 - Embedded-language and injection metadata is duplicated here intentionally so a
   loaded asset is self-describing.
 
@@ -143,15 +142,12 @@ pub struct ThemeAsset {
 
 Notes:
 
-- `theme_json` contains Ferriki-normalized theme JSON.
-- Themes are normalized away from raw VS Code/TextMate upstream shape into a
-  predictable Ferriki shape before encoding.
-- The normalized JSON currently carries:
-  - `name`
-  - `type`
-  - `fg`
-  - `bg`
-  - flattened `settings[]` entries with normalized scope/style fields
+- `theme_json` preserves the upstream VS Code/TextMate theme object, including
+  `colors`, `tokenColors`, and string-valued `fontStyle` declarations.
+- Generation validates and compactly serializes the JSON. It only supplies the
+  manifest ID as `name` when the source omits one.
+- Theme interpretation belongs to the vscode-textmate-compatible runtime; the
+  asset layer must not flatten selectors or collapse inherited font styles.
 
 ## Loader Behavior
 
