@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
+use std::fmt;
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// The internal identity assigned to a compiled rule.
 ///
@@ -80,7 +82,7 @@ pub struct RawRule {
     pub patterns: Option<Vec<Arc<RawRule>>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<RawRepository>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_bool_like")]
     pub apply_end_pattern_last: bool,
     #[serde(
         default,
@@ -96,6 +98,42 @@ pub struct Location {
     pub line: u32,
     #[serde(rename = "char")]
     pub character: u32,
+}
+
+fn deserialize_bool_like<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct BoolLikeVisitor;
+
+    impl Visitor<'_> for BoolLikeVisitor {
+        type Value = bool;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("a boolean or numeric truth value")
+        }
+
+        fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E> {
+            Ok(value)
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E> {
+            Ok(value != 0)
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E> {
+            Ok(value != 0)
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value != 0.0 && !value.is_nan())
+        }
+    }
+
+    deserializer.deserialize_any(BoolLikeVisitor)
 }
 
 #[cfg(test)]
@@ -185,5 +223,22 @@ mod tests {
 
         let cloned = grammar.clone();
         assert!(Arc::ptr_eq(&grammar.patterns[0], &cloned.patterns[0]));
+    }
+
+    #[test]
+    fn accepts_numeric_apply_end_pattern_last_values() {
+        let grammar: RawGrammar = serde_json::from_str(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [
+                    { "applyEndPatternLast": 1 },
+                    { "applyEndPatternLast": 0 }
+                ]
+            }"#,
+        )
+        .unwrap();
+
+        assert!(grammar.patterns[0].apply_end_pattern_last);
+        assert!(!grammar.patterns[1].apply_end_pattern_last);
     }
 }
