@@ -490,9 +490,14 @@ impl<T: Copy> RegExpSourceList<T> {
 
 pub struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
-    direct_fallbacks: Vec<Option<Regex>>,
+    direct_fallbacks: Vec<Option<DirectFallback>>,
     reg_exps: Vec<String>,
     rules: Vec<T>,
+}
+
+struct DirectFallback {
+    regex: Regex,
+    rejects_artificial_end: bool,
 }
 
 impl<T: Copy> CompiledRule<T> {
@@ -501,18 +506,36 @@ impl<T: Copy> CompiledRule<T> {
             .iter()
             .map(|pattern| normalize_ferroni_pattern(pattern))
             .collect();
-        let patterns: Vec<_> = compiled_reg_exps.iter().map(String::as_str).collect();
-        let direct_fallbacks = compiled_reg_exps
+        let direct_fallbacks: Vec<_> = compiled_reg_exps
             .iter()
             .map(|pattern| {
                 Regex::builder(&stabilize_ferroni_captures(pattern))
                     .option(ONIG_OPTION_CAPTURE_GROUP)
                     .build()
                     .ok()
+                    .map(|regex| DirectFallback {
+                        regex,
+                        rejects_artificial_end: has_line_start_anchor(pattern),
+                    })
+            })
+            .collect();
+        let scanner_reg_exps: Vec<_> = compiled_reg_exps
+            .iter()
+            .zip(&direct_fallbacks)
+            .map(|(pattern, direct)| {
+                if Regex::new(pattern).is_ok() || direct.is_none() {
+                    pattern.as_str()
+                } else {
+                    // Oniguruma's CAPTURE_GROUP option permits numbered
+                    // backreferences alongside named groups. Scanner does
+                    // not expose compile options, so leave this pattern to
+                    // the equivalent direct engine path below.
+                    "(?!)"
+                }
             })
             .collect();
         Ok(Self {
-            scanner: Mutex::new(Scanner::new(&patterns)?),
+            scanner: Mutex::new(Scanner::new(&scanner_reg_exps)?),
             direct_fallbacks,
             reg_exps,
             rules,
@@ -542,14 +565,16 @@ impl<T: Copy> CompiledRule<T> {
             // Verify its candidate with the same engine's direct search path
             // until the Scanner oracle covers those cases itself.
             for (index, regex) in self.direct_fallbacks.iter().enumerate() {
-                let Some(regex) = regex else {
+                let Some(fallback) = regex else {
                     continue;
                 };
-                let Some(capture_indices) = find_direct_fallback(regex, string, start_position)
+                let Some(capture_indices) =
+                    find_direct_fallback(&fallback.regex, string, start_position)
                 else {
                     continue;
                 };
-                if capture_indices[0].start == string.utf16_len() {
+                if fallback.rejects_artificial_end && capture_indices[0].start == string.utf16_len()
+                {
                     continue;
                 }
                 let should_replace = best.as_ref().is_none_or(|best| {
@@ -613,6 +638,29 @@ fn normalize_ferroni_pattern(pattern: &str) -> String {
         position += character.len_utf8();
     }
     result
+}
+
+fn has_line_start_anchor(pattern: &str) -> bool {
+    let bytes = pattern.as_bytes();
+    let mut position = 0;
+    let mut in_character_class = false;
+    while position < bytes.len() {
+        if bytes[position] == b'\\' {
+            position += 1;
+            if position < bytes.len() {
+                position += 1;
+            }
+            continue;
+        }
+        match bytes[position] {
+            b'[' => in_character_class = true,
+            b']' => in_character_class = false,
+            b'^' if !in_character_class => return true,
+            _ => {}
+        }
+        position += 1;
+    }
+    false
 }
 
 fn starts_valid_interval(value: &str) -> bool {
@@ -966,6 +1014,44 @@ mod tests {
 
         assert_eq!(captures.get(1).unwrap().as_str(), "string");
         assert_eq!(captures.get(3).unwrap().as_str(), "message");
+    }
+
+    #[test]
+    fn supports_numbered_backrefs_alongside_named_groups() {
+        let pattern = r"(?<word>a)(b)\2";
+        assert!(ferroni::api::Regex::new(pattern).is_err());
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(pattern, 1_u32));
+        let scanner = sources.compile().unwrap();
+
+        let result = scanner
+            .find_next_match(&OnigString::new("abb\n"), 0, ScannerFindOptions::NONE)
+            .unwrap();
+
+        assert_eq!(result.capture_indices[0].start, 0);
+        assert_eq!(result.capture_indices[0].end, 3);
+        assert_eq!(result.capture_indices[2].start, 1);
+        assert_eq!(result.capture_indices[2].end, 2);
+    }
+
+    #[test]
+    fn distinguishes_end_anchor_from_empty_line_anchor_at_artificial_eol() {
+        let line = OnigString::new("\n");
+        let mut end_sources = RegExpSourceList::new();
+        end_sources.push(RegExpSource::new("$", 1_u32));
+        assert!(end_sources
+            .compile()
+            .unwrap()
+            .find_next_match(&line, 1, ScannerFindOptions::NONE)
+            .is_some());
+
+        let mut empty_line_sources = RegExpSourceList::new();
+        empty_line_sources.push(RegExpSource::new("^$", 1_u32));
+        assert!(empty_line_sources
+            .compile()
+            .unwrap()
+            .find_next_match(&line, 1, ScannerFindOptions::NONE)
+            .is_none());
     }
 
     #[test]
