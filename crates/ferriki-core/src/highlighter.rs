@@ -6,6 +6,10 @@ use napi::{Error, Result};
 
 use crate::asset_catalog::StandardAssetCatalogs;
 use crate::theme_data::{parse_theme_data, ThemeData};
+use crate::tokens::{
+    split_lines, token_from_metadata, utf16_to_byte_map, HighlightToken, HighlightTokensResult,
+    TokenizeOptions,
+};
 
 pub struct HighlighterCore {
     standard_assets: Option<StandardAssetCatalogs>,
@@ -206,6 +210,79 @@ impl HighlighterCore {
             )
             .map_err(theme_error)
     }
+
+    pub fn tokenize(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme_id: &str,
+        options: &TokenizeOptions,
+    ) -> Result<HighlightTokensResult> {
+        let theme = self
+            .activate_theme(theme_id)?
+            .ok_or_else(|| Error::from_reason(format!("Unknown theme `{theme_id}`.")))?
+            .clone();
+        let grammar = self
+            .grammar_for_language(language)?
+            .ok_or_else(|| Error::from_reason(format!("Unknown language `{language}`.")))?;
+        let color_map = self.registry.get_color_map();
+        let mut state = None;
+        let mut output_lines = Vec::new();
+
+        for (line, line_offset) in split_lines(code) {
+            if line.is_empty() {
+                output_lines.push(Vec::new());
+                continue;
+            }
+            let line_length = line.encode_utf16().count();
+            if options.max_line_length > 0 && line_length >= options.max_line_length {
+                output_lines.push(vec![HighlightToken {
+                    content: line.to_owned(),
+                    offset: line_offset,
+                    color: String::new(),
+                    font_style: 0,
+                    token_type: options.include_token_type.then_some(0),
+                }]);
+                continue;
+            }
+
+            let result = grammar
+                .tokenize_line2(line, state, options.time_limit_millis)
+                .map_err(|error| {
+                    Error::from_reason(format!("Failed to tokenize `{language}` line: {error}"))
+                })?;
+            let utf16_map = utf16_to_byte_map(line);
+            let mut line_tokens = Vec::with_capacity(result.tokens.len() / 2);
+            for token_index in 0..result.tokens.len() / 2 {
+                let start_index = result.tokens[token_index * 2] as usize;
+                let end_index = result
+                    .tokens
+                    .get(token_index * 2 + 2)
+                    .copied()
+                    .map_or(line_length, |value| value as usize);
+                if let Some(token) = token_from_metadata(
+                    line,
+                    &utf16_map,
+                    start_index..end_index,
+                    line_offset,
+                    result.tokens[token_index * 2 + 1],
+                    &color_map,
+                    options.include_token_type,
+                ) {
+                    line_tokens.push(token);
+                }
+            }
+            state = Some(result.rule_stack);
+            output_lines.push(line_tokens);
+        }
+
+        Ok(HighlightTokensResult {
+            tokens: output_lines,
+            foreground: theme.foreground,
+            background: theme.background,
+            theme_name: theme.name,
+        })
+    }
 }
 
 fn scope_matches(candidate: &str, scope_name: &str) -> bool {
@@ -275,5 +352,60 @@ mod tests {
         let injections = highlighter.registry.injections("source.ts");
         assert!(injections.contains(&"inline.es6-css".to_owned()));
         assert!(injections.contains(&"inline.es6-html".to_owned()));
+    }
+
+    #[test]
+    fn tokenizes_standard_javascript_with_textmate_theme_metadata() {
+        let mut highlighter = standard_highlighter();
+        let result = highlighter
+            .tokenize(
+                "console.log(\"Hi\")",
+                "javascript",
+                "nord",
+                &TokenizeOptions::default(),
+            )
+            .expect("tokens");
+
+        let pairs = result.tokens[0]
+            .iter()
+            .map(|token| (token.content.as_str(), token.color.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            pairs,
+            [
+                ("console", "#D8DEE9"),
+                (".", "#ECEFF4"),
+                ("log", "#88C0D0"),
+                ("(", "#D8DEE9FF"),
+                ("\"", "#ECEFF4"),
+                ("Hi", "#A3BE8C"),
+                ("\"", "#ECEFF4"),
+                (")", "#D8DEE9FF"),
+            ]
+        );
+        assert_eq!(result.theme_name, "nord");
+        assert_eq!(result.tokens[0][0].offset, 0);
+        assert_eq!(result.tokens[0][1].offset, 7);
+    }
+
+    #[test]
+    fn tokenizes_multiline_utf16_offsets_and_optional_types() {
+        let mut highlighter = standard_highlighter();
+        let result = highlighter
+            .tokenize(
+                "\"😀\"\r\n// x\n",
+                "javascript",
+                "nord",
+                &TokenizeOptions {
+                    include_token_type: true,
+                    ..TokenizeOptions::default()
+                },
+            )
+            .expect("tokens");
+
+        assert_eq!(result.tokens.len(), 3);
+        assert_eq!(result.tokens[1][0].offset, 6);
+        assert_eq!(result.tokens[1][0].token_type, Some(1));
+        assert!(result.tokens[2].is_empty());
     }
 }
