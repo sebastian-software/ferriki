@@ -182,27 +182,39 @@ export async function getSingletonHighlighter(options = {}) {
 
 export const getSingletonHighlighterCore = getSingletonHighlighter
 
-export async function codeToHtml(code, options) {
-  const highlighter = await getSingletonHighlighter()
-  return highlighter.codeToHtml(code, options)
+export function codeToHtml(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, 'codeToHtml'))
+    return highlighterOrCode.codeToHtml(codeOrOptions, options)
+  return getSingletonHighlighter()
+    .then(highlighter => highlighter.codeToHtml(highlighterOrCode, codeOrOptions))
 }
 
-export async function codeToHast(code, options) {
-  const highlighter = await getSingletonHighlighter()
-  return highlighter.codeToHast(code, options)
+export function codeToHast(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, 'codeToHast'))
+    return highlighterOrCode.codeToHast(codeOrOptions, options)
+  return getSingletonHighlighter()
+    .then(highlighter => highlighter.codeToHast(highlighterOrCode, codeOrOptions))
 }
 
-export async function codeToTokens(code, options) {
-  const highlighter = await getSingletonHighlighter()
-  return highlighter.codeToTokens(code, options)
+export function codeToTokens(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, 'codeToTokens'))
+    return highlighterOrCode.codeToTokens(codeOrOptions, options)
+  return getSingletonHighlighter()
+    .then(highlighter => highlighter.codeToTokens(highlighterOrCode, codeOrOptions))
 }
 
-export async function codeToTokensBase(code, options) {
-  return (await codeToTokens(code, options)).tokens
+export function codeToTokensBase(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, 'codeToTokensBase'))
+    return highlighterOrCode.codeToTokensBase(codeOrOptions, options)
+  return codeToTokens(highlighterOrCode, codeOrOptions)
+    .then(result => result.tokens)
 }
 
-export async function codeToTokensWithThemes(code, options) {
-  return (await codeToTokens(code, options)).tokens
+export function codeToTokensWithThemes(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, 'codeToTokensWithThemes'))
+    return highlighterOrCode.codeToTokensWithThemes(codeOrOptions, options)
+  return codeToTokens(highlighterOrCode, codeOrOptions)
+    .then(result => result.tokens)
 }
 
 export function getLastGrammarState() {
@@ -257,6 +269,10 @@ function selectDefaultTheme(options) {
   if (options.defaultColor && options.themes[options.defaultColor])
     return options.themes[options.defaultColor]
   return options.themes.light || options.themes.dark || Object.values(options.themes)[0]
+}
+
+function isHighlighter(value, method) {
+  return value != null && typeof value[method] === 'function'
 }
 
 function isSpecialLanguage(language) {
