@@ -8,6 +8,7 @@ pub mod basic_scope_attributes;
 pub mod diff_state_stacks;
 pub mod encoded_token_attributes;
 pub mod grammar;
+pub mod grammar_dependencies;
 pub mod include_reference;
 pub mod line_output;
 pub mod matcher;
@@ -34,6 +35,9 @@ pub use encoded_token_attributes::{
     StandardTokenType,
 };
 pub use grammar::{Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2};
+pub use grammar_dependencies::{
+    AbsoluteRuleReference, GrammarDependencyError, ScopeDependencyProcessor,
+};
 pub use include_reference::{parse_include, IncludeReference};
 pub use line_output::{
     BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
