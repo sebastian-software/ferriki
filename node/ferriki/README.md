@@ -1,37 +1,84 @@
 # ferriki
 
-**Placeholder release.** Ferriki — a Shiki-compatible syntax highlighter
-with a native Rust core — is currently being rebuilt as a native-only
-runtime, and this package version intentionally ships no highlighting
-API.
+Ferriki is a Shiki-compatible syntax highlighter backed by a native Rust
+TextMate runtime. The grammar interpreter is a mechanical port of
+vscode-textmate onto ferroni; the Node layer loads the native addon and the
+bundled standard languages and themes.
 
-## What is happening
+## Install
 
-The original incremental port kept a bundled JavaScript engine as
-scaffolding. An honest compatibility measurement against the mirrored
-upstream Shiki suite showed structural defects in that transitional
-tokenizer, so the core is being re-ported properly: a mechanical 1:1
-port of [vscode-textmate](https://github.com/microsoft/vscode-textmate)
-onto [ferroni](https://github.com/sebastian-software/ferroni)'s
-Oniguruma-compatible Scanner API, verified against the upstream test
-suites.
-
-- Decision record: [ADR 0009 — native-only runtime](https://github.com/sebastian-software/ferriki/blob/main/adr/0009-native-only-runtime.md)
-- Re-port: [sebastian-software/ferriki#30](https://github.com/sebastian-software/ferriki/issues/30)
-- Facade and cut-over: [sebastian-software/ferriki#31](https://github.com/sebastian-software/ferriki/issues/31)
-
-## What this version provides
-
-```js
-import { ferrikiVersion } from 'ferriki'
-
-ferrikiVersion() // version of the bundled native core, if a platform binary loads
+```sh
+npm install ferriki
 ```
 
-Nothing else — use [shiki](https://www.npmjs.com/package/shiki) until the
-native runtime ships. The Shiki-compatible API (`codeToHtml`,
-`codeToHast`, `codeToTokens`, `createHighlighter`) returns with the
-re-port, verified against the mirrored Shiki v4.3.1 suite.
+Ferriki requires Node.js 20 or newer and a supported platform binary.
+
+## Highlight code
+
+Use a shorthand for one-off highlighting:
+
+```js
+import { codeToHtml } from 'ferriki'
+
+const html = await codeToHtml('console.log("Hello")', {
+  lang: 'javascript',
+  theme: 'nord',
+})
+```
+
+Reuse a highlighter when highlighting multiple snippets:
+
+```js
+import { createHighlighter } from 'ferriki'
+
+using highlighter = await createHighlighter({
+  langs: ['javascript', 'markdown'],
+  themes: ['nord'],
+})
+
+const html = highlighter.codeToHtml('const answer = 42', {
+  lang: 'javascript',
+  theme: 'nord',
+})
+
+const tokens = highlighter.codeToTokens('# Hello', {
+  lang: 'markdown',
+  theme: 'nord',
+})
+```
+
+`codeToHast` returns the same highlighted output as a HAST root. Languages
+embedded by a grammar are loaded with it; lazy embeddings are loaded only
+after an explicit `loadLanguage`.
+
+## Current API
+
+The native runtime currently provides:
+
+- `codeToHtml`, `codeToHast`, `codeToTokens`, and `codeToTokensBase`
+- `createHighlighter`, `createHighlighterCore`, and their synchronous core
+  constructor
+- asynchronous and synchronous language and theme loading
+- bundled standard TextMate grammars and themes
+- language aliases, lazy embedded languages, and external grammar injections
+- `ferrikiVersion` and the low-level `ferriki/native` binding loader
+
+The current renderer is the single-theme classic Shiki structure. Multi-theme
+CSS variables, token explanations, grammar-state continuation, ANSI parsing,
+transformers, and decoration adapters remain facade work tracked in
+[issue #31](https://github.com/sebastian-software/ferriki/issues/31).
+
+## Compatibility
+
+The TextMate interpreter is checked against the complete pinned
+vscode-textmate v9.3.2 oracle. End-to-end behavior is checked through an
+honestly aliased mirror of Shiki v4.3.1, including core highlighting, dynamic
+loading, Markdown embeddings, Vue/SCSS lazy embeddings, and external
+injections.
+
+- [ADR 0009 — native-only runtime](https://github.com/sebastian-software/ferriki/blob/main/adr/0009-native-only-runtime.md)
+- [ADR 0010 — mechanical vscode-textmate port](https://github.com/sebastian-software/ferriki/blob/main/adr/0010-mechanical-vscode-textmate-port.md)
+- [Issue #30 — interpreter re-port](https://github.com/sebastian-software/ferriki/issues/30)
 
 ## License
 
