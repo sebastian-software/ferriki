@@ -2,7 +2,7 @@
   "name": "ferriki",
   "type": "module",
   "version": "0.2.0",
-  "description": "Placeholder while ferriki is rebuilt as a native-only Shiki-compatible highlighter (Rust core via napi)",
+  "description": "Shiki-compatible syntax highlighting powered by a native Rust TextMate runtime",
   "license": "MIT",
   "homepage": "https://github.com/sebastian-software/ferriki#readme",
   "repository": {
@@ -38,6 +38,8 @@
   "types": "./index.d.mts",
   "files": [
     "CHANGELOG.md",
+    "README.md",
+    "assets/shiki",
     "dist/ferriki.*.node",
     "index.d.mts",
     "index.mjs",
