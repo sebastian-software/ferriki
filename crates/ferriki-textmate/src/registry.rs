@@ -61,11 +61,20 @@ impl SyncRegistry {
     pub fn add_grammar(&mut self, grammar: RawGrammar, injection_scope_names: Vec<String>) {
         let scope_name = grammar.scope_name.clone();
         self.raw_grammars.insert(grammar);
+        self.set_injections(scope_name, injection_scope_names);
+    }
+
+    pub fn set_injections(
+        &mut self,
+        target_scope: impl Into<String>,
+        injection_scope_names: Vec<String>,
+    ) {
         self.raw_grammars
-            .set_injections(scope_name, injection_scope_names);
+            .set_injections(target_scope, injection_scope_names);
         // Compiled grammars can include or inject any registered grammar.
         // Registry loading completes before compilation upstream; clearing is
-        // the equivalent safe behavior when Rust callers replace one later.
+        // the equivalent safe behavior when Rust callers replace a grammar or
+        // update a target's external injection list later.
         self.grammars.clear();
     }
 
@@ -221,5 +230,50 @@ mod tests {
             .grammar_for_scope_name("source.missing", GrammarConfiguration::default())
             .unwrap()
             .is_none());
+    }
+
+    #[test]
+    fn updates_injections_after_the_target_was_registered() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.test",
+                    "patterns": [{ "match": "x", "name": "normal.test" }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.inject",
+                    "injectionSelector": "L:source.test",
+                    "patterns": [{ "match": "x", "name": "injected.test" }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+
+        let before = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            before.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
+            ["source.test", "normal.test"]
+        );
+
+        registry.set_injections("source.test", vec!["source.inject".into()]);
+
+        let after = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert!(!Rc::ptr_eq(&before, &after));
+        assert_eq!(
+            after.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
+            ["source.test", "injected.test"]
+        );
     }
 }
