@@ -11,12 +11,14 @@
 mod asset_catalog;
 mod highlighter;
 mod theme_data;
+mod tokens;
 
 use napi_derive::napi;
 
 pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
 pub use highlighter::HighlighterCore;
 pub use theme_data::{parse_theme_data, ThemeData};
+pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};
 
 #[napi(js_name = "ferrikiVersion")]
 pub fn ferriki_version() -> String {
