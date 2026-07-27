@@ -120,6 +120,10 @@ impl<'a> RuleFactory<'a> {
         self.get_compiled_rule_id(root, repository)
     }
 
+    pub fn compile_raw_rule(&mut self, rule: Arc<RawRule>, repository: &RawRepository) -> RuleId {
+        self.get_compiled_rule_id(rule, RepositoryContext::new(repository))
+    }
+
     #[must_use]
     pub fn root_grammar(&self) -> &Arc<RawGrammar> {
         &self.root_grammar
