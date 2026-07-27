@@ -24,7 +24,6 @@ export function loadFerrikiNativeBinding() {
   }
   throw new Error([
     `[ferriki] No native binary for ${process.platform}-${process.arch}.`,
-    'This placeholder release ships without a runtime; see the README.',
     'Tried:',
     ...errors.map(e => `- ${e}`),
   ].join('\n'))

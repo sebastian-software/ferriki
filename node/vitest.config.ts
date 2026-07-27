@@ -23,7 +23,6 @@ const backendEntry = new URL('./compat/harness/shiki-backend-entry.ts', import.m
 
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
     {
       // Honest-alias mode (FERRIKI_HONEST_ALIAS=1): route the mirrored
       // tests' remaining upstream entry points through the ferriki backend
@@ -36,6 +35,13 @@ export default defineConfig({
           return
         if (source === 'shiki/bundle/full' || source === 'shiki/core')
           return backendEntry
+        if (
+          source === '@shikijs/engine-javascript'
+          || source === '@shikijs/engine-oniguruma'
+          || source === '@shikijs/engine-oniguruma/wasm-inlined'
+        ) {
+          return backendEntry
+        }
         if (source === '../src' && importer && (
           importer.includes('/compat/upstream/shiki/packages/shiki/test/')
           || importer.includes('/compat/upstream/shiki/packages/core/test/')
@@ -44,6 +50,7 @@ export default defineConfig({
         }
       },
     },
+    tsconfigPaths(),
     {
       name: 'ferriki-compat-subpath-loader',
       resolveId(id) {
@@ -102,11 +109,21 @@ export default ${defaultExportInteropExpression('loaded')}
       },
       {
         find: /^@shikijs\/engine-javascript$/,
-        replacement: compatPackage('engine-javascript/src/index.ts'),
+        replacement: process.env.FERRIKI_HONEST_ALIAS
+          ? backendEntry
+          : compatPackage('engine-javascript/src/index.ts'),
       },
       {
         find: /^@shikijs\/engine-oniguruma$/,
-        replacement: compatPackage('engine-oniguruma/src/index.ts'),
+        replacement: process.env.FERRIKI_HONEST_ALIAS
+          ? backendEntry
+          : compatPackage('engine-oniguruma/src/index.ts'),
+      },
+      {
+        find: /^@shikijs\/engine-oniguruma\/wasm-inlined$/,
+        replacement: process.env.FERRIKI_HONEST_ALIAS
+          ? backendEntry
+          : compatPackage('engine-oniguruma/src/wasm-inlined.ts'),
       },
       {
         find: /^@shikijs\/transformers$/,
