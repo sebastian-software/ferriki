@@ -110,6 +110,24 @@ impl CaptureRule {
             retokenize_captured_with_rule_id,
         }
     }
+
+    #[must_use]
+    pub fn get_name(
+        &self,
+        line_text: Option<&str>,
+        capture_indices: Option<&[CaptureIndex]>,
+    ) -> Option<String> {
+        self.data.get_name(line_text, capture_indices)
+    }
+
+    #[must_use]
+    pub fn get_content_name(
+        &self,
+        line_text: &str,
+        capture_indices: &[CaptureIndex],
+    ) -> Option<String> {
+        self.data.get_content_name(line_text, capture_indices)
+    }
 }
 
 pub struct MatchRule {

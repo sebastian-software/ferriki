@@ -15,6 +15,7 @@ pub mod rule;
 pub mod rule_factory;
 pub mod state_stack;
 pub mod theme;
+pub mod tokenize_string;
 
 pub use attributed_scope_stack::{
     AttributedScopeStack, AttributedScopeStackFrame, ScopeAttributesProvider,
@@ -47,3 +48,4 @@ pub use theme::{
     font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
     RawThemeSetting, RawThemeStyle, ScopeStack, StyleAttributes, Theme, ThemeError,
 };
+pub use tokenize_string::{tokenize_string, Injection, TokenizeStringResult, TokenizerGrammar};
