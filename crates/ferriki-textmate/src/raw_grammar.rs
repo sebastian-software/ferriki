@@ -64,19 +64,35 @@ pub struct RawRule {
     pub content_name: Option<String>,
     #[serde(default, rename = "match", skip_serializing_if = "Option::is_none")]
     pub match_pattern: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_raw_rule_map",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub begin: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_raw_rule_map",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub begin_captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_raw_rule_map",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub end_captures: Option<RawCaptures>,
     #[serde(default, rename = "while", skip_serializing_if = "Option::is_none")]
     pub while_pattern: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_raw_rule_map",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub while_captures: Option<RawCaptures>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub patterns: Option<Vec<Arc<RawRule>>>,
@@ -134,6 +150,28 @@ where
     }
 
     deserializer.deserialize_any(BoolLikeVisitor)
+}
+
+fn deserialize_optional_raw_rule_map<'de, D>(
+    deserializer: D,
+) -> Result<Option<RawCaptures>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let values = Option::<BTreeMap<String, serde_json::Value>>::deserialize(deserializer)?;
+    values
+        .map(|values| {
+            values
+                .into_iter()
+                .filter_map(|(key, value)| value.is_object().then_some((key, value)))
+                .map(|(key, value)| {
+                    serde_json::from_value(value)
+                        .map(|rule| (key, Arc::new(rule)))
+                        .map_err(de::Error::custom)
+                })
+                .collect()
+        })
+        .transpose()
 }
 
 #[cfg(test)]
@@ -240,5 +278,30 @@ mod tests {
 
         assert!(grammar.patterns[0].apply_end_pattern_last);
         assert!(!grammar.patterns[1].apply_end_pattern_last);
+    }
+
+    #[test]
+    fn ignores_non_rule_metadata_in_capture_maps() {
+        let grammar: RawGrammar = serde_json::from_str(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "<%--",
+                    "captures": {
+                        "0": { "name": "punctuation.definition.comment" },
+                        "end": "--%>",
+                        "name": "comment.block"
+                    }
+                }]
+            }"#,
+        )
+        .unwrap();
+
+        let captures = grammar.patterns[0].captures.as_ref().unwrap();
+        assert_eq!(captures.len(), 1);
+        assert_eq!(
+            captures["0"].name.as_deref(),
+            Some("punctuation.definition.comment")
+        );
     }
 }
