@@ -65,9 +65,12 @@ name = "ferriki-core"
 version = "0.1.0"
 dependencies = [
  "ferriki-asset-gen",
+ "ferriki-textmate",
  "napi",
  "napi-build",
  "napi-derive",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
