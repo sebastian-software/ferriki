@@ -17,14 +17,14 @@ export interface ThemeRegistration {
 
 export type LanguageInput = string | LanguageRegistration
 export type ThemeInput = string | ThemeRegistration
-export type SyncRegistrationInput<T> =
-  | T
-  | { default: SyncRegistrationInput<T> }
-  | readonly SyncRegistrationInput<T>[]
-export type RegistrationInput<T> =
-  | SyncRegistrationInput<T>
-  | PromiseLike<RegistrationInput<T>>
-  | (() => RegistrationInput<T>)
+export type SyncRegistrationInput<T>
+  = | T
+    | { default: SyncRegistrationInput<T> }
+    | readonly SyncRegistrationInput<T>[]
+export type RegistrationInput<T>
+  = | SyncRegistrationInput<T>
+    | PromiseLike<RegistrationInput<T>>
+    | (() => RegistrationInput<T>)
 
 export interface HighlighterOptions {
   langs?: readonly RegistrationInput<LanguageInput>[]
@@ -90,20 +90,20 @@ export interface HastRoot {
 export type HastNode = HastRoot | HastElement | HastText
 
 export interface Highlighter {
-  codeToHtml(code: string, options: HighlightOptions): string
-  codeToHast(code: string, options: HighlightOptions): HastRoot
-  codeToTokens(code: string, options: HighlightOptions): TokensResult
-  codeToTokensBase(code: string, options: HighlightOptions): ThemedToken[][]
-  codeToTokensWithThemes(code: string, options: HighlightOptions): ThemedToken[][]
-  getLoadedLanguages(): string[]
-  getLoadedThemes(): string[]
-  loadLanguage(...languages: RegistrationInput<LanguageInput>[]): Promise<void>
-  loadLanguageSync(...languages: SyncRegistrationInput<LanguageInput>[]): void
-  loadTheme(...themes: RegistrationInput<ThemeInput>[]): Promise<void>
-  loadThemeSync(...themes: SyncRegistrationInput<ThemeInput>[]): void
-  resolveLangAlias(language: string): string
-  dispose(): void
-  [Symbol.dispose](): void
+  codeToHtml: (code: string, options: HighlightOptions) => string
+  codeToHast: (code: string, options: HighlightOptions) => HastRoot
+  codeToTokens: (code: string, options: HighlightOptions) => TokensResult
+  codeToTokensBase: (code: string, options: HighlightOptions) => ThemedToken[][]
+  codeToTokensWithThemes: (code: string, options: HighlightOptions) => ThemedToken[][]
+  getLoadedLanguages: () => string[]
+  getLoadedThemes: () => string[]
+  loadLanguage: (...languages: RegistrationInput<LanguageInput>[]) => Promise<void>
+  loadLanguageSync: (...languages: SyncRegistrationInput<LanguageInput>[]) => void
+  loadTheme: (...themes: RegistrationInput<ThemeInput>[]) => Promise<void>
+  loadThemeSync: (...themes: SyncRegistrationInput<ThemeInput>[]) => void
+  resolveLangAlias: (language: string) => string
+  dispose: () => void
+  [Symbol.dispose]: () => void
 }
 
 export declare class ShikiError extends Error {
