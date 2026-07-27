@@ -107,16 +107,6 @@ impl HighlighterCore {
             return Ok(Some(asset.scope_name));
         }
 
-        let injecting_ids = self
-            .standard_assets
-            .as_ref()
-            .expect("standard assets checked above")
-            .languages
-            .entries_injecting_into(&asset.scope_name)
-            .into_iter()
-            .map(|entry| entry.id.clone())
-            .collect::<Vec<_>>();
-
         for dependency in asset
             .embedded_langs
             .iter()
@@ -134,9 +124,6 @@ impl HighlighterCore {
             })?;
         self.register_loaded_grammar(&asset, raw_grammar);
 
-        for injection_id in injecting_ids {
-            self.load_standard_language_inner(&injection_id, visiting)?;
-        }
         self.refresh_injections(&asset.scope_name);
 
         visiting.remove(&asset.id);
@@ -400,6 +387,12 @@ mod tests {
         highlighter
             .load_standard_language("typescript")
             .expect("typescript");
+        highlighter
+            .load_standard_language("es-tag-css")
+            .expect("css injection");
+        highlighter
+            .load_standard_language("es-tag-html")
+            .expect("html injection");
 
         let injections = highlighter.registry.injections("source.ts");
         assert!(injections.contains(&"inline.es6-css".to_owned()));
