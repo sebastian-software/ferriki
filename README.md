@@ -76,11 +76,13 @@ package):
 cd node
 pnpm install
 pnpm run build:native
+pnpm run test:ferriki-compat:textmate
 ```
 
-The compat lanes (`pnpm run test:ferriki-compat:*`) are suspended during
-the rebuild — they return as milestones of the #30 re-port against the
-mirrored suite.
+The TextMate compatibility lane runs selected, unchanged Shiki tests with
+honest aliases so every highlighted result passes through the native addon.
+The broader `test:ferriki-compat:core` lane also covers facade work tracked in
+issue #31.
 
 ## Compatibility
 
@@ -96,13 +98,15 @@ Ferriki tracks one approved Shiki release tag at a time — currently
 
 ## Status
 
-Ferriki is mid-rebuild as a native-only runtime (ADR 0009). The
-transitional JS engine, its parity adapter, and the fork-era tokenizer
-were removed; the last full pre-teardown state is commit `e9c01db` in
-main's history. The tokenizer returns as a mechanical 1:1 port of
-vscode-textmate onto ferroni's Scanner API (#30), followed by the thin
-napi facade and cut-over work (#31). The npm package is an honest
-placeholder until then. The core direction is fixed:
+The native TextMate runtime from issue #30 is implemented. It is a mechanical
+port of pinned vscode-textmate v9.3.2 onto ferroni's Scanner API, integrated
+with Ferriki's asset catalogs, native renderer, N-API host, and focused Node
+surface. Its inner vscode-textmate oracle and honest Shiki v4.3.1 structural
+gate are green.
+
+Issue #31 owns the remaining breadth of the Shiki facade, including
+multi-theme rendering, token explanations, grammar-state continuation, ANSI
+parsing, and transformer/decorator behavior. The core direction remains:
 
 - Rust owns runtime behavior
 - Node is the thin facade and compatibility layer

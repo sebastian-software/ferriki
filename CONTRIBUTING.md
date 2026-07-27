@@ -10,7 +10,7 @@
 
 ```sh
 # Rust checks (fmt, clippy, tests — all gated in CI)
-cargo fmt --check
+cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 
@@ -18,7 +18,7 @@ cargo test --workspace
 cd node
 pnpm install
 pnpm run build:native
-pnpm run test:ferriki-compat:core
+pnpm run test:ferriki-compat:textmate
 ```
 
 `build:native` compiles `crates/ferriki-core` in release mode and copies
@@ -27,17 +27,20 @@ running the Node lanes.
 
 ## Test lanes
 
-| Lane | Command (from `node/`) | Gates releases? |
+| Lane | Command | Purpose |
 | --- | --- | --- |
-| Core compat | `pnpm run test:ferriki-compat:core` | Yes |
-| Adapter compat | `pnpm run test:ferriki-compat:adapters` | Yes |
-| Colorized brackets | `pnpm run test:ferriki-compat:colorized-brackets` | No (manual) |
+| TextMate inner oracle | `cargo test -p ferriki-textmate` (repository root) | Exact vscode-textmate v9.3.2 grammar semantics |
+| Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.3.1 tests |
+| Full core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Broader issue #31 API parity |
+| Adapter compat | `pnpm run test:ferriki-compat:adapters` (from `node/`) | Optional adapter behavior outside the core product boundary |
+| Colorized brackets | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check |
 
-The lanes run the mirrored upstream Shiki suite with
-`FERRIKI_BACKEND=rust`. Additionally, `FERRIKI_HONEST_ALIAS=1` routes the
-mirrored tests' remaining upstream imports through Ferriki as well — this
-is the honest measurement mode used by the native-only migration (see
-`plans/native-only-migration.md`); expect known failures there.
+The TextMate structural lane sets `FERRIKI_HONEST_ALIAS=1`, which routes the
+mirrored tests' remaining upstream imports through Ferriki as well. Its
+20 selected behavior tests cover core highlighting, loaders, aliases,
+Markdown embeddings, lazy Vue/SCSS embeddings, and external injections. The
+full core facade lane intentionally has a broader scope and tracks the
+remaining work in issue #31.
 
 ## The upstream mirrors are never hand-edited
 
