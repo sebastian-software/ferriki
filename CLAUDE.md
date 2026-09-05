@@ -16,10 +16,10 @@
 - **Never edit anything under `node/compat/upstream/`** — it contains
   mechanical mirrors of Shiki and vscode-textmate. Glue and Rust test adapters
   stay outside the mirrors.
-- The fork-era tokenizer and the vendored JS engine were removed
-  (teardown per ADR 0009); the last full state is commit `e9c01db` in
-  main's history. The npm package is a placeholder until the #30 re-port
-  lands. Behavioral reference is the upstream mirror, not old code.
+- The fork-era tokenizer and vendored JS engine were removed (teardown per
+  ADR 0009). The native TextMate port, Rust renderer, N-API binding, asset
+  catalogs, and Node facade are the current runtime. Behavioral reference is
+  the upstream mirror, not old code.
 - Project language is US English (code, comments, commits, docs).
 - Conventional commits without exception; release-please depends on them.
 
@@ -28,15 +28,21 @@
 ```sh
 cargo test --workspace                       # Rust (also: fmt --check, clippy -D warnings)
 cd node && pnpm install && pnpm run build:native
-# Compat lanes are suspended until the #30 port produces a runtime;
-# they then run with FERRIKI_HONEST_ALIAS=1 as the honest gate.
+# Mandatory release gate (includes the honest native compatibility checks)
+pnpm run test:ferriki-compat:core
 ```
 
 Rerun `build:native` after any Rust change before Node checks.
 
 ## Package facts
 
-- Publishable package: `node/ferriki` (npm `ferriki`), ESM-only,
-  Node >= 20 — currently a placeholder exposing only `ferrikiVersion()`.
+- Publishable package: `node/ferriki` (npm `ferriki`), ESM-only, Node >= 20,
+  backed by the native Rust runtime and platform addon.
 - Publishing runs `pnpm publish` (catalog: specifiers must be rewritten;
   plain `npm publish` would leak them).
+
+## Delivery source of truth
+
+Current API and release work is tracked in the GitHub issues and epics for
+Ferriki 1.0. Historical migration plans remain useful context, but they are
+not a status ledger; check the linked issue before relying on an old finding.
