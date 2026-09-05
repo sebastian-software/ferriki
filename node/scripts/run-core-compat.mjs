@@ -71,6 +71,18 @@ const packedConsumerCheck = spawnSync(process.execPath, ['./scripts/check-packed
 if (packedConsumerCheck.status !== 0)
   process.exit(packedConsumerCheck.status || 1)
 
+const errorCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-errors.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (errorCheck.status !== 0)
+  process.exit(errorCheck.status || 1)
+
 const multiThemeCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-multitheme.mjs'], {
   cwd: nodeRoot,
   env: {
