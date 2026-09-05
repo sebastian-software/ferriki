@@ -65,6 +65,33 @@ const html = highlighter.codeToHtml('const answer = 42', {
 embedded by a grammar are loaded with it; lazy embeddings are loaded only
 after an explicit `loadLanguage`.
 
+Custom registrations use the same TextMate shapes as Shiki and are validated
+before they cross the native boundary:
+
+```js
+using custom = await createHighlighter({
+  langs: [{
+    name: 'todo',
+    scopeName: 'source.todo',
+    aliases: ['todos'],
+    patterns: [{ match: '\\bTODO\\b', name: 'keyword.todo' }],
+  }],
+  themes: [{
+    name: 'todo-theme',
+    type: 'light',
+    fg: '#111111',
+    bg: '#ffffff',
+    settings: [{
+      scope: 'keyword.todo',
+      settings: { foreground: '#ff00aa', fontStyle: 'bold' },
+    }],
+  }],
+})
+```
+
+Synchronous factories accept already-resolved names and registrations only;
+promises and loader functions require `createHighlighter`.
+
 ## Current API
 
 The native runtime currently provides:
@@ -77,6 +104,7 @@ The native runtime currently provides:
 - deterministically enumerable `bundledLanguages` and `bundledThemes` loader maps
 - `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
 - language aliases, lazy embedded languages, and external grammar injections
+- validated custom TextMate grammar and theme registrations
 - `ferrikiVersion` and the low-level `ferriki/native` binding loader
 
 The current renderer is the single-theme classic Shiki structure. Multi-theme

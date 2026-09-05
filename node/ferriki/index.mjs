@@ -65,17 +65,25 @@ export function createHighlighterCoreSync(options = {}) {
   function loadLanguageSync(...inputs) {
     assertActive()
     for (const registration of resolveSyncRegistrations(inputs)) {
+      validateLanguageRegistration(registration)
       const name = registrationName(registration)
       if (!name)
         continue
       const resolved = resolveAlias(name)
-      const scope = native.loadStandardGrammar(resolved)
+      const custom = isCustomLanguageRegistration(registration)
+      const scope = custom
+        ? callCustomRegistration(() => native.loadCustomGrammar(JSON.stringify(registration)), 'language')
+        : native.loadStandardGrammar(resolved)
       if (!scope)
         throw new ShikiError(`Language \`${resolved}\` not found, you may need to load it first`)
       loadedLanguages.add(resolved)
-      for (const alias of registration?.aliases || []) {
-        languageAliases[alias] = resolved
-        loadedLanguages.add(alias)
+      if (custom) {
+        for (const alias of registration.aliases || []) {
+          if (!isStandardLanguageKey(alias)) {
+            languageAliases[alias] = resolved
+            loadedLanguages.add(alias)
+          }
+        }
       }
     }
   }
@@ -87,11 +95,17 @@ export function createHighlighterCoreSync(options = {}) {
   function loadThemeSync(...inputs) {
     assertActive()
     for (const registration of resolveSyncRegistrations(inputs)) {
+      validateThemeRegistration(registration)
       const name = registrationName(registration)
       if (!name)
         continue
-      if (name !== 'none' && !native.loadStandardTheme(name))
-        throw new ShikiError(`Theme \`${name}\` not found, you may need to load it first`)
+      if (name !== 'none') {
+        const loaded = isCustomThemeRegistration(registration)
+          ? callCustomRegistration(() => native.loadCustomTheme(JSON.stringify(registration)), 'theme')
+          : native.loadStandardTheme(name)
+        if (!loaded)
+          throw new ShikiError(`Theme \`${name}\` not found, you may need to load it first`)
+      }
       loadedThemes.add(name)
     }
   }
@@ -103,13 +117,17 @@ export function createHighlighterCoreSync(options = {}) {
   function prepareOptions(options) {
     assertActive()
     const prepared = { ...options }
+    if (prepared.lang && typeof prepared.lang !== 'string')
+      loadLanguageSync(prepared.lang)
+    if (prepared.theme && typeof prepared.theme !== 'string')
+      loadThemeSync(prepared.theme)
     const language = resolveAlias(registrationName(prepared.lang) || 'text')
     const requestedTheme = registrationName(prepared.theme)
       || registrationName(selectDefaultTheme(prepared))
     const theme = requestedTheme === 'none' ? NONE_THEME_BACKING : requestedTheme
     if (!theme)
       throw new ShikiError('Invalid options, either `theme` or `themes` must be provided')
-    if (!isSpecialLanguage(language) && !native.loadStandardGrammar(language))
+    if (!isSpecialLanguage(language) && !native.resolveGrammarScope(language))
       throw new ShikiError(`Language \`${language}\` not found, you may need to load it first`)
     if (!native.loadStandardTheme(theme))
       throw new ShikiError(`Theme \`${theme}\` not found, you may need to load it first`)
@@ -131,6 +149,7 @@ export function createHighlighterCoreSync(options = {}) {
 
   function highlightMultiTheme(code, options) {
     const themes = resolveThemeEntries(options)
+    loadThemeSync(...themes.map(theme => theme.input))
     if (
       typeof native.codeToTokensWithThemes === 'function'
       && !themes.some(theme => theme.name === 'none')
@@ -303,6 +322,9 @@ export const bundledLanguages = createLanguageBundle(languageCatalog)
 export const bundledThemes = createThemeBundle(themeCatalog)
 export const bundledLanguagesAlias = createLanguageAliasBundle(languageCatalog)
 
+const standardLanguageKeys = new Set(languageCatalog.flatMap(entry => [entry.id, ...entry.aliases]))
+const standardThemeKeys = new Set(themeCatalog.map(entry => entry.id))
+
 function createLanguageBundle(catalog) {
   const loaders = new Map()
   for (const entry of catalog) {
@@ -346,6 +368,121 @@ function createThemeBundle(catalog) {
   return Object.freeze(loaders)
 }
 
+function validateLanguageRegistration(registration) {
+  if (typeof registration === 'string')
+    return
+  if (!registration || typeof registration !== 'object' || Array.isArray(registration))
+    throw new ShikiError('Language registrations must be names or registration objects')
+  const allowed = new Set([
+    'name',
+    'scopeName',
+    'aliases',
+    'patterns',
+    'repository',
+    'injections',
+    'injectionSelector',
+    'fileTypes',
+    'firstLineMatch',
+    '$vscodeTextmateLocation',
+    'embeddedLangs',
+    'embeddedLanguages',
+    'embeddedLangsLazy',
+    'injectTo',
+    'balancedBracketSelectors',
+    'unbalancedBracketSelectors',
+    'displayName',
+    'foldingStopMarker',
+    'foldingStartMarker',
+  ])
+  for (const key of Object.keys(registration)) {
+    if (!allowed.has(key))
+      throw new ShikiError(`Unsupported language registration field \`${key}\``)
+  }
+  if (typeof registration.name !== 'string' || !registration.name)
+    throw new ShikiError('Language registration requires a non-empty `name`')
+  if (isCustomLanguageRegistration(registration)) {
+    if (typeof registration.scopeName !== 'string' || !registration.scopeName)
+      throw new ShikiError(`Language registration \`${registration.name}\` requires a non-empty \`scopeName\``)
+    if (!hasLanguagePayload(registration))
+      throw new ShikiError(`Language registration \`${registration.name}\` has no supported grammar payload`)
+  }
+  for (const key of ['aliases', 'embeddedLangs', 'embeddedLanguages', 'embeddedLangsLazy', 'injectTo']) {
+    if (registration[key] !== undefined && (!Array.isArray(registration[key]) || registration[key].some(value => typeof value !== 'string')))
+      throw new ShikiError(`Language registration \`${key}\` must be an array of strings`)
+  }
+  if (registration.patterns !== undefined && !Array.isArray(registration.patterns))
+    throw new ShikiError('Language registration `patterns` must be an array')
+  if (registration.repository !== undefined && (!registration.repository || typeof registration.repository !== 'object' || Array.isArray(registration.repository)))
+    throw new ShikiError('Language registration `repository` must be an object')
+}
+
+function validateThemeRegistration(registration) {
+  if (typeof registration === 'string')
+    return
+  if (!registration || typeof registration !== 'object' || Array.isArray(registration))
+    throw new ShikiError('Theme registrations must be names or registration objects')
+  const allowed = new Set([
+    'name',
+    'type',
+    'fg',
+    'bg',
+    'settings',
+    'tokenColors',
+    'colors',
+    'include',
+    'displayName',
+    '$schema',
+    'semanticHighlighting',
+    'semanticTokenColors',
+  ])
+  for (const key of Object.keys(registration)) {
+    if (!allowed.has(key))
+      throw new ShikiError(`Unsupported theme registration field \`${key}\``)
+  }
+  if (typeof registration.name !== 'string' || !registration.name)
+    throw new ShikiError('Theme registration requires a non-empty `name`')
+  if (registration.include !== undefined && typeof registration.include !== 'string')
+    throw new ShikiError('Theme registration `include` must be a theme name')
+  if (isCustomThemeRegistration(registration) && registration.settings !== undefined && !Array.isArray(registration.settings) && !Array.isArray(registration.tokenColors))
+    throw new ShikiError('Theme registration settings must be an array')
+  if (!standardThemeKeys.has(registration.name) && !hasThemePayload(registration))
+    throw new ShikiError(`Theme registration \`${registration.name}\` has no supported theme payload`)
+}
+
+function hasLanguagePayload(registration) {
+  return ['patterns', 'repository', 'injections', 'injectionSelector', 'fileTypes', 'firstLineMatch'].some(key => Object.hasOwn(registration, key))
+}
+
+function isCustomLanguageRegistration(registration) {
+  return typeof registration === 'object'
+    && registration !== null
+    && !standardLanguageKeys.has(registration.name)
+}
+
+function hasThemePayload(registration) {
+  return ['settings', 'tokenColors', 'colors', 'fg', 'bg', 'include'].some(key => Object.hasOwn(registration, key))
+}
+
+function isCustomThemeRegistration(registration) {
+  return typeof registration === 'object'
+    && registration !== null
+    && !standardThemeKeys.has(registration.name)
+}
+
+function isStandardLanguageKey(name) {
+  return standardLanguageKeys.has(name)
+}
+
+function callCustomRegistration(loader, kind) {
+  try {
+    return loader()
+  }
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new ShikiError(`Invalid custom ${kind} registration: ${detail}`)
+  }
+}
+
 function compareIds(left, right) {
   return left < right ? -1 : left > right ? 1 : 0
 }
@@ -357,7 +494,7 @@ function hasThemes(options) {
 function resolveThemeEntries(options) {
   const entries = Object.entries(options?.themes || {})
     .filter(([, theme]) => theme != null && theme !== false)
-    .map(([color, theme]) => ({ color, name: registrationName(theme) }))
+    .map(([color, theme]) => ({ color, input: theme, name: registrationName(theme) }))
   if (entries.length === 0)
     throw new ShikiError('`themes` option must not be empty')
   if (entries.some(entry => !entry.name))

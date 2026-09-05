@@ -5,6 +5,7 @@ use ferriki_textmate::{
     parse_raw_grammar, GrammarConfiguration, RawGrammar, ScopeStack, SyncRegistry, Theme,
 };
 use napi::{Error, Result};
+use serde_json::Value;
 
 use crate::asset_catalog::StandardAssetCatalogs;
 use crate::theme_data::{parse_theme_data, ThemeData};
@@ -19,6 +20,7 @@ pub struct HighlighterCore {
     registry: SyncRegistry,
     aliases: BTreeMap<String, String>,
     loaded_language_ids: BTreeSet<String>,
+    loaded_custom_language_ids: BTreeSet<String>,
     loaded_language_order: Vec<String>,
     language_aliases: BTreeMap<String, Vec<String>>,
     injections: BTreeMap<String, Vec<String>>,
@@ -33,6 +35,7 @@ impl HighlighterCore {
             registry: SyncRegistry::new(None, None).map_err(theme_error)?,
             aliases: BTreeMap::new(),
             loaded_language_ids: BTreeSet::new(),
+            loaded_custom_language_ids: BTreeSet::new(),
             loaded_language_order: Vec::new(),
             language_aliases: BTreeMap::new(),
             injections: BTreeMap::new(),
@@ -82,6 +85,142 @@ impl HighlighterCore {
     pub fn load_standard_language(&mut self, requested: &str) -> Result<Option<String>> {
         let mut visiting = BTreeSet::new();
         self.load_standard_language_inner(requested, &mut visiting)
+    }
+
+    /// Register a user-provided TextMate grammar without pretending it is a
+    /// bundled asset. The JSON shape intentionally stays close to Shiki's
+    /// LanguageRegistration: the raw grammar fields are parsed by the same
+    /// decoder as shipped grammars, while aliases and injection metadata are
+    /// kept in the shared lookup model.
+    pub fn load_custom_language(&mut self, source: &str) -> Result<Option<String>> {
+        let value: Value = serde_json::from_str(source).map_err(|error| {
+            Error::from_reason(format!(
+                "Failed to parse custom language registration: {error}"
+            ))
+        })?;
+        let object = value
+            .as_object()
+            .ok_or_else(|| Error::from_reason("Language registration must be a JSON object."))?;
+        let id = object
+            .get("name")
+            .and_then(Value::as_str)
+            .filter(|name| !name.is_empty())
+            .ok_or_else(|| {
+                Error::from_reason("Language registration requires a non-empty `name`.")
+            })?
+            .to_owned();
+        let grammar = parse_raw_grammar(source, Some("custom-grammar.json")).map_err(|error| {
+            Error::from_reason(format!("Failed to parse custom grammar `{id}`: {error}"))
+        })?;
+        if grammar.scope_name.is_empty() {
+            return Err(Error::from_reason(format!(
+                "Language registration `{id}` requires a non-empty `scopeName`."
+            )));
+        }
+        let aliases = string_array(object, "aliases")?;
+        let inject_to = string_array(object, "injectTo")?;
+
+        if self.loaded_custom_language_ids.contains(&id) {
+            return Ok(Some(grammar.scope_name));
+        }
+
+        let scope_name = grammar.scope_name.clone();
+        self.registry.add_grammar(
+            grammar,
+            self.injections
+                .get(&scope_name)
+                .cloned()
+                .unwrap_or_default(),
+        );
+        self.aliases.insert(id.clone(), scope_name.clone());
+        for alias in &aliases {
+            // A user registration must never steal a key that belongs to the
+            // standard catalog. The standard resolver can still load that
+            // language later, regardless of registration order.
+            if self
+                .standard_assets
+                .as_ref()
+                .and_then(|catalogs| catalogs.languages.resolve_id(alias))
+                .is_some()
+            {
+                continue;
+            }
+            self.aliases.insert(alias.clone(), scope_name.clone());
+        }
+        for target in &inject_to {
+            {
+                let injections = self.injections.entry(target.clone()).or_default();
+                if !injections.contains(&scope_name) {
+                    injections.push(scope_name.clone());
+                }
+            }
+            self.refresh_injections(target);
+        }
+        self.language_aliases.insert(id.clone(), aliases);
+        self.loaded_custom_language_ids.insert(id.clone());
+        self.loaded_language_order.push(id);
+        Ok(Some(scope_name))
+    }
+
+    /// Register a user-provided theme using the same parser and TextMate
+    /// theme cache as bundled themes. A simple `include` name is supported so
+    /// custom themes can layer on a previously loaded standard/custom theme.
+    pub fn load_custom_theme(&mut self, source: &str) -> Result<bool> {
+        let value: Value = serde_json::from_str(source).map_err(|error| {
+            Error::from_reason(format!(
+                "Failed to parse custom theme registration: {error}"
+            ))
+        })?;
+        let object = value
+            .as_object()
+            .ok_or_else(|| Error::from_reason("Theme registration must be a JSON object."))?;
+        let id = object
+            .get("name")
+            .and_then(Value::as_str)
+            .filter(|name| !name.is_empty())
+            .ok_or_else(|| Error::from_reason("Theme registration requires a non-empty `name`."))?
+            .to_owned();
+        let mut theme = parse_theme_data(&id, source)?;
+        if let Some(include) = object.get("include") {
+            let include = include.as_str().ok_or_else(|| {
+                Error::from_reason("Theme registration `include` must be a theme name.")
+            })?;
+            if !self.load_standard_theme(include)? {
+                return Err(Error::from_reason(format!(
+                    "Theme `{include}` not found for custom theme include."
+                )));
+            }
+            let base = self
+                .themes
+                .get(include)
+                .cloned()
+                .ok_or_else(|| Error::from_reason("Included Ferriki theme disappeared."))?;
+            let explicit_foreground = object.get("fg").and_then(Value::as_str).is_some()
+                || object
+                    .get("colors")
+                    .and_then(Value::as_object)
+                    .and_then(|colors| colors.get("editor.foreground"))
+                    .and_then(Value::as_str)
+                    .is_some();
+            let explicit_background = object.get("bg").and_then(Value::as_str).is_some()
+                || object
+                    .get("colors")
+                    .and_then(Value::as_object)
+                    .and_then(|colors| colors.get("editor.background"))
+                    .and_then(Value::as_str)
+                    .is_some();
+            if !explicit_foreground {
+                theme.foreground = base.foreground.clone();
+            }
+            if !explicit_background {
+                theme.background = base.background.clone();
+            }
+            let mut settings = base.raw_theme.settings;
+            settings.extend(theme.raw_theme.settings);
+            theme.raw_theme.settings = settings;
+        }
+        self.themes.insert(id, theme);
+        Ok(true)
     }
 
     fn load_standard_language_inner(
@@ -535,6 +674,25 @@ fn scope_matches(candidate: &str, scope_name: &str) -> bool {
         || scope_name
             .strip_prefix(candidate)
             .is_some_and(|suffix| suffix.starts_with('.'))
+}
+
+fn string_array(object: &serde_json::Map<String, Value>, key: &str) -> Result<Vec<String>> {
+    let Some(value) = object.get(key) else {
+        return Ok(Vec::new());
+    };
+    let values = value.as_array().ok_or_else(|| {
+        Error::from_reason(format!("Language registration `{key}` must be an array."))
+    })?;
+    values
+        .iter()
+        .map(|value| {
+            value.as_str().map(str::to_owned).ok_or_else(|| {
+                Error::from_reason(format!(
+                    "Language registration `{key}` must contain strings."
+                ))
+            })
+        })
+        .collect()
 }
 
 fn is_plain_language(language: &str) -> bool {
