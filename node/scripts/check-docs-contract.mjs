@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const nodeRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const repoRoot = join(nodeRoot, '..')
-const declarationPath = join(nodeRoot, 'ferriki', 'index.d.mts')
+const declarationPath = join(nodeRoot, 'ferriki', 'src', 'api.d.mts')
 const apiPath = join(repoRoot, 'docs', 'ferriki-api.md')
 const migrationPath = join(repoRoot, 'docs', 'migrations', 'shiki-to-ferriki.md')
 const compatibilityPath = join(repoRoot, 'docs', 'compatibility.md')

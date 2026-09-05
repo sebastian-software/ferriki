@@ -20,6 +20,7 @@ lib-cov
 cache
 .cache
 .eslintcache
+node/.generated
 dist
 
 # Native addon artifacts (rebuilt by build:native)

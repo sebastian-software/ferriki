@@ -35,6 +35,11 @@ Ferromark/Ardo adoption path (#14, #18, #38). The old JS bundle/chunk runtime
 and placeholder-only package described by earlier migration snapshots are no
 longer present.
 
+The public API source-of-truth lane now lives under [`node/ferriki/src`](../node/ferriki/src):
+`api.mts` is compiled to `api.d.mts`, and the package-root runtime/type entry
+points are generated wrappers checked for drift in CI. The remaining API work
+is tracked in #10 for any future contract additions.
+
 ## 1. Fix Core Compatibility Gaps
 
 Status: complete — the core lane passes, including the bundle smoke tests.

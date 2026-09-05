@@ -1,9 +1,9 @@
 # Ferriki 1.0 API reference
 
 This is the public API reference for the `ferriki` package. The declaration
-file [`node/ferriki/index.d.mts`](../node/ferriki/index.d.mts) is the type-level
-source of truth; the CI docs gate checks that every declared public symbol is
-represented here.
+source [`node/ferriki/src/api.mts`](../node/ferriki/src/api.mts) generates the
+published declaration wrapper [`node/ferriki/index.d.mts`](../node/ferriki/index.d.mts).
+The CI docs gate checks that every generated public symbol is represented here.
 
 The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "rootDir": "ferriki/src",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationDir": ".generated/ferriki",
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["ferriki/src/api.mts"]
+}
