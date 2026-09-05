@@ -20,7 +20,8 @@ permissions:
 
 jobs:
   release:
-    uses: sebastian-software/ferramenta/.github/workflows/release-node-native.yml@main
+    # Reviewed reusable workflow ref; update only with a reviewed commit.
+    uses: sebastian-software/ferramenta/.github/workflows/release-node-native.yml@8cd4792a193013206f8b8728ec875c7465885dd5
     permissions:
       contents: write
       issues: write

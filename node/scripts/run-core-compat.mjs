@@ -47,6 +47,18 @@ const nativeBoundaryCheck = spawnSync(process.execPath, ['./scripts/check-native
 if (nativeBoundaryCheck.status !== 0)
   process.exit(nativeBoundaryCheck.status || 1)
 
+const releaseCheck = spawnSync(process.execPath, ['./scripts/check-release-workflow.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (releaseCheck.status !== 0)
+  process.exit(releaseCheck.status || 1)
+
 const docsCheck = spawnSync(process.execPath, ['./scripts/check-docs-drift.mjs'], {
   cwd: nodeRoot,
   env: {

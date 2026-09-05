@@ -1,0 +1,42 @@
+# Ferriki release checklist
+
+This checklist applies to every pre-1.0 release candidate and to the final
+1.0 go/no-go. A green Release workflow is not by itself evidence that npm was
+published: the release summary must say whether it created a release, skipped
+publication, or published successfully.
+
+## Before dispatch
+
+- [ ] The release PR is merged to `main` and the normal CI matrix is green.
+- [ ] The package version, changelog, release-please manifest, and intended npm
+      dist-tag agree.
+- [ ] `pnpm run test:ferriki-compat:core`, `pnpm run lint`, and
+      `pnpm run typecheck` pass from a clean checkout.
+- [ ] The pinned reusable workflow ref in `.github/workflows/publish.yml` was
+      reviewed and its target runners are available.
+- [ ] npm trusted publishing/provenance is enabled for the Ferriki package.
+
+## Release-candidate run
+
+- [ ] Run the normal publish workflow first; use `force-publish` only for an
+      intentional backfill of the manifest version.
+- [ ] Confirm every documented target build completes, including the packed
+      consumer smoke test.
+- [ ] Confirm the workflow summary distinguishes “no release” from
+      “published” and records failed or skipped target jobs.
+- [ ] Confirm the GitHub release and npm metadata show the same version and
+      dist-tag.
+- [ ] Install the published tarball in a clean consumer and run the public
+      `ferriki` plus `ferriki/native` smoke checks.
+- [ ] Verify npm provenance on the published package.
+
+## Go/no-go and rollback
+
+- [ ] An accountable maintainer records the manual 1.0 go/no-go decision in the
+      release discussion.
+- [ ] If publication is incomplete, stop promotion and document the failed
+      target and recovery command; do not call the run successful.
+- [ ] If a bad version is published, deprecate it with a migration message and
+      publish a corrected version. Do not reuse the version number.
+- [ ] Record the post-publish smoke result, GitHub release URL, npm version,
+      provenance result, and any follow-up issue.
