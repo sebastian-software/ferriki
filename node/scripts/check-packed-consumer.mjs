@@ -10,6 +10,7 @@ const nodeRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const packageRoot = join(nodeRoot, 'ferriki')
 const examplePath = join(nodeRoot, '..', 'docs', 'examples', 'ferromark-ardo.mjs')
 const tempRoot = await mkdtemp(join(tmpdir(), 'ferriki-docs-consumer-'))
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -25,13 +26,13 @@ function run(command, args, options = {}) {
     ...options,
   })
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed with ${result.status}\n${result.stdout || ''}\n${result.stderr || ''}`)
+    throw new Error(`${command} ${args.join(' ')} failed with ${result.status}\n${result.error || ''}\n${result.stdout || ''}\n${result.stderr || ''}`)
   }
   return result
 }
 
 try {
-  const packed = run('npm', ['pack', '--json', '--pack-destination', tempRoot])
+  const packed = run(npmCommand, ['pack', '--json', '--pack-destination', tempRoot])
   const metadata = JSON.parse(packed.stdout)[0]
   const files = new Set(metadata.files.map(file => file.path))
   for (const required of ['index.mjs', 'index.d.mts', 'native.mjs', 'assets/shiki/catalog.mjs'])
@@ -49,8 +50,8 @@ try {
 
   const tarball = join(tempRoot, metadata.filename)
   const consumer = await mkdtemp(join(tempRoot, 'consumer-'))
-  run('npm', ['init', '--yes'], { cwd: consumer, stdio: 'ignore' })
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball], { cwd: consumer, stdio: 'ignore' })
+  run(npmCommand, ['init', '--yes'], { cwd: consumer, stdio: 'ignore' })
+  run(npmCommand, ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball], { cwd: consumer, stdio: 'ignore' })
   const consumerExample = join(consumer, 'ferromark-ardo.mjs')
   await cp(examplePath, consumerExample)
   run(process.execPath, [consumerExample], { cwd: consumer, stdio: 'inherit' })
