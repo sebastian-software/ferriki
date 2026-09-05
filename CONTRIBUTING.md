@@ -47,6 +47,13 @@ sentinel; its deferred file list is maintained in
 issue #31. Use `test:ferriki-compat:core:full` when auditing the complete
 upstream core suite; it must not be mistaken for the mandatory parity score.
 
+The accepted 1.0 API matrix is
+[`docs/ferriki-1.0-api-contract.md`](docs/ferriki-1.0-api-contract.md) and
+its decision record is
+[`ADR 0011`](adr/0011-ferriki-1.0-api-contract.md). Changes to exports,
+options, errors, lifecycle, or compatibility classifications update that
+contract and the corresponding tests together.
+
 ## The upstream mirrors are never hand-edited
 
 Everything under `node/compat/upstream/` is a mechanical mirror of an approved
