@@ -10,9 +10,17 @@ const NONE_THEME_BACKING = 'nord'
 let singleton
 
 export class ShikiError extends Error {
-  constructor(message) {
-    super(message)
+  constructor(message, code = 'ERR_USAGE', options) {
+    super(message, options)
     this.name = 'ShikiError'
+    this.code = code
+  }
+}
+
+export class FerrikiError extends ShikiError {
+  constructor(message, code = 'ERR_INTERNAL', options) {
+    super(message, code, options)
+    this.name = 'FerrikiError'
   }
 }
 
@@ -21,6 +29,7 @@ export function ferrikiVersion() {
 }
 
 export async function createHighlighter(options = {}) {
+  options = validateHighlighterOptions(options)
   const {
     langs = [],
     themes = [],
@@ -38,9 +47,26 @@ export const createHighlighterCore = createHighlighter
 export const createShikiPrimitiveAsync = createHighlighter
 
 export function createHighlighterCoreSync(options = {}) {
-  const native = loadFerrikiNativeBinding().createHighlighter(JSON.stringify({
-    standardAssetRoot,
-  }))
+  options = validateHighlighterOptions(options)
+  let native
+  try {
+    native = loadFerrikiNativeBinding().createHighlighter(JSON.stringify({
+      standardAssetRoot,
+    }))
+  }
+  catch (cause) {
+    if (cause instanceof FerrikiError)
+      throw cause
+    const detail = cause instanceof Error ? cause.message : String(cause)
+    const missingBinary = detail.includes('No native binary')
+    throw new FerrikiError(
+      missingBinary
+        ? `${detail}\nInstall a Ferriki platform binary for this target or choose a documented supported target.`
+        : `${detail}\nVerify that the package contains assets/shiki and reinstall it.`,
+      missingBinary ? 'ERR_NATIVE_LOAD' : 'ERR_ASSET',
+      { cause },
+    )
+  }
   const loadedLanguages = new Set()
   const loadedThemes = new Set()
   const languageAliases = { ...(options.langAlias || {}) }
@@ -48,14 +74,14 @@ export function createHighlighterCoreSync(options = {}) {
 
   function assertActive() {
     if (disposed)
-      throw new ShikiError('Shiki instance has been disposed')
+      throw new ShikiError('Shiki instance has been disposed', 'ERR_USAGE')
   }
 
   function resolveAlias(language) {
     const visited = new Set()
     while (languageAliases[language]) {
       if (visited.has(language))
-        throw new ShikiError(`Circular alias \`${[...visited, language].join(' -> ')}\``)
+        throw new ShikiError(`Circular alias \`${[...visited, language].join(' -> ')}\``, 'ERR_USAGE')
       visited.add(language)
       language = languageAliases[language]
     }
@@ -75,7 +101,7 @@ export function createHighlighterCoreSync(options = {}) {
         ? callCustomRegistration(() => native.loadCustomGrammar(JSON.stringify(registration)), 'language')
         : native.loadStandardGrammar(resolved)
       if (!scope)
-        throw new ShikiError(`Language \`${resolved}\` not found, you may need to load it first`)
+        throw new ShikiError(`Language \`${resolved}\` not found, you may need to load it first`, 'ERR_UNSUPPORTED')
       loadedLanguages.add(resolved)
       if (custom) {
         for (const alias of registration.aliases || []) {
@@ -104,7 +130,7 @@ export function createHighlighterCoreSync(options = {}) {
           ? callCustomRegistration(() => native.loadCustomTheme(JSON.stringify(registration)), 'theme')
           : native.loadStandardTheme(name)
         if (!loaded)
-          throw new ShikiError(`Theme \`${name}\` not found, you may need to load it first`)
+          throw new ShikiError(`Theme \`${name}\` not found, you may need to load it first`, 'ERR_UNSUPPORTED')
       }
       loadedThemes.add(name)
     }
@@ -116,7 +142,7 @@ export function createHighlighterCoreSync(options = {}) {
 
   function prepareOptions(options) {
     assertActive()
-    const prepared = { ...options }
+    const prepared = { ...validateHighlightOptions(options) }
     if (prepared.lang && typeof prepared.lang !== 'string')
       loadLanguageSync(prepared.lang)
     if (prepared.theme && typeof prepared.theme !== 'string')
@@ -126,11 +152,11 @@ export function createHighlighterCoreSync(options = {}) {
       || registrationName(selectDefaultTheme(prepared))
     const theme = requestedTheme === 'none' ? NONE_THEME_BACKING : requestedTheme
     if (!theme)
-      throw new ShikiError('Invalid options, either `theme` or `themes` must be provided')
+      throw new ShikiError('Invalid options, either `theme` or `themes` must be provided', 'ERR_USAGE')
     if (!isSpecialLanguage(language) && !native.resolveGrammarScope(language))
-      throw new ShikiError(`Language \`${language}\` not found, you may need to load it first`)
+      throw new ShikiError(`Language \`${language}\` not found, you may need to load it first`, 'ERR_UNSUPPORTED')
     if (!native.loadStandardTheme(theme))
-      throw new ShikiError(`Theme \`${theme}\` not found, you may need to load it first`)
+      throw new ShikiError(`Theme \`${theme}\` not found, you may need to load it first`, 'ERR_UNSUPPORTED')
     if (!isSpecialLanguage(language))
       loadedLanguages.add(language)
     loadedThemes.add(theme)
@@ -142,7 +168,10 @@ export function createHighlighterCoreSync(options = {}) {
 
   function highlightSingleTheme(code, options = {}) {
     assertAnsiInput(code, options)
-    const result = JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options))))
+    const result = callNativeOperation(
+      'Ferriki tokenization failed',
+      () => JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options)))),
+    )
     if (registrationName(options.theme) === 'none')
       return normalizeNoneThemeResult(result)
     return result
@@ -159,7 +188,10 @@ export function createHighlighterCoreSync(options = {}) {
       const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined })
       prepared.themeEntries = themes
       return combineNativeThemeResult(
-        JSON.parse(native.codeToTokensWithThemes(code, JSON.stringify(prepared))),
+        callNativeOperation(
+          'Ferriki multi-theme tokenization failed',
+          () => JSON.parse(native.codeToTokensWithThemes(code, JSON.stringify(prepared))),
+        ),
         options,
       )
     }
@@ -175,7 +207,10 @@ export function createHighlighterCoreSync(options = {}) {
   function highlightNativeTheme(code, options, theme) {
     assertAnsiInput(code, options)
     const prepared = prepareOptions({ ...options, theme, themes: undefined })
-    return JSON.parse(native.codeToTokens(code, JSON.stringify(prepared)))
+    return callNativeOperation(
+      'Ferriki tokenization failed',
+      () => JSON.parse(native.codeToTokens(code, JSON.stringify(prepared))),
+    )
   }
 
   const highlighter = {
@@ -185,7 +220,10 @@ export function createHighlighterCoreSync(options = {}) {
         return hastToHtml(renderTokenResultHast(highlightMultiTheme(code, options), options))
       if (registrationName(options?.theme) === 'none')
         return hastToHtml(renderTokenResultHast(highlightSingleTheme(code, options), options))
-      return native.codeToHtml(code, JSON.stringify(prepareOptions(options)))
+      return callNativeOperation(
+        'Ferriki HTML rendering failed',
+        () => native.codeToHtml(code, JSON.stringify(prepareOptions(options))),
+      )
     },
     codeToHast(code, options) {
       assertAnsiInput(code, options)
@@ -193,7 +231,10 @@ export function createHighlighterCoreSync(options = {}) {
         return renderTokenResultHast(highlightMultiTheme(code, options), options)
       if (registrationName(options?.theme) === 'none')
         return renderTokenResultHast(highlightSingleTheme(code, options), options)
-      return JSON.parse(native.codeToHast(code, JSON.stringify(prepareOptions(options))))
+      return callNativeOperation(
+        'Ferriki HAST rendering failed',
+        () => JSON.parse(native.codeToHast(code, JSON.stringify(prepareOptions(options)))),
+      )
     },
     codeToTokens(code, options) {
       assertAnsiInput(code, options)
@@ -201,7 +242,10 @@ export function createHighlighterCoreSync(options = {}) {
         return highlightMultiTheme(code, options)
       if (registrationName(options?.theme) === 'none')
         return highlightSingleTheme(code, options)
-      return JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options))))
+      return callNativeOperation(
+        'Ferriki tokenization failed',
+        () => JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options)))),
+      )
     },
     codeToTokensBase(code, options) {
       return this.codeToTokens(code, options).tokens
@@ -362,11 +406,82 @@ function createThemeBundle(catalog) {
   return Object.freeze(loaders)
 }
 
+function validateHighlightOptions(options) {
+  if (options == null)
+    return {}
+  if (typeof options !== 'object' || Array.isArray(options))
+    throw new ShikiError('Highlight options must be an object', 'ERR_USAGE')
+
+  const registrationFields = ['lang', 'theme']
+  for (const field of registrationFields) {
+    const value = options[field]
+    if (value !== undefined && (typeof value !== 'string' && (!value || typeof value !== 'object' || Array.isArray(value))))
+      throw new ShikiError(`Highlight option \`${field}\` must be a name or registration object`, 'ERR_USAGE')
+  }
+  if (options.themes !== undefined && (!options.themes || typeof options.themes !== 'object' || Array.isArray(options.themes)))
+    throw new ShikiError('Highlight option `themes` must be an object', 'ERR_USAGE')
+  if (options.defaultColor !== undefined && options.defaultColor !== false && typeof options.defaultColor !== 'string')
+    throw new ShikiError('Highlight option `defaultColor` must be a string or false', 'ERR_USAGE')
+  if (options.cssVariablePrefix !== undefined && typeof options.cssVariablePrefix !== 'string')
+    throw new ShikiError('Highlight option `cssVariablePrefix` must be a string', 'ERR_USAGE')
+  if (options.includeExplanation !== undefined
+    && typeof options.includeExplanation !== 'boolean'
+    && !['scopeName', 'tokenType'].includes(options.includeExplanation)) {
+    throw new ShikiError('Highlight option `includeExplanation` has an unsupported value', 'ERR_USAGE')
+  }
+  for (const field of ['mergeWhitespaces', 'mergeSameStyleTokens']) {
+    if (options[field] !== undefined && typeof options[field] !== 'boolean')
+      throw new ShikiError(`Highlight option \`${field}\` must be boolean`, 'ERR_USAGE')
+  }
+  if (options.rootStyle !== undefined && options.rootStyle !== false && typeof options.rootStyle !== 'string')
+    throw new ShikiError('Highlight option `rootStyle` must be a string or false', 'ERR_USAGE')
+  if (options.tabindex !== undefined
+    && options.tabindex !== null
+    && options.tabindex !== false
+    && typeof options.tabindex !== 'string'
+    && (typeof options.tabindex !== 'number' || !Number.isFinite(options.tabindex))) {
+    throw new ShikiError('Highlight option `tabindex` must be a string, number, false, or null', 'ERR_USAGE')
+  }
+  for (const field of ['tokenizeMaxLineLength', 'tokenizeTimeLimit']) {
+    if (options[field] !== undefined
+      && (typeof options[field] !== 'number' || !Number.isFinite(options[field]) || options[field] < 0)) {
+      throw new ShikiError(`Highlight option \`${field}\` must be a non-negative number`, 'ERR_USAGE')
+    }
+  }
+  for (const field of ['engine', 'loadWasm', 'wasmBinary', 'transformers', 'decorations']) {
+    if (options[field] !== undefined)
+      throw new ShikiError(`Highlight option \`${field}\` is not supported by Ferriki`, 'ERR_UNSUPPORTED')
+  }
+  return options
+}
+
+function validateHighlighterOptions(options) {
+  if (options == null)
+    return {}
+  if (typeof options !== 'object' || Array.isArray(options))
+    throw new ShikiError('Highlighter options must be an object', 'ERR_USAGE')
+  for (const field of ['langs', 'themes']) {
+    if (options[field] !== undefined && !Array.isArray(options[field]))
+      throw new ShikiError(`Highlighter option \`${field}\` must be an array`, 'ERR_USAGE')
+  }
+  if (options.langAlias !== undefined
+    && (!options.langAlias || typeof options.langAlias !== 'object' || Array.isArray(options.langAlias))) {
+    throw new ShikiError('Highlighter option `langAlias` must be an object', 'ERR_USAGE')
+  }
+  if (options.langAlias) {
+    for (const [alias, target] of Object.entries(options.langAlias)) {
+      if (!alias || typeof target !== 'string' || !target)
+        throw new ShikiError('Highlighter option `langAlias` must map non-empty names to strings', 'ERR_USAGE')
+    }
+  }
+  return options
+}
+
 function validateLanguageRegistration(registration) {
   if (typeof registration === 'string')
     return
   if (!registration || typeof registration !== 'object' || Array.isArray(registration))
-    throw new ShikiError('Language registrations must be names or registration objects')
+    throw new ShikiError('Language registrations must be names or registration objects', 'ERR_USAGE')
   const allowed = new Set([
     'name',
     'scopeName',
@@ -390,31 +505,31 @@ function validateLanguageRegistration(registration) {
   ])
   for (const key of Object.keys(registration)) {
     if (!allowed.has(key))
-      throw new ShikiError(`Unsupported language registration field \`${key}\``)
+      throw new ShikiError(`Unsupported language registration field \`${key}\``, 'ERR_USAGE')
   }
   if (typeof registration.name !== 'string' || !registration.name)
-    throw new ShikiError('Language registration requires a non-empty `name`')
+    throw new ShikiError('Language registration requires a non-empty `name`', 'ERR_USAGE')
   if (isCustomLanguageRegistration(registration)) {
     if (typeof registration.scopeName !== 'string' || !registration.scopeName)
-      throw new ShikiError(`Language registration \`${registration.name}\` requires a non-empty \`scopeName\``)
+      throw new ShikiError(`Language registration \`${registration.name}\` requires a non-empty \`scopeName\``, 'ERR_USAGE')
     if (!hasLanguagePayload(registration))
-      throw new ShikiError(`Language registration \`${registration.name}\` has no supported grammar payload`)
+      throw new ShikiError(`Language registration \`${registration.name}\` has no supported grammar payload`, 'ERR_USAGE')
   }
   for (const key of ['aliases', 'embeddedLangs', 'embeddedLanguages', 'embeddedLangsLazy', 'injectTo']) {
     if (registration[key] !== undefined && (!Array.isArray(registration[key]) || registration[key].some(value => typeof value !== 'string')))
-      throw new ShikiError(`Language registration \`${key}\` must be an array of strings`)
+      throw new ShikiError(`Language registration \`${key}\` must be an array of strings`, 'ERR_USAGE')
   }
   if (registration.patterns !== undefined && !Array.isArray(registration.patterns))
-    throw new ShikiError('Language registration `patterns` must be an array')
+    throw new ShikiError('Language registration `patterns` must be an array', 'ERR_USAGE')
   if (registration.repository !== undefined && (!registration.repository || typeof registration.repository !== 'object' || Array.isArray(registration.repository)))
-    throw new ShikiError('Language registration `repository` must be an object')
+    throw new ShikiError('Language registration `repository` must be an object', 'ERR_USAGE')
 }
 
 function validateThemeRegistration(registration) {
   if (typeof registration === 'string')
     return
   if (!registration || typeof registration !== 'object' || Array.isArray(registration))
-    throw new ShikiError('Theme registrations must be names or registration objects')
+    throw new ShikiError('Theme registrations must be names or registration objects', 'ERR_USAGE')
   const allowed = new Set([
     'name',
     'type',
@@ -431,16 +546,16 @@ function validateThemeRegistration(registration) {
   ])
   for (const key of Object.keys(registration)) {
     if (!allowed.has(key))
-      throw new ShikiError(`Unsupported theme registration field \`${key}\``)
+      throw new ShikiError(`Unsupported theme registration field \`${key}\``, 'ERR_USAGE')
   }
   if (typeof registration.name !== 'string' || !registration.name)
-    throw new ShikiError('Theme registration requires a non-empty `name`')
+    throw new ShikiError('Theme registration requires a non-empty `name`', 'ERR_USAGE')
   if (registration.include !== undefined && typeof registration.include !== 'string')
-    throw new ShikiError('Theme registration `include` must be a theme name')
+    throw new ShikiError('Theme registration `include` must be a theme name', 'ERR_USAGE')
   if (isCustomThemeRegistration(registration) && registration.settings !== undefined && !Array.isArray(registration.settings) && !Array.isArray(registration.tokenColors))
-    throw new ShikiError('Theme registration settings must be an array')
+    throw new ShikiError('Theme registration settings must be an array', 'ERR_USAGE')
   if (!standardThemeKeys.has(registration.name) && !hasThemePayload(registration))
-    throw new ShikiError(`Theme registration \`${registration.name}\` has no supported theme payload`)
+    throw new ShikiError(`Theme registration \`${registration.name}\` has no supported theme payload`, 'ERR_USAGE')
 }
 
 function hasLanguagePayload(registration) {
@@ -467,13 +582,30 @@ function isStandardLanguageKey(name) {
   return standardLanguageKeys.has(name)
 }
 
+function callNativeOperation(message, operation) {
+  try {
+    return operation()
+  }
+  catch (cause) {
+    if (cause instanceof ShikiError)
+      throw cause
+    const detail = cause instanceof Error ? cause.message : String(cause)
+    const code = /time|line length|resource|limit/i.test(detail)
+      ? 'ERR_RESOURCE_LIMIT'
+      : /asset|grammar|theme|catalog/i.test(detail)
+        ? 'ERR_ASSET'
+        : 'ERR_INTERNAL'
+    throw new FerrikiError(`${message}: ${detail}`, code, { cause })
+  }
+}
+
 function callCustomRegistration(loader, kind) {
   try {
     return loader()
   }
   catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
-    throw new ShikiError(`Invalid custom ${kind} registration: ${detail}`)
+    throw new ShikiError(`Invalid custom ${kind} registration: ${detail}`, 'ERR_ASSET', { cause: error })
   }
 }
 
@@ -490,22 +622,22 @@ function resolveThemeEntries(options) {
     .filter(([, theme]) => theme != null && theme !== false)
     .map(([color, theme]) => ({ color, input: theme, name: registrationName(theme) }))
   if (entries.length === 0)
-    throw new ShikiError('`themes` option must not be empty')
+    throw new ShikiError('`themes` option must not be empty', 'ERR_USAGE')
   if (entries.some(entry => !entry.name))
-    throw new ShikiError('Theme registrations must provide a name')
+    throw new ShikiError('Theme registrations must provide a name', 'ERR_USAGE')
 
   const defaultColor = options.defaultColor === undefined ? 'light' : options.defaultColor
   if (defaultColor && defaultColor !== 'light-dark()') {
     const defaultEntry = entries.find(entry => entry.color === defaultColor)
     if (!defaultEntry)
-      throw new ShikiError(`\`themes\` option must contain the defaultColor key \`${defaultColor}\``)
+      throw new ShikiError(`\`themes\` option must contain the defaultColor key \`${defaultColor}\``, 'ERR_USAGE')
     return [defaultEntry, ...entries.filter(entry => entry !== defaultEntry)]
   }
   if (defaultColor === 'light-dark()' && (
     !entries.some(entry => entry.color === 'light')
     || !entries.some(entry => entry.color === 'dark')
   )) {
-    throw new ShikiError('When using `defaultColor: "light-dark()"`, you must provide both `light` and `dark` themes')
+    throw new ShikiError('When using `defaultColor: "light-dark()"`, you must provide both `light` and `dark` themes', 'ERR_USAGE')
   }
   return entries
 }
@@ -773,7 +905,7 @@ function assertAnsiInput(code, options) {
   if (!globalThis.__FERRIKI_COMPAT_LEGACY_ANSI
     && registrationName(options?.lang) === 'ansi'
     && code.includes(String.fromCharCode(27))) {
-    throw new ShikiError('ANSI control sequences are not supported by Ferriki; strip or parse them before highlighting')
+    throw new ShikiError('ANSI control sequences are not supported by Ferriki; strip or parse them before highlighting', 'ERR_UNSUPPORTED')
   }
 }
 
@@ -786,7 +918,7 @@ function registrationName(registration) {
 function resolveSyncRegistrations(inputs) {
   return inputs.flat(Infinity).flatMap((input) => {
     if (typeof input === 'function' || input?.then)
-      throw new ShikiError('Async language/theme input requires the async loader')
+      throw new ShikiError('Async language/theme input requires the async loader', 'ERR_USAGE')
     if (input?.default)
       return resolveSyncRegistrations([input.default])
     return input == null ? [] : [input]
