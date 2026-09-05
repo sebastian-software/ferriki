@@ -167,6 +167,18 @@ const tokenStateCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-to
 if (tokenStateCheck.status !== 0)
   process.exit(tokenStateCheck.status || 1)
 
+const ferromarkArdoCheck = spawnSync(process.execPath, ['./scripts/check-ferromark-ardo-contract.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (ferromarkArdoCheck.status !== 0)
+  process.exit(ferromarkArdoCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,

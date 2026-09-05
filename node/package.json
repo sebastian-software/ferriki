@@ -24,6 +24,7 @@
     "check:release": "node ./scripts/check-release-workflow.mjs",
     "check:transformers": "node ./scripts/check-ferriki-transformers.mjs",
     "check:token-state": "node ./scripts/check-ferriki-token-state.mjs",
+    "check:ferromark-ardo": "node ./scripts/check-ferromark-ardo-contract.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },

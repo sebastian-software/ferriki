@@ -76,6 +76,19 @@ policy; Ferriki owns highlighting and HAST/HTML/token output. The contract and
 representative executable consumer are documented in
 [`docs/examples/ferromark-ardo.mjs`](../examples/ferromark-ardo.mjs).
 
+The executable contract in `node/scripts/check-ferromark-ardo-contract.mjs`
+asserts the integration boundary:
+
+- the synchronous `codeToHtml(code, { lang, meta })` handoff emits aligned
+  light/dark Shiki output with `.line` elements;
+- `meta.__raw` remains opaque to Ferriki, so Ardo can safely parse title/label
+  metadata and attach its own figure/line attributes;
+- source and fence metadata never cross into fallback HTML unescaped;
+- an unsupported language returns one escaped plaintext block and one
+  actionable `FERRIKI_HIGHLIGHT_FALLBACK` diagnostic;
+- the adapter uses only public Ferriki APIs and performs language loading at
+  its async construction boundary.
+
 ## Rollback
 
 Keep the Shiki adapter behind the same highlighter interface while migrating.

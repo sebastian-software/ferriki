@@ -65,7 +65,7 @@ compatibility tests must converge on this matrix.
 | `theme` | Stable | Single-theme rendering with deterministic class, foreground, and background output. |
 | `themes` | Stable | Ordered theme map for light/dark or multi-theme output; never silently collapsed to one theme. `defaultColor: false` emits CSS variables for every theme. |
 | `defaultColor` | Stable | `light`, `dark`, a named theme, or `false`; invalid combinations throw `ShikiError` (#43). |
-| `meta` | Stable | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. |
+| `meta` | Stable | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. Ardo parses title/label/line attributes; Ferriki never interpolates `meta.__raw` into HTML. |
 | `transformers` | Stable | JS callbacks run in the documented HAST/token pipeline order (ADR 0008, #45). |
 | `decorations` | Stable | Declarative ranges are validated and applied in the JS rendering layer (ADR 0008, #45). |
 | `includeExplanation` | Stable | `true`, `scopeName`, and `tokenType` produce the documented explanation shape (#47). |
@@ -112,8 +112,8 @@ compatibility tests must converge on this matrix.
 | Synchronous fenced rendering | `Highlighter.codeToHtml()` | #42, #55 |
 | Lazy language/theme discovery | Enumerable catalogs and loader inputs | #44, #46 |
 | Light/dark output | `themes`, `defaultColor`, aligned tokens | #43 |
-| Line/title/fence metadata | `meta`, HAST line properties | #45, #55 |
-| Safe unknown-language fallback | `ShikiError` taxonomy and adapter policy | #50, #55 |
+| Line/title/fence metadata | `meta`, HAST line properties; Ardo owns container/title/line attributes | #45, #55 |
+| Safe unknown-language fallback | `ShikiError` taxonomy and the public adapter's escaped fallback/diagnostic policy | #50, #55 |
 | Line highlighting/decorations | JS transformer/decorator pipeline | #45, ADR 0008 |
 | No private native calls | Node exports only | #10, #31 |
 
