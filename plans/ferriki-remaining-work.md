@@ -29,16 +29,17 @@ Already true:
 - transitional naming is resolved: the addon is `ferriki.node`; the
   compatibility harness uses `FERRIKI_HONEST_ALIAS=1` for native routing
 
-Open work is tracked by the current GitHub backlog, including the typed public
-API (#10), release hardening and sidecars (#15, #52–#54), and the
-Ferromark/Ardo adoption path (#14, #18, #38). The old JS bundle/chunk runtime
+Open work is tracked by the current GitHub backlog, including public npm
+availability and sidecars (#15, #52), and the Ferromark/Ardo adoption path
+(#14, #18, #38). The old JS bundle/chunk runtime
 and placeholder-only package described by earlier migration snapshots are no
 longer present.
 
 The public API source-of-truth lane now lives under [`node/ferriki/src`](../node/ferriki/src):
 `api.mts` is compiled to `api.d.mts`, and the package-root runtime/type entry
 points are generated wrappers checked for drift in CI. The remaining API work
-is tracked in #10 for any future contract additions.
+is tracked by the accepted contract document and its focused checks; future
+additions require a new contract decision.
 
 ## 1. Fix Core Compatibility Gaps
 
@@ -185,18 +186,16 @@ Goal: make the repo easy to build, test, and release without historical context.
 
 Already resolved:
 
-- publishing goes through `publish.yml`, which delegates to the shared
-  `sebastian-software/ferramenta` release workflow: release-please for
-  versioning, `build:native` on five platform targets, binary
-  verification, and npm Trusted Publishing
+- publishing goes through the repository-owned `publish.yml`: release-please
+  versioning, `build:native` on five platform targets, sidecar verification,
+  npm Trusted Publishing, public registry/provenance verification, and a clean
+  consumer install
 - the workspace root is `private: true`; the publishable package is
   [`node/ferriki`](../node/ferriki)
 - Rust checks (fmt, clippy, tests) run in CI
 
 Remaining work:
 
-- continue tightening the checked-in `index.d.mts` contract as API issues
-  land (#10, #31)
 - decide whether and when `ferriki-core` becomes a separately published crate
 - add a CONTRIBUTING.md documenting the normal local workflow:
   - Rust checks

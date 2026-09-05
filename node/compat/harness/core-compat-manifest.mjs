@@ -13,8 +13,8 @@ export const coreCompatSupportedTests = [
 export const coreCompatDeferredTests = [
   {
     path: 'compat/upstream/shiki/packages/core/test/css-variables.test.ts',
-    reason: 'custom theme registration and CSS variable patching are part of the public facade contract',
-    issue: 31,
+    reason: 'Shiki engine CSS-variable patching is outside the accepted native boundary; Ferriki registration and multi-theme contracts are covered by dedicated checks',
+    issue: 48,
   },
   {
     path: 'compat/upstream/shiki/packages/core/test/tokens.test.ts',
@@ -28,18 +28,18 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/ansi.test.ts',
-    reason: 'ANSI parsing is not part of the current Ferriki facade',
-    issue: 31,
+    reason: 'ANSI escape parsing is an explicit non-goal; Ferriki rejects terminal escape sequences before native execution',
+    issue: 48,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/color-replacement.test.ts',
-    reason: 'color replacement options are not implemented yet',
-    issue: 31,
+    reason: 'the upstream bundle fixture exercises Shiki-only theme plumbing; Ferriki colorReplacements are validated by the native option contract',
+    issue: 48,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/css-variables.test.ts',
-    reason: 'CSS variable theme helpers are not implemented yet',
-    issue: 31,
+    reason: 'the upstream helper fixture is outside the accepted native boundary; Ferriki CSS variables are covered by the multi-theme and registration contracts',
+    issue: 48,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/decorations.test.ts',
@@ -48,8 +48,8 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/dist.test.ts',
-    reason: 'upstream distribution-file assertions do not describe the Ferriki package boundary',
-    issue: 31,
+    reason: 'upstream distribution-file assertions do not describe the Ferriki package boundary; packed Ferriki artifacts have a separate consumer gate',
+    issue: 42,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/grammar-state.test.ts',
@@ -58,27 +58,27 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/hast.test.ts',
-    reason: 'HAST metadata, decorations, and multi-theme rendering are not implemented yet',
-    issue: 31,
+    reason: 'the upstream HAST fixture combines adapter-owned metadata with engine behavior; Ferriki HAST, decoration, and multi-theme contracts are covered by dedicated checks',
+    issue: 45,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/shorthands-markdown.test.ts',
-    reason: 'lazy embedded-language shorthand behavior is not implemented yet',
-    issue: 31,
+    reason: 'Markdown shorthand expansion belongs to an optional adapter, not the Ferriki core product boundary',
+    issue: 42,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/shorthands.test.ts',
-    reason: 'facade error wording and shorthand behavior are not stable yet',
-    issue: 31,
+    reason: 'the upstream shorthand fixture asserts Shiki-specific adapter wording; Ferriki usage errors and native recovery are covered by the error contract',
+    issue: 50,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/theme-none.test.ts',
-    reason: 'none and dual-theme rendering are not implemented yet',
-    issue: 31,
+    reason: 'Ferriki theme-none and dual-theme behavior is covered by the dedicated multi-theme contract rather than the upstream adapter fixture',
+    issue: 43,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/themes.test.ts',
-    reason: 'dual-theme, multi-theme, and defaultColor behavior are not implemented yet',
-    issue: 31,
+    reason: 'Ferriki multi-theme and defaultColor behavior is covered by the dedicated native contract with deterministic output assertions',
+    issue: 43,
   },
 ]
