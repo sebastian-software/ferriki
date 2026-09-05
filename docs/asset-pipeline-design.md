@@ -1,7 +1,7 @@
 # Ferriki Asset Pipeline Design
 
 Date: 2026-03-09
-Status: implemented (see [`plans/ferriki-asset-pipeline-implementation-plan.md`](../../plans/ferriki-asset-pipeline-implementation-plan.md); phase 5, the `dist/chunks` removal, is still open)
+Status: implemented as of 2026-09-05 (see [`plans/ferriki-asset-pipeline-implementation-plan.md`](../plans/ferriki-asset-pipeline-implementation-plan.md)); packed-artifact follow-up work is tracked in #53.
 
 ## Goal
 
@@ -140,6 +140,7 @@ The asset pipeline must be covered by dedicated tests:
 3. Generate Ferriki-owned theme and language assets from that upstream plus
    selected Shiki metadata.
 4. Add lazy Rust loaders and caches for both catalogs.
-5. Point the Node-facing standard catalog at Ferriki assets instead of
-   `node/ferriki/dist/chunks`.
-6. Remove transitional JS bundle assets once parity and packaging are covered.
+5. Pointed the Node-facing standard catalog at Ferriki assets; no
+   `node/ferriki/dist/chunks` path is shipped or loaded.
+6. Removed transitional JS bundle assets; packed-artifact verification remains
+   tracked by #53.

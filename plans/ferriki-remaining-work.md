@@ -1,5 +1,9 @@
 # Ferriki Remaining Work
 
+> Historical execution ledger. Evidence date: 2026-09-05. The GitHub
+> epics/issues are the delivery source of truth; this file records context and
+> points to successor issues rather than claiming live status.
+
 This file tracks only the work that is still meaningfully open in the current
 repository state.
 
@@ -21,18 +25,15 @@ Already true:
 - the core compatibility lane passes (with `bundle.test.ts` consciously
   excluded, see item 1)
 - adapter scope is decided and documented (ADR 0004/0007)
-- transitional naming is resolved: the addon is `ferriki.node`, the backend
-  switch is `FERRIKI_BACKEND` (with `SHIKI_BACKEND` as a deprecated alias)
+- transitional naming is resolved: the addon is `ferriki.node`; the
+  compatibility harness uses `FERRIKI_HONEST_ALIAS=1` for native routing
 
-Not done yet:
-
-- the transitional JS bundle assets under `node/ferriki/dist/chunks` still
-  back the JS engine path (removal decided in ADR 0009)
-- the Node package source of truth is the checked-in `dist` bundle; there is
-  no TS source for it in the repo
-- the shipped `index.d.mts` types most of the compat surface as `any`
-  (see #10); the release flow itself (multi-platform binaries via the
-  shared ferramenta workflow, npm Trusted Publishing) is in place
+Open work is tracked by the current GitHub backlog, including the transformer
+and decoration pipeline (#45), token/state/explanation surface (#47), error
+taxonomy (#50), lifecycle and work limits (#51), release hardening (#54), and
+the Ferromark/Ardo contract (#55). The old JS bundle/chunk runtime and
+placeholder-only package described by earlier migration snapshots are no
+longer present.
 
 ## 1. Fix Core Compatibility Gaps
 
@@ -87,9 +88,8 @@ Remaining direction:
 - done: the Ferriki-owned asset pipeline replaced the bundle-driven asset
   layer for the native path
   (see [`ferriki-asset-pipeline-implementation-plan.md`](ferriki-asset-pipeline-implementation-plan.md);
-  grammars/themes ship as lazy binary catalogs, the Rust core caches after
-  registration) — removing the old `dist/chunks` JS assets is tracked in
-  item 5
+  grammars/themes ship as lazy binary catalogs, and the Rust core caches after
+  registration)
 
 Exit criteria:
 
@@ -102,9 +102,9 @@ Goal: make [`node/ferriki`](../node/ferriki) the only supported Node product sur
 
 Remaining work:
 
-- transitional naming is done: the addon is `ferriki.node`, backend selection
-  reads `FERRIKI_BACKEND` (with `SHIKI_BACKEND` as a deprecated alias), and
-  errors/symbols use the `[ferriki]`/`ferriki.*` prefixes
+- transitional naming is done: the addon is `ferriki.node` and errors/symbols
+  use the `[ferriki]`/`ferriki.*` prefixes; `FERRIKI_HONEST_ALIAS` is a
+  compatibility-harness switch, not a product backend selector
 - keep the public API Shiki-compatible where intended, but Ferriki-branded
 - ensure optional adapters do not silently become core product requirements
 
@@ -169,8 +169,8 @@ Remove when replacement coverage is in place:
 - Oniguruma/WASM runtime paths
 - obsolete compatibility shims that only existed during the migration
 - old package-topology references that are no longer part of the product
-- transitional JS bundle assets under [`node/ferriki/dist`](../node/ferriki/dist)
-  once the Ferriki-owned asset pipeline replaces them
+- any future compatibility-only artifacts must not become a production
+  runtime path; the native asset catalogs are the only shipped runtime data
 
 Exit criteria:
 
@@ -193,9 +193,8 @@ Already resolved:
 
 Remaining work:
 
-- replace the provisional `index.d.mts` (most exports are still typed
-  `any`, see #10) — ideally by re-exporting `@shikijs/types` for the
-  compat surface
+- continue tightening the checked-in `index.d.mts` contract as API issues
+  land (#10, #31)
 - decide whether and when `ferriki-core` becomes a separately published crate
 - add a CONTRIBUTING.md documenting the normal local workflow:
   - Rust checks
@@ -211,9 +210,7 @@ Exit criteria:
 
 ## Suggested Order
 
-1. Fix core compatibility gaps
-2. Move remaining runtime logic into Rust
-3. Shrink the Node surface
-4. Decide adapter support explicitly
-5. Remove obsolete runtime paths
-6. Harden release and contributor workflow
+1. Finish the accepted 1.0 API issues (#45, #47, #50, #51)
+2. Harden release and packaging (#52–#54)
+3. Validate the Ferromark/Ardo integration contract (#55)
+4. Keep docs and compatibility gates synchronized (#56–#57)

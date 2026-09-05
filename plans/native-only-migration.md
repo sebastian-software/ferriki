@@ -1,5 +1,9 @@
 # Native-Only Migration Plan
 
+> Historical audit and migration record. Evidence dates are retained below;
+> current delivery status lives in the GitHub issues and the accepted 1.0 API
+> contract. Do not use the teardown snapshot as a current package description.
+
 Execution plan for [ADR 0009](../adr/0009-native-only-runtime.md): remove
 the bundled JS engine and make the Rust core the only runtime, with a thin
 JS facade on top. Based on a full audit of the backend wiring in
