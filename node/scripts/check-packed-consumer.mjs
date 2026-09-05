@@ -17,6 +17,7 @@ function run(command, args, options = {}) {
     cwd: options.cwd || packageRoot,
     encoding: 'utf8',
     stdio: options.stdio || 'pipe',
+    shell: process.platform === 'win32' && command === 'npm.cmd',
     env: {
       ...process.env,
       npm_config_cache: join(tempRoot, 'npm-cache'),
