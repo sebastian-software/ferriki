@@ -68,7 +68,7 @@ compatibility machinery lives under [`node`](node).
 
 ## Quick Start
 
-Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 20, and pnpm
+Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 22.13.0, and pnpm
 (the pinned version in `node/package.json` is picked up via corepack).
 
 Rust:
@@ -95,8 +95,10 @@ checkout and keeps the tracked mirror immutable.
 
 The TextMate compatibility lane runs selected, unchanged Shiki tests with
 honest aliases so every highlighted result passes through the native addon.
-The broader `test:ferriki-compat:core` lane also covers facade work tracked in
-issue #31.
+The broader `test:ferriki-compat:core` lane also runs the Ferriki-owned API,
+error, catalog, registration, multi-theme, transformer, token-state, packaging,
+and Ferromark/Ardo contract checks. Upstream cases outside that accepted
+boundary remain explicitly classified in the compatibility manifest.
 
 ## Compatibility
 
@@ -118,9 +120,10 @@ with Ferriki's asset catalogs, native renderer, N-API host, and focused Node
 surface. Its inner vscode-textmate oracle and honest Shiki v4.4.3 structural
 gate are green.
 
-Issues #47 and #51 own the remaining token/state and lifecycle breadth of the
-Shiki facade. Transformer/decorator behavior remains deliberately outside the
-core runtime until its contract is accepted. The current core direction is:
+The accepted API contract and its focused checks own token/state, lifecycle,
+transformer, and registration behavior. Upstream adapter fixtures that do not
+describe Ferriki's native boundary remain classified as explicit non-goals.
+The current core direction is:
 
 - Rust owns runtime behavior
 - Node is the thin facade and compatibility layer
