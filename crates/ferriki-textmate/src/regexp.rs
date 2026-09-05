@@ -559,6 +559,18 @@ impl<T: Copy> CompiledRule<T> {
             capture_indices: matched.capture_indices,
         });
 
+        // Ferroni 1.3.2 reports a `^$` match at the synthetic end position
+        // used by TextMate's line scanner. That position is valid for `$`,
+        // but not for a line-start anchor after the line terminator. Keep the
+        // TextMate distinction here rather than weakening the shared Scanner
+        // semantics for other callers.
+        if best.as_ref().is_some_and(|best| {
+            has_line_start_anchor(&self.reg_exps[best.index])
+                && best.capture_indices[0].start == string.utf16_len()
+        }) {
+            best = None;
+        }
+
         if options == ScannerFindOptions::NONE {
             // Ferroni 1.3's RegSet path can miss a valid lookaround match or
             // return a later start for some extended-mode TextMate patterns.

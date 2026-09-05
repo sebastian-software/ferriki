@@ -14,6 +14,10 @@ Ferriki is intentionally split like this:
 - `node/ferriki`: Node package and compatibility-facing entrypoint
 - `ferroni`: external regex dependency, not a vendored repository component
 
+The scanner compatibility baseline is Ferroni **1.3.2 or newer within the
+1.x release line**. The workspace lockfile pins the release used by CI; any
+Ferroni upgrade must rerun the TextMate oracle and Shiki compatibility lanes.
+
 The design target is that runtime behavior is defined here first. JavaScript is
 there to load the addon, expose the public API, and keep compatibility stable,
 not to reimplement the highlighter.
