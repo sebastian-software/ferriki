@@ -101,7 +101,7 @@ issue #31.
 ## Compatibility
 
 Ferriki tracks one approved Shiki release tag at a time — currently
-**Shiki v4.3.1** (machine-readable source of truth:
+**Shiki v4.4.3** (machine-readable source of truth:
 [`node/compat/upstream/shiki/.source.json`](node/compat/upstream/shiki/.source.json)).
 
 - Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
@@ -115,7 +115,7 @@ Ferriki tracks one approved Shiki release tag at a time — currently
 The native TextMate runtime from issue #30 is implemented. It is a mechanical
 port of pinned vscode-textmate v9.3.2 onto ferroni's Scanner API, integrated
 with Ferriki's asset catalogs, native renderer, N-API host, and focused Node
-surface. Its inner vscode-textmate oracle and honest Shiki v4.3.1 structural
+surface. Its inner vscode-textmate oracle and honest Shiki v4.4.3 structural
 gate are green.
 
 Issues #47 and #51 own the remaining token/state and lifecycle breadth of the

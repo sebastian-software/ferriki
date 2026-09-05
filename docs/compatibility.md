@@ -2,7 +2,7 @@
 
 ## Baseline
 
-Ferriki's compatibility reference is the pinned **Shiki v4.3.1** mirror at
+Ferriki's compatibility reference is the pinned **Shiki v4.4.3** mirror at
 [`node/compat/upstream/shiki`](../node/compat/upstream/shiki). The source commit
 and imported paths are recorded in
 [`node/compat/upstream/shiki/.source.json`](../node/compat/upstream/shiki/.source.json).
@@ -11,7 +11,9 @@ The tokenizer oracle is the pinned vscode-textmate source under
 
 The mirror is immutable during tests. Ferriki-specific aliases, native
 registration, and compatibility shims live in `node/compat/harness`; upstream
-files are never edited to make a test pass.
+files are never edited to make a test pass. The mirror's `.manifest.sha256`
+records the SHA-256 digest of every tracked upstream file and is checked before
+and after compatibility preparation.
 
 ## What is covered
 

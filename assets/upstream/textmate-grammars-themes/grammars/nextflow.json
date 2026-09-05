@@ -318,6 +318,9 @@
     }
   },
   "scopeName": "source.nextflow",
+  "embeddedLangs": [
+    "nextflow-groovy"
+  ],
   "aliases": [
     "nf"
   ]

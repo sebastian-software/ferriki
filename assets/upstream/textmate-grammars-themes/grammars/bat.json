@@ -781,6 +781,7 @@
   },
   "scopeName": "source.batchfile",
   "aliases": [
-    "batch"
+    "batch",
+    "cmd"
   ]
 }

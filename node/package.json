@@ -11,6 +11,7 @@
     "build:native": "pnpm -C ferriki build:native",
     "prepare:compat": "node ./scripts/prepare-shiki-compat.mjs",
     "check:compat-mirror": "node ./scripts/check-shiki-compat-clean.mjs",
+    "check:compat-manifest": "node ./scripts/check-shiki-compat-manifest.mjs",
     "build:compat": "pnpm run prepare:compat && pnpm --filter './compat/upstream/shiki/packages/*' --filter '!@shikijs/langs' --filter '!@shikijs/themes' run --if-present build",
     "test:ferriki-compat": "pnpm run test:ferriki-compat:core",
     "test:ferriki-compat:textmate": "FERRIKI_HONEST_ALIAS=1 vitest run compat/upstream/shiki/packages/core/test/core.test.ts compat/upstream/shiki/packages/shiki/test/injections.test.ts compat/upstream/shiki/packages/shiki/test/general.test.ts -t '^(should|vue-injections|injections-side-effects)' --maxWorkers 1 --no-file-parallelism",

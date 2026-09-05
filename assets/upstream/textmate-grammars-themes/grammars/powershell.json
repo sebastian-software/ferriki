@@ -1001,6 +1001,7 @@
   "scopeName": "source.powershell",
   "aliases": [
     "ps",
-    "ps1"
+    "ps1",
+    "pwsh"
   ]
 }
