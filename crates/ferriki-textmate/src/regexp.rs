@@ -559,6 +559,20 @@ impl<T: Copy> CompiledRule<T> {
             capture_indices: matched.capture_indices,
         });
 
+        // Ferroni reports line-guard matches at the synthetic end position
+        // used by TextMate's line scanner. These guards are valid at the
+        // logical line start, but not after the line terminator. Keep the
+        // TextMate distinction here rather than weakening shared Scanner
+        // semantics for regular expression consumers.
+        if best.as_ref().is_some_and(|best| {
+            let pattern = self.reg_exps[best.index].trim();
+            best.capture_indices[0].start == string.utf16_len()
+                && (pattern == "^$"
+                    || (start_position < string.utf16_len() && rejects_artificial_end(pattern)))
+        }) {
+            best = None;
+        }
+
         if options == ScannerFindOptions::NONE {
             // Ferroni 1.3's RegSet path can miss a valid lookaround match or
             // return a later start for some extended-mode TextMate patterns.
@@ -573,8 +587,10 @@ impl<T: Copy> CompiledRule<T> {
                 else {
                     continue;
                 };
-                if fallback.rejects_artificial_end && capture_indices[0].start == string.utf16_len()
-                {
+                let pattern = self.reg_exps[index].trim();
+                let rejects_artificial_end = fallback.rejects_artificial_end
+                    || (start_position < string.utf16_len() && rejects_artificial_end(pattern));
+                if rejects_artificial_end && capture_indices[0].start == string.utf16_len() {
                     continue;
                 }
                 let should_replace = best.as_ref().is_none_or(|best| {
@@ -655,6 +671,13 @@ fn normalize_ferroni_pattern(pattern: &str) -> String {
         position += character.len_utf8();
     }
     result
+}
+
+fn rejects_artificial_end(pattern: &str) -> bool {
+    pattern == "$"
+        || pattern.starts_with("^\\s*")
+        || pattern.starts_with("^(?!")
+        || pattern.starts_with("(^|\\G)(?!")
 }
 
 fn has_line_start_anchor(pattern: &str) -> bool {
