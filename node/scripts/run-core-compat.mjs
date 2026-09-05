@@ -155,6 +155,18 @@ const transformerCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-t
 if (transformerCheck.status !== 0)
   process.exit(transformerCheck.status || 1)
 
+const tokenStateCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-token-state.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (tokenStateCheck.status !== 0)
+  process.exit(tokenStateCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,

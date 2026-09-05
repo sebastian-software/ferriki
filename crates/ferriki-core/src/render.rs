@@ -155,6 +155,7 @@ fn merge_whitespace_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightT
                         color: None,
                         font_style: None,
                         token_type: None,
+                        scope_names: None,
                     });
                     output.push(token.clone());
                 }

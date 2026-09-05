@@ -393,6 +393,7 @@ impl HighlighterCore {
                             color: None,
                             font_style: None,
                             token_type: None,
+                            scope_names: None,
                         }]
                     }
                 })
@@ -424,9 +425,24 @@ impl HighlighterCore {
                     color: Some(String::new()),
                     font_style: Some(0),
                     token_type: options.include_token_type.then_some(0),
+                    scope_names: None,
                 }]);
                 continue;
             }
+
+            let scope_result = if options.include_scopes {
+                Some(
+                    grammar
+                        .tokenize_line(line, state.clone(), options.time_limit_millis)
+                        .map_err(|error| {
+                            Error::from_reason(format!(
+                                "Failed to tokenize `{language}` line scopes: {error}"
+                            ))
+                        })?,
+                )
+            } else {
+                None
+            };
 
             let result = grammar
                 .tokenize_line2(line, state, options.time_limit_millis)
@@ -450,6 +466,15 @@ impl HighlighterCore {
                     result.tokens[token_index * 2 + 1],
                     &color_map,
                     options.include_token_type,
+                    scope_result.as_ref().and_then(|scopes| {
+                        scopes
+                            .tokens
+                            .iter()
+                            .find(|token| {
+                                token.start_index <= start_index && token.end_index >= end_index
+                            })
+                            .map(|token| token.scopes.clone())
+                    }),
                 ) {
                     line_tokens.push(token);
                 }
@@ -679,6 +704,7 @@ fn theme_token_for_range(
         offset: line_offset + range.start,
         variants,
         token_type: None,
+        scope_names: (!scopes.is_empty()).then(|| scopes.to_vec()),
     })
 }
 
@@ -909,6 +935,30 @@ mod tests {
         assert_eq!(result.tokens[1][0].offset, 6);
         assert_eq!(result.tokens[1][0].token_type, Some(1));
         assert!(result.tokens[2].is_empty());
+    }
+
+    #[test]
+    fn retains_scope_paths_when_requested_for_explanations() {
+        let mut highlighter = standard_highlighter();
+        let result = highlighter
+            .tokenize(
+                "console.log(1)",
+                "javascript",
+                "nord",
+                &TokenizeOptions {
+                    time_limit_millis: 0,
+                    include_scopes: true,
+                    ..TokenizeOptions::default()
+                },
+            )
+            .expect("tokens");
+
+        let console = &result.tokens[0][0];
+        assert_eq!(console.content, "console");
+        assert!(console
+            .scope_names
+            .as_ref()
+            .is_some_and(|scopes| scopes.iter().any(|scope| scope == "source.js")));
     }
 
     #[test]
