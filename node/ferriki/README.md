@@ -60,6 +60,8 @@ The native runtime currently provides:
   constructor
 - asynchronous and synchronous language and theme loading
 - bundled standard TextMate grammars and themes
+- deterministically enumerable `bundledLanguages` and `bundledThemes` loader maps
+- `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
 - language aliases, lazy embedded languages, and external grammar injections
 - `ferrikiVersion` and the low-level `ferriki/native` binding loader
 

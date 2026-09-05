@@ -35,6 +35,10 @@ Theme catalog:
 - [`assets/shiki/themes/manifest.fkindex`](../assets/shiki/themes/manifest.fkindex)
 - one `.fktheme` file per theme
 
+The generated [`assets/shiki/catalog.mjs`](../assets/shiki/catalog.mjs) is the
+Node-facing metadata projection of both manifests. It is intentionally kept
+separate from the binary payloads so catalog enumeration remains lazy.
+
 The manifest is loaded first. It maps logical IDs to asset filenames and carries
 enough metadata for lazy lookup.
 

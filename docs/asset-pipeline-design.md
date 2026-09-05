@@ -68,10 +68,13 @@ given process. The asset model therefore optimizes for:
    curated metadata it needs.
 4. The generator emits Ferriki-owned assets under
    [`assets/shiki/`](../../assets/shiki).
-5. [`crates/ferriki-core`](../../crates/ferriki-core)
+5. The Node catalog generator derives `assets/shiki/catalog.mjs` from those
+   manifests. It contains only enumerable IDs and loader metadata, never the
+   grammar or theme payloads.
+6. [`crates/ferriki-core`](../../crates/ferriki-core)
    uses manifests plus embedded bytes to lazy-load and compile requested
    grammars and themes.
-6. The Node package exposes the standard Shiki-compatible API, but no longer
+7. The Node package exposes the standard Shiki-compatible API, but no longer
    depends on Shiki chunk files as the catalog source of truth.
 
 ## Runtime Behavior
@@ -83,6 +86,9 @@ Standard assets are shipped with Ferriki but are not eagerly activated.
 - Manifests and asset bytes belong to the product.
 - Decoding happens only when a language or theme is requested.
 - Compiled runtime structures stay in Rust caches after first use.
+- `bundledLanguages` and `bundledThemes` enumerate the generated catalog
+  without decoding any payload. Language aliases are enumerable loader keys;
+  `bundledLanguagesAlias` maps each alias to its canonical ID.
 
 ### External assets
 
@@ -119,6 +125,7 @@ This design does not require:
 The asset pipeline must be covered by dedicated tests:
 
 - generator determinism tests
+- Node catalog/asset parity checks
 - binary roundtrip tests
 - decode stability tests
 - semantic parity tests ensuring the same asset yields the same usable runtime
