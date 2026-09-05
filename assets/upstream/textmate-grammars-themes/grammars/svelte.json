@@ -231,6 +231,9 @@
     "attributes": {
       "patterns": [
         {
+          "include": "#attributes-comments"
+        },
+        {
           "include": "#attributes-directives"
         },
         {
@@ -256,6 +259,19 @@
       "patterns": [
         {
           "include": "source.ts"
+        }
+      ]
+    },
+    "attributes-comments": {
+      "patterns": [
+        {
+          "match": "//.*$",
+          "name": "comment.line.double-slash.svelte"
+        },
+        {
+          "begin": "/\\*",
+          "end": "\\*/",
+          "name": "comment.block.svelte"
         }
       ]
     },
@@ -699,7 +715,7 @@
       ]
     },
     "special-tags-block-end": {
-      "begin": "(\\{)\\s*(/([a-z]*))",
+      "begin": "(\\{)\\s*(/(?![*/])([a-z]*))",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.block.begin.svelte"

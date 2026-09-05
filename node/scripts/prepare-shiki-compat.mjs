@@ -8,6 +8,7 @@ const scriptDir = path.dirname(new URL(import.meta.url).pathname)
 const nodeRoot = path.resolve(scriptDir, '..')
 const mirrorRoot = path.join(nodeRoot, 'compat/upstream/shiki')
 const checkScript = path.join(scriptDir, 'check-shiki-compat-clean.mjs')
+const manifestCheckScript = path.join(scriptDir, 'check-shiki-compat-manifest.mjs')
 
 function run(command, args, cwd) {
   const result = spawnSync(command, args, {
@@ -42,6 +43,7 @@ async function copyPackage(source, destination) {
 }
 
 async function main() {
+  run(process.execPath, [manifestCheckScript], nodeRoot)
   run(process.execPath, [checkScript], nodeRoot)
 
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ferriki-shiki-'))
@@ -79,6 +81,7 @@ async function main() {
   }
 
   run(process.execPath, [checkScript], nodeRoot)
+  run(process.execPath, [manifestCheckScript], nodeRoot)
 }
 
 main().catch((error) => {

@@ -35,7 +35,7 @@
     "attribute": {
       "patterns": [
         {
-          "begin": "@(?:(?:align|allow_deprecated|benchmark|bigendian|builtin|callconv|cname|compact|const|deprecated|dynamic|export|extern|finalizer|format|if|inline|init|jump|link|littleendian|local|maydiscard|naked|noalias|nodiscard|noinit|noinline|nopadding|norecurse|noreturn|nosanitize|nostrip|obfuscate|operator|operator_r|operator_s|optional|overlap|packed|private|public|pure|reflect|safeinfer|safemacro|simd|section|structlike|tag|test|unused|used|wasm|weak|winmain)|\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b",
+          "begin": "@(?:(?:align|allow_deprecated|benchmark|bigendian|builtin|callconv|cname|compact|const|constinit|deprecated|dynamic|export|finalizer|format|if|inline|init|jump|link|littleendian|local|maydiscard|mustinit|naked|noalias|nodiscard|noinit|noinline|nopadding|norecurse|noreturn|nosanitize|nostrip|obfuscate|operator|operator_r|operator_s|optional|overlap|packed|private|public|pure|reflect|safeinfer|safemacro|simd|section|tag|test|unused|used|wasm|weak|weaklink|winmain)|\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b",
           "beginCaptures": {
             "0": {
               "name": "keyword.annotation.c3"
@@ -248,9 +248,64 @@
           "end": "(?=[^\\t {])|(?<=})",
           "patterns": [
             {
-              "include": "#generic_params"
+              "include": "#generic_args"
             }
           ]
+        }
+      ]
+    },
+    "contract_expression": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#function"
+        },
+        {
+          "include": "#constants"
+        },
+        {
+          "include": "#builtin"
+        },
+        {
+          "include": "#real_literal"
+        },
+        {
+          "include": "#integer_literal"
+        },
+        {
+          "include": "#operators"
+        },
+        {
+          "include": "#keywords"
+        },
+        {
+          "include": "#type"
+        },
+        {
+          "include": "#path"
+        },
+        {
+          "include": "#function_call"
+        },
+        {
+          "include": "#variable"
+        },
+        {
+          "include": "#parens"
+        },
+        {
+          "include": "#brackets"
+        },
+        {
+          "include": "#block"
+        },
+        {
+          "include": "#punctuation"
+        },
+        {
+          "include": "#leftover_at_ident"
         }
       ]
     },
@@ -447,7 +502,7 @@
               "end": "(?=:|\\*>|$)",
               "patterns": [
                 {
-                  "include": "#expression"
+                  "include": "#contract_expression"
                 }
               ]
             },
@@ -460,8 +515,7 @@
               "name": "comment.block.documentation.c3"
             },
             {
-              "begin": "([\"`])",
-              "end": "\\\\1",
+              "match": "`[^`]*`|\"[^\"]*\"",
               "name": "comment.block.documentation.c3"
             }
           ]
@@ -510,7 +564,7 @@
               "end": "(?=:|\\*>|$)",
               "patterns": [
                 {
-                  "include": "#expression"
+                  "include": "#contract_expression"
                 }
               ]
             },
@@ -523,8 +577,7 @@
               "name": "comment.block.documentation.c3"
             },
             {
-              "begin": "([\"`])",
-              "end": "\\\\1",
+              "match": "`[^`]*`|\"[^\"]*\"",
               "name": "comment.block.documentation.c3"
             }
           ]
@@ -638,6 +691,9 @@
               "include": "#comments"
             },
             {
+              "include": "#generic_params"
+            },
+            {
               "include": "#attribute"
             }
           ]
@@ -655,7 +711,7 @@
       "name": "meta.function_call.c3",
       "patterns": [
         {
-          "include": "#generic_params"
+          "include": "#generic_args"
         },
         {
           "begin": "\\(",
@@ -734,7 +790,7 @@
         }
       ]
     },
-    "generic_params": {
+    "generic_args": {
       "patterns": [
         {
           "begin": "\\{",
@@ -758,6 +814,42 @@
         }
       ]
     },
+    "generic_params": {
+      "patterns": [
+        {
+          "begin": "<",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.generic.begin.c3"
+            }
+          },
+          "end": ">",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.generic.end.c3"
+            }
+          },
+          "name": "meta.generic.c3",
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "match": "\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*\\b",
+              "name": "support.type.c3"
+            },
+            {
+              "match": "\\b_*[A-Z][0-9A-Z_]*\\b",
+              "name": "variable.other.constant.c3"
+            },
+            {
+              "match": ",",
+              "name": "punctuation.separator.c3"
+            }
+          ]
+        }
+      ]
+    },
     "integer_literal": {
       "match": "\\b(?:0[Xx]\\h(?:_?\\h)*|0[Oo][0-7](_?[0-7])*|0[Bb][01](_?[01])*|[0-9](?:_?[0-9])*)(?:[IUiu](?:8|16|32|64|128)|[Uu][Ll]{0,2}|[Ll]{1,2})?",
       "name": "constant.numeric.integer.c3"
@@ -765,7 +857,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\$(?:alignof|assert|assignable|default|defined|echo|embed|eval|error|exec|extnameof|feature|include|is_const|kindof|nameof|offsetof|qnameof|sizeof|stringify|vacount|vaconst|vaarg|vaexpr|vasplat)\\b",
+          "match": "\\$(?:alignof|assert|assignable|default|defined|echo|embed|eval|error|exec|expand|extnameof|feature|include|reflect|is_const|kindof|nameof|offsetof|qnameof|sizeof|stringify|vacount|vaconst|vaarg|vaexpr|vasplat)\\b",
           "name": "keyword.other.ct.c3"
         },
         {
@@ -803,7 +895,7 @@
           "end": "(?=[^\\t {])|(?<=})",
           "patterns": [
             {
-              "include": "#generic_params"
+              "include": "#generic_args"
             }
           ]
         }
@@ -1175,6 +1267,9 @@
               "name": "variable.other.member.c3"
             },
             {
+              "include": "#generic_params"
+            },
+            {
               "include": "#attribute"
             },
             {
@@ -1191,6 +1286,9 @@
                 },
                 {
                   "include": "#type_no_generics"
+                },
+                {
+                  "include": "#generic_params"
                 },
                 {
                   "include": "#attribute"
@@ -1342,6 +1440,9 @@
               "include": "#module_path"
             },
             {
+              "include": "#generic_args"
+            },
+            {
               "include": "#generic_params"
             }
           ]
@@ -1465,6 +1566,9 @@
                   "include": "#comments"
                 },
                 {
+                  "include": "#generic_params"
+                },
+                {
                   "include": "#attribute"
                 },
                 {
@@ -1483,6 +1587,9 @@
               "patterns": [
                 {
                   "include": "#comments"
+                },
+                {
+                  "include": "#generic_params"
                 },
                 {
                   "include": "#attribute"
@@ -1526,6 +1633,9 @@
                 },
                 {
                   "include": "#parens"
+                },
+                {
+                  "include": "#generic_params"
                 },
                 {
                   "include": "#attribute"
@@ -1650,14 +1760,17 @@
           "include": "#structlike"
         },
         {
-          "begin": "(?=\\benum\\b)",
+          "begin": "(?=\\b(?:enum|constdef)\\b)",
           "end": "(?<=})",
           "patterns": [
             {
-              "begin": "\\benum\\b",
+              "begin": "\\b(enum)|(constdef)\\b",
               "beginCaptures": {
-                "0": {
+                "1": {
                   "name": "keyword.declaration.enum.c3"
+                },
+                "2": {
+                  "name": "keyword.declaration.constdef.c3"
                 }
               },
               "end": "(?=\\{)",
@@ -1669,6 +1782,9 @@
                 {
                   "match": "\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*\\b",
                   "name": "entity.name.type.enum.c3"
+                },
+                {
+                  "include": "#generic_params"
                 },
                 {
                   "include": "#attribute"
@@ -1711,13 +1827,16 @@
                           "include": "#comments"
                         },
                         {
-                          "match": "\\b(?:inline|const)\\b",
+                          "match": "\\binline\\b",
                           "name": "storage.modifier.c3"
                         },
                         {
                           "include": "#parameters"
                         }
                       ]
+                    },
+                    {
+                      "include": "#generic_params"
                     },
                     {
                       "include": "#attribute"
@@ -1751,12 +1870,15 @@
                       "name": "keyword.operator.assignment.c3"
                     }
                   },
-                  "end": "(?=,)",
+                  "end": "(?=[,}])",
                   "patterns": [
                     {
                       "include": "#expression"
                     }
                   ]
+                },
+                {
+                  "include": "#block"
                 },
                 {
                   "include": "#attribute"
@@ -1793,6 +1915,9 @@
                 {
                   "match": "\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*\\b",
                   "name": "entity.name.type.interface.c3"
+                },
+                {
+                  "include": "#generic_params"
                 },
                 {
                   "include": "#attribute"
@@ -1853,10 +1978,7 @@
     "type": {
       "patterns": [
         {
-          "include": "#path"
-        },
-        {
-          "begin": "(?:\\b(void|bool|char|double|float|float16|bfloat|int128|ichar|int|iptr|isz|long|short|uint128|uint|ulong|uptr|ushort|usz|float128|any|fault|typeid)|(\\$?\\b\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b)\\b",
+          "begin": "(?:\\b(void|bool|char|double|float|float16|bfloat|int128|ichar|int|iptr|isz|sz|long|short|uint128|uint|ulong|uptr|ushort|usz|float128|any|fault|typeid|untypedlist)|(\\$?\\b\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b)\\b",
           "beginCaptures": {
             "1": {
               "name": "storage.type.built-in.primitive.c3"
@@ -1865,56 +1987,62 @@
               "name": "support.type.c3"
             }
           },
-          "end": "(?=\\*>|[^\\t *?\\[{])",
+          "end": "(?=\\*>|[^\\t *:?\\[{]|:(?!:))",
           "patterns": [
             {
               "include": "#comments"
             },
             {
-              "include": "#generic_params"
+              "include": "#generic_args"
             },
             {
               "include": "#type_suffix"
+            },
+            {
+              "include": "#type_access"
             }
           ]
         },
         {
           "include": "#type_expr"
+        },
+        {
+          "include": "#path"
         }
       ]
+    },
+    "type_access": {
+      "captures": {
+        "1": {
+          "name": "punctuation.accessor.c3"
+        },
+        "2": {
+          "name": "variable.other.constant.c3"
+        }
+      },
+      "match": "(::)\\s*\\b(_*[a-z][0-9A-Z_a-z]*)\\b"
     },
     "type_expr": {
       "patterns": [
         {
-          "begin": "\\$(?:typeof|typefrom|evaltype)\\b",
+          "begin": "\\$(?:Typeof|Typefrom|typeof|typefrom|evaltype|vatype)\\b",
           "beginCaptures": {
             "0": {
-              "name": "storage.type.c3"
+              "name": "support.type.c3"
             }
           },
-          "end": "(?<=\\))",
+          "end": "(?=[^\\t (*:?\\[]|:(?!:))",
           "patterns": [
             {
               "include": "#parens"
-            }
-          ]
-        },
-        {
-          "begin": "\\$vatype\\b",
-          "beginCaptures": {
-            "0": {
-              "name": "storage.type.c3"
-            }
-          },
-          "end": "(?<=])",
-          "patterns": [
+            },
             {
-              "include": "#brackets"
+              "include": "#type_suffix"
+            },
+            {
+              "include": "#type_access"
             }
           ]
-        },
-        {
-          "include": "#type_suffix"
         }
       ]
     },
@@ -1924,7 +2052,7 @@
           "include": "#path"
         },
         {
-          "begin": "(?:\\b(void|bool|char|double|float|float16|bfloat|int128|ichar|int|iptr|isz|long|short|uint128|uint|ulong|uptr|ushort|usz|float128|any|fault|typeid)|(\\$?\\b\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b)\\b",
+          "begin": "(?:\\b(void|bool|char|double|float|float16|bfloat|int128|ichar|int|iptr|isz|sz|long|short|uint128|uint|ulong|uptr|ushort|usz|float128|any|fault|typeid|untypedlist)|(\\$?\\b\\b_*[A-Z][0-9A-Z_]*[a-z][0-9A-Z_a-z]*)\\b)\\b",
           "beginCaptures": {
             "1": {
               "name": "storage.type.built-in.primitive.c3"
@@ -1933,7 +2061,7 @@
               "name": "support.type.c3"
             }
           },
-          "end": "(?=[^\\t *?@\\[])",
+          "end": "(?=[^\\t *?\\[])",
           "patterns": [
             {
               "include": "#comments"
@@ -1973,7 +2101,7 @@
       "end": "(?=[^\\t {])|(?<=})",
       "patterns": [
         {
-          "include": "#generic_params"
+          "include": "#generic_args"
         }
       ]
     }

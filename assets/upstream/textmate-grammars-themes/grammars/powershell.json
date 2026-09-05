@@ -745,7 +745,7 @@
         {
           "captures": {
             "0": {
-              "name": "support.constant.variable.powershell"
+              "name": "variable.other.constant.powershell"
             },
             "1": {
               "name": "punctuation.definition.variable.powershell"
@@ -882,7 +882,7 @@
         {
           "captures": {
             "0": {
-              "name": "support.constant.variable.powershell"
+              "name": "variable.other.constant.powershell"
             },
             "1": {
               "name": "punctuation.definition.variable.powershell"
@@ -1001,6 +1001,7 @@
   "scopeName": "source.powershell",
   "aliases": [
     "ps",
-    "ps1"
+    "ps1",
+    "pwsh"
   ]
 }

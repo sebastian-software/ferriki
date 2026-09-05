@@ -18,5 +18,7 @@
     "packages/themes",
     "packages/engine-javascript",
     "packages/engine-oniguruma"
-  ]
+  ],
+  "manifest": ".manifest.sha256",
+  "manifestSha256": "0325171af31aa7fc9c4bc291b65428eb6a6c2025161c86b7b8c5a2fe171478a9"
 }

@@ -169,6 +169,12 @@
       "theme_type": "dark"
     },
     {
+      "id": "horizon-bright",
+      "theme_file": "horizon-bright.json",
+      "display_name": "horizon-bright",
+      "theme_type": "light"
+    },
+    {
       "id": "houston",
       "theme_file": "houston.json",
       "display_name": "houston",
