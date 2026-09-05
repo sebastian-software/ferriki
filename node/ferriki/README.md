@@ -11,7 +11,7 @@ bundled standard languages and themes.
 npm install ferriki
 ```
 
-Ferriki requires Node.js 20 or newer and a supported platform binary.
+Ferriki requires Node.js 22.13.0 or newer and a supported platform binary.
 
 ## Highlight code
 

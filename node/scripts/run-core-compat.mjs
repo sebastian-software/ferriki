@@ -179,6 +179,18 @@ const ferromarkArdoCheck = spawnSync(process.execPath, ['./scripts/check-ferroma
 if (ferromarkArdoCheck.status !== 0)
   process.exit(ferromarkArdoCheck.status || 1)
 
+const platformMatrixCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-platform-matrix.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (platformMatrixCheck.status !== 0)
+  process.exit(platformMatrixCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,

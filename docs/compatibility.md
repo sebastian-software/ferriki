@@ -53,11 +53,31 @@ required after compatibility preparation.
 
 ## Platform support
 
-The current CI smoke matrix exercises Node 20 on Ubuntu and Node 22 on Ubuntu,
-macOS, and Windows. Ferriki requires Node 20 or newer and a matching native
-binary. libc variants and additional architectures are not implied by a green
-CI run; they require an explicit support-matrix decision and a packed-artifact
-smoke test before being documented as supported.
+The 1.0 floor is Node.js 22.13.0. The CI smoke matrix exercises every target
+in the current release map:
+
+| Target | OS/architecture | libc/runtime | Status |
+| --- | --- | --- | --- |
+| `linux-x64-gnu` | Linux x64 | glibc | Supported |
+| `linux-arm64-gnu` | Linux arm64 | glibc | Supported |
+| `darwin-arm64` | macOS arm64 | system | Supported |
+| `darwin-x64` | macOS x64 | system | Supported |
+| `win32-x64-msvc` | Windows x64 | MSVC | Supported |
+| Linux x64/arm64 musl | Alpine and other musl systems | musl | Explicitly unsupported |
+
+The target map is maintained in [`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs)
+and checked by `pnpm run check:platform-matrix`. A green CI run does not imply
+support for an unlisted libc or architecture. Platform sidecar publication is
+tracked separately in issue #52; the current shared release workflow still
+bundles the five binaries into the main package.
+
+## Packaging baseline
+
+The packed `ferriki@0.2.0` main package measured **11,372,892 bytes
+unpacked** on 2026-09-05 (`npm pack --json`). This is the before-sidecar
+baseline. A post-sidecar measurement is intentionally not claimed until the
+shared release workflow publishes and installs the optional packages; that
+follow-up remains part of #52.
 
 ## Reporting a compatibility gap
 
