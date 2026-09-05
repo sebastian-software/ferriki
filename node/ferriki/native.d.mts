@@ -5,6 +5,7 @@ export interface FerrikiNativeHighlighter {
   getLoadedGrammarScopes: () => string[]
   getLoadedLanguages: () => string[]
   codeToTokens: (code: string, optionsJson: string) => string
+  codeToTokensWithThemes: (code: string, optionsJson: string) => string
   codeToHast: (code: string, optionsJson: string) => string
   codeToHtml: (code: string, optionsJson: string) => string
   dispose: () => void

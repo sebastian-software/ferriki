@@ -34,7 +34,7 @@ compatibility tests must converge on this matrix.
 | `codeToHast()` | Stable | Top-level async shorthand or sync reusable-highlighter method. Returns a typed HAST root. |
 | `codeToTokens()` | Stable | Returns themed token lines with UTF-16 offsets and theme metadata. |
 | `codeToTokensBase()` | Shim | Projection of `codeToTokens()` for callers that only need token lines; no separate engine contract. |
-| `codeToTokensWithThemes()` | Stable | Returns aligned per-theme token variants once multi-theme support (#43) lands. |
+| `codeToTokensWithThemes()` | Stable | Returns aligned per-theme token variants with deterministic theme order. |
 | `hastToHtml()` | Stable | Serializes Ferriki-owned HAST output; callers remain responsible for their trust boundary. |
 | `bundledLanguages` / `bundledThemes` | Stable | Deterministically enumerable lazy loader maps. Language keys include canonical IDs and supported aliases; enumeration never loads asset payloads. |
 | `bundledLanguagesAlias` | Stable | Deterministic alias-to-canonical map used by catalog discovery and `getLoadedLanguages()`. |
@@ -63,7 +63,7 @@ compatibility tests must converge on this matrix.
 | --- | --- | --- |
 | `lang` | Stable | Required for highlighting; `text`, `txt`, `plain`, and `plaintext` are explicit plain-text languages. |
 | `theme` | Stable | Single-theme rendering with deterministic class, foreground, and background output. |
-| `themes` | Stable | Ordered theme map for light/dark or multi-theme output; never silently collapsed to one theme (#43). |
+| `themes` | Stable | Ordered theme map for light/dark or multi-theme output; never silently collapsed to one theme. `defaultColor: false` emits CSS variables for every theme. |
 | `defaultColor` | Stable | `light`, `dark`, a named theme, or `false`; invalid combinations throw `ShikiError` (#43). |
 | `meta` | Stable | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. |
 | `transformers` | Stable | JS callbacks run in the documented HAST/token pipeline order (ADR 0008, #45). |
