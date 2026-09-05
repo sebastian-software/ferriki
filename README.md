@@ -74,10 +74,16 @@ package):
 
 ```sh
 cd node
-pnpm install
+pnpm install --ignore-scripts
+pnpm run prepare:compat
 pnpm run build:native
 pnpm run test:ferriki-compat:textmate
 ```
+
+The compatibility workspace contains upstream `prepare` scripts that rewrite
+generated files. Installs intentionally skip package lifecycle scripts; the
+explicit `prepare:compat` command runs those generators in a temporary
+checkout and keeps the tracked mirror immutable.
 
 The TextMate compatibility lane runs selected, unchanged Shiki tests with
 honest aliases so every highlighted result passes through the native addon.
