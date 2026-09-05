@@ -11,6 +11,18 @@ const vitestArgs = [
 ]
 const testNamePattern = '^(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects)'
 
+const catalogCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-catalog.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (catalogCheck.status !== 0)
+  process.exit(catalogCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,
