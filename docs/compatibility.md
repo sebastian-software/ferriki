@@ -86,7 +86,7 @@ versus target mismatch before release artifacts are assembled.
 
 ## Packaging baseline
 
-The packed `ferriki@0.2.0` main package measured **11,372,892 bytes
+The packed `ferriki@0.2.1` main package measured **11,372,892 bytes
 unpacked** on 2026-09-05 (`npm pack --json`). This is the main-package
 baseline; the release workflow also validates each sidecar tarball before
 publication.

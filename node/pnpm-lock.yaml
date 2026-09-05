@@ -557,19 +557,19 @@ importers:
         version: 25.3.3
     optionalDependencies:
       '@sebastian-software/ferriki-darwin-arm64':
-        specifier: 0.2.0
+        specifier: 0.2.1
         version: link:../platforms/darwin-arm64
       '@sebastian-software/ferriki-darwin-x64':
-        specifier: 0.2.0
+        specifier: 0.2.1
         version: link:../platforms/darwin-x64
       '@sebastian-software/ferriki-linux-arm64-gnu':
-        specifier: 0.2.0
+        specifier: 0.2.1
         version: link:../platforms/linux-arm64-gnu
       '@sebastian-software/ferriki-linux-x64-gnu':
-        specifier: 0.2.0
+        specifier: 0.2.1
         version: link:../platforms/linux-x64-gnu
       '@sebastian-software/ferriki-win32-x64-msvc':
-        specifier: 0.2.0
+        specifier: 0.2.1
         version: link:../platforms/win32-x64-msvc
 
   platforms/darwin-arm64: {}
