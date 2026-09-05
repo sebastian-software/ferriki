@@ -22,8 +22,8 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/core/test/transformers.test.ts',
-    reason: 'transformer execution is intentionally deferred to the Node facade contract',
-    issue: 31,
+    reason: 'upstream engine transformer fixtures are outside the native boundary; the JS facade contract is covered by check-ferriki-transformers',
+    issue: 45,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/ansi.test.ts',
@@ -42,8 +42,8 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/decorations.test.ts',
-    reason: 'decoration and transformer execution is not implemented yet',
-    issue: 31,
+    reason: 'upstream bundle decorations are exercised through the Ferriki JS facade contract',
+    issue: 45,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/dist.test.ts',

@@ -44,7 +44,8 @@
     "index.d.mts",
     "index.mjs",
     "native.d.mts",
-    "native.mjs"
+    "native.mjs",
+    "transformers.mjs"
   ],
   "engines": {
     "node": ">=20"
