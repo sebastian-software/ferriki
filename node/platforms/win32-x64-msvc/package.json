@@ -1,6 +1,6 @@
 {
   "name": "@sebastian-software/ferriki-win32-x64-msvc",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Ferriki native addon for Windows x64 with MSVC",
   "license": "MIT",
   "repository": "git+https://github.com/sebastian-software/ferriki.git",
