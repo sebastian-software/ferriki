@@ -10,6 +10,7 @@ for (const removed of [
   'createOnigurumaEngine',
   'loadWasm',
   'wasmBinary',
+  '__ferrikiBackend',
 ]) {
   assert.equal(Object.hasOwn(ferriki, removed), false, `${removed} must not be public Ferriki API`)
 }

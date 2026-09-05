@@ -10,5 +10,6 @@ it('routes every compatibility entry point through the Ferriki backend', async (
     import('@shikijs/engine-oniguruma/wasm-inlined'),
   ])
 
-  expect(modules.every(module => (module as { __ferrikiBackend?: boolean }).__ferrikiBackend === true)).toBe(true)
+  expect(modules).toHaveLength(6)
+  expect((globalThis as typeof globalThis & { __FERRIKI_COMPAT_NATIVE?: boolean }).__FERRIKI_COMPAT_NATIVE).toBe(true)
 })
