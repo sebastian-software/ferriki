@@ -47,6 +47,18 @@ const multiThemeCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-mu
 if (multiThemeCheck.status !== 0)
   process.exit(multiThemeCheck.status || 1)
 
+const ansiCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-ansi.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (ansiCheck.status !== 0)
+  process.exit(ansiCheck.status || 1)
+
 const registrationCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-registrations.mjs'], {
   cwd: nodeRoot,
   env: {
