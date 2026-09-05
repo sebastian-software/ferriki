@@ -22,6 +22,7 @@
     "check:errors": "node ./scripts/check-ferriki-errors.mjs",
     "check:boundary": "node ./scripts/check-native-boundary.mjs",
     "check:release": "node ./scripts/check-release-workflow.mjs",
+    "check:transformers": "node ./scripts/check-ferriki-transformers.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },
