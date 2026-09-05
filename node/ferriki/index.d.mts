@@ -68,6 +68,7 @@ export interface HighlightOptions {
   defaultColor?: string | false
   cssVariablePrefix?: string
   includeExplanation?: boolean | 'scopeName' | 'tokenType'
+  grammarState?: GrammarState
   mergeWhitespaces?: boolean
   mergeSameStyleTokens?: boolean
   rootStyle?: string | false
@@ -94,6 +95,26 @@ export interface ThemedToken {
     color?: string
     fontStyle?: number
   }>>
+  explanation?: readonly ThemedTokenExplanation[]
+}
+
+export interface ThemedTokenScopeExplanation {
+  scopeName: string
+}
+
+export interface ThemedTokenExplanation {
+  content: string
+  scopes: readonly ThemedTokenScopeExplanation[]
+}
+
+export interface GrammarState {
+  readonly version: 1
+  readonly lang: string
+  readonly theme: string
+  readonly themes: readonly string[]
+  readonly scopes: readonly string[]
+  /** Opaque serialized source context used to continue tokenization. */
+  readonly source: string
 }
 
 export interface TokensResult {
@@ -102,6 +123,7 @@ export interface TokensResult {
   bg: string
   themeName: string
   rootStyle?: string
+  grammarState?: GrammarState
 }
 
 export interface HastText {
@@ -169,6 +191,10 @@ export interface Highlighter {
   codeToTokens: (code: string, options: HighlightOptions) => TokensResult
   codeToTokensBase: (code: string, options: HighlightOptions) => ThemedToken[][]
   codeToTokensWithThemes: (code: string, options: HighlightOptions) => ThemedToken[][]
+  getLastGrammarState: {
+    (code: string, options: HighlightOptions): GrammarState
+    (element: ThemedToken[][] | HastRoot): GrammarState | undefined
+  }
   getLoadedLanguages: () => string[]
   getLoadedThemes: () => string[]
   loadLanguage: (...languages: RegistrationInput<LanguageInput>[]) => Promise<void>
@@ -250,7 +276,19 @@ export declare function codeToTokensWithThemes(
   options: HighlightOptions,
 ): ThemedToken[][]
 
-export declare function getLastGrammarState(): undefined
+export declare function getLastGrammarState(
+  code: string,
+  options: HighlightOptions,
+): Promise<GrammarState>
+export declare function getLastGrammarState(
+  highlighter: Highlighter,
+  code: string,
+  options: HighlightOptions,
+): GrammarState
+export declare function getLastGrammarState(
+  highlighter: Highlighter,
+  element: ThemedToken[][] | HastRoot,
+): GrammarState | undefined
 
 export interface CssVariablesThemeOptions {
   name?: string

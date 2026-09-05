@@ -17,8 +17,8 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/core/test/tokens.test.ts',
-    reason: 'explanations, grammar state, and multi-theme token projections are not implemented yet',
-    issue: 31,
+    reason: 'remaining upstream token snapshots and native projection edge cases are tracked in the Ferriki token contract',
+    issue: 47,
   },
   {
     path: 'compat/upstream/shiki/packages/core/test/transformers.test.ts',
@@ -52,8 +52,8 @@ export const coreCompatDeferredTests = [
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/grammar-state.test.ts',
-    reason: 'grammar-state continuation is not implemented yet',
-    issue: 31,
+    reason: 'remaining upstream grammar-state snapshots and native stack parity are tracked in the Ferriki grammar-state contract',
+    issue: 47,
   },
   {
     path: 'compat/upstream/shiki/packages/shiki/test/hast.test.ts',

@@ -165,6 +165,9 @@ impl HighlightOptions {
         let theme = required_string(&value, "theme")?;
         let include_token_type =
             value.get("includeExplanation").and_then(Value::as_str) == Some("tokenType");
+        let include_scopes = value.get("includeExplanation").is_some_and(|value| {
+            value.as_bool() == Some(true) || value.as_str() == Some("scopeName")
+        });
         let time_limit_millis = value
             .get("tokenizeTimeLimit")
             .and_then(Value::as_u64)
@@ -201,6 +204,7 @@ impl HighlightOptions {
                 time_limit_millis,
                 max_line_length,
                 include_token_type,
+                include_scopes,
             },
             render: RenderOptions {
                 merge_whitespaces,

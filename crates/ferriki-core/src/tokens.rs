@@ -8,6 +8,7 @@ pub struct TokenizeOptions {
     pub time_limit_millis: u64,
     pub max_line_length: usize,
     pub include_token_type: bool,
+    pub include_scopes: bool,
 }
 
 impl Default for TokenizeOptions {
@@ -16,6 +17,7 @@ impl Default for TokenizeOptions {
             time_limit_millis: 500,
             max_line_length: 0,
             include_token_type: false,
+            include_scopes: false,
         }
     }
 }
@@ -31,6 +33,8 @@ pub struct HighlightToken {
     pub font_style: Option<i32>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope_names: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -61,6 +65,8 @@ pub struct HighlightThemeToken {
     pub variants: BTreeMap<String, HighlightThemeTokenStyle>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope_names: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -79,6 +85,7 @@ pub struct HighlightTokensWithThemesResult {
     pub themes: Vec<HighlightThemeMetadata>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn token_from_metadata(
     line: &str,
     utf16_map: &[usize],
@@ -87,6 +94,7 @@ pub(crate) fn token_from_metadata(
     metadata: u32,
     color_map: &[String],
     include_token_type: bool,
+    scope_names: Option<Vec<String>>,
 ) -> Option<HighlightToken> {
     let start_index = range.start;
     let end_index = range.end;
@@ -107,6 +115,7 @@ pub(crate) fn token_from_metadata(
         ),
         font_style: Some(attributes.font_style().bits()),
         token_type: include_token_type.then_some(attributes.token_type() as u8),
+        scope_names,
     })
 }
 
@@ -158,6 +167,7 @@ mod tests {
                 time_limit_millis: 500,
                 max_line_length: 0,
                 include_token_type: false,
+                include_scopes: false,
             }
         );
     }

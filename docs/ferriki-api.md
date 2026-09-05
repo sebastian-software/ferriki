@@ -10,7 +10,8 @@ The retained declaration symbols are `LanguageRegistration`,
 `RegistrationInput`, `HighlighterOptions`, `HighlighterSyncOptions`,
 `HighlightOptions`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
 `HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
-`ShikiTransformerContext`, `ShikiTransformer`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
+`ShikiTransformerContext`, `ShikiTransformer`, `ThemedTokenScopeExplanation`,
+`ThemedTokenExplanation`, `GrammarState`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
 `createHighlighter`, `createHighlighterCore`, `createShikiPrimitiveAsync`,
 `createHighlighterCoreSync`, `createShikiPrimitive`, `getSingletonHighlighter`,
 `getSingletonHighlighterCore`, `codeToHtml`, `codeToHast`, `codeToTokens`,
@@ -51,6 +52,9 @@ codeToTokensBase(highlighter, code, options): ThemedToken[][]
 
 codeToTokensWithThemes(code, options): Promise<ThemedToken[][]>
 codeToTokensWithThemes(highlighter, code, options): ThemedToken[][]
+
+getLastGrammarState(code, options): Promise<GrammarState>
+getLastGrammarState(highlighter, code, options): GrammarState
 ```
 
 `codeToHtml` returns escaped HTML with Shiki-compatible line and token
@@ -99,6 +103,8 @@ functions. Unknown options are not a supported extension point.
 | `codeToTokens(code, options)` | `TokensResult` | Return tokens and theme metadata. |
 | `codeToTokensBase(code, options)` | `ThemedToken[][]` | Return the token matrix. |
 | `codeToTokensWithThemes(code, options)` | `ThemedToken[][]` | Return aligned tokens for a theme map. |
+| `highlighter.getLastGrammarState(code, options)` | `GrammarState` | Synchronous highlighter method for capturing grammar context. |
+| `getLastGrammarState(code, options)` | `Promise<GrammarState>` | Capture a serializable grammar context for continuation. |
 | `loadLanguage(...inputs)` | `Promise<void>` | Load standard or custom grammars. |
 | `loadLanguageSync(...inputs)` | `void` | Synchronous form for resolved registrations. |
 | `loadTheme(...inputs)` | `Promise<void>` | Load standard or custom themes. |
@@ -125,6 +131,7 @@ an explicit worker boundary; create one highlighter per worker instead.
 | `defaultColor` | `string \| false` | Default foreground color; `false` disables the default color. |
 | `cssVariablePrefix` | `string` | Prefix used for multi-theme CSS variables. |
 | `includeExplanation` | `boolean \| 'scopeName' \| 'tokenType'` | Include the accepted token explanation metadata. |
+| `grammarState` | `GrammarState` | Continue grammar inference from a state returned by `getLastGrammarState` or `codeToTokens`. |
 | `mergeWhitespaces` | `boolean` | Merge adjacent whitespace tokens where possible. |
 | `mergeSameStyleTokens` | `boolean` | Merge adjacent tokens with the same style. |
 | `rootStyle` | `string \| false` | Inline style on the root element. |
@@ -190,6 +197,25 @@ interface ThemedToken {
   type?: number
   htmlStyle?: Record<string, string>
   variants?: Record<string, { color?: string; fontStyle?: number }>
+  explanation?: ThemedTokenExplanation[]
+}
+
+interface ThemedTokenScopeExplanation {
+  scopeName: string
+}
+
+interface ThemedTokenExplanation {
+  content: string
+  scopes: ThemedTokenScopeExplanation[]
+}
+
+interface GrammarState {
+  version: 1
+  lang: string
+  theme: string
+  themes: string[]
+  scopes: string[]
+  source: string
 }
 
 interface TokensResult {
@@ -198,8 +224,16 @@ interface TokensResult {
   bg: string
   themeName: string
   rootStyle?: string
+  grammarState?: GrammarState
 }
 ```
+
+`includeExplanation: 'scopeName'` (or `true`) adds a serializable
+`explanation` entry to every token with its TextMate scope path. The
+`'tokenType'` mode retains the numeric `type` metadata without scope paths.
+`getLastGrammarState` and the `grammarState` option provide a validated,
+serializable continuation context. A state from another language or a theme
+not present in the current highlight call is rejected with `ShikiError`.
 
 `HastRoot`, `HastElement`, and `HastText` are the small serializable HAST
 subset returned by Ferriki. `hastToHtml(tree)` serializes a root or element;
