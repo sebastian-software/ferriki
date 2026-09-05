@@ -50,6 +50,11 @@ impl GrammarStore {
     ) -> Option<Vec<String>> {
         self.injections.insert(scope_name.into(), injections)
     }
+
+    pub fn clear(&mut self) {
+        self.grammars.clear();
+        self.injections.clear();
+    }
 }
 
 impl GrammarProvider for GrammarStore {

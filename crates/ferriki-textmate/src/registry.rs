@@ -38,6 +38,10 @@ impl SyncRegistry {
 
     pub fn dispose(&mut self) {
         self.grammars.clear();
+        self.raw_grammars.clear();
+        self.raw_theme = None;
+        self.frozen_color_map = None;
+        self.color_map.clear();
     }
 
     pub fn set_theme(
@@ -275,5 +279,34 @@ mod tests {
             after.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
             ["source.test", "injected.test"]
         );
+    }
+
+    #[test]
+    fn dispose_releases_raw_and_compiled_grammar_state() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.test",
+                    "patterns": [{ "match": "x", "name": "normal.test" }]
+                }"#,
+            ),
+            vec!["source.inject".into()],
+        );
+        let _ = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap();
+        assert!(registry.lookup("source.test").is_some());
+        assert_eq!(registry.injections("source.test"), ["source.inject"]);
+
+        registry.dispose();
+
+        assert!(registry.lookup("source.test").is_none());
+        assert!(registry.injections("source.test").is_empty());
+        assert!(registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .is_none());
+        assert!(registry.get_color_map().is_empty());
     }
 }

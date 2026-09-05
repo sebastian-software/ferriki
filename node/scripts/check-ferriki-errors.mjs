@@ -56,6 +56,12 @@ assert.throws(
   () => highlighter.codeToHtml('const answer = 42', { lang: 'javascript' }),
   hasCode('ERR_USAGE'),
 )
+const limited = highlighter.codeToTokens('const answer = 42', {
+  lang: 'javascript',
+  theme: 'nord',
+  tokenizeMaxLineLength: 4,
+})
+assert.equal(limited.tokens[0][0].color, '')
 
 const rendered = await codeToHtml('const answer = 42', { lang: 'javascript', theme: 'nord' })
 assert(rendered.includes('const'))
