@@ -91,6 +91,11 @@ compatibility tests must converge on this matrix.
 
 ## Lifecycle, concurrency, and errors
 
+The 1.0 runtime floor is Node.js 22.13.0. Supported native targets are
+Linux x64/arm64 with glibc, macOS arm64/x64, and Windows x64 with MSVC. Linux
+musl/Alpine and other architectures are explicit non-support until a tested
+sidecar is published (see #52).
+
 - A highlighter handle owns its native state and must be disposable. Calls
   after `dispose()` throw `ShikiError` with a stable lifecycle category (#51).
 - Async registration loading is explicit; sync factories reject unresolved

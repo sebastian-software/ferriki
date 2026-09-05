@@ -22,14 +22,15 @@ The retained declaration symbols are `LanguageRegistration`,
 
 ## Runtime requirements
 
-- Node.js 20 or newer.
+- Node.js 22.13.0 or newer.
 - A supported native binary for the current OS and architecture.
 - The package is ESM-only. Use `import`, not `require()`.
 
-The supported platform policy is intentionally conservative while Ferriki is
-pre-1.0. If the native loader cannot find a binary it throws an error starting
-with `[ferriki] No native binary for <platform>-<arch>` and lists every path it
-tried.
+The supported platform policy is intentionally explicit. Ferriki supports
+Linux x64/arm64 with glibc, macOS arm64/x64, and Windows x64 with Node.js
+22.13.0+. Linux musl/Alpine and other architectures are unsupported. If the
+native loader cannot find a binary it reports the target, optional package
+candidate, and every path it tried.
 
 ## One-shot functions
 

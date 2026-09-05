@@ -45,10 +45,11 @@
     "index.mjs",
     "native.d.mts",
     "native.mjs",
+    "platforms.mjs",
     "transformers.mjs"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "build": "node ./scripts/verify-wrapper.mjs",

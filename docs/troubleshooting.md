@@ -5,15 +5,19 @@
 This is the actual loader error when no candidate can be loaded. It lists the
 paths tried under the package directory. Check, in order:
 
-1. the installed package contains `dist/ferriki.<platform>-<arch>.node` or
+1. the installed package contains the matching `dist/ferriki.<platform>-<arch>.node` or
    `dist/ferriki.node`;
 2. the package was installed with optional dependencies and lifecycle scripts
    allowed by your deployment policy;
-3. the target is in the documented CI support matrix;
+3. the target is in the documented CI support matrix and uses glibc on Linux;
 4. the Node ABI and native binary were built for the same target.
 
 Do not set a backend switch or install a JavaScript/WASM fallback: Ferriki has
 one native runtime and should fail clearly when its target is unsupported.
+
+On an unsupported target, Ferriki reports the complete supported matrix and
+the detected platform/architecture/libc. Linux musl/Alpine is intentionally
+rejected until a separately built and tested sidecar exists.
 
 ## `Language \`...\` not found`
 
