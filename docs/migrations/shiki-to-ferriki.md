@@ -1,7 +1,7 @@
 # Migrating from Shiki to Ferriki
 
 Ferriki follows the Shiki API shape but has a deliberately smaller native-only
-runtime. This guide is for a Shiki **v4.3.1** consumer moving to the Ferriki
+runtime. This guide is for a Shiki **v4.4.3** consumer moving to the Ferriki
 pre-1.0 package.
 
 ## Before changing code

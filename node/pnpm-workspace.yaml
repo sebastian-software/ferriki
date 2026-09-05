@@ -67,7 +67,7 @@ catalogs:
     '@types/hast': ^3.0.4
     '@types/markdown-it': ^14.1.2
     # Pinned to the exact version resolved by the mirrored shiki release tag
-    # (v4.3.1); the twoslash compat snapshots embed @types/node JSDoc hovers.
+    # (v4.4.3); the twoslash compat snapshots embed @types/node JSDoc hovers.
     '@types/node': 25.3.3
 onlyBuiltDependencies:
   - esbuild

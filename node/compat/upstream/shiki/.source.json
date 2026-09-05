@@ -1,8 +1,8 @@
 {
   "source": "shikijs/shiki",
-  "ref": "v4.3.1",
-  "commit": "fdff6e2384b8d97afd3f33aa82ce52700d58972e",
-  "importedAt": "2026-07-26T21:34:45.943Z",
+  "ref": "v4.4.3",
+  "commit": "48cd2cc695ed2e3357c3f9c370578ea843d6d9a3",
+  "importedAt": "2026-09-05T20:44:34.111Z",
   "paths": [
     "packages/core",
     "packages/primitive",

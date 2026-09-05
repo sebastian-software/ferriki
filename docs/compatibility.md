@@ -2,7 +2,7 @@
 
 ## Baseline
 
-Ferriki's compatibility reference is the pinned **Shiki v4.3.1** mirror at
+Ferriki's compatibility reference is the pinned **Shiki v4.4.3** mirror at
 [`node/compat/upstream/shiki`](../node/compat/upstream/shiki). The source commit
 and imported paths are recorded in
 [`node/compat/upstream/shiki/.source.json`](../node/compat/upstream/shiki/.source.json).
