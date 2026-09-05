@@ -92,6 +92,10 @@ using custom = await createHighlighter({
 Synchronous factories accept already-resolved names and registrations only;
 promises and loader functions require `createHighlighter`.
 
+Terminal ANSI input is intentionally outside Ferriki's 1.0 contract. Strip or
+parse escape sequences before passing code to the highlighter; Ferriki rejects
+`lang: 'ansi'` with `ShikiError` rather than emitting control bytes.
+
 ## Current API
 
 The native runtime currently provides:
