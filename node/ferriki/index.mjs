@@ -1,6 +1,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { languageCatalog, themeCatalog } from './assets/shiki/catalog.mjs'
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from './native.mjs'
 
 const packageDir = dirname(fileURLToPath(import.meta.url))
@@ -250,20 +251,55 @@ export function hastToHtml(tree) {
 // Harness-only marker used by the honest compatibility resolver sentinel.
 export const __ferrikiBackend = true
 
-export const bundledLanguages = virtualRegistrationBundle('language')
-export const bundledThemes = virtualRegistrationBundle('theme')
-export const bundledLanguagesAlias = {}
+export const bundledLanguages = createLanguageBundle(languageCatalog)
+export const bundledThemes = createThemeBundle(themeCatalog)
+export const bundledLanguagesAlias = createLanguageAliasBundle(languageCatalog)
 
-function virtualRegistrationBundle(kind) {
-  return new Proxy({}, {
-    get(_target, name) {
-      if (typeof name !== 'string')
-        return undefined
-      return async () => kind === 'language'
-        ? [{ name, scopeName: name }]
-        : { name }
-    },
-  })
+function createLanguageBundle(catalog) {
+  const loaders = new Map()
+  for (const entry of catalog) {
+    const loader = createLanguageLoader(entry)
+    loaders.set(entry.id, loader)
+    for (const alias of entry.aliases)
+      loaders.set(alias, loader)
+  }
+  return Object.freeze(Object.fromEntries([...loaders].sort(([left], [right]) => compareIds(left, right))))
+}
+
+function createLanguageAliasBundle(catalog) {
+  const aliases = new Map()
+  for (const entry of catalog) {
+    for (const alias of entry.aliases)
+      aliases.set(alias, entry.id)
+  }
+  return Object.freeze(Object.fromEntries([...aliases].sort(([left], [right]) => compareIds(left, right))))
+}
+
+function createLanguageLoader(entry) {
+  return async () => [{
+    name: entry.id,
+    scopeName: entry.scopeName,
+    displayName: entry.displayName || undefined,
+    aliases: [...entry.aliases],
+    embeddedLangs: [...entry.embeddedLangs],
+    embeddedLangsLazy: [...entry.embeddedLangsLazy],
+    injectTo: [...entry.injectTo],
+  }]
+}
+
+function createThemeBundle(catalog) {
+  const loaders = Object.fromEntries(catalog.map(entry => [
+    entry.id,
+    async () => ({
+      name: entry.id,
+      type: entry.themeType || undefined,
+    }),
+  ]))
+  return Object.freeze(loaders)
+}
+
+function compareIds(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0
 }
 
 function selectDefaultTheme(options) {

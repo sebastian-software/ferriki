@@ -9,6 +9,8 @@ Catalogs:
 
 - `languages/` — `.fkgram` grammars plus a `manifest.fkindex`
 - `themes/` — `.fktheme` themes plus a `manifest.fkindex`
+- `catalog.mjs` — generated enumerable Node loader metadata; it contains no
+  grammar or theme payloads
 
 These files are the product-side asset format consumed by Ferriki, not the raw
 upstream source format. The Node package copies them during `build:native` via
@@ -17,6 +19,7 @@ upstream source format. The Node package copies them during `build:native` via
 They are generated from the normalized upstream mirror with:
 
 - [`scripts/generate-ferriki-assets.mjs`](../../scripts/generate-ferriki-assets.mjs)
+- [`scripts/generate-ferriki-catalog.mjs`](../../scripts/generate-ferriki-catalog.mjs)
 - or the bootstrap helper
   [`scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs`](../../scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs)
   when only the checked-in Shiki mirror is available

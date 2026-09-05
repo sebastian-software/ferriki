@@ -36,8 +36,8 @@ compatibility tests must converge on this matrix.
 | `codeToTokensBase()` | Shim | Projection of `codeToTokens()` for callers that only need token lines; no separate engine contract. |
 | `codeToTokensWithThemes()` | Stable | Returns aligned per-theme token variants once multi-theme support (#43) lands. |
 | `hastToHtml()` | Stable | Serializes Ferriki-owned HAST output; callers remain responsible for their trust boundary. |
-| `bundledLanguages` / `bundledThemes` | Stable | Deterministically enumerable lazy loader maps. Enumeration never loads asset payloads. |
-| `bundledLanguagesAlias` | Stable | Deterministic canonical-to-alias policy used by catalog discovery and `getLoadedLanguages()`. |
+| `bundledLanguages` / `bundledThemes` | Stable | Deterministically enumerable lazy loader maps. Language keys include canonical IDs and supported aliases; enumeration never loads asset payloads. |
+| `bundledLanguagesAlias` | Stable | Deterministic alias-to-canonical map used by catalog discovery and `getLoadedLanguages()`. |
 | `createCssVariablesTheme()` | Stable | Creates a typed CSS-variable theme registration; details are covered by the theme contract (#48). |
 | `createJavaScriptRegexEngine()` | Remove | The native runtime owns matching. This empty compatibility stub is removed before 1.0 (#49). |
 | `createOnigurumaEngine()` | Remove | The native runtime owns matching. This empty compatibility stub is removed before 1.0 (#49). |

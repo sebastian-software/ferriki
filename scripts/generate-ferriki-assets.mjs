@@ -30,6 +30,19 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
+const catalog = spawnSync(
+  'node',
+  ['scripts/generate-ferriki-catalog.mjs', args.outputDir],
+  {
+    cwd: path.resolve('.'),
+    stdio: 'inherit'
+  }
+);
+
+if (catalog.status !== 0) {
+  process.exit(catalog.status ?? 1);
+}
+
 function parseArgs(argv) {
   let upstreamDir = path.resolve('assets/upstream/textmate-grammars-themes');
   let outputDir = path.resolve('assets/shiki');
