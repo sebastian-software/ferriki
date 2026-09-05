@@ -117,6 +117,12 @@ jobs:
       - name: Build native
         run: pnpm run build:native
 
+      - name: Prepare compatibility inputs without mutating the mirror
+        run: pnpm run prepare:compat
+
+      - name: Verify compatibility mirror is clean
+        run: pnpm run check:compat-mirror
+
       - name: Run native TextMate compatibility gate
         run: pnpm run test:ferriki-compat:textmate
 
