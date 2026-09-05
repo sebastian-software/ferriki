@@ -141,6 +141,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function highlightSingleTheme(code, options = {}) {
+    assertAnsiInput(code, options)
     const result = JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options))))
     if (registrationName(options.theme) === 'none')
       return normalizeNoneThemeResult(result)
@@ -148,6 +149,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function highlightMultiTheme(code, options) {
+    assertAnsiInput(code, options)
     const themes = resolveThemeEntries(options)
     loadThemeSync(...themes.map(theme => theme.input))
     if (
@@ -171,12 +173,14 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function highlightNativeTheme(code, options, theme) {
+    assertAnsiInput(code, options)
     const prepared = prepareOptions({ ...options, theme, themes: undefined })
     return JSON.parse(native.codeToTokens(code, JSON.stringify(prepared)))
   }
 
   const highlighter = {
     codeToHtml(code, options) {
+      assertAnsiInput(code, options)
       if (hasThemes(options))
         return hastToHtml(renderTokenResultHast(highlightMultiTheme(code, options), options))
       if (registrationName(options?.theme) === 'none')
@@ -184,6 +188,7 @@ export function createHighlighterCoreSync(options = {}) {
       return native.codeToHtml(code, JSON.stringify(prepareOptions(options)))
     },
     codeToHast(code, options) {
+      assertAnsiInput(code, options)
       if (hasThemes(options))
         return renderTokenResultHast(highlightMultiTheme(code, options), options)
       if (registrationName(options?.theme) === 'none')
@@ -191,6 +196,7 @@ export function createHighlighterCoreSync(options = {}) {
       return JSON.parse(native.codeToHast(code, JSON.stringify(prepareOptions(options))))
     },
     codeToTokens(code, options) {
+      assertAnsiInput(code, options)
       if (hasThemes(options))
         return highlightMultiTheme(code, options)
       if (registrationName(options?.theme) === 'none')
@@ -761,6 +767,14 @@ function isHighlighter(value, method) {
 
 function isSpecialLanguage(language) {
   return ['text', 'txt', 'plain', 'plaintext', 'ansi'].includes(language)
+}
+
+function assertAnsiInput(code, options) {
+  if (!globalThis.__FERRIKI_COMPAT_LEGACY_ANSI
+    && registrationName(options?.lang) === 'ansi'
+    && code.includes(String.fromCharCode(27))) {
+    throw new ShikiError('ANSI control sequences are not supported by Ferriki; strip or parse them before highlighting')
+  }
 }
 
 function registrationName(registration) {

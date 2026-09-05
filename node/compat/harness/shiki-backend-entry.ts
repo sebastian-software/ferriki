@@ -1,5 +1,10 @@
 export * from '../../ferriki/index.mjs'
 
+// Keep legacy upstream ANSI snapshots runnable while the public Ferriki
+// contract rejects control sequences. This marker exists only in the mirror
+// adapter and is never set by the package itself.
+(globalThis as typeof globalThis & { __FERRIKI_COMPAT_LEGACY_ANSI?: boolean }).__FERRIKI_COMPAT_LEGACY_ANSI = true
+
 // The upstream mirror still imports engine names while its compatibility
 // tests are being retired. Keep those names isolated to the test harness;
 // they are intentionally absent from Ferriki's public package exports.

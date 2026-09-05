@@ -73,7 +73,7 @@ compatibility tests must converge on this matrix.
 | `colorReplacements` | Stable | Validated theme color substitutions; invalid colors produce `ShikiError` rather than corrupt output (#48). |
 | `rootStyle` / `tabindex` | Stable | Explicit HTML root attributes; `false`/`null` disable the corresponding output. |
 | `tokenizeMaxLineLength` / `tokenizeTimeLimit` | Stable | Resource limits with deterministic `ShikiError` failures (#51). |
-| ANSI input | Stable | Parsed only through the explicit ANSI contract; raw escape sequences are never silently emitted (#48). |
+| ANSI input | Removed | Ferriki rejects terminal escape sequences with `ShikiError`; callers must strip or parse ANSI before highlighting. |
 | `theme: 'none'` | Stable | Explicit unstyled theme with documented inheritance in multi-theme output (#48). |
 | Unknown options | Remove | No catch-all option type. New options require a contract entry and a compatibility test (#10, #42). |
 
