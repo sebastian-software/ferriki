@@ -1,7 +1,7 @@
+import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
-import { join, posix } from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { join } from 'node:path'
 
 const repoRoot = new URL('../..', import.meta.url).pathname
 const mirrorRoot = join(repoRoot, 'node', 'compat', 'upstream', 'shiki')

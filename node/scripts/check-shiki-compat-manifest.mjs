@@ -1,7 +1,8 @@
+import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { spawnSync } from 'node:child_process'
+import process from 'node:process'
 
 const repoRoot = new URL('../..', import.meta.url).pathname
 const mirrorRoot = join(repoRoot, 'node', 'compat', 'upstream', 'shiki')
@@ -29,7 +30,7 @@ const entries = manifest
   .split('\n')
   .filter(Boolean)
   .map((line) => {
-    const match = line.match(/^([a-f0-9]{64})  (.+)$/)
+    const match = line.match(/^([a-f0-9]{64})\s{2}(.+)$/)
     if (!match)
       fail(`invalid manifest line: ${line}`)
     return { digest: match[1], path: match[2] }
