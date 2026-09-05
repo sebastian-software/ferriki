@@ -12,23 +12,25 @@ publication, or published successfully.
       dist-tag agree.
 - [ ] `pnpm run test:ferriki-compat:core`, `pnpm run lint`, and
       `pnpm run typecheck` pass from a clean checkout.
-- [ ] The pinned reusable workflow ref in `.github/workflows/publish.yml` was
-      reviewed and its target runners are available.
+- [ ] The action SHAs in `.github/workflows/publish.yml` were reviewed and its
+      target runners are available; each native matrix job has a timeout.
 - [ ] npm trusted publishing/provenance is enabled for the Ferriki package.
 
 ## Release-candidate run
 
 - [ ] Run the normal publish workflow first; use `force-publish` only for an
-      intentional backfill of the manifest version.
-- [ ] Confirm every documented target build completes, including the packed
-      consumer smoke test.
+      intentional backfill of the manifest version. Use the `next` dist-tag for
+      a release candidate and record the manual go/no-go decision.
+- [ ] Confirm every documented target build completes and every platform
+      package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from
       “published” and records failed or skipped target jobs.
 - [ ] Confirm the GitHub release and npm metadata show the same version and
       dist-tag.
 - [ ] Install the published tarball in a clean consumer and run the public
-      `ferriki` plus `ferriki/native` smoke checks.
-- [ ] Verify npm provenance on the published package.
+      `ferriki` plus `ferriki/native` smoke checks. The workflow also performs
+      this install check against the public registry after publication.
+- [ ] Verify npm provenance on the main package and all platform packages.
 
 ## Go/no-go and rollback
 
