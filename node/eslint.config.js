@@ -8,6 +8,7 @@ export default antfu(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/*.d.mts',
       'compat/upstream/**',
       'pnpm-workspace.yaml',
     ],

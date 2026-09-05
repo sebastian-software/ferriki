@@ -46,14 +46,16 @@
     "native.d.mts",
     "native.mjs",
     "platforms.mjs",
+    "src/api.d.mts",
+    "src/index.mjs",
     "transformers.mjs"
   ],
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "node ./scripts/verify-wrapper.mjs",
-    "dev": "node ./scripts/verify-wrapper.mjs",
+    "build": "node ./scripts/build-wrapper.mjs && node ./scripts/verify-wrapper.mjs",
+    "dev": "node ./scripts/build-wrapper.mjs && node ./scripts/verify-wrapper.mjs",
     "build:native": "node ./scripts/build-native.mjs"
   },
   "devDependencies": {
