@@ -15,7 +15,8 @@ The retained declaration symbols are `LanguageRegistration`,
 `getSingletonHighlighterCore`, `codeToHtml`, `codeToHast`, `codeToTokens`,
 `codeToTokensBase`, `codeToTokensWithThemes`, `getLastGrammarState`,
 `CssVariablesThemeOptions`, `createCssVariablesTheme`, `hastToHtml`,
-`bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`.
+`bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`, and
+`FerrikiErrorCode`, `FerrikiError`.
 
 ## Runtime requirements
 
@@ -191,9 +192,22 @@ the current platform binding is unavailable.
 ## Errors and deliberate boundaries
 
 User-facing validation, missing language/theme, circular aliases, disposal,
-ANSI input, and native loading failures are reported as `ShikiError` where a
-public call can classify them. Native causes are not a stable API and should
-not be pattern-matched beyond the documented loader prefix.
+and ANSI input are reported as `ShikiError` with a stable `code`. Native
+operation failures are reported as the `FerrikiError` subclass, which remains
+an `instanceof ShikiError` for existing consumers. The supported codes are:
+
+| Code | Meaning |
+| --- | --- |
+| `ERR_USAGE` | Invalid public options, registrations, aliases, or lifecycle use. |
+| `ERR_UNSUPPORTED` | A deliberate capability boundary, missing language/theme, or ANSI input. |
+| `ERR_NATIVE_LOAD` | No loadable platform addon for the current target. |
+| `ERR_ASSET` | Missing/corrupt bundled assets or invalid native registration payload. |
+| `ERR_RESOURCE_LIMIT` | Tokenization exceeded a documented time/size/resource limit. |
+| `ERR_INTERNAL` | An unexpected native or facade failure. |
+
+`FerrikiError` preserves the original native exception in `cause` without
+making its implementation text part of the contract. Native loader messages
+remain actionable and start with the documented `[ferriki]` prefix.
 
 The following historical Shiki extension points are deliberately not Ferriki
 exports: JavaScript/Oniguruma engine factories, WASM loading, transformer

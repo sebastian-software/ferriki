@@ -132,8 +132,21 @@ export interface Highlighter {
   [Symbol.dispose]: () => void
 }
 
+export type FerrikiErrorCode
+  = | 'ERR_USAGE'
+    | 'ERR_UNSUPPORTED'
+    | 'ERR_NATIVE_LOAD'
+    | 'ERR_ASSET'
+    | 'ERR_RESOURCE_LIMIT'
+    | 'ERR_INTERNAL'
+
 export declare class ShikiError extends Error {
-  constructor(message: string)
+  readonly code: FerrikiErrorCode
+  constructor(message: string, code?: FerrikiErrorCode, options?: { cause?: unknown })
+}
+
+export declare class FerrikiError extends ShikiError {
+  constructor(message: string, code?: FerrikiErrorCode, options?: { cause?: unknown })
 }
 
 /** Version of the bundled native core, or undefined when no platform binary loads. */
