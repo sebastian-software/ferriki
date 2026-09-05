@@ -107,8 +107,11 @@ functions. Unknown options are not a supported extension point.
 | `dispose()` | `void` | Mark the highlighter disposed and release native state. |
 | `[Symbol.dispose]()` | `void` | Equivalent to `dispose()`. |
 
-Calls after disposal throw `ShikiError`. A highlighter is synchronous after
-creation; do not share one across workers without an explicit worker boundary.
+Calls after disposal throw `ShikiError`. Disposal clears native grammar/theme
+registries and asset caches deterministically; a disposed wrapper cannot be
+reused. A highlighter is synchronous after creation, so calls on one instance
+are serialized by the Node event loop. Do not share one across workers without
+an explicit worker boundary; create one highlighter per worker instead.
 
 ## Highlight options
 
@@ -126,6 +129,13 @@ creation; do not share one across workers without an explicit worker boundary.
 | `tabindex` | `string \| number \| false \| null` | Root `tabindex` attribute. |
 | `tokenizeMaxLineLength` | `number` | Maximum tokenized line length. |
 | `tokenizeTimeLimit` | `number` | Tokenization time budget in milliseconds. |
+
+`tokenizeTimeLimit` defaults to 500 ms per line; `0` disables the time limit.
+`tokenizeMaxLineLength` defaults to `0` (unlimited). When a non-zero line
+length limit is reached, Ferriki returns that line as one deliberately
+unstyled token instead of silently claiming syntax-level highlighting. A
+tokenization timeout follows the native TextMate stopped-early behavior and
+remains observable through the unstyled/partial token result.
 
 ANSI escape sequences are outside the Ferriki 1.0 contract. Passing escape
 bytes with `lang: 'ansi'` throws `ShikiError`; strip or parse terminal output
