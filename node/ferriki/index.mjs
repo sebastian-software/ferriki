@@ -289,18 +289,6 @@ export function getLastGrammarState() {
   return undefined
 }
 
-export function createJavaScriptRegexEngine() {
-  return {}
-}
-
-export function createOnigurumaEngine() {
-  return {}
-}
-
-export async function loadWasm() {}
-
-export const wasmBinary = new Uint8Array()
-
 export function createCssVariablesTheme(options = {}) {
   return {
     name: options.name || 'css-variables',

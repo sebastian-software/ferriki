@@ -191,12 +191,6 @@ export declare function codeToTokensWithThemes(
 
 export declare function getLastGrammarState(): undefined
 
-export interface RegexEngine {}
-export declare function createJavaScriptRegexEngine(): RegexEngine
-export declare function createOnigurumaEngine(): RegexEngine
-export declare function loadWasm(): Promise<void>
-export declare const wasmBinary: Uint8Array
-
 export interface CssVariablesThemeOptions {
   name?: string
   type?: 'dark' | 'light' | string
