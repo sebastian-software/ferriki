@@ -53,7 +53,7 @@ jobs:
         run: npm i -g @antfu/ni
 
       - name: Install
-        run: nci
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Lint
         run: nr lint
@@ -80,7 +80,7 @@ jobs:
         run: npm i -g @antfu/ni
 
       - name: Install
-        run: nci
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build
         run: nr build
@@ -112,10 +112,16 @@ jobs:
           node-version: 22.x
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build native
         run: pnpm run build:native
+
+      - name: Prepare compatibility inputs without mutating the mirror
+        run: pnpm run prepare:compat
+
+      - name: Verify compatibility mirror is clean
+        run: pnpm run check:compat-mirror
 
       - name: Run native TextMate compatibility gate
         run: pnpm run test:ferriki-compat:textmate
@@ -155,7 +161,7 @@ jobs:
         run: npm i -g @antfu/ni
 
       - name: Install
-        run: nci
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build native
         run: pnpm run build:native
