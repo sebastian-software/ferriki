@@ -20,6 +20,7 @@
     "test:ferriki-compat:colorized-brackets": "pnpm run build:compat && pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
     "check:errors": "node ./scripts/check-ferriki-errors.mjs",
     "check:boundary": "node ./scripts/check-native-boundary.mjs",
+    "check:release": "node ./scripts/check-release-workflow.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },
