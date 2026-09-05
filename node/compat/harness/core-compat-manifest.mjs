@@ -4,6 +4,7 @@ export const coreCompatSupportedTests = [
   'compat/upstream/shiki/packages/core/test/get-singleton.test.ts',
   'compat/upstream/shiki/packages/shiki/test/alias.test.ts',
   'compat/upstream/shiki/packages/shiki/test/astro.test.ts',
+  'compat/upstream/shiki/packages/shiki/test/bundle.test.ts',
   'compat/upstream/shiki/packages/shiki/test/get-highlighter.test.ts',
   'compat/upstream/shiki/packages/shiki/test/general.test.ts',
   'compat/upstream/shiki/packages/shiki/test/injections.test.ts',

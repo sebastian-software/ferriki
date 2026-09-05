@@ -51,6 +51,13 @@ the package manifest and source tree against legacy runtime dependencies,
 fallback loaders, and forbidden runtime files. A clean working tree is
 required after compatibility preparation.
 
+The core gate also runs Shiki's `bundle-full` and `bundle-web` smoke tests. The
+current pinned baseline expects 364 and 96 loaded languages respectively. The
+audit found two grammar-shape gaps that had been hidden by the old exclusion:
+legacy capture arrays (for example, `jinja`) and repository entries represented
+as rule arrays (for example, `racket`). Ferriki normalizes both forms at the
+raw-grammar boundary, with focused Rust tests covering the conversion.
+
 ## Platform support
 
 The 1.0 floor is Node.js 22.13.0. The CI smoke matrix exercises every target

@@ -9,7 +9,7 @@ const vitestArgs = [
   'exec',
   'vitest',
 ]
-const testNamePattern = '^(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects)'
+const testNamePattern = '^(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects|bundle-(full|web))'
 
 const catalogCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-catalog.mjs'], {
   cwd: nodeRoot,
@@ -217,8 +217,6 @@ run([
 run([
   'run',
   ...coreCompatSupportedTests,
-  '--exclude',
-  'compat/upstream/shiki/packages/shiki/test/bundle.test.ts',
   '-t',
   testNamePattern,
   '--maxWorkers',
