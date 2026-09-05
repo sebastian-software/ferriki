@@ -36,14 +36,18 @@ cd node
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm run test:ferriki-compat:textmate
 pnpm run test:ferriki-compat:core
+pnpm run check:boundary
 pnpm run typecheck
 pnpm run lint
 ```
 
 `test:ferriki-compat:core` builds the pinned compatibility packages, builds the
-native addon, runs the catalog/export/docs/API checks, executes the supported
-native suite, and reports deferred contracts with their owning issue. A clean
-working tree is required after compatibility preparation.
+native addon, runs the catalog/export/native-boundary/docs/API checks, executes
+the supported native suite, and reports deferred contracts with their owning
+issue. `check:boundary` is also safe to run without a native build; it guards
+the package manifest and source tree against legacy runtime dependencies,
+fallback loaders, and forbidden runtime files. A clean working tree is
+required after compatibility preparation.
 
 ## Platform support
 
