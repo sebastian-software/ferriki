@@ -74,10 +74,11 @@ in the current release map:
 
 The target map is maintained in [`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs)
 and checked by `pnpm run check:platform-matrix`. A green CI run does not imply
-support for an unlisted libc or architecture. Platform sidecar publication is
-tracked separately in issue #52. The five sidecar manifests now live under
-`node/platforms/*` and are declared as optional dependencies; publication and
-artifact assembly remain part of the release workflow work in #54.
+support for an unlisted libc or architecture. The five sidecar manifests now
+live under `node/platforms/*` and are declared as optional dependencies. The
+publish workflow assembles and publishes those sidecars before the main
+package, then verifies public npm metadata, provenance, and a clean consumer
+install.
 
 The native smoke jobs build with an explicit Rust target for each supported
 platform, including macOS Intel (`x86_64-apple-darwin`). This catches a host
@@ -86,10 +87,9 @@ versus target mismatch before release artifacts are assembled.
 ## Packaging baseline
 
 The packed `ferriki@0.2.0` main package measured **11,372,892 bytes
-unpacked** on 2026-09-05 (`npm pack --json`). This is the before-sidecar
-baseline. A post-sidecar measurement is intentionally not claimed until the
-release workflow publishes and installs the optional packages; that follow-up
-remains part of #52/#54.
+unpacked** on 2026-09-05 (`npm pack --json`). This is the main-package
+baseline; the release workflow also validates each sidecar tarball before
+publication.
 
 ## Reporting a compatibility gap
 

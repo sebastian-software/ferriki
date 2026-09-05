@@ -35,6 +35,7 @@ for (const target of FERRIKI_PLATFORM_TARGETS) {
   )
   const sidecar = JSON.parse(await readFile(join(nodeRoot, 'platforms', target.id, 'package.json'), 'utf8'))
   assert.equal(sidecar.name, target.packageName)
+  assert.equal(sidecar.version, ferrikiManifest.version, `${target.id} sidecar must use the main package version`)
   assert(sidecar.files.includes('ferriki.node'), `${target.id} sidecar must publish ferriki.node`)
 }
 

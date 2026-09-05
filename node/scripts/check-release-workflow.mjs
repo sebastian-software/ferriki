@@ -10,12 +10,22 @@ const checklist = await readFile(join(repoRoot, 'docs/release-checklist.md'), 'u
 
 assert.match(
   workflow,
-  /sebastian-software\/ferramenta\/\.github\/workflows\/release-node-native\.yml@[0-9a-f]{40}/,
-  'publish workflow must pin the reusable release workflow to an immutable commit',
+  /googleapis\/release-please-action@[0-9a-f]{40}/,
+  'release workflow must pin release-please to an immutable commit',
 )
-assert.doesNotMatch(workflow, /release-node-native\.yml@(main|master|v\d)/, 'publish workflow must not follow a mutable branch or tag')
-for (const required of ['force-publish:', 'config-file:', 'manifest-file:', 'smoke-script:'])
-  assert(workflow.includes(required), `publish workflow is missing ${required}`)
+assert.doesNotMatch(workflow, /uses: [^\n]+@(main|master|v\d)/, 'release workflow must not follow mutable action refs')
+for (const job of ['release-please:', 'build-native:', 'publish-npm:', 'verify-npm-publish:', 'release-summary:'])
+  assert(workflow.includes(`  ${job}`), `release workflow is missing ${job}`)
+for (const required of [
+  'force-publish:',
+  'dist-tag:',
+  'timeout-minutes:',
+  'actions/download-artifact@',
+  'npm publish --access public --provenance',
+  'NPM_PUBLISH_RESULT:',
+  'write-release-summary.mjs',
+])
+  assert(workflow.includes(required), `release workflow is missing ${required}`)
 
 for (const required of ['npm provenance', 'GitHub release', 'tarball', 'rollback', 'deprecate', 'go/no-go'])
   assert(checklist.toLowerCase().includes(required.toLowerCase()), `release checklist is missing ${required}`)

@@ -7,36 +7,271 @@ on:
   workflow_dispatch:
     inputs:
       force-publish:
-        description: Publish current main even without a new release
+        description: Publish the current manifest version even without a new release
         type: boolean
         default: false
-
-concurrency:
-  group: publish-${{ github.ref }}
-  cancel-in-progress: false
+      dist-tag:
+        description: npm dist-tag for an intentional release-candidate or stable publish
+        type: choice
+        options:
+          - latest
+          - next
+        default: latest
 
 permissions:
   contents: read
 
+concurrency:
+  group: publish-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NPM_DIST_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.dist-tag || 'latest' }}
+
 jobs:
-  release:
-    # Reviewed reusable workflow ref; update only with a reviewed commit.
-    uses: sebastian-software/ferramenta/.github/workflows/release-node-native.yml@8cd4792a193013206f8b8728ec875c7465885dd5
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@0dfd8538845b8e92600d271a895a5372865d4062 # v5
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+  build-native:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rust-target: x86_64-unknown-linux-gnu
+            platform-id: linux-x64-gnu
+          - os: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-gnu
+            platform-id: linux-arm64-gnu
+          - os: macos-latest
+            rust-target: aarch64-apple-darwin
+            platform-id: darwin-arm64
+          - os: macos-15-intel
+            rust-target: x86_64-apple-darwin
+            platform-id: darwin-x64
+          - os: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            platform-id: win32-x64-msvc
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: node
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: node/pnpm-lock.yaml
+
+      - name: Set Rust target
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.rust-target }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Synchronize platform package versions
+        run: pnpm run sync:platform-versions
+
+      - name: Build native addon
+        run: pnpm run build:native
+        env:
+          FERRIKI_RUST_TARGET: ${{ matrix.rust-target }}
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
+      - name: Verify platform package
+        run: pnpm run check:platform-package
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
+      - name: Upload native sidecar
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: native-${{ matrix.platform-id }}
+          path: node/platforms/${{ matrix.platform-id }}/ferriki.node
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-npm:
+    needs:
+      - release-please
+      - build-native
+    if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
       id-token: write
-    with:
-      workspace-dir: node
-      package-dir: node/ferriki
-      addon-name: ferriki
-      config-file: .release-please-config.json
-      manifest-file: .release-please-manifest.json
-      force-publish: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish }}
-      smoke-script: >-
-        import('./ferriki/index.mjs').then((m) => {
-        const version = m.ferrikiVersion();
-        if (!version) throw new Error('native binding did not load')
-        })
-    secrets: inherit
+    defaults:
+      run:
+        working-directory: node
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: node/pnpm-lock.yaml
+
+      - name: Set Rust
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
+        with:
+          toolchain: stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Synchronize platform package versions
+        run: pnpm run sync:platform-versions
+
+      - name: Download Linux native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-linux-x64-gnu
+          path: node/platforms/linux-x64-gnu
+
+      - name: Download Linux arm64 native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-linux-arm64-gnu
+          path: node/platforms/linux-arm64-gnu
+
+      - name: Download macOS arm64 native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-darwin-arm64
+          path: node/platforms/darwin-arm64
+
+      - name: Download macOS x64 native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-darwin-x64
+          path: node/platforms/darwin-x64
+
+      - name: Download Windows x64 native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-win32-x64-msvc
+          path: node/platforms/win32-x64-msvc
+
+      - name: Build package wrappers and Linux fallback
+        run: |
+          pnpm run build
+          pnpm run build:native
+
+      - name: Verify all release packages
+        run: |
+          pnpm run check:platform-matrix
+          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
+            FERRIKI_PLATFORM_ID="$platform_id" pnpm run check:platform-package
+          done
+          pnpm run check:docs
+
+      - name: Publish platform packages with npm provenance
+        working-directory: node
+        run: |
+          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
+            npm publish "platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
+          done
+
+      - name: Publish main package with npm provenance
+        working-directory: node/ferriki
+        run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
+
+  verify-npm-publish:
+    needs:
+      - release-please
+      - publish-npm
+    if: ${{ always() && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Verify public npm packages, provenance, and install
+        env:
+          NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
+        run: node ./node/scripts/verify-npm-publish.mjs
+
+  release-summary:
+    needs:
+      - release-please
+      - build-native
+      - publish-npm
+      - verify-npm-publish
+    if: ${{ always() }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Summarize release outcome
+        env:
+          RELEASES_CREATED: ${{ needs.release-please.outputs.releases_created }}
+          FORCE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish || false }}
+          RELEASE_RESULT: ${{ needs.release-please.result }}
+          BUILD_RESULT: ${{ needs.build-native.result }}
+          PUBLISH_RESULT: ${{ needs.publish-npm.result }}
+          VERIFY_RESULT: ${{ needs.verify-npm-publish.result }}
+        run: node ./node/scripts/write-release-summary.mjs

@@ -1,8 +1,8 @@
 import process from 'node:process'
 
 /**
- * The release workflow currently bundles these five GNU/MSVC targets into
- * the main package. The map is deliberately shared by the loader, docs, and
+ * The release workflow publishes these five GNU/MSVC targets as optional
+ * sidecar packages. The map is deliberately shared by the loader, docs, and
  * CI so a new target cannot be documented accidentally.
  */
 export const FERRIKI_NODE_MIN_VERSION = '22.13.0'
