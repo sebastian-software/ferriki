@@ -54,6 +54,40 @@ impl FerrikiHighlighter {
             .map_err(|error| Error::from_reason(format!("Failed to serialize tokens: {error}")))
     }
 
+    #[napi(js_name = "codeToTokensWithThemes")]
+    pub fn code_to_tokens_with_themes(&self, code: String, options_json: String) -> Result<String> {
+        let options = HighlightOptions::parse(&options_json)?;
+        let value: Value = serde_json::from_str(&options_json).map_err(|error| {
+            Error::from_reason(format!("Failed to parse multi-theme options: {error}"))
+        })?;
+        let themes = value
+            .get("themeEntries")
+            .and_then(Value::as_array)
+            .ok_or_else(|| Error::from_reason("Multi-theme options require `themeEntries`."))?
+            .iter()
+            .map(|entry| {
+                let color = entry
+                    .get("color")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| Error::from_reason("Theme entries require `color`."))?;
+                let name = entry
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| Error::from_reason("Theme entries require `name`."))?;
+                Ok((color.to_owned(), name.to_owned()))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let tokens = self.core.borrow_mut().tokenize_with_themes(
+            &code,
+            &options.language,
+            &themes,
+            &options.tokenize,
+        )?;
+        serde_json::to_string(&tokens).map_err(|error| {
+            Error::from_reason(format!("Failed to serialize themed tokens: {error}"))
+        })
+    }
+
     #[napi(js_name = "codeToHast")]
     pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
@@ -228,5 +262,31 @@ mod tests {
         assert_eq!(options.render.tabindex.as_deref(), Some("-1"));
         assert!(!options.render.merge_whitespaces);
         assert_eq!(options.tokenize.time_limit_millis, 42);
+    }
+
+    #[test]
+    fn emits_aligned_multi_theme_tokens_from_one_grammar_pass() {
+        let highlighter = standard_highlighter();
+        let options = json!({
+            "lang": "javascript",
+            "theme": "vitesse-light",
+            "themeEntries": [
+                { "color": "light", "name": "vitesse-light" },
+                { "color": "dark", "name": "nord" }
+            ],
+            "tokenizeTimeLimit": 0,
+        })
+        .to_string();
+        let result: Value = serde_json::from_str(
+            &highlighter
+                .code_to_tokens_with_themes("const x = 1".to_owned(), options)
+                .expect("multi-theme tokens"),
+        )
+        .expect("JSON result");
+
+        assert_eq!(result["themes"].as_array().expect("themes").len(), 2);
+        assert_eq!(result["tokens"][0][0]["content"], "const");
+        assert!(result["tokens"][0][0]["variants"]["light"]["color"].is_string());
+        assert!(result["tokens"][0][0]["variants"]["dark"]["color"].is_string());
     }
 }

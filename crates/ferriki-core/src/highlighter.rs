@@ -1,14 +1,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use ferriki_textmate::{parse_raw_grammar, GrammarConfiguration, RawGrammar, SyncRegistry};
+use ferriki_textmate::{
+    parse_raw_grammar, GrammarConfiguration, RawGrammar, ScopeStack, SyncRegistry, Theme,
+};
 use napi::{Error, Result};
 
 use crate::asset_catalog::StandardAssetCatalogs;
 use crate::theme_data::{parse_theme_data, ThemeData};
 use crate::tokens::{
-    split_lines, token_from_metadata, utf16_to_byte_map, HighlightToken, HighlightTokensResult,
-    TokenizeOptions,
+    split_lines, token_from_metadata, utf16_to_byte_map, HighlightThemeMetadata,
+    HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken, HighlightTokensResult,
+    HighlightTokensWithThemesResult, TokenizeOptions,
 };
 
 pub struct HighlighterCore {
@@ -310,6 +313,221 @@ impl HighlighterCore {
             theme_name: theme.name,
         })
     }
+
+    pub fn tokenize_with_themes(
+        &mut self,
+        code: &str,
+        language: &str,
+        themes: &[(String, String)],
+        options: &TokenizeOptions,
+    ) -> Result<HighlightTokensWithThemesResult> {
+        if themes.is_empty() {
+            return Err(Error::from_reason("At least one theme is required."));
+        }
+
+        let mut theme_data = Vec::with_capacity(themes.len());
+        for (color, theme_id) in themes {
+            let data = if theme_id == "none" {
+                None
+            } else {
+                if !self.load_standard_theme(theme_id)? {
+                    return Err(Error::from_reason(format!("Unknown theme `{theme_id}`.")));
+                }
+                Some(
+                    self.themes
+                        .get(theme_id)
+                        .cloned()
+                        .ok_or_else(|| Error::from_reason("Loaded Ferriki theme disappeared."))?,
+                )
+            };
+            theme_data.push((color.clone(), theme_id.clone(), data));
+        }
+
+        let themes = theme_data
+            .into_iter()
+            .map(|(color, name, data)| {
+                let theme = data
+                    .as_ref()
+                    .map(|data| {
+                        Theme::create_from_raw_theme(Some(&data.raw_theme), None)
+                            .map_err(theme_error)
+                    })
+                    .transpose()?;
+                Ok((
+                    HighlightThemeMetadata {
+                        color,
+                        name,
+                        foreground: data
+                            .as_ref()
+                            .map(|data| data.foreground.clone())
+                            .unwrap_or_else(|| "inherit".to_owned()),
+                        background: data
+                            .as_ref()
+                            .map(|data| data.background.clone())
+                            .unwrap_or_else(|| "inherit".to_owned()),
+                    },
+                    theme,
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        if is_plain_language(language) || language == "ansi" {
+            let mut output_lines = Vec::new();
+            for (line, line_offset) in split_lines(code) {
+                if line.is_empty() {
+                    output_lines.push(Vec::new());
+                } else {
+                    let utf16_map = utf16_to_byte_map(line);
+                    let line_length = line.encode_utf16().count();
+                    output_lines.push(vec![theme_token_for_range(
+                        line,
+                        0..line_length,
+                        line_offset,
+                        &[],
+                        &themes,
+                        &utf16_map,
+                    )?]);
+                }
+            }
+            return Ok(HighlightTokensWithThemesResult {
+                tokens: output_lines,
+                themes: themes.into_iter().map(|(metadata, _)| metadata).collect(),
+            });
+        }
+
+        let grammar_theme = themes
+            .iter()
+            .find_map(|(metadata, theme)| {
+                (metadata.name != "none" && theme.is_some()).then_some(metadata.name.as_str())
+            })
+            .unwrap_or("nord");
+        self.activate_theme(grammar_theme)?;
+        let grammar = self
+            .grammar_for_language(language)?
+            .ok_or_else(|| Error::from_reason(format!("Unknown language `{language}`.")))?;
+
+        let mut state = None;
+        let mut output_lines = Vec::new();
+        for (line, line_offset) in split_lines(code) {
+            if line.is_empty() {
+                output_lines.push(Vec::new());
+                continue;
+            }
+            let line_length = line.encode_utf16().count();
+            let utf16_map = utf16_to_byte_map(line);
+            if options.max_line_length > 0 && line_length >= options.max_line_length {
+                output_lines.push(vec![theme_token_for_range(
+                    line,
+                    0..line_length,
+                    line_offset,
+                    &[],
+                    &themes,
+                    &utf16_map,
+                )?]);
+                continue;
+            }
+
+            let result = grammar
+                .tokenize_line(line, state, options.time_limit_millis)
+                .map_err(|error| {
+                    Error::from_reason(format!("Failed to tokenize `{language}` line: {error}"))
+                })?;
+            state = Some(result.rule_stack);
+            output_lines.push(
+                result
+                    .tokens
+                    .into_iter()
+                    .filter_map(|token| {
+                        let end = token.end_index.min(line_length);
+                        let start = token.start_index.min(end);
+                        (start < end).then(|| {
+                            theme_token_for_range(
+                                line,
+                                start..end,
+                                line_offset,
+                                &token.scopes,
+                                &themes,
+                                &utf16_map,
+                            )
+                        })
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+            );
+        }
+
+        Ok(HighlightTokensWithThemesResult {
+            tokens: output_lines,
+            themes: themes.into_iter().map(|(metadata, _)| metadata).collect(),
+        })
+    }
+}
+
+fn theme_token_for_range(
+    line: &str,
+    range: std::ops::Range<usize>,
+    line_offset: usize,
+    scopes: &[String],
+    themes: &[(HighlightThemeMetadata, Option<Theme>)],
+    utf16_map: &[usize],
+) -> Result<HighlightThemeToken> {
+    let start_byte = *utf16_map
+        .get(range.start)
+        .ok_or_else(|| Error::from_reason("Token start is outside the UTF-16 line map."))?;
+    let end_byte = *utf16_map
+        .get(range.end)
+        .ok_or_else(|| Error::from_reason("Token end is outside the UTF-16 line map."))?;
+    let content = line
+        .get(start_byte..end_byte)
+        .ok_or_else(|| Error::from_reason("Token range is not on a UTF-8 boundary."))?
+        .to_owned();
+    let scope_path = ScopeStack::from(scopes.iter().cloned());
+    let variants = themes
+        .iter()
+        .map(|(metadata, theme)| {
+            let style = theme.as_ref().and_then(|theme| {
+                theme
+                    .match_scope(scope_path.as_deref())
+                    .or_else(|| Some(theme.get_defaults().clone()))
+            });
+            let (color, font_style) = style
+                .map(|style| {
+                    let defaults = theme.as_ref().map(|theme| theme.get_defaults().clone());
+                    let foreground_id = if style.foreground_id == 0 {
+                        defaults
+                            .as_ref()
+                            .map_or(0, |defaults| defaults.foreground_id)
+                    } else {
+                        style.foreground_id
+                    };
+                    let font_style = if style.font_style.bits() < 0 {
+                        defaults
+                            .as_ref()
+                            .map_or(0, |defaults| defaults.font_style.bits())
+                    } else {
+                        style.font_style.bits()
+                    };
+                    let color = theme.as_ref().and_then(|theme| {
+                        let color_map = theme.get_color_map();
+                        color_map
+                            .get(foreground_id as usize)
+                            .filter(|color| !color.is_empty())
+                            .cloned()
+                    });
+                    (color, Some(font_style))
+                })
+                .unwrap_or((None, None));
+            (
+                metadata.color.clone(),
+                HighlightThemeTokenStyle { color, font_style },
+            )
+        })
+        .collect();
+    Ok(HighlightThemeToken {
+        content,
+        offset: line_offset + range.start,
+        variants,
+        token_type: None,
+    })
 }
 
 fn scope_matches(candidate: &str, scope_name: &str) -> bool {

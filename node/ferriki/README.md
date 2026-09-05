@@ -47,6 +47,20 @@ const tokens = highlighter.codeToTokens('# Hello', {
 })
 ```
 
+For Ardo-style light/dark output, pass an ordered theme map. With
+`defaultColor: false`, Ferriki emits CSS variables for every theme:
+
+```js
+const html = highlighter.codeToHtml('const answer = 42', {
+  lang: 'typescript',
+  themes: {
+    light: 'vitesse-light',
+    dark: 'vitesse-dark',
+  },
+  defaultColor: false,
+})
+```
+
 `codeToHast` returns the same highlighted output as a HAST root. Languages
 embedded by a grammar are loaded with it; lazy embeddings are loaded only
 after an explicit `loadLanguage`.

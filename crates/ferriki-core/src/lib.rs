@@ -22,7 +22,10 @@ pub use highlighter::HighlighterCore;
 pub use napi_api::{create_highlighter, FerrikiHighlighter};
 pub use render::{render_hast, render_html, RenderOptions};
 pub use theme_data::{parse_theme_data, ThemeData};
-pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};
+pub use tokens::{
+    HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,
+};
 
 #[napi(js_name = "ferrikiVersion")]
 pub fn ferriki_version() -> String {
