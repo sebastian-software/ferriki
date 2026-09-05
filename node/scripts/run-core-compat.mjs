@@ -47,6 +47,30 @@ const docsCheck = spawnSync(process.execPath, ['./scripts/check-docs-drift.mjs']
 if (docsCheck.status !== 0)
   process.exit(docsCheck.status || 1)
 
+const docsContractCheck = spawnSync(process.execPath, ['./scripts/check-docs-contract.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (docsContractCheck.status !== 0)
+  process.exit(docsContractCheck.status || 1)
+
+const packedConsumerCheck = spawnSync(process.execPath, ['./scripts/check-packed-consumer.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (packedConsumerCheck.status !== 0)
+  process.exit(packedConsumerCheck.status || 1)
+
 const multiThemeCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-multitheme.mjs'], {
   cwd: nodeRoot,
   env: {
