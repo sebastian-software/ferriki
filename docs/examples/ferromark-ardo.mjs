@@ -51,4 +51,15 @@ const rendered = adapter.codeToHtml('const answer = 42', {
 if (!rendered.includes('shiki'))
   throw new Error('Ferriki example did not render highlighted HTML')
 
+const hast = highlighter.codeToHast('const answer = 42', {
+  lang: 'typescript',
+  theme: 'nord',
+})
+const tokens = highlighter.codeToTokens('const answer = 42', {
+  lang: 'typescript',
+  theme: 'nord',
+})
+if (hast.type !== 'root' || tokens.tokens.length === 0)
+  throw new Error('Ferriki example did not produce HAST and token output')
+
 console.log('Ferriki + Ferromark adapter example rendered successfully')
