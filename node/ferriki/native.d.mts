@@ -1,6 +1,8 @@
 export interface FerrikiNativeHighlighter {
   loadStandardTheme: (themeId: string) => boolean
   loadStandardGrammar: (language: string) => string | undefined
+  loadCustomTheme: (registrationJson: string) => boolean
+  loadCustomGrammar: (registrationJson: string) => string | undefined
   resolveGrammarScope: (language: string) => string | undefined
   getLoadedGrammarScopes: () => string[]
   getLoadedLanguages: () => string[]
