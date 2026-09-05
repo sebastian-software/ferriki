@@ -77,11 +77,11 @@ catalogs:
       specifier: ^3.0.1
       version: 3.0.1
     tm-grammars:
-      specifier: ^1.30.0
-      version: 1.30.0
+      specifier: 1.32.3
+      version: 1.32.3
     tm-themes:
-      specifier: ^1.11.0
-      version: 1.11.0
+      specifier: 1.12.3
+      version: 1.12.3
     vscode-oniguruma:
       specifier: 1.7.0
       version: 1.7.0
@@ -256,10 +256,10 @@ importers:
         version: link:compat/upstream/shiki/packages/shiki
       tm-grammars:
         specifier: catalog:inlined
-        version: 1.30.0
+        version: 1.32.3
       tm-themes:
         specifier: catalog:inlined
-        version: 1.11.0
+        version: 1.12.3
       tsdown:
         specifier: catalog:bundling
         version: 0.20.3(synckit@0.11.11)(typescript@5.9.3)
@@ -345,7 +345,7 @@ importers:
     devDependencies:
       tm-grammars:
         specifier: catalog:inlined
-        version: 1.30.0
+        version: 1.32.3
 
   compat/upstream/shiki/packages/markdown-it:
     dependencies:
@@ -447,10 +447,10 @@ importers:
         version: 3.5.0
       tm-grammars:
         specifier: catalog:inlined
-        version: 1.30.0
+        version: 1.32.3
       tm-themes:
         specifier: catalog:inlined
-        version: 1.11.0
+        version: 1.12.3
       vscode-oniguruma:
         specifier: catalog:inlined
         version: 1.7.0
@@ -463,7 +463,7 @@ importers:
     devDependencies:
       tm-themes:
         specifier: catalog:inlined
-        version: 1.11.0
+        version: 1.12.3
 
   compat/upstream/shiki/packages/transformers:
     dependencies:
@@ -492,9 +492,6 @@ importers:
       '@iconify-json/codicon':
         specifier: catalog:icons
         version: 1.2.41
-      '@shikijs/twoslash':
-        specifier: workspace:*
-        version: 'link:'
       hast-util-from-html:
         specifier: catalog:inlined
         version: 2.0.3
@@ -3067,11 +3064,11 @@ packages:
     resolution: {integrity: sha512-azl+t0z7pw/z958Gy9svOTuzqIk6xq+NSheJzn5MMWtWTFywIacg2wUlzKFGtt3cthx0r2SxMK0yzJOR0IES7Q==}
     engines: {node: '>=14.0.0'}
 
-  tm-grammars@1.30.0:
-    resolution: {integrity: sha512-h5zRJYEyA7uA7hIl6iZcOTK8z0EPlMDWr3wCSY5LD10rl6FVmaVJVvWWtBY7Gu7vyOy+sZGMUKCRvyY7fsqs5Q==}
+  tm-grammars@1.32.3:
+    resolution: {integrity: sha512-7h+UR4PPD4KY5Bu6olRkylEoEkrO8lK0Q6cHgThgq/IJWyiMj3iCcGlvJaLLplXW9PmOniOKnhajsBnM5/btfQ==}
 
-  tm-themes@1.11.0:
-    resolution: {integrity: sha512-9Ru5WhVznGa9u+7A9WcUpP5SPkafGjGmfXcp9HgVdRf2VJPsLLh8kYVd7f5kNNHFrnamvyZZoyJnuMJR19QxfA==}
+  tm-themes@1.12.3:
+    resolution: {integrity: sha512-DiuwChs9cpdGmu71483ld0+IsBQQxLpNFsUvz8WizzmiycQXJLNYHj0IgUlhrslk9BexmFn6lSLaAiyll5QD5Q==}
 
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
@@ -6079,9 +6076,9 @@ snapshots:
 
   tinyspy@4.0.4: {}
 
-  tm-grammars@1.30.0: {}
+  tm-grammars@1.32.3: {}
 
-  tm-themes@1.11.0: {}
+  tm-themes@1.12.3: {}
 
   to-regex-range@5.0.1:
     dependencies:

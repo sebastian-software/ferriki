@@ -29,7 +29,7 @@ const exportedNames = [...declarations.matchAll(/^export (?:declare )?(?:functio
 for (const name of exportedNames)
   assert(api.includes(name), `docs/ferriki-api.md is missing declared export: ${name}`)
 
-assert.equal(source.ref, 'v4.3.1', 'the docs baseline must follow the pinned Shiki source')
+assert.equal(source.ref, 'v4.4.3', 'the docs baseline must follow the pinned Shiki source')
 assert(migration.includes(`Shiki **${source.ref}**`), 'migration guide must name the exact Shiki baseline')
 assert(compatibility.includes(`Shiki ${source.ref}`), 'compatibility guide must name the exact Shiki baseline')
 assert(rootReadme.includes('docs/ferriki-api.md'), 'root README must link the API reference')

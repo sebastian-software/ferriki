@@ -228,8 +228,5 @@
       ]
     }
   },
-  "scopeName": "source.asp.vb.net",
-  "aliases": [
-    "cmd"
-  ]
+  "scopeName": "source.asp.vb.net"
 }

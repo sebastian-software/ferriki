@@ -35,8 +35,8 @@ catalogs:
     hast-util-from-html: ^2.0.3
     hast-util-to-html: ^9.0.5
     hast-util-to-string: ^3.0.1
-    tm-grammars: ^1.30.0
-    tm-themes: ^1.11.0
+    tm-grammars: 1.32.3
+    tm-themes: 1.12.3
     vscode-oniguruma: 1.7.0
   integrations:
     lz-string: ^1.5.0
@@ -67,7 +67,7 @@ catalogs:
     '@types/hast': ^3.0.4
     '@types/markdown-it': ^14.1.2
     # Pinned to the exact version resolved by the mirrored shiki release tag
-    # (v4.3.1); the twoslash compat snapshots embed @types/node JSDoc hovers.
+    # (v4.4.3); the twoslash compat snapshots embed @types/node JSDoc hovers.
     '@types/node': 25.3.3
 onlyBuiltDependencies:
   - esbuild

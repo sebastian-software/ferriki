@@ -15,7 +15,10 @@
       "grammar_file": "actionscript-3.json",
       "scope_name": "source.actionscript.3",
       "display_name": "ActionScript",
-      "aliases": [],
+      "aliases": [
+        "actionscript",
+        "as3"
+      ],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -25,6 +28,28 @@
       "grammar_file": "ada.json",
       "scope_name": "source.ada",
       "display_name": "Ada",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "ahk",
+      "grammar_file": "ahk.json",
+      "scope_name": "source.ahk",
+      "display_name": "AutoHotkey",
+      "aliases": [
+        "ahk1"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "ahk2",
+      "grammar_file": "ahk2.json",
+      "scope_name": "source.ahk2",
+      "display_name": "AutoHotkey2",
       "aliases": [],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
@@ -337,7 +362,8 @@
       "scope_name": "source.batchfile",
       "display_name": "Batch File",
       "aliases": [
-        "batch"
+        "batch",
+        "cmd"
       ],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
@@ -381,6 +407,18 @@
       "scope_name": "source.bicep",
       "display_name": "Bicep",
       "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "bird2",
+      "grammar_file": "bird2.json",
+      "scope_name": "source.bird2",
+      "display_name": "BIRD2 Configuration",
+      "aliases": [
+        "bird"
+      ],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -457,6 +495,20 @@
       "aliases": [],
       "embedded_langs": [
         "python"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "chapel",
+      "grammar_file": "chapel.json",
+      "scope_name": "source.chapel",
+      "display_name": "Chapel",
+      "aliases": [
+        "chpl"
+      ],
+      "embedded_langs": [
+        "c"
       ],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -557,8 +609,8 @@
     {
       "id": "coq",
       "grammar_file": "coq.json",
-      "scope_name": "source.coq",
-      "display_name": "Coq",
+      "scope_name": "source.rocq",
+      "display_name": "Rocq",
       "aliases": [],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
@@ -575,8 +627,7 @@
       "embedded_langs": [
         "cpp-macro",
         "regexp",
-        "glsl",
-        "sql"
+        "glsl"
       ],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -589,8 +640,7 @@
       "aliases": [],
       "embedded_langs": [
         "regexp",
-        "glsl",
-        "sql"
+        "glsl"
       ],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -880,7 +930,7 @@
     {
       "id": "es-tag-sql",
       "grammar_file": "es-tag-sql.json",
-      "scope_name": "inline.es6-sql",
+      "scope_name": "inline.tagged-template-sql",
       "display_name": null,
       "aliases": [],
       "embedded_langs": [
@@ -1531,6 +1581,25 @@
       "inject_to": []
     },
     {
+      "id": "just",
+      "grammar_file": "just.json",
+      "scope_name": "source.just",
+      "display_name": "Just",
+      "aliases": [
+        "justfile"
+      ],
+      "embedded_langs": [
+        "shellscript",
+        "javascript",
+        "typescript",
+        "perl",
+        "python",
+        "ruby"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
       "id": "kdl",
       "grammar_file": "kdl.json",
       "scope_name": "source.kdl",
@@ -1958,6 +2027,18 @@
       "aliases": [
         "nf"
       ],
+      "embedded_langs": [
+        "nextflow-groovy"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "nextflow-groovy",
+      "grammar_file": "nextflow-groovy.json",
+      "scope_name": "source.nextflow-groovy",
+      "display_name": "Nextflow Groovy",
+      "aliases": [],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []
@@ -2001,6 +2082,16 @@
       "embedded_langs": [
         "markdown-nix"
       ],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "nsis",
+      "grammar_file": "nsis.json",
+      "scope_name": "source.nsis",
+      "display_name": "NSIS",
+      "aliases": [],
+      "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []
     },
@@ -2067,6 +2158,64 @@
         "scad"
       ],
       "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "org",
+      "grammar_file": "org.json",
+      "scope_name": "source.org",
+      "display_name": "Org Markup",
+      "aliases": [],
+      "embedded_langs": [
+        "javascript",
+        "typescript",
+        "tsx",
+        "java",
+        "python",
+        "regexp",
+        "css",
+        "lua",
+        "ini",
+        "make",
+        "perl",
+        "r",
+        "ruby",
+        "php",
+        "sql",
+        "vb",
+        "clojure",
+        "coffee",
+        "c",
+        "cpp",
+        "objective-c",
+        "diff",
+        "docker",
+        "go",
+        "groovy",
+        "less",
+        "scss",
+        "raku",
+        "rust",
+        "scala",
+        "shellscript",
+        "csharp",
+        "dart",
+        "nim",
+        "elixir",
+        "erlang",
+        "ocaml",
+        "zig",
+        "yaml",
+        "json",
+        "xml",
+        "xsl",
+        "markdown",
+        "html",
+        "git-commit",
+        "git-rebase",
+        "latex"
+      ],
       "embedded_langs_lazy": [],
       "inject_to": []
     },
@@ -2183,7 +2332,8 @@
       "display_name": "PowerShell",
       "aliases": [
         "ps",
-        "ps1"
+        "ps1",
+        "pwsh"
       ],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
@@ -2348,6 +2498,18 @@
         "html",
         "csharp"
       ],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "rbs",
+      "grammar_file": "rbs.json",
+      "scope_name": "source.rbs",
+      "display_name": "RBS",
+      "aliases": [
+        "ruby-signature"
+      ],
+      "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []
     },
@@ -2581,8 +2743,18 @@
     {
       "id": "smalltalk",
       "grammar_file": "smalltalk.json",
-      "scope_name": "source.smalltalk",
-      "display_name": "Smalltalk",
+      "scope_name": "source.smalltalk.gnu",
+      "display_name": "GNU Smalltalk",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": []
+    },
+    {
+      "id": "smithy",
+      "grammar_file": "smithy.json",
+      "scope_name": "source.smithy",
+      "display_name": "Smithy",
       "aliases": [],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
@@ -2928,7 +3100,65 @@
       "aliases": [
         "typ"
       ],
-      "embedded_langs": [],
+      "embedded_langs": [
+        "bat",
+        "bibtex",
+        "c",
+        "clojure",
+        "coffee",
+        "cpp",
+        "css",
+        "csharp",
+        "dart",
+        "diff",
+        "docker",
+        "elixir",
+        "erlang",
+        "fsharp",
+        "git-commit",
+        "git-rebase",
+        "go",
+        "groovy",
+        "handlebars",
+        "html",
+        "ini",
+        "java",
+        "javascript",
+        "jsonc",
+        "json",
+        "julia",
+        "latex",
+        "less",
+        "log",
+        "lua",
+        "make",
+        "markdown",
+        "objective-c",
+        "perl",
+        "raku",
+        "php",
+        "powershell",
+        "pug",
+        "r",
+        "regexp",
+        "ruby",
+        "scss",
+        "sql",
+        "swift",
+        "xml",
+        "xsl",
+        "yaml",
+        "python",
+        "rust",
+        "scala",
+        "shellscript",
+        "typescript",
+        "tsx",
+        "twig",
+        "verilog",
+        "system-verilog",
+        "vb"
+      ],
       "embedded_langs_lazy": [],
       "inject_to": []
     },
@@ -2957,9 +3187,7 @@
       "grammar_file": "vb.json",
       "scope_name": "source.asp.vb.net",
       "display_name": "Visual Basic",
-      "aliases": [
-        "cmd"
-      ],
+      "aliases": [],
       "embedded_langs": [],
       "embedded_langs_lazy": [],
       "inject_to": []

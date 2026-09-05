@@ -122,14 +122,14 @@ For the complete retained API, option semantics, deliberate removals, and
 error behavior, see the repository's [Ferriki API reference](../../docs/ferriki-api.md)
 and [Shiki migration guide](../../docs/migrations/shiki-to-ferriki.md). The
 [compatibility policy](../../docs/compatibility.md) documents the exact Shiki
-v4.3.1 baseline and supported CI targets; [troubleshooting](../../docs/troubleshooting.md)
+v4.4.3 baseline and supported CI targets; [troubleshooting](../../docs/troubleshooting.md)
 covers native-loader and packed-install failures.
 
 ## Compatibility
 
 The TextMate interpreter is checked against the complete pinned
 vscode-textmate v9.3.2 oracle. End-to-end behavior is checked through an
-honestly aliased mirror of Shiki v4.3.1, including core highlighting, dynamic
+honestly aliased mirror of Shiki v4.4.3, including core highlighting, dynamic
 loading, Markdown embeddings, Vue/SCSS lazy embeddings, and external
 injections.
 

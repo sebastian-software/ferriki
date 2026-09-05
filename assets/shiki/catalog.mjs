@@ -16,7 +16,10 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.actionscript.3",
     "assetFile": "actionscript-3.fkgram",
     "displayName": "ActionScript",
-    "aliases": [],
+    "aliases": [
+      "actionscript",
+      "as3"
+    ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -26,6 +29,28 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.ada",
     "assetFile": "ada.fkgram",
     "displayName": "Ada",
+    "aliases": [],
+    "embeddedLangs": [],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "ahk",
+    "scopeName": "source.ahk",
+    "assetFile": "ahk.fkgram",
+    "displayName": "AutoHotkey",
+    "aliases": [
+      "ahk1"
+    ],
+    "embeddedLangs": [],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "ahk2",
+    "scopeName": "source.ahk2",
+    "assetFile": "ahk2.fkgram",
+    "displayName": "AutoHotkey2",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -338,7 +363,8 @@ export const languageCatalog = Object.freeze([
     "assetFile": "bat.fkgram",
     "displayName": "Batch File",
     "aliases": [
-      "batch"
+      "batch",
+      "cmd"
     ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -382,6 +408,18 @@ export const languageCatalog = Object.freeze([
     "assetFile": "bicep.fkgram",
     "displayName": "Bicep",
     "aliases": [],
+    "embeddedLangs": [],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "bird2",
+    "scopeName": "source.bird2",
+    "assetFile": "bird2.fkgram",
+    "displayName": "BIRD2 Configuration",
+    "aliases": [
+      "bird"
+    ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -458,6 +496,20 @@ export const languageCatalog = Object.freeze([
     "aliases": [],
     "embeddedLangs": [
       "python"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "chapel",
+    "scopeName": "source.chapel",
+    "assetFile": "chapel.fkgram",
+    "displayName": "Chapel",
+    "aliases": [
+      "chpl"
+    ],
+    "embeddedLangs": [
+      "c"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -557,9 +609,9 @@ export const languageCatalog = Object.freeze([
   },
   {
     "id": "coq",
-    "scopeName": "source.coq",
+    "scopeName": "source.rocq",
     "assetFile": "coq.fkgram",
-    "displayName": "Coq",
+    "displayName": "Rocq",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -576,8 +628,7 @@ export const languageCatalog = Object.freeze([
     "embeddedLangs": [
       "cpp-macro",
       "regexp",
-      "glsl",
-      "sql"
+      "glsl"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -590,8 +641,7 @@ export const languageCatalog = Object.freeze([
     "aliases": [],
     "embeddedLangs": [
       "regexp",
-      "glsl",
-      "sql"
+      "glsl"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -880,7 +930,7 @@ export const languageCatalog = Object.freeze([
   },
   {
     "id": "es-tag-sql",
-    "scopeName": "inline.es6-sql",
+    "scopeName": "inline.tagged-template-sql",
     "assetFile": "es-tag-sql.fkgram",
     "displayName": null,
     "aliases": [],
@@ -1532,6 +1582,25 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
+    "id": "just",
+    "scopeName": "source.just",
+    "assetFile": "just.fkgram",
+    "displayName": "Just",
+    "aliases": [
+      "justfile"
+    ],
+    "embeddedLangs": [
+      "shellscript",
+      "javascript",
+      "typescript",
+      "perl",
+      "python",
+      "ruby"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
     "id": "kdl",
     "scopeName": "source.kdl",
     "assetFile": "kdl.fkgram",
@@ -1959,6 +2028,18 @@ export const languageCatalog = Object.freeze([
     "aliases": [
       "nf"
     ],
+    "embeddedLangs": [
+      "nextflow-groovy"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "nextflow-groovy",
+    "scopeName": "source.nextflow-groovy",
+    "assetFile": "nextflow-groovy.fkgram",
+    "displayName": "Nextflow Groovy",
+    "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -2002,6 +2083,16 @@ export const languageCatalog = Object.freeze([
     "embeddedLangs": [
       "markdown-nix"
     ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "nsis",
+    "scopeName": "source.nsis",
+    "assetFile": "nsis.fkgram",
+    "displayName": "NSIS",
+    "aliases": [],
+    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2068,6 +2159,64 @@ export const languageCatalog = Object.freeze([
       "scad"
     ],
     "embeddedLangs": [],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "org",
+    "scopeName": "source.org",
+    "assetFile": "org.fkgram",
+    "displayName": "Org Markup",
+    "aliases": [],
+    "embeddedLangs": [
+      "javascript",
+      "typescript",
+      "tsx",
+      "java",
+      "python",
+      "regexp",
+      "css",
+      "lua",
+      "ini",
+      "make",
+      "perl",
+      "r",
+      "ruby",
+      "php",
+      "sql",
+      "vb",
+      "clojure",
+      "coffee",
+      "c",
+      "cpp",
+      "objective-c",
+      "diff",
+      "docker",
+      "go",
+      "groovy",
+      "less",
+      "scss",
+      "raku",
+      "rust",
+      "scala",
+      "shellscript",
+      "csharp",
+      "dart",
+      "nim",
+      "elixir",
+      "erlang",
+      "ocaml",
+      "zig",
+      "yaml",
+      "json",
+      "xml",
+      "xsl",
+      "markdown",
+      "html",
+      "git-commit",
+      "git-rebase",
+      "latex"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2184,7 +2333,8 @@ export const languageCatalog = Object.freeze([
     "displayName": "PowerShell",
     "aliases": [
       "ps",
-      "ps1"
+      "ps1",
+      "pwsh"
     ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -2349,6 +2499,18 @@ export const languageCatalog = Object.freeze([
       "html",
       "csharp"
     ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "rbs",
+    "scopeName": "source.rbs",
+    "assetFile": "rbs.fkgram",
+    "displayName": "RBS",
+    "aliases": [
+      "ruby-signature"
+    ],
+    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2581,9 +2743,19 @@ export const languageCatalog = Object.freeze([
   },
   {
     "id": "smalltalk",
-    "scopeName": "source.smalltalk",
+    "scopeName": "source.smalltalk.gnu",
     "assetFile": "smalltalk.fkgram",
-    "displayName": "Smalltalk",
+    "displayName": "GNU Smalltalk",
+    "aliases": [],
+    "embeddedLangs": [],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "smithy",
+    "scopeName": "source.smithy",
+    "assetFile": "smithy.fkgram",
+    "displayName": "Smithy",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -2929,7 +3101,65 @@ export const languageCatalog = Object.freeze([
     "aliases": [
       "typ"
     ],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "bat",
+      "bibtex",
+      "c",
+      "clojure",
+      "coffee",
+      "cpp",
+      "css",
+      "csharp",
+      "dart",
+      "diff",
+      "docker",
+      "elixir",
+      "erlang",
+      "fsharp",
+      "git-commit",
+      "git-rebase",
+      "go",
+      "groovy",
+      "handlebars",
+      "html",
+      "ini",
+      "java",
+      "javascript",
+      "jsonc",
+      "json",
+      "julia",
+      "latex",
+      "less",
+      "log",
+      "lua",
+      "make",
+      "markdown",
+      "objective-c",
+      "perl",
+      "raku",
+      "php",
+      "powershell",
+      "pug",
+      "r",
+      "regexp",
+      "ruby",
+      "scss",
+      "sql",
+      "swift",
+      "xml",
+      "xsl",
+      "yaml",
+      "python",
+      "rust",
+      "scala",
+      "shellscript",
+      "typescript",
+      "tsx",
+      "twig",
+      "verilog",
+      "system-verilog",
+      "vb"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2958,9 +3188,7 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.asp.vb.net",
     "assetFile": "vb.fkgram",
     "displayName": "Visual Basic",
-    "aliases": [
-      "cmd"
-    ],
+    "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -3461,6 +3689,12 @@ export const themeCatalog = Object.freeze([
     "assetFile": "horizon.fktheme",
     "displayName": "horizon",
     "themeType": "dark"
+  },
+  {
+    "id": "horizon-bright",
+    "assetFile": "horizon-bright.fktheme",
+    "displayName": "horizon-bright",
+    "themeType": "light"
   },
   {
     "id": "houston",
