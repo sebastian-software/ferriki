@@ -52,7 +52,9 @@ try {
   const tarball = join(tempRoot, metadata.filename)
   const consumer = await mkdtemp(join(tempRoot, 'consumer-'))
   run(npmCommand, ['init', '--yes'], { cwd: consumer, stdio: 'ignore' })
-  run(npmCommand, ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball], { cwd: consumer, stdio: 'ignore' })
+  // Sidecars are published independently. The main-package smoke intentionally
+  // omits them so this gate remains runnable before the first coordinated npm release.
+  run(npmCommand, ['install', '--ignore-scripts', '--omit=optional', '--offline', '--no-audit', '--no-fund', tarball], { cwd: consumer, stdio: 'ignore' })
   const consumerExample = join(consumer, 'ferromark-ardo.mjs')
   await cp(examplePath, consumerExample)
   run(process.execPath, [consumerExample], { cwd: consumer, stdio: 'inherit' })

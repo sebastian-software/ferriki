@@ -5,8 +5,8 @@
 This is the actual loader error when no candidate can be loaded. It lists the
 paths tried under the package directory. Check, in order:
 
-1. the installed package contains the matching `dist/ferriki.<platform>-<arch>.node` or
-   `dist/ferriki.node`;
+1. the matching optional package (`@sebastian-software/ferriki-*`) is installed,
+   or the main package contains `dist/ferriki.<platform>-<arch>.node`;
 2. the package was installed with optional dependencies and lifecycle scripts
    allowed by your deployment policy;
 3. the target is in the documented CI support matrix and uses glibc on Linux;

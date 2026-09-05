@@ -11,6 +11,17 @@ const addonOut = join(pkgDir, 'ferriki.node')
 const distAddonOut = join(pkgDir, 'dist', 'ferriki.node')
 const rustTarget = process.env.FERRIKI_RUST_TARGET
 let platformTarget = process.env.FERRIKI_PLATFORM_TARGET
+let platformId = process.env.FERRIKI_PLATFORM_ID
+
+if (!platformId && rustTarget) {
+  platformId = {
+    'x86_64-unknown-linux-gnu': 'linux-x64-gnu',
+    'aarch64-unknown-linux-gnu': 'linux-arm64-gnu',
+    'aarch64-apple-darwin': 'darwin-arm64',
+    'x86_64-apple-darwin': 'darwin-x64',
+    'x86_64-pc-windows-msvc': 'win32-x64-msvc',
+  }[rustTarget]
+}
 
 if (!platformTarget && rustTarget) {
   platformTarget = {
@@ -30,6 +41,9 @@ if (!platformTarget) {
 }
 
 const platformAddonOut = join(pkgDir, 'dist', `ferriki.${platformTarget}.node`)
+const sidecarAddonOut = platformId
+  ? join(repoRoot, 'node', 'platforms', platformId, 'ferriki.node')
+  : undefined
 const syncAssetsScript = join(pkgDir, 'scripts', 'sync-standard-assets.mjs')
 const cargoArgs = ['build', '--release', '--manifest-path', manifestPath]
 
@@ -79,6 +93,8 @@ if (!selectedInput) {
 await cp(selectedInput, addonOut)
 await cp(selectedInput, distAddonOut)
 await cp(selectedInput, platformAddonOut)
+if (sidecarAddonOut)
+  await cp(selectedInput, sidecarAddonOut)
 const syncAssets = spawnSync('node', [syncAssetsScript], {
   cwd: repoRoot,
   stdio: 'inherit',
@@ -90,3 +106,5 @@ if (syncAssets.status !== 0)
 console.log(`[ferriki] Native addon ready: ${addonOut}`)
 console.log(`[ferriki] Bundled native addon ready: ${distAddonOut}`)
 console.log(`[ferriki] Platform addon ready: ${platformAddonOut}`)
+if (sidecarAddonOut)
+  console.log(`[ferriki] Sidecar addon ready: ${sidecarAddonOut}`)
