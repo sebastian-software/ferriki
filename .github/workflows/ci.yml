@@ -174,22 +174,27 @@ jobs:
             os: ubuntu-latest
             rust-target: x86_64-unknown-linux-gnu
             platform-target: linux-x64
+            platform-id: linux-x64-gnu
           - node: 22.x
             os: ubuntu-24.04-arm
             rust-target: aarch64-unknown-linux-gnu
             platform-target: linux-arm64
+            platform-id: linux-arm64-gnu
           - node: 22.x
             os: macos-latest
             rust-target: aarch64-apple-darwin
             platform-target: darwin-arm64
+            platform-id: darwin-arm64
           - node: 22.x
             os: macos-15-intel
             rust-target: x86_64-apple-darwin
             platform-target: darwin-x64
+            platform-id: darwin-x64
           - node: 22.x
             os: windows-latest
             rust-target: x86_64-pc-windows-msvc
             platform-target: win32-x64
+            platform-id: win32-x64-msvc
       fail-fast: false
 
     permissions:
@@ -224,6 +229,12 @@ jobs:
         env:
           FERRIKI_RUST_TARGET: ${{ matrix.rust-target }}
           FERRIKI_PLATFORM_TARGET: ${{ matrix.platform-target }}
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
+      - name: Verify native platform package
+        run: nr check:platform-package
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
 
       - name: Verify packed consumer on the target platform
         run: node ./scripts/check-packed-consumer.mjs

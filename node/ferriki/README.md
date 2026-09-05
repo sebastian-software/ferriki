@@ -12,6 +12,10 @@ npm install ferriki
 ```
 
 Ferriki requires Node.js 22.13.0 or newer and a supported platform binary.
+The main package declares one optional native package for each supported target;
+package managers select the matching OS/CPU/libc sidecar automatically. Keep
+optional dependencies enabled in production installs unless you intentionally
+ship the bundled main-package binary instead.
 
 ## Highlight code
 

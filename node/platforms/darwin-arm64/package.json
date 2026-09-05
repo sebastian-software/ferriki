@@ -1,0 +1,20 @@
+{
+  "name": "@sebastian-software/ferriki-darwin-arm64",
+  "version": "0.2.0",
+  "description": "Ferriki native addon for macOS arm64",
+  "license": "MIT",
+  "repository": "git+https://github.com/sebastian-software/ferriki.git",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "ferriki.node",
+  "files": [
+    "ferriki.node"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

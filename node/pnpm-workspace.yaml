@@ -4,6 +4,7 @@ trustPolicy: no-downgrade
 
 packages:
   - ferriki
+  - platforms/*
   - compat/upstream/shiki/packages/*
 catalogs:
   bundling:
