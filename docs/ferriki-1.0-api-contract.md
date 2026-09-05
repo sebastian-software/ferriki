@@ -39,9 +39,9 @@ compatibility tests must converge on this matrix.
 | `bundledLanguages` / `bundledThemes` | Stable | Deterministically enumerable lazy loader maps. Language keys include canonical IDs and supported aliases; enumeration never loads asset payloads. |
 | `bundledLanguagesAlias` | Stable | Deterministic alias-to-canonical map used by catalog discovery and `getLoadedLanguages()`. |
 | `createCssVariablesTheme()` | Stable | Creates a typed CSS-variable theme registration; details are covered by the theme contract (#48). |
-| `createJavaScriptRegexEngine()` | Remove | The native runtime owns matching. This empty compatibility stub is removed before 1.0 (#49). |
-| `createOnigurumaEngine()` | Remove | The native runtime owns matching. This empty compatibility stub is removed before 1.0 (#49). |
-| `loadWasm()` / `wasmBinary` | Remove | Browser/WASM loading is not a Ferriki 1.0 runtime path (#49). |
+| `createJavaScriptRegexEngine()` | Removed | The native runtime owns matching; use Ferriki's native factories without engine injection. |
+| `createOnigurumaEngine()` | Removed | The native runtime owns matching; use Ferriki's native factories without engine injection. |
+| `loadWasm()` / `wasmBinary` | Removed | Browser/WASM loading is not a Ferriki 1.0 runtime path. |
 | Markdown, rehype, VitePress, Twoslash, and colorized-brackets packages | Non-goal | Optional adapter lanes may be tested separately; they are not Ferriki core exports (#38, ADR 0004). |
 | Public Rust crates | Non-goal | Rust crates remain internal implementation components unless a later decision promotes them (ADR 0001). |
 
@@ -54,7 +54,7 @@ compatibility tests must converge on this matrix.
 | `langs` | Stable | Accepts names, synchronous registrations, arrays, promises, or loader functions. Custom registrations are validated and cached (#46). |
 | `themes` | Stable | Accepts names, synchronous registrations, arrays, promises, or loader functions. Custom registrations are validated and cached (#46). |
 | `langAlias` | Stable | Explicit alias-to-canonical mapping. Cycles and unknown targets produce `ShikiError`. |
-| `engine` | Shim | Accepted temporarily for Shiki migration but ignored by the native runtime. It is not an extension point and is removed with the engine exports (#49). |
+| `engine` | Removed | Engine injection is not a Ferriki runtime extension point; native matching is selected by the Ferriki binding. |
 | Unknown factory keys | Remove | Do not silently widen the public type. Unsupported keys are rejected by the typed API and validated at runtime where practical (#10, #42). |
 
 ### Highlight options
