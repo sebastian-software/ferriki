@@ -308,3 +308,5 @@ export declare const bundledThemes: Readonly<
   Record<string, () => Promise<ThemeRegistration>>
 >
 export declare const bundledLanguagesAlias: Readonly<Record<string, string>>
+export type BundledLanguage = keyof typeof bundledLanguages
+export type BundledTheme = keyof typeof bundledThemes

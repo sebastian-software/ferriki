@@ -234,3 +234,5 @@ export declare function hastToHtml(tree: HastRoot | HastElement): string;
 export declare const bundledLanguages: Readonly<Record<string, () => Promise<LanguageRegistration[]>>>;
 export declare const bundledThemes: Readonly<Record<string, () => Promise<ThemeRegistration>>>;
 export declare const bundledLanguagesAlias: Readonly<Record<string, string>>;
+export type BundledLanguage = keyof typeof bundledLanguages;
+export type BundledTheme = keyof typeof bundledThemes;
