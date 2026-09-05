@@ -93,7 +93,9 @@ highlighter is no longer needed.
 | `transformers` | `ShikiTransformer[]` | JavaScript-only callbacks for the documented token/HAST pipeline. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
-functions. Unknown options are not a supported extension point.
+functions. Unknown options are rejected by the public TypeScript declarations
+and are not a supported extension point. Additions require an explicit API
+contract and compatibility coverage.
 
 ## Highlighter methods
 

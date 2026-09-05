@@ -22,22 +22,22 @@ Already true:
 - the Ferriki-owned asset pipeline exists: `crates/ferriki-asset-gen` generates
   the binary catalogs under [`assets/shiki`](../assets/shiki), and the core
   loads standard assets lazily at render time
-- the core compatibility lane passes (with `bundle.test.ts` consciously
-  excluded, see item 1)
+- the core compatibility lane passes, including the pinned Shiki bundle smoke
+  tests; legacy capture and repository-array grammar forms are normalized at
+  the raw-grammar boundary (#12)
 - adapter scope is decided and documented (ADR 0004/0007)
 - transitional naming is resolved: the addon is `ferriki.node`; the
   compatibility harness uses `FERRIKI_HONEST_ALIAS=1` for native routing
 
-Open work is tracked by the current GitHub backlog, including the transformer
-and decoration pipeline (#45), token/state/explanation surface (#47), error
-taxonomy (#50), lifecycle and work limits (#51), release hardening (#54), and
-the Ferromark/Ardo contract (#55). The old JS bundle/chunk runtime and
-placeholder-only package described by earlier migration snapshots are no
+Open work is tracked by the current GitHub backlog, including the typed public
+API (#10), release hardening and sidecars (#15, #52–#54), and the
+Ferromark/Ardo adoption path (#14, #18, #38). The old JS bundle/chunk runtime
+and placeholder-only package described by earlier migration snapshots are no
 longer present.
 
 ## 1. Fix Core Compatibility Gaps
 
-Status: largely done — the core lane passes. One classified exception remains.
+Status: complete — the core lane passes, including the bundle smoke tests.
 
 Goal: make the core compatibility lane fail only on deliberate scope decisions,
 not on missing functionality or transitional breakage.
@@ -49,13 +49,10 @@ Core lane means only:
 
 It explicitly excludes optional adapter suites.
 
-Remaining:
-
-- resolve or consciously classify the remaining `bundle-full` snapshot drift
-  - current mirrored expectation: `350`
-  - current mirrored runtime result: `346`
-  - this currently reproduces in Ferriki and in the directly imported mirrored Shiki bundle code
-  - `bundle.test.ts` is therefore currently excluded from the core release gate until the mirrored upstream expectation is updated or the drift is otherwise explained
+The audit found and fixed two grammar-shape incompatibilities that the old
+exclusion concealed: capture arrays in `jinja` and repository rule arrays in
+`racket`. `bundle-full` (364 languages) and `bundle-web` (96 languages) are now
+mandatory core-gate tests.
 
 Exit criteria:
 
