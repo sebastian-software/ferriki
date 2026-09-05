@@ -16,7 +16,8 @@ cargo test --workspace
 
 # Node workspace: install, build the native addon, run the release gate
 cd node
-pnpm install
+pnpm install --ignore-scripts
+pnpm run prepare:compat
 pnpm run build:native
 pnpm run test:ferriki-compat:textmate
 ```
@@ -31,7 +32,8 @@ running the Node lanes.
 | --- | --- | --- |
 | TextMate inner oracle | `cargo test -p ferriki-textmate` (repository root) | Exact vscode-textmate v9.3.2 grammar semantics |
 | Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.3.1 tests |
-| Full core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Broader issue #31 API parity |
+| Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Honest mandatory lane; resolver sentinel plus supported contracts |
+| Full core audit | `pnpm run test:ferriki-compat:core:full` (from `node/`) | Diagnostic issue #31 parity run; deferred failures are expected and classified |
 | Adapter compat | `pnpm run test:ferriki-compat:adapters` (from `node/`) | Optional adapter behavior outside the core product boundary |
 | Colorized brackets | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check |
 
@@ -39,8 +41,11 @@ The TextMate structural lane sets `FERRIKI_HONEST_ALIAS=1`, which routes the
 mirrored tests' remaining upstream imports through Ferriki as well. Its
 20 selected behavior tests cover core highlighting, loaders, aliases,
 Markdown embeddings, lazy Vue/SCSS embeddings, and external injections. The
-full core facade lane intentionally has a broader scope and tracks the
-remaining work in issue #31.
+supported core lane adds the core sync/singleton contracts and a resolver
+sentinel; its deferred file list is maintained in
+`node/compat/harness/core-compat-manifest.mjs` and links each current gap to
+issue #31. Use `test:ferriki-compat:core:full` when auditing the complete
+upstream core suite; it must not be mistaken for the mandatory parity score.
 
 ## The upstream mirrors are never hand-edited
 
