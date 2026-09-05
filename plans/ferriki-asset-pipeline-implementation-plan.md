@@ -1,7 +1,8 @@
 # Ferriki Asset Pipeline Implementation Plan
 
-Status: phases 1–4 are implemented. Phase 5 (removing the transitional
-`dist/chunks` bundle truth) is still open.
+Status: implemented as of 2026-09-05. The native catalogs and generated Node
+catalog are the runtime source of truth; the old `dist/chunks` bundle path is
+not shipped. Follow-up packaging work is tracked in GitHub issue #53.
 
 ## Goal
 
@@ -48,13 +49,12 @@ catalogs for languages and themes.
   points
 - ensure the Node binding exposes those registration APIs clearly
 
-## Phase 5: Remove Transitional Bundle Truth
+## Phase 5: Remove Transitional Bundle Truth (complete)
 
 - stop treating
   [`node/ferriki/dist`](../node/ferriki/dist)
   as the standard catalog source
-- reduce or remove `dist/chunks/*.mjs` once the Ferriki asset pipeline replaces
-  them
+- verify that no `dist/chunks/*.mjs` files are shipped or loaded
 - keep only the minimal Node runtime surface needed for the supported package
 
 ## Validation
