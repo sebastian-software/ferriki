@@ -78,6 +78,10 @@ support for an unlisted libc or architecture. Platform sidecar publication is
 tracked separately in issue #52; the current shared release workflow still
 bundles the five binaries into the main package.
 
+The native smoke jobs build with an explicit Rust target for each supported
+platform, including macOS Intel (`x86_64-apple-darwin`). This catches a host
+versus target mismatch before release artifacts are assembled.
+
 ## Packaging baseline
 
 The packed `ferriki@0.2.0` main package measured **11,372,892 bytes

@@ -9,10 +9,27 @@ const repoRoot = join(pkgDir, '..', '..')
 const manifestPath = join(repoRoot, 'crates', 'ferriki-core', 'Cargo.toml')
 const addonOut = join(pkgDir, 'ferriki.node')
 const distAddonOut = join(pkgDir, 'dist', 'ferriki.node')
-const platformAddonOut = join(pkgDir, 'dist', `ferriki.${process.platform}-${process.arch}.node`)
-const syncAssetsScript = join(pkgDir, 'scripts', 'sync-standard-assets.mjs')
+const rustTarget = process.env.FERRIKI_RUST_TARGET
+const platformTarget = process.env.FERRIKI_PLATFORM_TARGET ?? (rustTarget ? {
+  'x86_64-unknown-linux-gnu': 'linux-x64',
+  'aarch64-unknown-linux-gnu': 'linux-arm64',
+  'aarch64-apple-darwin': 'darwin-arm64',
+  'x86_64-apple-darwin': 'darwin-x64',
+  'x86_64-pc-windows-msvc': 'win32-x64',
+}[rustTarget] : `${process.platform}-${process.arch}`)
 
-const cargo = spawnSync('cargo', ['build', '--release', '--manifest-path', manifestPath], {
+if (!platformTarget) {
+  throw new Error(`[ferriki] Unsupported FERRIKI_RUST_TARGET: ${rustTarget}`)
+}
+
+const platformAddonOut = join(pkgDir, 'dist', `ferriki.${platformTarget}.node`)
+const syncAssetsScript = join(pkgDir, 'scripts', 'sync-standard-assets.mjs')
+const cargoArgs = ['build', '--release', '--manifest-path', manifestPath]
+
+if (rustTarget)
+  cargoArgs.push('--target', rustTarget)
+
+const cargo = spawnSync('cargo', cargoArgs, {
   cwd: repoRoot,
   stdio: 'inherit',
 })
@@ -27,7 +44,7 @@ const dylibName = process.platform === 'darwin'
     : 'ferriki_core.dll'
 
 const candidates = [
-  join(repoRoot, 'target', 'release', dylibName),
+  join(repoRoot, 'target', ...(rustTarget ? [rustTarget] : []), 'release', dylibName),
 ]
 
 let selectedInput = null

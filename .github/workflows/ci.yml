@@ -166,11 +166,27 @@ jobs:
 
     strategy:
       matrix:
-        node: [22.x]
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - node: 22.x
+            os: ubuntu-latest
+            rust-target: x86_64-unknown-linux-gnu
+            platform-target: linux-x64
+          - node: 22.x
             os: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-gnu
+            platform-target: linux-arm64
+          - node: 22.x
+            os: macos-latest
+            rust-target: aarch64-apple-darwin
+            platform-target: darwin-arm64
+          - node: 22.x
+            os: macos-15-intel
+            rust-target: x86_64-apple-darwin
+            platform-target: darwin-x64
+          - node: 22.x
+            os: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            platform-target: win32-x64
       fail-fast: false
 
     permissions:
@@ -178,6 +194,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Set Rust target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
@@ -197,6 +218,9 @@ jobs:
 
       - name: Build native
         run: pnpm run build:native
+        env:
+          FERRIKI_RUST_TARGET: ${{ matrix.rust-target }}
+          FERRIKI_PLATFORM_TARGET: ${{ matrix.platform-target }}
 
       - name: Verify packed consumer on the target platform
         run: node ./scripts/check-packed-consumer.mjs
