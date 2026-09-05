@@ -17,6 +17,7 @@ assert.deepEqual(FERRIKI_PLATFORM_TARGETS.map(target => target.id), [
 ])
 assert.equal(resolveFerrikiPlatformTarget({ platform: 'linux', arch: 'x64', libc: 'gnu' }).id, 'linux-x64-gnu')
 assert.equal(resolveFerrikiPlatformTarget({ platform: 'linux', arch: 'x64', libc: 'musl' }), undefined)
+assert.equal(resolveFerrikiPlatformTarget({ platform: 'win32', arch: 'x64' }).id, 'win32-x64-msvc')
 assert.equal(resolveFerrikiPlatformTarget({ platform: 'win32', arch: 'arm64' }), undefined)
 assert.match(formatFerrikiPlatformMatrix(), /linux-arm64-gnu \(Node >= 22\.13\.0\)/)
 

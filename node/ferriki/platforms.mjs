@@ -29,7 +29,7 @@ export function detectLinuxLibc(platform = process.platform) {
 export function resolveFerrikiPlatformTarget({
   platform = process.platform,
   arch = process.arch,
-  libc = detectLinuxLibc(platform),
+  libc = platform === 'win32' ? 'msvc' : detectLinuxLibc(platform),
 } = {}) {
   return FERRIKI_PLATFORM_TARGETS.find(target => target.platform === platform
     && target.arch === arch
