@@ -18,7 +18,7 @@ The retained declaration symbols are `LanguageRegistration`,
 `codeToTokensBase`, `codeToTokensWithThemes`, `getLastGrammarState`,
 `CssVariablesThemeOptions`, `createCssVariablesTheme`, `hastToHtml`,
 `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`, and
-`FerrikiErrorCode`, `FerrikiError`.
+`BundledLanguage`, `BundledTheme`, `FerrikiErrorCode`, `FerrikiError`.
 
 ## Runtime requirements
 
@@ -188,6 +188,8 @@ catalog cannot be overwritten.
 
 `bundledLanguages` and `bundledThemes` are frozen, enumerable loader maps.
 `bundledLanguagesAlias` maps every bundled alias to its canonical language ID.
+`BundledLanguage` and `BundledTheme` are key unions for those maps and are
+provided for typed consumers such as Ardo configuration and language guards.
 
 ## Results and helpers
 
