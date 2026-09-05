@@ -9,7 +9,8 @@ The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
 `RegistrationInput`, `HighlighterOptions`, `HighlighterSyncOptions`,
 `HighlightOptions`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
-`HastRoot`, `HastNode`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
+`HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
+`ShikiTransformerContext`, `ShikiTransformer`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
 `createHighlighter`, `createHighlighterCore`, `createShikiPrimitiveAsync`,
 `createHighlighterCoreSync`, `createShikiPrimitive`, `getSingletonHighlighter`,
 `getSingletonHighlighterCore`, `codeToHtml`, `codeToHast`, `codeToTokens`,
@@ -84,6 +85,7 @@ highlighter is no longer needed.
 | `langs` | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves. |
 | `themes` | `RegistrationInput<ThemeInput>[]` | Themes or loader functions to load before the factory resolves. |
 | `langAlias` | `Record<string, string>` | Per-highlighter aliases. Circular aliases throw `ShikiError`. |
+| `transformers` | `ShikiTransformer[]` | JavaScript-only callbacks for the documented token/HAST pipeline. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are not a supported extension point.
@@ -129,6 +131,10 @@ an explicit worker boundary; create one highlighter per worker instead.
 | `tabindex` | `string \| number \| false \| null` | Root `tabindex` attribute. |
 | `tokenizeMaxLineLength` | `number` | Maximum tokenized line length. |
 | `tokenizeTimeLimit` | `number` | Tokenization time budget in milliseconds. |
+| `structure` | `'classic' | 'inline'` | Select the classic `<pre><code>` tree or inline token tree. |
+| `meta` | `Record<string, unknown>` | Fence metadata copied to the root HAST element, except private `_` keys. |
+| `transformers` | `ShikiTransformer[]` | Ordered JS hooks; callbacks never cross the native boundary. |
+| `decorations` | `DecorationItem[]` | Validated UTF-16 ranges applied around highlighted HAST sections. |
 
 `tokenizeTimeLimit` defaults to 500 ms per line; `0` disables the time limit.
 `tokenizeMaxLineLength` defaults to `0` (unlimited). When a non-zero line
@@ -140,6 +146,12 @@ remains observable through the unstyled/partial token result.
 ANSI escape sequences are outside the Ferriki 1.0 contract. Passing escape
 bytes with `lang: 'ansi'` throws `ShikiError`; strip or parse terminal output
 before highlighting.
+
+Transformers run in this order: `preprocess`, `tokens`, `span`, `line`, `code`,
+`pre`, `root`, and (for `codeToHtml`) `postprocess`. `enforce: 'pre'` and
+`enforce: 'post'` group transformers around the normal tier. Decoration
+callbacks run in the JS HAST layer and receive `meta.__raw` through the
+transformer context without serializing callbacks into N-API.
 
 ## Registrations and loaders
 

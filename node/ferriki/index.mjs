@@ -3,6 +3,12 @@ import { fileURLToPath } from 'node:url'
 
 import { languageCatalog, themeCatalog } from './assets/shiki/catalog.mjs'
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from './native.mjs'
+import {
+  applyTokenTransformers,
+  renderTransformedHast,
+  sortTransformers,
+  splitTokensAtDecorations,
+} from './transformers.mjs'
 
 const packageDir = dirname(fileURLToPath(import.meta.url))
 const standardAssetRoot = join(packageDir, 'assets', 'shiki')
@@ -163,6 +169,12 @@ export function createHighlighterCoreSync(options = {}) {
     prepared.lang = language
     prepared.theme = theme
     delete prepared.themes
+    // Transformer callbacks and HAST-only options stay in the JS facade.
+    delete prepared.transformers
+    delete prepared.decorations
+    delete prepared.structure
+    delete prepared.meta
+    delete prepared.data
     return prepared
   }
 
@@ -213,9 +225,69 @@ export function createHighlighterCoreSync(options = {}) {
     )
   }
 
+  function highlightRaw(code, options) {
+    if (hasThemes(options))
+      return highlightMultiTheme(code, options)
+    return registrationName(options?.theme) === 'none'
+      ? highlightSingleTheme(code, options)
+      : callNativeOperation(
+          'Ferriki tokenization failed',
+          () => JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options)))),
+        )
+  }
+
+  function createTransformerContext(source, options, meta) {
+    return {
+      meta,
+      options,
+      source,
+      codeToHast: (nestedCode, nestedOptions) => buildHast(nestedCode, nestedOptions),
+      codeToTokens: (nestedCode, nestedOptions) => highlightWithTransformers(nestedCode, nestedOptions),
+    }
+  }
+
+  function getTransformers(options) {
+    return sortTransformers(options?.transformers)
+  }
+
+  function highlightWithTransformers(code, options = {}) {
+    const validated = validateHighlightOptions(options)
+    const transformers = getTransformers(validated)
+    const meta = {}
+    const context = createTransformerContext(code, validated, meta)
+    let source = code
+    for (const transformer of transformers)
+      source = transformer?.preprocess?.call(context, source, validated) || source
+    context.source = source
+    const result = highlightRaw(source, validated)
+    result.tokens = applyTokenTransformers(result.tokens, transformers, context)
+    return result
+  }
+
+  function buildHast(code, options = {}) {
+    const validated = validateHighlightOptions(options)
+    const transformers = getTransformers(validated)
+    const meta = {}
+    const context = createTransformerContext(code, validated, meta)
+    let source = code
+    for (const transformer of transformers)
+      source = transformer?.preprocess?.call(context, source, validated) || source
+    context.source = source
+    const result = highlightRaw(source, validated)
+    result.tokens = applyTokenTransformers(result.tokens, transformers, context)
+    if (validated.decorations?.length)
+      result.tokens = splitTokensAtDecorations(result.tokens, validated.decorations, source)
+    return renderTransformedHast(result, validated, transformers, context, source)
+  }
+
   const highlighter = {
     codeToHtml(code, options) {
       assertAnsiInput(code, options)
+      if (hasHastPipeline(options)) {
+        const validated = validateHighlightOptions(options)
+        const html = hastToHtml(buildHast(code, validated))
+        return applyPostprocess(html, validated, code)
+      }
       if (hasThemes(options))
         return hastToHtml(renderTokenResultHast(highlightMultiTheme(code, options), options))
       if (registrationName(options?.theme) === 'none')
@@ -227,6 +299,8 @@ export function createHighlighterCoreSync(options = {}) {
     },
     codeToHast(code, options) {
       assertAnsiInput(code, options)
+      if (hasHastPipeline(options))
+        return buildHast(code, options)
       if (hasThemes(options))
         return renderTokenResultHast(highlightMultiTheme(code, options), options)
       if (registrationName(options?.theme) === 'none')
@@ -238,6 +312,8 @@ export function createHighlighterCoreSync(options = {}) {
     },
     codeToTokens(code, options) {
       assertAnsiInput(code, options)
+      if (options?.transformers?.some(transformer => transformer?.preprocess || transformer?.tokens))
+        return highlightWithTransformers(code, options)
       if (hasThemes(options))
         return highlightMultiTheme(code, options)
       if (registrationName(options?.theme) === 'none')
@@ -251,6 +327,8 @@ export function createHighlighterCoreSync(options = {}) {
       return this.codeToTokens(code, options).tokens
     },
     codeToTokensWithThemes(code, options) {
+      if (options?.transformers?.some(transformer => transformer?.preprocess || transformer?.tokens))
+        return highlightWithTransformers(code, options).tokens
       return highlightMultiTheme(code, options).tokens
     },
     getLoadedLanguages() {
@@ -448,7 +526,13 @@ function validateHighlightOptions(options) {
       throw new ShikiError(`Highlight option \`${field}\` must be a non-negative number`, 'ERR_USAGE')
     }
   }
-  for (const field of ['engine', 'loadWasm', 'wasmBinary', 'transformers', 'decorations']) {
+  if (options.transformers !== undefined && !Array.isArray(options.transformers))
+    throw new ShikiError('Highlight option transformers must be an array', 'ERR_USAGE')
+  if (options.decorations !== undefined && !Array.isArray(options.decorations))
+    throw new ShikiError('Highlight option decorations must be an array', 'ERR_USAGE')
+  if (options.structure !== undefined && options.structure !== 'classic' && options.structure !== 'inline')
+    throw new ShikiError('Highlight option structure must be classic or inline', 'ERR_USAGE')
+  for (const field of ['engine', 'loadWasm', 'wasmBinary']) {
     if (options[field] !== undefined)
       throw new ShikiError(`Highlight option \`${field}\` is not supported by Ferriki`, 'ERR_UNSUPPORTED')
   }
@@ -885,6 +969,24 @@ function renderTokenResultHast(result, options = {}) {
   }
 }
 
+function hasHastPipeline(options) {
+  return Boolean(
+    options?.decorations
+    || options?.structure
+    || options?.meta
+    || options?.data
+    || options?.transformers?.length,
+  )
+}
+
+function applyPostprocess(html, options, source) {
+  let output = html
+  const context = { meta: {}, options, source }
+  for (const transformer of sortTransformers(options?.transformers))
+    output = transformer?.postprocess?.call(context, output, options) || output
+  return output
+}
+
 function selectDefaultTheme(options) {
   if (!options.themes)
     return undefined
@@ -947,9 +1049,17 @@ function nodeToHtml(node) {
   if (node.type !== 'element')
     return (node.children || []).map(nodeToHtml).join('')
   const properties = Object.entries(node.properties || {})
-    .map(([key, value]) => ` ${key}="${escapeAttribute(String(value))}"`)
+    .map(([key, value]) => ` ${key}="${escapeAttribute(propertyValue(value))}"`)
     .join('')
   return `<${node.tagName}${properties}>${(node.children || []).map(nodeToHtml).join('')}</${node.tagName}>`
+}
+
+function propertyValue(value) {
+  if (Array.isArray(value))
+    return value.join(' ')
+  if (value && typeof value === 'object')
+    return Object.entries(value).map(([key, entry]) => `${key}:${entry}`).join(';')
+  return String(value)
 }
 
 function escapeHtml(value) {

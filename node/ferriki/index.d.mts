@@ -49,6 +49,7 @@ export interface HighlighterOptions {
   langs?: readonly RegistrationInput<LanguageInput>[]
   themes?: readonly RegistrationInput<ThemeInput>[]
   langAlias?: Readonly<Record<string, string>>
+  transformers?: readonly ShikiTransformer[]
   [key: string]: unknown
 }
 
@@ -56,6 +57,7 @@ export interface HighlighterSyncOptions {
   langs?: readonly SyncRegistrationInput<LanguageInput>[]
   themes?: readonly SyncRegistrationInput<ThemeInput>[]
   langAlias?: Readonly<Record<string, string>>
+  transformers?: readonly ShikiTransformer[]
   [key: string]: unknown
 }
 
@@ -72,12 +74,18 @@ export interface HighlightOptions {
   tabindex?: string | number | false | null
   tokenizeMaxLineLength?: number
   tokenizeTimeLimit?: number
+  structure?: 'classic' | 'inline'
+  meta?: Readonly<Record<string, unknown>>
+  data?: Readonly<Record<string, unknown>>
+  transformers?: readonly ShikiTransformer[]
+  decorations?: readonly DecorationItem[]
   [key: string]: unknown
 }
 
 export interface ThemedToken {
   content: string
   offset: number
+  htmlAttrs?: Readonly<Record<string, string>>
   color?: string
   fontStyle?: number
   type?: number
@@ -114,6 +122,46 @@ export interface HastRoot {
 }
 
 export type HastNode = HastRoot | HastElement | HastText
+
+export interface DecorationItem {
+  start: number | { line: number, character: number }
+  end: number | { line: number, character: number }
+  tagName?: string
+  properties?: Record<string, unknown>
+  transform?: (element: HastElement, type: 'wrapper' | 'line' | 'token') => HastElement | void
+  alwaysWrap?: boolean
+}
+
+export interface ShikiTransformerContextCommon {
+  meta: Record<string, unknown>
+  options: HighlightOptions
+  codeToHast: (code: string, options: HighlightOptions) => HastRoot
+  codeToTokens: (code: string, options: HighlightOptions) => TokensResult
+}
+
+export interface ShikiTransformerContext extends ShikiTransformerContextCommon {
+  readonly source: string
+  readonly tokens: ThemedToken[][]
+  readonly root: HastRoot
+  readonly pre: HastElement
+  readonly code: HastElement
+  readonly lines: HastElement[]
+  readonly structure: HighlightOptions['structure']
+  addClassToHast: (hast: HastElement, className: string | string[]) => HastElement
+}
+
+export interface ShikiTransformer {
+  name?: string
+  enforce?: 'pre' | 'post'
+  preprocess?: (this: ShikiTransformerContextCommon, code: string, options: HighlightOptions) => string | void
+  tokens?: (this: ShikiTransformerContextCommon & { readonly source: string }, tokens: ThemedToken[][]) => ThemedToken[][] | void
+  root?: (this: ShikiTransformerContext, hast: HastRoot) => HastRoot | void
+  pre?: (this: ShikiTransformerContext, hast: HastElement) => HastElement | void
+  code?: (this: ShikiTransformerContext, hast: HastElement) => HastElement | void
+  line?: (this: ShikiTransformerContext, hast: HastElement, line: number) => HastElement | void
+  span?: (this: ShikiTransformerContext, hast: HastElement, line: number, col: number, lineElement: HastElement, token: ThemedToken) => HastElement | void
+  postprocess?: (this: ShikiTransformerContextCommon, html: string, options: HighlightOptions) => string | void
+}
 
 export interface Highlighter {
   codeToHtml: (code: string, options: HighlightOptions) => string

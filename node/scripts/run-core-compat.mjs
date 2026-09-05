@@ -143,6 +143,18 @@ const registrationCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-
 if (registrationCheck.status !== 0)
   process.exit(registrationCheck.status || 1)
 
+const transformerCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-transformers.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (transformerCheck.status !== 0)
+  process.exit(transformerCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,
@@ -180,6 +192,6 @@ run([
 
 console.log('\nFerriki core compatibility summary')
 console.log(`- supported contracts: ${coreCompatSupportedTests.length} test files (mandatory)`)
-console.log(`- deferred contracts: ${coreCompatDeferredTests.length} test files (all linked to #31)`)
+console.log(`- deferred contracts: ${coreCompatDeferredTests.length} test files (each linked to its owning issue)`)
 for (const test of coreCompatDeferredTests)
   console.log(`  - ${test.path}: ${test.reason} (see #${test.issue})`)
