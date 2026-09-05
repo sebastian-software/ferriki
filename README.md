@@ -55,6 +55,14 @@ maintenance.
 Contributor workflow, test lanes, and the mirror rules are documented in
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+User-facing documentation lives in the [`docs/`](docs) directory:
+
+- [Ferriki API reference](docs/ferriki-api.md)
+- [Shiki migration guide](docs/migrations/shiki-to-ferriki.md)
+- [Compatibility and support policy](docs/compatibility.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Ferromark + Ardo example](docs/examples/ferromark-ardo.mjs)
+
 The repository root is intentionally Rust-first. All Node, npm, and upstream
 compatibility machinery lives under [`node`](node).
 
@@ -110,9 +118,9 @@ with Ferriki's asset catalogs, native renderer, N-API host, and focused Node
 surface. Its inner vscode-textmate oracle and honest Shiki v4.3.1 structural
 gate are green.
 
-Issue #31 owns the remaining breadth of the Shiki facade, including
-multi-theme rendering, token explanations, grammar-state continuation, ANSI
-parsing, and transformer/decorator behavior. The core direction remains:
+Issues #47 and #51 own the remaining token/state and lifecycle breadth of the
+Shiki facade. Transformer/decorator behavior remains deliberately outside the
+core runtime until its contract is accepted. The current core direction is:
 
 - Rust owns runtime behavior
 - Node is the thin facade and compatibility layer

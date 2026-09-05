@@ -111,10 +111,19 @@ The native runtime currently provides:
 - validated custom TextMate grammar and theme registrations
 - `ferrikiVersion` and the low-level `ferriki/native` binding loader
 
-The current renderer is the single-theme classic Shiki structure. Multi-theme
-CSS variables, token explanations, grammar-state continuation, ANSI parsing,
-transformers, and decoration adapters remain facade work tracked in
-[issue #31](https://github.com/sebastian-software/ferriki/issues/31).
+The renderer supports the classic single-theme structure and ordered
+light/dark CSS-variable themes. ANSI escape sequences are rejected explicitly;
+token explanations, grammar-state continuation, transformers, and decoration
+adapters remain separately scoped facade work (see issues
+[#47](https://github.com/sebastian-software/ferriki/issues/47) and
+[#45](https://github.com/sebastian-software/ferriki/issues/45)).
+
+For the complete retained API, option semantics, deliberate removals, and
+error behavior, see the repository's [Ferriki API reference](../../docs/ferriki-api.md)
+and [Shiki migration guide](../../docs/migrations/shiki-to-ferriki.md). The
+[compatibility policy](../../docs/compatibility.md) documents the exact Shiki
+v4.3.1 baseline and supported CI targets; [troubleshooting](../../docs/troubleshooting.md)
+covers native-loader and packed-install failures.
 
 ## Compatibility
 

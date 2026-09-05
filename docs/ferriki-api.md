@@ -1,0 +1,209 @@
+# Ferriki 1.0 API reference
+
+This is the public API reference for the `ferriki` package. The declaration
+file [`node/ferriki/index.d.mts`](../node/ferriki/index.d.mts) is the type-level
+source of truth; the CI docs gate checks that every declared public symbol is
+represented here.
+
+The retained declaration symbols are `LanguageRegistration`,
+`ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
+`RegistrationInput`, `HighlighterOptions`, `HighlighterSyncOptions`,
+`HighlightOptions`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
+`HastRoot`, `HastNode`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
+`createHighlighter`, `createHighlighterCore`, `createShikiPrimitiveAsync`,
+`createHighlighterCoreSync`, `createShikiPrimitive`, `getSingletonHighlighter`,
+`getSingletonHighlighterCore`, `codeToHtml`, `codeToHast`, `codeToTokens`,
+`codeToTokensBase`, `codeToTokensWithThemes`, `getLastGrammarState`,
+`CssVariablesThemeOptions`, `createCssVariablesTheme`, `hastToHtml`,
+`bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`.
+
+## Runtime requirements
+
+- Node.js 20 or newer.
+- A supported native binary for the current OS and architecture.
+- The package is ESM-only. Use `import`, not `require()`.
+
+The supported platform policy is intentionally conservative while Ferriki is
+pre-1.0. If the native loader cannot find a binary it throws an error starting
+with `[ferriki] No native binary for <platform>-<arch>` and lists every path it
+tried.
+
+## One-shot functions
+
+All one-shot functions use the singleton highlighter. They return a Promise
+when called without an existing highlighter and are synchronous when passed a
+highlighter as the first argument.
+
+```ts
+codeToHtml(code, options): Promise<string>
+codeToHtml(highlighter, code, options): string
+
+codeToHast(code, options): Promise<HastRoot>
+codeToHast(highlighter, code, options): HastRoot
+
+codeToTokens(code, options): Promise<TokensResult>
+codeToTokens(highlighter, code, options): TokensResult
+
+codeToTokensBase(code, options): Promise<ThemedToken[][]>
+codeToTokensBase(highlighter, code, options): ThemedToken[][]
+
+codeToTokensWithThemes(code, options): Promise<ThemedToken[][]>
+codeToTokensWithThemes(highlighter, code, options): ThemedToken[][]
+```
+
+`codeToHtml` returns escaped HTML with Shiki-compatible line and token
+structure. `codeToHast` returns the equivalent serializable HAST tree.
+`codeToTokens` returns token metadata plus foreground/background information.
+The `Base` and `WithThemes` helpers return only the token matrix from the
+corresponding result.
+
+## Highlighter factories
+
+```ts
+createHighlighter(options?): Promise<Highlighter>
+createHighlighterCore(options?): Promise<Highlighter>
+createShikiPrimitiveAsync(options?): Promise<Highlighter>
+
+createHighlighterCoreSync(options?): Highlighter
+createShikiPrimitive(options?): Highlighter
+
+getSingletonHighlighter(options?): Promise<Highlighter>
+getSingletonHighlighterCore(options?): Promise<Highlighter>
+```
+
+`createHighlighter` resolves loader functions and promises before returning.
+The synchronous factories accept only already-resolved registrations. Use
+`using highlighter = await createHighlighter(...)` or call `dispose()` when a
+highlighter is no longer needed.
+
+### Highlighter options
+
+| Option | Type | Meaning |
+| --- | --- | --- |
+| `langs` | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves. |
+| `themes` | `RegistrationInput<ThemeInput>[]` | Themes or loader functions to load before the factory resolves. |
+| `langAlias` | `Record<string, string>` | Per-highlighter aliases. Circular aliases throw `ShikiError`. |
+
+`HighlighterSyncOptions` has the same fields but excludes promises and loader
+functions. Unknown options are not a supported extension point.
+
+## Highlighter methods
+
+| Method | Result | Notes |
+| --- | --- | --- |
+| `codeToHtml(code, options)` | `string` | Render highlighted HTML. |
+| `codeToHast(code, options)` | `HastRoot` | Render the serializable HAST equivalent. |
+| `codeToTokens(code, options)` | `TokensResult` | Return tokens and theme metadata. |
+| `codeToTokensBase(code, options)` | `ThemedToken[][]` | Return the token matrix. |
+| `codeToTokensWithThemes(code, options)` | `ThemedToken[][]` | Return aligned tokens for a theme map. |
+| `loadLanguage(...inputs)` | `Promise<void>` | Load standard or custom grammars. |
+| `loadLanguageSync(...inputs)` | `void` | Synchronous form for resolved registrations. |
+| `loadTheme(...inputs)` | `Promise<void>` | Load standard or custom themes. |
+| `loadThemeSync(...inputs)` | `void` | Synchronous form for resolved registrations. |
+| `getLoadedLanguages()` | `string[]` | Loaded canonical language IDs plus configured aliases. |
+| `getLoadedThemes()` | `string[]` | Loaded theme IDs. |
+| `resolveLangAlias(language)` | `string` | Resolve the configured alias chain. |
+| `dispose()` | `void` | Mark the highlighter disposed and release native state. |
+| `[Symbol.dispose]()` | `void` | Equivalent to `dispose()`. |
+
+Calls after disposal throw `ShikiError`. A highlighter is synchronous after
+creation; do not share one across workers without an explicit worker boundary.
+
+## Highlight options
+
+| Option | Type | Meaning |
+| --- | --- | --- |
+| `lang` | `LanguageInput` | Language ID, alias, or a custom registration. Defaults to `text`. |
+| `theme` | `ThemeInput` | One theme ID or registration. Required unless `themes` is supplied. |
+| `themes` | `Record<string, ThemeInput>` | Ordered theme map, for example `{ light, dark }`. |
+| `defaultColor` | `string \| false` | Default foreground color; `false` disables the default color. |
+| `cssVariablePrefix` | `string` | Prefix used for multi-theme CSS variables. |
+| `includeExplanation` | `boolean \| 'scopeName' \| 'tokenType'` | Include the accepted token explanation metadata. |
+| `mergeWhitespaces` | `boolean` | Merge adjacent whitespace tokens where possible. |
+| `mergeSameStyleTokens` | `boolean` | Merge adjacent tokens with the same style. |
+| `rootStyle` | `string \| false` | Inline style on the root element. |
+| `tabindex` | `string \| number \| false \| null` | Root `tabindex` attribute. |
+| `tokenizeMaxLineLength` | `number` | Maximum tokenized line length. |
+| `tokenizeTimeLimit` | `number` | Tokenization time budget in milliseconds. |
+
+ANSI escape sequences are outside the Ferriki 1.0 contract. Passing escape
+bytes with `lang: 'ansi'` throws `ShikiError`; strip or parse terminal output
+before highlighting.
+
+## Registrations and loaders
+
+`LanguageRegistration` and `ThemeRegistration` accept the JSON-shaped
+TextMate structures used by Shiki. Ferriki validates them before sending them
+to the native runtime. A registration can be supplied directly, wrapped in a
+`{ default: ... }` object, nested in an array, returned by a loader function,
+or returned by a promise (async factories only).
+
+```ts
+type LanguageInput = string | LanguageRegistration
+type ThemeInput = string | ThemeRegistration
+type SyncRegistrationInput<T> = T | { default: SyncRegistrationInput<T> }
+  | readonly SyncRegistrationInput<T>[]
+type RegistrationInput<T> = SyncRegistrationInput<T>
+  | PromiseLike<RegistrationInput<T>>
+  | (() => RegistrationInput<T>)
+```
+
+Custom language registrations need `name`, `scopeName`, and valid TextMate
+patterns. Custom theme registrations need `name` and valid settings. Custom
+aliases are added to the highlighter only; aliases belonging to the standard
+catalog cannot be overwritten.
+
+`bundledLanguages` and `bundledThemes` are frozen, enumerable loader maps.
+`bundledLanguagesAlias` maps every bundled alias to its canonical language ID.
+
+## Results and helpers
+
+```ts
+interface ThemedToken {
+  content: string
+  offset: number
+  color?: string
+  fontStyle?: number
+  type?: number
+  htmlStyle?: Record<string, string>
+  variants?: Record<string, { color?: string; fontStyle?: number }>
+}
+
+interface TokensResult {
+  tokens: ThemedToken[][]
+  fg: string
+  bg: string
+  themeName: string
+  rootStyle?: string
+}
+```
+
+`HastRoot`, `HastElement`, and `HastText` are the small serializable HAST
+subset returned by Ferriki. `hastToHtml(tree)` serializes a root or element;
+it does not sanitize arbitrary user-created nodes.
+
+`createCssVariablesTheme(options)` creates a theme registration whose default
+foreground/background use CSS variables. It does not load the theme itself.
+
+`ferrikiVersion()` returns the loaded native core version, or `undefined` when
+the current platform binding is unavailable.
+
+## Errors and deliberate boundaries
+
+User-facing validation, missing language/theme, circular aliases, disposal,
+ANSI input, and native loading failures are reported as `ShikiError` where a
+public call can classify them. Native causes are not a stable API and should
+not be pattern-matched beyond the documented loader prefix.
+
+The following historical Shiki extension points are deliberately not Ferriki
+exports: JavaScript/Oniguruma engine factories, WASM loading, transformer
+callbacks, decoration adapters, and adapter packages such as `rehype` or
+`markdown-it`. See the [migration guide](./migrations/shiki-to-ferriki.md) for
+the supported replacement boundary.
+
+## Native subpath
+
+`ferriki/native` is a low-level diagnostic escape hatch. It exposes
+`loadFerrikiNativeBinding()` and `tryLoadFerrikiNativeBinding()` plus the
+native highlighter type. Applications should use the root API so runtime
+validation and the public error contract remain intact.
