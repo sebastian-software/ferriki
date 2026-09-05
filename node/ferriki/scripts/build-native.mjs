@@ -10,13 +10,20 @@ const manifestPath = join(repoRoot, 'crates', 'ferriki-core', 'Cargo.toml')
 const addonOut = join(pkgDir, 'ferriki.node')
 const distAddonOut = join(pkgDir, 'dist', 'ferriki.node')
 const rustTarget = process.env.FERRIKI_RUST_TARGET
-const platformTarget = process.env.FERRIKI_PLATFORM_TARGET ?? (rustTarget ? {
-  'x86_64-unknown-linux-gnu': 'linux-x64',
-  'aarch64-unknown-linux-gnu': 'linux-arm64',
-  'aarch64-apple-darwin': 'darwin-arm64',
-  'x86_64-apple-darwin': 'darwin-x64',
-  'x86_64-pc-windows-msvc': 'win32-x64',
-}[rustTarget] : `${process.platform}-${process.arch}`)
+let platformTarget = process.env.FERRIKI_PLATFORM_TARGET
+
+if (!platformTarget && rustTarget) {
+  platformTarget = {
+    'x86_64-unknown-linux-gnu': 'linux-x64',
+    'aarch64-unknown-linux-gnu': 'linux-arm64',
+    'aarch64-apple-darwin': 'darwin-arm64',
+    'x86_64-apple-darwin': 'darwin-x64',
+    'x86_64-pc-windows-msvc': 'win32-x64',
+  }[rustTarget]
+}
+
+if (!platformTarget)
+  platformTarget = `${process.platform}-${process.arch}`
 
 if (!platformTarget) {
   throw new Error(`[ferriki] Unsupported FERRIKI_RUST_TARGET: ${rustTarget}`)
