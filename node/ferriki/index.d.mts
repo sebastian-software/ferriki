@@ -1,9 +1,22 @@
 export interface LanguageRegistration {
   name: string
-  id?: string
-  scopeName?: string
+  scopeName: string
+  displayName?: string
   aliases?: readonly string[]
-  [key: string]: unknown
+  patterns?: readonly unknown[]
+  repository?: Readonly<Record<string, unknown>>
+  injections?: Readonly<Record<string, unknown>>
+  injectionSelector?: string
+  fileTypes?: readonly string[]
+  firstLineMatch?: string
+  embeddedLangs?: readonly string[]
+  embeddedLanguages?: readonly string[]
+  embeddedLangsLazy?: readonly string[]
+  injectTo?: readonly string[]
+  balancedBracketSelectors?: readonly string[]
+  unbalancedBracketSelectors?: readonly string[]
+  foldingStopMarker?: string
+  foldingStartMarker?: string
 }
 
 export interface ThemeRegistration {
@@ -12,7 +25,13 @@ export interface ThemeRegistration {
   fg?: string
   bg?: string
   settings?: readonly unknown[]
-  [key: string]: unknown
+  tokenColors?: readonly unknown[]
+  colors?: Readonly<Record<string, string>>
+  include?: string
+  displayName?: string
+  $schema?: string
+  semanticHighlighting?: boolean
+  semanticTokenColors?: Readonly<Record<string, string>>
 }
 
 export type LanguageInput = string | LanguageRegistration

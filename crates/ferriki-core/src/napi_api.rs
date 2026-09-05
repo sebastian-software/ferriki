@@ -24,6 +24,18 @@ impl FerrikiHighlighter {
         self.core.borrow_mut().load_standard_language(&language)
     }
 
+    #[napi(js_name = "loadCustomGrammar")]
+    pub fn load_custom_grammar(&self, registration_json: String) -> Result<Option<String>> {
+        self.core
+            .borrow_mut()
+            .load_custom_language(&registration_json)
+    }
+
+    #[napi(js_name = "loadCustomTheme")]
+    pub fn load_custom_theme(&self, registration_json: String) -> Result<bool> {
+        self.core.borrow_mut().load_custom_theme(&registration_json)
+    }
+
     #[napi(js_name = "resolveGrammarScope")]
     pub fn resolve_grammar_scope(&self, language: String) -> Result<Option<String>> {
         let mut core = self.core.borrow_mut();
