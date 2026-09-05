@@ -78,26 +78,18 @@
           ]
         },
         {
-          "begin": "(?!\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})([^\"#$'(),:;\\[{|}\\s][^\"'(),:;\\[{|}\\s]*)\\s*(:)\\s*",
-          "beginCaptures": {
+          "captures": {
             "1": {
-              "name": "string.bare.nushell variable.other.nushell"
+              "name": "variable.other.nushell"
             },
             "2": {
               "name": "keyword.control.nushell"
             }
           },
-          "end": "(?=[,}])|(?<=[^:\\s])(?=\\s)",
-          "name": "meta.record-entry.nushell",
-          "patterns": [
-            {
-              "include": "#record-value"
-            }
-          ]
+          "match": "(\\w+)\\s*(:)\\s*"
         },
         {
-          "begin": "(\\$\"((?:[^\"\\\\]|\\\\.)*)\")\\s*(:)\\s*",
-          "beginCaptures": {
+          "captures": {
             "1": {
               "name": "variable.other.nushell"
             },
@@ -113,17 +105,11 @@
               "name": "keyword.control.nushell"
             }
           },
-          "end": "(?=[,}])|(?<=[^:\\s])(?=\\s)",
-          "name": "meta.record-entry.nushell",
-          "patterns": [
-            {
-              "include": "#record-value"
-            }
-          ]
+          "match": "(\\$\"((?:[^\"\\\\]|\\\\.)*)\")\\s*(:)\\s*",
+          "name": "meta.record-entry.nushell"
         },
         {
-          "begin": "(\"(?:[^\"\\\\]|\\\\.)*\")\\s*(:)\\s*",
-          "beginCaptures": {
+          "captures": {
             "1": {
               "name": "string.quoted.double.nushell variable.other.nushell"
             },
@@ -131,17 +117,11 @@
               "name": "keyword.control.nushell"
             }
           },
-          "end": "(?=[,}])|(?<=[^:\\s])(?=\\s)",
-          "name": "meta.record-entry.nushell",
-          "patterns": [
-            {
-              "include": "#record-value"
-            }
-          ]
+          "match": "(\"(?:[^\"\\\\]|\\\\.)*\")\\s*(:)\\s*",
+          "name": "meta.record-entry.nushell"
         },
         {
-          "begin": "(\\$'([^']*)')\\s*(:)\\s*",
-          "beginCaptures": {
+          "captures": {
             "1": {
               "name": "variable.other.nushell"
             },
@@ -157,17 +137,11 @@
               "name": "keyword.control.nushell"
             }
           },
-          "end": "(?=[,}])|(?<=[^:\\s])(?=\\s)",
-          "name": "meta.record-entry.nushell",
-          "patterns": [
-            {
-              "include": "#record-value"
-            }
-          ]
+          "match": "(\\$'([^']*)')\\s*(:)\\s*",
+          "name": "meta.record-entry.nushell"
         },
         {
-          "begin": "('[^']*')\\s*(:)\\s*",
-          "beginCaptures": {
+          "captures": {
             "1": {
               "name": "string.quoted.single.nushell variable.other.nushell"
             },
@@ -175,13 +149,8 @@
               "name": "keyword.control.nushell"
             }
           },
-          "end": "(?=[,}])|(?<=[^:\\s])(?=\\s)",
-          "name": "meta.record-entry.nushell",
-          "patterns": [
-            {
-              "include": "#record-value"
-            }
-          ]
+          "match": "('[^']*')\\s*(:)\\s*",
+          "name": "meta.record-entry.nushell"
         },
         {
           "include": "#spread"
@@ -736,40 +705,6 @@
     "ranges": {
       "match": "\\.\\.<?",
       "name": "keyword.control.nushell"
-    },
-    "record-value": {
-      "patterns": [
-        {
-          "include": "#variables"
-        },
-        {
-          "include": "#variable-fields"
-        },
-        {
-          "include": "#constant-value"
-        },
-        {
-          "include": "#table"
-        },
-        {
-          "include": "#spread"
-        },
-        {
-          "include": "#ranges"
-        },
-        {
-          "include": "#paren-expression"
-        },
-        {
-          "include": "#braced-expression"
-        },
-        {
-          "include": "#string"
-        },
-        {
-          "include": "#comment"
-        }
-      ]
     },
     "spread": {
       "match": "\\.\\.\\.(?=[^]}\\s])",

@@ -3,12 +3,6 @@
   "name": "handlebars",
   "patterns": [
     {
-      "include": "#escaped_backslash"
-    },
-    {
-      "include": "#escaped_expression"
-    },
-    {
       "include": "#yfm"
     },
     {
@@ -46,8 +40,8 @@
     "block_comments": {
       "patterns": [
         {
-          "begin": "\\{\\{~?!--",
-          "end": "--~?}}",
+          "begin": "\\{\\{!--",
+          "end": "--}}",
           "name": "comment.block.handlebars",
           "patterns": [
             {
@@ -78,7 +72,7 @@
       ]
     },
     "block_helper": {
-      "begin": "(\\{\\{)(~?#)([-./>_\\p{L}\\p{N}]+)\\s?(@?[-./_\\p{L}\\p{N}]+)*\\s?(@?[-./_\\p{L}\\p{N}]+)*\\s?(@?[-./_\\p{L}\\p{N}]+)*",
+      "begin": "(\\{\\{)(~?#)([\\--9>A-Z_a-z]+)\\s?(@?[\\--9A-Z_a-z]+)*\\s?(@?[\\--9A-Z_a-z]+)*\\s?(@?[\\--9A-Z_a-z]+)*",
       "beginCaptures": {
         "1": {
           "name": "support.constant.handlebars"
@@ -121,8 +115,8 @@
     "comments": {
       "patterns": [
         {
-          "begin": "\\{\\{~?!",
-          "end": "~?}}",
+          "begin": "\\{\\{!",
+          "end": "}}",
           "name": "comment.block.handlebars",
           "patterns": [
             {
@@ -153,7 +147,7 @@
       ]
     },
     "else_token": {
-      "begin": "(\\{\\{)(~?else)(@?\\s(if)\\s([-()./_\\p{L}\\p{N}\\s]+))?",
+      "begin": "(\\{\\{)(~?else)(@?\\s(if)\\s([()\\--9A-Z_a-z\\s]+))?",
       "beginCaptures": {
         "1": {
           "name": "support.constant.handlebars"
@@ -177,7 +171,7 @@
       "name": "meta.function.inline.else.handlebars"
     },
     "end_block": {
-      "begin": "(\\{\\{)(~?/)([-./_\\p{L}\\p{N}]+)\\s*",
+      "begin": "(\\{\\{)(~?/)([\\--9A-Z_a-z]+)\\s*",
       "beginCaptures": {
         "1": {
           "name": "support.constant.handlebars"
@@ -226,18 +220,10 @@
       "match": "\\\\'",
       "name": "constant.character.escape.js"
     },
-    "escaped_backslash": {
-      "match": "\\\\\\\\(?=\\\\*\\{{2,3})",
-      "name": "constant.character.escape.handlebars"
-    },
-    "escaped_expression": {
-      "match": "\\\\\\{{2,3}",
-      "name": "constant.character.escape.handlebars"
-    },
     "extends": {
       "patterns": [
         {
-          "begin": "(\\{\\{!<)\\s([-./_\\p{L}\\p{N}]+)",
+          "begin": "(\\{\\{!<)\\s([\\--9A-Z_a-z]+)",
           "beginCaptures": {
             "1": {
               "name": "support.function.handlebars"
@@ -267,7 +253,7 @@
       ]
     },
     "handlebars_attribute_name": {
-      "begin": "\\b([-._\\p{L}\\p{N}]+)\\b=",
+      "begin": "\\b([-.0-9A-Z_a-z]+)\\b=",
       "captures": {
         "1": {
           "name": "variable.parameter.handlebars"
@@ -277,7 +263,7 @@
       "name": "entity.other.attribute-name.handlebars"
     },
     "handlebars_attribute_value": {
-      "begin": "([-./_\\p{L}\\p{N}]+)\\b",
+      "begin": "([\\--9A-Z_a-z]+)\\b",
       "captures": {
         "1": {
           "name": "variable.parameter.handlebars"
@@ -597,13 +583,19 @@
       ]
     },
     "inline_script": {
-      "begin": "(?:^\\s+)?(<)((?i:script))\\b(?=[^>]*\\stype=[\"'](?:text/x-handlebars-template|text/x-handlebars|text/template|x-tmpl-handlebars)[\"'])(?![^>]*/>)",
+      "begin": "(?:^\\s+)?(<)((?i:script))\\b.*(type)=([\"'](?:text/x-handlebars-template|text/x-handlebars|text/template|x-tmpl-handlebars)[\"'])(?![^>]*/>)",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.tag.html"
         },
         "2": {
           "name": "entity.name.tag.script.html"
+        },
+        "3": {
+          "name": "entity.other.attribute-name.html"
+        },
+        "4": {
+          "name": "string.quoted.double.html"
         }
       },
       "end": "(?<=</(script|SCRIPT))(>)(?:\\s*\\n)?",
@@ -629,12 +621,6 @@
           },
           "end": "(</)((?i:script))",
           "patterns": [
-            {
-              "include": "#escaped_backslash"
-            },
-            {
-              "include": "#escaped_expression"
-            },
             {
               "include": "#block_comments"
             },
@@ -664,7 +650,7 @@
       ]
     },
     "partial_and_var": {
-      "begin": "(\\{\\{~?\\{*(>|!<)*)\\s*(@?[-$./_\\p{L}\\p{N}]+)*",
+      "begin": "(\\{\\{~?\\{*(>|!<)*)\\s*(@?[$\\--9A-Z_a-z]+)*",
       "beginCaptures": {
         "1": {
           "name": "support.constant.handlebars"
@@ -845,8 +831,8 @@
     "yfm": {
       "patterns": [
         {
-          "begin": "\\A-{3}$",
-          "end": "^-{3}$",
+          "begin": "(?<!\\s)---\\n$",
+          "end": "^---\\s",
           "name": "markup.raw.yaml.front-matter",
           "patterns": [
             {

@@ -289,12 +289,12 @@
     "dartdoc-codeblock-block": {
       "begin": "^\\s*\\*\\s*(?!(\\s*```|/))",
       "contentName": "variable.other.source.dart",
-      "end": "$"
+      "end": "\\n"
     },
     "dartdoc-codeblock-triple": {
       "begin": "^\\s*///\\s*(?!\\s*```)",
       "contentName": "variable.other.source.dart",
-      "end": "$"
+      "end": "\\n"
     },
     "expression": {
       "patterns": [
