@@ -126,7 +126,9 @@ impl FerrikiHighlighter {
     }
 
     #[napi]
-    pub fn dispose(&self) {}
+    pub fn dispose(&self) {
+        self.core.borrow_mut().dispose();
+    }
 }
 
 #[napi(js_name = "createHighlighter")]

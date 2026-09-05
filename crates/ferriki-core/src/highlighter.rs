@@ -50,6 +50,19 @@ impl HighlighterCore {
         Ok(highlighter)
     }
 
+    pub fn dispose(&mut self) {
+        self.registry.dispose();
+        self.standard_assets = None;
+        self.aliases.clear();
+        self.loaded_language_ids.clear();
+        self.loaded_custom_language_ids.clear();
+        self.loaded_language_order.clear();
+        self.language_aliases.clear();
+        self.injections.clear();
+        self.themes.clear();
+        self.active_theme = None;
+    }
+
     pub fn load_standard_theme(&mut self, theme_id: &str) -> Result<bool> {
         if self.themes.contains_key(theme_id) {
             return Ok(true);
@@ -910,5 +923,27 @@ mod tests {
         assert_eq!(result.tokens[0][0].color, None);
         assert_eq!(result.tokens[0][0].font_style, None);
         assert!(result.tokens[1].is_empty());
+    }
+
+    #[test]
+    fn dispose_releases_assets_registrations_and_compiled_state() {
+        let mut highlighter = standard_highlighter();
+        highlighter
+            .load_standard_language("javascript")
+            .expect("javascript");
+        highlighter.load_standard_theme("nord").expect("nord");
+        highlighter
+            .grammar_for_language("javascript")
+            .expect("grammar")
+            .expect("javascript grammar");
+        assert!(highlighter.standard_assets.is_some());
+        assert!(!highlighter.themes.is_empty());
+
+        highlighter.dispose();
+
+        assert!(highlighter.standard_assets.is_none());
+        assert!(highlighter.themes.is_empty());
+        assert!(highlighter.loaded_languages().is_empty());
+        assert!(highlighter.registry.lookup("source.js").is_none());
     }
 }

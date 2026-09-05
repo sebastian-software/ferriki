@@ -45,6 +45,17 @@ The highlighter is no longer usable after `dispose()` or a `using` scope ends.
 Create a new instance instead of retaining a disposed reference. This also
 applies to `loadLanguage*` and `loadTheme*` calls.
 
+## Long lines or tokenizer time limits
+
+The default per-line tokenization budget is 500 ms. Set
+`tokenizeTimeLimit: 0` only for trusted workloads where an unlimited line is
+acceptable. `tokenizeMaxLineLength` defaults to unlimited (`0`); when set, a
+line at or above the limit is returned as one unstyled token so callers can
+identify the degradation instead of receiving misleading syntax colors.
+
+Ferriki's public highlighter is synchronous after creation. Calls on one
+instance are serialized; use one instance per worker for parallel workloads.
+
 ## ANSI input is rejected
 
 Ferriki does not parse terminal control sequences. If `lang: 'ansi'` is passed
