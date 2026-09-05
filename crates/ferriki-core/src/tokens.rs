@@ -1,5 +1,6 @@
 use ferriki_textmate::EncodedTokenAttributes;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::ops::Range;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -41,6 +42,41 @@ pub struct HighlightTokensResult {
     #[serde(rename = "bg")]
     pub background: String,
     pub theme_name: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightThemeTokenStyle {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub font_style: Option<i32>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightThemeToken {
+    pub content: String,
+    pub offset: usize,
+    pub variants: BTreeMap<String, HighlightThemeTokenStyle>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub token_type: Option<u8>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightThemeMetadata {
+    pub color: String,
+    pub name: String,
+    pub foreground: String,
+    pub background: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightTokensWithThemesResult {
+    pub tokens: Vec<Vec<HighlightThemeToken>>,
+    pub themes: Vec<HighlightThemeMetadata>,
 }
 
 pub(crate) fn token_from_metadata(

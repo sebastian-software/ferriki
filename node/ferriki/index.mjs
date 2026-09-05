@@ -6,6 +6,7 @@ import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from './native.
 
 const packageDir = dirname(fileURLToPath(import.meta.url))
 const standardAssetRoot = join(packageDir, 'assets', 'shiki')
+const NONE_THEME_BACKING = 'nord'
 let singleton
 
 export class ShikiError extends Error {
@@ -89,7 +90,7 @@ export function createHighlighterCoreSync(options = {}) {
       const name = registrationName(registration)
       if (!name)
         continue
-      if (!native.loadStandardTheme(name))
+      if (name !== 'none' && !native.loadStandardTheme(name))
         throw new ShikiError(`Theme \`${name}\` not found, you may need to load it first`)
       loadedThemes.add(name)
     }
@@ -103,8 +104,9 @@ export function createHighlighterCoreSync(options = {}) {
     assertActive()
     const prepared = { ...options }
     const language = resolveAlias(registrationName(prepared.lang) || 'text')
-    const theme = registrationName(prepared.theme)
+    const requestedTheme = registrationName(prepared.theme)
       || registrationName(selectDefaultTheme(prepared))
+    const theme = requestedTheme === 'none' ? NONE_THEME_BACKING : requestedTheme
     if (!theme)
       throw new ShikiError('Invalid options, either `theme` or `themes` must be provided')
     if (!isSpecialLanguage(language) && !native.loadStandardGrammar(language))
@@ -120,21 +122,67 @@ export function createHighlighterCoreSync(options = {}) {
     return prepared
   }
 
+  function highlightSingleTheme(code, options = {}) {
+    const result = JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options))))
+    if (registrationName(options.theme) === 'none')
+      return normalizeNoneThemeResult(result)
+    return result
+  }
+
+  function highlightMultiTheme(code, options) {
+    const themes = resolveThemeEntries(options)
+    if (
+      typeof native.codeToTokensWithThemes === 'function'
+      && !themes.some(theme => theme.name === 'none')
+    ) {
+      const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined })
+      prepared.themeEntries = themes
+      return combineNativeThemeResult(
+        JSON.parse(native.codeToTokensWithThemes(code, JSON.stringify(prepared))),
+        options,
+      )
+    }
+    const results = themes.map(theme => ({
+      ...theme,
+      result: theme.name === 'none'
+        ? normalizeNoneThemeResult(highlightNativeTheme(code, options, NONE_THEME_BACKING))
+        : highlightNativeTheme(code, options, theme.name),
+    }))
+    return combineThemeResults(results, options)
+  }
+
+  function highlightNativeTheme(code, options, theme) {
+    const prepared = prepareOptions({ ...options, theme, themes: undefined })
+    return JSON.parse(native.codeToTokens(code, JSON.stringify(prepared)))
+  }
+
   const highlighter = {
     codeToHtml(code, options) {
+      if (hasThemes(options))
+        return hastToHtml(renderTokenResultHast(highlightMultiTheme(code, options), options))
+      if (registrationName(options?.theme) === 'none')
+        return hastToHtml(renderTokenResultHast(highlightSingleTheme(code, options), options))
       return native.codeToHtml(code, JSON.stringify(prepareOptions(options)))
     },
     codeToHast(code, options) {
+      if (hasThemes(options))
+        return renderTokenResultHast(highlightMultiTheme(code, options), options)
+      if (registrationName(options?.theme) === 'none')
+        return renderTokenResultHast(highlightSingleTheme(code, options), options)
       return JSON.parse(native.codeToHast(code, JSON.stringify(prepareOptions(options))))
     },
     codeToTokens(code, options) {
+      if (hasThemes(options))
+        return highlightMultiTheme(code, options)
+      if (registrationName(options?.theme) === 'none')
+        return highlightSingleTheme(code, options)
       return JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options))))
     },
     codeToTokensBase(code, options) {
       return this.codeToTokens(code, options).tokens
     },
     codeToTokensWithThemes(code, options) {
-      return this.codeToTokens(code, options).tokens
+      return highlightMultiTheme(code, options).tokens
     },
     getLoadedLanguages() {
       const nativeLanguages = native.getLoadedLanguages()
@@ -300,6 +348,278 @@ function createThemeBundle(catalog) {
 
 function compareIds(left, right) {
   return left < right ? -1 : left > right ? 1 : 0
+}
+
+function hasThemes(options) {
+  return options != null && Object.hasOwn(options, 'themes')
+}
+
+function resolveThemeEntries(options) {
+  const entries = Object.entries(options?.themes || {})
+    .filter(([, theme]) => theme != null && theme !== false)
+    .map(([color, theme]) => ({ color, name: registrationName(theme) }))
+  if (entries.length === 0)
+    throw new ShikiError('`themes` option must not be empty')
+  if (entries.some(entry => !entry.name))
+    throw new ShikiError('Theme registrations must provide a name')
+
+  const defaultColor = options.defaultColor === undefined ? 'light' : options.defaultColor
+  if (defaultColor && defaultColor !== 'light-dark()') {
+    const defaultEntry = entries.find(entry => entry.color === defaultColor)
+    if (!defaultEntry)
+      throw new ShikiError(`\`themes\` option must contain the defaultColor key \`${defaultColor}\``)
+    return [defaultEntry, ...entries.filter(entry => entry !== defaultEntry)]
+  }
+  if (defaultColor === 'light-dark()' && (
+    !entries.some(entry => entry.color === 'light')
+    || !entries.some(entry => entry.color === 'dark')
+  )) {
+    throw new ShikiError('When using `defaultColor: "light-dark()"`, you must provide both `light` and `dark` themes')
+  }
+  return entries
+}
+
+function normalizeNoneThemeResult(result) {
+  return {
+    ...result,
+    fg: 'inherit',
+    bg: 'inherit',
+    themeName: 'none',
+    tokens: result.tokens.map(line => line.map(token => ({
+      content: token.content,
+      offset: token.offset,
+      ...(token.type === undefined ? {} : { type: token.type }),
+    }))),
+  }
+}
+
+function combineThemeResults(results, options) {
+  const defaultColor = options.defaultColor === undefined ? 'light' : options.defaultColor
+  const cssVariablePrefix = options.cssVariablePrefix || '--shiki-'
+  const tokens = alignThemeTokens(results).map(line => line.map(token => ({
+    ...token,
+    htmlStyle: tokenHtmlStyle(token.variants, results, defaultColor, cssVariablePrefix),
+  })))
+  const foreground = themePropertyStyle(results, 'foreground', defaultColor, cssVariablePrefix)
+  const background = themePropertyStyle(results, 'background', defaultColor, cssVariablePrefix)
+  return {
+    tokens,
+    fg: foreground,
+    bg: background,
+    themeName: `shiki-themes ${results.map(result => result.name).join(' ')}`,
+    ...(defaultColor ? {} : { rootStyle: `${foreground};${background}` }),
+  }
+}
+
+function combineNativeThemeResult(result, options) {
+  const results = result.themes.map(theme => ({
+    color: theme.color,
+    name: theme.name,
+    result: {
+      fg: theme.foreground,
+      bg: theme.background,
+    },
+  }))
+  const defaultColor = options.defaultColor === undefined ? 'light' : options.defaultColor
+  const cssVariablePrefix = options.cssVariablePrefix || '--shiki-'
+  const tokens = result.tokens.map(line => line.map((token) => {
+    const variants = Object.fromEntries(Object.entries(token.variants).map(([color, style]) => [
+      color,
+      tokenStyleFromNative(style),
+    ]))
+    return {
+      content: token.content,
+      offset: token.offset,
+      ...(token.type === undefined ? {} : { type: token.type }),
+      variants,
+      htmlStyle: tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix),
+    }
+  }))
+  const foreground = themePropertyStyle(results, 'foreground', defaultColor, cssVariablePrefix)
+  const background = themePropertyStyle(results, 'background', defaultColor, cssVariablePrefix)
+  return {
+    tokens,
+    fg: foreground,
+    bg: background,
+    themeName: `shiki-themes ${results.map(result => result.name).join(' ')}`,
+    ...(defaultColor ? {} : { rootStyle: `${foreground};${background}` }),
+  }
+}
+
+function tokenStyleFromNative(style) {
+  const output = {}
+  if (style.color)
+    output.color = style.color
+  const fontStyle = style.fontStyle || 0
+  if (fontStyle & 1)
+    output['font-style'] = 'italic'
+  if (fontStyle & 2)
+    output['font-weight'] = 'bold'
+  const decorations = []
+  if (fontStyle & 4)
+    decorations.push('underline')
+  if (fontStyle & 8)
+    decorations.push('line-through')
+  if (decorations.length)
+    output['text-decoration'] = decorations.join(' ')
+  return output
+}
+
+function alignThemeTokens(results) {
+  const lineCount = Math.max(...results.map(result => result.result.tokens.length))
+  return Array.from({ length: lineCount }, (_, lineIndex) => {
+    const lines = results.map(result => result.result.tokens[lineIndex] || [])
+    const boundaries = new Set()
+    for (const line of lines) {
+      for (const token of line) {
+        boundaries.add(token.offset)
+        boundaries.add(token.offset + token.content.length)
+      }
+    }
+    const sorted = [...boundaries].sort((left, right) => left - right)
+    const output = []
+    for (let index = 0; index < sorted.length - 1; index++) {
+      const start = sorted[index]
+      const end = sorted[index + 1]
+      if (start === end)
+        continue
+      const variants = {}
+      let baseToken
+      for (const result of results) {
+        const token = tokenAt(lines[results.indexOf(result)], start)
+        if (token && !baseToken)
+          baseToken = token
+        variants[result.color] = tokenStyle(token)
+      }
+      if (!baseToken)
+        continue
+      output.push({
+        content: baseToken.content.slice(start - baseToken.offset, end - baseToken.offset),
+        offset: start,
+        ...(baseToken.type === undefined ? {} : { type: baseToken.type }),
+        variants,
+      })
+    }
+    return output
+  })
+}
+
+function tokenAt(line, offset) {
+  return line.find(token => offset >= token.offset && offset < token.offset + token.content.length)
+}
+
+function tokenStyle(token) {
+  if (!token)
+    return {}
+  const style = {}
+  if (token.color)
+    style.color = token.color
+  const fontStyle = token.fontStyle || 0
+  if (fontStyle & 1)
+    style['font-style'] = 'italic'
+  if (fontStyle & 2)
+    style['font-weight'] = 'bold'
+  const decorations = []
+  if (fontStyle & 4)
+    decorations.push('underline')
+  if (fontStyle & 8)
+    decorations.push('line-through')
+  if (decorations.length)
+    style['text-decoration'] = decorations.join(' ')
+  return style
+}
+
+function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
+  const styles = results.map(result => variants[result.color] || {})
+  const keys = new Set(styles.flatMap(style => Object.keys(style)))
+  const declarations = []
+  for (const key of keys) {
+    for (let index = 0; index < results.length; index++) {
+      const value = styles[index][key] || 'inherit'
+      const color = results[index].color
+      if (index === 0 && defaultColor) {
+        if (defaultColor === 'light-dark()' && (key === 'color' || key === 'background-color')) {
+          const lightIndex = results.findIndex(result => result.color === 'light')
+          const darkIndex = results.findIndex(result => result.color === 'dark')
+          if (lightIndex !== -1 && darkIndex !== -1) {
+            const light = styles[lightIndex][key] || 'inherit'
+            const dark = styles[darkIndex][key] || 'inherit'
+            declarations.push(`${key}:light-dark(${light}, ${dark})`)
+          }
+        }
+        else {
+          declarations.push(`${key}:${value}`)
+        }
+      }
+      if (index > 0 || !defaultColor || defaultColor === 'light-dark()') {
+        const suffix = key === 'color' ? '' : key === 'background-color' ? '-bg' : `-${key}`
+        declarations.push(`${cssVariablePrefix}${color}${suffix}:${value}`)
+      }
+    }
+  }
+  return declarations.join(';')
+}
+
+function themePropertyStyle(results, property, defaultColor, cssVariablePrefix) {
+  const declarations = []
+  for (let index = 0; index < results.length; index++) {
+    const value = results[index].result[property === 'foreground' ? 'fg' : 'bg'] || 'inherit'
+    const color = results[index].color
+    if (index === 0 && defaultColor) {
+      if (defaultColor === 'light-dark()') {
+        const light = results.find(result => result.color === 'light')?.result[property === 'foreground' ? 'fg' : 'bg'] || 'inherit'
+        const dark = results.find(result => result.color === 'dark')?.result[property === 'foreground' ? 'fg' : 'bg'] || 'inherit'
+        declarations.push(`light-dark(${light}, ${dark})`)
+      }
+      else {
+        declarations.push(value)
+      }
+    }
+    if (index > 0 || !defaultColor || defaultColor === 'light-dark()')
+      declarations.push(`${cssVariablePrefix}${color}${property === 'background' ? '-bg' : ''}:${value}`)
+  }
+  return declarations.join(';')
+}
+
+function renderTokenResultHast(result, options = {}) {
+  const properties = {
+    class: result.themeName,
+  }
+  if (options.rootStyle !== false) {
+    properties.style = options.rootStyle || result.rootStyle || `background-color:${result.bg};color:${result.fg}`
+  }
+  if (options.tabindex !== false && options.tabindex !== null)
+    properties.tabindex = String(options.tabindex ?? 0)
+  const children = []
+  for (let lineIndex = 0; lineIndex < result.tokens.length; lineIndex++) {
+    if (lineIndex > 0)
+      children.push({ type: 'text', value: '\n' })
+    children.push({
+      type: 'element',
+      tagName: 'span',
+      properties: { class: 'line' },
+      children: result.tokens[lineIndex].map(token => ({
+        type: 'element',
+        tagName: 'span',
+        properties: token.htmlStyle ? { style: token.htmlStyle } : {},
+        children: [{ type: 'text', value: token.content }],
+      })),
+    })
+  }
+  return {
+    type: 'root',
+    children: [{
+      type: 'element',
+      tagName: 'pre',
+      properties,
+      children: [{
+        type: 'element',
+        tagName: 'code',
+        properties: {},
+        children,
+      }],
+    }],
+  }
 }
 
 function selectDefaultTheme(options) {

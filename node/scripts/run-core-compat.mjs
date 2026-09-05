@@ -23,6 +23,18 @@ const catalogCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-catal
 if (catalogCheck.status !== 0)
   process.exit(catalogCheck.status || 1)
 
+const multiThemeCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-multitheme.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (multiThemeCheck.status !== 0)
+  process.exit(multiThemeCheck.status || 1)
+
 function run(args) {
   const result = spawnSync('pnpm', [...vitestArgs, ...args], {
     cwd: nodeRoot,

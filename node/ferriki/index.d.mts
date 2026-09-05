@@ -45,6 +45,7 @@ export interface HighlightOptions {
   theme?: ThemeInput
   themes?: Readonly<Record<string, ThemeInput>>
   defaultColor?: string | false
+  cssVariablePrefix?: string
   includeExplanation?: boolean | 'scopeName' | 'tokenType'
   mergeWhitespaces?: boolean
   mergeSameStyleTokens?: boolean
@@ -61,6 +62,11 @@ export interface ThemedToken {
   color?: string
   fontStyle?: number
   type?: number
+  htmlStyle?: Readonly<Record<string, string>>
+  variants?: Readonly<Record<string, {
+    color?: string
+    fontStyle?: number
+  }>>
 }
 
 export interface TokensResult {
@@ -68,6 +74,7 @@ export interface TokensResult {
   fg: string
   bg: string
   themeName: string
+  rootStyle?: string
 }
 
 export interface HastText {
