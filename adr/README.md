@@ -15,6 +15,7 @@ records refine earlier ones where noted.
 | [0008](0008-transformers-and-decorations-stay-in-js.md) | Transformers and decorations stay in the JS layer |
 | [0009](0009-native-only-runtime.md) | Native-only runtime — JS is a facade, WASM is the future fallback |
 | [0010](0010-mechanical-vscode-textmate-port.md) | Mechanically port vscode-textmate into a separate Rust crate |
+| [0011](0011-ferriki-1.0-api-contract.md) | Freeze the Ferriki 1.0 Node API contract |
 
 ## Adding a record
 
