@@ -126,6 +126,35 @@ jobs:
       - name: Run native TextMate compatibility gate
         run: pnpm run test:ferriki-compat:textmate
 
+  core-compat:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          package_json_file: node/package.json
+
+      - name: Set node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run honest supported core compatibility gate
+        run: pnpm run test:ferriki-compat:core
+
   native-smoke:
     runs-on: ${{ matrix.os }}
     defaults:

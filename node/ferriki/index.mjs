@@ -247,6 +247,9 @@ export function hastToHtml(tree) {
   return (tree.children || []).map(nodeToHtml).join('')
 }
 
+// Harness-only marker used by the honest compatibility resolver sentinel.
+export const __ferrikiBackend = true
+
 export const bundledLanguages = virtualRegistrationBundle('language')
 export const bundledThemes = virtualRegistrationBundle('theme')
 export const bundledLanguagesAlias = {}
