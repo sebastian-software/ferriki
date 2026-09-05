@@ -50,7 +50,6 @@ export interface HighlighterOptions {
   themes?: readonly RegistrationInput<ThemeInput>[]
   langAlias?: Readonly<Record<string, string>>
   transformers?: readonly ShikiTransformer[]
-  [key: string]: unknown
 }
 
 export interface HighlighterSyncOptions {
@@ -58,7 +57,6 @@ export interface HighlighterSyncOptions {
   themes?: readonly SyncRegistrationInput<ThemeInput>[]
   langAlias?: Readonly<Record<string, string>>
   transformers?: readonly ShikiTransformer[]
-  [key: string]: unknown
 }
 
 export interface HighlightOptions {
@@ -80,7 +78,6 @@ export interface HighlightOptions {
   data?: Readonly<Record<string, unknown>>
   transformers?: readonly ShikiTransformer[]
   decorations?: readonly DecorationItem[]
-  [key: string]: unknown
 }
 
 export interface ThemedToken {
