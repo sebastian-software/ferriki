@@ -35,6 +35,18 @@ const exportCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-export
 if (exportCheck.status !== 0)
   process.exit(exportCheck.status || 1)
 
+const apiContractCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-api-contract.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_BACKEND: 'rust',
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (apiContractCheck.status !== 0)
+  process.exit(apiContractCheck.status || 1)
+
 const nativeBoundaryCheck = spawnSync(process.execPath, ['./scripts/check-native-boundary.mjs'], {
   cwd: nodeRoot,
   env: {
