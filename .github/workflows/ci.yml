@@ -82,8 +82,8 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Prepare compatibility inputs
-        run: pnpm run prepare:compat
+      - name: Build compatibility packages
+        run: pnpm run build:compat
 
       - name: Build
         run: nr build
