@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Rust (stable toolchain with `cargo`, `clippy`, `rustfmt`)
-- Node.js >= 20
+- Node.js >= 22.13.0 (the floor declared by `node/ferriki/package.json`)
 - pnpm (the pinned version in `node/package.json` is picked up via corepack)
 
 ## The happy path
@@ -31,7 +31,7 @@ running the Node lanes.
 | Lane | Command | Purpose |
 | --- | --- | --- |
 | TextMate inner oracle | `cargo test -p ferriki-textmate` (repository root) | Exact vscode-textmate v9.3.2 grammar semantics |
-| Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.3.1 tests |
+| Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.4.3 tests (baseline pinned in `node/compat/upstream/shiki/.source.json`) |
 | Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Honest mandatory lane; resolver sentinel plus supported contracts |
 | Full core audit | `pnpm run test:ferriki-compat:core:full` (from `node/`) | Diagnostic issue #31 parity run; deferred failures are expected and classified |
 | Adapter compat | `pnpm run test:ferriki-compat:adapters` (from `node/`) | Optional adapter behavior outside the core product boundary |
@@ -69,6 +69,24 @@ test adapters live outside the mirrors.
 
 ADR 0003 records the general strict-mirror policy. ADR 0010 applies it to the
 mechanical tokenizer port.
+
+## Facts with a single source
+
+Two prose facts are contract-checked instead of repeated by hand:
+
+- the Shiki baseline, whose source is
+  `node/compat/upstream/shiki/.source.json`
+- the Node floor, whose source is `engines.node` in
+  `node/ferriki/package.json`
+
+`node/scripts/check-docs-drift.mjs` (`pnpm run check:docs-drift` from `node/`,
+also part of the mandatory core lane) fails when a documented baseline or floor
+disagrees with those files. Change the source of truth first, then the prose.
+Dated records under `plans/` and `adr/` keep the version that was pinned when
+they were written and are deliberately outside the check.
+`node/scripts/test-docs-drift.mjs` runs the same check against fixture copies
+of the documents with stale versions injected, so a change to the checker that
+stops detecting drift fails alongside it.
 
 ## Commits and releases
 

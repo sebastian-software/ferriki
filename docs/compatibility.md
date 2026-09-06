@@ -52,11 +52,18 @@ fallback loaders, and forbidden runtime files. A clean working tree is
 required after compatibility preparation.
 
 The core gate also runs Shiki's `bundle-full` and `bundle-web` smoke tests. The
-current pinned baseline expects 364 and 96 loaded languages respectively. The
-audit found two grammar-shape gaps that had been hidden by the old exclusion:
-legacy capture arrays (for example, `jinja`) and repository entries represented
-as rule arrays (for example, `racket`). Ferriki normalizes both forms at the
-raw-grammar boundary, with focused Rust tests covering the conversion.
+current pinned baseline expects 364 and 96 loaded languages respectively. Those
+numbers count language *keys*, not grammar files: the shipped catalog holds 260
+grammars (`ls assets/shiki/languages/*.fkgram | wc -l`) and 65 themes
+(`ls assets/shiki/themes/*.fktheme | wc -l`), while `getLoadedLanguages()`
+reports every canonical ID plus each of its aliases — 364 keys for Shiki's
+full bundle, and 96 for the curated subset behind its `bundle/web` entry point.
+
+The audit behind that baseline found two grammar-shape gaps that had been
+hidden by the old exclusion: legacy capture arrays (for example, `jinja`) and
+repository entries represented as rule arrays (for example, `racket`). Ferriki
+normalizes both forms at the raw-grammar boundary, with focused Rust tests
+covering the conversion.
 
 ## Platform support
 
@@ -86,10 +93,13 @@ versus target mismatch before release artifacts are assembled.
 
 ## Packaging baseline
 
-The packed `ferriki@0.2.1` main package measured **11,372,892 bytes
-unpacked** on 2026-09-05 (`npm pack --json`). This is the main-package
-baseline; the release workflow also validates each sidecar tarball before
-publication.
+The main package ships the native addon for the host target plus the standard
+asset catalogs, so its unpacked size is dominated by `assets/shiki`. It is
+measured on every run of the core gate rather than quoted here:
+`node/scripts/check-packed-consumer.mjs` packs the package, installs the
+tarball in a clean consumer, and prints the tarball name, unpacked size, and
+file count for the tree it ran against. The release workflow also validates
+each sidecar tarball before publication.
 
 ## Reporting a compatibility gap
 

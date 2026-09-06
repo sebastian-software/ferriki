@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0](https://github.com/sebastian-software/ferriki/compare/v0.2.1...v0.3.0) (2026-09-05)
+## [0.3.0](https://github.com/sebastian-software/ferriki/compare/v0.2.1...v0.3.0) (2026-09-06)
 
 
 ### Features

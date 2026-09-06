@@ -215,8 +215,9 @@ lane described in the teardown snapshot have been replaced by:
 - a mechanical `ferriki-textmate` port of pinned vscode-textmate v9.3.2
 - the native asset, rendering, N-API, and focused Node package integration
 - an exact green vscode-textmate oracle
-- a green, honestly aliased Shiki v4.3.1 structural gate covering the four
-  failure classes that triggered the re-port
+- a green, honestly aliased Shiki structural gate covering the four failure
+  classes that triggered the re-port (v4.3.1, the baseline pinned at the time;
+  the current baseline is `node/compat/upstream/shiki/.source.json`)
 
 The remaining facade breadth in the sequence below belongs to issue #31.
 ADR 0010 records the interpreter boundary and the final #30 validation result.

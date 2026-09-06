@@ -36,7 +36,7 @@ Rerun `build:native` after any Rust change before Node checks.
 
 ## Package facts
 
-- Publishable package: `node/ferriki` (npm `ferriki`), ESM-only, Node >= 20,
+- Publishable package: `node/ferriki` (npm `ferriki`), ESM-only, Node >= 22.13.0,
   backed by the native Rust runtime and platform addon.
 - Publishing runs `pnpm publish` (catalog: specifiers must be rewritten;
   plain `npm publish` would leak them).
