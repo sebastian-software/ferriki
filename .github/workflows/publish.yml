@@ -216,7 +216,7 @@ jobs:
         working-directory: node
         run: |
           for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
-            npm publish "platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
+            npm publish "./platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
           done
 
       - name: Publish main package with npm provenance
@@ -242,9 +242,11 @@ jobs:
           node-version: '22'
 
       - name: Verify public npm packages, provenance, and install
+        run: |
+          node ./node/scripts/sync-platform-package-versions.mjs
+          node ./node/scripts/verify-npm-publish.mjs
         env:
           NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
-        run: node ./node/scripts/verify-npm-publish.mjs
 
   release-summary:
     needs:
