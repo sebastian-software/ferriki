@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
 const checks = [
-  ['CLAUDE.md', [
+  ['AGENTS.md', [
     'npm package is a placeholder',
     'Compat lanes are suspended',
     'currently a placeholder exposing only',
