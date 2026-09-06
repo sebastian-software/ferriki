@@ -84,6 +84,9 @@ also part of the mandatory core lane) fails when a documented baseline or floor
 disagrees with those files. Change the source of truth first, then the prose.
 Dated records under `plans/` and `adr/` keep the version that was pinned when
 they were written and are deliberately outside the check.
+`node/scripts/test-docs-drift.mjs` runs the same check against fixture copies
+of the documents with stale versions injected, so a change to the checker that
+stops detecting drift fails alongside it.
 
 ## Commits and releases
 

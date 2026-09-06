@@ -30,7 +30,7 @@
     "check:ferromark-ardo": "node ./scripts/check-ferromark-ardo-contract.mjs",
     "check:platform-matrix": "node ./scripts/check-ferriki-platform-matrix.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
-    "check:docs-drift": "node ./scripts/check-docs-drift.mjs",
+    "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
   },
   "devDependencies": {

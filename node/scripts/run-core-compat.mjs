@@ -77,6 +77,17 @@ const docsCheck = spawnSync(process.execPath, ['./scripts/check-docs-drift.mjs']
 if (docsCheck.status !== 0)
   process.exit(docsCheck.status || 1)
 
+const docsDriftTest = spawnSync(process.execPath, ['./scripts/test-docs-drift.mjs'], {
+  cwd: nodeRoot,
+  env: {
+    ...process.env,
+    FERRIKI_HONEST_ALIAS: '1',
+  },
+  stdio: 'inherit',
+})
+if (docsDriftTest.status !== 0)
+  process.exit(docsDriftTest.status || 1)
+
 const docsContractCheck = spawnSync(process.execPath, ['./scripts/check-docs-contract.mjs'], {
   cwd: nodeRoot,
   env: {
