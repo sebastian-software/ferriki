@@ -19,9 +19,9 @@ use napi_derive::napi;
 
 pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
 pub use highlighter::HighlighterCore;
-pub use napi_api::{create_highlighter, FerrikiHighlighter};
-pub use render::{render_hast, render_html, RenderOptions};
-pub use theme_data::{parse_theme_data, ThemeData};
+pub use napi_api::{FerrikiHighlighter, create_highlighter};
+pub use render::{RenderOptions, render_hast, render_html};
+pub use theme_data::{ThemeData, parse_theme_data};
 pub use tokens::{
     HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
     HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,

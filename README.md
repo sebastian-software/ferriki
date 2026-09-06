@@ -131,7 +131,8 @@ The current core direction is:
 
 ## License
 
-[MIT](./LICENSE)
+Licensed under either of [MIT](./LICENSE-MIT) or [Apache-2.0](./LICENSE-APACHE)
+at your option.
 
 <!-- ferramenta-family:start -->
 ## The Ferramenta family

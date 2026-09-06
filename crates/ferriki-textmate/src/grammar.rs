@@ -21,7 +21,7 @@ use crate::rule::RuleRegistry;
 use crate::rule_factory::{GrammarProvider, RuleFactory};
 use crate::state_stack::StateStack;
 use crate::theme::{ScopeStack, StyleAttributes, Theme};
-use crate::tokenize_string::{tokenize_string, Injection, TokenizeStringResult, TokenizerGrammar};
+use crate::tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
 
 #[derive(Clone, Default)]
 pub struct GrammarConfiguration {

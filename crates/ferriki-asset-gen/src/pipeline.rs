@@ -1,4 +1,4 @@
-use crate::generate::{write_language_catalog, write_theme_catalog, GeneratedCatalog};
+use crate::generate::{GeneratedCatalog, write_language_catalog, write_theme_catalog};
 use crate::import::{load_language_records_from_upstream, load_theme_records_from_upstream};
 use crate::schema::AssetSourceRef;
 use std::io;

@@ -9,7 +9,7 @@ use ferroni::error::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{
-    has_captures, replace_captures, CaptureIndex, CompiledRule, RegExpSource, RegExpSourceList,
+    CaptureIndex, CompiledRule, RegExpSource, RegExpSourceList, has_captures, replace_captures,
 };
 
 /// The scanner identity for a compiled grammar pattern.

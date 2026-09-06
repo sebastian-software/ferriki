@@ -175,7 +175,7 @@ where
         value => {
             return Err(de::Error::custom(format!(
                 "expected capture map or array, got {value}"
-            )))
+            )));
         }
     };
 
@@ -239,7 +239,7 @@ fn deserialize_repository_entry(
             return Err(serde_json::Error::io(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!("repository entry {key} must be an object or array, got {value}"),
-            )))
+            )));
         }
     };
     Ok((key, Arc::new(rule)))
@@ -316,18 +316,24 @@ mod tests {
         let explicit = &grammar.patterns[1];
         assert_eq!(explicit.patterns.as_deref(), Some(&[][..]));
         assert!(explicit.captures.as_ref().is_some_and(BTreeMap::is_empty));
-        assert!(explicit
-            .begin_captures
-            .as_ref()
-            .is_some_and(BTreeMap::is_empty));
-        assert!(explicit
-            .end_captures
-            .as_ref()
-            .is_some_and(BTreeMap::is_empty));
-        assert!(explicit
-            .while_captures
-            .as_ref()
-            .is_some_and(BTreeMap::is_empty));
+        assert!(
+            explicit
+                .begin_captures
+                .as_ref()
+                .is_some_and(BTreeMap::is_empty)
+        );
+        assert!(
+            explicit
+                .end_captures
+                .as_ref()
+                .is_some_and(BTreeMap::is_empty)
+        );
+        assert!(
+            explicit
+                .while_captures
+                .as_ref()
+                .is_some_and(BTreeMap::is_empty)
+        );
         assert!(explicit.repository.as_ref().is_some_and(BTreeMap::is_empty));
 
         let cloned = grammar.clone();

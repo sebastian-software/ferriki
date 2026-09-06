@@ -126,9 +126,11 @@ mod tests {
         assert_eq!(records[0].id, "javascript");
         assert_eq!(records[0].scope_name, "source.js");
         assert_eq!(records[0].aliases, vec!["js".to_owned(), "mjs".to_owned()]);
-        assert!(records[0]
-            .grammar_json
-            .contains("\"scopeName\":\"source.js\""));
+        assert!(
+            records[0]
+                .grammar_json
+                .contains("\"scopeName\":\"source.js\"")
+        );
     }
 
     #[test]

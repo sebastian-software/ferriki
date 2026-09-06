@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ferriki_textmate::{
-    apply_state_stack_diff, diff_state_stacks_ref_eq, parse_raw_grammar, Grammar,
-    GrammarConfiguration, GrammarProvider, GrammarStore, StateStack, Theme,
+    Grammar, GrammarConfiguration, GrammarProvider, GrammarStore, StateStack, Theme,
+    apply_state_stack_diff, diff_state_stacks_ref_eq, parse_raw_grammar,
 };
 use serde::Deserialize;
 
