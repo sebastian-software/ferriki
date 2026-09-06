@@ -5,7 +5,7 @@ use napi::{Error, Result};
 use napi_derive::napi;
 use serde_json::Value;
 
-use crate::{render_hast, render_html, HighlighterCore, RenderOptions, TokenizeOptions};
+use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_hast, render_html};
 
 #[napi]
 pub struct FerrikiHighlighter {

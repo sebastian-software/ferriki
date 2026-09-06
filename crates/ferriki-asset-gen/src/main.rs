@@ -1,4 +1,4 @@
-use ferriki_asset_gen::{generate_catalogs_from_upstream, AssetSourceRef};
+use ferriki_asset_gen::{AssetSourceRef, generate_catalogs_from_upstream};
 use std::env;
 use std::path::PathBuf;
 

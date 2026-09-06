@@ -9,7 +9,7 @@ use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 
-use crate::include_reference::{parse_include, IncludeReference};
+use crate::include_reference::{IncludeReference, parse_include};
 use crate::raw_grammar::{RawGrammar, RawRepository, RawRule};
 use crate::rule_factory::GrammarProvider;
 

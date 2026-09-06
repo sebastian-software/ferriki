@@ -1,7 +1,7 @@
 # Ferriki
 
 [![CI](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](./LICENSE-MIT)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
 Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
@@ -137,7 +137,8 @@ The current core direction is:
 
 ## License
 
-[MIT](./LICENSE)
+Licensed under either of [MIT](./LICENSE-MIT) or [Apache-2.0](./LICENSE-APACHE)
+at your option.
 
 <!-- ferramenta-family:start -->
 ## The Ferramenta family

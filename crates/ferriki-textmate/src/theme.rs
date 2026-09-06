@@ -887,8 +887,8 @@ impl ThemeTrieElement {
 #[cfg(test)]
 mod tests {
     use super::{
-        font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
-        RawThemeSetting, RawThemeStyle, ScopeStack, Theme,
+        FontStyle, ParsedThemeRule, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle,
+        ScopeStack, Theme, font_style_to_string, parse_theme,
     };
 
     fn style(

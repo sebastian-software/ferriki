@@ -1,7 +1,7 @@
 use crate::schema::{
-    encode_language_asset, encode_language_manifest, encode_theme_asset, encode_theme_manifest,
-    AssetSourceRef, LanguageAsset, LanguageAssetEntry, LanguageManifest, ThemeAsset,
-    ThemeAssetEntry, ThemeManifest, FORMAT_VERSION,
+    AssetSourceRef, FORMAT_VERSION, LanguageAsset, LanguageAssetEntry, LanguageManifest,
+    ThemeAsset, ThemeAssetEntry, ThemeManifest, encode_language_asset, encode_language_manifest,
+    encode_theme_asset, encode_theme_manifest,
 };
 use std::fs;
 use std::io;

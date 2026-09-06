@@ -230,10 +230,12 @@ mod tests {
     #[test]
     fn returns_none_for_an_unknown_scope() {
         let mut registry = SyncRegistry::new(None, None).unwrap();
-        assert!(registry
-            .grammar_for_scope_name("source.missing", GrammarConfiguration::default())
-            .unwrap()
-            .is_none());
+        assert!(
+            registry
+                .grammar_for_scope_name("source.missing", GrammarConfiguration::default())
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -303,10 +305,12 @@ mod tests {
 
         assert!(registry.lookup("source.test").is_none());
         assert!(registry.injections("source.test").is_empty());
-        assert!(registry
-            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
-            .unwrap()
-            .is_none());
+        assert!(
+            registry
+                .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+                .unwrap()
+                .is_none()
+        );
         assert!(registry.get_color_map().is_empty());
     }
 }

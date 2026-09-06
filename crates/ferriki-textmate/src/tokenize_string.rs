@@ -9,7 +9,7 @@ use ferroni::error::RegexError;
 
 use crate::attributed_scope_stack::{AttributedScopeStack, ScopeAttributesProvider};
 use crate::line_output::{LineFonts, LineTokens};
-use crate::matcher::{create_matchers, Matcher, MatcherPriority};
+use crate::matcher::{Matcher, MatcherPriority, create_matchers};
 use crate::regexp::{CaptureIndex, FindNextMatchResult, OnigString, ScannerFindOptions};
 use crate::rule::{CaptureRule, RuleRegistry, RuleScannerId};
 use crate::state_stack::StateStack;
@@ -662,7 +662,7 @@ fn utf16_prefix(value: &str, end: usize) -> &str {
 mod tests {
     use std::sync::Arc;
 
-    use super::{tokenize_string, Injection, TokenizeStringResult, TokenizerGrammar};
+    use super::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
     use crate::{
         AttributedScopeStack, BasicScopeAttributes, BasicScopeAttributesProvider,
         EncodedTokenAttributes, FontAttribute, FontStyle, GrammarStore, LineFonts, LineTokens,

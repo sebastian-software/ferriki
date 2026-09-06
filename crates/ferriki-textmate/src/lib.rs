@@ -30,36 +30,36 @@ pub use attributed_scope_stack::{
 pub use basic_scope_attributes::{
     BasicScopeAttributes, BasicScopeAttributesProvider, EmbeddedLanguages,
 };
-pub use diff_state_stacks::{apply_state_stack_diff, diff_state_stacks_ref_eq, StackDiff};
+pub use diff_state_stacks::{StackDiff, apply_state_stack_diff, diff_state_stacks_ref_eq};
 pub use encoded_token_attributes::{
-    to_optional_token_type, EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType,
-    StandardTokenType,
+    EncodedTokenAttributes, FontAttribute, OptionalStandardTokenType, StandardTokenType,
+    to_optional_token_type,
 };
 pub use grammar::{Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2};
 pub use grammar_dependencies::{
     AbsoluteRuleReference, GrammarDependencyError, ScopeDependencyProcessor,
 };
-pub use include_reference::{parse_include, IncludeReference};
+pub use include_reference::{IncludeReference, parse_include};
 pub use line_output::{
     BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
 };
-pub use matcher::{create_matchers, Matcher, MatcherPriority, MatcherWithPriority};
-pub use parse_raw_grammar::{parse_raw_grammar, ParseRawGrammarError};
-pub use plist::{parse_plist, PlistError};
+pub use matcher::{Matcher, MatcherPriority, MatcherWithPriority, create_matchers};
+pub use parse_raw_grammar::{ParseRawGrammarError, parse_raw_grammar};
+pub use plist::{PlistError, parse_plist};
 pub use raw_grammar::{Location, RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
 pub use regexp::{
-    has_captures, replace_captures, CaptureIndex, CompiledRule, FindNextMatchResult, OnigString,
-    RegExpSource, RegExpSourceList, ScannerFindOptions,
+    CaptureIndex, CompiledRule, FindNextMatchResult, OnigString, RegExpSource, RegExpSourceList,
+    ScannerFindOptions, has_captures, replace_captures,
 };
 pub use registry::SyncRegistry;
 pub use rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
     CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry, RuleScannerId,
 };
-pub use rule_factory::{initialize_grammar, GrammarProvider, GrammarStore, RuleFactory};
+pub use rule_factory::{GrammarProvider, GrammarStore, RuleFactory, initialize_grammar};
 pub use state_stack::{StateStack, StateStackFrame};
 pub use theme::{
-    font_style_to_string, parse_theme, FontStyle, ParsedThemeRule, RawTheme, RawThemeScope,
-    RawThemeSetting, RawThemeStyle, ScopeStack, StyleAttributes, Theme, ThemeError,
+    FontStyle, ParsedThemeRule, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle,
+    ScopeStack, StyleAttributes, Theme, ThemeError, font_style_to_string, parse_theme,
 };
-pub use tokenize_string::{tokenize_string, Injection, TokenizeStringResult, TokenizerGrammar};
+pub use tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};

@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use crate::include_reference::{parse_include, IncludeReference};
+use crate::include_reference::{IncludeReference, parse_include};
 use crate::raw_grammar::{RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
 use crate::rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
@@ -522,11 +522,13 @@ mod tests {
         assert!(match_rule.captures[0].is_none());
         assert!(match_rule.captures[2].is_none());
         assert!(match_rule.captures[1].is_some());
-        assert!(match_rule.captures[3]
-            .as_ref()
-            .unwrap()
-            .retokenize_captured_with_rule_id
-            .is_some());
+        assert!(
+            match_rule.captures[3]
+                .as_ref()
+                .unwrap()
+                .retokenize_captured_with_rule_id
+                .is_some()
+        );
     }
 
     #[test]
@@ -646,9 +648,11 @@ mod tests {
             .get_rule(root)
             .compile(factory.registry(), None)
             .unwrap();
-        assert!(compiled
-            .find_next_match(&OnigString::new("external"), 0, ScannerFindOptions::NONE,)
-            .is_some());
+        assert!(
+            compiled
+                .find_next_match(&OnigString::new("external"), 0, ScannerFindOptions::NONE,)
+                .is_some()
+        );
     }
 
     #[test]

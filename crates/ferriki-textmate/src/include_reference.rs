@@ -42,7 +42,7 @@ pub fn parse_include(include: &str) -> IncludeReference<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_include, IncludeReference};
+    use super::{IncludeReference, parse_include};
 
     #[test]
     fn parses_base_and_self_references() {

@@ -146,4 +146,7 @@ injections.
 
 ## License
 
-[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE)
+Licensed under either of
+[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or
+[Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
+at your option.
