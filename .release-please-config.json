@@ -5,7 +5,26 @@
   "packages": {
     "node/ferriki": {
       "component": "ferriki",
-      "package-name": "ferriki"
+      "package-name": "ferriki",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "/node/ferriki/package.json",
+          "jsonpath": "$.optionalDependencies[*]"
+        },
+        {
+          "type": "json",
+          "path": "/node/platforms/*/package.json",
+          "glob": true,
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "/node/pnpm-lock.yaml",
+          "jsonpath": "$.importers.ferriki.optionalDependencies[*].specifier"
+        }
+      ]
     }
   }
 }
