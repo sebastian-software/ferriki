@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use ferroni::api::Regex;
 use ferroni::error::RegexError;
-use ferroni::oniguruma::{OnigRegion, ONIG_OPTION_CAPTURE_GROUP, ONIG_OPTION_NONE};
+use ferroni::oniguruma::{ONIG_OPTION_CAPTURE_GROUP, ONIG_OPTION_NONE, OnigRegion};
 use ferroni::regexec::onig_search;
 pub use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerMatch};
@@ -884,8 +884,8 @@ mod tests {
     use std::sync::Arc;
 
     use super::{
-        has_captures, normalize_ferroni_pattern, replace_captures, stabilize_ferroni_captures,
-        CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions,
+        CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions, has_captures,
+        normalize_ferroni_pattern, replace_captures, stabilize_ferroni_captures,
     };
 
     #[test]
@@ -1117,19 +1117,23 @@ mod tests {
         let line = OnigString::new("\n");
         let mut end_sources = RegExpSourceList::new();
         end_sources.push(RegExpSource::new("$", 1_u32));
-        assert!(end_sources
-            .compile()
-            .unwrap()
-            .find_next_match(&line, 1, ScannerFindOptions::NONE)
-            .is_some());
+        assert!(
+            end_sources
+                .compile()
+                .unwrap()
+                .find_next_match(&line, 1, ScannerFindOptions::NONE)
+                .is_some()
+        );
 
         let mut empty_line_sources = RegExpSourceList::new();
         empty_line_sources.push(RegExpSource::new("^$", 1_u32));
-        assert!(empty_line_sources
-            .compile()
-            .unwrap()
-            .find_next_match(&line, 1, ScannerFindOptions::NONE)
-            .is_none());
+        assert!(
+            empty_line_sources
+                .compile()
+                .unwrap()
+                .find_next_match(&line, 1, ScannerFindOptions::NONE)
+                .is_none()
+        );
     }
 
     #[test]
@@ -1179,22 +1183,30 @@ mod tests {
         sources.push(RegExpSource::new(r"\Afoo", 1_u32));
 
         let compiled = sources.compile().unwrap();
-        assert!(compiled
-            .find_next_match(&line, 0, ScannerFindOptions::NONE)
-            .is_some());
-        assert!(compiled
-            .find_next_match(&line, 0, ScannerFindOptions::NOT_BEGIN_STRING)
-            .is_none());
+        assert!(
+            compiled
+                .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
+        assert!(
+            compiled
+                .find_next_match(&line, 0, ScannerFindOptions::NOT_BEGIN_STRING)
+                .is_none()
+        );
 
-        assert!(sources
-            .compile_ag(false, false)
-            .unwrap()
-            .find_next_match(&line, 0, ScannerFindOptions::NONE)
-            .is_none());
-        assert!(sources
-            .compile_ag(true, false)
-            .unwrap()
-            .find_next_match(&line, 0, ScannerFindOptions::NONE)
-            .is_some());
+        assert!(
+            sources
+                .compile_ag(false, false)
+                .unwrap()
+                .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                .is_none()
+        );
+        assert!(
+            sources
+                .compile_ag(true, false)
+                .unwrap()
+                .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
     }
 }

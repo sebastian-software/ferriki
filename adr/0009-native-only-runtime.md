@@ -22,7 +22,7 @@ goal of ADR 0001:
 
 With multi-platform prebuilds (linux-x64/arm64, darwin-x64/arm64,
 win32-x64) shipping through the release pipeline, and with the Rust stack
-(including ferroni) able to target `wasm32`, the JS engine no longer has a
+(including Ferroni) able to target `wasm32`, the JS engine no longer has a
 justification as a product component.
 
 ## Decision

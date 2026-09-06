@@ -1,11 +1,22 @@
 [package]
 name = "ferriki-textmate"
 version = "0.1.0"
-edition = "2021"
-license = "MIT"
+description = "TextMate grammar tokenizer and theme resolver behind Ferriki"
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
 publish = false
 
 [dependencies]
 ferroni = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[lints]
+workspace = true

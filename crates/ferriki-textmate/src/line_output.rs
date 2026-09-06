@@ -6,9 +6,9 @@ use std::sync::Arc;
 
 use crate::attributed_scope_stack::AttributedScopeStack;
 use crate::encoded_token_attributes::{
-    to_optional_token_type, EncodedTokenAttributes, OptionalStandardTokenType, StandardTokenType,
+    EncodedTokenAttributes, OptionalStandardTokenType, StandardTokenType, to_optional_token_type,
 };
-use crate::matcher::{create_matchers, Matcher};
+use crate::matcher::{Matcher, create_matchers};
 use crate::state_stack::StateStack;
 use crate::theme::FontStyle;
 
@@ -323,6 +323,9 @@ impl LineFonts {
             font_size_multiplier: font_attributes.font_size,
             line_height_multiplier: font_attributes.line_height,
         };
+        // Kept nested to mirror the vscode-textmate original (ADR 0010); an
+        // edition 2024 let-chain would read differently from the source.
+        #[allow(clippy::collapsible_if)]
         if let Some(last_font) = self.fonts.last_mut() {
             if last_font.end_index == self.last_index && last_font.options_equal(&font) {
                 last_font.end_index = font.end_index;

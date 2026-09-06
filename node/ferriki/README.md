@@ -1,9 +1,9 @@
-# ferriki
+# Ferriki
 
-Ferriki is a Shiki-compatible syntax highlighter backed by a native Rust
-TextMate runtime. The grammar interpreter is a mechanical port of
-vscode-textmate onto ferroni; the Node layer loads the native addon and the
-bundled standard languages and themes.
+Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
+Node bindings. The grammar interpreter is a mechanical port of vscode-textmate
+onto [Ferroni](https://github.com/sebastian-software/ferroni); the Node layer
+loads the native addon and the bundled standard languages and themes.
 
 ## Install
 
@@ -123,11 +123,14 @@ adapters remain separately scoped facade work (see issues
 [#45](https://github.com/sebastian-software/ferriki/issues/45)).
 
 For the complete retained API, option semantics, deliberate removals, and
-error behavior, see the repository's [Ferriki API reference](../../docs/ferriki-api.md)
-and [Shiki migration guide](../../docs/migrations/shiki-to-ferriki.md). The
-[compatibility policy](../../docs/compatibility.md) documents the exact Shiki
-v4.4.3 baseline and supported CI targets; [troubleshooting](../../docs/troubleshooting.md)
-covers native-loader and packed-install failures.
+error behavior, see the repository documentation:
+
+- [Ferriki API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md)
+- [Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md)
+- [Compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md) — the exact Shiki v4.4.3
+  baseline and supported CI targets
+- [Troubleshooting](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md) — native-loader and
+  packed-install failures
 
 ## Compatibility
 
@@ -143,4 +146,7 @@ injections.
 
 ## License
 
-[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE)
+Licensed under either of
+[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or
+[Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
+at your option.

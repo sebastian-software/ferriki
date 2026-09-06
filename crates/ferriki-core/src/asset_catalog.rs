@@ -1,7 +1,7 @@
 use ferriki_asset_gen::{
-    decode_language_asset, decode_language_manifest, decode_theme_asset, decode_theme_manifest,
-    LanguageAsset, LanguageAssetEntry, LanguageManifest, ThemeAsset, ThemeAssetEntry,
-    ThemeManifest, FORMAT_VERSION,
+    FORMAT_VERSION, LanguageAsset, LanguageAssetEntry, LanguageManifest, ThemeAsset,
+    ThemeAssetEntry, ThemeManifest, decode_language_asset, decode_language_manifest,
+    decode_theme_asset, decode_theme_manifest,
 };
 use napi::Error;
 use std::cell::RefCell;
@@ -187,7 +187,7 @@ fn validate_format_version(kind: &str, actual: u32) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ferriki_asset_gen::{generate_catalogs_from_upstream, AssetSourceRef};
+    use ferriki_asset_gen::{AssetSourceRef, generate_catalogs_from_upstream};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_output_dir(label: &str) -> PathBuf {
@@ -306,11 +306,13 @@ mod tests {
 
         let catalogs = StandardAssetCatalogs::load_from_root(&output_dir).expect("catalogs");
         assert_eq!(catalogs.languages.resolve_id("js"), Some("javascript"));
-        assert!(catalogs
-            .themes
-            .load_asset("vitesse-light")
-            .expect("theme")
-            .is_some());
+        assert!(
+            catalogs
+                .themes
+                .load_asset("vitesse-light")
+                .expect("theme")
+                .is_some()
+        );
 
         fs::remove_dir_all(output_dir).expect("cleanup");
     }

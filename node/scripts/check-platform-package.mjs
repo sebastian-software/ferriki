@@ -18,6 +18,8 @@ const npmCache = await mkdtemp(join(tmpdir(), 'ferriki-sidecar-npm-'))
 
 assert.equal(manifest.name, `ferriki-${platformId}`)
 assert(manifest.files.includes('ferriki.node'), `${manifest.name} must publish ferriki.node`)
+for (const licenseFile of ['LICENSE-APACHE', 'LICENSE-MIT'])
+  assert(manifest.files.includes(licenseFile), `${manifest.name} must publish ${licenseFile}`)
 assert(info.size > 100_000, `${manifest.name} native addon is unexpectedly small (${info.size} bytes)`)
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
@@ -39,5 +41,8 @@ if (packed.status !== 0) {
 
 const files = JSON.parse(packed.stdout)[0].files.map(file => file.path)
 assert(files.includes('ferriki.node'), `${manifest.name} dry-run package is missing ferriki.node`)
+// The dual license is only real if both texts travel with the published addon.
+for (const licenseFile of ['LICENSE-APACHE', 'LICENSE-MIT'])
+  assert(files.includes(licenseFile), `${manifest.name} dry-run package is missing ${licenseFile}`)
 await rm(npmCache, { recursive: true, force: true })
 console.log(`Ferriki platform package verified (${manifest.name}, ${info.size} bytes)`)

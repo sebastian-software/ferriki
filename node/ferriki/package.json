@@ -2,8 +2,8 @@
   "name": "ferriki",
   "type": "module",
   "version": "0.3.0",
-  "description": "Shiki-compatible syntax highlighting powered by a native Rust TextMate runtime",
-  "license": "MIT",
+  "description": "Shiki-compatible syntax highlighting with a leaner Rust core and Node bindings",
+  "license": "MIT OR Apache-2.0",
   "homepage": "https://github.com/sebastian-software/ferriki#readme",
   "repository": {
     "type": "git",
@@ -38,6 +38,8 @@
   "types": "./index.d.mts",
   "files": [
     "CHANGELOG.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
     "README.md",
     "assets/shiki",
     "dist/ferriki.*.node",

@@ -205,7 +205,7 @@ fn is_identifier_continue(character: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{create_matchers, MatcherPriority};
+    use super::{MatcherPriority, create_matchers};
 
     struct Case {
         expression: &'static str,
@@ -216,31 +216,131 @@ mod tests {
     #[test]
     fn matches_upstream_selector_cases() {
         let cases = [
-            Case { expression: "foo", input: &["foo"], result: true },
-            Case { expression: "foo", input: &["bar"], result: false },
-            Case { expression: "- foo", input: &["foo"], result: false },
-            Case { expression: "- foo", input: &["bar"], result: true },
-            Case { expression: "- - foo", input: &["bar"], result: false },
-            Case { expression: "bar foo", input: &["foo"], result: false },
-            Case { expression: "bar foo", input: &["bar"], result: false },
-            Case { expression: "bar foo", input: &["bar", "foo"], result: true },
-            Case { expression: "bar - foo", input: &["bar"], result: true },
-            Case { expression: "bar - foo", input: &["foo", "bar"], result: false },
-            Case { expression: "bar - foo", input: &["foo"], result: false },
-            Case { expression: "bar, foo", input: &["foo"], result: true },
-            Case { expression: "bar, foo", input: &["bar"], result: true },
-            Case { expression: "bar, foo", input: &["bar", "foo"], result: true },
-            Case { expression: "bar, -foo", input: &["bar", "foo"], result: true },
-            Case { expression: "bar, -foo", input: &["yo"], result: true },
-            Case { expression: "bar, -foo", input: &["foo"], result: false },
-            Case { expression: "(foo)", input: &["foo"], result: true },
-            Case { expression: "(foo - bar)", input: &["foo"], result: true },
-            Case { expression: "(foo - bar)", input: &["foo", "bar"], result: false },
-            Case { expression: "foo bar - (yo man)", input: &["foo", "bar"], result: true },
-            Case { expression: "foo bar - (yo man)", input: &["foo", "bar", "yo"], result: true },
-            Case { expression: "foo bar - (yo man)", input: &["foo", "bar", "yo", "man"], result: false },
-            Case { expression: "foo bar - (yo | man)", input: &["foo", "bar", "yo", "man"], result: false },
-            Case { expression: "foo bar - (yo | man)", input: &["foo", "bar", "yo"], result: false },
+            Case {
+                expression: "foo",
+                input: &["foo"],
+                result: true,
+            },
+            Case {
+                expression: "foo",
+                input: &["bar"],
+                result: false,
+            },
+            Case {
+                expression: "- foo",
+                input: &["foo"],
+                result: false,
+            },
+            Case {
+                expression: "- foo",
+                input: &["bar"],
+                result: true,
+            },
+            Case {
+                expression: "- - foo",
+                input: &["bar"],
+                result: false,
+            },
+            Case {
+                expression: "bar foo",
+                input: &["foo"],
+                result: false,
+            },
+            Case {
+                expression: "bar foo",
+                input: &["bar"],
+                result: false,
+            },
+            Case {
+                expression: "bar foo",
+                input: &["bar", "foo"],
+                result: true,
+            },
+            Case {
+                expression: "bar - foo",
+                input: &["bar"],
+                result: true,
+            },
+            Case {
+                expression: "bar - foo",
+                input: &["foo", "bar"],
+                result: false,
+            },
+            Case {
+                expression: "bar - foo",
+                input: &["foo"],
+                result: false,
+            },
+            Case {
+                expression: "bar, foo",
+                input: &["foo"],
+                result: true,
+            },
+            Case {
+                expression: "bar, foo",
+                input: &["bar"],
+                result: true,
+            },
+            Case {
+                expression: "bar, foo",
+                input: &["bar", "foo"],
+                result: true,
+            },
+            Case {
+                expression: "bar, -foo",
+                input: &["bar", "foo"],
+                result: true,
+            },
+            Case {
+                expression: "bar, -foo",
+                input: &["yo"],
+                result: true,
+            },
+            Case {
+                expression: "bar, -foo",
+                input: &["foo"],
+                result: false,
+            },
+            Case {
+                expression: "(foo)",
+                input: &["foo"],
+                result: true,
+            },
+            Case {
+                expression: "(foo - bar)",
+                input: &["foo"],
+                result: true,
+            },
+            Case {
+                expression: "(foo - bar)",
+                input: &["foo", "bar"],
+                result: false,
+            },
+            Case {
+                expression: "foo bar - (yo man)",
+                input: &["foo", "bar"],
+                result: true,
+            },
+            Case {
+                expression: "foo bar - (yo man)",
+                input: &["foo", "bar", "yo"],
+                result: true,
+            },
+            Case {
+                expression: "foo bar - (yo man)",
+                input: &["foo", "bar", "yo", "man"],
+                result: false,
+            },
+            Case {
+                expression: "foo bar - (yo | man)",
+                input: &["foo", "bar", "yo", "man"],
+                result: false,
+            },
+            Case {
+                expression: "foo bar - (yo | man)",
+                input: &["foo", "bar", "yo"],
+                result: false,
+            },
             Case {
                 expression: "R:text.html - (comment.block, text.html source)",
                 input: &["text.html", "bar", "source"],

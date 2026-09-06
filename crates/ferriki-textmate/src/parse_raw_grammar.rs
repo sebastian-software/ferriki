@@ -7,8 +7,8 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::plist::{parse_plist, PlistError};
 use crate::RawGrammar;
+use crate::plist::{PlistError, parse_plist};
 
 #[derive(Debug)]
 pub enum ParseRawGrammarError {

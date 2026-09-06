@@ -2,7 +2,7 @@
   "name": "ferriki-linux-x64-gnu",
   "version": "0.3.0",
   "description": "Ferriki native addon for Linux x64 with GNU libc",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
   "repository": "git+https://github.com/sebastian-software/ferriki.git",
   "os": [
     "linux"
@@ -15,6 +15,8 @@
   ],
   "main": "ferriki.node",
   "files": [
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
     "ferriki.node"
   ],
   "engines": {

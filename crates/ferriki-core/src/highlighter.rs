@@ -2,17 +2,17 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use ferriki_textmate::{
-    parse_raw_grammar, GrammarConfiguration, RawGrammar, ScopeStack, SyncRegistry, Theme,
+    GrammarConfiguration, RawGrammar, ScopeStack, SyncRegistry, Theme, parse_raw_grammar,
 };
 use napi::{Error, Result};
 use serde_json::Value;
 
 use crate::asset_catalog::StandardAssetCatalogs;
-use crate::theme_data::{parse_theme_data, ThemeData};
+use crate::theme_data::{ThemeData, parse_theme_data};
 use crate::tokens::{
-    split_lines, token_from_metadata, utf16_to_byte_map, HighlightThemeMetadata,
-    HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken, HighlightTokensResult,
-    HighlightTokensWithThemesResult, TokenizeOptions,
+    HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions, split_lines,
+    token_from_metadata, utf16_to_byte_map,
 };
 
 pub struct HighlighterCore {
@@ -770,21 +770,29 @@ mod tests {
             highlighter.resolve_scope("vue"),
             Some("text.html.vue".to_owned())
         );
-        assert!(highlighter
-            .loaded_scopes()
-            .contains(&"source.js".to_owned()));
-        assert!(highlighter
-            .loaded_scopes()
-            .contains(&"text.html.basic".to_owned()));
-        assert!(highlighter
-            .loaded_languages()
-            .contains(&"javascript".to_owned()));
+        assert!(
+            highlighter
+                .loaded_scopes()
+                .contains(&"source.js".to_owned())
+        );
+        assert!(
+            highlighter
+                .loaded_scopes()
+                .contains(&"text.html.basic".to_owned())
+        );
+        assert!(
+            highlighter
+                .loaded_languages()
+                .contains(&"javascript".to_owned())
+        );
         assert!(highlighter.loaded_languages().contains(&"js".to_owned()));
         assert!(!highlighter.loaded_languages().contains(&"scss".to_owned()));
-        assert!(highlighter
-            .grammar_for_language("vue")
-            .expect("grammar")
-            .is_some());
+        assert!(
+            highlighter
+                .grammar_for_language("vue")
+                .expect("grammar")
+                .is_some()
+        );
     }
 
     #[test]
@@ -955,10 +963,12 @@ mod tests {
 
         let console = &result.tokens[0][0];
         assert_eq!(console.content, "console");
-        assert!(console
-            .scope_names
-            .as_ref()
-            .is_some_and(|scopes| scopes.iter().any(|scope| scope == "source.js")));
+        assert!(
+            console
+                .scope_names
+                .as_ref()
+                .is_some_and(|scopes| scopes.iter().any(|scope| scope == "source.js"))
+        );
     }
 
     #[test]

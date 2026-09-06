@@ -71,7 +71,7 @@ fn option_ref_eq(left: &Option<Arc<StateStack>>, right: &Option<Arc<StateStack>>
 mod tests {
     use std::sync::Arc;
 
-    use super::{apply_state_stack_diff, diff_state_stacks_ref_eq, StackDiff};
+    use super::{StackDiff, apply_state_stack_diff, diff_state_stacks_ref_eq};
     use crate::{RuleId, StateStack};
 
     fn root(rule_id: u32) -> Arc<StateStack> {
@@ -121,8 +121,10 @@ mod tests {
             pops: 0,
             new_frames: vec![stack.to_frame()],
         };
-        assert!(apply_state_stack_diff(empty, &restore)
-            .unwrap()
-            .equals(&stack));
+        assert!(
+            apply_state_stack_diff(empty, &restore)
+                .unwrap()
+                .equals(&stack)
+        );
     }
 }
