@@ -50,6 +50,23 @@ assert.doesNotMatch(
   /\]\(\.\.\//,
   'package README must not use repository-relative links',
 )
+
+// The block itself is generated from the family registry and verified against
+// it by `node scripts/sync-readme-family.mjs --check`; this only holds the
+// markers in place, so a README cannot quietly lose the family block offline.
+const familyBlockReadmes = [
+  ['README.md', rootReadme],
+  ['node/ferriki/README.md', packageReadme],
+]
+for (const [label, content] of familyBlockReadmes) {
+  for (const marker of ['<!-- ferramenta-family:start -->', '<!-- ferramenta-family:end -->']) {
+    assert(
+      content.includes(marker),
+      `${label} must keep ${marker}; regenerate with \`node scripts/sync-readme-family.mjs\``,
+    )
+  }
+}
+
 assert(troubleshooting.includes('No native binary for <platform>-<arch>'), 'troubleshooting must start from the actual loader error')
 
 console.log(`Ferriki docs contract verified (${exportedNames.length} declared exports, ${source.ref} baseline)`)

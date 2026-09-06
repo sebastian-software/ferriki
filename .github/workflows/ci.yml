@@ -194,6 +194,12 @@ jobs:
       - name: Verify the release workflow and checklist contract
         run: pnpm run check:release
 
+      # The family block in both READMEs is generated from the registry in
+      # sebastian-software/ferramenta; this fails when either has drifted.
+      - name: Verify the generated Ferramenta family block
+        working-directory: ${{ github.workspace }}
+        run: node scripts/sync-readme-family.mjs --check
+
   typecheck:
     runs-on: ubuntu-latest
     defaults:

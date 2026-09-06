@@ -14,6 +14,9 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 
+# Both READMEs carry a generated family block (needs network)
+node scripts/sync-readme-family.mjs --check
+
 # Node workspace: install, build the native addon, run the release gate
 cd node
 pnpm install --ignore-scripts
@@ -87,6 +90,38 @@ they were written and are deliberately outside the check.
 `node/scripts/test-docs-drift.mjs` runs the same check against fixture copies
 of the documents with stale versions injected, so a change to the checker that
 stops detecting drift fails alongside it.
+
+## The Ferramenta family block
+
+Ferriki is one of the [Ferramenta](https://ferramenta.dev) tools, and both
+READMEs end with a block naming its siblings: the grouped tables in the root
+`README.md`, and the two plain-Markdown lines in `node/ferriki/README.md`,
+which is what npmjs.com renders. Neither is hand-written. Both are rendered
+from `src/family.ts` in
+[sebastian-software/ferramenta](https://github.com/sebastian-software/ferramenta),
+the single source of truth for every tool's name, job and link.
+
+```sh
+node scripts/sync-readme-family.mjs           # rewrite both blocks
+node scripts/sync-readme-family.mjs --check   # fail when either has drifted
+```
+
+`scripts/sync-readme-family.mjs` runs the `ferramenta-readme` generator through
+`pnpm dlx`, so it needs network access and the Node floor this repository
+already declares. The generator compares content rather than
+whitespace, so a formatter padding table cells is not drift. The CI `lint` job
+runs the `--check` form; `node/scripts/check-docs-contract.mjs` additionally
+holds the `<!-- ferramenta-family:start -->` markers in place without network.
+
+The registry commit is pinned once, in `REGISTRY_PIN` at the top of that
+script, so the block a CI run blesses today is the one it blessed yesterday.
+When the registry changes — a new member, a renamed tool, a reworded job —
+adopt it by bumping `REGISTRY_PIN` to the new ferramenta commit, rerunning the
+script without `--check`, and committing the regenerated blocks together with
+the pin. Do not edit the text between the markers by hand; the next run
+overwrites it. The platform sidecar packages under `node/platforms/` are
+install-time artifacts rather than a product surface and deliberately carry no
+block.
 
 ## Commits and releases
 
