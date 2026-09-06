@@ -33,9 +33,22 @@ assert.equal(source.ref, 'v4.4.3', 'the docs baseline must follow the pinned Shi
 assert(migration.includes(`Shiki **${source.ref}**`), 'migration guide must name the exact Shiki baseline')
 assert(compatibility.includes(`Shiki ${source.ref}`), 'compatibility guide must name the exact Shiki baseline')
 assert(rootReadme.includes('docs/ferriki-api.md'), 'root README must link the API reference')
-assert(
-  packageReadme.includes('https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md'),
-  'package README must link the API reference absolutely, because npmjs.com renders it outside the repository tree',
+const packageReadmeLinks = [
+  'docs/ferriki-api.md',
+  'docs/migrations/shiki-to-ferriki.md',
+  'docs/compatibility.md',
+  'docs/troubleshooting.md',
+]
+for (const target of packageReadmeLinks) {
+  assert(
+    packageReadme.includes(`https://github.com/sebastian-software/ferriki/blob/main/${target}`),
+    `package README must link ${target} absolutely, because npmjs.com renders it outside the repository tree`,
+  )
+}
+assert.doesNotMatch(
+  packageReadme,
+  /\]\(\.\.\//,
+  'package README must not use repository-relative links',
 )
 assert(troubleshooting.includes('No native binary for <platform>-<arch>'), 'troubleshooting must start from the actual loader error')
 
