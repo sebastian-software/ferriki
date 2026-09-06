@@ -1,6 +1,12 @@
 # Ferriki
 
-Ferriki is a Shiki-compatible highlighter with a leaner Rust core.
+[![npm](https://img.shields.io/npm/v/ferriki.svg)](https://www.npmjs.com/package/ferriki)
+[![CI](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
+
+Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
+Node bindings.
 
 It keeps the API shape people already know from Shiki, but removes the old
 JS/WASM multi-engine direction from the runtime. The goal is simple: keep the
@@ -115,8 +121,9 @@ Ferriki tracks one approved Shiki release tag at a time — currently
 ## Status
 
 The native TextMate runtime from issue #30 is implemented. It is a mechanical
-port of pinned vscode-textmate v9.3.2 onto ferroni's Scanner API, integrated
-with Ferriki's asset catalogs, native renderer, N-API host, and focused Node
+port of pinned vscode-textmate v9.3.2 onto the Scanner API of
+[Ferroni](https://github.com/sebastian-software/ferroni), integrated with
+Ferriki's asset catalogs, native renderer, N-API host, and focused Node
 surface. Its inner vscode-textmate oracle and honest Shiki v4.4.3 structural
 gate are green.
 

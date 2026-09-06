@@ -33,7 +33,10 @@ assert.equal(source.ref, 'v4.4.3', 'the docs baseline must follow the pinned Shi
 assert(migration.includes(`Shiki **${source.ref}**`), 'migration guide must name the exact Shiki baseline')
 assert(compatibility.includes(`Shiki ${source.ref}`), 'compatibility guide must name the exact Shiki baseline')
 assert(rootReadme.includes('docs/ferriki-api.md'), 'root README must link the API reference')
-assert(packageReadme.includes('../../docs/ferriki-api.md'), 'package README must link the API reference')
+assert(
+  packageReadme.includes('https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md'),
+  'package README must link the API reference absolutely, because npmjs.com renders it outside the repository tree',
+)
 assert(troubleshooting.includes('No native binary for <platform>-<arch>'), 'troubleshooting must start from the actual loader error')
 
 console.log(`Ferriki docs contract verified (${exportedNames.length} declared exports, ${source.ref} baseline)`)
