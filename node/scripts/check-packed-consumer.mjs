@@ -108,7 +108,11 @@ void oneShot
   })
 
   const installedReadme = await readFile(join(consumer, 'node_modules', 'ferriki', 'README.md'), 'utf8')
-  assert(installedReadme.includes('Ferriki is a Shiki-compatible syntax highlighter'), 'packed README was not installed')
+  const { description } = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'))
+  assert(
+    installedReadme.replace(/\s+/g, ' ').includes(`Ferriki is ${description}`),
+    `packed README was not installed, or its tagline no longer matches the package description: ${description}`,
+  )
   console.log(`Ferriki packed consumer verified (${metadata.filename}, ${metadata.unpackedSize} bytes unpacked, ${files.size} files)`)
 }
 finally {

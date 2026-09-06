@@ -30,7 +30,7 @@ named `ferriki-textmate`.
   layout closely. Rust type-system adaptations are allowed, but semantic
   shortcuts and unrelated redesigns are not.
 - Ferroni remains the external regex implementation from ADR 0005.
-  `ferriki-textmate` adapts vscode-textmate's Oniguruma calls to ferroni's
+  `ferriki-textmate` adapts vscode-textmate's Oniguruma calls to Ferroni's
   Scanner API and does not add another regex engine.
 - `ferriki-textmate` owns raw grammar models, selector matching, themes, rules,
   grammar compilation, tokenization, and state stacks. `ferriki-core` owns
