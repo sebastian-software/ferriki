@@ -4,6 +4,11 @@
   "description": "Ferriki native addon for Windows x64 with MSVC",
   "license": "MIT OR Apache-2.0",
   "repository": "git+https://github.com/sebastian-software/ferriki.git",
+  "files": [
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "ferriki.node"
+  ],
   "os": [
     "win32"
   ],
@@ -11,11 +16,6 @@
     "x64"
   ],
   "main": "ferriki.node",
-  "files": [
-    "LICENSE-APACHE",
-    "LICENSE-MIT",
-    "ferriki.node"
-  ],
   "engines": {
     "node": ">=22.13.0"
   }

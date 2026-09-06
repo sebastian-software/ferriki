@@ -15,14 +15,12 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "include": [
-    "**/*.ts",
-    "**/*.mjs",
-    "eslint.config.js"
-  ],
+  "include": ["**/*.ts", "**/*.mjs", "eslint.config.js"],
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
-    "compat/upstream/**"
+    "compat/upstream/**",
+    "eslint.config.ts",
+    "oxlint.config.ts"
   ]
 }

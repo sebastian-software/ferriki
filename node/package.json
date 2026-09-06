@@ -1,11 +1,12 @@
 {
   "name": "ferriki-workspace",
-  "type": "module",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@10.28.2",
+  "type": "module",
   "scripts": {
     "lint": "eslint . --cache",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
     "typecheck": "tsc --noEmit",
     "build": "pnpm -C ferriki build",
     "build:native": "pnpm -C ferriki build:native",
@@ -56,6 +57,7 @@
     "fast-glob": "catalog:testing",
     "fs-extra": "catalog:testing",
     "hast-util-to-html": "catalog:inlined",
+    "oxfmt": "catalog:cli",
     "pathe": "catalog:bundling",
     "rimraf": "catalog:cli",
     "rollup": "catalog:bundling",
@@ -77,5 +79,6 @@
   "resolutions": {
     "typescript": "catalog:cli",
     "vite": "catalog:bundling"
-  }
+  },
+  "packageManager": "pnpm@10.28.2"
 }

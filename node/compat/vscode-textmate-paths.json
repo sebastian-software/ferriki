@@ -1,8 +1,1 @@
-[
-  "LICENSE.md",
-  "README.md",
-  "ThirdPartyNotices.txt",
-  "package.json",
-  "src",
-  "test-cases"
-]
+["LICENSE.md", "README.md", "ThirdPartyNotices.txt", "package.json", "src", "test-cases"]

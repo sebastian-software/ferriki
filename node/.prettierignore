@@ -1,0 +1,11 @@
+# Repository-local formatter ignores. The managed `.oxfmtrc.json` is owned by
+# @sebastian-software/standards and must not carry repository-specific entries,
+# so oxfmt picks these up through the `.prettierignore` it auto-discovers
+# (see changes/0005-oxfmt-ignore-patterns.md in the standards repository).
+
+# Mechanical mirror of Shiki and vscode-textmate. ADR 0003: never hand-edited,
+# so it is never reformatted either.
+compat/upstream/
+
+# Generated declaration output of `check:api` (tsconfig.api.json).
+.generated/
