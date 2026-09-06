@@ -5,28 +5,33 @@ import { fileURLToPath } from 'node:url'
 
 import { formatFerrikiPlatformMatrix, resolveFerrikiPlatformTarget } from './platforms.mjs'
 
+// Every candidate says how it must be resolved. The sidecar is a package
+// specifier that Node resolves from node_modules, whatever its scope; the rest
+// are files next to this loader. Deciding by the shape of the string (a leading
+// `@`) is exactly what broke once the sidecars became unscoped.
+function nativeCandidates(target, here) {
+  return [
+    { package: `${target.packageName}/ferriki.node` },
+    { file: join(here, 'dist', target.binaryName) },
+    { file: join(here, 'dist', 'ferriki.node') },
+    { file: join(here, 'ferriki.node') },
+  ]
+}
+
 export function loadFerrikiNativeBinding() {
   const require = createRequire(import.meta.url)
   const here = dirname(fileURLToPath(import.meta.url))
   const target = resolveFerrikiPlatformTarget()
-  const candidates = target
-    ? [
-        `${target.packageName}/ferriki.node`,
-        join('dist', target.binaryName),
-        'dist/ferriki.node',
-        'ferriki.node',
-      ]
-    : []
+  const candidates = target ? nativeCandidates(target, here) : []
   const errors = []
   for (const candidate of candidates) {
-    const absPath = candidate.startsWith('@')
-      ? candidate
-      : join(here, candidate)
+    const label = candidate.package ?? candidate.file
     try {
-      return require(candidate.startsWith('@') ? require.resolve(candidate) : absPath)
+      const resolved = candidate.package ? require.resolve(candidate.package) : candidate.file
+      return require(resolved)
     }
     catch (error) {
-      errors.push(`${absPath}: ${String(error)}`)
+      errors.push(`${label}: ${String(error)}`)
     }
   }
   if (!target) {

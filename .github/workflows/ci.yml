@@ -239,5 +239,10 @@ jobs:
       - name: Verify packed consumer on the target platform
         run: node ./scripts/check-packed-consumer.mjs
 
+      - name: Verify the installed sidecar is what the loader resolves
+        run: nr check:packed-sidecar
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
       - name: Import ferriki package and load the native binding
         run: node --input-type=module -e "const m = await import('./ferriki/index.mjs'); const v = m.ferrikiVersion(); if (!v) throw new Error('native binding did not load'); console.log('ferriki native core', v)"
