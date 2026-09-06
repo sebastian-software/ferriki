@@ -15,7 +15,6 @@ const catalogCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-catal
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -27,7 +26,6 @@ const exportCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-export
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -39,7 +37,6 @@ const apiContractCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-a
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -51,7 +48,6 @@ const nativeBoundaryCheck = spawnSync(process.execPath, ['./scripts/check-native
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -63,7 +59,6 @@ const releaseCheck = spawnSync(process.execPath, ['./scripts/check-release-workf
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -75,7 +70,6 @@ const docsCheck = spawnSync(process.execPath, ['./scripts/check-docs-drift.mjs']
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -87,7 +81,6 @@ const docsContractCheck = spawnSync(process.execPath, ['./scripts/check-docs-con
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -99,7 +92,6 @@ const packedConsumerCheck = spawnSync(process.execPath, ['./scripts/check-packed
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -111,7 +103,6 @@ const errorCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-errors.
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -123,7 +114,6 @@ const multiThemeCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-mu
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -135,7 +125,6 @@ const ansiCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-ansi.mjs
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -147,7 +136,6 @@ const registrationCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -159,7 +147,6 @@ const transformerCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-t
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -171,7 +158,6 @@ const tokenStateCheck = spawnSync(process.execPath, ['./scripts/check-ferriki-to
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -183,7 +169,6 @@ const ferromarkArdoCheck = spawnSync(process.execPath, ['./scripts/check-ferroma
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -195,7 +180,6 @@ const platformMatrixCheck = spawnSync(process.execPath, ['./scripts/check-ferrik
   cwd: nodeRoot,
   env: {
     ...process.env,
-    FERRIKI_BACKEND: 'rust',
     FERRIKI_HONEST_ALIAS: '1',
   },
   stdio: 'inherit',
@@ -208,7 +192,6 @@ function run(args) {
     cwd: nodeRoot,
     env: {
       ...process.env,
-      FERRIKI_BACKEND: 'rust',
       FERRIKI_HONEST_ALIAS: '1',
     },
     stdio: 'inherit',

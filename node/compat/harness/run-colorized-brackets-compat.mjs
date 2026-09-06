@@ -15,10 +15,7 @@ for (const file of files) {
     ['exec', 'vitest', file, '--run', '--pool', 'forks', '--poolOptions.forks.singleFork', '--no-file-parallelism', '--no-isolate'],
     {
       stdio: 'inherit',
-      env: {
-        ...process.env,
-        FERRIKI_BACKEND: 'rust',
-      },
+      env: process.env,
     },
   )
 
