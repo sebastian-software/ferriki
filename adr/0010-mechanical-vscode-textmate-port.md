@@ -59,7 +59,8 @@ Issue #30 implements this decision against two immutable upstream references:
 
 - vscode-textmate v9.3.2, pinned by
   `node/compat/upstream/vscode-textmate/.source.json`
-- Shiki v4.3.1, pinned by `node/compat/upstream/shiki/.source.json`
+- Shiki v4.3.1, the baseline pinned by `node/compat/upstream/shiki/.source.json`
+  when issue #30 was validated
 
 The inner gate is `cargo test -p ferriki-textmate`. It passes the Rust unit
 suite and all mirrored tokenization cases: 91 First Mate cases, 20 Suite 1
