@@ -94,10 +94,12 @@ versus target mismatch before release artifacts are assembled.
 ## Packaging baseline
 
 The main package ships the native addon for the host target plus the standard
-asset catalogs, so its unpacked size is dominated by `assets/shiki`. Measure it
-for a given release with `npm pack --json` from `node/ferriki`; the published
-figures are the `unpackedSize` values on the npm version page. The release
-workflow also validates each sidecar tarball before publication.
+asset catalogs, so its unpacked size is dominated by `assets/shiki`. It is
+measured on every run of the core gate rather than quoted here:
+`node/scripts/check-packed-consumer.mjs` packs the package, installs the
+tarball in a clean consumer, and prints the tarball name, unpacked size, and
+file count for the tree it ran against. The release workflow also validates
+each sidecar tarball before publication.
 
 ## Reporting a compatibility gap
 
