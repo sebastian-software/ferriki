@@ -1,6 +1,6 @@
 {
   "name": "ferriki-linux-arm64-gnu",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Ferriki native addon for Linux arm64 with GNU libc",
   "license": "MIT OR Apache-2.0",
   "repository": "git+https://github.com/sebastian-software/ferriki.git",

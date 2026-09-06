@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.0](https://github.com/sebastian-software/ferriki/compare/v0.3.0...v1.0.0) (2026-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* the optional native sidecars are now published as `ferriki-<platform>` rather than `@sebastian-software/ferriki-<platform>`.
+
+### Features
+
+* rename the native sidecars to unscoped ferriki-&lt;platform&gt; ([#106](https://github.com/sebastian-software/ferriki/issues/106)) ([71d47a3](https://github.com/sebastian-software/ferriki/commit/71d47a379ac9054380343eaeb39f6ae2a4322566))
+
+
+### Bug Fixes
+
+* **release:** let release-please update platform versions ([#92](https://github.com/sebastian-software/ferriki/issues/92)) ([c0e4593](https://github.com/sebastian-software/ferriki/commit/c0e4593b6295efb4cf83c3b091477861790b77cd))
+
 ## [0.3.0](https://github.com/sebastian-software/ferriki/compare/v0.2.1...v0.3.0) (2026-09-06)
 
 
