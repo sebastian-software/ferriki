@@ -1,4 +1,9 @@
 catalogMode: prefer
+# The five native sidecars are workspace packages that carry a plain version
+# range, not `workspace:*`, because they are published with `npm publish`.
+# pnpm 10 does not link those by default, and without this it silently drops
+# them from the lockfile's `ferriki` importer.
+linkWorkspacePackages: true
 shellEmulator: true
 trustPolicy: no-downgrade
 

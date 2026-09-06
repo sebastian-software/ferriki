@@ -5,7 +5,7 @@
 This is the actual loader error when no candidate can be loaded. It lists the
 paths tried under the package directory. Check, in order:
 
-1. the matching optional package (`@sebastian-software/ferriki-*`) is installed,
+1. the matching optional package (`ferriki-<platform>`) is installed,
    or the main package contains `dist/ferriki.<platform>-<arch>.node`;
 2. the package was installed with optional dependencies and lifecycle scripts
    allowed by your deployment policy;

@@ -7,8 +7,15 @@ import {
 } from './verify-npm-publish.mjs'
 
 assert.equal(
-  registryVersionUrl('@sebastian-software/ferriki-linux-x64-gnu', '0.2.0'),
-  'https://registry.npmjs.org/%40sebastian-software%2Fferriki-linux-x64-gnu/0.2.0',
+  registryVersionUrl('ferriki-linux-x64-gnu', '0.2.0'),
+  'https://registry.npmjs.org/ferriki-linux-x64-gnu/0.2.0',
+)
+
+// The sidecars are unscoped, but the helper still has to encode a scope for any
+// other package name it is handed.
+assert.equal(
+  registryVersionUrl('@sebastian-software/ferriki', '0.2.0'),
+  'https://registry.npmjs.org/%40sebastian-software%2Fferriki/0.2.0',
 )
 
 let attempts = 0
