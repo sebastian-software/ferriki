@@ -2,6 +2,12 @@
 // 40-character commit SHA with the human-readable version in a trailing
 // comment, so a moved tag cannot change what CI executes. Local (`./`) and
 // container (`docker://`) references are exempt because they are not tags.
+//
+// The scan is line-based on purpose: this runs in a job that only checks the
+// repository out, with no dependency install, so it cannot pull in a YAML
+// parser. To keep that safe it recognizes every shape a `uses` key can take —
+// block (`- uses: x`), flow (`- { uses: x }`) and quoted (`"uses": x`) — and
+// fails loudly on any `uses` key it cannot classify rather than skipping it.
 import { readdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -10,9 +16,32 @@ import { fileURLToPath } from 'node:url'
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const workflowDir = process.argv[2] ? resolve(process.argv[2]) : join(repoRoot, '.github', 'workflows')
 
-const USES = /^\s*(?:-\s*)?uses:\s*(?<ref>\S+)(?<rest>.*)$/
+const USES_KEY = /(?:^|[\s{,])(?:uses|"uses"|'uses')\s*:/
+const BLOCK_USES = /^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(?<ref>[^\s#]+)\s*(?<rest>.*)$/
+const FLOW_USES = /(?:^|[\s{,])(?:uses|"uses"|'uses')\s*:\s*(?<ref>[^\s,}]+)(?<rest>[^,}]*)/g
 const PINNED = /^[^\s@]+@[0-9a-f]{40}$/
-const VERSION_COMMENT = /#\s*\S+/
+const VERSION_COMMENT = /#\s*\S/
+
+function unquote(value) {
+  return value.replace(/^['"]|['"]$/g, '')
+}
+
+// Returns every `uses` value on the line, or null when the line has a `uses`
+// key in a shape this scanner does not understand.
+function usesReferences(line) {
+  const block = BLOCK_USES.exec(line)
+  if (block)
+    return [{ ref: unquote(block.groups.ref), rest: block.groups.rest }]
+
+  if (line.includes('{')) {
+    const flow = [...line.matchAll(FLOW_USES)]
+      .map(match => ({ ref: unquote(match.groups.ref), rest: match.groups.rest }))
+    if (flow.length > 0)
+      return flow
+  }
+
+  return null
+}
 
 const files = (await readdir(workflowDir)).filter(name => /\.ya?ml$/.test(name)).sort()
 if (files.length === 0) {
@@ -26,18 +55,25 @@ let checked = 0
 for (const file of files) {
   const lines = (await readFile(join(workflowDir, file), 'utf8')).split('\n')
   for (const [index, line] of lines.entries()) {
-    const match = USES.exec(line)
-    if (!match)
+    if (!USES_KEY.test(line))
       continue
+
     const location = `${file}:${index + 1}`
-    const ref = match.groups.ref.replace(/^['"]|['"]$/g, '')
-    if (ref.startsWith('./') || ref.startsWith('docker://'))
+    const references = usesReferences(line)
+    if (references === null) {
+      problems.push(`${location}: a "uses" key is present but could not be read: ${line.trim()}`)
       continue
-    checked += 1
-    if (!PINNED.test(ref))
-      problems.push(`${location}: "${ref}" is not pinned to a full 40-character commit SHA`)
-    else if (!VERSION_COMMENT.test(match.groups.rest))
-      problems.push(`${location}: "${ref}" is missing the trailing "# <version>" comment`)
+    }
+
+    for (const { ref, rest } of references) {
+      if (ref.startsWith('./') || ref.startsWith('docker://'))
+        continue
+      checked += 1
+      if (!PINNED.test(ref))
+        problems.push(`${location}: "${ref}" is not pinned to a full 40-character commit SHA`)
+      else if (!VERSION_COMMENT.test(rest))
+        problems.push(`${location}: "${ref}" is missing the trailing "# <version>" comment`)
+    }
   }
 }
 

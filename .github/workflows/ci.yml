@@ -33,6 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Verify the pin check itself
+        run: node scripts/test-check-workflow-pins.mjs
+
       - name: Verify every workflow action is pinned by commit SHA
         run: node scripts/check-workflow-pins.mjs
 
