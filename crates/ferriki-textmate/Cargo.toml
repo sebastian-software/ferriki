@@ -2,7 +2,7 @@
 name = "ferriki-textmate"
 version = "0.1.0"
 description = "TextMate grammar tokenizer and theme resolver behind Ferriki"
-readme = "../../README.md"
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
