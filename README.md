@@ -148,3 +148,20 @@ This project is part of [Ferramenta](https://ferramenta.dev) — the family of R
 | [ferrolex](https://github.com/sebastian-software/ferrolex) | Spell, dictionary, and brand validation |
 | [ferrugo](https://github.com/sebastian-software/ferrugo) | Rust-native PDF previews |
 <!-- ferramenta-family:end -->
+
+---
+
+<!-- sebastian-software-branding:start -->
+<p align="center">
+  <a href="https://oss.sebastian-software.com">
+    <img src="https://sebastian-brand.vercel.app/sebastian-software/logo-software.svg" alt="Sebastian Software" width="240" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>Built by Sebastian Software</strong> — consulting for TypeScript, React &amp; Rust.<br />
+  <a href="https://sebastian-software.de">Work with us</a> · <a href="https://oss.sebastian-software.com">More open source</a>
+</p>
+
+<p align="center">Copyright &copy; 2026 Sebastian Software GmbH</p>
+<!-- sebastian-software-branding:end -->
