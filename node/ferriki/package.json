@@ -1,7 +1,7 @@
 {
   "name": "ferriki",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Shiki-compatible syntax highlighting powered by a native Rust TextMate runtime",
   "license": "MIT",
   "homepage": "https://github.com/sebastian-software/ferriki#readme",
