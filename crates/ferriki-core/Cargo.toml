@@ -2,7 +2,7 @@
 name = "ferriki-core"
 version = "0.1.0"
 description = "Native N-API core of the Ferriki Shiki-compatible highlighter"
-readme = "../../README.md"
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
