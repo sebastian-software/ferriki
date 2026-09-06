@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
+const claudePointer = '@AGENTS.md'
 const checks = [
   ['AGENTS.md', [
     'npm package is a placeholder',
@@ -21,6 +22,13 @@ const checks = [
     'reduce or remove `dist/chunks/*.mjs` once',
   ]],
 ]
+
+const claude = await readFile(join(root, 'CLAUDE.md'), 'utf8')
+assert.equal(
+  claude.trim(),
+  claudePointer,
+  `CLAUDE.md must be exactly the pointer line \`${claudePointer}\`; agent guidance belongs in AGENTS.md, which this script checks for stale phrases.`,
+)
 
 for (const [relative, stalePhrases] of checks) {
   const source = await readFile(join(root, relative), 'utf8')
