@@ -12,6 +12,8 @@
   ],
   "main": "ferriki.node",
   "files": [
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
     "ferriki.node"
   ],
   "engines": {
