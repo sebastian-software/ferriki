@@ -16,7 +16,7 @@ const addon = join(packageDir, 'ferriki.node')
 const info = await stat(addon)
 const npmCache = await mkdtemp(join(tmpdir(), 'ferriki-sidecar-npm-'))
 
-assert.equal(manifest.name, `@sebastian-software/ferriki-${platformId}`)
+assert.equal(manifest.name, `ferriki-${platformId}`)
 assert(manifest.files.includes('ferriki.node'), `${manifest.name} must publish ferriki.node`)
 for (const licenseFile of ['LICENSE-APACHE', 'LICENSE-MIT'])
   assert(manifest.files.includes(licenseFile), `${manifest.name} must publish ${licenseFile}`)

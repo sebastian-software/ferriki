@@ -1,5 +1,5 @@
 {
-  "name": "@sebastian-software/ferriki-linux-arm64-gnu",
+  "name": "ferriki-linux-arm64-gnu",
   "version": "0.3.0",
   "description": "Ferriki native addon for Linux arm64 with GNU libc",
   "license": "MIT OR Apache-2.0",

@@ -1,5 +1,5 @@
 {
-  "name": "@sebastian-software/ferriki-darwin-arm64",
+  "name": "ferriki-darwin-arm64",
   "version": "0.3.0",
   "description": "Ferriki native addon for macOS arm64",
   "license": "MIT OR Apache-2.0",
