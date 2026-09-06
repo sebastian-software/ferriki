@@ -59,11 +59,11 @@
     "build:native": "node ./scripts/build-native.mjs"
   },
   "optionalDependencies": {
-    "@sebastian-software/ferriki-darwin-arm64": "0.2.1",
-    "@sebastian-software/ferriki-darwin-x64": "0.2.1",
-    "@sebastian-software/ferriki-linux-arm64-gnu": "0.2.1",
-    "@sebastian-software/ferriki-linux-x64-gnu": "0.2.1",
-    "@sebastian-software/ferriki-win32-x64-msvc": "0.2.1"
+    "@sebastian-software/ferriki-darwin-arm64": "0.3.0",
+    "@sebastian-software/ferriki-darwin-x64": "0.3.0",
+    "@sebastian-software/ferriki-linux-arm64-gnu": "0.3.0",
+    "@sebastian-software/ferriki-linux-x64-gnu": "0.3.0",
+    "@sebastian-software/ferriki-win32-x64-msvc": "0.3.0"
   },
   "devDependencies": {
     "@types/node": "catalog:types"

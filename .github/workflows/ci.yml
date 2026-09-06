@@ -158,9 +158,6 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Synchronize platform package versions
-        run: pnpm run sync:platform-versions
-
       - name: Run honest supported core compatibility gate
         run: pnpm run test:ferriki-compat:core
 

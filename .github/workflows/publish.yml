@@ -106,9 +106,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Synchronize platform package versions
-        run: pnpm run sync:platform-versions
-
       - name: Build native addon
         run: pnpm run build:native
         env:
@@ -165,9 +162,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Synchronize platform package versions
-        run: pnpm run sync:platform-versions
 
       - name: Download Linux native sidecar
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -242,9 +236,7 @@ jobs:
           node-version: '22'
 
       - name: Verify public npm packages, provenance, and install
-        run: |
-          node ./node/scripts/sync-platform-package-versions.mjs
-          node ./node/scripts/verify-npm-publish.mjs
+        run: node ./node/scripts/verify-npm-publish.mjs
         env:
           NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
 

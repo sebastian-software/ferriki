@@ -21,7 +21,6 @@
     "test:ferriki-compat:colorized-brackets": "pnpm run build:compat && pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
     "check:errors": "node ./scripts/check-ferriki-errors.mjs",
     "check:platform-package": "node ./scripts/check-platform-package.mjs",
-    "sync:platform-versions": "node ./scripts/sync-platform-package-versions.mjs",
     "check:api": "node ./scripts/check-generated-api.mjs",
     "check:api-contract": "node ./scripts/check-ferriki-api-contract.mjs",
     "check:boundary": "node ./scripts/check-native-boundary.mjs",
