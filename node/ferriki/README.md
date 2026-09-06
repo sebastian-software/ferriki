@@ -150,3 +150,9 @@ Licensed under either of
 [MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or
 [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
 at your option.
+
+<!-- ferramenta-family:start -->
+**ferriki** is part of the [Ferramenta](https://ferramenta.dev) family — Rust-native developer tools that keep the APIs the ecosystem already knows.
+
+Siblings: [ferroni](https://sebastian-software.github.io/ferroni/) · [ferromark](https://sebastian-software.github.io/ferromark/) · [ferrolex](https://github.com/sebastian-software/ferrolex) · [ferrocat](https://ferrocat.dev) · [palamedes](https://palamedes.dev) · [ferrovia](https://github.com/sebastian-software/ferrovia) · [ferralk](https://github.com/sebastian-software/ferralk) · [ferrugo](https://github.com/sebastian-software/ferrugo).
+<!-- ferramenta-family:end -->
