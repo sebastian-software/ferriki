@@ -1,43 +1,77 @@
-import process from 'node:process'
+import process from "node:process";
 
 /**
  * The release workflow publishes these five GNU/MSVC targets as optional
  * sidecar packages. The map is deliberately shared by the loader, docs, and
  * CI so a new target cannot be documented accidentally.
  */
-export const FERRIKI_NODE_MIN_VERSION = '22.13.0'
+export const FERRIKI_NODE_MIN_VERSION = "22.13.0";
 
 export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
-  Object.freeze({ id: 'linux-x64-gnu', platform: 'linux', arch: 'x64', libc: 'gnu', packageName: 'ferriki-linux-x64-gnu', binaryName: 'ferriki.linux-x64.node' }),
-  Object.freeze({ id: 'linux-arm64-gnu', platform: 'linux', arch: 'arm64', libc: 'gnu', packageName: 'ferriki-linux-arm64-gnu', binaryName: 'ferriki.linux-arm64.node' }),
-  Object.freeze({ id: 'darwin-arm64', platform: 'darwin', arch: 'arm64', packageName: 'ferriki-darwin-arm64', binaryName: 'ferriki.darwin-arm64.node' }),
-  Object.freeze({ id: 'darwin-x64', platform: 'darwin', arch: 'x64', packageName: 'ferriki-darwin-x64', binaryName: 'ferriki.darwin-x64.node' }),
-  Object.freeze({ id: 'win32-x64-msvc', platform: 'win32', arch: 'x64', libc: 'msvc', packageName: 'ferriki-win32-x64-msvc', binaryName: 'ferriki.win32-x64.node' }),
-])
+  Object.freeze({
+    id: "linux-x64-gnu",
+    platform: "linux",
+    arch: "x64",
+    libc: "gnu",
+    packageName: "ferriki-linux-x64-gnu",
+    binaryName: "ferriki.linux-x64.node",
+  }),
+  Object.freeze({
+    id: "linux-arm64-gnu",
+    platform: "linux",
+    arch: "arm64",
+    libc: "gnu",
+    packageName: "ferriki-linux-arm64-gnu",
+    binaryName: "ferriki.linux-arm64.node",
+  }),
+  Object.freeze({
+    id: "darwin-arm64",
+    platform: "darwin",
+    arch: "arm64",
+    packageName: "ferriki-darwin-arm64",
+    binaryName: "ferriki.darwin-arm64.node",
+  }),
+  Object.freeze({
+    id: "darwin-x64",
+    platform: "darwin",
+    arch: "x64",
+    packageName: "ferriki-darwin-x64",
+    binaryName: "ferriki.darwin-x64.node",
+  }),
+  Object.freeze({
+    id: "win32-x64-msvc",
+    platform: "win32",
+    arch: "x64",
+    libc: "msvc",
+    packageName: "ferriki-win32-x64-msvc",
+    binaryName: "ferriki.win32-x64.node",
+  }),
+]);
 
 export function detectLinuxLibc(platform = process.platform) {
-  if (platform !== 'linux')
-    return undefined
+  if (platform !== "linux") return undefined;
   try {
-    return process.report?.getReport?.().header?.glibcVersionRuntime ? 'gnu' : 'musl'
-  }
-  catch {
-    return 'unknown'
+    return process.report?.getReport?.().header?.glibcVersionRuntime ? "gnu" : "musl";
+  } catch {
+    return "unknown";
   }
 }
 
 export function resolveFerrikiPlatformTarget({
   platform = process.platform,
   arch = process.arch,
-  libc = platform === 'win32' ? 'msvc' : detectLinuxLibc(platform),
+  libc = platform === "win32" ? "msvc" : detectLinuxLibc(platform),
 } = {}) {
-  return FERRIKI_PLATFORM_TARGETS.find(target => target.platform === platform
-    && target.arch === arch
-    && (target.libc === undefined || target.libc === libc))
+  return FERRIKI_PLATFORM_TARGETS.find(
+    (target) =>
+      target.platform === platform &&
+      target.arch === arch &&
+      (target.libc === undefined || target.libc === libc),
+  );
 }
 
 export function formatFerrikiPlatformMatrix() {
-  return FERRIKI_PLATFORM_TARGETS
-    .map(target => `${target.id} (Node >= ${FERRIKI_NODE_MIN_VERSION})`)
-    .join(', ')
+  return FERRIKI_PLATFORM_TARGETS.map(
+    (target) => `${target.id} (Node >= ${FERRIKI_NODE_MIN_VERSION})`,
+  ).join(", ");
 }

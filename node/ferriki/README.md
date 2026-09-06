@@ -22,47 +22,47 @@ ship the bundled main-package binary instead.
 Use a shorthand for one-off highlighting:
 
 ```js
-import { codeToHtml } from 'ferriki'
+import { codeToHtml } from "ferriki";
 
 const html = await codeToHtml('console.log("Hello")', {
-  lang: 'javascript',
-  theme: 'nord',
-})
+  lang: "javascript",
+  theme: "nord",
+});
 ```
 
 Reuse a highlighter when highlighting multiple snippets:
 
 ```js
-import { createHighlighter } from 'ferriki'
+import { createHighlighter } from "ferriki";
 
 using highlighter = await createHighlighter({
-  langs: ['javascript', 'markdown'],
-  themes: ['nord'],
-})
+  langs: ["javascript", "markdown"],
+  themes: ["nord"],
+});
 
-const html = highlighter.codeToHtml('const answer = 42', {
-  lang: 'javascript',
-  theme: 'nord',
-})
+const html = highlighter.codeToHtml("const answer = 42", {
+  lang: "javascript",
+  theme: "nord",
+});
 
-const tokens = highlighter.codeToTokens('# Hello', {
-  lang: 'markdown',
-  theme: 'nord',
-})
+const tokens = highlighter.codeToTokens("# Hello", {
+  lang: "markdown",
+  theme: "nord",
+});
 ```
 
 For Ardo-style light/dark output, pass an ordered theme map. With
 `defaultColor: false`, Ferriki emits CSS variables for every theme:
 
 ```js
-const html = highlighter.codeToHtml('const answer = 42', {
-  lang: 'typescript',
+const html = highlighter.codeToHtml("const answer = 42", {
+  lang: "typescript",
   themes: {
-    light: 'vitesse-light',
-    dark: 'vitesse-dark',
+    light: "vitesse-light",
+    dark: "vitesse-dark",
   },
   defaultColor: false,
-})
+});
 ```
 
 `codeToHast` returns the same highlighted output as a HAST root. Languages
@@ -74,23 +74,29 @@ before they cross the native boundary:
 
 ```js
 using custom = await createHighlighter({
-  langs: [{
-    name: 'todo',
-    scopeName: 'source.todo',
-    aliases: ['todos'],
-    patterns: [{ match: '\\bTODO\\b', name: 'keyword.todo' }],
-  }],
-  themes: [{
-    name: 'todo-theme',
-    type: 'light',
-    fg: '#111111',
-    bg: '#ffffff',
-    settings: [{
-      scope: 'keyword.todo',
-      settings: { foreground: '#ff00aa', fontStyle: 'bold' },
-    }],
-  }],
-})
+  langs: [
+    {
+      name: "todo",
+      scopeName: "source.todo",
+      aliases: ["todos"],
+      patterns: [{ match: "\\bTODO\\b", name: "keyword.todo" }],
+    },
+  ],
+  themes: [
+    {
+      name: "todo-theme",
+      type: "light",
+      fg: "#111111",
+      bg: "#ffffff",
+      settings: [
+        {
+          scope: "keyword.todo",
+          settings: { foreground: "#ff00aa", fontStyle: "bold" },
+        },
+      ],
+    },
+  ],
+});
 ```
 
 Synchronous factories accept already-resolved names and registrations only;
@@ -152,6 +158,7 @@ Licensed under either of
 at your option.
 
 <!-- ferramenta-family:start -->
+
 **ferriki** is part of the [Ferramenta](https://ferramenta.dev) family — Rust-native developer tools that keep the APIs the ecosystem already knows.
 
 Siblings: [ferroni](https://sebastian-software.github.io/ferroni/) · [ferromark](https://sebastian-software.github.io/ferromark/) · [ferrolex](https://github.com/sebastian-software/ferrolex) · [ferrocat](https://ferrocat.dev) · [palamedes](https://palamedes.dev) · [ferrovia](https://github.com/sebastian-software/ferrovia) · [ferralk](https://github.com/sebastian-software/ferralk) · [ferrugo](https://github.com/sebastian-software/ferrugo).
