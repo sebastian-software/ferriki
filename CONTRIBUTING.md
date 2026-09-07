@@ -57,6 +57,24 @@ its decision record is
 options, errors, lifecycle, or compatibility classifications update that
 contract and the corresponding tests together.
 
+## Coverage
+
+CI measures line coverage over the whole workspace and fails the `coverage`
+job when it falls below the gate. The gate is one whole percent in
+`coverage-threshold` at the repository root — the single source the workflow,
+the README badge and the command below all read. Raise it when coverage grows;
+never lower it to make a run pass.
+
+```sh
+cargo llvm-cov --workspace --all-features --locked --lcov --output-path lcov.info \
+  --fail-under-lines "$(cat coverage-threshold)"
+```
+
+This needs the `llvm-tools-preview` component (`rustup component add
+llvm-tools-preview`) and `cargo-llvm-cov` (`cargo install cargo-llvm-cov`). CI
+runs exactly this command and appends `Line coverage: X% (gate: ≥ N%)` to the
+run summary, so a failed gate still reports the number it measured.
+
 ## The upstream mirrors are never hand-edited
 
 Everything under `node/compat/upstream/` is a mechanical mirror of an approved
@@ -75,12 +93,13 @@ mechanical tokenizer port.
 
 ## Facts with a single source
 
-Two prose facts are contract-checked instead of repeated by hand:
+Three facts are contract-checked instead of repeated by hand:
 
 - the Shiki baseline, whose source is
   `node/compat/upstream/shiki/.source.json`
 - the Node floor, whose source is `engines.node` in
   `node/ferriki/package.json`
+- the line-coverage gate, whose source is `coverage-threshold`
 
 `node/scripts/check-docs-drift.mjs` (`pnpm run check:docs-drift` from `node/`,
 also part of the mandatory core lane) fails when a documented baseline or floor
@@ -90,6 +109,10 @@ they were written and are deliberately outside the check.
 `node/scripts/test-docs-drift.mjs` runs the same check against fixture copies
 of the documents with stale versions injected, so a change to the checker that
 stops detecting drift fails alongside it.
+
+The gate is the one fact a badge has to repeat, so
+`node/scripts/check-docs-contract.mjs` fails when the README badge names a
+percent other than the one in `coverage-threshold`.
 
 ## The Ferramenta family block
 
