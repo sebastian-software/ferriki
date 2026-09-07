@@ -53,14 +53,22 @@ assert(rootReadme.includes("docs/ferriki-api.md"), "root README must link the AP
 // only place the README repeats it, so it is checked rather than trusted.
 assert.match(
   coverageThreshold,
-  /^\d{1,3}$/,
-  "coverage-threshold must hold the line-coverage gate as a whole percent",
+  /^(100|[1-9]?\d)$/,
+  "coverage-threshold must hold the line-coverage gate as a whole percent between 0 and 100",
 );
-assert(
-  rootReadme.includes(
-    `[![Coverage gate >= ${coverageThreshold}%](https://img.shields.io/badge/coverage%20gate-%3E%3D%20${coverageThreshold}%25`,
-  ),
-  `root README must show the coverage gate badge for ${coverageThreshold}%, the gate in coverage-threshold`,
+const coverageBadge = `[![Coverage gate >= ${coverageThreshold}%](https://img.shields.io/badge/coverage%20gate-%3E%3D%20${coverageThreshold}%25-brightgreen.svg)](./.github/workflows/ci.yml)`;
+const countOccurrences = (haystack, needle) => haystack.split(needle).length - 1;
+assert.equal(
+  countOccurrences(rootReadme, coverageBadge),
+  1,
+  `root README must carry the coverage gate badge exactly once, as \`${coverageBadge}\``,
+);
+// Counting the shields label as well rejects a second, stale or truncated
+// coverage badge that the exact match above would not see.
+assert.equal(
+  countOccurrences(rootReadme, "https://img.shields.io/badge/coverage%20gate-"),
+  1,
+  "root README must carry exactly one coverage gate badge",
 );
 
 const packageReadmeLinks = [

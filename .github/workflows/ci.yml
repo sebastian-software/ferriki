@@ -190,7 +190,11 @@ jobs:
         id: threshold
         run: |
           threshold=$(tr -d '[:space:]' < coverage-threshold)
-          echo "$threshold" | grep -Eq '^[0-9]{1,3}$'
+          # A percent, and only a percent: 0 to 100, no leading zeros.
+          if ! echo "$threshold" | grep -Eq '^(100|[1-9]?[0-9])$'; then
+            echo "coverage-threshold must hold a whole percent between 0 and 100, found '$threshold'" >&2
+            exit 1
+          fi
           echo "value=$threshold" >> "$GITHUB_OUTPUT"
           echo "Line coverage gate is >= $threshold%"
 
