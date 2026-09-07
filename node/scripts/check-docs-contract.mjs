@@ -13,6 +13,7 @@ const troubleshootingPath = join(repoRoot, "docs", "troubleshooting.md");
 const rootReadmePath = join(repoRoot, "README.md");
 const packageReadmePath = join(nodeRoot, "ferriki", "README.md");
 const sourcePath = join(nodeRoot, "compat", "upstream", "shiki", ".source.json");
+const coverageThresholdPath = join(repoRoot, "coverage-threshold");
 
 const declarations = await readFile(declarationPath, "utf8");
 const api = await readFile(apiPath, "utf8");
@@ -22,6 +23,7 @@ const troubleshooting = await readFile(troubleshootingPath, "utf8");
 const rootReadme = await readFile(rootReadmePath, "utf8");
 const packageReadme = await readFile(packageReadmePath, "utf8");
 const source = JSON.parse(await readFile(sourcePath, "utf8"));
+const coverageThreshold = (await readFile(coverageThresholdPath, "utf8")).trim();
 
 const exportedNames = [
   ...declarations.matchAll(
@@ -46,6 +48,21 @@ assert(
   "compatibility guide must name the exact Shiki baseline",
 );
 assert(rootReadme.includes("docs/ferriki-api.md"), "root README must link the API reference");
+
+// The CI coverage gate is one number in `coverage-threshold`; the badge is the
+// only place the README repeats it, so it is checked rather than trusted.
+assert.match(
+  coverageThreshold,
+  /^\d{1,3}$/,
+  "coverage-threshold must hold the line-coverage gate as a whole percent",
+);
+assert(
+  rootReadme.includes(
+    `[![Coverage gate >= ${coverageThreshold}%](https://img.shields.io/badge/coverage%20gate-%3E%3D%20${coverageThreshold}%25`,
+  ),
+  `root README must show the coverage gate badge for ${coverageThreshold}%, the gate in coverage-threshold`,
+);
+
 const packageReadmeLinks = [
   "docs/ferriki-api.md",
   "docs/migrations/shiki-to-ferriki.md",
@@ -86,5 +103,5 @@ assert(
 );
 
 console.log(
-  `Ferriki docs contract verified (${exportedNames.length} declared exports, ${source.ref} baseline)`,
+  `Ferriki docs contract verified (${exportedNames.length} declared exports, ${source.ref} baseline, coverage gate >= ${coverageThreshold}%)`,
 );

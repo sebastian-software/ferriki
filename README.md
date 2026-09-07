@@ -1,6 +1,7 @@
 # Ferriki
 
 [![CI](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml)
+[![Coverage gate >= 89%](https://img.shields.io/badge/coverage%20gate-%3E%3D%2089%25-brightgreen.svg)](./.github/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](./LICENSE-MIT)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 

@@ -13,6 +13,9 @@ tmp
 # Rust
 target
 
+# Coverage report written by `cargo llvm-cov` (see CONTRIBUTING.md)
+lcov.info
+
 # Node
 node_modules
 coverage

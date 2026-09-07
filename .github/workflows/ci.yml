@@ -183,16 +183,44 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
-      - name: Collect coverage
-        run: cargo llvm-cov --workspace --all-features --locked --lcov --output-path lcov.info
+      # `coverage-threshold` is the single source of truth for the gate; the
+      # README badge and CONTRIBUTING point at that file, and nothing here
+      # restates the number.
+      - name: Read the coverage threshold
+        id: threshold
+        run: |
+          threshold=$(tr -d '[:space:]' < coverage-threshold)
+          echo "$threshold" | grep -Eq '^[0-9]{1,3}$'
+          echo "value=$threshold" >> "$GITHUB_OUTPUT"
+          echo "Line coverage gate is >= $threshold%"
 
-      # The Codecov token may not exist yet, so a failed upload must not fail CI.
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
-        with:
-          files: lcov.info
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Collect coverage and enforce the gate
+        run: |
+          cargo llvm-cov --workspace --all-features --locked --lcov --output-path lcov.info \
+            --fail-under-lines "${{ steps.threshold.outputs.value }}"
+
+      # cargo-llvm-cov fails the gate through its exit code alone, so the
+      # measured number is reported here in every outcome. It writes the report
+      # before checking the threshold, so `lcov.info` exists on failure too.
+      - name: Report line coverage
+        if: always()
+        run: |
+          threshold="${{ steps.threshold.outputs.value }}"
+          if [ -f lcov.info ]; then
+            summary=$(awk -F: -v threshold="$threshold" '
+              /^LF:/ { total += $2 }
+              /^LH:/ { covered += $2 }
+              END {
+                if (total > 0)
+                  printf "Line coverage: %.2f%% (gate: ≥ %s%%)", covered * 100 / total, threshold
+                else
+                  printf "Line coverage: no instrumented lines (gate: ≥ %s%%)", threshold
+              }' lcov.info)
+          else
+            summary="Line coverage: not collected (gate: ≥ ${threshold}%)"
+          fi
+          echo "$summary"
+          echo "$summary" >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-latest
