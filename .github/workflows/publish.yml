@@ -206,6 +206,12 @@ jobs:
           done
           pnpm run check:docs
 
+      # Publish only after the generated main-package tarball installs and loads
+      # in a clean consumer. The native-smoke matrix runs this on every target;
+      # this repeats the Linux release artifact check immediately before npm.
+      - name: Verify packed main-package consumer
+        run: node ./scripts/check-packed-consumer.mjs
+
       - name: Publish platform packages with npm provenance
         working-directory: node
         run: |

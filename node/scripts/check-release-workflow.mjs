@@ -81,6 +81,7 @@ for (const required of [
   "dist-tag:",
   "timeout-minutes:",
   "actions/download-artifact@",
+  "check-packed-consumer.mjs",
   "npm publish --access public --provenance",
   "NPM_PUBLISH_RESULT:",
   "write-release-summary.mjs",
