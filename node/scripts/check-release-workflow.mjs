@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 function publishJob(workflow) {
@@ -8,7 +9,7 @@ function publishJob(workflow) {
   const start = workflow.indexOf(startMarker);
   assert(start >= 0, "release workflow is missing publish-npm job");
   const body = workflow.slice(start + startMarker.length);
-  const nextJob = body.search(/\n  [a-z0-9-]+:\s*\n/);
+  const nextJob = body.search(/\n {2}[a-z0-9-]+:\s*\n/);
   return body.slice(0, nextJob >= 0 ? nextJob : body.length);
 }
 
