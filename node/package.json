@@ -26,7 +26,7 @@
     "check:api": "node ./scripts/check-generated-api.mjs",
     "check:api-contract": "node ./scripts/check-ferriki-api-contract.mjs",
     "check:boundary": "node ./scripts/check-native-boundary.mjs",
-    "check:release": "node ./scripts/check-release-workflow.mjs && node ./scripts/test-npm-publish-verification.mjs",
+    "check:release": "node ./scripts/check-release-workflow.mjs && node ./scripts/test-release-workflow-contract.mjs && node ./scripts/test-npm-publish-verification.mjs",
     "check:transformers": "node ./scripts/check-ferriki-transformers.mjs",
     "check:token-state": "node ./scripts/check-ferriki-token-state.mjs",
     "check:ferromark-ardo": "node ./scripts/check-ferromark-ardo-contract.mjs",

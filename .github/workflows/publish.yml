@@ -204,7 +204,7 @@ jobs:
           for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
             FERRIKI_PLATFORM_ID="$platform_id" pnpm run check:platform-package
           done
-          pnpm run check:docs
+          node ./scripts/check-docs-contract.mjs
 
       # Publish only after the generated main-package tarball installs and loads
       # in a clean consumer. The native-smoke matrix runs this on every target;
