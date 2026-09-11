@@ -107,7 +107,7 @@ jobs:
       # back, so a pin raised on the day of a standards release would not
       # resolve at all without it.
       - name: Check for standards drift
-        run: pnpm --config.minimum-release-age=0 dlx @sebastian-software/standards@0.11.0 check
+        run: pnpm --config.minimum-release-age=0 dlx @sebastian-software/standards@0.11.1 check
 
   rust:
     runs-on: ubuntu-latest
