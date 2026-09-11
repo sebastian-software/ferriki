@@ -1,6 +1,6 @@
 {
   "name": "ferriki-darwin-arm64",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Ferriki native addon for macOS arm64",
   "license": "MIT OR Apache-2.0",
   "repository": "git+https://github.com/sebastian-software/ferriki.git",
