@@ -114,7 +114,7 @@ The gate is the one fact a badge has to repeat, so
 `node/scripts/check-docs-contract.mjs` fails when the README badge names a
 percent other than the one in `coverage-threshold`.
 
-## The Ferramenta family block
+More from Ferramenta block
 
 Ferriki is one of the [Ferramenta](https://ferramenta.dev) tools, and both
 READMEs end with a block naming its siblings: the grouped tables in the root
@@ -161,3 +161,20 @@ multi-platform binaries and npm Trusted Publishing.
 - Execution backlog: [`plans/`](plans/), currently centered on
   [`plans/native-only-migration.md`](plans/native-only-migration.md)
 - Project language is US English, everywhere.
+
+### Shared registry theme presentation
+
+The pinned Ferramenta generator supplies the compact family icon,
+“More from Ferramenta”, and visible descriptions for related tools. The current
+project is omitted from those links. Registry READMEs retain plain Markdown
+with descriptions; repository READMEs include the small icon.
+Keep theme branding subordinate to the project content. Regenerate through
+the existing family command after updating the pin, then run its check mode.
+
+The shared [living decision](https://github.com/sebastian-software/ferramenta/blob/main/docs/adr/0004-successor-copy-register.md)
+owns the family wording and hierarchy; the
+[composition decision](https://github.com/sebastian-software/ferramenta/blob/main/docs/adr/0001-decentralized-homepages-with-shared-family-package.md)
+owns membership and current-project exclusion.
+
+For the generated project README, see [README themes](docs/readme-theme.md).
+Edit `README.md.src`, then run `mise run readme:write`.
