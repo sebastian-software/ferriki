@@ -14,11 +14,11 @@ import { fileURLToPath } from 'node:url'
 
 // The single pin for this repository. Bump it to adopt a registry change,
 // then rerun the script without `--check` and commit the regenerated block.
-const REGISTRY_PIN = 'd63a0b163ef3e5e68cd1c77e5c8871ac72c36b60'
+const REGISTRY_PIN = '05fadd21d86b69bb15179ef4461bef6b3b531f88'
 
 // The `&path:` part is required: without it pnpm installs the site instead of
 // the package and there is no `ferramenta-readme` binary to run.
-const GENERATOR = `github:sebastian-software/ferramenta#${REGISTRY_PIN}&path:/packages/ardo-config`
+const GENERATOR = `github:sebastian-software/ferramenta#${REGISTRY_PIN}&path:/packages/family`
 const TOOL = 'ferriki'
 
 // The root README carries the full grouped block. `node/ferriki/README.md` is
@@ -27,7 +27,6 @@ const TOOL = 'ferriki'
 // under `node/platforms/` are install-time artifacts, not a product surface,
 // and deliberately carry no block.
 const TARGETS = [
-  { readme: 'README.md', variant: 'github' },
   { readme: 'node/ferriki/README.md', variant: 'registry' },
 ]
 

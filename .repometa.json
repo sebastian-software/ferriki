@@ -5,5 +5,8 @@
   "platform": "github",
   "workspaces": [
     "node"
-  ]
+  ],
+  "readme": {
+    "owner": "mdtheme"
+  }
 }
