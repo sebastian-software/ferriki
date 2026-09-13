@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "blocking": false,
+  "reason": "The configured fallback gate could not run because node/package.json does not define an agent:check script; the direct standards check passed.",
+  "detectedAt": "2026-09-13T21:42:38.000Z",
+  "expectedStandardsVersion": 14,
+  "observedStandardsVersion": 14,
+  "expectedCliVersion": "0.12.0",
+  "observedCliVersion": "0.12.0",
+  "failedChecks": [
+    "pnpm agent:check"
+  ],
+  "retry": "Add an agent:check or agent:check:ci script to node/package.json, rerun the repository gate in CI mode, then delete this marker if it passes."
+}
