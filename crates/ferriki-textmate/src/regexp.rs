@@ -8,12 +8,10 @@ use std::array;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use ferroni::api::Regex;
 use ferroni::error::RegexError;
-use ferroni::oniguruma::{ONIG_OPTION_CAPTURE_GROUP, ONIG_OPTION_NONE, OnigRegion};
-use ferroni::regexec::onig_search;
+use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
-use ferroni::scanner::{Scanner, ScannerMatch};
+use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
 
 #[derive(Clone, Debug)]
 struct AnchorCache {
@@ -490,14 +488,8 @@ impl<T: Copy> RegExpSourceList<T> {
 
 pub struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
-    direct_fallbacks: Vec<Option<DirectFallback>>,
     reg_exps: Vec<String>,
     rules: Vec<T>,
-}
-
-struct DirectFallback {
-    regex: Regex,
-    rejects_artificial_end: bool,
 }
 
 impl<T: Copy> CompiledRule<T> {
@@ -506,37 +498,16 @@ impl<T: Copy> CompiledRule<T> {
             .iter()
             .map(|pattern| normalize_ferroni_pattern(pattern))
             .collect();
-        let direct_fallbacks: Vec<_> = compiled_reg_exps
-            .iter()
-            .map(|pattern| {
-                Regex::builder(&stabilize_ferroni_captures(pattern))
-                    .option(ONIG_OPTION_CAPTURE_GROUP)
-                    .build()
-                    .ok()
-                    .map(|regex| DirectFallback {
-                        regex,
-                        rejects_artificial_end: has_line_start_anchor(pattern),
-                    })
-            })
-            .collect();
-        let scanner_reg_exps: Vec<_> = compiled_reg_exps
-            .iter()
-            .zip(&direct_fallbacks)
-            .map(|(pattern, direct)| {
-                if Regex::new(pattern).is_ok() || direct.is_none() {
-                    pattern.as_str()
-                } else {
-                    // Oniguruma's CAPTURE_GROUP option permits numbered
-                    // backreferences alongside named groups. Scanner does
-                    // not expose compile options, so leave this pattern to
-                    // the equivalent direct engine path below.
-                    "(?!)"
-                }
-            })
-            .collect();
+        let scanner_reg_exps: Vec<_> = compiled_reg_exps.iter().map(String::as_str).collect();
+        // vscode-oniguruma compiles scanner patterns with CAPTURE_GROUP by
+        // default, so unnamed groups keep capturing next to named ones and
+        // numbered backreferences stay valid in patterns with named groups.
+        let config = ScannerConfig {
+            options: ONIG_OPTION_CAPTURE_GROUP,
+            syntax: ScannerSyntax::Oniguruma,
+        };
         Ok(Self {
-            scanner: Mutex::new(Scanner::new(&scanner_reg_exps)?),
-            direct_fallbacks,
+            scanner: Mutex::new(Scanner::with_config(&scanner_reg_exps, &config)?),
             reg_exps,
             rules,
         })
@@ -549,89 +520,28 @@ impl<T: Copy> CompiledRule<T> {
         start_position: usize,
         options: ScannerFindOptions,
     ) -> Option<FindNextMatchResult<T>> {
-        let scanner_match = self
+        let matched = self
             .scanner
             .lock()
             .expect("compiled scanner lock poisoned")
-            .find_next_match_utf16(string, start_position, options);
-        let mut best = scanner_match.map(|matched| ScannerMatch {
-            index: matched.index,
-            capture_indices: matched.capture_indices,
-        });
+            .find_next_match_utf16(string, start_position, options)?;
 
         // Ferroni reports line-guard matches at the synthetic end position
         // used by TextMate's line scanner. These guards are valid at the
         // logical line start, but not after the line terminator. Keep the
         // TextMate distinction here rather than weakening shared Scanner
         // semantics for regular expression consumers.
-        if best.as_ref().is_some_and(|best| {
-            let pattern = self.reg_exps[best.index].trim();
-            best.capture_indices[0].start == string.utf16_len()
-                && (pattern == "^$"
-                    || (start_position < string.utf16_len() && rejects_artificial_end(pattern)))
-        }) {
-            best = None;
+        let pattern = self.reg_exps[matched.index].trim();
+        if matched.capture_indices[0].start == string.utf16_len()
+            && (pattern == "^$"
+                || (start_position < string.utf16_len() && rejects_artificial_end(pattern)))
+        {
+            return None;
         }
 
-        if options == ScannerFindOptions::NONE {
-            // Ferroni 1.3's RegSet path can miss a valid lookaround match or
-            // return a later start for some extended-mode TextMate patterns.
-            // Verify its candidate with the same engine's direct search path
-            // until the Scanner oracle covers those cases itself.
-            for (index, regex) in self.direct_fallbacks.iter().enumerate() {
-                let Some(fallback) = regex else {
-                    continue;
-                };
-                let Some(mut capture_indices) =
-                    find_direct_fallback(&fallback.regex, string, start_position)
-                else {
-                    continue;
-                };
-                let pattern = self.reg_exps[index].trim();
-                let rejects_artificial_end = fallback.rejects_artificial_end
-                    || (start_position < string.utf16_len() && rejects_artificial_end(pattern));
-                if rejects_artificial_end && capture_indices[0].start == string.utf16_len() {
-                    continue;
-                }
-                let should_replace = best.as_ref().is_none_or(|best| {
-                    let best_start = best.capture_indices[0].start;
-                    let candidate_start = capture_indices[0].start;
-                    candidate_start < best_start
-                        || (candidate_start == best_start && index <= best.index)
-                });
-                if should_replace {
-                    if let Some(existing) = best.as_ref().filter(|best| best.index == index) {
-                        let full_match_end = capture_indices[0].end;
-                        for (capture, existing_capture) in capture_indices
-                            .iter_mut()
-                            .zip(&existing.capture_indices)
-                            .skip(1)
-                        {
-                            // Ferroni's CAPTURE_GROUP compatibility mode can
-                            // retain a competing pattern's end position for an
-                            // unmatched alternative. RegSet keeps that
-                            // sentinel correct, while the direct path retains
-                            // the participating capture groups.
-                            if capture.end > full_match_end {
-                                *capture = existing_capture.clone();
-                            }
-                        }
-                    }
-                    best = Some(ScannerMatch {
-                        index,
-                        capture_indices: capture_indices.into(),
-                    });
-                }
-            }
-        }
-
-        let ScannerMatch {
-            index,
-            capture_indices,
-        } = best?;
         Some(FindNextMatchResult {
-            rule_id: self.rules[index],
-            capture_indices: capture_indices.into_vec(),
+            rule_id: self.rules[matched.index],
+            capture_indices: matched.capture_indices.into_vec(),
         })
     }
 }
@@ -680,29 +590,6 @@ fn rejects_artificial_end(pattern: &str) -> bool {
         || pattern.starts_with("(^|\\G)(?!")
 }
 
-fn has_line_start_anchor(pattern: &str) -> bool {
-    let bytes = pattern.as_bytes();
-    let mut position = 0;
-    let mut in_character_class = false;
-    while position < bytes.len() {
-        if bytes[position] == b'\\' {
-            position += 1;
-            if position < bytes.len() {
-                position += 1;
-            }
-            continue;
-        }
-        match bytes[position] {
-            b'[' => in_character_class = true,
-            b']' => in_character_class = false,
-            b'^' if !in_character_class => return true,
-            _ => {}
-        }
-        position += 1;
-    }
-    false
-}
-
 fn starts_valid_interval(value: &str) -> bool {
     let bytes = value.as_bytes();
     let mut position = 1;
@@ -734,133 +621,6 @@ fn starts_special_brace_expression(pattern: &str, position: usize) -> bool {
     })
 }
 
-fn stabilize_ferroni_captures(pattern: &str) -> String {
-    let mut result = String::with_capacity(pattern.len());
-    let bytes = pattern.as_bytes();
-    let mut position = 0;
-    let mut in_character_class = false;
-
-    while position < bytes.len() {
-        if bytes[position] == b'\\' {
-            result.push('\\');
-            position += 1;
-            if let Some(character) = pattern[position..].chars().next() {
-                result.push(character);
-                position += character.len_utf8();
-            }
-            continue;
-        }
-        match bytes[position] {
-            b'[' => in_character_class = true,
-            b']' => in_character_class = false,
-            b'(' if !in_character_class => {
-                if let Some(opener_end) = named_capture_opener_end(pattern, position) {
-                    result.push_str(&pattern[position..opener_end]);
-                    result.push_str("(?=)");
-                    position = opener_end;
-                    continue;
-                }
-                if bytes.get(position + 1) != Some(&b'?') {
-                    result.push_str("((?=)");
-                    position += 1;
-                    continue;
-                }
-            }
-            _ => {}
-        }
-        let character = pattern[position..]
-            .chars()
-            .next()
-            .expect("pattern position must be on a character boundary");
-        result.push(character);
-        position += character.len_utf8();
-    }
-    result
-}
-
-fn named_capture_opener_end(pattern: &str, position: usize) -> Option<usize> {
-    let remainder = pattern.get(position..)?;
-    if remainder.starts_with("(?<")
-        && !remainder.starts_with("(?<=")
-        && !remainder.starts_with("(?<!")
-    {
-        return remainder.find('>').map(|end| position + end + 1);
-    }
-    if let Some(name) = remainder.strip_prefix("(?'") {
-        return name.find('\'').map(|end| position + 3 + end + 1);
-    }
-    if remainder.starts_with("(?P<") {
-        return remainder.find('>').map(|end| position + end + 1);
-    }
-    None
-}
-
-fn find_direct_fallback(
-    regex: &Regex,
-    string: &OnigString,
-    start_position: usize,
-) -> Option<Vec<CaptureIndex>> {
-    let text = string.content().as_bytes();
-    let start = utf16_to_utf8_offset(string.content(), start_position);
-    let (result, region) = onig_search(
-        regex.as_raw(),
-        text,
-        text.len(),
-        start,
-        text.len(),
-        Some(OnigRegion::new()),
-        ONIG_OPTION_NONE,
-    );
-    if result < 0 {
-        return None;
-    }
-    let region = region?;
-    Some(
-        region
-            .beg
-            .iter()
-            .zip(&region.end)
-            .map(|(&start, &end)| {
-                if start < 0 || end < 0 {
-                    return CaptureIndex {
-                        start: 0,
-                        end: 0,
-                        length: 0,
-                    };
-                }
-                let start = utf8_to_utf16_offset(string.content(), start as usize);
-                let end = utf8_to_utf16_offset(string.content(), end as usize);
-                CaptureIndex {
-                    start,
-                    end,
-                    length: end.saturating_sub(start),
-                }
-            })
-            .collect(),
-    )
-}
-
-fn utf16_to_utf8_offset(value: &str, target: usize) -> usize {
-    let mut utf16_position = 0;
-    for (byte_position, character) in value.char_indices() {
-        if utf16_position >= target {
-            return byte_position;
-        }
-        utf16_position += character.len_utf16();
-        if utf16_position > target {
-            return byte_position + character.len_utf8();
-        }
-    }
-    value.len()
-}
-
-fn utf8_to_utf16_offset(value: &str, target: usize) -> usize {
-    value[..target.min(value.len())]
-        .chars()
-        .map(char::len_utf16)
-        .sum()
-}
-
 impl<T: fmt::Debug> fmt::Display for CompiledRule<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (index, (rule, source)) in self.rules.iter().zip(&self.reg_exps).enumerate() {
@@ -885,7 +645,7 @@ mod tests {
 
     use super::{
         CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions, has_captures,
-        normalize_ferroni_pattern, replace_captures, stabilize_ferroni_captures,
+        normalize_ferroni_pattern, replace_captures,
     };
 
     #[test]
@@ -1048,14 +808,11 @@ mod tests {
     }
 
     #[test]
-    fn preserves_captures_when_direct_search_beats_regset() {
+    fn preserves_captures_in_extended_patterns_with_look_behind() {
         let pattern = r"(?x)
             ( (https?|s?ftp|ftps|file|smb|afp|nfs|(x-)?man(-page)?|gopher|txmt|issue)://|mailto:)
             [-:@a-zA-Z0-9_.,~%+/?=&#;]+(?<![-.,?:#;])
         ";
-        let direct = ferroni::api::Regex::new(&stabilize_ferroni_captures(pattern)).unwrap();
-        let captures = direct.captures("https://github.com\n").unwrap();
-        assert_eq!(captures.get(2).unwrap().as_str(), "https");
         let mut sources = RegExpSourceList::new();
         sources.push(RegExpSource::new(pattern, 1_u32));
         let scanner = sources.compile().unwrap();
@@ -1083,15 +840,64 @@ mod tests {
             )[ \t]*
             (?:([a-zA-Z_][\w.]*)[ \t]*)?
         ";
-        let stabilized = stabilize_ferroni_captures(pattern);
-        let direct = ferroni::api::Regex::builder(&stabilized)
-            .option(ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP)
-            .build()
-            .unwrap();
-        let captures = direct.captures("string message\n").unwrap();
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(pattern, 1_u32));
+        let scanner = sources.compile().unwrap();
 
-        assert_eq!(captures.get(1).unwrap().as_str(), "string");
-        assert_eq!(captures.get(3).unwrap().as_str(), "message");
+        let result = scanner
+            .find_next_match(
+                &OnigString::new("string message\n"),
+                0,
+                ScannerFindOptions::NONE,
+            )
+            .unwrap();
+
+        assert_eq!(result.capture_indices[1].start, 0);
+        assert_eq!(result.capture_indices[1].end, 6);
+        assert_eq!(result.capture_indices[3].start, 7);
+        assert_eq!(result.capture_indices[3].end, 14);
+    }
+
+    #[test]
+    fn keeps_unnamed_groups_capturing_next_to_named_groups() {
+        // Go's function-call rule: without CAPTURE_GROUP the unnamed
+        // alternatives stop capturing and `Println` loses its scope.
+        let pattern = r"(?:((?<=\.)\b\w+)|\b(\w+))(?<brackets>\[(?:[^]\[]|\g<brackets>)*])?(?=\()";
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new(pattern, 1_u32));
+        let scanner = sources.compile().unwrap();
+
+        let result = scanner
+            .find_next_match(
+                &OnigString::new("\tfmt.Println(\"Hello\")\n"),
+                5,
+                ScannerFindOptions::NONE,
+            )
+            .unwrap();
+
+        assert_eq!(result.capture_indices.len(), 4);
+        assert_eq!(result.capture_indices[0].start, 5);
+        assert_eq!(result.capture_indices[0].end, 12);
+        assert_eq!(result.capture_indices[1].start, 5);
+        assert_eq!(result.capture_indices[1].end, 12);
+    }
+
+    #[test]
+    fn matches_any_char_star_from_a_mid_line_position() {
+        // Svelte retokenizes captures on a line prefix and resumes mid-line;
+        // a leading `.*` must still match at the resume position.
+        let mut sources = RegExpSourceList::new();
+        sources.push(RegExpSource::new("--.*", 1_u32));
+        sources.push(RegExpSource::new(".*", 2_u32));
+        let scanner = sources.compile().unwrap();
+
+        let result = scanner
+            .find_next_match(&OnigString::new("<div class"), 5, ScannerFindOptions::NONE)
+            .unwrap();
+
+        assert_eq!(result.rule_id, 2);
+        assert_eq!(result.capture_indices[0].start, 5);
+        assert_eq!(result.capture_indices[0].end, 10);
     }
 
     #[test]
