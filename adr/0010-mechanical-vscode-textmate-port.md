@@ -4,6 +4,10 @@
 
 Accepted
 
+ADR 0012 refines the publishing and runtime boundary established here: asset
+catalogs and rendering now live in the pure `ferriki` crate, and
+`ferriki-core` is the N-API host.
+
 ## Context
 
 The native-only migration gate found structural tokenization failures in the

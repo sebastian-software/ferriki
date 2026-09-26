@@ -52,6 +52,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferriki"
+version = "0.1.0"
+dependencies = [
+ "ferriki-asset-gen",
+ "ferriki-textmate",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ferriki-asset-gen"
 version = "0.1.0"
 dependencies = [
@@ -64,12 +74,10 @@ dependencies = [
 name = "ferriki-core"
 version = "0.1.0"
 dependencies = [
- "ferriki-asset-gen",
- "ferriki-textmate",
+ "ferriki",
  "napi",
  "napi-build",
  "napi-derive",
- "serde",
  "serde_json",
 ]
 

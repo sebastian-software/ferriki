@@ -4,17 +4,21 @@ use std::path::Path;
 use ferriki_textmate::{
     GrammarConfiguration, RawGrammar, ScopeStack, SyncRegistry, Theme, parse_raw_grammar,
 };
-use napi::{Error, Result};
 use serde_json::Value;
 
 use crate::asset_catalog::StandardAssetCatalogs;
+use crate::render::{RenderOptions, render_html_lines};
 use crate::theme_data::{ThemeData, parse_theme_data};
 use crate::tokens::{
     HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
-    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions, split_lines,
-    token_from_metadata, utf16_to_byte_map,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,
+    convert_token_offsets_to_utf8, split_lines, token_from_metadata, utf16_to_byte_map,
 };
+use crate::{Error, ErrorKind, Result};
 
+/// Compatibility bridge for the N-API host. Its token offsets are UTF-16.
+/// Rust consumers should use [`Highlighter`] for UTF-8 byte offsets.
+#[doc(hidden)]
 pub struct HighlighterCore {
     standard_assets: Option<StandardAssetCatalogs>,
     registry: SyncRegistry,
@@ -26,6 +30,206 @@ pub struct HighlighterCore {
     injections: BTreeMap<String, Vec<String>>,
     themes: BTreeMap<String, ThemeData>,
     active_theme: Option<String>,
+}
+
+/// Reusable, synchronous highlighter for Rust consumers.
+///
+/// A highlighter lazily loads grammars and themes from its asset catalogs.
+/// Its mutable API makes cache updates explicit; instances are not shared
+/// across threads. Create one instance and reuse it across many documents.
+///
+/// ```no_run
+/// use std::path::Path;
+/// use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs};
+///
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+///     let mut highlighter = Highlighter::builder().with_assets(assets).build()?;
+///     let highlighted = highlighter.highlight_html_lines(
+///         "fn main() {}", "rust", "nord", &RenderOptions::default(),
+///     )?;
+///     assert_eq!(highlighted.lines.len(), 1);
+///     Ok(())
+/// }
+/// ```
+pub struct Highlighter {
+    core: HighlighterCore,
+}
+
+/// Escaped, balanced inner HTML and the theme colors for one code block.
+///
+/// Each entry in `lines` corresponds to one source line. A Markdown renderer
+/// owns the outer markup and should apply `foreground` and `background` to its
+/// code-block wrapper.
+#[non_exhaustive]
+pub struct HighlightedLines {
+    pub lines: Vec<String>,
+    pub foreground: String,
+    pub background: String,
+    pub theme_name: String,
+}
+
+/// A typed custom TextMate grammar registration.
+pub struct LanguageRegistration {
+    /// Language identifier used by `highlight`.
+    pub id: String,
+    /// Parsed TextMate grammar with a non-empty scope name.
+    pub grammar: RawGrammar,
+    /// Additional language identifiers.
+    pub aliases: Vec<String>,
+    /// Scopes into which this grammar injects.
+    pub inject_to: Vec<String>,
+}
+
+/// Configuration for a reusable highlighter.
+#[derive(Default)]
+pub struct HighlighterBuilder {
+    assets: Option<StandardAssetCatalogs>,
+    languages: Vec<String>,
+    themes: Vec<String>,
+}
+
+impl Highlighter {
+    /// Starts a highlighter builder. Assets are optional for custom-only use.
+    pub fn builder() -> HighlighterBuilder {
+        HighlighterBuilder::default()
+    }
+
+    /// Highlights source into per-line themed tokens.
+    pub fn highlight(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme: &str,
+    ) -> Result<HighlightTokensResult> {
+        self.highlight_with_options(code, language, theme, &TokenizeOptions::default())
+    }
+
+    /// Highlights source with explicit tokenizer limits and metadata options.
+    pub fn highlight_with_options(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme: &str,
+        options: &TokenizeOptions,
+    ) -> Result<HighlightTokensResult> {
+        let mut result = self.core.tokenize(code, language, theme, options)?;
+        convert_token_offsets_to_utf8(&mut result, code)?;
+        Ok(result)
+    }
+
+    /// Highlights directly to escaped, balanced inner HTML per source line.
+    ///
+    /// This avoids converting token offsets when a Markdown renderer only
+    /// needs line fragments. It does not include code-block or line wrappers.
+    pub fn highlight_html_lines(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme: &str,
+        render_options: &RenderOptions,
+    ) -> Result<HighlightedLines> {
+        let tokens = self
+            .core
+            .tokenize(code, language, theme, &TokenizeOptions::default())?;
+        let lines = render_html_lines(&tokens, render_options);
+        Ok(HighlightedLines {
+            lines,
+            foreground: tokens.foreground,
+            background: tokens.background,
+            theme_name: tokens.theme_name,
+        })
+    }
+
+    /// Loads a standard language and its dependencies; returns false if absent.
+    pub fn load_language(&mut self, language: &str) -> Result<bool> {
+        self.core
+            .load_standard_language(language)
+            .map(|scope| scope.is_some())
+    }
+
+    /// Loads a standard theme; returns false if absent.
+    pub fn load_theme(&mut self, theme: &str) -> Result<bool> {
+        self.core.load_standard_theme(theme)
+    }
+
+    /// Registers a custom grammar in Ferriki's JSON registration format.
+    pub fn register_language_json(&mut self, source: &str) -> Result<()> {
+        self.core.load_custom_language(source).map(|_| ())
+    }
+
+    /// Registers a typed custom grammar without a JSON intermediary.
+    pub fn register_language(&mut self, registration: LanguageRegistration) -> Result<()> {
+        self.core.register_language(registration).map(|_| ())
+    }
+
+    /// Registers a custom theme in Ferriki's JSON registration format.
+    pub fn register_theme_json(&mut self, source: &str) -> Result<()> {
+        self.core.load_custom_theme(source).map(|_| ())
+    }
+
+    /// Registers a parsed custom theme without a JSON intermediary.
+    pub fn register_theme(&mut self, theme: ThemeData) -> Result<()> {
+        self.core.register_theme(theme)
+    }
+}
+
+impl HighlighterBuilder {
+    /// Uses portable asset catalogs prepared by a filesystem or memory source.
+    pub fn with_assets(mut self, assets: StandardAssetCatalogs) -> Self {
+        self.assets = Some(assets);
+        self
+    }
+
+    /// Eagerly loads these languages while building the highlighter.
+    pub fn load_languages<I, S>(mut self, languages: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        self.languages.extend(
+            languages
+                .into_iter()
+                .map(|language| language.as_ref().to_owned()),
+        );
+        self
+    }
+
+    /// Eagerly loads these themes while building the highlighter.
+    pub fn load_themes<I, S>(mut self, themes: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        self.themes
+            .extend(themes.into_iter().map(|theme| theme.as_ref().to_owned()));
+        self
+    }
+
+    /// Builds one reusable highlighter. Unknown requested assets are errors.
+    pub fn build(self) -> Result<Highlighter> {
+        let mut core = match self.assets {
+            Some(assets) => HighlighterCore::with_assets(assets)?,
+            None => HighlighterCore::new()?,
+        };
+        for language in self.languages {
+            if core.load_standard_language(&language)?.is_none() {
+                return Err(Error::new(
+                    ErrorKind::UnknownLanguage,
+                    format!("Unknown language `{language}`."),
+                ));
+            }
+        }
+        for theme in self.themes {
+            if !core.load_standard_theme(&theme)? {
+                return Err(Error::new(
+                    ErrorKind::UnknownTheme,
+                    format!("Unknown theme `{theme}`."),
+                ));
+            }
+        }
+        Ok(Highlighter { core })
+    }
 }
 
 impl HighlighterCore {
@@ -45,8 +249,12 @@ impl HighlighterCore {
     }
 
     pub fn with_standard_assets(root: &Path) -> Result<Self> {
+        Self::with_assets(StandardAssetCatalogs::load_from_root(root)?)
+    }
+
+    pub fn with_assets(assets: StandardAssetCatalogs) -> Result<Self> {
         let mut highlighter = Self::new()?;
-        highlighter.standard_assets = Some(StandardAssetCatalogs::load_from_root(root)?);
+        highlighter.standard_assets = Some(assets);
         Ok(highlighter)
     }
 
@@ -73,7 +281,12 @@ impl HighlighterCore {
         let Some(asset) = catalogs.themes.load_asset(theme_id)? else {
             return Ok(false);
         };
-        let theme = parse_theme_data(&asset.id, &asset.theme_json)?;
+        let theme = parse_theme_data(&asset.id, &asset.theme_json).map_err(|error| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                format!("Failed to parse standard theme `{}`: {error}", asset.id),
+            )
+        })?;
         self.themes.insert(asset.id.clone(), theme);
         Ok(true)
     }
@@ -107,36 +320,68 @@ impl HighlighterCore {
     /// kept in the shared lookup model.
     pub fn load_custom_language(&mut self, source: &str) -> Result<Option<String>> {
         let value: Value = serde_json::from_str(source).map_err(|error| {
-            Error::from_reason(format!(
-                "Failed to parse custom language registration: {error}"
-            ))
+            Error::new(
+                ErrorKind::InvalidRegistration,
+                format!("Failed to parse custom language registration: {error}"),
+            )
         })?;
-        let object = value
-            .as_object()
-            .ok_or_else(|| Error::from_reason("Language registration must be a JSON object."))?;
+        let object = value.as_object().ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvalidRegistration,
+                "Language registration must be a JSON object.",
+            )
+        })?;
         let id = object
             .get("name")
             .and_then(Value::as_str)
             .filter(|name| !name.is_empty())
             .ok_or_else(|| {
-                Error::from_reason("Language registration requires a non-empty `name`.")
+                Error::new(
+                    ErrorKind::InvalidRegistration,
+                    "Language registration requires a non-empty `name`.",
+                )
             })?
             .to_owned();
         let grammar = parse_raw_grammar(source, Some("custom-grammar.json")).map_err(|error| {
-            Error::from_reason(format!("Failed to parse custom grammar `{id}`: {error}"))
+            Error::new(
+                ErrorKind::InvalidRegistration,
+                format!("Failed to parse custom grammar `{id}`: {error}"),
+            )
         })?;
         if grammar.scope_name.is_empty() {
-            return Err(Error::from_reason(format!(
-                "Language registration `{id}` requires a non-empty `scopeName`."
-            )));
+            return Err(Error::new(
+                ErrorKind::InvalidRegistration,
+                format!("Language registration `{id}` requires a non-empty `scopeName`."),
+            ));
         }
         let aliases = string_array(object, "aliases")?;
         let inject_to = string_array(object, "injectTo")?;
 
-        if self.loaded_custom_language_ids.contains(&id) {
-            return Ok(Some(grammar.scope_name));
-        }
+        self.register_language(LanguageRegistration {
+            id,
+            grammar,
+            aliases,
+            inject_to,
+        })
+        .map(Some)
+    }
 
+    pub fn register_language(&mut self, registration: LanguageRegistration) -> Result<String> {
+        let LanguageRegistration {
+            id,
+            grammar,
+            aliases,
+            inject_to,
+        } = registration;
+        if id.is_empty() || grammar.scope_name.is_empty() {
+            return Err(Error::new(
+                ErrorKind::InvalidRegistration,
+                "Language registration requires non-empty `id` and `scopeName`.",
+            ));
+        }
+        if self.loaded_custom_language_ids.contains(&id) {
+            return Ok(grammar.scope_name);
+        }
         let scope_name = grammar.scope_name.clone();
         self.registry.add_grammar(
             grammar,
@@ -172,7 +417,7 @@ impl HighlighterCore {
         self.language_aliases.insert(id.clone(), aliases);
         self.loaded_custom_language_ids.insert(id.clone());
         self.loaded_language_order.push(id);
-        Ok(Some(scope_name))
+        Ok(scope_name)
     }
 
     /// Register a user-provided theme using the same parser and TextMate
@@ -180,28 +425,41 @@ impl HighlighterCore {
     /// custom themes can layer on a previously loaded standard/custom theme.
     pub fn load_custom_theme(&mut self, source: &str) -> Result<bool> {
         let value: Value = serde_json::from_str(source).map_err(|error| {
-            Error::from_reason(format!(
-                "Failed to parse custom theme registration: {error}"
-            ))
+            Error::new(
+                ErrorKind::InvalidRegistration,
+                format!("Failed to parse custom theme registration: {error}"),
+            )
         })?;
-        let object = value
-            .as_object()
-            .ok_or_else(|| Error::from_reason("Theme registration must be a JSON object."))?;
+        let object = value.as_object().ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvalidRegistration,
+                "Theme registration must be a JSON object.",
+            )
+        })?;
         let id = object
             .get("name")
             .and_then(Value::as_str)
             .filter(|name| !name.is_empty())
-            .ok_or_else(|| Error::from_reason("Theme registration requires a non-empty `name`."))?
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidRegistration,
+                    "Theme registration requires a non-empty `name`.",
+                )
+            })?
             .to_owned();
         let mut theme = parse_theme_data(&id, source)?;
         if let Some(include) = object.get("include") {
             let include = include.as_str().ok_or_else(|| {
-                Error::from_reason("Theme registration `include` must be a theme name.")
+                Error::new(
+                    ErrorKind::InvalidRegistration,
+                    "Theme registration `include` must be a theme name.",
+                )
             })?;
             if !self.load_standard_theme(include)? {
-                return Err(Error::from_reason(format!(
-                    "Theme `{include}` not found for custom theme include."
-                )));
+                return Err(Error::new(
+                    ErrorKind::InvalidRegistration,
+                    format!("Theme `{include}` not found for custom theme include."),
+                ));
             }
             let base = self
                 .themes
@@ -232,8 +490,22 @@ impl HighlighterCore {
             settings.extend(theme.raw_theme.settings);
             theme.raw_theme.settings = settings;
         }
-        self.themes.insert(id, theme);
+        self.register_theme(theme)?;
         Ok(true)
+    }
+
+    pub fn register_theme(&mut self, theme: ThemeData) -> Result<()> {
+        if theme.name.is_empty() {
+            return Err(Error::new(
+                ErrorKind::InvalidRegistration,
+                "Theme registration requires a non-empty `name`.",
+            ));
+        }
+        if self.active_theme.as_deref() == Some(&theme.name) {
+            self.active_theme = None;
+        }
+        self.themes.insert(theme.name.clone(), theme);
+        Ok(())
     }
 
     fn load_standard_language_inner(
@@ -268,10 +540,10 @@ impl HighlighterCore {
 
         let raw_grammar =
             parse_raw_grammar(&asset.grammar_json, Some("grammar.json")).map_err(|error| {
-                Error::from_reason(format!(
-                    "Failed to parse standard grammar `{}`: {error}",
-                    asset.id
-                ))
+                Error::new(
+                    ErrorKind::AssetFormat,
+                    format!("Failed to parse standard grammar `{}`: {error}", asset.id),
+                )
             })?;
         self.register_loaded_grammar(&asset, raw_grammar);
 
@@ -378,7 +650,12 @@ impl HighlighterCore {
     ) -> Result<HighlightTokensResult> {
         let theme = self
             .activate_theme(theme_id)?
-            .ok_or_else(|| Error::from_reason(format!("Unknown theme `{theme_id}`.")))?
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::UnknownTheme,
+                    format!("Unknown theme `{theme_id}`."),
+                )
+            })?
             .clone();
         if is_plain_language(language) || language == "ansi" {
             let tokens = split_lines(code)
@@ -405,9 +682,12 @@ impl HighlighterCore {
                 theme_name: theme.name,
             });
         }
-        let grammar = self
-            .grammar_for_language(language)?
-            .ok_or_else(|| Error::from_reason(format!("Unknown language `{language}`.")))?;
+        let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownLanguage,
+                format!("Unknown language `{language}`."),
+            )
+        })?;
         let color_map = self.registry.get_color_map();
         let mut state = None;
         let mut output_lines = Vec::new();
@@ -435,9 +715,10 @@ impl HighlighterCore {
                     grammar
                         .tokenize_line(line, state.clone(), options.time_limit_millis)
                         .map_err(|error| {
-                            Error::from_reason(format!(
-                                "Failed to tokenize `{language}` line scopes: {error}"
-                            ))
+                            Error::new(
+                                ErrorKind::Tokenization,
+                                format!("Failed to tokenize `{language}` line scopes: {error}"),
+                            )
                         })?,
                 )
             } else {
@@ -447,7 +728,10 @@ impl HighlighterCore {
             let result = grammar
                 .tokenize_line2(line, state, options.time_limit_millis)
                 .map_err(|error| {
-                    Error::from_reason(format!("Failed to tokenize `{language}` line: {error}"))
+                    Error::new(
+                        ErrorKind::Tokenization,
+                        format!("Failed to tokenize `{language}` line: {error}"),
+                    )
                 })?;
             let utf16_map = utf16_to_byte_map(line);
             let mut line_tokens = Vec::with_capacity(result.tokens.len() / 2);
@@ -508,7 +792,10 @@ impl HighlighterCore {
                 None
             } else {
                 if !self.load_standard_theme(theme_id)? {
-                    return Err(Error::from_reason(format!("Unknown theme `{theme_id}`.")));
+                    return Err(Error::new(
+                        ErrorKind::UnknownTheme,
+                        format!("Unknown theme `{theme_id}`."),
+                    ));
                 }
                 Some(
                     self.themes
@@ -579,9 +866,12 @@ impl HighlighterCore {
             })
             .unwrap_or("nord");
         self.activate_theme(grammar_theme)?;
-        let grammar = self
-            .grammar_for_language(language)?
-            .ok_or_else(|| Error::from_reason(format!("Unknown language `{language}`.")))?;
+        let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownLanguage,
+                format!("Unknown language `{language}`."),
+            )
+        })?;
 
         let mut state = None;
         let mut output_lines = Vec::new();
@@ -607,7 +897,10 @@ impl HighlighterCore {
             let result = grammar
                 .tokenize_line(line, state, options.time_limit_millis)
                 .map_err(|error| {
-                    Error::from_reason(format!("Failed to tokenize `{language}` line: {error}"))
+                    Error::new(
+                        ErrorKind::Tokenization,
+                        format!("Failed to tokenize `{language}` line: {error}"),
+                    )
                 })?;
             state = Some(result.rule_stack);
             output_lines.push(
@@ -720,15 +1013,19 @@ fn string_array(object: &serde_json::Map<String, Value>, key: &str) -> Result<Ve
         return Ok(Vec::new());
     };
     let values = value.as_array().ok_or_else(|| {
-        Error::from_reason(format!("Language registration `{key}` must be an array."))
+        Error::new(
+            ErrorKind::InvalidRegistration,
+            format!("Language registration `{key}` must be an array."),
+        )
     })?;
     values
         .iter()
         .map(|value| {
             value.as_str().map(str::to_owned).ok_or_else(|| {
-                Error::from_reason(format!(
-                    "Language registration `{key}` must contain strings."
-                ))
+                Error::new(
+                    ErrorKind::InvalidRegistration,
+                    format!("Language registration `{key}` must contain strings."),
+                )
             })
         })
         .collect()
@@ -739,7 +1036,10 @@ fn is_plain_language(language: &str) -> bool {
 }
 
 fn theme_error(error: ferriki_textmate::ThemeError) -> Error {
-    Error::from_reason(format!("Failed to resolve TextMate theme: {error}"))
+    Error::new(
+        ErrorKind::Theme,
+        format!("Failed to resolve TextMate theme: {error}"),
+    )
 }
 
 #[cfg(test)]

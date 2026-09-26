@@ -1,47 +1,14 @@
 # ferriki-core
 
-`ferriki-core` is Ferriki's Rust runtime crate.
+`ferriki-core` is the unpublished N-API host behind the Ferriki Node package.
+Its native methods call the shared [`ferriki`](../ferriki/README.md) Rust
+runtime and map typed Rust errors to N-API errors. It does not own a separate
+grammar, theme, tokenizer, asset, or HTML implementation.
 
-It owns the native side of highlighting: grammar loading, theme handling,
-runtime state, tokenization, rendering, and the N-API boundary used by the Node
-package.
-
-## Role In The Architecture
-
-Ferriki is intentionally split like this:
-
-- `ferriki-core`: native runtime and binding surface
-- `node/ferriki`: Node package and compatibility-facing entrypoint
-- `ferroni`: external regex dependency, not a vendored repository component
-
-The scanner compatibility baseline is Ferroni **1.3.2 or newer within the
-1.x release line**. The workspace lockfile pins the release used by CI; any
-Ferroni upgrade must rerun the TextMate oracle and Shiki compatibility lanes.
-
-The design target is that runtime behavior is defined here first. JavaScript is
-there to load the addon, expose the public API, and keep compatibility stable,
-not to reimplement the highlighter.
-
-## Scope Boundary
-
-`ferriki-core` is the native home of the highlighting runtime.
-It does not currently implement ecosystem adapters like `markdown-it`,
-`rehype`, VitePress-facing integrations, or `colorized-brackets`.
-
-That boundary is intentional. Ferriki would rather keep those areas out of the
-product than rebuild the old JS-heavy architecture around the core again.
-
-If Ferriki expands into higher-level features later, the preferred direction is
-to build them as native lanes here instead of treating Rust as a token producer
-and JavaScript as the real runtime.
-
-Any future higher-level lane should be added only if it can stay true to the
-same Rust-first boundary, instead of reintroducing a JS-heavy runtime split.
-
-## Current Status
-
-This crate is repository-owned but not yet positioned as a separately published
-crate. For now it is the internal native core behind the Ferriki Node package.
+The public Rust highlighter API, lifecycle, asset loading, and Ferromark
+adapter contract are documented in [`docs/rust-api.md`](../../docs/rust-api.md).
+The Node API contract remains in
+[`docs/ferriki-1.0-api-contract.md`](../../docs/ferriki-1.0-api-contract.md).
 
 ## Development
 

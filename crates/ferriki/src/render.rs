@@ -32,6 +32,34 @@ pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> S
         .map_or_else(String::new, hast_node_to_html)
 }
 
+/// Renders trusted, tag-balanced HTML fragments for each highlighted line.
+///
+/// The fragments contain escaped source text and escaped style attributes.
+/// They do not include line wrappers or a `<pre><code>` pair, so a Markdown
+/// renderer can own those structures and its line annotations. The number of
+/// fragments matches `result.tokens.len()`, including trailing empty lines.
+pub fn render_html_lines(result: &HighlightTokensResult, options: &RenderOptions) -> Vec<String> {
+    prepare_tokens(&result.tokens, options)
+        .iter()
+        .map(|line| {
+            let mut html = String::new();
+            for token in line {
+                html.push_str("<span");
+                let style = token_style(token);
+                if !style.is_empty() {
+                    html.push_str(" style=\"");
+                    html.push_str(&escape_attribute(&style));
+                    html.push('"');
+                }
+                html.push('>');
+                html.push_str(&escape_html(&token.content));
+                html.push_str("</span>");
+            }
+            html
+        })
+        .collect()
+}
+
 pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
     let tokens = prepare_tokens(&result.tokens, options);
     let mut pre_properties = Map::new();
@@ -314,5 +342,34 @@ mod tests {
         );
         assert!(html.contains("&#x3C;"));
         assert!(!hast.to_string().contains("&#x3C;"));
+    }
+
+    #[test]
+    fn line_fragments_match_the_html_renderer_inner_content() {
+        let result = javascript_tokens("a < b\n\"x\" & 😀\n");
+        let options = RenderOptions::default();
+        let hast = render_hast(&result, &options);
+        let lines = render_html_lines(&result, &options);
+        let children = hast["children"][0]["children"][0]["children"]
+            .as_array()
+            .expect("code children");
+        let expected = children
+            .iter()
+            .filter(|node| node["type"] == "element")
+            .map(|line| {
+                line["children"]
+                    .as_array()
+                    .expect("line children")
+                    .iter()
+                    .map(hast_node_to_html)
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(lines, expected);
+        assert_eq!(lines.len(), 3);
+        assert!(lines[0].contains("&#x3C;"));
+        assert!(lines[1].contains("&#x26;"));
+        assert!(lines[2].is_empty());
     }
 }

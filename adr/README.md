@@ -16,6 +16,7 @@ records refine earlier ones where noted.
 | [0009](0009-native-only-runtime.md) | Native-only runtime — JS is a facade, WASM is the future fallback |
 | [0010](0010-mechanical-vscode-textmate-port.md) | Mechanically port vscode-textmate into a separate Rust crate |
 | [0011](0011-ferriki-1.0-api-contract.md) | Freeze the Ferriki 1.0 Node API contract |
+| [0012](0012-publishable-rust-highlighter.md) | Publishable Rust highlighter and external Ferromark adapter |
 
 ## Adding a record
 
