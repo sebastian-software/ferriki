@@ -3,12 +3,14 @@ use ferriki_asset_gen::{
     ThemeAssetEntry, ThemeManifest, decode_language_asset, decode_language_manifest,
     decode_theme_asset, decode_theme_manifest,
 };
-use napi::Error;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+use crate::{Error, ErrorKind, Result};
 
 pub struct StandardAssetCatalogs {
     pub languages: LanguageAssetCatalog,
@@ -16,16 +18,65 @@ pub struct StandardAssetCatalogs {
 }
 
 impl StandardAssetCatalogs {
-    pub fn load_from_root(root_dir: &Path) -> Result<Self, Error> {
+    pub fn load_from_root(root_dir: &Path) -> Result<Self> {
         Ok(Self {
             languages: LanguageAssetCatalog::load_from_dir(&root_dir.join("languages"))?,
             themes: ThemeAssetCatalog::load_from_dir(&root_dir.join("themes"))?,
         })
     }
+
+    /// Builds lazy catalogs from embedded binary manifests and asset bytes.
+    ///
+    /// The binary format is versioned and validated on load. Applications can
+    /// use `include_bytes!` for the manifests and chosen assets, without a
+    /// filesystem or a Node package at runtime.
+    pub fn from_embedded(
+        language_manifest: &[u8],
+        language_assets: HashMap<String, Vec<u8>>,
+        theme_manifest: &[u8],
+        theme_assets: HashMap<String, Vec<u8>>,
+    ) -> Result<Self> {
+        Ok(Self {
+            languages: LanguageAssetCatalog::from_embedded(language_manifest, language_assets)?,
+            themes: ThemeAssetCatalog::from_embedded(theme_manifest, theme_assets)?,
+        })
+    }
+}
+
+enum AssetStore {
+    Directory(PathBuf),
+    Embedded(HashMap<String, Vec<u8>>),
+}
+
+impl AssetStore {
+    fn read(&self, file: &str) -> Result<Cow<'_, [u8]>> {
+        if Path::new(file).components().count() != 1
+            || Path::new(file).file_name().and_then(|name| name.to_str()) != Some(file)
+            || file == "."
+            || file == ".."
+        {
+            return Err(Error::new(
+                ErrorKind::AssetFormat,
+                format!("Invalid Ferriki asset filename `{file}`."),
+            ));
+        }
+        match self {
+            Self::Directory(dir) => read_bytes(&dir.join(file)).map(Cow::Owned),
+            Self::Embedded(assets) => assets
+                .get(file)
+                .map(|bytes| Cow::Borrowed(bytes.as_slice()))
+                .ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::AssetIo,
+                        format!("Embedded Ferriki asset `{file}` is missing."),
+                    )
+                }),
+        }
+    }
 }
 
 pub struct LanguageAssetCatalog {
-    asset_dir: PathBuf,
+    asset_store: AssetStore,
     manifest: LanguageManifest,
     entries_by_id: HashMap<String, LanguageAssetEntry>,
     ids_by_scope: HashMap<String, String>,
@@ -34,11 +85,29 @@ pub struct LanguageAssetCatalog {
 }
 
 impl LanguageAssetCatalog {
-    pub fn load_from_dir(asset_dir: &Path) -> Result<Self, Error> {
+    pub fn load_from_dir(asset_dir: &Path) -> Result<Self> {
         let manifest_path = asset_dir.join("manifest.fkindex");
         let manifest = decode_language_manifest(&read_bytes(&manifest_path)?).map_err(|err| {
-            Error::from_reason(format!("Failed to decode language manifest: {err}"))
+            Error::new(
+                ErrorKind::AssetFormat,
+                format!("Failed to decode language manifest: {err}"),
+            )
         })?;
+        Self::from_manifest(manifest, AssetStore::Directory(asset_dir.to_path_buf()))
+    }
+
+    /// Creates a catalog from an embedded manifest and lazy asset byte map.
+    pub fn from_embedded(manifest_bytes: &[u8], assets: HashMap<String, Vec<u8>>) -> Result<Self> {
+        let manifest = decode_language_manifest(manifest_bytes).map_err(|err| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                format!("Failed to decode language manifest: {err}"),
+            )
+        })?;
+        Self::from_manifest(manifest, AssetStore::Embedded(assets))
+    }
+
+    fn from_manifest(manifest: LanguageManifest, asset_store: AssetStore) -> Result<Self> {
         validate_format_version("language manifest", manifest.format_version)?;
         let mut entries_by_id = HashMap::with_capacity(manifest.entries.len());
         let mut ids_by_scope = HashMap::with_capacity(manifest.entries.len());
@@ -53,7 +122,7 @@ impl LanguageAssetCatalog {
         }
 
         Ok(Self {
-            asset_dir: asset_dir.to_path_buf(),
+            asset_store,
             manifest,
             entries_by_id,
             ids_by_scope,
@@ -89,7 +158,7 @@ impl LanguageAssetCatalog {
             .collect()
     }
 
-    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>, Error> {
+    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>> {
         let Some(resolved_id) = self.resolve_id(requested) else {
             return Ok(None);
         };
@@ -101,11 +170,12 @@ impl LanguageAssetCatalog {
         let entry = self.entries_by_id.get(resolved_id).ok_or_else(|| {
             Error::from_reason("Ferriki language asset entry missing after resolution.")
         })?;
-        let asset = decode_language_asset(&read_bytes(&self.asset_dir.join(&entry.asset_file))?)
-            .map_err(|err| {
-                Error::from_reason(format!(
-                    "Failed to decode language asset `{resolved_id}`: {err}"
-                ))
+        let asset =
+            decode_language_asset(&self.asset_store.read(&entry.asset_file)?).map_err(|err| {
+                Error::new(
+                    ErrorKind::AssetFormat,
+                    format!("Failed to decode language asset `{resolved_id}`: {err}"),
+                )
             })?;
         validate_format_version(
             &format!("language asset `{resolved_id}`"),
@@ -120,17 +190,36 @@ impl LanguageAssetCatalog {
 }
 
 pub struct ThemeAssetCatalog {
-    asset_dir: PathBuf,
+    asset_store: AssetStore,
     manifest: ThemeManifest,
     entries_by_id: HashMap<String, ThemeAssetEntry>,
     cache: RefCell<HashMap<String, Arc<ThemeAsset>>>,
 }
 
 impl ThemeAssetCatalog {
-    pub fn load_from_dir(asset_dir: &Path) -> Result<Self, Error> {
+    pub fn load_from_dir(asset_dir: &Path) -> Result<Self> {
         let manifest_path = asset_dir.join("manifest.fkindex");
-        let manifest = decode_theme_manifest(&read_bytes(&manifest_path)?)
-            .map_err(|err| Error::from_reason(format!("Failed to decode theme manifest: {err}")))?;
+        let manifest = decode_theme_manifest(&read_bytes(&manifest_path)?).map_err(|err| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                format!("Failed to decode theme manifest: {err}"),
+            )
+        })?;
+        Self::from_manifest(manifest, AssetStore::Directory(asset_dir.to_path_buf()))
+    }
+
+    /// Creates a catalog from an embedded manifest and lazy asset byte map.
+    pub fn from_embedded(manifest_bytes: &[u8], assets: HashMap<String, Vec<u8>>) -> Result<Self> {
+        let manifest = decode_theme_manifest(manifest_bytes).map_err(|err| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                format!("Failed to decode theme manifest: {err}"),
+            )
+        })?;
+        Self::from_manifest(manifest, AssetStore::Embedded(assets))
+    }
+
+    fn from_manifest(manifest: ThemeManifest, asset_store: AssetStore) -> Result<Self> {
         validate_format_version("theme manifest", manifest.format_version)?;
         let mut entries_by_id = HashMap::with_capacity(manifest.entries.len());
         for entry in &manifest.entries {
@@ -138,7 +227,7 @@ impl ThemeAssetCatalog {
         }
 
         Ok(Self {
-            asset_dir: asset_dir.to_path_buf(),
+            asset_store,
             manifest,
             entries_by_id,
             cache: RefCell::new(HashMap::new()),
@@ -149,7 +238,7 @@ impl ThemeAssetCatalog {
         &self.manifest
     }
 
-    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<ThemeAsset>>, Error> {
+    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<ThemeAsset>>> {
         if let Some(cached) = self.cache.borrow().get(requested) {
             return Ok(Some(cached.clone()));
         }
@@ -157,9 +246,12 @@ impl ThemeAssetCatalog {
         let Some(entry) = self.entries_by_id.get(requested) else {
             return Ok(None);
         };
-        let asset = decode_theme_asset(&read_bytes(&self.asset_dir.join(&entry.asset_file))?)
-            .map_err(|err| {
-                Error::from_reason(format!("Failed to decode theme asset `{requested}`: {err}"))
+        let asset =
+            decode_theme_asset(&self.asset_store.read(&entry.asset_file)?).map_err(|err| {
+                Error::new(
+                    ErrorKind::AssetFormat,
+                    format!("Failed to decode theme asset `{requested}`: {err}"),
+                )
             })?;
         validate_format_version(&format!("theme asset `{requested}`"), asset.format_version)?;
         let asset = Arc::new(asset);
@@ -170,18 +262,23 @@ impl ThemeAssetCatalog {
     }
 }
 
-fn read_bytes(path: &Path) -> Result<Vec<u8>, Error> {
-    fs::read(path)
-        .map_err(|err| Error::from_reason(format!("Failed to read `{}`: {err}", path.display())))
+fn read_bytes(path: &Path) -> Result<Vec<u8>> {
+    fs::read(path).map_err(|err| {
+        Error::new(
+            ErrorKind::AssetIo,
+            format!("Failed to read `{}`: {err}", path.display()),
+        )
+    })
 }
 
-fn validate_format_version(kind: &str, actual: u32) -> Result<(), Error> {
+fn validate_format_version(kind: &str, actual: u32) -> Result<()> {
     if actual == FORMAT_VERSION {
         return Ok(());
     }
-    Err(Error::from_reason(format!(
-        "Unsupported Ferriki {kind} format version {actual}; expected {FORMAT_VERSION}."
-    )))
+    Err(Error::new(
+        ErrorKind::AssetFormat,
+        format!("Unsupported Ferriki {kind} format version {actual}; expected {FORMAT_VERSION}."),
+    ))
 }
 
 #[cfg(test)]
@@ -314,6 +411,94 @@ mod tests {
                 .is_some()
         );
 
+        fs::remove_dir_all(output_dir).expect("cleanup");
+    }
+
+    #[test]
+    fn embedded_catalogs_work_after_the_filesystem_source_is_removed() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let output_dir = temp_output_dir("embedded-catalogs");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &output_dir,
+            AssetSourceRef {
+                upstream: "textmate-grammars-themes".to_owned(),
+                version: Some("1.0.0".to_owned()),
+                commit: Some("abc123".to_owned()),
+            },
+        )
+        .expect("generate");
+
+        let language_dir = output_dir.join("languages");
+        let theme_dir = output_dir.join("themes");
+        let language_manifest = fs::read(language_dir.join("manifest.fkindex")).expect("manifest");
+        let theme_manifest = fs::read(theme_dir.join("manifest.fkindex")).expect("manifest");
+        let language_entries = decode_language_manifest(&language_manifest).expect("decode");
+        let theme_entries = decode_theme_manifest(&theme_manifest).expect("decode");
+        let language_assets = language_entries
+            .entries
+            .iter()
+            .map(|entry| {
+                (
+                    entry.asset_file.clone(),
+                    fs::read(language_dir.join(&entry.asset_file)).expect("language asset"),
+                )
+            })
+            .collect();
+        let theme_assets = theme_entries
+            .entries
+            .iter()
+            .map(|entry| {
+                (
+                    entry.asset_file.clone(),
+                    fs::read(theme_dir.join(&entry.asset_file)).expect("theme asset"),
+                )
+            })
+            .collect();
+
+        let catalogs = StandardAssetCatalogs::from_embedded(
+            &language_manifest,
+            language_assets,
+            &theme_manifest,
+            theme_assets,
+        )
+        .expect("embedded catalogs");
+        fs::remove_dir_all(output_dir).expect("cleanup");
+
+        let mut highlighter = crate::Highlighter::builder()
+            .with_assets(catalogs)
+            .load_languages(["js"])
+            .load_themes(["vitesse-light"])
+            .build()
+            .expect("highlighter");
+        let result = highlighter
+            .highlight("const x = 1;", "js", "vitesse-light")
+            .expect("highlight");
+        assert!(!result.tokens[0].is_empty());
+    }
+
+    #[test]
+    fn missing_embedded_asset_is_a_typed_io_error() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let output_dir = temp_output_dir("missing-embedded-asset");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &output_dir,
+            AssetSourceRef {
+                upstream: "textmate-grammars-themes".to_owned(),
+                version: None,
+                commit: None,
+            },
+        )
+        .expect("generate");
+        let language_manifest =
+            fs::read(output_dir.join("languages/manifest.fkindex")).expect("manifest");
+        let catalog = LanguageAssetCatalog::from_embedded(&language_manifest, HashMap::new())
+            .expect("catalog");
+        let error = catalog.load_asset("js").expect_err("missing asset");
+        assert_eq!(error.kind(), ErrorKind::AssetIo);
         fs::remove_dir_all(output_dir).expect("cleanup");
     }
 }

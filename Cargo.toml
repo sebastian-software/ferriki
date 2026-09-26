@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/ferriki-asset-gen",
+  "crates/ferriki",
   "crates/ferriki-core",
   "crates/ferriki-textmate",
 ]

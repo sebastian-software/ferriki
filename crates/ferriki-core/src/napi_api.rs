@@ -16,30 +16,32 @@ pub struct FerrikiHighlighter {
 impl FerrikiHighlighter {
     #[napi(js_name = "loadStandardTheme")]
     pub fn load_standard_theme(&self, theme_id: String) -> Result<bool> {
-        self.core.borrow_mut().load_standard_theme(&theme_id)
+        native(self.core.borrow_mut().load_standard_theme(&theme_id))
     }
 
     #[napi(js_name = "loadStandardGrammar")]
     pub fn load_standard_grammar(&self, language: String) -> Result<Option<String>> {
-        self.core.borrow_mut().load_standard_language(&language)
+        native(self.core.borrow_mut().load_standard_language(&language))
     }
 
     #[napi(js_name = "loadCustomGrammar")]
     pub fn load_custom_grammar(&self, registration_json: String) -> Result<Option<String>> {
-        self.core
-            .borrow_mut()
-            .load_custom_language(&registration_json)
+        native(
+            self.core
+                .borrow_mut()
+                .load_custom_language(&registration_json),
+        )
     }
 
     #[napi(js_name = "loadCustomTheme")]
     pub fn load_custom_theme(&self, registration_json: String) -> Result<bool> {
-        self.core.borrow_mut().load_custom_theme(&registration_json)
+        native(self.core.borrow_mut().load_custom_theme(&registration_json))
     }
 
     #[napi(js_name = "resolveGrammarScope")]
     pub fn resolve_grammar_scope(&self, language: String) -> Result<Option<String>> {
         let mut core = self.core.borrow_mut();
-        core.load_standard_language(&language)?;
+        native(core.load_standard_language(&language))?;
         Ok(core.resolve_scope(&language))
     }
 
@@ -56,12 +58,12 @@ impl FerrikiHighlighter {
     #[napi(js_name = "codeToTokens")]
     pub fn code_to_tokens(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
-        let tokens = self.core.borrow_mut().tokenize(
+        let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
             &options.theme,
             &options.tokenize,
-        )?;
+        ))?;
         serde_json::to_string(&tokens)
             .map_err(|error| Error::from_reason(format!("Failed to serialize tokens: {error}")))
     }
@@ -89,12 +91,12 @@ impl FerrikiHighlighter {
                 Ok((color.to_owned(), name.to_owned()))
             })
             .collect::<Result<Vec<_>>>()?;
-        let tokens = self.core.borrow_mut().tokenize_with_themes(
+        let tokens = native(self.core.borrow_mut().tokenize_with_themes(
             &code,
             &options.language,
             &themes,
             &options.tokenize,
-        )?;
+        ))?;
         serde_json::to_string(&tokens).map_err(|error| {
             Error::from_reason(format!("Failed to serialize themed tokens: {error}"))
         })
@@ -103,12 +105,12 @@ impl FerrikiHighlighter {
     #[napi(js_name = "codeToHast")]
     pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
-        let tokens = self.core.borrow_mut().tokenize(
+        let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
             &options.theme,
             &options.tokenize,
-        )?;
+        ))?;
         serde_json::to_string(&render_hast(&tokens, &options.render))
             .map_err(|error| Error::from_reason(format!("Failed to serialize HAST: {error}")))
     }
@@ -116,12 +118,12 @@ impl FerrikiHighlighter {
     #[napi(js_name = "codeToHtml")]
     pub fn code_to_html(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
-        let tokens = self.core.borrow_mut().tokenize(
+        let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
             &options.theme,
             &options.tokenize,
-        )?;
+        ))?;
         Ok(render_html(&tokens, &options.render))
     }
 
@@ -141,12 +143,16 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
         .and_then(Value::as_str)
         .map(Path::new);
     let core = match standard_asset_root {
-        Some(root) => HighlighterCore::with_standard_assets(root)?,
-        None => HighlighterCore::new()?,
+        Some(root) => native(HighlighterCore::with_standard_assets(root))?,
+        None => native(HighlighterCore::new())?,
     };
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
     })
+}
+
+fn native<T>(result: ferriki::Result<T>) -> Result<T> {
+    result.map_err(|error| Error::from_reason(error.to_string()))
 }
 
 struct HighlightOptions {

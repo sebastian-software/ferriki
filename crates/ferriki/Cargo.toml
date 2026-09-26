@@ -1,7 +1,7 @@
 [package]
-name = "ferriki-textmate"
+name = "ferriki"
 version = "0.1.0"
-description = "TextMate grammar tokenizer and theme resolver behind Ferriki"
+description = "Reusable native Rust syntax highlighter with TextMate grammars"
 readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
@@ -14,7 +14,8 @@ categories.workspace = true
 publish = ["crates-io"]
 
 [dependencies]
-ferroni = { workspace = true }
+ferriki-asset-gen = { version = "0.1.0", path = "../ferriki-asset-gen" }
+ferriki-textmate = { version = "0.1.0", path = "../ferriki-textmate" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
