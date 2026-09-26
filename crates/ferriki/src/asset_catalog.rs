@@ -13,8 +13,8 @@ use std::sync::Arc;
 use crate::{Error, ErrorKind, Result};
 
 pub struct StandardAssetCatalogs {
-    pub languages: LanguageAssetCatalog,
-    pub themes: ThemeAssetCatalog,
+    pub(crate) languages: LanguageAssetCatalog,
+    pub(crate) themes: ThemeAssetCatalog,
 }
 
 impl StandardAssetCatalogs {
@@ -32,20 +32,43 @@ impl StandardAssetCatalogs {
     /// filesystem or a Node package at runtime.
     pub fn from_embedded(
         language_manifest: &[u8],
-        language_assets: HashMap<String, Vec<u8>>,
+        language_assets: HashMap<String, Cow<'static, [u8]>>,
         theme_manifest: &[u8],
-        theme_assets: HashMap<String, Vec<u8>>,
+        theme_assets: HashMap<String, Cow<'static, [u8]>>,
     ) -> Result<Self> {
         Ok(Self {
             languages: LanguageAssetCatalog::from_embedded(language_manifest, language_assets)?,
             themes: ThemeAssetCatalog::from_embedded(theme_manifest, theme_assets)?,
         })
     }
+
+    /// Enumerates bundled language IDs without decoding grammar payloads.
+    pub fn language_ids(&self) -> impl Iterator<Item = &str> {
+        self.languages
+            .manifest()
+            .entries
+            .iter()
+            .map(|entry| entry.id.as_str())
+    }
+
+    /// Enumerates bundled theme IDs without decoding theme payloads.
+    pub fn theme_ids(&self) -> impl Iterator<Item = &str> {
+        self.themes
+            .manifest()
+            .entries
+            .iter()
+            .map(|entry| entry.id.as_str())
+    }
+
+    /// Resolves a standard language ID, alias, or scope name.
+    pub fn resolve_language(&self, requested: &str) -> Option<&str> {
+        self.languages.resolve_id(requested)
+    }
 }
 
 enum AssetStore {
     Directory(PathBuf),
-    Embedded(HashMap<String, Vec<u8>>),
+    Embedded(HashMap<String, Cow<'static, [u8]>>),
 }
 
 impl AssetStore {
@@ -64,7 +87,7 @@ impl AssetStore {
             Self::Directory(dir) => read_bytes(&dir.join(file)).map(Cow::Owned),
             Self::Embedded(assets) => assets
                 .get(file)
-                .map(|bytes| Cow::Borrowed(bytes.as_slice()))
+                .map(|bytes| Cow::Borrowed(bytes.as_ref()))
                 .ok_or_else(|| {
                     Error::new(
                         ErrorKind::AssetIo,
@@ -75,7 +98,7 @@ impl AssetStore {
     }
 }
 
-pub struct LanguageAssetCatalog {
+pub(crate) struct LanguageAssetCatalog {
     asset_store: AssetStore,
     manifest: LanguageManifest,
     entries_by_id: HashMap<String, LanguageAssetEntry>,
@@ -85,7 +108,7 @@ pub struct LanguageAssetCatalog {
 }
 
 impl LanguageAssetCatalog {
-    pub fn load_from_dir(asset_dir: &Path) -> Result<Self> {
+    pub(crate) fn load_from_dir(asset_dir: &Path) -> Result<Self> {
         let manifest_path = asset_dir.join("manifest.fkindex");
         let manifest = decode_language_manifest(&read_bytes(&manifest_path)?).map_err(|err| {
             Error::new(
@@ -97,7 +120,10 @@ impl LanguageAssetCatalog {
     }
 
     /// Creates a catalog from an embedded manifest and lazy asset byte map.
-    pub fn from_embedded(manifest_bytes: &[u8], assets: HashMap<String, Vec<u8>>) -> Result<Self> {
+    pub(crate) fn from_embedded(
+        manifest_bytes: &[u8],
+        assets: HashMap<String, Cow<'static, [u8]>>,
+    ) -> Result<Self> {
         let manifest = decode_language_manifest(manifest_bytes).map_err(|err| {
             Error::new(
                 ErrorKind::AssetFormat,
@@ -131,11 +157,11 @@ impl LanguageAssetCatalog {
         })
     }
 
-    pub fn manifest(&self) -> &LanguageManifest {
+    pub(crate) fn manifest(&self) -> &LanguageManifest {
         &self.manifest
     }
 
-    pub fn resolve_id(&self, requested: &str) -> Option<&str> {
+    pub(crate) fn resolve_id(&self, requested: &str) -> Option<&str> {
         if let Some((resolved_id, _entry)) = self.entries_by_id.get_key_value(requested) {
             return Some(resolved_id.as_str());
         }
@@ -145,20 +171,7 @@ impl LanguageAssetCatalog {
         self.aliases.get(requested).map(String::as_str)
     }
 
-    pub fn entries_injecting_into(&self, target_scope: &str) -> Vec<&LanguageAssetEntry> {
-        self.manifest
-            .entries
-            .iter()
-            .filter(|entry| {
-                entry
-                    .inject_to
-                    .iter()
-                    .any(|candidate| candidate == target_scope)
-            })
-            .collect()
-    }
-
-    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>> {
+    pub(crate) fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>> {
         let Some(resolved_id) = self.resolve_id(requested) else {
             return Ok(None);
         };
@@ -189,7 +202,7 @@ impl LanguageAssetCatalog {
     }
 }
 
-pub struct ThemeAssetCatalog {
+pub(crate) struct ThemeAssetCatalog {
     asset_store: AssetStore,
     manifest: ThemeManifest,
     entries_by_id: HashMap<String, ThemeAssetEntry>,
@@ -197,7 +210,7 @@ pub struct ThemeAssetCatalog {
 }
 
 impl ThemeAssetCatalog {
-    pub fn load_from_dir(asset_dir: &Path) -> Result<Self> {
+    pub(crate) fn load_from_dir(asset_dir: &Path) -> Result<Self> {
         let manifest_path = asset_dir.join("manifest.fkindex");
         let manifest = decode_theme_manifest(&read_bytes(&manifest_path)?).map_err(|err| {
             Error::new(
@@ -209,7 +222,10 @@ impl ThemeAssetCatalog {
     }
 
     /// Creates a catalog from an embedded manifest and lazy asset byte map.
-    pub fn from_embedded(manifest_bytes: &[u8], assets: HashMap<String, Vec<u8>>) -> Result<Self> {
+    pub(crate) fn from_embedded(
+        manifest_bytes: &[u8],
+        assets: HashMap<String, Cow<'static, [u8]>>,
+    ) -> Result<Self> {
         let manifest = decode_theme_manifest(manifest_bytes).map_err(|err| {
             Error::new(
                 ErrorKind::AssetFormat,
@@ -234,11 +250,11 @@ impl ThemeAssetCatalog {
         })
     }
 
-    pub fn manifest(&self) -> &ThemeManifest {
+    pub(crate) fn manifest(&self) -> &ThemeManifest {
         &self.manifest
     }
 
-    pub fn load_asset(&self, requested: &str) -> Result<Option<Arc<ThemeAsset>>> {
+    pub(crate) fn load_asset(&self, requested: &str) -> Result<Option<Arc<ThemeAsset>>> {
         if let Some(cached) = self.cache.borrow().get(requested) {
             return Ok(Some(cached.clone()));
         }
@@ -345,7 +361,17 @@ mod tests {
 
         let catalog =
             LanguageAssetCatalog::load_from_dir(&output_dir.join("languages")).expect("catalog");
-        let injecting = catalog.entries_injecting_into("text.html.markdown");
+        let injecting = catalog
+            .manifest()
+            .entries
+            .iter()
+            .filter(|entry| {
+                entry
+                    .inject_to
+                    .iter()
+                    .any(|scope| scope == "text.html.markdown")
+            })
+            .collect::<Vec<_>>();
 
         assert_eq!(injecting.len(), 1);
         assert_eq!(injecting[0].id, "javascript");
@@ -442,7 +468,9 @@ mod tests {
             .map(|entry| {
                 (
                     entry.asset_file.clone(),
-                    fs::read(language_dir.join(&entry.asset_file)).expect("language asset"),
+                    Cow::Owned(
+                        fs::read(language_dir.join(&entry.asset_file)).expect("language asset"),
+                    ),
                 )
             })
             .collect();
@@ -452,7 +480,7 @@ mod tests {
             .map(|entry| {
                 (
                     entry.asset_file.clone(),
-                    fs::read(theme_dir.join(&entry.asset_file)).expect("theme asset"),
+                    Cow::Owned(fs::read(theme_dir.join(&entry.asset_file)).expect("theme asset")),
                 )
             })
             .collect();
@@ -500,5 +528,17 @@ mod tests {
         let error = catalog.load_asset("js").expect_err("missing asset");
         assert_eq!(error.kind(), ErrorKind::AssetIo);
         fs::remove_dir_all(output_dir).expect("cleanup");
+    }
+
+    #[test]
+    fn borrowed_embedded_bytes_are_not_copied() {
+        static ASSET: &[u8] = b"embedded";
+        let store = AssetStore::Embedded(HashMap::from([(
+            "asset.fkgram".to_owned(),
+            Cow::Borrowed(ASSET),
+        )]));
+        let loaded = store.read("asset.fkgram").expect("borrowed asset");
+        assert!(matches!(loaded, Cow::Borrowed(_)));
+        assert_eq!(loaded.as_ptr(), ASSET.as_ptr());
     }
 }

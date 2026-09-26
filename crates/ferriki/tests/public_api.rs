@@ -14,6 +14,16 @@ fn assets() -> StandardAssetCatalogs {
 }
 
 #[test]
+fn catalogs_are_sendable_and_enumerate_without_binary_types() {
+    fn assert_send<T: Send>() {}
+    assert_send::<StandardAssetCatalogs>();
+    let catalogs = assets();
+    assert!(catalogs.language_ids().any(|id| id == "rust"));
+    assert!(catalogs.theme_ids().any(|id| id == "nord"));
+    assert_eq!(catalogs.resolve_language("rs"), Some("rust"));
+}
+
+#[test]
 fn reusable_rust_api_exposes_byte_offsets_and_balanced_line_html() {
     let mut highlighter = Highlighter::builder()
         .with_assets(assets())
@@ -40,7 +50,10 @@ fn reusable_rust_api_exposes_byte_offsets_and_balanced_line_html() {
     let direct = highlighter
         .highlight_html_lines(code, "rust", "nord", &RenderOptions::default())
         .expect("direct line HTML");
-    assert_eq!(direct, lines);
+    assert_eq!(direct.lines, lines);
+    assert_eq!(direct.foreground, highlighted.foreground);
+    assert_eq!(direct.background, highlighted.background);
+    assert_eq!(direct.theme_name, "nord");
 }
 
 #[test]

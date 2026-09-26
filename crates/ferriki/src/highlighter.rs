@@ -16,6 +16,9 @@ use crate::tokens::{
 };
 use crate::{Error, ErrorKind, Result};
 
+/// Compatibility bridge for the N-API host. Its token offsets are UTF-16.
+/// Rust consumers should use [`Highlighter`] for UTF-8 byte offsets.
+#[doc(hidden)]
 pub struct HighlighterCore {
     standard_assets: Option<StandardAssetCatalogs>,
     registry: SyncRegistry,
@@ -34,8 +37,36 @@ pub struct HighlighterCore {
 /// A highlighter lazily loads grammars and themes from its asset catalogs.
 /// Its mutable API makes cache updates explicit; instances are not shared
 /// across threads. Create one instance and reuse it across many documents.
+///
+/// ```no_run
+/// use std::path::Path;
+/// use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs};
+///
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+///     let mut highlighter = Highlighter::builder().with_assets(assets).build()?;
+///     let highlighted = highlighter.highlight_html_lines(
+///         "fn main() {}", "rust", "nord", &RenderOptions::default(),
+///     )?;
+///     assert_eq!(highlighted.lines.len(), 1);
+///     Ok(())
+/// }
+/// ```
 pub struct Highlighter {
     core: HighlighterCore,
+}
+
+/// Escaped, balanced inner HTML and the theme colors for one code block.
+///
+/// Each entry in `lines` corresponds to one source line. A Markdown renderer
+/// owns the outer markup and should apply `foreground` and `background` to its
+/// code-block wrapper.
+#[non_exhaustive]
+pub struct HighlightedLines {
+    pub lines: Vec<String>,
+    pub foreground: String,
+    pub background: String,
+    pub theme_name: String,
 }
 
 /// A typed custom TextMate grammar registration.
@@ -97,11 +128,17 @@ impl Highlighter {
         language: &str,
         theme: &str,
         render_options: &RenderOptions,
-    ) -> Result<Vec<String>> {
+    ) -> Result<HighlightedLines> {
         let tokens = self
             .core
             .tokenize(code, language, theme, &TokenizeOptions::default())?;
-        Ok(render_html_lines(&tokens, render_options))
+        let lines = render_html_lines(&tokens, render_options);
+        Ok(HighlightedLines {
+            lines,
+            foreground: tokens.foreground,
+            background: tokens.background,
+            theme_name: tokens.theme_name,
+        })
     }
 
     /// Loads a standard language and its dependencies; returns false if absent.

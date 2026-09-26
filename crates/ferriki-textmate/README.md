@@ -8,5 +8,7 @@ The upstream source and test mirror is read-only; Rust adaptations and test
 harnesses live in this crate.
 
 The crate owns grammar models, selector matching, themes, compiled rules,
-tokenization, and state stacks. Asset catalogs, rendering, and N-API remain in
-`ferriki-core` as defined by ADR 0010.
+tokenization, and state stacks. Asset catalogs and rendering live in the
+publishable `ferriki` crate; `ferriki-core` contains the N-API host, as refined
+by ADR 0012. The package includes the upstream vscode-textmate license and
+third-party notices alongside Ferriki's MIT and Apache-2.0 license texts.

@@ -10,12 +10,14 @@ mod render;
 mod theme_data;
 mod tokens;
 
-pub use asset_catalog::{LanguageAssetCatalog, StandardAssetCatalogs, ThemeAssetCatalog};
+pub use asset_catalog::StandardAssetCatalogs;
 pub use error::{Error, ErrorKind, Result};
 pub use ferriki_textmate::{
     RawGrammar, RawTheme, RawThemeSetting, RawThemeStyle, parse_raw_grammar,
 };
-pub use highlighter::{Highlighter, HighlighterBuilder, HighlighterCore, LanguageRegistration};
+#[doc(hidden)]
+pub use highlighter::HighlighterCore;
+pub use highlighter::{HighlightedLines, Highlighter, HighlighterBuilder, LanguageRegistration};
 pub use render::{RenderOptions, render_hast, render_html, render_html_lines};
 pub use theme_data::{ThemeData, parse_theme_data};
 pub use tokens::{
