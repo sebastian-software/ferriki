@@ -434,11 +434,6 @@ jobs:
             platform-target: darwin-arm64
             platform-id: darwin-arm64
           - node: 22.x
-            os: macos-15-intel
-            rust-target: x86_64-apple-darwin
-            platform-target: darwin-x64
-            platform-id: darwin-x64
-          - node: 22.x
             os: windows-latest
             rust-target: x86_64-pc-windows-msvc
             platform-target: win32-x64

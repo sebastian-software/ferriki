@@ -18,7 +18,7 @@ const ferrikiManifest = JSON.parse(
 assert.equal(FERRIKI_NODE_MIN_VERSION, "22.13.0");
 assert.deepEqual(
   FERRIKI_PLATFORM_TARGETS.map((target) => target.id),
-  ["linux-x64-gnu", "linux-arm64-gnu", "darwin-arm64", "darwin-x64", "win32-x64-msvc"],
+  ["linux-x64-gnu", "linux-arm64-gnu", "darwin-arm64", "win32-x64-msvc"],
 );
 assert.equal(
   resolveFerrikiPlatformTarget({ platform: "linux", arch: "x64", libc: "gnu" }).id,

@@ -32,13 +32,6 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     binaryName: "ferriki.darwin-arm64.node",
   }),
   Object.freeze({
-    id: "darwin-x64",
-    platform: "darwin",
-    arch: "x64",
-    packageName: "@ferriki/darwin-x64",
-    binaryName: "ferriki.darwin-x64.node",
-  }),
-  Object.freeze({
     id: "win32-x64-msvc",
     platform: "win32",
     arch: "x64",
