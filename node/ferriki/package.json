@@ -29,7 +29,6 @@
     "dist/ferriki.*.node",
     "index.d.mts",
     "index.mjs",
-    "native.d.mts",
     "native.mjs",
     "platforms.mjs",
     "src/api.d.mts",
@@ -45,10 +44,6 @@
     ".": {
       "types": "./index.d.mts",
       "default": "./index.mjs"
-    },
-    "./native": {
-      "types": "./native.d.mts",
-      "default": "./native.mjs"
     },
     "./package.json": "./package.json"
   },

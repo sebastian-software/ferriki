@@ -78,7 +78,7 @@ automatic.
 - [ ] Confirm the GitHub release and npm metadata show the same version and
       dist-tag, and that crates.io lists the same version for all three crates.
 - [ ] Install the published tarball in a clean consumer and run the public
-      `@ferriki/core` plus `@ferriki/core/native` smoke checks. The workflow also performs
+      `@ferriki/core` smoke checks. The workflow also performs
       this install check against the public registry after publication.
 - [ ] Verify npm provenance on the main package and all platform packages.
 

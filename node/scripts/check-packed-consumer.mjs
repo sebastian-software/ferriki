@@ -86,11 +86,22 @@ try {
   await writeFile(
     consumerProbe,
     `
-import { codeToHast, codeToHtml, codeToTokens, createHighlighter } from '@ferriki/core'
-import { tryLoadFerrikiNativeBinding } from '@ferriki/core/native'
+import { codeToHast, codeToHtml, codeToTokens, createHighlighter, ferrikiVersion } from '@ferriki/core'
 
-if (!tryLoadFerrikiNativeBinding()?.ferrikiVersion())
-  throw new Error('the packed ferriki/native export did not load')
+if (!ferrikiVersion())
+  throw new Error('the packed @ferriki/core native binding did not load')
+
+let nativeSubpathExported = true
+try {
+  await import('@ferriki/core/native')
+}
+catch (error) {
+  if (error?.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED')
+    throw error
+  nativeSubpathExported = false
+}
+if (nativeSubpathExported)
+  throw new Error('the internal native loader must not be exported as @ferriki/core/native')
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
 await highlighter.loadLanguage('javascript')
