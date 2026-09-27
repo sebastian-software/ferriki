@@ -16,6 +16,6 @@ for (const removed of [
 }
 
 const packageJson = JSON.parse(await readFile(join(scriptDir, "../ferriki/package.json"), "utf8"));
-assert.deepEqual(Object.keys(packageJson.exports).sort(), [".", "./native", "./package.json"]);
+assert.deepEqual(Object.keys(packageJson.exports).sort(), [".", "./package.json"]);
 
 console.log("Ferriki public export surface verified");

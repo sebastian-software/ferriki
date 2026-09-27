@@ -276,9 +276,9 @@ callbacks, decoration adapters, and adapter packages such as `rehype` or
 `markdown-it`. See the [migration guide](./migrations/shiki-to-ferriki.md) for
 the supported replacement boundary.
 
-## Native subpath
+## Native binding
 
-`@ferriki/core/native` is a low-level diagnostic escape hatch. It exposes
-`loadFerrikiNativeBinding()` and `tryLoadFerrikiNativeBinding()` plus the
-native highlighter type. Applications should use the root API so runtime
-validation and the public error contract remain intact.
+The raw N-API binding and its loader are internal. `@ferriki/core` exports no
+native subpath, so runtime validation and the public error contract always
+apply. Use `ferrikiVersion()` to check whether the platform binding loaded; it
+returns `undefined` when no supported binary is installed.

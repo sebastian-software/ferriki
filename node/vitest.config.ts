@@ -141,10 +141,6 @@ export default ${defaultExportInteropExpression("loaded")}
         find: /^@ferriki\/core$/,
         replacement: new URL("./ferriki/index.mjs", import.meta.url).pathname,
       },
-      {
-        find: /^@ferriki\/core\/native$/,
-        replacement: new URL("./ferriki/native.mjs", import.meta.url).pathname,
-      },
     ],
   },
   test: {

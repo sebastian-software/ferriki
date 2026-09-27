@@ -112,11 +112,14 @@ try {
   await writeFile(
     probe,
     `
-import { loadFerrikiNativeBinding } from '@ferriki/core/native'
+import { createHighlighterCoreSync, ferrikiVersion } from '@ferriki/core'
 
-const version = loadFerrikiNativeBinding().ferrikiVersion()
+// Creating a highlighter loads the binding and throws the loader's error when
+// no candidate addon is available; the negative control below relies on that.
+createHighlighterCoreSync().dispose()
+const version = ferrikiVersion()
 if (!version)
-  throw new Error('the sidecar-backed ferriki/native export did not load')
+  throw new Error('the sidecar-backed native binding did not load')
 console.log(\`ferriki native core \${version} loaded from ${target.packageName}\`)
 `,
   );

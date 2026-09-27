@@ -119,7 +119,7 @@ The native runtime currently provides:
 - `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
 - language aliases, lazy embedded languages, and external grammar injections
 - validated custom TextMate grammar and theme registrations
-- `ferrikiVersion` and the low-level `@ferriki/core/native` binding loader
+- `ferrikiVersion`, which reports the loaded native core version
 
 The renderer supports the classic single-theme structure and ordered
 light/dark CSS-variable themes. ANSI escape sequences are rejected explicitly;
