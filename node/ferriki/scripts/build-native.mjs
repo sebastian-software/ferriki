@@ -17,8 +17,11 @@ if (!platformId && rustTarget) {
   platformId = {
     "x86_64-unknown-linux-gnu": "linux-x64-gnu",
     "aarch64-unknown-linux-gnu": "linux-arm64-gnu",
+    "x86_64-unknown-linux-musl": "linux-x64-musl",
+    "aarch64-unknown-linux-musl": "linux-arm64-musl",
     "aarch64-apple-darwin": "darwin-arm64",
     "x86_64-pc-windows-msvc": "win32-x64-msvc",
+    "aarch64-pc-windows-msvc": "win32-arm64-msvc",
   }[rustTarget];
 }
 
@@ -26,8 +29,11 @@ if (!platformTarget && rustTarget) {
   platformTarget = {
     "x86_64-unknown-linux-gnu": "linux-x64",
     "aarch64-unknown-linux-gnu": "linux-arm64",
+    "x86_64-unknown-linux-musl": "linux-x64-musl",
+    "aarch64-unknown-linux-musl": "linux-arm64-musl",
     "aarch64-apple-darwin": "darwin-arm64",
     "x86_64-pc-windows-msvc": "win32-x64",
+    "aarch64-pc-windows-msvc": "win32-arm64",
   }[rustTarget];
 }
 
@@ -42,12 +48,26 @@ const sidecarAddonOut = platformId
   ? join(repoRoot, "node", "platforms", platformId, "ferriki.node")
   : undefined;
 const syncAssetsScript = join(pkgDir, "scripts", "sync-standard-assets.mjs");
-const cargoArgs = ["build", "--release", "--manifest-path", manifestPath];
+// musl targets are cross-compiled from a glibc host with cargo-zigbuild, the
+// same toolchain Ferromark uses. A Node addon is a shared library, so the musl
+// CRT must be linked dynamically: Rust links it statically by default, which
+// rules out a loadable cdylib.
+const isMusl = rustTarget?.endsWith("-musl") ?? false;
+const cargoArgs = [isMusl ? "zigbuild" : "build", "--release", "--manifest-path", manifestPath];
 
 if (rustTarget) cargoArgs.push("--target", rustTarget);
 
+const cargoEnv = { ...process.env };
+if (isMusl) {
+  const rustflagsVar = `CARGO_TARGET_${rustTarget.toUpperCase().replaceAll("-", "_")}_RUSTFLAGS`;
+  cargoEnv[rustflagsVar] = [cargoEnv[rustflagsVar], "-C target-feature=-crt-static"]
+    .filter(Boolean)
+    .join(" ");
+}
+
 const cargo = spawnSync("cargo", cargoArgs, {
   cwd: repoRoot,
+  env: cargoEnv,
   stdio: "inherit",
 });
 

@@ -58,7 +58,10 @@
   "optionalDependencies": {
     "@ferriki/darwin-arm64": "0.3.0",
     "@ferriki/linux-arm64-gnu": "0.3.0",
+    "@ferriki/linux-arm64-musl": "0.3.0",
     "@ferriki/linux-x64-gnu": "0.3.0",
+    "@ferriki/linux-x64-musl": "0.3.0",
+    "@ferriki/win32-arm64-msvc": "0.3.0",
     "@ferriki/win32-x64-msvc": "0.3.0"
   },
   "engines": {
