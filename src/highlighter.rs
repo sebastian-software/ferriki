@@ -1047,7 +1047,7 @@ mod tests {
     use super::*;
 
     fn standard_highlighter() -> HighlighterCore {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
         HighlighterCore::with_standard_assets(&root).expect("highlighter")
     }
 

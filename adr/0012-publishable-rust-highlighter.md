@@ -32,12 +32,28 @@ still applies.
   rendering. Ferromark owns code block structure, metadata, and fallback.
   The adapter belongs in Ferromark or a separate adapter crate, not Ferriki.
 
-The three library crates start at version `0.1.0` and are published in
-dependency order: `ferriki-textmate`, `ferriki-asset-gen`, then `ferriki`.
-`ferriki-core` remains private. The existing npm release workflow is kept
-separate until crates.io credentials or trusted publishing are configured.
-The first Rust release requires that setup and a package/consumer check; the
-Rust API is not represented as already published by this decision.
+### Release (amended 2026-09-27)
+
+Ferriki follows the organization's release blueprint (one product, one
+version, one release signal; see Ferromark ADR-0020 and
+`reference/release-please/` in sebastian-software/standards):
+
+- `ferriki` is the repository's root Cargo package, so Release Please's native
+  `rust` strategy updates the root package, all workspace members, their
+  explicit path-dependency requirements and `Cargo.lock`. The npm package,
+  its platform sidecars and the pnpm lockfile specifiers follow through typed
+  `extra-files`.
+- All crates and the npm package share one version. The crates therefore start
+  at the next Ferriki release rather than at `0.1.0`, as originally planned.
+- Merging the release pull request tags `v<version>`; `publish.yml` then
+  publishes npm and, through the shared `publish-crates` action, the three
+  crates in dependency order: `ferriki-textmate`, `ferriki-asset-gen`, then
+  `ferriki`. `ferriki-core` remains private.
+- Both registries authenticate through Trusted Publishing; no long-lived
+  registry token is stored. crates.io only offers Trusted Publishing for an
+  existing crate, so the very first version of each crate is published once by
+  hand from the release tag, then the trusted publisher is configured. The
+  steps are in `docs/release-checklist.md`.
 
 ## Consequences
 

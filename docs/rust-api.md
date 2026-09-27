@@ -32,14 +32,15 @@ assets and the Rust crate from the same Ferriki release.
 
 ```toml
 [dependencies]
-ferriki = "0.1"
+# Use the version of the matching Ferriki release; crates and npm share it.
+ferriki = "<version>"
 ```
 
-Until the first crates.io release, use a Git or local path dependency for this
+Before the first crates.io release, use a Git or local path dependency for this
 repository and its matching assets. The checked-in, compiled
-[`rust_consumer` example](../crates/ferriki/examples/rust_consumer.rs) runs with
+[`rust_consumer` example](../examples/rust_consumer.rs) runs with
 `cargo run -p ferriki --example rust_consumer -- assets/shiki`. The public
-[`Highlighter` API](../crates/ferriki/src/highlighter.rs) also carries a
+[`Highlighter` API](../src/highlighter.rs) also carries a
 compiling Rustdoc example.
 
 ```rust
@@ -146,9 +147,11 @@ Ferriki itself does not depend on Ferromark.
 ## Publishing
 
 The publishable crates are `ferriki-textmate`, `ferriki-asset-gen`, and
-`ferriki`, at version `0.1.0` initially. Publish them in that order, because
-the `ferriki` package depends on the first two. The `ferriki-core` N-API host
-remains unpublished. The npm and Rust release streams are distinct, while the
-binary asset format version links the runtime to its asset bundle. crates.io
-publishing credentials or trusted publishing must be configured before the
-first Rust release. See [ADR 0012](../adr/0012-publishable-rust-highlighter.md).
+`ferriki` (the repository's root package). They share one version with the
+`ferriki` npm package and are released by the same Release Please pull request:
+merging it tags `v<version>`, and `publish.yml` publishes npm and the three
+crates from that release, in dependency order, through crates.io Trusted
+Publishing. The `ferriki-core` N-API host remains unpublished. The binary
+asset format version links the runtime to its asset bundle. See
+[ADR 0012](../adr/0012-publishable-rust-highlighter.md) and the
+[release checklist](release-checklist.md).

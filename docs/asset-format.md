@@ -17,7 +17,7 @@ core a stable generator/loader contract.
 - Current format version: `2`
 - Source of truth for structs and roundtrip tests:
   - [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
-  - [`crates/ferriki/src/asset_catalog.rs`](../crates/ferriki/src/asset_catalog.rs)
+  - [`src/asset_catalog.rs`](../src/asset_catalog.rs)
 
 There is currently no custom magic header or checksum layer. The loader relies
 on the file extension, the enclosing catalog path, and successful `bincode`
@@ -156,7 +156,7 @@ Notes:
 ## Loader Behavior
 
 Current runtime behavior in
-[`crates/ferriki/src/asset_catalog.rs`](../crates/ferriki/src/asset_catalog.rs):
+[`src/asset_catalog.rs`](../src/asset_catalog.rs):
 
 - read manifest bytes from disk
 - decode with `bincode`
@@ -192,7 +192,7 @@ Current test coverage includes:
 - schema roundtrip stability in
   [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
 - catalog load and cache behavior in
-  [`crates/ferriki/src/asset_catalog.rs`](../crates/ferriki/src/asset_catalog.rs)
+  [`src/asset_catalog.rs`](../src/asset_catalog.rs)
 - generator normalization tests in
   [`crates/ferriki-asset-gen/src/import.rs`](../crates/ferriki-asset-gen/src/import.rs)
 

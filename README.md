@@ -47,7 +47,7 @@ The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/up
 
 This repository has a Rust library and a Node package:
 
-- [`crates/ferriki`](crates/ferriki): reusable Rust highlighter and renderer
+- [`ferriki`](src) (repository root package): reusable Rust highlighter and renderer
 - [`node/ferriki`](node/ferriki): the Node-facing package surface
 
 The private [`ferriki-core`](crates/ferriki-core) crate hosts the N-API binding
@@ -55,7 +55,7 @@ over the same Rust runtime.
 
 ## Repository Layout
 
-- [`crates/ferriki`](crates/ferriki): native highlighter and asset catalogs
+- [`src`](src): the `ferriki` crate, native highlighter and asset catalogs
 - [`crates/ferriki-core`](crates/ferriki-core): N-API host
 - [`node/ferriki`](node/ferriki): Node package
 - [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue

@@ -301,7 +301,7 @@ mod tests {
     use std::path::Path;
 
     fn javascript_tokens(code: &str) -> HighlightTokensResult {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
         HighlighterCore::with_standard_assets(&root)
             .expect("highlighter")
             .tokenize(
