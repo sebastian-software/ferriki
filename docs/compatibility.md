@@ -75,21 +75,21 @@ in the current release map:
 | `linux-x64-gnu` | Linux x64 | glibc | Supported |
 | `linux-arm64-gnu` | Linux arm64 | glibc | Supported |
 | `darwin-arm64` | macOS arm64 | system | Supported |
-| `darwin-x64` | macOS x64 | system | Supported |
+| `darwin-x64` | macOS Intel | system | Unsupported since 0.4.0 (Apple Silicon only) |
 | `win32-x64-msvc` | Windows x64 | MSVC | Supported |
 | Linux x64/arm64 musl | Alpine and other musl systems | musl | Explicitly unsupported |
 
 The target map is maintained in [`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs)
 and checked by `pnpm run check:platform-matrix`. A green CI run does not imply
-support for an unlisted libc or architecture. The five sidecar manifests now
+support for an unlisted libc or architecture. The four sidecar manifests now
 live under `node/platforms/*` and are declared as optional dependencies. The
 publish workflow assembles and publishes those sidecars before the main
 package, then verifies public npm metadata, provenance, and a clean consumer
 install.
 
 The native smoke jobs build with an explicit Rust target for each supported
-platform, including macOS Intel (`x86_64-apple-darwin`). This catches a host
-versus target mismatch before release artifacts are assembled.
+platform. This catches a host versus target mismatch before release artifacts
+are assembled.
 
 ## Packaging baseline
 

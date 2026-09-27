@@ -565,9 +565,6 @@ importers:
       '@ferriki/darwin-arm64':
         specifier: 0.3.0
         version: link:../platforms/darwin-arm64
-      '@ferriki/darwin-x64':
-        specifier: 0.3.0
-        version: link:../platforms/darwin-x64
       '@ferriki/linux-arm64-gnu':
         specifier: 0.3.0
         version: link:../platforms/linux-arm64-gnu
@@ -579,8 +576,6 @@ importers:
         version: link:../platforms/win32-x64-msvc
 
   platforms/darwin-arm64: {}
-
-  platforms/darwin-x64: {}
 
   platforms/linux-arm64-gnu: {}
 

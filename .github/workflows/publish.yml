@@ -104,9 +104,6 @@ jobs:
           - os: macos-latest
             rust-target: aarch64-apple-darwin
             platform-id: darwin-arm64
-          - os: macos-15-intel
-            rust-target: x86_64-apple-darwin
-            platform-id: darwin-x64
           - os: windows-latest
             rust-target: x86_64-pc-windows-msvc
             platform-id: win32-x64-msvc
@@ -214,12 +211,6 @@ jobs:
           name: native-darwin-arm64
           path: node/platforms/darwin-arm64
 
-      - name: Download macOS x64 native sidecar
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: native-darwin-x64
-          path: node/platforms/darwin-x64
-
       - name: Download Windows x64 native sidecar
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -234,7 +225,7 @@ jobs:
       - name: Verify all release packages
         run: |
           pnpm run check:platform-matrix
-          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
+          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 win32-x64-msvc; do
             FERRIKI_PLATFORM_ID="$platform_id" pnpm run check:platform-package
           done
           node ./scripts/check-docs-contract.mjs
@@ -248,7 +239,7 @@ jobs:
       - name: Publish platform packages with npm provenance
         working-directory: node
         run: |
-          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 darwin-x64 win32-x64-msvc; do
+          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 win32-x64-msvc; do
             npm publish "./platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
           done
 
