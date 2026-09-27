@@ -1,8 +1,8 @@
 [package]
 name = "ferriki-asset-gen"
-version = "0.1.0"
+version = "0.3.0"
 description = "Binary asset catalog encoder and decoder for the Ferriki highlighter"
-readme = "../../README.md"
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -11,7 +11,7 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
-publish = false
+publish = ["crates-io"]
 
 [lib]
 name = "ferriki_asset_gen"

@@ -52,8 +52,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferriki"
+version = "0.3.0"
+dependencies = [
+ "ferriki-asset-gen",
+ "ferriki-textmate",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ferriki-asset-gen"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "bincode",
  "serde",
@@ -62,20 +72,18 @@ dependencies = [
 
 [[package]]
 name = "ferriki-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
- "ferriki-asset-gen",
- "ferriki-textmate",
+ "ferriki",
  "napi",
  "napi-build",
  "napi-derive",
- "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "ferriki-textmate"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "ferroni",
  "serde",

@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-textmate"
-version = "0.1.0"
+version = "0.3.0"
 description = "TextMate grammar tokenizer and theme resolver behind Ferriki"
 readme = "README.md"
 edition.workspace = true
@@ -11,7 +11,7 @@ repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
-publish = false
+publish = ["crates-io"]
 
 [dependencies]
 ferroni = { workspace = true }

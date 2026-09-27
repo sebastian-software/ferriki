@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::ops::Range;
 
+use crate::{Error, ErrorKind, Result};
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TokenizeOptions {
     pub time_limit_millis: u64,
@@ -46,6 +48,26 @@ pub struct HighlightTokensResult {
     #[serde(rename = "bg")]
     pub background: String,
     pub theme_name: String,
+}
+
+/// The Rust `Highlighter` returns token offsets in UTF-8 bytes. The internal
+/// Node compatibility core keeps UTF-16 offsets for the JavaScript API.
+pub(crate) fn convert_token_offsets_to_utf8(
+    result: &mut HighlightTokensResult,
+    input: &str,
+) -> Result<()> {
+    let map = utf16_to_byte_map(input);
+    for line in &mut result.tokens {
+        for token in line {
+            token.offset = *map.get(token.offset).ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Internal,
+                    "Token offset exceeds the highlighted source.",
+                )
+            })?;
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize)]

@@ -1,5 +1,50 @@
+# `ferriki` is the repository's root package, which is what Release Please's
+# native `rust` strategy requires: it updates the root `[package]` version, the
+# members listed below, their explicit path dependency requirements and
+# `Cargo.lock`. npm and crates.io share one version and one release signal.
+# See ADR 0012 and docs/release-checklist.md.
+[package]
+name = "ferriki"
+version = "0.3.0"
+description = "Reusable native Rust syntax highlighter with TextMate grammars"
+readme = "README.md"
+documentation = "https://docs.rs/ferriki"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+publish = ["crates-io"]
+# The package sits at the repository root, so the published archive is an
+# explicit allow-list rather than everything Cargo finds. Node sources, the
+# upstream mirrors, the generated asset bundle and the other crates stay out.
+include = [
+  "/src",
+  "/tests",
+  "/examples",
+  "/README.md",
+  "/LICENSE-MIT",
+  "/LICENSE-APACHE",
+]
+
+[dependencies]
+ferriki-asset-gen = { version = "0.3.0", path = "crates/ferriki-asset-gen" }
+ferriki-textmate = { version = "0.3.0", path = "crates/ferriki-textmate" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true
+
+# Package versions are deliberately concrete in every member: Release Please
+# cannot replace an inherited `version.workspace = true`, and it skips a path
+# dependency that does not spell out a `version`.
 [workspace]
 members = [
+  ".",
   "crates/ferriki-asset-gen",
   "crates/ferriki-core",
   "crates/ferriki-textmate",

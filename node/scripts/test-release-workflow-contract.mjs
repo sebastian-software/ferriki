@@ -55,4 +55,26 @@ assert.throws(
   /must precede the first npm publication step/,
 );
 
+const crateOrder =
+  "          crates: |\n" +
+  "            ferriki-textmate\n" +
+  "            ferriki-asset-gen\n" +
+  "            ferriki\n";
+assert.equal(workflow.split(crateOrder).length - 1, 1);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(
+        crateOrder,
+        "          crates: |\n" +
+          "            ferriki\n" +
+          "            ferriki-textmate\n" +
+          "            ferriki-asset-gen\n",
+      ),
+      checklist,
+      releaseConfig,
+    }),
+  /dependency order/,
+);
+
 console.log("Ferriki release workflow command and order contract verified");

@@ -4,17 +4,20 @@ import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-function publishJob(workflow) {
-  const startMarker = "\n  publish-npm:\n";
+function workflowJob(workflow, name) {
+  const startMarker = `\n  ${name}:\n`;
   const start = workflow.indexOf(startMarker);
-  assert(start >= 0, "release workflow is missing publish-npm job");
+  assert(start >= 0, `release workflow is missing ${name} job`);
   const body = workflow.slice(start + startMarker.length);
   const nextJob = body.search(/\n {2}[a-z0-9-]+:\s*\n/);
   return body.slice(0, nextJob >= 0 ? nextJob : body.length);
 }
 
+// Dependency order: `ferriki` depends on the two library crates.
+const CRATE_PUBLISH_ORDER = ["ferriki-textmate", "ferriki-asset-gen", "ferriki"];
+
 export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
-  const releasePackage = releaseConfig.packages?.["node/ferriki"];
+  const releasePackage = releaseConfig.packages?.["."];
   const extraFiles = releasePackage?.["extra-files"] ?? [];
 
   assert.match(
@@ -29,8 +32,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   );
   assert.equal(
     releaseConfig["release-type"],
-    "node",
-    "Ferriki release authority must remain the Node package",
+    "rust",
+    "Ferriki release authority is the root Rust package (ADR 0012)",
   );
   assert.equal(
     releaseConfig["include-component-in-tag"],
@@ -39,8 +42,14 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   );
   assert.equal(
     releasePackage?.["changelog-path"],
-    "CHANGELOG.md",
+    "node/ferriki/CHANGELOG.md",
     "release package must declare its changelog path",
+  );
+  assert(
+    extraFiles.some(
+      (file) => file.path === "/node/ferriki/package.json" && file.jsonpath === "$.version",
+    ),
+    "release config must update the npm package version with the product version",
   );
   assert(
     extraFiles.some(
@@ -74,6 +83,7 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   );
   for (const job of [
     "release-please:",
+    "publish-crates:",
     "build-native:",
     "publish-npm:",
     "verify-npm-publish:",
@@ -91,7 +101,31 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   ])
     assert(workflow.includes(required), `release workflow is missing ${required}`);
 
-  const publishWorkflow = publishJob(workflow);
+  const cratesJob = workflowJob(workflow, "publish-crates");
+  assert.match(
+    cratesJob,
+    /sebastian-software\/standards\/\.github\/actions\/publish-crates@[0-9a-f]{40}/,
+    "publish-crates must use the shared, pinned standards action",
+  );
+  assert.match(
+    cratesJob,
+    /^\s+id-token: write\s*$/m,
+    "publish-crates needs an OIDC token for crates.io Trusted Publishing",
+  );
+  assert.doesNotMatch(
+    cratesJob,
+    /CARGO_REGISTRY_TOKEN/,
+    "publish-crates must not fall back to a long-lived registry token",
+  );
+  const crateList = cratesJob.match(/crates: \|\n((?:[ \t]+[a-z0-9-]+\n?)+)/);
+  assert(crateList, "publish-crates must list the crates to publish");
+  assert.deepEqual(
+    crateList[1].split("\n").map((line) => line.trim()).filter(Boolean),
+    CRATE_PUBLISH_ORDER,
+    "publish-crates must publish the crates in dependency order",
+  );
+
+  const publishWorkflow = workflowJob(workflow, "publish-npm");
   const smokeMatch = publishWorkflow.match(
     /^[ \t]+run:[ \t]+node \.\/scripts\/check-packed-consumer\.mjs\s*$/m,
   );
@@ -112,6 +146,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
     "rollback",
     "deprecate",
     "go/no-go",
+    "Trusted Publishing",
+    `cargo publish --locked ${CRATE_PUBLISH_ORDER.map((name) => `-p ${name}`).join(" ")}`,
   ])
     assert(
       checklist.toLowerCase().includes(required.toLowerCase()),

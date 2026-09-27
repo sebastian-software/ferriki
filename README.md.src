@@ -43,17 +43,18 @@ The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/up
 
 ## Products
 
-This repository currently has two primary product surfaces:
+This repository has a Rust library and a Node package:
 
-- [`crates/ferriki-core`](crates/ferriki-core): the Rust runtime and N-API host layer
+- [`ferriki`](src) (repository root package): reusable Rust highlighter and renderer
 - [`node/ferriki`](node/ferriki): the Node-facing package surface
 
-Everything else exists to support validation, compatibility, and repository
-maintenance.
+The private [`ferriki-core`](crates/ferriki-core) crate hosts the N-API binding
+over the same Rust runtime.
 
 ## Repository Layout
 
-- [`crates/ferriki-core`](crates/ferriki-core): native runtime
+- [`src`](src): the `ferriki` crate, native highlighter and asset catalogs
+- [`crates/ferriki-core`](crates/ferriki-core): N-API host
 - [`node/ferriki`](node/ferriki): Node package
 - [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue
 - [`node/compat/upstream/shiki`](node/compat/upstream/shiki): strict upstream Shiki mirror
@@ -66,6 +67,7 @@ Contributor workflow, test lanes, and the mirror rules are documented in
 User-facing documentation lives in the [`docs/`](docs) directory:
 
 - [Ferriki API reference](docs/ferriki-api.md)
+- [Rust API and Ferromark integration](docs/rust-api.md)
 - [Shiki migration guide](docs/migrations/shiki-to-ferriki.md)
 - [Compatibility and support policy](docs/compatibility.md)
 - [Troubleshooting](docs/troubleshooting.md)

@@ -1,6 +1,7 @@
 use ferriki_textmate::{RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle};
-use napi::{Error, Result};
 use serde_json::{Map, Value};
+
+use crate::{Error, ErrorKind, Result};
 
 const FALLBACK_LIGHT_FG: &str = "#333333";
 const FALLBACK_LIGHT_BG: &str = "#fffffe";
@@ -16,11 +17,18 @@ pub struct ThemeData {
 }
 
 pub fn parse_theme_data(id: &str, source: &str) -> Result<ThemeData> {
-    let value: Value = serde_json::from_str(source)
-        .map_err(|error| Error::from_reason(format!("Failed to parse theme JSON: {error}")))?;
-    let object = value
-        .as_object()
-        .ok_or_else(|| Error::from_reason("Theme registration must be a JSON object."))?;
+    let value: Value = serde_json::from_str(source).map_err(|error| {
+        Error::new(
+            ErrorKind::InvalidRegistration,
+            format!("Failed to parse theme JSON: {error}"),
+        )
+    })?;
+    let object = value.as_object().ok_or_else(|| {
+        Error::new(
+            ErrorKind::InvalidRegistration,
+            "Theme registration must be a JSON object.",
+        )
+    })?;
 
     let name = string_property(object, "name").unwrap_or(id).to_owned();
     let theme_type = string_property(object, "type").unwrap_or("dark").to_owned();
@@ -97,7 +105,10 @@ fn parse_settings(object: &Map<String, Value>) -> Result<Vec<RawThemeSetting>> {
         .map(|entry| {
             if entry.get("settings").is_some() {
                 return serde_json::from_value(Value::Object(entry.clone())).map_err(|error| {
-                    Error::from_reason(format!("Failed to parse TextMate theme setting: {error}"))
+                    Error::new(
+                        ErrorKind::InvalidRegistration,
+                        format!("Failed to parse TextMate theme setting: {error}"),
+                    )
                 });
             }
 
@@ -214,7 +225,7 @@ mod tests {
 
     #[test]
     fn parses_generated_shiki_theme_without_flattening() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
         let catalogs = StandardAssetCatalogs::load_from_root(&root).expect("catalogs");
         let asset = catalogs
             .themes

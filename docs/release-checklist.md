@@ -7,12 +7,43 @@ publication, or published successfully.
 
 ## Release authority
 
-Ferriki intentionally uses a Node-owned Release Please component at
-`node/ferriki`. The repository root is a virtual Cargo workspace and all Rust
-members are implementation crates with `publish = false`, so the standards
-Rust+Node template cannot be applied until Ferriki has a real, publishable root
-Cargo product. The npm sidecars remain part of the same product and are updated
-through typed Release Please `extra-files` entries, including the pnpm lockfile.
+Ferriki follows the organization's release blueprint (ADR 0012, amended
+2026-09-27). The repository root is the `ferriki` Cargo package with
+`release-type: rust`, so one Release Please pull request versions the root
+package, every workspace member, their path-dependency requirements and
+`Cargo.lock`. The npm package, its platform sidecars and the pnpm lockfile
+specifiers follow through typed `extra-files`. Merging the release pull request
+tags `v<version>` and `publish.yml` publishes npm and the crates
+`ferriki-textmate`, `ferriki-asset-gen` and `ferriki` from that release. Both
+registries use Trusted Publishing.
+
+## One-time crates.io bootstrap
+
+crates.io offers Trusted Publishing only for crates that already exist. The
+first Rust release is therefore published once by hand; every later release is
+automatic.
+
+1. Merge the release pull request. The `Publish to crates.io` job of that run
+   is expected to fail once, because the crates do not exist yet. The npm jobs
+   are independent and publish as usual.
+2. Create a crates.io API token with the `publish-new` scope, then publish the
+   three crates from the release tag. Cargo publishes them in dependency order
+   and verifies `ferriki` against the two freshly packaged crates:
+
+   ```sh
+   git fetch --tags origin
+   git checkout v<version>
+   cargo login
+   cargo publish --locked -p ferriki-textmate -p ferriki-asset-gen -p ferriki
+   cargo logout
+   ```
+
+   Revoke the token afterwards; it is not needed again.
+3. For each of the three crates, open *Settings → Trusted Publishing* on
+   crates.io and add a GitHub publisher: owner `sebastian-software`,
+   repository `ferriki`, workflow `publish.yml`, no environment.
+4. Re-run the failed `Publish to crates.io` job. It skips versions that are
+   already in the index, so it turns green without publishing twice.
 
 ## Before dispatch
 
@@ -27,6 +58,8 @@ through typed Release Please `extra-files` entries, including the pnpm lockfile.
 - [ ] The action SHAs in `.github/workflows/publish.yml` were reviewed and its
       target runners are available; each native matrix job has a timeout.
 - [ ] npm trusted publishing/provenance is enabled for the Ferriki package.
+- [ ] crates.io Trusted Publishing is configured for `ferriki-textmate`,
+      `ferriki-asset-gen` and `ferriki` (after the one-time bootstrap above).
 
 ## Release-candidate run
 
@@ -38,7 +71,7 @@ through typed Release Please `extra-files` entries, including the pnpm lockfile.
 - [ ] Confirm the workflow summary distinguishes “no release” from
       “published” and records failed or skipped target jobs.
 - [ ] Confirm the GitHub release and npm metadata show the same version and
-      dist-tag.
+      dist-tag, and that crates.io lists the same version for all three crates.
 - [ ] Install the published tarball in a clean consumer and run the public
       `ferriki` plus `ferriki/native` smoke checks. The workflow also performs
       this install check against the public registry after publication.
