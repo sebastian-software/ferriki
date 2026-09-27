@@ -1,13 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "release-type": "node",
+  "release-type": "rust",
   "include-component-in-tag": false,
   "packages": {
-    "node/ferriki": {
+    ".": {
       "component": "ferriki",
-      "package-name": "ferriki",
-      "changelog-path": "CHANGELOG.md",
+      "changelog-path": "node/ferriki/CHANGELOG.md",
       "extra-files": [
+        {
+          "type": "json",
+          "path": "/node/ferriki/package.json",
+          "jsonpath": "$.version"
+        },
         {
           "type": "json",
           "path": "/node/ferriki/package.json",

@@ -8,7 +8,7 @@ use ferriki::{
 fn assets() -> StandardAssetCatalogs {
     StandardAssetCatalogs::load_from_root(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../assets/shiki"
+        "/assets/shiki"
     )))
     .expect("fixture assets")
 }

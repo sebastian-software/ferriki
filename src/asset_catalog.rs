@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn language_catalog_resolves_alias_and_caches_asset() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("language-catalog-loader");
         generate_catalogs_from_upstream(
             &upstream_dir,
@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn language_catalog_finds_external_injections_by_target_scope() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("language-catalog-injections");
         generate_catalogs_from_upstream(
             &upstream_dir,
@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn theme_catalog_loads_and_caches_asset() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("theme-catalog-loader");
         generate_catalogs_from_upstream(
             &upstream_dir,
@@ -414,7 +414,7 @@ mod tests {
     #[test]
     fn standard_catalogs_load_both_catalogs_from_root() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("standard-asset-catalogs");
         generate_catalogs_from_upstream(
             &upstream_dir,
@@ -443,7 +443,7 @@ mod tests {
     #[test]
     fn embedded_catalogs_work_after_the_filesystem_source_is_removed() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("embedded-catalogs");
         generate_catalogs_from_upstream(
             &upstream_dir,
@@ -509,7 +509,7 @@ mod tests {
     #[test]
     fn missing_embedded_asset_is_a_typed_io_error() {
         let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
         let output_dir = temp_output_dir("missing-embedded-asset");
         generate_catalogs_from_upstream(
             &upstream_dir,

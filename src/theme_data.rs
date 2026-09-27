@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn parses_generated_shiki_theme_without_flattening() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
         let catalogs = StandardAssetCatalogs::load_from_root(&root).expect("catalogs");
         let asset = catalogs
             .themes
