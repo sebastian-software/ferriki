@@ -1,0 +1,22 @@
+{
+  "name": "@ferriki/win32-arm64-msvc",
+  "version": "0.3.0",
+  "description": "Ferriki native addon for Windows arm64 with MSVC",
+  "license": "MIT OR Apache-2.0",
+  "repository": "git+https://github.com/sebastian-software/ferriki.git",
+  "files": [
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "ferriki.node"
+  ],
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "ferriki.node",
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

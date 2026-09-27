@@ -120,7 +120,10 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   const crateList = cratesJob.match(/crates: \|\n((?:[ \t]+[a-z0-9-]+\n?)+)/);
   assert(crateList, "publish-crates must list the crates to publish");
   assert.deepEqual(
-    crateList[1].split("\n").map((line) => line.trim()).filter(Boolean),
+    crateList[1]
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean),
     CRATE_PUBLISH_ORDER,
     "publish-crates must publish the crates in dependency order",
   );
@@ -130,9 +133,7 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
     /^[ \t]+run:[ \t]+node \.\/scripts\/check-packed-consumer\.mjs\s*$/m,
   );
   assert(smokeMatch, "publish-npm must run an executable packed-consumer smoke command");
-  const firstPublicationMatch = publishWorkflow.match(
-    /^[ \t]+(?:run:[ \t]+)?npm publish\b/m,
-  );
+  const firstPublicationMatch = publishWorkflow.match(/^[ \t]+(?:run:[ \t]+)?npm publish\b/m);
   assert(firstPublicationMatch, "publish-npm must contain an npm publication step");
   assert(
     smokeMatch.index < firstPublicationMatch.index,

@@ -92,8 +92,8 @@ compatibility tests must converge on this matrix.
 ## Lifecycle, concurrency, and errors
 
 The 1.0 runtime floor is Node.js 22.13.0. Supported native targets are
-Linux x64/arm64 with glibc, macOS arm64 (Apple Silicon), and Windows x64 with MSVC. Linux
-musl/Alpine, macOS Intel and other architectures are explicit non-support until a tested
+Linux x64/arm64 with glibc or musl, macOS arm64 (Apple Silicon), and Windows x64/arm64
+with MSVC. macOS Intel and other architectures are explicit non-support until a tested
 sidecar is published (see #52).
 
 - A highlighter handle owns its native state and must be disposable. Calls

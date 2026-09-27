@@ -101,12 +101,25 @@ jobs:
           - os: ubuntu-24.04-arm
             rust-target: aarch64-unknown-linux-gnu
             platform-id: linux-arm64-gnu
+          # musl targets cross-compile with cargo-zigbuild on a glibc runner of
+          # the same architecture; CI's native-smoke job loads them on Alpine.
+          - os: ubuntu-latest
+            rust-target: x86_64-unknown-linux-musl
+            platform-id: linux-x64-musl
+            musl: true
+          - os: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-musl
+            platform-id: linux-arm64-musl
+            musl: true
           - os: macos-latest
             rust-target: aarch64-apple-darwin
             platform-id: darwin-arm64
           - os: windows-latest
             rust-target: x86_64-pc-windows-msvc
             platform-id: win32-x64-msvc
+          - os: windows-11-arm
+            rust-target: aarch64-pc-windows-msvc
+            platform-id: win32-arm64-msvc
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -132,6 +145,20 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.rust-target }}
+
+      - name: Set up Zig for the musl cross-build
+        if: ${{ matrix.musl }}
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: 0.15.2
+
+      - name: Install cargo-zigbuild
+        if: ${{ matrix.musl }}
+        uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tool: cargo-zigbuild
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -165,6 +192,10 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      # Must list every target in node/ferriki/platforms.mjs, in that order;
+      # check:platform-matrix enforces it.
+      FERRIKI_PLATFORM_IDS: linux-x64-gnu linux-arm64-gnu linux-x64-musl linux-arm64-musl darwin-arm64 win32-x64-msvc win32-arm64-msvc
     defaults:
       run:
         working-directory: node
@@ -205,6 +236,18 @@ jobs:
           name: native-linux-arm64-gnu
           path: node/platforms/linux-arm64-gnu
 
+      - name: Download Linux x64 musl native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-linux-x64-musl
+          path: node/platforms/linux-x64-musl
+
+      - name: Download Linux arm64 musl native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-linux-arm64-musl
+          path: node/platforms/linux-arm64-musl
+
       - name: Download macOS arm64 native sidecar
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -217,6 +260,12 @@ jobs:
           name: native-win32-x64-msvc
           path: node/platforms/win32-x64-msvc
 
+      - name: Download Windows arm64 native sidecar
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: native-win32-arm64-msvc
+          path: node/platforms/win32-arm64-msvc
+
       - name: Build package wrappers and Linux fallback
         run: |
           pnpm run build
@@ -225,7 +274,7 @@ jobs:
       - name: Verify all release packages
         run: |
           pnpm run check:platform-matrix
-          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 win32-x64-msvc; do
+          for platform_id in $FERRIKI_PLATFORM_IDS; do
             FERRIKI_PLATFORM_ID="$platform_id" pnpm run check:platform-package
           done
           node ./scripts/check-docs-contract.mjs
@@ -239,7 +288,7 @@ jobs:
       - name: Publish platform packages with npm provenance
         working-directory: node
         run: |
-          for platform_id in linux-x64-gnu linux-arm64-gnu darwin-arm64 win32-x64-msvc; do
+          for platform_id in $FERRIKI_PLATFORM_IDS; do
             npm publish "./platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
           done
 

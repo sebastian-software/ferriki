@@ -74,22 +74,27 @@ in the current release map:
 | --- | --- | --- | --- |
 | `linux-x64-gnu` | Linux x64 | glibc | Supported |
 | `linux-arm64-gnu` | Linux arm64 | glibc | Supported |
+| `linux-x64-musl` | Linux x64 (Alpine and other musl systems) | musl | Supported since 0.4.0 |
+| `linux-arm64-musl` | Linux arm64 (Alpine and other musl systems) | musl | Supported since 0.4.0 |
 | `darwin-arm64` | macOS arm64 | system | Supported |
 | `darwin-x64` | macOS Intel | system | Unsupported since 0.4.0 (Apple Silicon only) |
 | `win32-x64-msvc` | Windows x64 | MSVC | Supported |
-| Linux x64/arm64 musl | Alpine and other musl systems | musl | Explicitly unsupported |
+| `win32-arm64-msvc` | Windows arm64 | MSVC | Supported since 0.4.0 |
 
 The target map is maintained in [`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs)
 and checked by `pnpm run check:platform-matrix`. A green CI run does not imply
-support for an unlisted libc or architecture. The four sidecar manifests now
-live under `node/platforms/*` and are declared as optional dependencies. The
+support for an unlisted libc or architecture. The sidecar manifests live
+under `node/platforms/*` and are declared as optional dependencies. The
 publish workflow assembles and publishes those sidecars before the main
 package, then verifies public npm metadata, provenance, and a clean consumer
 install.
 
 The native smoke jobs build with an explicit Rust target for each supported
 platform. This catches a host versus target mismatch before release artifacts
-are assembled.
+are assembled. The musl addons are cross-compiled with `cargo zigbuild` on a
+glibc runner of the same architecture; their packed-consumer, sidecar, and
+import checks then run in a `node:22-alpine` container, because a glibc host
+cannot load a musl addon.
 
 ## Packaging baseline
 

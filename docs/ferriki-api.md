@@ -27,8 +27,8 @@ The retained declaration symbols are `LanguageRegistration`,
 - The package is ESM-only. Use `import`, not `require()`.
 
 The supported platform policy is intentionally explicit. Ferriki supports
-Linux x64/arm64 with glibc, macOS arm64 (Apple Silicon), and Windows x64 with Node.js
-22.13.0+. Linux musl/Alpine, macOS Intel and other architectures are unsupported. If the
+Linux x64/arm64 with glibc or musl (Alpine), macOS arm64 (Apple Silicon), and Windows
+x64/arm64 with Node.js 22.13.0+. macOS Intel and other architectures are unsupported. If the
 native loader cannot find a binary it reports the target, optional package
 candidate, and every path it tried.
 

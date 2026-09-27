@@ -3,7 +3,11 @@ import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { formatFerrikiPlatformMatrix, resolveFerrikiPlatformTarget } from "./platforms.mjs";
+import {
+  detectLinuxLibc,
+  formatFerrikiPlatformMatrix,
+  resolveFerrikiPlatformTarget,
+} from "./platforms.mjs";
 
 // Every candidate says how it must be resolved. The sidecar is a package
 // specifier that Node resolves from node_modules, whatever its scope; the rest
@@ -36,9 +40,8 @@ export function loadFerrikiNativeBinding() {
   if (!target) {
     throw new Error(
       [
-        `[ferriki] Unsupported target ${process.platform}-${process.arch}${process.platform === "linux" ? " (musl or unknown libc)" : ""}.`,
+        `[ferriki] Unsupported target ${process.platform}-${process.arch}${process.platform === "linux" ? ` (libc: ${detectLinuxLibc()})` : ""}.`,
         `Supported targets: ${formatFerrikiPlatformMatrix()}.`,
-        "Ferriki currently supports GNU libc on Linux; musl/Alpine requires a separately tested target.",
       ].join("\n"),
     );
   }

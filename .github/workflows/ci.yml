@@ -428,6 +428,20 @@ jobs:
             rust-target: aarch64-unknown-linux-gnu
             platform-target: linux-arm64
             platform-id: linux-arm64-gnu
+          # musl targets cross-compile with cargo-zigbuild on a glibc runner of
+          # the same architecture and run their runtime checks in Alpine.
+          - node: 22.x
+            os: ubuntu-latest
+            rust-target: x86_64-unknown-linux-musl
+            platform-target: linux-x64-musl
+            platform-id: linux-x64-musl
+            musl: true
+          - node: 22.x
+            os: ubuntu-24.04-arm
+            rust-target: aarch64-unknown-linux-musl
+            platform-target: linux-arm64-musl
+            platform-id: linux-arm64-musl
+            musl: true
           - node: 22.x
             os: macos-latest
             rust-target: aarch64-apple-darwin
@@ -438,6 +452,11 @@ jobs:
             rust-target: x86_64-pc-windows-msvc
             platform-target: win32-x64
             platform-id: win32-x64-msvc
+          - node: 22.x
+            os: windows-11-arm
+            rust-target: aarch64-pc-windows-msvc
+            platform-target: win32-arm64
+            platform-id: win32-arm64-msvc
       fail-fast: false
 
     permissions:
@@ -451,6 +470,20 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.rust-target }}
+
+      - name: Set up Zig for the musl cross-build
+        if: ${{ matrix.musl }}
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: 0.15.2
+
+      - name: Install cargo-zigbuild
+        if: ${{ matrix.musl }}
+        uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tool: cargo-zigbuild
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -481,12 +514,30 @@ jobs:
           FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
 
       - name: Verify packed consumer on the target platform
+        if: ${{ !matrix.musl }}
         run: node ./scripts/check-packed-consumer.mjs
 
       - name: Verify the installed sidecar is what the loader resolves
+        if: ${{ !matrix.musl }}
         run: nr check:packed-sidecar
         env:
           FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
 
       - name: Import ferriki package and load the native binding
+        if: ${{ !matrix.musl }}
         run: node --input-type=module -e "const m = await import('./ferriki/index.mjs'); const v = m.ferrikiVersion(); if (!v) throw new Error('native binding did not load'); console.log('ferriki native core', v)"
+
+      # The glibc runner cannot load a musl addon, so the same three runtime
+      # checks run in an Alpine container on the runner's architecture.
+      - name: Verify packed consumer, sidecar and import on Alpine musl
+        if: ${{ matrix.musl }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node \
+            -e FERRIKI_PLATFORM_ID="$FERRIKI_PLATFORM_ID" node:22-alpine sh -euc '
+              node -e "if (process.report.getReport().header.glibcVersionRuntime) throw new Error(\"not a musl host\")"
+              node ./scripts/check-packed-consumer.mjs
+              node ./scripts/check-packed-sidecar.mjs
+              node --input-type=module -e "const m = await import(\"./ferriki/index.mjs\"); const v = m.ferrikiVersion(); if (!v) throw new Error(\"native binding did not load\"); console.log(\"ferriki native core\", v)"
+            '
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}

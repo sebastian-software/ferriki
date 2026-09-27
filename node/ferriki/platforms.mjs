@@ -1,9 +1,11 @@
 import process from "node:process";
 
 /**
- * The release workflow publishes these five GNU/MSVC targets as optional
- * sidecar packages. The map is deliberately shared by the loader, docs, and
- * CI so a new target cannot be documented accidentally.
+ * The release workflow publishes these seven targets as optional sidecar
+ * packages. The map is deliberately shared by the loader, docs, and CI so a new
+ * target cannot be documented accidentally. musl binaries carry their libc in
+ * the file name so a musl host can never pick up the glibc fallback addon that
+ * ships in the main package.
  */
 export const FERRIKI_NODE_MIN_VERSION = "22.13.0";
 
@@ -25,6 +27,22 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     binaryName: "ferriki.linux-arm64.node",
   }),
   Object.freeze({
+    id: "linux-x64-musl",
+    platform: "linux",
+    arch: "x64",
+    libc: "musl",
+    packageName: "@ferriki/linux-x64-musl",
+    binaryName: "ferriki.linux-x64-musl.node",
+  }),
+  Object.freeze({
+    id: "linux-arm64-musl",
+    platform: "linux",
+    arch: "arm64",
+    libc: "musl",
+    packageName: "@ferriki/linux-arm64-musl",
+    binaryName: "ferriki.linux-arm64-musl.node",
+  }),
+  Object.freeze({
     id: "darwin-arm64",
     platform: "darwin",
     arch: "arm64",
@@ -38,6 +56,14 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     libc: "msvc",
     packageName: "@ferriki/win32-x64-msvc",
     binaryName: "ferriki.win32-x64.node",
+  }),
+  Object.freeze({
+    id: "win32-arm64-msvc",
+    platform: "win32",
+    arch: "arm64",
+    libc: "msvc",
+    packageName: "@ferriki/win32-arm64-msvc",
+    binaryName: "ferriki.win32-arm64.node",
   }),
 ]);
 
