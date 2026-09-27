@@ -8,7 +8,7 @@ loads the native addon and the bundled standard languages and themes.
 ## Install
 
 ```sh
-npm install ferriki
+npm install @ferriki/core
 ```
 
 Ferriki requires Node.js 22.13.0 or newer and a supported platform binary.
@@ -22,7 +22,7 @@ ship the bundled main-package binary instead.
 Use a shorthand for one-off highlighting:
 
 ```js
-import { codeToHtml } from "ferriki";
+import { codeToHtml } from "@ferriki/core";
 
 const html = await codeToHtml('console.log("Hello")', {
   lang: "javascript",
@@ -33,7 +33,7 @@ const html = await codeToHtml('console.log("Hello")', {
 Reuse a highlighter when highlighting multiple snippets:
 
 ```js
-import { createHighlighter } from "ferriki";
+import { createHighlighter } from "@ferriki/core";
 
 using highlighter = await createHighlighter({
   langs: ["javascript", "markdown"],
@@ -119,7 +119,7 @@ The native runtime currently provides:
 - `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
 - language aliases, lazy embedded languages, and external grammar injections
 - validated custom TextMate grammar and theme registrations
-- `ferrikiVersion` and the low-level `ferriki/native` binding loader
+- `ferrikiVersion` and the low-level `@ferriki/core/native` binding loader
 
 The renderer supports the classic single-theme structure and ordered
 light/dark CSS-variable themes. ANSI escape sequences are rejected explicitly;

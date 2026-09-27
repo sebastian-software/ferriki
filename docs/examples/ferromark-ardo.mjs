@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-const { createHighlighter } = await import(process.env.FERRIKI_PACKAGE_PATH || 'ferriki')
+const { createHighlighter } = await import(process.env.FERRIKI_PACKAGE_PATH || '@ferriki/core')
 
 /**
  * Build the synchronous highlighter contract consumed by Ferromark 0.8.

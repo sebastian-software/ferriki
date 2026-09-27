@@ -37,7 +37,7 @@ is a Ferriki feature.
 
 ```diff
 - import { createHighlighter } from 'shiki'
-+ import { createHighlighter } from 'ferriki'
++ import { createHighlighter } from '@ferriki/core'
 
   const highlighter = await createHighlighter({
     langs: ['typescript'],

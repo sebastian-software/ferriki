@@ -1,7 +1,7 @@
 # ferriki-core
 
 `ferriki-core` is the unpublished N-API host behind the Ferriki Node package.
-Its native methods call the shared [`ferriki`](../ferriki/README.md) Rust
+Its native methods call the shared [`ferriki`](../../README.md) Rust
 runtime and map typed Rust errors to N-API errors. It does not own a separate
 grammar, theme, tokenizer, asset, or HTML implementation.
 

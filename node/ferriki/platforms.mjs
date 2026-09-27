@@ -13,7 +13,7 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     platform: "linux",
     arch: "x64",
     libc: "gnu",
-    packageName: "ferriki-linux-x64-gnu",
+    packageName: "@ferriki/linux-x64-gnu",
     binaryName: "ferriki.linux-x64.node",
   }),
   Object.freeze({
@@ -21,21 +21,21 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     platform: "linux",
     arch: "arm64",
     libc: "gnu",
-    packageName: "ferriki-linux-arm64-gnu",
+    packageName: "@ferriki/linux-arm64-gnu",
     binaryName: "ferriki.linux-arm64.node",
   }),
   Object.freeze({
     id: "darwin-arm64",
     platform: "darwin",
     arch: "arm64",
-    packageName: "ferriki-darwin-arm64",
+    packageName: "@ferriki/darwin-arm64",
     binaryName: "ferriki.darwin-arm64.node",
   }),
   Object.freeze({
     id: "darwin-x64",
     platform: "darwin",
     arch: "x64",
-    packageName: "ferriki-darwin-x64",
+    packageName: "@ferriki/darwin-x64",
     binaryName: "ferriki.darwin-x64.node",
   }),
   Object.freeze({
@@ -43,7 +43,7 @@ export const FERRIKI_PLATFORM_TARGETS = Object.freeze([
     platform: "win32",
     arch: "x64",
     libc: "msvc",
-    packageName: "ferriki-win32-x64-msvc",
+    packageName: "@ferriki/win32-x64-msvc",
     binaryName: "ferriki.win32-x64.node",
   }),
 ]);

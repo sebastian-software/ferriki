@@ -5,7 +5,7 @@
 This is the actual loader error when no candidate can be loaded. It lists the
 paths tried under the package directory. Check, in order:
 
-1. the matching optional package (`ferriki-<platform>`) is installed,
+1. the matching optional package (`@ferriki/<platform>`) is installed,
    or the main package contains `dist/ferriki.<platform>-<arch>.node`;
 2. the package was installed with optional dependencies and lifecycle scripts
    allowed by your deployment policy;
@@ -25,7 +25,7 @@ Load the language before synchronous rendering, or use the async factory with
 the bundled loader:
 
 ```js
-import { bundledLanguages, createHighlighter } from 'ferriki'
+import { bundledLanguages, createHighlighter } from '@ferriki/core'
 
 const highlighter = await createHighlighter({
   langs: [bundledLanguages.typescript],
@@ -83,6 +83,6 @@ pnpm run check:docs
 ```
 
 The gate packs `node/ferriki`, installs that tarball into a temporary consumer
-with lifecycle scripts disabled, and imports only the installed `ferriki`
+with lifecycle scripts disabled, and imports only the installed `@ferriki/core`
 package. A failure usually means a missing `files` entry, asset, declaration,
 or platform sidecar. Inspect `npm pack --dry-run` from `node/ferriki`.

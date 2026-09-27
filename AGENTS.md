@@ -36,8 +36,9 @@ Rerun `build:native` after any Rust change before Node checks.
 
 ## Package facts
 
-- Publishable package: `node/ferriki` (npm `ferriki`), ESM-only, Node >= 22.13.0,
-  backed by the native Rust runtime and platform addon.
+- Publishable package: `node/ferriki` (npm `@ferriki/core`, platform sidecars
+  `@ferriki/<platform>`), ESM-only, Node >= 22.13.0, backed by the native Rust
+  runtime and platform addon.
 - Publishable crates: `ferriki` (the repository root package),
   `ferriki-textmate` and `ferriki-asset-gen`. They share one version with the
   npm package; Release Please (`release-type: rust`) bumps all of them and

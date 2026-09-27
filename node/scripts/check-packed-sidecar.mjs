@@ -86,7 +86,7 @@ try {
     { cwd: consumer, stdio: "ignore" },
   );
 
-  const installedMain = join(consumer, "node_modules", "ferriki");
+  const installedMain = join(consumer, "node_modules", "@ferriki", "core");
   const installedSidecarAddon = join(
     consumer,
     "node_modules",
@@ -112,7 +112,7 @@ try {
   await writeFile(
     probe,
     `
-import { loadFerrikiNativeBinding } from 'ferriki/native'
+import { loadFerrikiNativeBinding } from '@ferriki/core/native'
 
 const version = loadFerrikiNativeBinding().ferrikiVersion()
 if (!version)

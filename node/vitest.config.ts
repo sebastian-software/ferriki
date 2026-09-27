@@ -138,11 +138,11 @@ export default ${defaultExportInteropExpression("loaded")}
         replacement: compatPackage("types/src/index.ts"),
       },
       {
-        find: /^ferriki$/,
+        find: /^@ferriki\/core$/,
         replacement: new URL("./ferriki/index.mjs", import.meta.url).pathname,
       },
       {
-        find: /^ferriki\/native$/,
+        find: /^@ferriki\/core\/native$/,
         replacement: new URL("./ferriki/native.mjs", import.meta.url).pathname,
       },
     ],
