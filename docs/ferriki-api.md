@@ -1,6 +1,6 @@
 # Ferriki 1.0 API reference
 
-This is the public API reference for the `ferriki` package. The declaration
+This is the public API reference for the `@ferriki/core` package. The declaration
 source [`node/ferriki/src/api.mts`](../node/ferriki/src/api.mts) generates the
 published declaration wrapper [`node/ferriki/index.d.mts`](../node/ferriki/index.d.mts).
 The CI docs gate checks that every generated public symbol is represented here.
@@ -278,7 +278,7 @@ the supported replacement boundary.
 
 ## Native subpath
 
-`ferriki/native` is a low-level diagnostic escape hatch. It exposes
+`@ferriki/core/native` is a low-level diagnostic escape hatch. It exposes
 `loadFerrikiNativeBinding()` and `tryLoadFerrikiNativeBinding()` plus the
 native highlighter type. Applications should use the root API so runtime
 validation and the public error contract remain intact.

@@ -148,7 +148,7 @@ Ferriki itself does not depend on Ferromark.
 
 The publishable crates are `ferriki-textmate`, `ferriki-asset-gen`, and
 `ferriki` (the repository's root package). They share one version with the
-`ferriki` npm package and are released by the same Release Please pull request:
+`@ferriki/core` npm package and are released by the same Release Please pull request:
 merging it tags `v<version>`, and `publish.yml` publishes npm and the three
 crates from that release, in dependency order, through crates.io Trusted
 Publishing. The `ferriki-core` N-API host remains unpublished. The binary

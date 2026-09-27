@@ -86,8 +86,8 @@ try {
   await writeFile(
     consumerProbe,
     `
-import { codeToHast, codeToHtml, codeToTokens, createHighlighter } from 'ferriki'
-import { tryLoadFerrikiNativeBinding } from 'ferriki/native'
+import { codeToHast, codeToHtml, codeToTokens, createHighlighter } from '@ferriki/core'
+import { tryLoadFerrikiNativeBinding } from '@ferriki/core/native'
 
 if (!tryLoadFerrikiNativeBinding()?.ferrikiVersion())
   throw new Error('the packed ferriki/native export did not load')
@@ -122,7 +122,7 @@ if (!lazy.codeToTokens('const answer: number = 42', { lang: 'typescript', theme:
   await writeFile(
     typecheck,
     `
-import { codeToHtml, createHighlighter } from 'ferriki'
+import { codeToHtml, createHighlighter } from '@ferriki/core'
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
 const html: string = highlighter.codeToHtml('const answer = 42', { lang: 'javascript', theme: 'nord' })
@@ -152,7 +152,7 @@ void oneShot
   );
 
   const installedReadme = await readFile(
-    join(consumer, "node_modules", "ferriki", "README.md"),
+    join(consumer, "node_modules", "@ferriki", "core", "README.md"),
     "utf8",
   );
   const { description } = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));

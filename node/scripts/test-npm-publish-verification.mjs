@@ -2,21 +2,20 @@ import assert from "node:assert/strict";
 
 import { MAX_ATTEMPTS, registryVersionUrl, verifyNpmPublication } from "./verify-npm-publish.mjs";
 
+// The main package and its sidecars live in the `@ferriki` scope, so the
+// helper has to encode the scope separator for the registry path.
 assert.equal(
-  registryVersionUrl("ferriki-linux-x64-gnu", "0.2.0"),
-  "https://registry.npmjs.org/ferriki-linux-x64-gnu/0.2.0",
+  registryVersionUrl("@ferriki/linux-x64-gnu", "0.2.0"),
+  "https://registry.npmjs.org/%40ferriki%2Flinux-x64-gnu/0.2.0",
 );
-
-// The sidecars are unscoped, but the helper still has to encode a scope for any
-// other package name it is handed.
 assert.equal(
-  registryVersionUrl("@sebastian-software/ferriki", "0.2.0"),
-  "https://registry.npmjs.org/%40sebastian-software%2Fferriki/0.2.0",
+  registryVersionUrl("@ferriki/core", "0.2.0"),
+  "https://registry.npmjs.org/%40ferriki%2Fcore/0.2.0",
 );
 
 let attempts = 0;
 await verifyNpmPublication({
-  packageName: "ferriki",
+  packageName: "@ferriki/core",
   version: "0.2.0",
   publishResult: "success",
   fetchImpl: async () => {
@@ -25,7 +24,7 @@ await verifyNpmPublication({
       ok: attempts === 2,
       status: attempts === 2 ? 200 : 404,
       json: async () => ({
-        name: "ferriki",
+        name: "@ferriki/core",
         version: "0.2.0",
         dist: { attestations: { provenance: {} } },
       }),
@@ -38,7 +37,7 @@ assert.equal(attempts, 2);
 let wrongVersionAttempts = 0;
 await assert.rejects(
   verifyNpmPublication({
-    packageName: "ferriki",
+    packageName: "@ferriki/core",
     version: "0.2.0",
     publishResult: "success",
     fetchImpl: async () => {
@@ -47,7 +46,7 @@ await assert.rejects(
         ok: true,
         status: 200,
         json: async () => ({
-          name: "ferriki",
+          name: "@ferriki/core",
           version: "0.1.0",
           dist: { attestations: { provenance: {} } },
         }),
@@ -55,19 +54,19 @@ await assert.rejects(
     },
     sleepImpl: async () => {},
   }),
-  /expected ferriki@0\.2\.0/,
+  /expected @ferriki\/core@0\.2\.0/,
 );
 assert.equal(wrongVersionAttempts, MAX_ATTEMPTS);
 
 await assert.rejects(
   verifyNpmPublication({
-    packageName: "ferriki",
+    packageName: "@ferriki/core",
     version: "0.2.0",
     publishResult: "failure",
     fetchImpl: async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ name: "ferriki", version: "0.2.0" }),
+      json: async () => ({ name: "@ferriki/core", version: "0.2.0" }),
     }),
     sleepImpl: async () => {},
   }),
