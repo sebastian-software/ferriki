@@ -6,6 +6,7 @@
     ".": {
       "component": "ferriki",
       "changelog-path": "node/ferriki/CHANGELOG.md",
+      "bump-minor-pre-major": true,
       "extra-files": [
         {
           "type": "json",

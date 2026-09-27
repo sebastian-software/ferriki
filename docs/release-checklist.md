@@ -17,6 +17,11 @@ tags `v<version>` and `publish.yml` publishes npm and the crates
 `ferriki-textmate`, `ferriki-asset-gen` and `ferriki` from that release. Both
 registries use Trusted Publishing.
 
+Before 1.0, `bump-minor-pre-major` keeps a breaking change on a minor bump
+(`0.4.0` → `0.5.0`) instead of cutting `1.0.0` implicitly. The 1.0 release is a
+deliberate act: it needs the go/no-go below and a `Release-As: 1.0.0` commit
+footer.
+
 ## One-time crates.io bootstrap
 
 crates.io offers Trusted Publishing only for crates that already exist. The
