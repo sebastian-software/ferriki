@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-core"
-version = "0.4.0"
+version = "0.4.1"
 description = "Native N-API core of the Ferriki Shiki-compatible highlighter"
 readme = "README.md"
 edition.workspace = true
@@ -20,7 +20,7 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-ferriki = { version = "0.4.0", path = "../.." }
+ferriki = { version = "0.4.1", path = "../.." }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }

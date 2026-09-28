@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/sebastian-software/ferriki/compare/v0.4.0...v0.4.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **release:** wait for npm to serve new versions and normalize sidecar repository ([d7a419d](https://github.com/sebastian-software/ferriki/commit/d7a419d68cd92dc25fddac469b14e3c74a93f4f5))
+
 ## [0.4.0](https://github.com/sebastian-software/ferriki/compare/v0.3.0...v0.4.0) (2026-09-27)
 
 
