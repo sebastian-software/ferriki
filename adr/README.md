@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Accepted decisions, in order. Each record is self-contained; later
+Decisions, in order. Proposed records are marked in the table. Each record is self-contained; later
 records refine earlier ones where noted.
 
 | ADR | Decision |
@@ -17,6 +17,7 @@ records refine earlier ones where noted.
 | [0010](0010-mechanical-vscode-textmate-port.md) | Mechanically port vscode-textmate into a separate Rust crate |
 | [0011](0011-ferriki-1.0-api-contract.md) | Freeze the Ferriki 1.0 Node API contract |
 | [0012](0012-publishable-rust-highlighter.md) | Publishable Rust highlighter and external Ferromark adapter |
+| [0013](0013-content-addressed-standard-assets.md) | Content-addressed standard assets with a bundled core set (proposed) |
 
 ## Adding a record
 
