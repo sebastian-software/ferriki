@@ -26,8 +26,9 @@ pnpm run test:ferriki-compat:textmate
 ```
 
 `build:native` compiles `crates/ferriki-core` in release mode and copies
-the addon into `node/ferriki/` — rerun it after any Rust change before
-running the Node lanes.
+the addon into `node/ferriki/` and the host's platform package under
+`node/platforms/` — rerun it after any Rust change before running the Node
+lanes.
 
 ## Test lanes
 

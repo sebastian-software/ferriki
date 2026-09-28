@@ -5,8 +5,8 @@
 This is the actual loader error when no candidate can be loaded. It lists the
 paths tried under the package directory. Check, in order:
 
-1. the matching optional package (`@ferriki/<platform>`) is installed,
-   or the main package contains `dist/ferriki.<platform>-<arch>.node`;
+1. the matching optional package (`@ferriki/<platform>`) is installed; the
+   main package itself ships no native addon;
 2. the package was installed with optional dependencies and lifecycle scripts
    allowed by your deployment policy;
 3. the target is in the documented CI support matrix (on Linux the loader
@@ -82,7 +82,7 @@ pnpm run build:native
 pnpm run check:docs
 ```
 
-The gate packs `node/ferriki`, installs that tarball into a temporary consumer
-with lifecycle scripts disabled, and imports only the installed `@ferriki/core`
-package. A failure usually means a missing `files` entry, asset, declaration,
+The gate packs `node/ferriki` and the host's platform package, installs both
+tarballs into a temporary consumer with lifecycle scripts disabled, and imports
+only the installed `@ferriki/core` package. A failure usually means a missing `files` entry, asset, declaration,
 or platform sidecar. Inspect `npm pack --dry-run` from `node/ferriki`.

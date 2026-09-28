@@ -266,10 +266,12 @@ jobs:
           name: native-win32-arm64-msvc
           path: node/platforms/win32-arm64-msvc
 
-      - name: Build package wrappers and Linux fallback
+      # The main package ships no native addon; every platform package holds
+      # the matrix-built artifact downloaded above.
+      - name: Build package wrappers and sync standard assets
         run: |
           pnpm run build
-          pnpm run build:native
+          node ./ferriki/scripts/sync-standard-assets.mjs
 
       - name: Verify all release packages
         run: |
@@ -284,6 +286,8 @@ jobs:
       # this repeats the Linux release artifact check immediately before npm.
       - name: Verify packed main-package consumer
         run: node ./scripts/check-packed-consumer.mjs
+        env:
+          FERRIKI_PLATFORM_ID: linux-x64-gnu
 
       - name: Publish platform packages with npm provenance
         working-directory: node

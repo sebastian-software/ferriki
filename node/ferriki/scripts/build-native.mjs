@@ -4,6 +4,8 @@ import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { resolveFerrikiPlatformTarget } from "../platforms.mjs";
+
 const pkgDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(pkgDir, "..", "..");
 const manifestPath = join(repoRoot, "crates", "ferriki-core", "Cargo.toml");
@@ -24,6 +26,10 @@ if (!platformId && rustTarget) {
     "aarch64-pc-windows-msvc": "win32-arm64-msvc",
   }[rustTarget];
 }
+
+// A host build without an explicit target also fills the host's platform
+// package: packed installs load the addon only from there.
+if (!platformId && !rustTarget) platformId = resolveFerrikiPlatformTarget()?.id;
 
 if (!platformTarget && rustTarget) {
   platformTarget = {
@@ -119,6 +125,6 @@ const syncAssets = spawnSync("node", [syncAssetsScript], {
 if (syncAssets.status !== 0) process.exit(syncAssets.status ?? 1);
 
 console.log(`[ferriki] Native addon ready: ${addonOut}`);
-console.log(`[ferriki] Bundled native addon ready: ${distAddonOut}`);
+console.log(`[ferriki] Workspace native addon ready: ${distAddonOut}`);
 console.log(`[ferriki] Platform addon ready: ${platformAddonOut}`);
 if (sidecarAddonOut) console.log(`[ferriki] Sidecar addon ready: ${sidecarAddonOut}`);

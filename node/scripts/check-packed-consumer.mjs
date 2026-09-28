@@ -1,14 +1,31 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
+
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const packageRoot = join(nodeRoot, "ferriki");
 const examplePath = join(nodeRoot, "..", "docs", "examples", "ferromark-ardo.mjs");
+// The main package ships no native addon; a consumer loads it from the
+// matching platform package, so this gate installs both tarballs.
+const platformId = process.env.FERRIKI_PLATFORM_ID ?? resolveFerrikiPlatformTarget()?.id;
+assert(
+  platformId,
+  "FERRIKI_PLATFORM_ID is required on a platform Ferriki does not support natively",
+);
+const target = FERRIKI_PLATFORM_TARGETS.find((entry) => entry.id === platformId);
+assert(target, `unknown Ferriki platform id ${platformId}`);
+const sidecarRoot = join(nodeRoot, "platforms", platformId);
+await stat(join(sidecarRoot, "ferriki.node")).catch(() => {
+  throw new Error(
+    `${sidecarRoot}/ferriki.node is missing; run build:native with FERRIKI_PLATFORM_ID=${platformId} first`,
+  );
+});
 const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-docs-consumer-"));
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
@@ -41,8 +58,8 @@ try {
   for (const required of ["index.mjs", "index.d.mts", "native.mjs", "assets/shiki/catalog.mjs"])
     assert(files.has(required), `packed Ferriki package is missing ${required}`);
   assert(
-    [...files].some((file) => /^dist\/ferriki\..+\.node$/.test(file)),
-    "packed Ferriki package is missing its platform addon",
+    ![...files].some((file) => file.endsWith(".node")),
+    "the main package must not ship a native addon; platform packages carry it",
   );
   const forbidden = [
     (file) => file.startsWith("dist/chunks/"),
@@ -61,20 +78,25 @@ try {
   );
 
   const tarball = join(tempRoot, metadata.filename);
+  const sidecar = JSON.parse(
+    run(npmCommand, ["pack", "--json", "--pack-destination", tempRoot], { cwd: sidecarRoot })
+      .stdout,
+  )[0];
+  assert.equal(sidecar.name, target.packageName, `sidecar tarball is ${sidecar.name}`);
   const consumer = await mkdtemp(join(tempRoot, "consumer-"));
   run(npmCommand, ["init", "--yes"], { cwd: consumer, stdio: "ignore" });
-  // Sidecars are published independently. The main-package smoke intentionally
-  // omits them so this gate remains runnable before the first coordinated npm release.
+  // Offline, so the release's other optional platform packages are skipped and
+  // the gate stays runnable before they are on npm.
   run(
     npmCommand,
     [
       "install",
       "--ignore-scripts",
-      "--omit=optional",
       "--offline",
       "--no-audit",
       "--no-fund",
       tarball,
+      join(tempRoot, sidecar.filename),
     ],
     { cwd: consumer, stdio: "ignore" },
   );

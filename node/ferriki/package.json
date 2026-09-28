@@ -26,7 +26,6 @@
     "LICENSE-MIT",
     "README.md",
     "assets/shiki",
-    "dist/ferriki.*.node",
     "index.d.mts",
     "index.mjs",
     "native.mjs",

@@ -18,14 +18,18 @@ assert.doesNotThrow(() => assertReleaseWorkflow({ workflow, checklist, releaseCo
 
 const smokeStep =
   "      - name: Verify packed main-package consumer\n" +
-  "        run: node ./scripts/check-packed-consumer.mjs\n\n";
+  "        run: node ./scripts/check-packed-consumer.mjs\n" +
+  "        env:\n" +
+  "          FERRIKI_PLATFORM_ID: linux-x64-gnu\n\n";
 assert.equal(workflow.match(new RegExp(smokeStep, "g"))?.length, 1);
 
 const commandReplacedWithVersionCheck = workflow.replace(
   smokeStep,
   "      - name: Verify packed main-package consumer\n" +
     "        run: node --version\n" +
-    "        # node ./scripts/check-packed-consumer.mjs\n\n",
+    "        # node ./scripts/check-packed-consumer.mjs\n" +
+    "        env:\n" +
+    "          FERRIKI_PLATFORM_ID: linux-x64-gnu\n\n",
 );
 assert.throws(
   () =>

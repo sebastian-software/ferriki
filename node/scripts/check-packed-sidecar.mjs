@@ -8,12 +8,10 @@ import { fileURLToPath } from "node:url";
 
 import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
 
-// The packed-consumer check installs ferriki without optional dependencies and
-// therefore only ever exercises the bundled addon. This check does the
-// opposite: it installs the matching sidecar package next to ferriki, strips
-// every bundled addon out of the installed main package, and proves that the
-// loader still comes up — which can only be true if it resolved the sidecar by
-// package name. A negative control then removes the sidecar addon as well and
+// The main package ships no native addon, so the loader can only come up by
+// resolving the matching sidecar package by name. This check installs both
+// packed tarballs, asserts that the installed main package carries no addon,
+// and loads the binding. A negative control then removes the sidecar addon and
 // expects the documented failure, so a green run cannot be a fallback in
 // disguise.
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
@@ -95,18 +93,14 @@ try {
   );
   await stat(installedSidecarAddon);
 
-  // Leave the sidecar as the only addon the loader could possibly find.
+  // The sidecar must be the only addon the loader could possibly find.
   const bundled = [];
   for (const directory of [installedMain, join(installedMain, "dist")]) {
     for (const entry of await readdir(directory).catch(() => [])) {
       if (entry.endsWith(".node")) bundled.push(join(directory, entry));
     }
   }
-  assert(
-    bundled.length > 0,
-    "the packed main package carried no bundled addon to strip; the check would prove nothing",
-  );
-  for (const file of bundled) await rm(file, { force: true });
+  assert.deepEqual(bundled, [], "the installed main package must not carry a native addon");
 
   const probe = join(consumer, "sidecar-probe.mjs");
   await writeFile(
@@ -146,7 +140,7 @@ console.log(\`ferriki native core \${version} loaded from ${target.packageName}\
   );
 
   console.log(
-    `Ferriki packed sidecar verified (${sidecar.filename} resolved by package name, ${main.filename} bundled addon ignored)`,
+    `Ferriki packed sidecar verified (${sidecar.filename} resolved by package name, ${main.filename} carries no addon)`,
   );
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
