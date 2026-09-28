@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.4.0](https://github.com/sebastian-software/ferriki/compare/v0.3.0...v0.4.0) (2026-09-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* macOS Intel (`darwin-x64`) is no longer a supported native target and no `@ferriki/darwin-x64` sidecar is published.
+* the `@ferriki/core/native` subpath is no longer exported; use `ferrikiVersion()` from `@ferriki/core` to check that the native binding loaded.
+* install and import `@ferriki/core` instead of `ferriki` (and `@ferriki/core/native` instead of `ferriki/native`); the platform sidecars are published as `@ferriki/<platform>`. No version of these packages has been published before.
+* the optional native sidecars are now published as `ferriki-<platform>` rather than `@sebastian-software/ferriki-<platform>`.
+
+### Features
+
+* drop the macOS Intel native target ([00aa74c](https://github.com/sebastian-software/ferriki/commit/00aa74ce0774a96f650ab3ffa9384188c51612a4)), closes [#52](https://github.com/sebastian-software/ferriki/issues/52)
+* keep the native binding loader internal ([ab1bfff](https://github.com/sebastian-software/ferriki/commit/ab1bfff11aad92fcfbbad3ad28793d5868e81ecc)), closes [#136](https://github.com/sebastian-software/ferriki/issues/136)
+* **native:** add Linux musl and Windows arm64 targets ([dede78e](https://github.com/sebastian-software/ferriki/commit/dede78e86d81b2f47386aae53962f8fd0a2daca9))
+* publish under the [@ferriki](https://github.com/ferriki) npm scope ([f975ae0](https://github.com/sebastian-software/ferriki/commit/f975ae031920864943747b4859dcb9059c6d81c3))
+* rename the native sidecars to unscoped ferriki-&lt;platform&gt; ([#106](https://github.com/sebastian-software/ferriki/issues/106)) ([71d47a3](https://github.com/sebastian-software/ferriki/commit/71d47a379ac9054380343eaeb39f6ae2a4322566))
+* **rust:** expose reusable highlighter for Ferromark ([#128](https://github.com/sebastian-software/ferriki/issues/128)) ([6bff499](https://github.com/sebastian-software/ferriki/commit/6bff499ea63943adebee15f547a1e90c29933fa9))
+
+
+### Bug Fixes
+
+* **ci:** publish platform packages from local paths ([#91](https://github.com/sebastian-software/ferriki/issues/91)) ([f21104f](https://github.com/sebastian-software/ferriki/commit/f21104f7a33984c3ddc6c997067ba9d22f668623))
+* harden release workflow contract ([8bb734a](https://github.com/sebastian-software/ferriki/commit/8bb734a14f276c7037e73b3954b5d4feb7e87f32))
+* **release:** let release-please update platform versions ([#92](https://github.com/sebastian-software/ferriki/issues/92)) ([c0e4593](https://github.com/sebastian-software/ferriki/commit/c0e4593b6295efb4cf83c3b091477861790b77cd))
+
+
+### Performance Improvements
+
+* **textmate:** scan with CAPTURE_GROUP and drop the direct-search fallback ([d38deb6](https://github.com/sebastian-software/ferriki/commit/d38deb69972f935e5c71b2b25c996bc2ebadb403))
+
 ## [0.3.0](https://github.com/sebastian-software/ferriki/compare/v0.2.1...v0.3.0) (2026-09-06)
 
 
