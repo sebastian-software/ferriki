@@ -3,7 +3,11 @@
   "version": "0.4.0",
   "description": "Ferriki native addon for macOS arm64",
   "license": "MIT OR Apache-2.0",
-  "repository": "git+https://github.com/sebastian-software/ferriki.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-software/ferriki.git",
+    "directory": "node/platforms/darwin-arm64"
+  },
   "files": [
     "LICENSE-APACHE",
     "LICENSE-MIT",

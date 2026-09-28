@@ -69,6 +69,17 @@ for (const target of FERRIKI_PLATFORM_TARGETS) {
     `${target.id} sidecar must use the main package version`,
   );
   assert(sidecar.files.includes("ferriki.node"), `${target.id} sidecar must publish ferriki.node`);
+  // npm rewrites a string `repository` on every publish; keep the normalized
+  // object so provenance and npmjs.com link the exact package directory.
+  assert.deepEqual(
+    sidecar.repository,
+    {
+      type: "git",
+      url: ferrikiManifest.repository.url,
+      directory: `node/platforms/${target.id}`,
+    },
+    `${target.id} sidecar must declare its repository as an object with its directory`,
+  );
 }
 
 // Every target must be built and smoke-tested in CI and built, collected and

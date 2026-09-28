@@ -58,19 +58,20 @@ await assert.rejects(
 );
 assert.equal(wrongVersionAttempts, MAX_ATTEMPTS);
 
+let failedPublishAttempts = 0;
 await assert.rejects(
   verifyNpmPublication({
     packageName: "@ferriki/core",
     version: "0.2.0",
     publishResult: "failure",
-    fetchImpl: async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ name: "@ferriki/core", version: "0.2.0" }),
-    }),
+    fetchImpl: async () => {
+      failedPublishAttempts += 1;
+      return { ok: false, status: 404, json: async () => ({}) };
+    },
     sleepImpl: async () => {},
   }),
   /publish-npm concluded failure/,
 );
+assert.equal(failedPublishAttempts, 1, "a failed publish must not wait out the retry window");
 
 console.log("Ferriki npm publication verification contract passed");

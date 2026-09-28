@@ -3,7 +3,11 @@
   "version": "0.4.0",
   "description": "Ferriki native addon for Windows x64 with MSVC",
   "license": "MIT OR Apache-2.0",
-  "repository": "git+https://github.com/sebastian-software/ferriki.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-software/ferriki.git",
+    "directory": "node/platforms/win32-x64-msvc"
+  },
   "files": [
     "LICENSE-APACHE",
     "LICENSE-MIT",
