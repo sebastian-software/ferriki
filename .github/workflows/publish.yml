@@ -301,7 +301,7 @@ jobs:
       - release-please
       - publish-npm
     if: ${{ always() && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read

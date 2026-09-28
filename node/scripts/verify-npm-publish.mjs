@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 
 import { FERRIKI_PLATFORM_TARGETS } from "../ferriki/platforms.mjs";
 
-export const MAX_ATTEMPTS = 8;
+// npm can take several minutes to serve a version it already accepted, most
+// visibly on a package's first real release: 0.4.0 of @ferriki/linux-x64-gnu
+// appeared about six and a half minutes after its publish was confirmed.
+// The packages are checked concurrently, so this window bounds the whole job.
+export const MAX_ATTEMPTS = 40;
 export const RETRY_DELAY_MS = 15_000;
 export const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -29,8 +33,11 @@ export async function verifyNpmPublication({
   let published = false;
   let provenance = false;
   let lastObservation = "the registry did not return the expected package metadata";
+  // After a failed publish the registry state is reported once; waiting for
+  // a version that was never accepted would only delay the failure.
+  const maxAttempts = publishResult === "success" ? MAX_ATTEMPTS : 1;
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const response = await fetchImpl(registryUrl, {
         cache: "no-store",
@@ -57,9 +64,9 @@ export async function verifyNpmPublication({
     }
 
     console.log(
-      `npm release verification attempt ${attempt}/${MAX_ATTEMPTS} for ${packageName}: ${lastObservation}`,
+      `npm release verification attempt ${attempt}/${maxAttempts} for ${packageName}: ${lastObservation}`,
     );
-    if (attempt < MAX_ATTEMPTS) await sleepImpl(RETRY_DELAY_MS);
+    if (attempt < maxAttempts) await sleepImpl(RETRY_DELAY_MS);
   }
 
   const failures = [];
@@ -141,13 +148,15 @@ async function main() {
     );
 
   const publishResult = process.env.NPM_PUBLISH_RESULT ?? "unknown";
-  for (const pkg of packages) {
-    await verifyNpmPublication({
-      packageName: pkg.name,
-      version: pkg.version,
-      publishResult,
-    });
-  }
+  const results = await Promise.allSettled(
+    packages.map((pkg) =>
+      verifyNpmPublication({ packageName: pkg.name, version: pkg.version, publishResult }),
+    ),
+  );
+  const failures = results
+    .filter((result) => result.status === "rejected")
+    .map((result) => result.reason.message);
+  if (failures.length > 0) throw new Error(failures.join("\n"));
   await verifyPublicInstall(packageJson.name, packageJson.version);
 }
 
