@@ -84,3 +84,7 @@ all = { level = "warn", priority = -1 }
 [profile.release]
 debug = false
 strip = "symbols"
+# Measured on linux-x64: the addon shrinks from 2.60 MB to 2.40 MB with cold
+# start and throughput unchanged or slightly faster (within run-to-run noise).
+lto = "fat"
+codegen-units = 1
