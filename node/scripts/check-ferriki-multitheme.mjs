@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
+import { createHighlighter as createShikiHighlighter } from "shiki";
 import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
+
+import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 
 const highlighter = await createHighlighter({
   langs: ["typescript"],
@@ -25,7 +29,7 @@ try {
   assert.match(tokens.tokens[0][0].htmlStyle, /--shiki-dark:/);
 
   const html = highlighter.codeToHtml("const answer: number = 42", options);
-  assert.match(html, /class="shiki-themes vitesse-light vitesse-dark"/);
+  assert.match(html, /class="shiki shiki-themes vitesse-light vitesse-dark"/);
   assert.match(html, /--shiki-light:/);
   assert.match(html, /--shiki-dark:/);
 
@@ -66,3 +70,65 @@ try {
 }
 
 console.log("Ferriki multi-theme contract verified");
+
+// Compare the actual rendering contract, including Ardo's defaultColor:false.
+const themes = ["github-light", "github-dark"];
+const native = await createHighlighter({ langs: comparisonCorpus.map(([lang]) => lang), themes });
+const reference = await createShikiHighlighter({
+  langs: comparisonCorpus.map(([lang]) => lang),
+  themes,
+});
+try {
+  for (const [lang, code] of [
+    ["typescript", "  const a = 1; \n\t// comment\n\nconst emoji = '😀';"],
+    ["rust", readFileSync(new URL("../../src/highlighter.rs", import.meta.url), "utf8")],
+  ]) {
+    for (const defaultColor of [undefined, false]) {
+      for (const mergeWhitespaces of [true, false]) {
+        for (const mergeSameStyleTokens of [false, true]) {
+          for (const transformers of [undefined, [{ tokens: (tokens) => tokens }]]) {
+            const options = {
+              lang,
+              themes: { light: themes[0], dark: themes[1] },
+              defaultColor,
+              mergeWhitespaces,
+              mergeSameStyleTokens,
+              transformers,
+            };
+            assert.equal(
+              native.codeToHtml(code, options),
+              reference.codeToHtml(code, options),
+              JSON.stringify({
+                lang,
+                defaultColor,
+                mergeWhitespaces,
+                mergeSameStyleTokens,
+                transformed: !!transformers,
+              }),
+            );
+            assert.deepEqual(
+              JSON.parse(JSON.stringify(native.codeToHast(code, options))),
+              JSON.parse(JSON.stringify(reference.codeToHast(code, options))),
+            );
+          }
+        }
+      }
+    }
+  }
+  for (const [lang, path] of comparisonCorpus) {
+    const code = readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+    for (const defaultColor of [undefined, false]) {
+      const options = { lang, themes: { light: themes[0], dark: themes[1] }, defaultColor };
+      assert.equal(native.codeToHtml(code, options), reference.codeToHtml(code, options), path);
+      assert.deepEqual(
+        JSON.parse(JSON.stringify(native.codeToHast(code, options))),
+        JSON.parse(JSON.stringify(reference.codeToHast(code, options))),
+        path,
+      );
+    }
+  }
+} finally {
+  native.dispose();
+  reference.dispose();
+}
+console.log("Multi-theme HTML and HAST match Shiki, including whitespace options and transformers");
