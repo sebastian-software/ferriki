@@ -12,6 +12,8 @@ pub enum ErrorKind {
     AssetIntegrity,
     /// The selected offline source does not contain the requested asset.
     AssetUnavailable,
+    /// Downloading an asset from the remote mirror failed.
+    AssetDownload,
     /// A custom grammar or theme registration is invalid.
     InvalidRegistration,
     /// No grammar is registered for the requested language.

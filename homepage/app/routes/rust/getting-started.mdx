@@ -14,9 +14,24 @@ cargo add ferriki
 
 ## Assets
 
-The crate does not embed the standard grammars and themes. Your application
-supplies the generated `assets/shiki` directory from the Ferriki release that
-matches the crate version:
+The crate does not embed the standard grammars and themes. Since 0.7.0 the
+`remote` feature loads them on demand from `assets.ferriki.dev`, pinned to
+the crate's release commit, verified by SHA-256 and cached locally:
+
+```sh
+cargo add ferriki --features remote
+```
+
+```rust
+let assets = StandardAssetCatalogs::remote(RemoteAssets::default())?;
+```
+
+`FERRIKI_ASSETS_BASE_URL` points at your own mirror, `FERRIKI_CACHE_DIR`
+moves the cache, and `FERRIKI_ASSETS_REMOTE=0` turns downloads off so only
+cached payloads load.
+
+Without the feature, your application supplies the generated `assets/shiki`
+directory from the Ferriki release that matches the crate version:
 
 ```text
 assets/shiki/

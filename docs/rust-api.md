@@ -149,11 +149,54 @@ The original directory and filename-based embedded constructors remain
 available for trusted application-owned assets; they validate binary formats
 but do not have release digests to verify.
 
-This is the Rust integrity foundation for ADR 0013. Release-manifest generation,
-the remote source, Node's asynchronous downloads and cache resolution, and the
-optional offline release packages remain tracked by #141. Node packages still
-bundle their payloads in this stage. A `FORMAT_VERSION` change requires matching
-assets; it is not a promise of backward-compatible binary decoding.
+`StandardAssetCatalogs::from_release_manifest` takes the same manifests plus a
+parsed `ReleaseManifest` (`assets/shiki/release-manifest.json`) instead of
+hand-built metadata. A `FORMAT_VERSION` change requires matching assets; it is
+not a promise of backward-compatible binary decoding.
+
+## Remote assets
+
+The optional `remote` feature loads the standard payloads from the
+release-pinned CDN of [ADR 0013](../adr/0013-cdn-loaded-standard-assets.md):
+
+```toml
+ferriki = { version = "<version>", features = ["remote"] }
+```
+
+```rust
+use ferriki::{Highlighter, RemoteAssets, StandardAssetCatalogs};
+
+let mut highlighter = Highlighter::builder()
+    .with_assets(StandardAssetCatalogs::remote(RemoteAssets::default())?)
+    .load_languages(["rust"])
+    .load_themes(["nord"])
+    .build()?;
+```
+
+- The crate compiles in both catalog manifests and the release manifest, so
+  resolution, aliases and error messages work offline. Payloads are fetched
+  on first load from `<base_url>/<commit>/assets/shiki/<path>`, verified
+  against the release manifest, and cached as one file per SHA-256 digest.
+  Later loads, and later releases with unchanged payloads, read the cache.
+- Settings left unset in `RemoteAssets` fall back to `FERRIKI_ASSETS_REMOTE`
+  (`0` or `false` turns downloads off), `FERRIKI_ASSETS_BASE_URL`
+  (`https://assets.ferriki.dev`) and `FERRIKI_CACHE_DIR` (the platform cache
+  directory plus `ferriki`), the same variables the Node package uses.
+- A published crate knows its release commit from `.cargo_vcs_info.json`. A
+  build from a git checkout or path dependency does not and must set
+  `RemoteAssets::with_commit`.
+- Errors: `AssetDownload` for an unreachable mirror or a non-200 response,
+  `AssetIntegrity` for bytes that do not match the release manifest (never
+  cached), and `AssetUnavailable` for a cache miss with downloads turned off.
+  There is no retry.
+- Offline use: point `FERRIKI_ASSETS_BASE_URL` at a mirror of the repository's
+  `assets/shiki/` at the release commit, run once online to populate the cache
+  and reuse it, or use `DirectoryAssetSource`/`EmbeddedAssetSource` over a
+  checkout. There is no bundled-catalog crate.
+- HTTP uses the blocking `ureq` client with rustls and the operating system's
+  trust store; `HTTPS_PROXY` is honored. The feature is not available on
+  wasm32. [`examples/remote_assets.rs`](../examples/remote_assets.rs) runs it
+  end to end.
 
 ## Ferromark adapter contract
 

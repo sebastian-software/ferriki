@@ -83,24 +83,35 @@ and verifies every file against a digest that the release pins.
   payload that did not change between releases is not downloaded again even
   though its URL contains a different commit. A payload whose format version
   does not match the runtime is a typed error as well.
-- **Resolution order.** An asset is taken from the first source that has it: an
-  optional installed `@ferriki/assets` package, the local cache, and then the
-  remote base URL. `@ferriki/assets` holds every payload of the release and
-  exists for offline and air-gapped use; installing it is never required.
+- **Resolution order.** An asset is taken from the local cache when a valid
+  copy is there, and otherwise from the remote base URL.
+- **No offline packages.** The CDN is the only published source of payloads;
+  there is no npm package and no crate that bundles the catalog. Offline and
+  air-gapped use has three answers that need no extra release artifact: a
+  mirror of the repository's `assets/shiki/` at the release commit behind
+  `FERRIKI_ASSETS_BASE_URL`, a cache pre-populated by one online run (for
+  example a CI cache or a container layer), and, in Rust, the directory and
+  embedded sources over a checkout.
 - **Remote fetching is on by default in Node.** Without bundled payloads,
   nothing would highlight out of the box otherwise. `createHighlighter`
   accepts `assets: { remote, baseUrl, cacheDir }`. For the shorthand functions,
   whose internal highlighter no option reaches, and for CI, the process-wide
   `FERRIKI_ASSETS_REMOTE=0` (or `false`), `FERRIKI_ASSETS_BASE_URL` and
   `FERRIKI_CACHE_DIR` apply; an explicit option wins over the environment. The
-  base URL is configurable so organizations can use their own mirror. With remote fetching off, a missing
-  asset fails with a typed error that names the remedies: install
-  `@ferriki/assets`, pre-populate the cache, or allow remote assets.
+  base URL is configurable so organizations can use their own mirror. With
+  remote fetching off, a missing asset fails with a typed error that names the
+  remedies: allow remote assets, point the base URL at a mirror, or
+  pre-populate the cache.
 - **Cache location.** Node uses `node_modules/.cache/ferriki/` of the nearest
   package root, following the common `find-cache-dir` convention, and falls
   back to `$XDG_CACHE_HOME/ferriki` or `~/.cache/ferriki`. Rust uses the
-  platform cache directory. `FERRIKI_CACHE_DIR` overrides the location.
-  The cache is never evicted: entries are immutable and addressed by digest.
+  platform cache directory plus `ferriki` (`$XDG_CACHE_HOME` or `~/.cache` on
+  Linux, `~/Library/Caches` on macOS, `%LOCALAPPDATA%` on Windows).
+  `FERRIKI_CACHE_DIR` overrides the location. Both runtimes store one file per
+  SHA-256 digest, written through a temporary file and a rename, so they can
+  share a cache. A cached file that fails its digest is replaced by a fresh
+  download. The cache is never evicted: entries are immutable and addressed by
+  digest.
 - **Failure handling.** An unreachable CDN or a failed download is a typed
   error. There is no retry policy.
 - **Loading stays asynchronous.** Remote resolution happens only in the
@@ -108,18 +119,32 @@ and verifies every file against a digest that the release pins.
   Synchronous highlighting never performs I/O and reports an unloaded language
   as it does today.
 - **Rust asset sources.** `ferriki` exposes a public `AssetSource` trait keyed
-  by digest, with directory and embedded sources, and a `remote` cargo feature
-  provides the verified, caching CDN source with the same URL scheme. The feature is off by default, so the
-  library stays free of network code unless a consumer opts in. A
-  `ferriki-assets` crate embeds the full catalog for Rust consumers that want
-  everything offline.
+  by digest, with directory and embedded sources, and
+  `StandardAssetCatalogs::from_release_manifest` for any source. The `remote`
+  cargo feature adds `StandardAssetCatalogs::remote(RemoteAssets)`, which
+  compiles in both catalog manifests and the release manifest and downloads
+  payloads on first use. `RemoteAssets` mirrors the Node settings (`remote`,
+  `base_url`, `cache_dir`, plus `commit`) and falls back to the same
+  environment variables. The feature is off by default, so the library stays
+  free of network code unless a consumer opts in.
+- **Rust HTTP and TLS.** The `remote` feature uses the blocking `ureq` client,
+  matching the synchronous `AssetSource::read`, with rustls on ring and the
+  operating system's trust store (`rustls-platform-verifier`), so corporate
+  certificate authorities and TLS inspection work and `HTTPS_PROXY` is
+  honored. The client is compiled only outside wasm32; a wasm build needs its
+  own fetch path ([ADR 0009](0009-native-only-runtime.md)).
+- **Release commit in Rust.** `cargo publish` writes `.cargo_vcs_info.json`
+  with the packaged commit, which for a release is the tagged release commit.
+  The crate's build script reads it, so a published crate knows where its
+  payloads live. A build from a checkout has no such file and must pass the
+  commit explicitly.
 
-**Implementation state.** Implemented as of 0.6.x: the release manifest and
-its drift test, the Bunny pull zone, and the Rust `AssetSource` trait with
-digest verification. Still open in #141: the `remote` feature,
-`ferriki-assets`, shipping the manifests inside the `ferriki` crate, the Node
-download and cache path with its options, `@ferriki/assets`, and the release
-checks that stamp the commit and verify the CDN.
+**Implementation state.** Implemented: the release manifest and its drift
+test, the Bunny pull zone, the Rust `AssetSource` trait with digest
+verification, and the Rust `remote` feature with the manifests shipped inside
+the `ferriki` crate. Still open in #141: the Node download and cache path with
+its options, dropping the payloads from `@ferriki/core`, and the release checks
+that stamp the commit into the npm package and verify the CDN.
 
 ## Consequences
 
@@ -137,15 +162,19 @@ checks that stamp the commit and verify the CDN.
 - By default, the first use of any language or theme needs network access to
   `assets.ferriki.dev` and adds download latency. After that the cache makes it
   free. On a CDN cache miss, availability also depends on GitHub.
-- Offline and air-gapped builds, and CI without network access, must install
-  `@ferriki/assets`, pre-populate the cache, or point the base URL at a mirror.
-  The documentation and the error messages must say so.
+- Offline and air-gapped builds, and CI without network access, must
+  pre-populate the cache or point the base URL at a mirror. The documentation
+  and the error messages must say so.
 - A default install contacts `assets.ferriki.dev`. The documentation needs a
   privacy note and the opt-out. The CDN is paid for by the maintainers'
   company; at a few hundred kilobytes per project and first use, the expected
   cost is small.
-- Each release additionally publishes the optional `@ferriki/assets` package
-  and the `ferriki-assets` crate.
+- A release publishes no additional package: one npm package plus the
+  platform sidecars, and three crates, as before.
+- Rust consumers that enable `remote` inherit ureq and rustls. cargo-deny sees
+  `webpki-root-certs` (CDLA-Permissive-2.0) through a wasm32-only dependency of
+  the platform verifier, because it checks the union of all targets;
+  `deny.toml` carries a narrow exception for that crate.
 - The on-disk layout of the npm package and the Rust asset API change before
   1.0. [ADR 0011](0011-ferriki-1.0-api-contract.md) and the API contract
   documents must list the new options and errors before they are frozen.
@@ -157,3 +186,7 @@ checks that stamp the commit and verify the CDN.
 - 2026-09-28: Proposed.
 - 2026-09-29: Accepted.
 - 2026-09-30: Records the release manifest layout (0.6.x), the Node option and environment variable names decided in #141, and the shipped `AssetSource` trait (0.5.0).
+- 2026-09-30: CDN only: the `@ferriki/assets` package and the `ferriki-assets`
+  crate are dropped; offline use goes through a mirror or a pre-populated
+  cache. Records the Rust `remote` feature: ureq with the OS trust store, the
+  cache layout, and the release commit from `.cargo_vcs_info.json`.

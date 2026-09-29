@@ -17,6 +17,15 @@ allow = [
 ]
 confidence-threshold = 0.9
 
+# webpki-root-certs (Mozilla's root store as data, CDLA-Permissive-2.0) is a
+# wasm32-only dependency of rustls-platform-verifier. Ferriki's `remote`
+# feature enables ureq only outside wasm32 and verifies TLS against the
+# operating system's trust store, so no shipped build contains it; cargo-deny
+# still sees it because it checks the union of all targets.
+[[licenses.exceptions]]
+crate = "webpki-root-certs"
+allow = ["CDLA-Permissive-2.0"]
+
 [bans]
 multiple-versions = "warn"
 # The workspace crates depend on each other by path and version. Path-only
