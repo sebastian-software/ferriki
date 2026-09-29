@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      .card {
+        color: rebeccapurple;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="card" data-name="Ferriki">Say hello</button>
+    <script type="module">
+      const button = document.querySelector(".card");
+      button.addEventListener("click", () => {
+        const name = button.dataset.name ?? "you";
+        alert(`Hello, ${name}!`);
+      });
+    </script>
+  </body>
+</html>

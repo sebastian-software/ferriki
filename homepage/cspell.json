@@ -1,0 +1,26 @@
+{
+  "version": "0.2",
+  "ignorePaths": [".standards/", "app/data/"],
+  "words": [
+    "Ardo",
+    "Ferramenta",
+    "ferramenta",
+    "Ferriki",
+    "ferriki",
+    "Ferromark",
+    "ferromark",
+    "Ferroni",
+    "ferroni",
+    "oniguruma",
+    "Oniguruma",
+    "oxfmt",
+    "oxlint",
+    "pnpm",
+    "prerender",
+    "prerendered",
+    "Shiki",
+    "shiki",
+    "textmate",
+    "Twoslash"
+  ]
+}

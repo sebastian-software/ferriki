@@ -1,0 +1,91 @@
+---
+title: Benchmarks
+order: 1
+---
+
+import {
+  BenchmarkContext,
+  BenchmarkDocuments,
+  BenchmarkSummary,
+} from "../../components/benchmark-tables";
+
+# Benchmarks
+
+Ferriki is measured against Shiki itself, in the same Node.js process, on the
+same documents, languages and theme. Shiki runs twice: with its default
+Oniguruma engine compiled to WebAssembly, and with its JavaScript regex engine.
+
+Every number on this site comes from one committed report,
+[docs/benchmarks/shiki-comparison.json](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/shiki-comparison.json).
+The landing page and this page read it at build time.
+
+## Summary
+
+Corpus totals: the sum of each document's median time on a reused
+highlighter. Each factor is Shiki's time divided by Ferriki's; higher is
+faster, and a factor below 1× means Ferriki is slower.
+
+<BenchmarkSummary />
+
+What this says today:
+
+- **HTML is where Ferriki is faster.** `codeToHtml` runs tokenizing, theming
+  and rendering natively and hands one string back to JavaScript. That is the
+  call a site build or a Markdown pipeline makes.
+- **HAST and tokens are not faster yet.** `codeToHast` is slower than with
+  Shiki and `codeToTokensBase` is about even. Both return many small JavaScript
+  objects, and building them across the native boundary currently costs about
+  as much as the native tokenizing saves, or more.
+- **Small documents are close.** Below about a hundred lines the fixed cost of a
+  call dominates, and some small documents are slower than with Shiki; the
+  tables below show which.
+- **Cold start is faster.** There is no WebAssembly module to instantiate and no
+  regex translation before the first line.
+
+## Method
+
+1. **Equal output first.** For every document, Ferriki's and Shiki's JavaScript
+   engine's HTML, HAST and tokens are compared with Shiki's Oniguruma output.
+   The HTML must match byte for byte; HAST and tokens must match once
+   serialized. A document an engine renders differently would be excluded
+   from its timings and counted below.
+2. **Warm timings.** One highlighter per engine, with every corpus language and
+   the theme loaded. Per document and API, five warm-up rounds, then engines
+   take turns round by round until each has at least 30 samples and the time
+   budget is spent. The statistic is the median.
+3. **Cold start.** A fresh Node.js process per run imports the package, creates
+   a highlighter for the corpus languages and renders every document once; the
+   median of ten runs.
+
+The corpus is real files from this repository and its pinned upstream mirrors,
+from small editor fixtures to source files of more than a thousand lines. Reproduce it from
+the repository root:
+
+```sh
+cd node
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm run build:compat
+pnpm run build:native
+node scripts/bench-shiki-comparison.mjs --write ../docs/benchmarks/shiki-comparison.json
+```
+
+## Measurement context
+
+<BenchmarkContext />
+
+This is one machine. Factors on other hardware differ; the method and the
+corpus stay the same, so the command above measures yours.
+
+## Every document
+
+### codeToHtml
+
+<BenchmarkDocuments api="codeToHtml" />
+
+### codeToHast
+
+<BenchmarkDocuments api="codeToHast" />
+
+### codeToTokensBase
+
+<BenchmarkDocuments api="codeToTokensBase" />
