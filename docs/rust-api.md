@@ -105,7 +105,7 @@ its results to the JavaScript UTF-16 contract.
 does not promise `Clone` or `Eq`; compare `kind()` for fallback decisions and
 use `std::error::Error::source()` for diagnostics. Tokenizer regex errors and
 asset codec errors have crate-owned types, so their public signatures do not
-commit consumers to ferroni's or bincode's error representations.
+commit consumers to the error representations of ferroni or the asset codec.
 `ferriki::__private` is a semver-exempt bridge for the N-API host, including its
 UTF-16 highlighter and multi-theme records. Applications use `Highlighter`.
 

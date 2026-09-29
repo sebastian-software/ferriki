@@ -24,11 +24,11 @@ fn run(args: Vec<String>) -> Result<(), String> {
     }
 
     let opts = parse_generate_args(&args[1..])?;
-    let source = AssetSourceRef {
-        upstream: "textmate-grammars-themes".to_owned(),
-        version: opts.source_version,
-        commit: opts.source_commit,
-    };
+    let source = AssetSourceRef::new(
+        "textmate-grammars-themes".to_owned(),
+        opts.source_version,
+        opts.source_commit,
+    );
 
     generate_catalogs_from_upstream(&opts.upstream_dir, &opts.output_dir, source)
         .map_err(|err| format!("generation failed: {err}"))?;

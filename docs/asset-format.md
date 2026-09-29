@@ -13,15 +13,22 @@ core a stable generator/loader contract.
   - `.fkgram`: one language asset
   - `.fktheme`: one theme asset
   - `.fkindex`: one manifest for a catalog
-- Encoding: `serde` + `bincode`
-- Current format version: `2`
+- Encoding: `serde` + [`postcard`](https://docs.rs/postcard): unsigned
+  integers and lengths are LEB128 varints, strings are length-prefixed UTF-8,
+  `Option` is a `0`/`1` tag followed by the value
+- Current format version: `3` (format `2` used `bincode` 1.x, which is
+  unmaintained, RUSTSEC-2025-0141)
 - Source of truth for structs and roundtrip tests:
   - [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
   - [`src/asset_catalog.rs`](../src/asset_catalog.rs)
 
-There is currently no custom magic header or checksum layer. The loader relies
-on the file extension, the enclosing catalog path, and successful `bincode`
-decode into the expected Rust structs.
+There is no magic header. Every manifest and asset starts with its
+`format_version`, so the decoder reads that varint first and reports a file
+from another format version as `unsupported asset format version N` before it
+looks at the payload. A format `2` file starts with `02 00 00 00`, whose first
+byte decodes to the same version, so old files get the same clear error. Bytes
+left over after the encoded value are rejected. Integrity against the release
+manifest is checked separately by the `AssetSource` layer (SHA-256).
 
 ## Catalog Layout
 
@@ -159,10 +166,10 @@ Current runtime behavior in
 [`src/asset_catalog.rs`](../src/asset_catalog.rs):
 
 - read manifest bytes from disk
-- decode with `bincode`
+- check the format version, then decode
 - resolve `id` or alias
 - lazy-load the requested asset file
-- decode with `bincode`
+- check the format version, then decode
 - cache the decoded Rust struct in memory
 
 The same catalog API also accepts embedded manifest and asset bytes. Both
@@ -175,7 +182,8 @@ Format changes should follow these rules:
 
 - If a field is added, removed, renamed, or reinterpreted, bump
   `FORMAT_VERSION`.
-- Update generator and loader together.
+- Update generator and loader together, including the manifest reader in
+  [`scripts/generate-ferriki-catalog.mjs`](../scripts/generate-ferriki-catalog.mjs).
 - Regenerate `assets/shiki/*`.
 - Keep roundtrip tests green.
 - Add or update targeted compatibility tests when semantic normalization

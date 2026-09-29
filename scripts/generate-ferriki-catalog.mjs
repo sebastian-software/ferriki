@@ -3,6 +3,9 @@ import path from 'node:path'
 
 const outputDir = path.resolve(process.argv[2] || 'assets/shiki')
 
+// Must match `FORMAT_VERSION` in crates/ferriki-asset-gen/src/schema.rs.
+const FORMAT_VERSION = 3
+
 async function main() {
   const languagesManifest = await readManifest(path.join(outputDir, 'languages', 'manifest.fkindex'), 'language')
   const themesManifest = await readManifest(path.join(outputDir, 'themes', 'manifest.fkindex'), 'theme')
@@ -20,13 +23,15 @@ async function main() {
 function readManifest(file, kind) {
   return readFile(file).then(bytes => {
     const cursor = new Cursor(bytes, file)
-    const formatVersion = cursor.u32()
+    const formatVersion = cursor.varint()
+    if (formatVersion !== FORMAT_VERSION)
+      throw new Error(`Unsupported Ferriki manifest format ${formatVersion} in ${file}; expected ${FORMAT_VERSION}`)
     const source = {
       upstream: cursor.string(),
       version: cursor.optionalString(),
       commit: cursor.optionalString(),
     }
-    const entries = Array.from({ length: cursor.u64() }, () => (
+    const entries = Array.from({ length: cursor.varint() }, () => (
       kind === 'language' ? readLanguageEntry(cursor) : readThemeEntry(cursor)
     ))
     cursor.assertEnd()
@@ -69,24 +74,24 @@ class Cursor {
     return this.view.getUint8(this.offset++)
   }
 
-  u32() {
-    this.ensure(4)
-    const value = this.view.getUint32(this.offset, true)
-    this.offset += 4
+  // postcard encodes integers and lengths as unsigned LEB128 varints.
+  varint() {
+    let value = 0
+    let shift = 0
+    for (;;) {
+      const byte = this.u8()
+      value += (byte & 0x7F) * 2 ** shift
+      if ((byte & 0x80) === 0)
+        break
+      shift += 7
+      if (shift > 49)
+        throw new Error(`Varint in ${this.file} exceeds JavaScript's safe integer range`)
+    }
     return value
   }
 
-  u64() {
-    this.ensure(8)
-    const value = this.view.getBigUint64(this.offset, true)
-    this.offset += 8
-    if (value > BigInt(Number.MAX_SAFE_INTEGER))
-      throw new Error(`Length in ${this.file} exceeds JavaScript's safe integer range`)
-    return Number(value)
-  }
-
   string() {
-    const length = this.u64()
+    const length = this.varint()
     this.ensure(length)
     const value = new TextDecoder().decode(this.bytes.subarray(this.offset, this.offset + length))
     this.offset += length
@@ -98,7 +103,7 @@ class Cursor {
   }
 
   strings() {
-    return Array.from({ length: this.u64() }, () => this.string())
+    return Array.from({ length: this.varint() }, () => this.string())
   }
 
   ensure(length) {
