@@ -118,8 +118,7 @@ fn manifests_from_another_format_version_fail_with_a_format_error() {
             fixture.metadata.clone(),
             EmbeddedAssetSource::new(fixture.bytes.clone()),
         )
-        .err()
-        .expect("a manifest from another format version must fail");
+        .expect_err("a manifest from another format version must fail");
         assert_eq!(error.kind(), ErrorKind::AssetFormat);
         let source = std::error::Error::source(&error).expect("codec error source");
         assert!(
@@ -147,8 +146,7 @@ fn tampered_payloads_are_rejected_before_decoding() {
         .with_assets(catalogs)
         .load_themes(["nord"])
         .build()
-        .err()
-        .expect("corrupt source must fail");
+        .expect_err("corrupt source must fail");
     assert_eq!(error.kind(), ErrorKind::AssetIntegrity);
 }
 
@@ -177,7 +175,7 @@ fn byte_size_and_format_are_pinned_even_when_digest_matches() {
         );
         if format_mismatch {
             assert_eq!(
-                result.err().expect("unsupported format").kind(),
+                result.expect_err("unsupported format").kind(),
                 ErrorKind::AssetFormat
             );
         } else {
@@ -185,8 +183,7 @@ fn byte_size_and_format_are_pinned_even_when_digest_matches() {
                 .with_assets(result.unwrap())
                 .load_themes(["nord"])
                 .build()
-                .err()
-                .expect("wrong size");
+                .expect_err("wrong size");
             assert_eq!(error.kind(), ErrorKind::AssetIntegrity);
         }
     }
@@ -202,7 +199,7 @@ fn missing_metadata_and_offline_payloads_have_distinct_errors() {
         EmbeddedAssetSource::default(),
     );
     assert_eq!(
-        incomplete.err().expect("missing metadata").kind(),
+        incomplete.expect_err("missing metadata").kind(),
         ErrorKind::AssetFormat
     );
     let catalogs = StandardAssetCatalogs::from_source(
@@ -216,8 +213,7 @@ fn missing_metadata_and_offline_payloads_have_distinct_errors() {
         .with_assets(catalogs)
         .load_themes(["nord"])
         .build()
-        .err()
-        .expect("offline miss");
+        .expect_err("offline miss");
     assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
     assert!(error.to_string().contains("pre-populated cache"));
 }

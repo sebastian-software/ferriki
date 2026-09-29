@@ -17,6 +17,15 @@ pub struct StandardAssetCatalogs {
     pub(crate) themes: ThemeAssetCatalog,
 }
 
+impl std::fmt::Debug for StandardAssetCatalogs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StandardAssetCatalogs")
+            .field("languages", &self.languages.entries_by_id.len())
+            .field("themes", &self.themes.entries_by_id.len())
+            .finish_non_exhaustive()
+    }
+}
+
 impl StandardAssetCatalogs {
     pub fn load_from_root(root_dir: &Path) -> Result<Self> {
         Ok(Self {

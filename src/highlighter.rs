@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use ferriki_textmate::{GrammarConfiguration, RawGrammar, SyncRegistry, parse_raw_grammar};
+use ferriki_textmate::{
+    FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType, SyncRegistry, parse_raw_grammar,
+};
 use serde_json::Value;
 
 use crate::asset_catalog::StandardAssetCatalogs;
@@ -54,11 +56,20 @@ pub struct Highlighter {
     core: HighlighterCore,
 }
 
+impl std::fmt::Debug for Highlighter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Highlighter")
+            .field("loaded_languages", &self.core.loaded_languages())
+            .finish_non_exhaustive()
+    }
+}
+
 /// Escaped, balanced inner HTML and the theme colors for one code block.
 ///
 /// Each entry in `lines` corresponds to one source line. A Markdown renderer
 /// owns the outer markup and should apply `foreground` and `background` to its
 /// code-block wrapper.
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct HighlightedLines {
     pub lines: Vec<String>,
@@ -68,6 +79,7 @@ pub struct HighlightedLines {
 }
 
 /// A typed custom TextMate grammar registration.
+#[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct LanguageRegistration {
     /// Language identifier used by `highlight`.
@@ -81,7 +93,7 @@ pub struct LanguageRegistration {
 }
 
 /// Configuration for a reusable highlighter.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct HighlighterBuilder {
     assets: Option<StandardAssetCatalogs>,
     languages: Vec<String>,
@@ -700,8 +712,10 @@ impl HighlighterCore {
                     content: line.to_owned(),
                     offset: line_offset,
                     color: Some(String::new()),
-                    font_style: Some(0),
-                    token_type: options.include_token_type.then_some(0),
+                    font_style: Some(FontStyle::NONE),
+                    token_type: options
+                        .include_token_type
+                        .then_some(StandardTokenType::Other),
                     scope_names: None,
                 }]);
                 continue;
@@ -1119,7 +1133,10 @@ mod tests {
 
         assert_eq!(result.tokens.len(), 3);
         assert_eq!(result.tokens[1][0].offset, 6);
-        assert_eq!(result.tokens[1][0].token_type, Some(1));
+        assert_eq!(
+            result.tokens[1][0].token_type,
+            Some(StandardTokenType::Comment)
+        );
         assert!(result.tokens[2].is_empty());
     }
 

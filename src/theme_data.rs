@@ -8,7 +8,7 @@ const FALLBACK_LIGHT_BG: &str = "#fffffe";
 const FALLBACK_DARK_FG: &str = "#bbbbbb";
 const FALLBACK_DARK_BG: &str = "#1e1e1e";
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct ThemeData {
     pub name: String,

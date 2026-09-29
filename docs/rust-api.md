@@ -93,13 +93,29 @@ tokenizer failures use `ErrorKind::Tokenization`.
 Options and output records are non-exhaustive so later releases can add fields.
 Construct `TokenizeOptions` and `RenderOptions` with `Default` and their
 `with_*` methods; inspect output records without exhaustive destructuring.
+The same rule holds across the three crates: input types that callers build
+(`RawTheme`, `RawThemeSetting`, `RawThemeStyle`, `GrammarConfiguration`) come
+with `Default` and `with_*` setters, and result types expose public fields for
+reading. `ErrorKind` is non-exhaustive, so a `match` needs a wildcard arm;
+comparing with `==` needs none. None of this affects the N-API boundary, which
+exchanges JSON.
 Tokenization defaults to a 500 ms per-line limit, unlimited line length (`0`),
 and no token type or scope metadata. Rendering merges whitespace by default,
 does not merge other adjacent styles, emits theme colors, and sets `tabindex="0"`.
-Tokens serialize with camelCase fields, `type` for the optional token type, and
-`fg`/`bg` on the enclosing result. Absent optional fields are omitted. Rust
-offsets remain UTF-8 bytes even when serialized; only the N-API host converts
-its results to the JavaScript UTF-16 contract.
+`HighlightToken::font_style` is a `FontStyle` bit set and `token_type` a
+`StandardTokenType`. `color` is `None` only for tokens without theme styling,
+such as plain-text input; themed tokens always carry a color.
+
+Tokens serialize with camelCase fields and `fg`/`bg` on the enclosing result.
+`fontStyle` serializes as its integer bits (`FontStyle::NOT_SET` is `-1`), and
+`type` as the numeric token type (`0` other, `1` comment, `2` string, `3`
+regex). Absent optional fields are omitted. Rust offsets remain UTF-8 bytes
+even when serialized; only the N-API host converts its results to the
+JavaScript UTF-16 contract. For example:
+
+```json
+{"content":"fn","offset":0,"color":"#81A1C1","fontStyle":3,"type":1}
+```
 
 `Error` owns a category, message, and optional source error. It deliberately
 does not promise `Clone` or `Eq`; compare `kind()` for fallback decisions and
@@ -201,6 +217,11 @@ The publishable crates are `ferriki-textmate`, `ferriki-asset-gen`, and
 merging it tags `v<version>`, and `publish.yml` publishes npm and the three
 crates from that release, in dependency order, through crates.io Trusted
 Publishing. The `ferriki-core` N-API host remains unpublished. The binary
-asset format version links the runtime to its asset bundle. See
+asset format version links the runtime to its asset bundle.
+
+`rust-version` in the workspace `Cargo.toml` is the MSRV of all three crates.
+It follows the Ferramenta family policy of staying within the four latest
+stable Rust releases, so a minor release may raise it; raising it is not
+treated as a breaking change. See
 [ADR 0012](../adr/0012-publishable-rust-highlighter.md) and the
 [release checklist](release-checklist.md).

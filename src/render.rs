@@ -223,7 +223,7 @@ fn token_style(token: &HighlightToken) -> String {
     if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
         declarations.push(format!("color:{color}"));
     }
-    let style = FontStyle::from_bits(token.font_style.unwrap_or_default());
+    let style = token.font_style.unwrap_or_default();
     if style.contains(FontStyle::ITALIC) {
         declarations.push("font-style:italic".to_owned());
     }
@@ -244,7 +244,7 @@ fn token_style(token: &HighlightToken) -> String {
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
-    let style = FontStyle::from_bits(token.font_style.unwrap_or_default());
+    let style = token.font_style.unwrap_or_default();
     style.contains(FontStyle::UNDERLINE) || style.contains(FontStyle::STRIKETHROUGH)
 }
 

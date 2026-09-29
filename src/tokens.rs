@@ -1,4 +1,4 @@
-use ferriki_textmate::EncodedTokenAttributes;
+use ferriki_textmate::{EncodedTokenAttributes, FontStyle, StandardTokenType};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::ops::Range;
@@ -34,9 +34,9 @@ pub struct HighlightToken {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub font_style: Option<i32>,
+    pub font_style: Option<FontStyle>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub token_type: Option<u8>,
+    pub token_type: Option<StandardTokenType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope_names: Option<Vec<String>>,
 }
@@ -79,7 +79,7 @@ pub struct HighlightThemeTokenStyle {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub font_style: Option<i32>,
+    pub font_style: Option<FontStyle>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -89,7 +89,7 @@ pub struct HighlightThemeToken {
     pub offset: usize,
     pub variants: BTreeMap<String, HighlightThemeTokenStyle>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub token_type: Option<u8>,
+    pub token_type: Option<StandardTokenType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope_names: Option<Vec<String>>,
 }
@@ -138,8 +138,8 @@ pub(crate) fn token_from_metadata(
                 .cloned()
                 .unwrap_or_default(),
         ),
-        font_style: Some(attributes.font_style().bits()),
-        token_type: include_token_type.then_some(attributes.token_type() as u8),
+        font_style: Some(attributes.font_style()),
+        token_type: include_token_type.then_some(attributes.token_type()),
         scope_names,
     })
 }
@@ -235,5 +235,30 @@ mod tests {
     #[test]
     fn maps_utf16_offsets_to_utf8_boundaries() {
         assert_eq!(utf16_to_byte_map("a😀b"), vec![0, 1, 1, 5, 6]);
+    }
+
+    #[test]
+    fn typed_token_fields_keep_the_numeric_json_shape() {
+        let token = HighlightToken {
+            content: "fn".to_owned(),
+            offset: 0,
+            color: Some("#81A1C1".to_owned()),
+            font_style: Some(FontStyle::ITALIC | FontStyle::BOLD),
+            token_type: Some(StandardTokenType::Comment),
+            scope_names: None,
+        };
+        let json = serde_json::to_string(&token).expect("serialize");
+        assert_eq!(
+            json,
+            r##"{"content":"fn","offset":0,"color":"#81A1C1","fontStyle":3,"type":1}"##
+        );
+        assert_eq!(
+            serde_json::from_str::<HighlightToken>(&json).expect("deserialize"),
+            token
+        );
+        assert!(
+            serde_json::from_str::<HighlightToken>(r#"{"content":"","offset":0,"type":4}"#)
+                .is_err()
+        );
     }
 }
