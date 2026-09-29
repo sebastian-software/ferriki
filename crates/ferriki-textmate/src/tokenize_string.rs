@@ -15,7 +15,7 @@ use crate::rule::{CaptureRule, RuleRegistry, RuleScannerId};
 use crate::state_stack::StateStack;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Injection {
+pub(crate) struct Injection {
     pub debug_selector: String,
     pub matcher: Matcher,
     pub priority: MatcherPriority,
@@ -24,7 +24,7 @@ pub struct Injection {
 
 impl Injection {
     #[must_use]
-    pub fn from_selector(selector: &str, rule_id: crate::RuleId) -> Vec<Self> {
+    pub(crate) fn from_selector(selector: &str, rule_id: crate::RuleId) -> Vec<Self> {
         create_matchers(selector)
             .into_iter()
             .map(|matcher| Self {
@@ -37,18 +37,18 @@ impl Injection {
     }
 }
 
-pub trait TokenizerGrammar: ScopeAttributesProvider {
+pub(crate) trait TokenizerGrammar: ScopeAttributesProvider {
     fn rule_registry(&self) -> &RuleRegistry;
     fn injections(&self) -> &[Injection];
 }
 
-pub struct TokenizeStringResult {
+pub(crate) struct TokenizeStringResult {
     pub stack: Arc<StateStack>,
     pub stopped_early: bool,
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn tokenize_string<G: TokenizerGrammar>(
+pub(crate) fn tokenize_string<G: TokenizerGrammar>(
     grammar: &G,
     line_text: &OnigString,
     mut is_first_line: bool,

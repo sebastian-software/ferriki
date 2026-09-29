@@ -631,11 +631,9 @@ impl HighlighterCore {
         self.registry
             .grammar_for_scope_name(
                 &scope_name,
-                GrammarConfiguration {
-                    initial_language_id: 1,
-                    balanced_bracket_selectors: Some(vec!["*".to_owned()]),
-                    ..GrammarConfiguration::default()
-                },
+                GrammarConfiguration::default()
+                    .with_initial_language_id(1)
+                    .with_balanced_bracket_selectors(Some(vec!["*".to_owned()])),
             )
             .map_err(theme_error)
     }

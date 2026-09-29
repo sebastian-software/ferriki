@@ -2,10 +2,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ferriki_textmate::{
-    Grammar, GrammarConfiguration, GrammarProvider, GrammarStore, StateStack, Theme,
-    apply_state_stack_diff, diff_state_stacks_ref_eq, parse_raw_grammar,
+use ferriki_textmate::__oracle::{
+    GrammarProvider, GrammarStore, Theme, apply_state_stack_diff, diff_state_stacks_ref_eq,
 };
+use ferriki_textmate::{Grammar, GrammarConfiguration, StateStack, parse_raw_grammar};
 use serde::Deserialize;
 
 #[derive(Deserialize)]

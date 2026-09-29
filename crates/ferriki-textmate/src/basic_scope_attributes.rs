@@ -10,7 +10,7 @@ use crate::encoded_token_attributes::OptionalStandardTokenType;
 pub type EmbeddedLanguages = BTreeMap<String, u32>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct BasicScopeAttributes {
+pub(crate) struct BasicScopeAttributes {
     pub language_id: u32,
     pub token_type: OptionalStandardTokenType,
 }
@@ -22,7 +22,7 @@ impl BasicScopeAttributes {
     };
 }
 
-pub struct BasicScopeAttributesProvider {
+pub(crate) struct BasicScopeAttributesProvider {
     default_attributes: BasicScopeAttributes,
     embedded_languages_matcher: ScopeMatcher,
     cache: Mutex<HashMap<String, BasicScopeAttributes>>,
@@ -30,7 +30,10 @@ pub struct BasicScopeAttributesProvider {
 
 impl BasicScopeAttributesProvider {
     #[must_use]
-    pub fn new(initial_language_id: u32, embedded_languages: Option<&EmbeddedLanguages>) -> Self {
+    pub(crate) fn new(
+        initial_language_id: u32,
+        embedded_languages: Option<&EmbeddedLanguages>,
+    ) -> Self {
         Self {
             default_attributes: BasicScopeAttributes {
                 language_id: initial_language_id,
@@ -44,12 +47,12 @@ impl BasicScopeAttributesProvider {
     }
 
     #[must_use]
-    pub const fn default_attributes(&self) -> BasicScopeAttributes {
+    pub(crate) const fn default_attributes(&self) -> BasicScopeAttributes {
         self.default_attributes
     }
 
     #[must_use]
-    pub fn basic_scope_attributes(&self, scope_name: Option<&str>) -> BasicScopeAttributes {
+    pub(crate) fn basic_scope_attributes(&self, scope_name: Option<&str>) -> BasicScopeAttributes {
         let Some(scope_name) = scope_name else {
             return BasicScopeAttributes::NULL_SCOPE;
         };

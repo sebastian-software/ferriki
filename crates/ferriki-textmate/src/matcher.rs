@@ -1,5 +1,5 @@
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub enum MatcherPriority {
+pub(crate) enum MatcherPriority {
     Left,
     #[default]
     Normal,
@@ -7,13 +7,13 @@ pub enum MatcherPriority {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MatcherWithPriority {
+pub(crate) struct MatcherWithPriority {
     pub matcher: Matcher,
     pub priority: MatcherPriority,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Matcher {
+pub(crate) enum Matcher {
     Name(Vec<String>),
     Negate(Box<Self>),
     Conjunction(Vec<Self>),
@@ -22,7 +22,7 @@ pub enum Matcher {
 }
 
 impl Matcher {
-    pub fn matches<T>(
+    pub(crate) fn matches<T>(
         &self,
         matcher_input: &T,
         matches_name: &impl Fn(&[String], &T) -> bool,
@@ -41,7 +41,7 @@ impl Matcher {
     }
 }
 
-pub fn create_matchers(selector: &str) -> Vec<MatcherWithPriority> {
+pub(crate) fn create_matchers(selector: &str) -> Vec<MatcherWithPriority> {
     Parser::new(selector).parse()
 }
 

@@ -3,7 +3,7 @@
 /// The variants mirror vscode-textmate's `IncludeReference` classes so rule
 /// compilation can dispatch without reinterpreting the original string.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum IncludeReference<'a> {
+pub(crate) enum IncludeReference<'a> {
     Base,
     SelfReference,
     RelativeReference {
@@ -19,7 +19,7 @@ pub enum IncludeReference<'a> {
 }
 
 /// Parse a TextMate grammar `include` using vscode-textmate's precedence.
-pub fn parse_include(include: &str) -> IncludeReference<'_> {
+pub(crate) fn parse_include(include: &str) -> IncludeReference<'_> {
     if include == "$base" {
         IncludeReference::Base
     } else if include == "$self" {

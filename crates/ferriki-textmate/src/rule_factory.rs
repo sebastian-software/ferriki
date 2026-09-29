@@ -69,7 +69,7 @@ impl GrammarProvider for GrammarStore {
 
 /// Add the synthetic `$self` and `$base` rules used by vscode-textmate.
 #[must_use]
-pub fn initialize_grammar(grammar: &RawGrammar, base: Option<Arc<RawRule>>) -> RawGrammar {
+pub(crate) fn initialize_grammar(grammar: &RawGrammar, base: Option<Arc<RawRule>>) -> RawGrammar {
     let mut grammar = grammar.clone();
     let self_rule = Arc::new(RawRule {
         name: Some(grammar.scope_name.clone()),
@@ -113,7 +113,7 @@ impl RepositoryContext {
 }
 
 /// Mechanical compiler for vscode-textmate raw rules.
-pub struct RuleFactory<'a> {
+pub(crate) struct RuleFactory<'a> {
     grammar_provider: &'a dyn GrammarProvider,
     root_grammar: Arc<RawGrammar>,
     included_grammars: BTreeMap<String, Arc<RawGrammar>>,
@@ -123,7 +123,7 @@ pub struct RuleFactory<'a> {
 
 impl<'a> RuleFactory<'a> {
     #[must_use]
-    pub fn new(grammar: &RawGrammar, grammar_provider: &'a dyn GrammarProvider) -> Self {
+    pub(crate) fn new(grammar: &RawGrammar, grammar_provider: &'a dyn GrammarProvider) -> Self {
         Self {
             grammar_provider,
             root_grammar: Arc::new(initialize_grammar(grammar, None)),
@@ -133,7 +133,7 @@ impl<'a> RuleFactory<'a> {
         }
     }
 
-    pub fn compile_root(&mut self) -> RuleId {
+    pub(crate) fn compile_root(&mut self) -> RuleId {
         let grammar = Arc::clone(&self.root_grammar);
         let repository = RepositoryContext::new(&grammar.repository);
         let root = repository
@@ -142,11 +142,15 @@ impl<'a> RuleFactory<'a> {
         self.get_compiled_rule_id(root, repository)
     }
 
-    pub fn compile_raw_rule(&mut self, rule: Arc<RawRule>, repository: &RawRepository) -> RuleId {
+    pub(crate) fn compile_raw_rule(
+        &mut self,
+        rule: Arc<RawRule>,
+        repository: &RawRepository,
+    ) -> RuleId {
         self.get_compiled_rule_id(rule, RepositoryContext::new(repository))
     }
 
-    pub fn compile_external_grammar(
+    pub(crate) fn compile_external_grammar(
         &mut self,
         scope_name: &str,
     ) -> Option<(Arc<RawGrammar>, RuleId)> {
@@ -160,16 +164,20 @@ impl<'a> RuleFactory<'a> {
     }
 
     #[must_use]
-    pub fn root_grammar(&self) -> &Arc<RawGrammar> {
+    pub(crate) fn root_grammar(&self) -> &Arc<RawGrammar> {
         &self.root_grammar
     }
 
     #[must_use]
-    pub fn registry(&self) -> &RuleRegistry {
+    #[allow(
+        dead_code,
+        reason = "ported from vscode-textmate; no caller outside the port"
+    )]
+    pub(crate) fn registry(&self) -> &RuleRegistry {
         &self.registry
     }
 
-    pub fn into_parts(self) -> (Arc<RawGrammar>, RuleRegistry) {
+    pub(crate) fn into_parts(self) -> (Arc<RawGrammar>, RuleRegistry) {
         (self.root_grammar, self.registry)
     }
 

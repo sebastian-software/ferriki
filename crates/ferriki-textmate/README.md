@@ -12,3 +12,15 @@ tokenization, and state stacks. Asset catalogs and rendering live in the
 publishable `ferriki` crate; `ferriki-core` contains the N-API host, as refined
 by ADR 0012. The package includes the upstream vscode-textmate license and
 third-party notices alongside Ferriki's MIT and Apache-2.0 license texts.
+
+## Public API
+
+The public surface follows vscode-textmate's `main.ts` exports: `SyncRegistry`,
+`Grammar` with its tokenize results, `StateStack`, raw grammar and theme input
+(`RawGrammar`, `RawTheme`, `RawThemeSetting`, `RawThemeStyle`), and token
+metadata (`EncodedTokenAttributes`, `FontStyle`, `StandardTokenType`). The
+modules of the port are private, so an upstream sync or an internal refactor
+does not break consumers. Input and result types are `#[non_exhaustive]`:
+build input types from `Default` with their `with_*` setters and read results
+through their public fields. The `__oracle` module exists only for the
+vscode-textmate oracle tests and carries no semver guarantee.

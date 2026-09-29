@@ -14,7 +14,7 @@ use crate::regexp::{
 
 /// The scanner identity for a compiled grammar pattern.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RuleScannerId {
+pub(crate) enum RuleScannerId {
     Rule(RuleId),
     End,
     While,
@@ -22,6 +22,10 @@ pub enum RuleScannerId {
 
 #[derive(Clone, Debug)]
 struct RuleData {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     location: Option<Location>,
     id: RuleId,
     name: Option<String>,
@@ -49,6 +53,10 @@ impl RuleData {
         }
     }
 
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     fn debug_name(&self, rule_name: &str) -> String {
         let location = self.location.as_ref().map_or_else(
             || "unknown".to_owned(),
@@ -91,14 +99,14 @@ impl RuleData {
     }
 }
 
-pub struct CaptureRule {
+pub(crate) struct CaptureRule {
     data: RuleData,
     pub retokenize_captured_with_rule_id: Option<RuleId>,
 }
 
 impl CaptureRule {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         location: Option<Location>,
         id: RuleId,
         name: Option<String>,
@@ -112,7 +120,7 @@ impl CaptureRule {
     }
 
     #[must_use]
-    pub fn get_name(
+    pub(crate) fn get_name(
         &self,
         line_text: Option<&str>,
         capture_indices: Option<&[CaptureIndex]>,
@@ -121,7 +129,7 @@ impl CaptureRule {
     }
 
     #[must_use]
-    pub fn get_content_name(
+    pub(crate) fn get_content_name(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
@@ -130,7 +138,7 @@ impl CaptureRule {
     }
 }
 
-pub struct MatchRule {
+pub(crate) struct MatchRule {
     data: RuleData,
     match_source: RegExpSource<RuleScannerId>,
     pub captures: Vec<Option<Arc<CaptureRule>>>,
@@ -139,7 +147,7 @@ pub struct MatchRule {
 
 impl MatchRule {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         location: Option<Location>,
         id: RuleId,
         name: Option<String>,
@@ -155,12 +163,16 @@ impl MatchRule {
     }
 
     #[must_use]
-    pub fn debug_match_reg_exp(&self) -> &str {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_match_reg_exp(&self) -> &str {
         &self.match_source.source
     }
 }
 
-pub struct IncludeOnlyRule {
+pub(crate) struct IncludeOnlyRule {
     data: RuleData,
     pub has_missing_patterns: bool,
     pub patterns: Vec<RuleId>,
@@ -169,7 +181,7 @@ pub struct IncludeOnlyRule {
 
 impl IncludeOnlyRule {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         location: Option<Location>,
         id: RuleId,
         name: Option<String>,
@@ -185,7 +197,7 @@ impl IncludeOnlyRule {
     }
 }
 
-pub struct BeginEndRule {
+pub(crate) struct BeginEndRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
     pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
@@ -198,7 +210,7 @@ pub struct BeginEndRule {
     cached_compiled_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub struct BeginEndRuleOptions {
+pub(crate) struct BeginEndRuleOptions {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
@@ -213,7 +225,7 @@ pub struct BeginEndRuleOptions {
 
 impl BeginEndRule {
     #[must_use]
-    pub fn new(options: BeginEndRuleOptions) -> Self {
+    pub(crate) fn new(options: BeginEndRuleOptions) -> Self {
         let end = RegExpSource::new(
             options.end.unwrap_or_else(|| "\u{ffff}".to_owned()),
             RuleScannerId::End,
@@ -239,17 +251,25 @@ impl BeginEndRule {
     }
 
     #[must_use]
-    pub fn debug_begin_reg_exp(&self) -> &str {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_begin_reg_exp(&self) -> &str {
         &self.begin.source
     }
 
     #[must_use]
-    pub fn debug_end_reg_exp(&self) -> &str {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_end_reg_exp(&self) -> &str {
         &self.end.source
     }
 
     #[must_use]
-    pub fn get_end_with_resolved_back_references(
+    pub(crate) fn get_end_with_resolved_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
@@ -258,7 +278,7 @@ impl BeginEndRule {
     }
 }
 
-pub struct BeginWhileRule {
+pub(crate) struct BeginWhileRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
     pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
@@ -271,7 +291,7 @@ pub struct BeginWhileRule {
     cached_compiled_while_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub struct BeginWhileRuleOptions {
+pub(crate) struct BeginWhileRuleOptions {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
@@ -285,7 +305,7 @@ pub struct BeginWhileRuleOptions {
 
 impl BeginWhileRule {
     #[must_use]
-    pub fn new(options: BeginWhileRuleOptions) -> Self {
+    pub(crate) fn new(options: BeginWhileRuleOptions) -> Self {
         let while_source = RegExpSource::new(options.while_pattern, RuleScannerId::While);
         let while_has_back_references = while_source.has_back_references;
         Self {
@@ -308,17 +328,25 @@ impl BeginWhileRule {
     }
 
     #[must_use]
-    pub fn debug_begin_reg_exp(&self) -> &str {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_begin_reg_exp(&self) -> &str {
         &self.begin.source
     }
 
     #[must_use]
-    pub fn debug_while_reg_exp(&self) -> &str {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_while_reg_exp(&self) -> &str {
         &self.while_source.source
     }
 
     #[must_use]
-    pub fn get_while_with_resolved_back_references(
+    pub(crate) fn get_while_with_resolved_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
@@ -327,14 +355,18 @@ impl BeginWhileRule {
             .resolve_back_references(line_text, capture_indices)
     }
 
-    pub fn compile_while(
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn compile_while(
         &self,
         end_regex_source: Option<&str>,
     ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
         self.compile_while_ag(end_regex_source, true, true)
     }
 
-    pub fn compile_while_ag(
+    pub(crate) fn compile_while_ag(
         &self,
         end_regex_source: Option<&str>,
         allow_a: bool,
@@ -357,12 +389,12 @@ impl BeginWhileRule {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct CompilePatternsResult {
+pub(crate) struct CompilePatternsResult {
     pub patterns: Vec<RuleId>,
     pub has_missing_patterns: bool,
 }
 
-pub enum Rule {
+pub(crate) enum Rule {
     Capture(Arc<CaptureRule>),
     Match(MatchRule),
     IncludeOnly(IncludeOnlyRule),
@@ -372,17 +404,25 @@ pub enum Rule {
 
 impl Rule {
     #[must_use]
-    pub fn id(&self) -> RuleId {
+    pub(crate) fn id(&self) -> RuleId {
         self.data().id
     }
 
     #[must_use]
-    pub fn location(&self) -> Option<&Location> {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn location(&self) -> Option<&Location> {
         self.data().location.as_ref()
     }
 
     #[must_use]
-    pub fn debug_name(&self) -> String {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn debug_name(&self) -> String {
         self.data().debug_name(match self {
             Self::Capture(_) => "CaptureRule",
             Self::Match(_) => "MatchRule",
@@ -393,7 +433,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn get_name(
+    pub(crate) fn get_name(
         &self,
         line_text: Option<&str>,
         capture_indices: Option<&[CaptureIndex]>,
@@ -402,7 +442,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn get_content_name(
+    pub(crate) fn get_content_name(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
@@ -410,7 +450,11 @@ impl Rule {
         self.data().get_content_name(line_text, capture_indices)
     }
 
-    pub fn dispose(&self) {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn dispose(&self) {
         match self {
             Self::Capture(_) => {}
             Self::Match(rule) => clear_cache(&rule.cached_compiled_patterns),
@@ -423,7 +467,7 @@ impl Rule {
         }
     }
 
-    pub fn collect_patterns(
+    pub(crate) fn collect_patterns(
         &self,
         registry: &RuleRegistry,
         output: &mut RegExpSourceList<RuleScannerId>,
@@ -439,7 +483,11 @@ impl Rule {
         }
     }
 
-    pub fn compile(
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn compile(
         &self,
         registry: &RuleRegistry,
         end_regex_source: Option<&str>,
@@ -447,7 +495,7 @@ impl Rule {
         self.compile_ag(registry, end_regex_source, true, true)
     }
 
-    pub fn compile_ag(
+    pub(crate) fn compile_ag(
         &self,
         registry: &RuleRegistry,
         end_regex_source: Option<&str>,
@@ -511,7 +559,11 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn as_capture(&self) -> Option<&Arc<CaptureRule>> {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn as_capture(&self) -> Option<&Arc<CaptureRule>> {
         match self {
             Self::Capture(rule) => Some(rule),
             _ => None,
@@ -519,7 +571,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn as_match(&self) -> Option<&MatchRule> {
+    pub(crate) fn as_match(&self) -> Option<&MatchRule> {
         match self {
             Self::Match(rule) => Some(rule),
             _ => None,
@@ -527,7 +579,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn as_include_only(&self) -> Option<&IncludeOnlyRule> {
+    pub(crate) fn as_include_only(&self) -> Option<&IncludeOnlyRule> {
         match self {
             Self::IncludeOnly(rule) => Some(rule),
             _ => None,
@@ -535,7 +587,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn as_begin_end(&self) -> Option<&BeginEndRule> {
+    pub(crate) fn as_begin_end(&self) -> Option<&BeginEndRule> {
         match self {
             Self::BeginEnd(rule) => Some(rule),
             _ => None,
@@ -543,7 +595,7 @@ impl Rule {
     }
 
     #[must_use]
-    pub fn as_begin_while(&self) -> Option<&BeginWhileRule> {
+    pub(crate) fn as_begin_while(&self) -> Option<&BeginWhileRule> {
         match self {
             Self::BeginWhile(rule) => Some(rule),
             _ => None,
@@ -562,23 +614,27 @@ impl Rule {
 }
 
 #[derive(Default)]
-pub struct RuleRegistry {
+pub(crate) struct RuleRegistry {
     rules: Vec<Option<Rule>>,
 }
 
 impl RuleRegistry {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    pub fn register_rule(&mut self, factory: impl FnOnce(RuleId) -> Rule) -> RuleId {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn register_rule(&mut self, factory: impl FnOnce(RuleId) -> Rule) -> RuleId {
         let id = self.reserve_rule();
         self.set_rule(id, factory(id));
         id
     }
 
-    pub fn reserve_rule(&mut self) -> RuleId {
+    pub(crate) fn reserve_rule(&mut self) -> RuleId {
         let id = RuleId::new(
             u32::try_from(self.rules.len() + 1)
                 .expect("TextMate rule registry exceeded u32 identity space"),
@@ -587,7 +643,7 @@ impl RuleRegistry {
         id
     }
 
-    pub fn set_rule(&mut self, id: RuleId, rule: Rule) {
+    pub(crate) fn set_rule(&mut self, id: RuleId, rule: Rule) {
         assert_eq!(
             id,
             rule.id(),
@@ -602,23 +658,31 @@ impl RuleRegistry {
     }
 
     #[must_use]
-    pub fn get_rule(&self, id: RuleId) -> &Rule {
+    pub(crate) fn get_rule(&self, id: RuleId) -> &Rule {
         self.try_get_rule(id)
             .expect("registered rule identity must be initialized")
     }
 
     #[must_use]
-    pub fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
+    pub(crate) fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
         self.rules.get(rule_index(id)).and_then(Option::as_ref)
     }
 
     #[must_use]
-    pub fn len(&self) -> usize {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn len(&self) -> usize {
         self.rules.len()
     }
 
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn is_empty(&self) -> bool {
         self.rules.is_empty()
     }
 }
@@ -657,6 +721,10 @@ fn compile_patterns(
     sources.compile_ag(allow_a, allow_g)
 }
 
+#[allow(
+    dead_code,
+    reason = "part of the vscode-textmate port, kept for upstream parity"
+)]
 fn clear_cache(cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>) {
     *cache.lock().expect("compiled pattern cache lock poisoned") = None;
 }

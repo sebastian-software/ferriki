@@ -8,8 +8,8 @@ use crate::state_stack::{StateStack, StateStackFrame};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StackDiff {
-    pub pops: usize,
-    pub new_frames: Vec<StateStackFrame>,
+    pub(crate) pops: usize,
+    pub(crate) new_frames: Vec<StateStackFrame>,
 }
 
 #[must_use]
