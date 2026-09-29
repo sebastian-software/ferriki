@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct RawTheme {
     pub name: Option<String>,
     #[serde(default)]
@@ -24,6 +25,7 @@ pub struct RawTheme {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct RawThemeSetting {
     pub name: Option<String>,
     pub scope: Option<RawThemeScope>,
@@ -39,6 +41,7 @@ pub enum RawThemeScope {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct RawThemeStyle {
     pub font_style: Option<String>,
     pub foreground: Option<String>,
@@ -90,7 +93,14 @@ impl BitOrAssign for FontStyle {
 }
 
 #[must_use]
-pub fn font_style_to_string(font_style: FontStyle) -> String {
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "ported from vscode-textmate; used by the theme specs"
+    )
+)]
+pub(crate) fn font_style_to_string(font_style: FontStyle) -> String {
     if font_style == FontStyle::NOT_SET {
         return "not set".to_owned();
     }
@@ -115,7 +125,7 @@ pub fn font_style_to_string(font_style: FontStyle) -> String {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ParsedThemeRule {
+pub(crate) struct ParsedThemeRule {
     pub scope: String,
     pub parent_scopes: Option<Vec<String>>,
     pub index: i32,
@@ -128,7 +138,7 @@ pub struct ParsedThemeRule {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct StyleAttributes {
+pub(crate) struct StyleAttributes {
     pub font_style: FontStyle,
     pub foreground_id: u32,
     pub background_id: u32,
@@ -138,14 +148,14 @@ pub struct StyleAttributes {
 }
 
 #[derive(Debug)]
-pub struct ScopeStack {
+pub(crate) struct ScopeStack {
     pub parent: Option<Arc<Self>>,
     pub scope_name: String,
 }
 
 impl ScopeStack {
     #[must_use]
-    pub fn push<I, S>(mut path: Option<Arc<Self>>, scope_names: I) -> Option<Arc<Self>>
+    pub(crate) fn push<I, S>(mut path: Option<Arc<Self>>, scope_names: I) -> Option<Arc<Self>>
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -160,7 +170,11 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub fn from<I, S>(segments: I) -> Option<Arc<Self>>
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn from<I, S>(segments: I) -> Option<Arc<Self>>
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -169,7 +183,11 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub fn push_scope(self: &Arc<Self>, scope_name: impl Into<String>) -> Arc<Self> {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn push_scope(self: &Arc<Self>, scope_name: impl Into<String>) -> Arc<Self> {
         Arc::new(Self {
             parent: Some(Arc::clone(self)),
             scope_name: scope_name.into(),
@@ -177,7 +195,7 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub fn get_segments(&self) -> Vec<String> {
+    pub(crate) fn get_segments(&self) -> Vec<String> {
         let mut item = Some(self);
         let mut result = Vec::new();
         while let Some(scope) = item {
@@ -189,7 +207,11 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub fn extends(self: &Arc<Self>, other: &Arc<Self>) -> bool {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn extends(self: &Arc<Self>, other: &Arc<Self>) -> bool {
         if Arc::ptr_eq(self, other) {
             return true;
         }
@@ -199,7 +221,7 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub fn get_extension_if_defined(
+    pub(crate) fn get_extension_if_defined(
         self: &Arc<Self>,
         base: Option<&Arc<Self>>,
     ) -> Option<Vec<String>> {
@@ -234,7 +256,91 @@ impl fmt::Display for ScopeStack {
     }
 }
 
+impl RawTheme {
+    /// Sets the theme name.
+    #[must_use]
+    pub fn with_name(mut self, value: Option<String>) -> Self {
+        self.name = value;
+        self
+    }
+
+    /// Sets the token color rules.
+    #[must_use]
+    pub fn with_settings(mut self, value: Vec<RawThemeSetting>) -> Self {
+        self.settings = value;
+        self
+    }
+}
+
+impl RawThemeSetting {
+    /// Sets the rule name.
+    #[must_use]
+    pub fn with_name(mut self, value: Option<String>) -> Self {
+        self.name = value;
+        self
+    }
+
+    /// Sets the scope selector; `None` makes this the default rule.
+    #[must_use]
+    pub fn with_scope(mut self, value: Option<RawThemeScope>) -> Self {
+        self.scope = value;
+        self
+    }
+
+    /// Sets the style this rule applies.
+    #[must_use]
+    pub fn with_settings(mut self, value: Option<RawThemeStyle>) -> Self {
+        self.settings = value;
+        self
+    }
+}
+
+impl RawThemeStyle {
+    /// Sets the space-separated font style, such as `"italic bold"`.
+    #[must_use]
+    pub fn with_font_style(mut self, value: Option<String>) -> Self {
+        self.font_style = value;
+        self
+    }
+
+    /// Sets the foreground color.
+    #[must_use]
+    pub fn with_foreground(mut self, value: Option<String>) -> Self {
+        self.foreground = value;
+        self
+    }
+
+    /// Sets the background color.
+    #[must_use]
+    pub fn with_background(mut self, value: Option<String>) -> Self {
+        self.background = value;
+        self
+    }
+
+    /// Sets the font family.
+    #[must_use]
+    pub fn with_font_family(mut self, value: Option<String>) -> Self {
+        self.font_family = value;
+        self
+    }
+
+    /// Sets the font size multiplier.
+    #[must_use]
+    pub fn with_font_size(mut self, value: Option<f64>) -> Self {
+        self.font_size = value;
+        self
+    }
+
+    /// Sets the line height multiplier.
+    #[must_use]
+    pub fn with_line_height(mut self, value: Option<f64>) -> Self {
+        self.line_height = value;
+        self
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ThemeError {
     MissingFrozenColor(String),
 }
@@ -266,7 +372,7 @@ impl Theme {
         Self::create_from_parsed_theme(parse_theme(source), color_map)
     }
 
-    pub fn create_from_parsed_theme(
+    pub(crate) fn create_from_parsed_theme(
         source: Vec<ParsedThemeRule>,
         color_map: Option<Vec<String>>,
     ) -> Result<Self, ThemeError> {
@@ -279,12 +385,12 @@ impl Theme {
     }
 
     #[must_use]
-    pub const fn get_defaults(&self) -> &StyleAttributes {
+    pub(crate) const fn get_defaults(&self) -> &StyleAttributes {
         &self.defaults
     }
 
     #[must_use]
-    pub fn match_scope(&self, scope_path: Option<&ScopeStack>) -> Option<StyleAttributes> {
+    pub(crate) fn match_scope(&self, scope_path: Option<&ScopeStack>) -> Option<StyleAttributes> {
         let Some(scope_path) = scope_path else {
             return Some(self.defaults.clone());
         };
@@ -321,7 +427,7 @@ impl Theme {
 }
 
 #[must_use]
-pub fn parse_theme(source: Option<&RawTheme>) -> Vec<ParsedThemeRule> {
+pub(crate) fn parse_theme(source: Option<&RawTheme>) -> Vec<ParsedThemeRule> {
     let Some(source) = source else {
         return Vec::new();
     };

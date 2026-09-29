@@ -14,7 +14,7 @@ use crate::raw_grammar::{RawGrammar, RawRepository, RawRule};
 use crate::rule_factory::GrammarProvider;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum AbsoluteRuleReference {
+pub(crate) enum AbsoluteRuleReference {
     TopLevel {
         scope_name: String,
     },
@@ -26,14 +26,14 @@ pub enum AbsoluteRuleReference {
 
 impl AbsoluteRuleReference {
     #[must_use]
-    pub fn top_level(scope_name: impl Into<String>) -> Self {
+    pub(crate) fn top_level(scope_name: impl Into<String>) -> Self {
         Self::TopLevel {
             scope_name: scope_name.into(),
         }
     }
 
     #[must_use]
-    pub fn repository(scope_name: impl Into<String>, rule_name: impl Into<String>) -> Self {
+    pub(crate) fn repository(scope_name: impl Into<String>, rule_name: impl Into<String>) -> Self {
         Self::Repository {
             scope_name: scope_name.into(),
             rule_name: rule_name.into(),
@@ -41,14 +41,14 @@ impl AbsoluteRuleReference {
     }
 
     #[must_use]
-    pub fn scope_name(&self) -> &str {
+    pub(crate) fn scope_name(&self) -> &str {
         match self {
             Self::TopLevel { scope_name } | Self::Repository { scope_name, .. } => scope_name,
         }
     }
 
     #[must_use]
-    pub fn key(&self) -> String {
+    pub(crate) fn key(&self) -> String {
         match self {
             Self::TopLevel { scope_name } => scope_name.clone(),
             Self::Repository {
@@ -60,7 +60,7 @@ impl AbsoluteRuleReference {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GrammarDependencyError {
+pub(crate) struct GrammarDependencyError {
     scope_name: String,
 }
 
@@ -80,7 +80,7 @@ impl fmt::Display for GrammarDependencyError {
 
 impl Error for GrammarDependencyError {}
 
-pub struct ScopeDependencyProcessor<'a> {
+pub(crate) struct ScopeDependencyProcessor<'a> {
     repository: &'a dyn GrammarProvider,
     initial_scope_name: String,
     seen_full_scope_requests: BTreeSet<String>,
@@ -90,7 +90,10 @@ pub struct ScopeDependencyProcessor<'a> {
 
 impl<'a> ScopeDependencyProcessor<'a> {
     #[must_use]
-    pub fn new(repository: &'a dyn GrammarProvider, initial_scope_name: impl Into<String>) -> Self {
+    pub(crate) fn new(
+        repository: &'a dyn GrammarProvider,
+        initial_scope_name: impl Into<String>,
+    ) -> Self {
         let initial_scope_name = initial_scope_name.into();
         Self {
             repository,
@@ -102,16 +105,16 @@ impl<'a> ScopeDependencyProcessor<'a> {
     }
 
     #[must_use]
-    pub fn queue(&self) -> &[AbsoluteRuleReference] {
+    pub(crate) fn queue(&self) -> &[AbsoluteRuleReference] {
         &self.queue
     }
 
     #[must_use]
-    pub fn is_complete(&self) -> bool {
+    pub(crate) fn is_complete(&self) -> bool {
         self.queue.is_empty()
     }
 
-    pub fn process_queue(&mut self) -> Result<(), GrammarDependencyError> {
+    pub(crate) fn process_queue(&mut self) -> Result<(), GrammarDependencyError> {
         let queue = std::mem::take(&mut self.queue);
         let mut references = ExternalReferenceCollector::default();
 

@@ -24,6 +24,7 @@ use crate::theme::{ScopeStack, StyleAttributes, Theme};
 use crate::tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
 
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct GrammarConfiguration {
     pub initial_language_id: u32,
     pub embedded_languages: EmbeddedLanguages,
@@ -32,6 +33,44 @@ pub struct GrammarConfiguration {
     pub unbalanced_bracket_selectors: Vec<String>,
 }
 
+impl GrammarConfiguration {
+    /// Sets the language id encoded into tokens of the root grammar.
+    #[must_use]
+    pub fn with_initial_language_id(mut self, value: u32) -> Self {
+        self.initial_language_id = value;
+        self
+    }
+
+    /// Maps embedded scope names to language ids.
+    #[must_use]
+    pub fn with_embedded_languages(mut self, value: EmbeddedLanguages) -> Self {
+        self.embedded_languages = value;
+        self
+    }
+
+    /// Maps scope selectors to standard token types.
+    #[must_use]
+    pub fn with_token_types(mut self, value: Vec<(String, StandardTokenType)>) -> Self {
+        self.token_types = value;
+        self
+    }
+
+    /// Sets the scope selectors whose brackets count as balanced; `None` disables bracket tracking.
+    #[must_use]
+    pub fn with_balanced_bracket_selectors(mut self, value: Option<Vec<String>>) -> Self {
+        self.balanced_bracket_selectors = value;
+        self
+    }
+
+    /// Sets the scope selectors excluded from bracket balancing.
+    #[must_use]
+    pub fn with_unbalanced_bracket_selectors(mut self, value: Vec<String>) -> Self {
+        self.unbalanced_bracket_selectors = value;
+        self
+    }
+}
+
+#[non_exhaustive]
 pub struct TokenizeLineResult {
     pub tokens: Vec<Token>,
     pub fonts: Vec<FontInfo>,
@@ -39,6 +78,7 @@ pub struct TokenizeLineResult {
     pub stopped_early: bool,
 }
 
+#[non_exhaustive]
 pub struct TokenizeLineResult2 {
     pub tokens: Vec<u32>,
     pub fonts: Vec<FontInfo>,
@@ -58,6 +98,9 @@ pub struct Grammar {
 }
 
 impl Grammar {
+    /// Compiles a grammar directly. Applications obtain grammars from
+    /// [`crate::SyncRegistry::grammar_for_scope_name`].
+    #[doc(hidden)]
     #[must_use]
     pub fn new(
         raw_grammar: &RawGrammar,
@@ -127,7 +170,11 @@ impl Grammar {
     }
 
     #[must_use]
-    pub const fn root_rule_id(&self) -> RuleId {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) const fn root_rule_id(&self) -> RuleId {
         self.root_id
     }
 

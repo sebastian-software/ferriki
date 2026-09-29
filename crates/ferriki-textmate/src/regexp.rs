@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::RegexError;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
-pub use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
+pub(crate) use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
 
 #[derive(Clone, Debug)]
@@ -22,7 +22,7 @@ struct AnchorCache {
 }
 
 #[derive(Clone, Debug)]
-pub struct RegExpSource<T> {
+pub(crate) struct RegExpSource<T> {
     pub source: String,
     pub rule_id: T,
     pub has_anchor: bool,
@@ -32,7 +32,7 @@ pub struct RegExpSource<T> {
 
 impl<T> RegExpSource<T> {
     #[must_use]
-    pub fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
+    pub(crate) fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
         let reg_exp_source = reg_exp_source.into();
         let (source, has_anchor) = rewrite_end_anchor(&reg_exp_source);
         let anchor_cache = has_anchor.then(|| build_anchor_cache(&source));
@@ -46,7 +46,7 @@ impl<T> RegExpSource<T> {
         }
     }
 
-    pub fn set_source(&mut self, new_source: impl Into<String>) {
+    pub(crate) fn set_source(&mut self, new_source: impl Into<String>) {
         let new_source = new_source.into();
         if self.source == new_source {
             return;
@@ -58,7 +58,7 @@ impl<T> RegExpSource<T> {
     }
 
     #[must_use]
-    pub fn resolve_back_references(
+    pub(crate) fn resolve_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
@@ -67,7 +67,7 @@ impl<T> RegExpSource<T> {
     }
 
     #[must_use]
-    pub fn resolve_anchors(&self, allow_a: bool, allow_g: bool) -> &str {
+    pub(crate) fn resolve_anchors(&self, allow_a: bool, allow_g: bool) -> &str {
         let Some(cache) = self.anchor_cache.as_ref() else {
             return &self.source;
         };
@@ -276,7 +276,7 @@ fn escape_reg_exp_characters(value: &str) -> String {
 }
 
 #[must_use]
-pub fn has_captures(regex_source: Option<&str>) -> bool {
+pub(crate) fn has_captures(regex_source: Option<&str>) -> bool {
     let Some(source) = regex_source else {
         return false;
     };
@@ -284,7 +284,7 @@ pub fn has_captures(regex_source: Option<&str>) -> bool {
 }
 
 #[must_use]
-pub fn replace_captures(
+pub(crate) fn replace_captures(
     regex_source: &str,
     capture_source: &str,
     capture_indices: &[CaptureIndex],
@@ -386,7 +386,7 @@ fn find_capture_placeholder(source: &str, from: usize) -> Option<CapturePlacehol
     None
 }
 
-pub struct RegExpSourceList<T> {
+pub(crate) struct RegExpSourceList<T> {
     items: Vec<RegExpSource<T>>,
     has_anchors: bool,
     cached: Option<Arc<CompiledRule<T>>>,
@@ -401,7 +401,7 @@ impl<T> Default for RegExpSourceList<T> {
 
 impl<T> RegExpSourceList<T> {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             items: Vec::new(),
             has_anchors: false,
@@ -410,7 +410,11 @@ impl<T> RegExpSourceList<T> {
         }
     }
 
-    pub fn dispose(&mut self) {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn dispose(&mut self) {
         self.dispose_caches();
     }
 
@@ -419,27 +423,31 @@ impl<T> RegExpSourceList<T> {
         self.anchor_cache = array::from_fn(|_| None);
     }
 
-    pub fn push(&mut self, item: RegExpSource<T>) {
+    pub(crate) fn push(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
         self.items.push(item);
     }
 
-    pub fn unshift(&mut self, item: RegExpSource<T>) {
+    pub(crate) fn unshift(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
         self.items.insert(0, item);
     }
 
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.items.len()
     }
 
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
-    pub fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
+    pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
         let new_source = new_source.into();
         if self.items[index].source != new_source {
             self.dispose_caches();
@@ -449,7 +457,7 @@ impl<T> RegExpSourceList<T> {
 }
 
 impl<T: Copy> RegExpSourceList<T> {
-    pub fn compile(&mut self) -> Result<Arc<CompiledRule<T>>, RegexError> {
+    pub(crate) fn compile(&mut self) -> Result<Arc<CompiledRule<T>>, RegexError> {
         if let Some(cached) = self.cached.as_ref() {
             return Ok(Arc::clone(cached));
         }
@@ -461,7 +469,7 @@ impl<T: Copy> RegExpSourceList<T> {
         Ok(compiled)
     }
 
-    pub fn compile_ag(
+    pub(crate) fn compile_ag(
         &mut self,
         allow_a: bool,
         allow_g: bool,
@@ -486,7 +494,7 @@ impl<T: Copy> RegExpSourceList<T> {
     }
 }
 
-pub struct CompiledRule<T> {
+pub(crate) struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
     reg_exps: Vec<String>,
     rules: Vec<T>,
@@ -516,7 +524,7 @@ impl<T: Copy> CompiledRule<T> {
     }
 
     #[must_use]
-    pub fn find_next_match(
+    pub(crate) fn find_next_match(
         &self,
         string: &OnigString,
         start_position: usize,
@@ -636,7 +644,7 @@ impl<T: fmt::Debug> fmt::Display for CompiledRule<T> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct FindNextMatchResult<T> {
+pub(crate) struct FindNextMatchResult<T> {
     pub rule_id: T,
     pub capture_indices: Vec<CaptureIndex>,
 }

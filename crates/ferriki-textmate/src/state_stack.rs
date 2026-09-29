@@ -11,14 +11,14 @@ use crate::raw_grammar::RuleId;
 use crate::rule::{Rule, RuleRegistry};
 
 pub struct StateStack {
-    pub parent: Option<Arc<Self>>,
+    pub(crate) parent: Option<Arc<Self>>,
     rule_id: RuleId,
     enter_pos: AtomicIsize,
     anchor_pos: AtomicIsize,
-    pub begin_rule_captured_eol: bool,
-    pub end_rule: Option<String>,
-    pub name_scopes_list: Option<Arc<AttributedScopeStack>>,
-    pub content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
+    pub(crate) begin_rule_captured_eol: bool,
+    pub(crate) end_rule: Option<String>,
+    pub(crate) name_scopes_list: Option<Arc<AttributedScopeStack>>,
+    pub(crate) content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
     pub depth: usize,
 }
 
@@ -33,7 +33,7 @@ impl StateStack {
 
     #[must_use]
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub(crate) fn new(
         parent: Option<Arc<Self>>,
         rule_id: RuleId,
         enter_pos: isize,
@@ -58,7 +58,7 @@ impl StateStack {
     }
 
     #[must_use]
-    pub const fn rule_id(&self) -> RuleId {
+    pub(crate) const fn rule_id(&self) -> RuleId {
         self.rule_id
     }
 
@@ -79,7 +79,7 @@ impl StateStack {
         Arc::clone(self)
     }
 
-    pub fn reset(self: &Arc<Self>) {
+    pub(crate) fn reset(self: &Arc<Self>) {
         let mut current = Some(Arc::clone(self));
         while let Some(element) = current {
             element.enter_pos.store(-1, Ordering::Relaxed);
@@ -89,12 +89,12 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn pop(&self) -> Option<Arc<Self>> {
+    pub(crate) fn pop(&self) -> Option<Arc<Self>> {
         self.parent.clone()
     }
 
     #[must_use]
-    pub fn safe_pop(self: &Arc<Self>) -> Arc<Self> {
+    pub(crate) fn safe_pop(self: &Arc<Self>) -> Arc<Self> {
         self.parent
             .as_ref()
             .map_or_else(|| Arc::clone(self), Arc::clone)
@@ -102,7 +102,7 @@ impl StateStack {
 
     #[must_use]
     #[allow(clippy::too_many_arguments)]
-    pub fn push(
+    pub(crate) fn push(
         self: &Arc<Self>,
         rule_id: RuleId,
         enter_pos: isize,
@@ -125,22 +125,22 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn enter_pos(&self) -> isize {
+    pub(crate) fn enter_pos(&self) -> isize {
         self.enter_pos.load(Ordering::Relaxed)
     }
 
     #[must_use]
-    pub fn anchor_pos(&self) -> isize {
+    pub(crate) fn anchor_pos(&self) -> isize {
         self.anchor_pos.load(Ordering::Relaxed)
     }
 
     #[must_use]
-    pub fn rule<'a>(&self, registry: &'a RuleRegistry) -> &'a Rule {
+    pub(crate) fn rule<'a>(&self, registry: &'a RuleRegistry) -> &'a Rule {
         registry.get_rule(self.rule_id)
     }
 
     #[must_use]
-    pub fn with_content_name_scopes_list(
+    pub(crate) fn with_content_name_scopes_list(
         self: &Arc<Self>,
         content_name_scope_stack: Arc<AttributedScopeStack>,
     ) -> Arc<Self> {
@@ -166,7 +166,7 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn with_end_rule(self: &Arc<Self>, end_rule: impl Into<String>) -> Arc<Self> {
+    pub(crate) fn with_end_rule(self: &Arc<Self>, end_rule: impl Into<String>) -> Arc<Self> {
         let end_rule = end_rule.into();
         if self.end_rule.as_deref() == Some(&end_rule) {
             return Arc::clone(self);
@@ -184,7 +184,7 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn has_same_rule_as(&self, other: &Self) -> bool {
+    pub(crate) fn has_same_rule_as(&self, other: &Self) -> bool {
         let mut current = Some(self);
         while let Some(element) = current {
             if element.enter_pos() != other.enter_pos() {
@@ -199,7 +199,7 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn to_frame(self: &Arc<Self>) -> StateStackFrame {
+    pub(crate) fn to_frame(self: &Arc<Self>) -> StateStackFrame {
         StateStackFrame {
             rule_id: self.rule_id.get(),
             enter_pos: None,
@@ -226,7 +226,7 @@ impl StateStack {
     }
 
     #[must_use]
-    pub fn push_frame(parent: Option<Arc<Self>>, frame: &StateStackFrame) -> Arc<Self> {
+    pub(crate) fn push_frame(parent: Option<Arc<Self>>, frame: &StateStackFrame) -> Arc<Self> {
         let names_scope_list = AttributedScopeStack::from_extension(
             parent
                 .as_ref()
@@ -275,7 +275,7 @@ impl fmt::Display for StateStack {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StateStackFrame {
+pub(crate) struct StateStackFrame {
     pub rule_id: u32,
     pub enter_pos: Option<isize>,
     pub anchor_pos: Option<isize>,

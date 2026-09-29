@@ -42,7 +42,7 @@ impl StandardTokenType {
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u8)]
-pub enum OptionalStandardTokenType {
+pub(crate) enum OptionalStandardTokenType {
     Other = 0,
     Comment = 1,
     String = 2,
@@ -64,7 +64,9 @@ impl OptionalStandardTokenType {
 }
 
 #[must_use]
-pub const fn to_optional_token_type(standard_type: StandardTokenType) -> OptionalStandardTokenType {
+pub(crate) const fn to_optional_token_type(
+    standard_type: StandardTokenType,
+) -> OptionalStandardTokenType {
     match standard_type {
         StandardTokenType::Other => OptionalStandardTokenType::Other,
         StandardTokenType::Comment => OptionalStandardTokenType::Comment,
@@ -128,7 +130,7 @@ impl EncodedTokenAttributes {
     /// Zero, `NotSet`, and `None` retain the corresponding current field, as
     /// in vscode-textmate's `EncodedTokenAttributes.set`.
     #[must_use]
-    pub fn set(
+    pub(crate) fn set(
         self,
         language_id: u32,
         token_type: OptionalStandardTokenType,
@@ -189,7 +191,7 @@ impl From<EncodedTokenAttributes> for u32 {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct FontAttribute {
+pub(crate) struct FontAttribute {
     pub font_family: Option<String>,
     pub font_size: Option<f64>,
     pub line_height: Option<f64>,
@@ -197,7 +199,7 @@ pub struct FontAttribute {
 
 impl FontAttribute {
     #[must_use]
-    pub fn from(
+    pub(crate) fn from(
         font_family: Option<String>,
         font_size: Option<f64>,
         line_height: Option<f64>,
@@ -210,7 +212,7 @@ impl FontAttribute {
     }
 
     #[must_use]
-    pub fn with(&self, style_attributes: Option<&StyleAttributes>) -> Self {
+    pub(crate) fn with(&self, style_attributes: Option<&StyleAttributes>) -> Self {
         let Some(style_attributes) = style_attributes else {
             return self.clone();
         };

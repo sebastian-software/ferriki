@@ -13,7 +13,7 @@ use crate::state_stack::StateStack;
 use crate::theme::FontStyle;
 
 #[derive(Clone)]
-pub struct BalancedBracketSelectors {
+pub(crate) struct BalancedBracketSelectors {
     balanced_bracket_scopes: Vec<Matcher>,
     unbalanced_bracket_scopes: Vec<Matcher>,
     allow_any: bool,
@@ -21,7 +21,10 @@ pub struct BalancedBracketSelectors {
 
 impl BalancedBracketSelectors {
     #[must_use]
-    pub fn new(balanced_bracket_scopes: &[String], unbalanced_bracket_scopes: &[String]) -> Self {
+    pub(crate) fn new(
+        balanced_bracket_scopes: &[String],
+        unbalanced_bracket_scopes: &[String],
+    ) -> Self {
         let mut allow_any = false;
         let balanced_bracket_scopes = balanced_bracket_scopes
             .iter()
@@ -53,17 +56,17 @@ impl BalancedBracketSelectors {
     }
 
     #[must_use]
-    pub fn matches_always(&self) -> bool {
+    pub(crate) fn matches_always(&self) -> bool {
         self.allow_any && self.unbalanced_bracket_scopes.is_empty()
     }
 
     #[must_use]
-    pub fn matches_never(&self) -> bool {
+    pub(crate) fn matches_never(&self) -> bool {
         self.balanced_bracket_scopes.is_empty() && !self.allow_any
     }
 
     #[must_use]
-    pub fn matches(&self, scopes: &[String]) -> bool {
+    pub(crate) fn matches(&self, scopes: &[String]) -> bool {
         if self
             .unbalanced_bracket_scopes
             .iter()
@@ -79,14 +82,14 @@ impl BalancedBracketSelectors {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TokenTypeMatcher {
+pub(crate) struct TokenTypeMatcher {
     pub matcher: Matcher,
     pub token_type: StandardTokenType,
 }
 
 impl TokenTypeMatcher {
     #[must_use]
-    pub fn from_selector(selector: &str, token_type: StandardTokenType) -> Vec<Self> {
+    pub(crate) fn from_selector(selector: &str, token_type: StandardTokenType) -> Vec<Self> {
         create_matchers(selector)
             .into_iter()
             .map(|matcher| Self {
@@ -98,13 +101,14 @@ impl TokenTypeMatcher {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct Token {
     pub start_index: usize,
     pub end_index: usize,
     pub scopes: Vec<String>,
 }
 
-pub struct LineTokens {
+pub(crate) struct LineTokens {
     emit_binary_tokens: bool,
     tokens: Vec<Token>,
     binary_tokens: Vec<u32>,
@@ -116,7 +120,7 @@ pub struct LineTokens {
 
 impl LineTokens {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         emit_binary_tokens: bool,
         line_text: &str,
         token_type_overrides: Vec<TokenTypeMatcher>,
@@ -133,11 +137,11 @@ impl LineTokens {
         }
     }
 
-    pub fn produce(&mut self, stack: &StateStack, end_index: usize) {
+    pub(crate) fn produce(&mut self, stack: &StateStack, end_index: usize) {
         self.produce_from_scopes(stack.content_name_scopes_list.as_ref(), end_index);
     }
 
-    pub fn produce_from_scopes(
+    pub(crate) fn produce_from_scopes(
         &mut self,
         scopes_list: Option<&Arc<AttributedScopeStack>>,
         end_index: usize,
@@ -224,7 +228,7 @@ impl LineTokens {
     }
 
     #[must_use]
-    pub fn result(&mut self, stack: &StateStack, line_length: usize) -> Vec<Token> {
+    pub(crate) fn result(&mut self, stack: &StateStack, line_length: usize) -> Vec<Token> {
         if self
             .tokens
             .last()
@@ -244,7 +248,7 @@ impl LineTokens {
     }
 
     #[must_use]
-    pub fn binary_result(&mut self, stack: &StateStack, line_length: usize) -> Vec<u32> {
+    pub(crate) fn binary_result(&mut self, stack: &StateStack, line_length: usize) -> Vec<u32> {
         if self.binary_tokens.len() >= 2
             && self.binary_tokens[self.binary_tokens.len() - 2]
                 == line_length.saturating_sub(1) as u32
@@ -262,6 +266,7 @@ impl LineTokens {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct FontInfo {
     pub start_index: usize,
     pub end_index: usize,
@@ -280,22 +285,22 @@ impl FontInfo {
 }
 
 #[derive(Default)]
-pub struct LineFonts {
+pub(crate) struct LineFonts {
     fonts: Vec<FontInfo>,
     last_index: usize,
 }
 
 impl LineFonts {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
-    pub fn produce(&mut self, stack: &StateStack, end_index: usize) {
+    pub(crate) fn produce(&mut self, stack: &StateStack, end_index: usize) {
         self.produce_from_scopes(stack.content_name_scopes_list.as_ref(), end_index);
     }
 
-    pub fn produce_from_scopes(
+    pub(crate) fn produce_from_scopes(
         &mut self,
         scopes_list: Option<&Arc<AttributedScopeStack>>,
         end_index: usize,
@@ -338,7 +343,7 @@ impl LineFonts {
     }
 
     #[must_use]
-    pub fn result(&self) -> Vec<FontInfo> {
+    pub(crate) fn result(&self) -> Vec<FontInfo> {
         self.fonts.clone()
     }
 }

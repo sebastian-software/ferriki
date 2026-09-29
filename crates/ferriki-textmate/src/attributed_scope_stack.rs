@@ -9,12 +9,16 @@ use crate::basic_scope_attributes::{BasicScopeAttributes, BasicScopeAttributesPr
 use crate::encoded_token_attributes::{EncodedTokenAttributes, FontAttribute};
 use crate::theme::{FontStyle, ScopeStack, StyleAttributes, Theme};
 
-pub trait ScopeAttributesProvider {
+pub(crate) trait ScopeAttributesProvider {
     fn metadata_for_scope(&self, scope_name: &str) -> BasicScopeAttributes;
     fn theme_match(&self, scope_path: &ScopeStack) -> Option<StyleAttributes>;
 }
 
-pub struct ScopeAttributesResolver<'a> {
+#[allow(
+    dead_code,
+    reason = "ported from vscode-textmate; no caller in the synchronous registry"
+)]
+pub(crate) struct ScopeAttributesResolver<'a> {
     pub basic_scope_attributes: &'a BasicScopeAttributesProvider,
     pub theme: &'a Theme,
 }
@@ -31,23 +35,27 @@ impl ScopeAttributesProvider for ScopeAttributesResolver<'_> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct AttributedScopeStackFrame {
+pub(crate) struct AttributedScopeStackFrame {
     pub encoded_token_attributes: EncodedTokenAttributes,
     pub scope_names: Vec<String>,
 }
 
 #[derive(Debug)]
-pub struct AttributedScopeStack {
+pub(crate) struct AttributedScopeStack {
     pub parent: Option<Arc<Self>>,
     pub scope_path: Arc<ScopeStack>,
     pub token_attributes: EncodedTokenAttributes,
     pub font_attributes: Option<FontAttribute>,
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     pub style_attributes: Option<StyleAttributes>,
 }
 
 impl AttributedScopeStack {
     #[must_use]
-    pub fn from_extension(
+    pub(crate) fn from_extension(
         names_scope_list: Option<Arc<Self>>,
         content_name_scopes_list: &[AttributedScopeStackFrame],
     ) -> Option<Arc<Self>> {
@@ -71,7 +79,11 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub fn create_root(
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
+    pub(crate) fn create_root(
         scope_name: impl Into<String>,
         token_attributes: EncodedTokenAttributes,
         font_attribute: FontAttribute,
@@ -89,7 +101,7 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub fn create_root_and_lookup_scope_name(
+    pub(crate) fn create_root_and_lookup_scope_name(
         scope_name: impl Into<String>,
         token_attributes: EncodedTokenAttributes,
         font_attribute: FontAttribute,
@@ -116,12 +128,12 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub fn scope_name(&self) -> &str {
+    pub(crate) fn scope_name(&self) -> &str {
         &self.scope_path.scope_name
     }
 
     #[must_use]
-    pub fn equals(left: Option<&Arc<Self>>, right: Option<&Arc<Self>>) -> bool {
+    pub(crate) fn equals(left: Option<&Arc<Self>>, right: Option<&Arc<Self>>) -> bool {
         let mut left = left.cloned();
         let mut right = right.cloned();
         loop {
@@ -145,7 +157,7 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub fn push_attributed(
+    pub(crate) fn push_attributed(
         self: &Arc<Self>,
         scope_path: Option<&str>,
         provider: &impl ScopeAttributesProvider,
@@ -188,12 +200,12 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub fn scope_names(&self) -> Vec<String> {
+    pub(crate) fn scope_names(&self) -> Vec<String> {
         self.scope_path.get_segments()
     }
 
     #[must_use]
-    pub fn extension_if_defined(
+    pub(crate) fn extension_if_defined(
         self: &Arc<Self>,
         base: Option<&Arc<Self>>,
     ) -> Option<Vec<AttributedScopeStackFrame>> {

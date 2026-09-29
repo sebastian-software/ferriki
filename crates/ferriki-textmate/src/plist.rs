@@ -37,7 +37,7 @@ impl Error for PlistError {}
 /// vscode-textmate's grammar reader only needs dictionaries, arrays, scalar
 /// values, and XML entity decoding. Dates and data remain strings, matching
 /// the values observed by the raw grammar model.
-pub fn parse_plist(content: &str) -> Result<Value, PlistError> {
+pub(crate) fn parse_plist(content: &str) -> Result<Value, PlistError> {
     Parser::new(content).parse()
 }
 

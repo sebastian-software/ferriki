@@ -69,14 +69,11 @@ pub fn parse_theme_data(id: &str, source: &str) -> Result<ThemeData> {
     {
         settings.insert(
             0,
-            RawThemeSetting {
-                settings: Some(RawThemeStyle {
-                    foreground: Some(foreground.clone()),
-                    background: Some(background.clone()),
-                    ..RawThemeStyle::default()
-                }),
-                ..RawThemeSetting::default()
-            },
+            RawThemeSetting::default().with_settings(Some(
+                RawThemeStyle::default()
+                    .with_foreground(Some(foreground.clone()))
+                    .with_background(Some(background.clone())),
+            )),
         );
     }
 
@@ -84,10 +81,9 @@ pub fn parse_theme_data(id: &str, source: &str) -> Result<ThemeData> {
         name: name.clone(),
         foreground,
         background,
-        raw_theme: RawTheme {
-            name: Some(name),
-            settings,
-        },
+        raw_theme: RawTheme::default()
+            .with_name(Some(name))
+            .with_settings(settings),
     })
 }
 
@@ -113,18 +109,18 @@ fn parse_settings(object: &Map<String, Value>) -> Result<Vec<RawThemeSetting>> {
                 });
             }
 
-            Ok(RawThemeSetting {
-                name: string_property(entry, "name").map(str::to_owned),
-                scope: parse_scope(entry.get("scope")),
-                settings: Some(RawThemeStyle {
-                    font_style: flattened_font_style(entry.get("fontStyle")),
-                    foreground: string_property(entry, "foreground").map(str::to_owned),
-                    background: string_property(entry, "background").map(str::to_owned),
-                    font_family: string_property(entry, "fontFamily").map(str::to_owned),
-                    font_size: entry.get("fontSize").and_then(Value::as_f64),
-                    line_height: entry.get("lineHeight").and_then(Value::as_f64),
-                }),
-            })
+            Ok(RawThemeSetting::default()
+                .with_name(string_property(entry, "name").map(str::to_owned))
+                .with_scope(parse_scope(entry.get("scope")))
+                .with_settings(Some(
+                    RawThemeStyle::default()
+                        .with_font_style(flattened_font_style(entry.get("fontStyle")))
+                        .with_foreground(string_property(entry, "foreground").map(str::to_owned))
+                        .with_background(string_property(entry, "background").map(str::to_owned))
+                        .with_font_family(string_property(entry, "fontFamily").map(str::to_owned))
+                        .with_font_size(entry.get("fontSize").and_then(Value::as_f64))
+                        .with_line_height(entry.get("lineHeight").and_then(Value::as_f64)),
+                )))
         })
         .collect()
 }

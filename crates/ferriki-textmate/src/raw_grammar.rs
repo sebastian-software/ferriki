@@ -10,31 +10,32 @@ use serde::{Deserialize, Deserializer, Serialize};
 /// This mirrors vscode-textmate's branded numeric `RuleId` without exposing a
 /// plain integer at API boundaries.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct RuleId(u32);
+pub(crate) struct RuleId(u32);
 
 impl RuleId {
-    pub const fn new(value: u32) -> Self {
+    pub(crate) const fn new(value: u32) -> Self {
         Self(value)
     }
 
-    pub const fn get(self) -> u32 {
+    pub(crate) const fn get(self) -> u32 {
         self.0
     }
 }
 
-pub type RawRepository = BTreeMap<String, Arc<RawRule>>;
-pub type RawCaptures = BTreeMap<String, Arc<RawRule>>;
+pub(crate) type RawRepository = BTreeMap<String, Arc<RawRule>>;
+pub(crate) type RawCaptures = BTreeMap<String, Arc<RawRule>>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct RawGrammar {
     #[serde(default, deserialize_with = "deserialize_raw_repository")]
-    pub repository: RawRepository,
+    pub(crate) repository: RawRepository,
     pub scope_name: String,
     #[serde(default)]
-    pub patterns: Vec<Arc<RawRule>>,
+    pub(crate) patterns: Vec<Arc<RawRule>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub injections: BTreeMap<String, Arc<RawRule>>,
+    pub(crate) injections: BTreeMap<String, Arc<RawRule>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub injection_selector: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -48,12 +49,12 @@ pub struct RawGrammar {
         rename = "$vscodeTextmateLocation",
         skip_serializing_if = "Option::is_none"
     )]
-    pub location: Option<Location>,
+    pub(crate) location: Option<Location>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RawRule {
+pub(crate) struct RawRule {
     #[serde(skip)]
     pub id: Option<RuleId>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -113,7 +114,7 @@ pub struct RawRule {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Location {
+pub(crate) struct Location {
     pub filename: String,
     pub line: u32,
     #[serde(rename = "char")]
