@@ -18,7 +18,8 @@ const FONT_STYLE_OFFSET: u32 = 11;
 const FOREGROUND_OFFSET: u32 = 15;
 const BACKGROUND_OFFSET: u32 = 24;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+/// The standard token type of vscode-textmate. Serializes as its numeric value.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 #[repr(u8)]
 pub enum StandardTokenType {
     #[default]
@@ -26,6 +27,26 @@ pub enum StandardTokenType {
     Comment = 1,
     String = 2,
     RegEx = 3,
+}
+
+impl serde::Serialize for StandardTokenType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_u8(*self as u8)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for StandardTokenType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        match <u8 as serde::Deserialize>::deserialize(deserializer)? {
+            0 => Ok(Self::Other),
+            1 => Ok(Self::Comment),
+            2 => Ok(Self::String),
+            3 => Ok(Self::RegEx),
+            other => Err(serde::de::Error::custom(format!(
+                "invalid standard token type {other}; expected 0 to 3"
+            ))),
+        }
+    }
 }
 
 impl StandardTokenType {

@@ -51,7 +51,9 @@ pub struct RawThemeStyle {
     pub line_height: Option<f64>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+/// TextMate font style bits. Serializes as its integer value; `NOT_SET` is `-1`.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct FontStyle(i32);
 
 impl FontStyle {

@@ -17,8 +17,8 @@ pub use asset_source::{
 };
 pub use error::{Error, ErrorKind, Result};
 pub use ferriki_textmate::{
-    ParseRawGrammarError, RawGrammar, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle,
-    parse_raw_grammar,
+    FontStyle, ParseRawGrammarError, RawGrammar, RawTheme, RawThemeScope, RawThemeSetting,
+    RawThemeStyle, StandardTokenType, parse_raw_grammar,
 };
 /// Implementation bridge for Ferriki's N-API host, exempt from semver guarantees.
 #[doc(hidden)]

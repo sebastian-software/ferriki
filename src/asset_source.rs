@@ -128,9 +128,17 @@ impl AssetSource for DirectoryAssetSource {
 }
 
 /// Borrowed or owned offline payloads, deduplicated by digest.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct EmbeddedAssetSource {
     assets: HashMap<AssetDigest, Cow<'static, [u8]>>,
+}
+
+impl std::fmt::Debug for EmbeddedAssetSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EmbeddedAssetSource")
+            .field("assets", &self.assets.len())
+            .finish()
+    }
 }
 
 impl EmbeddedAssetSource {
