@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 Ferriki exposes a deliberately small native runtime behind a Shiki-shaped Node
@@ -21,7 +23,17 @@ as Stable, Shim, Remove, or Non-goal.
 
 The contract prioritizes the synchronous reusable highlighter path required by
 Ferromark and Ardo, keeps transformers/decorations in the JavaScript layer, and
-keeps Rust crates and ecosystem adapters outside the public Ferriki package.
+keeps ecosystem adapters outside the public Ferriki package. The npm package
+exposes no Rust API; Rust consumers use the published crates of
+[ADR 0012](0012-publishable-rust-highlighter.md).
+
+Before the contract is frozen at 1.0 it must also list:
+
+- the `assets` option (`remote`, `baseUrl`, `cacheDir`), the `FERRIKI_ASSETS_*`
+  and `FERRIKI_CACHE_DIR` environment variables and the new typed asset errors
+  of [ADR 0013](0013-cdn-loaded-standard-assets.md) (#141);
+- a type-level check of the public TypeScript declarations against the
+  mirrored Shiki types, so the hand-written declarations cannot drift (#158).
 
 ## Consequences
 
@@ -31,3 +43,8 @@ keeps Rust crates and ecosystem adapters outside the public Ferriki package.
 - Some currently exported stubs are intentionally removed before 1.0.
 - Multi-theme output, enumerable catalogs, custom registrations, errors, and
   lifecycle behavior are required work rather than accidental extensions.
+
+## History
+
+- 2026-09-05: Accepted.
+- 2026-09-30: Lists the ADR 0013 options and the type conformance check the contract must cover before the freeze.

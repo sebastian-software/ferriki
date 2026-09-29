@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 Ferriki's runtime originally lived in the `ferriki-core` N-API crate. Rust
@@ -19,20 +21,27 @@ still applies.
 - `ferriki` is the publishable reusable highlighter. It owns asset catalogs,
   lazy loading, themed tokens, escaped Rust HTML rendering, and typed errors.
 - `ferriki-core` is the unpublished N-API adapter over the same Rust runtime.
-- Asset providers are explicit catalogs backed by a directory or embedded
-  bytes. No Node package path is part of the Rust API. Binary asset files are
-  internal, versioned artifacts that must match the runtime release.
+- Asset providers are explicit catalogs. `StandardAssetCatalogs` reads a
+  directory or embedded bytes, or takes the binary manifests plus trusted
+  release metadata and a digest-keyed `AssetSource`, verifying size and
+  SHA-256 before it decodes a payload. Remote loading will come from the
+  `remote` feature of [ADR 0013](0013-cdn-loaded-standard-assets.md) (#141). No Node package path is
+  part of the Rust API. Binary asset files are internal, versioned artifacts
+  that must match the runtime release
+  ([ADR 0015](0015-postcard-asset-codec.md)).
 - Rust token offsets are UTF-8 bytes. The Node facade retains UTF-16 offsets.
-- The N-API compatibility core is hidden from the Rust API documentation. The
-  catalog's binary manifest and asset structs are not exposed through the
-  `ferriki` API.
+- The N-API compatibility core lives in `ferriki::__private`, hidden from the
+  Rust API documentation and exempt from semver guarantees. The catalog's
+  binary manifest and asset structs are not exposed through the `ferriki` API.
+- What the three crates promise under semver is set by
+  [ADR 0014](0014-rust-crate-semver-surface.md).
 - A highlighter is synchronous and mutable. It is reused within one thread;
   one instance per worker avoids unsafe sharing of TextMate registry state.
 - Ferriki emits escaped, balanced line fragments for composable Markdown
   rendering. Ferromark owns code block structure, metadata, and fallback.
   The adapter belongs in Ferromark or a separate adapter crate, not Ferriki.
 
-### Release (amended 2026-09-27)
+### Release
 
 Ferriki follows the organization's release blueprint (one product, one
 version, one release signal; see Ferromark ADR-0020 and
@@ -67,3 +76,9 @@ version, one release signal; see Ferromark ADR-0020 and
   updating the format version. The format itself is not a stable public API.
 - The default Ferromark crate keeps its zero-cost path without a Ferriki
   dependency; integration is explicitly opt-in.
+
+## History
+
+- 2026-09-26: Accepted.
+- 2026-09-27: Release section: one version and one Release Please pull request for the crates and npm.
+- 2026-09-30: Asset sources verify digests (0.5.0); links the semver and codec records.

@@ -43,7 +43,7 @@ compatibility tests must converge on this matrix.
 | `createOnigurumaEngine()` | Removed | The native runtime owns matching; use Ferriki's native factories without engine injection. |
 | `loadWasm()` / `wasmBinary` | Removed | Browser/WASM loading is not a Ferriki 1.0 runtime path. |
 | Markdown, rehype, VitePress, Twoslash, and colorized-brackets packages | Non-goal | Optional adapter lanes may be tested separately; they are not Ferriki core exports (#38, ADR 0004). |
-| Public Rust crates | Non-goal | Rust crates remain internal implementation components unless a later decision promotes them (ADR 0001). |
+| Rust crates through npm | Non-goal | The npm package exposes no Rust API. The Rust crates are published separately and have their own contract (ADR 0012, ADR 0014, `docs/rust-api.md`). |
 
 ## Input and output matrix
 
