@@ -91,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "ferriki-asset-gen",
  "ferriki-textmate",
@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-asset-gen"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "bincode",
  "serde",
@@ -111,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-core"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "ferriki",
  "napi",
@@ -122,7 +122,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-textmate"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "ferroni",
  "serde",

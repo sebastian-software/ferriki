@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/sebastian-software/ferriki/compare/v0.4.1...v0.5.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* add verified asset sources and extensible Rust options
+
+### Features
+
+* add verified asset sources and extensible Rust options ([2131d38](https://github.com/sebastian-software/ferriki/commit/2131d38fbba91f93da6e729e7552729e21a2de7a))
+
+
+### Bug Fixes
+
+* match Shiki multi-theme rendering ([61f19c6](https://github.com/sebastian-software/ferriki/commit/61f19c62215428ca9bbec01f32213437f1fdd9db))
+* **npm:** stop shipping a Linux addon in the main package ([a813367](https://github.com/sebastian-software/ferriki/commit/a81336772043c1b794c3bd27a907f9cce777bc27))
+
+
+### Performance Improvements
+
+* **deps:** update ferroni to 1.6.1 ([6a36499](https://github.com/sebastian-software/ferriki/commit/6a36499ad4c22e82494a857416027d196ff5f426))
+
 ## [0.4.1](https://github.com/sebastian-software/ferriki/compare/v0.4.0...v0.4.1) (2026-09-28)
 
 
