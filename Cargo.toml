@@ -58,7 +58,7 @@ rust-version = "1.94"
 license = "MIT OR Apache-2.0"
 authors = [ "Sebastian Software GmbH" ]
 repository = "https://github.com/sebastian-software/ferriki"
-homepage = "https://ferramenta.dev"
+homepage = "https://ferriki.dev"
 # crates.io allows at most five keywords; "ferramenta" marks the tool family.
 keywords = [ "syntax-highlighting", "textmate", "shiki", "tokenizer", "ferramenta" ]
 categories = [ "text-processing", "parser-implementations", "development-tools" ]
