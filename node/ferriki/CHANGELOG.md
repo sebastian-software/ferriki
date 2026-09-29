@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/sebastian-software/ferriki/compare/v0.5.0...v0.6.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* HighlightToken::font_style is Option<FontStyle> instead of Option<i32>, and token_type is Option<StandardTokenType> instead of Option<u8>.
+* **assets:** the binary asset format is version 3. Assets generated for format 2 must be regenerated. ferriki-asset-gen no longer exports its generate and import modules, and its schema types can no longer be built with struct literals outside the crate; use AssetSourceRef::new.
+* **textmate:** ferriki-textmate modules are private; import from the crate root. Types such as Rule, RuleId, RawRule, Matcher, ScopeStack, Theme and the re-exported ferroni scanner types are no longer public. Raw theme input and GrammarConfiguration must be built with Default and the with_* setters.
+
+### Features
+
+* **assets:** encode catalogs with postcard and narrow the codec crate API ([23a7727](https://github.com/sebastian-software/ferriki/commit/23a7727ebd18556161c38fc9c6456cbf480f9afa))
+* **textmate:** keep the port's modules private behind a curated API ([1cea59a](https://github.com/sebastian-software/ferriki/commit/1cea59abd0d6b38b6283c934b85dd1a252e36c22))
+* type token font styles and token types, derive common traits ([538619d](https://github.com/sebastian-software/ferriki/commit/538619dcbe5607b20d7de8e8fae75dc233a17c05))
+
 ## [0.5.0](https://github.com/sebastian-software/ferriki/compare/v0.4.1...v0.5.0) (2026-09-29)
 
 
