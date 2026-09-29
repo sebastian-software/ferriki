@@ -39,6 +39,21 @@ jobs:
       - name: Verify every workflow action is pinned by commit SHA
         run: node scripts/check-workflow-pins.mjs
 
+  adrs:
+    name: Decision records
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Verify the decision record check itself
+        run: node scripts/test-check-adrs.mjs
+
+      # Records are living documents (adr/README.md); this keeps their status,
+      # dates and the index in sync. Whether the content is current is part of
+      # every review.
+      - name: Verify the decision records and their index
+        run: node scripts/check-adrs.mjs
+
   rust:
     runs-on: ubuntu-latest
     steps:
