@@ -35,7 +35,7 @@ What this says today:
 - **HAST and tokens are not faster yet.** `codeToHast` is slower than with
   Shiki and `codeToTokensBase` is about even. Both return many small JavaScript
   objects, and building them across the native boundary currently costs about
-  as much as the native tokenizing saves, or more.
+  as much as the native tokenizing saves, or more ([ferriki#147](https://github.com/sebastian-software/ferriki/issues/147)).
 - **Small documents are close.** Below about a hundred lines the fixed cost of a
   call dominates, and some small documents are slower than with Shiki; the
   tables below show which.
