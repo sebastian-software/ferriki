@@ -1,0 +1,61 @@
+---
+title: Languages and themes
+order: 3
+---
+
+# Languages and themes
+
+Ferriki ships Shiki's catalog: **260 TextMate grammars** and **65 themes**,
+converted into a compact binary format and loaded lazily. A grammar or theme
+is decoded the first time a highlighter needs it.
+
+## Standard languages
+
+Name a language by its ID or one of its aliases (`ts`, `rs`, `sh`, …):
+
+```ts
+import { bundledLanguages, bundledLanguagesAlias, createHighlighter } from "@ferriki/core";
+
+const highlighter = await createHighlighter({
+  langs: ["typescript", bundledLanguages.rust],
+  themes: ["github-dark"],
+});
+
+bundledLanguagesAlias.ts; // "typescript"
+```
+
+Embedded languages load with their host: an HTML grammar brings the CSS and
+JavaScript grammars it hands `<style>` and `<script>` blocks to, and a
+Markdown grammar highlights fenced code in every language that is loaded.
+
+## Themes
+
+Use any key of `bundledThemes`, such as `github-light`, `github-dark`,
+`nord` or `vitesse-dark`. The special theme `none` returns unstyled output.
+For light and dark output from one call, pass a `themes` map:
+
+```ts
+const html = highlighter.codeToHtml(source, {
+  lang: "typescript",
+  themes: { light: "github-light", dark: "github-dark" },
+});
+```
+
+`createCssVariablesTheme` builds a theme whose colors are CSS variables, for
+sites that style highlighting from their own stylesheet.
+
+## Your own grammars and themes
+
+A custom grammar or theme is the same JSON-shaped TextMate structure Shiki
+accepts. Ferriki validates it before it reaches the native engine:
+
+```ts
+import myGrammar from "./my-language.tmLanguage.json" with { type: "json" };
+
+await highlighter.loadLanguage({ ...myGrammar, name: "my-language" });
+highlighter.codeToHtml(source, { lang: "my-language", theme: "github-dark" });
+```
+
+A language registration needs `name`, `scopeName` and valid patterns; a theme
+needs `name` and valid settings. Aliases of your own apply to one
+highlighter; the standard aliases cannot be overwritten.

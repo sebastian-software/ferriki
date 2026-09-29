@@ -1,0 +1,75 @@
+---
+title: Getting started
+order: 1
+---
+
+# Getting started
+
+Ferriki highlights code with the TextMate grammars and themes from Shiki's
+catalog, on a native Rust engine. From Node.js it keeps Shiki's API; from Rust
+it is a regular crate ([Start with Rust](/rust/getting-started)).
+
+## Requirements
+
+- Node.js 22.13.0 or newer. The package is ESM-only: use `import`, not `require()`.
+- A supported platform: Linux x64 and arm64 (glibc or musl), macOS on Apple
+  Silicon, or Windows x64 and arm64. See [Compatibility](/evidence/compatibility).
+
+## Install
+
+```sh
+npm install @ferriki/core
+```
+
+The native addon comes from a platform package (`@ferriki/<platform>`) that npm
+installs as an optional dependency. Keep optional dependencies enabled in your
+deployment.
+
+## Highlight once
+
+```ts
+import { codeToHtml } from "@ferriki/core";
+
+const html = await codeToHtml("const answer = 42;", {
+  lang: "javascript",
+  theme: "github-dark",
+});
+```
+
+The one-shot functions share a singleton highlighter and return a Promise.
+They load the language and theme on first use.
+
+## Reuse a highlighter
+
+For a site build or a server, create one highlighter with the languages and
+themes you need. After creation every call is synchronous.
+
+```ts
+import { createHighlighter } from "@ferriki/core";
+
+using highlighter = await createHighlighter({
+  langs: ["typescript", "rust", "css"],
+  themes: ["github-light", "github-dark"],
+});
+
+const html = highlighter.codeToHtml(source, { lang: "typescript", theme: "github-light" });
+```
+
+`using` disposes the highlighter at the end of the scope; call
+`highlighter.dispose()` yourself where `using` is not available. A highlighter
+belongs to one thread: create one per worker for parallel builds.
+
+## Other outputs
+
+- `codeToHast` returns the same result as a serializable HAST tree.
+- `codeToTokens` returns themed tokens with foreground and background colors.
+- `getLastGrammarState` captures where a grammar stopped, to continue
+  highlighting in a later call.
+
+The [API overview](/guide/api) lists every function and option.
+
+## Next steps
+
+- Coming from Shiki? Read [Migrating from Shiki](/guide/migrating-from-shiki).
+- Need a language or theme of your own? See [Languages and themes](/guide/languages-and-themes).
+- Something fails to load? Check [Troubleshooting](/guide/troubleshooting).

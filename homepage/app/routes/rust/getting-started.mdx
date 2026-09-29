@@ -1,0 +1,103 @@
+---
+title: Start with Rust
+order: 1
+---
+
+# Start with Rust
+
+The `ferriki` crate is the same highlighter the Node.js package runs, as a
+synchronous Rust library with no Node.js or N-API dependency.
+
+```sh
+cargo add ferriki
+```
+
+## Assets
+
+The crate does not embed the standard grammars and themes. Your application
+supplies the generated `assets/shiki` directory from the Ferriki release that
+matches the crate version:
+
+```text
+assets/shiki/
+  languages/manifest.fkindex
+  languages/*.fkgram
+  themes/manifest.fkindex
+  themes/*.fktheme
+```
+
+`StandardAssetCatalogs::load_from_root` reads the two manifests; grammars and
+themes are decoded on first use and cached. To ship the assets inside your
+binary, `StandardAssetCatalogs::from_embedded` takes the same files as
+borrowed bytes from `include_bytes!`.
+
+## Highlight
+
+```rust
+use std::path::Path;
+use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs, render_html_lines};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+    let mut highlighter = Highlighter::builder()
+        .with_assets(assets)
+        .load_languages(["rust", "typescript"])
+        .load_themes(["github-dark"])
+        .build()?;
+
+    let tokens = highlighter.highlight("fn main() {}", "rust", "github-dark")?;
+    let lines = render_html_lines(&tokens, &RenderOptions::default());
+    assert_eq!(lines.len(), 1);
+    Ok(())
+}
+```
+
+- `highlight` returns themed tokens, one vector per line, with UTF-8 byte
+  offsets.
+- `render_html` produces a standalone `<pre><code>` block;
+  `render_html_lines` produces escaped inner HTML per line.
+- `highlight_html_lines` goes straight to line HTML plus the theme's
+  foreground and background, for callers that only need HTML.
+
+A highlighter is meant to be reused across blocks and documents. It is `!Send`:
+move the `StandardAssetCatalogs` to a worker thread and build one highlighter
+there. Custom grammars and themes register through `LanguageRegistration` and
+`ThemeData`, or from JSON with `register_language_json` and
+`register_theme_json`.
+
+## With Ferromark
+
+Ferromark's `HtmlRenderHooks::highlight_code_block` hands each fenced block's
+code and language to a hook. Ferriki highlights the lines; Ferromark keeps the
+wrapper, the fence metadata and the fallback for unknown languages.
+
+```rust
+use ferriki::{Highlighter, RenderOptions};
+use ferromark::{CodeHighlightInput, HighlightedCodeBlock, HtmlRenderHooks};
+
+struct FerrikiHook<'a> {
+    highlighter: &'a mut Highlighter,
+    theme: &'a str,
+}
+
+impl HtmlRenderHooks for FerrikiHook<'_> {
+    fn highlight_code_block(
+        &mut self,
+        input: CodeHighlightInput<'_>,
+    ) -> Option<HighlightedCodeBlock> {
+        let language = input.language?.to_ascii_lowercase();
+        let highlighted = self
+            .highlighter
+            .highlight_html_lines(input.code, &language, self.theme, &RenderOptions::default())
+            .ok()?;
+        Some(
+            HighlightedCodeBlock::new(highlighted.lines)
+                .with_colors(highlighted.foreground, highlighted.background),
+        )
+    }
+}
+```
+
+Returning `None` makes Ferromark render escaped plain code. The full contract
+is in [docs/rust-api.md](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md); the API itself is on
+[docs.rs/ferriki](https://docs.rs/ferriki).

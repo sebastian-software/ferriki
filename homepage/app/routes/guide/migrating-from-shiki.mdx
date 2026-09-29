@@ -1,0 +1,57 @@
+---
+title: Migrating from Shiki
+order: 2
+---
+
+# Migrating from Shiki
+
+Ferriki follows the API shape of Shiki **v4.4.3** and runs it on a native
+engine. For the highlighting calls themselves, moving over is usually an
+import:
+
+```diff
+- import { createHighlighter } from "shiki";
++ import { createHighlighter } from "@ferriki/core";
+
+  const highlighter = await createHighlighter({
+    langs: ["typescript"],
+    themes: ["nord"],
+  });
+
+  const html = highlighter.codeToHtml(source, { lang: "typescript", theme: "nord" });
+```
+
+## What stays
+
+| Shiki surface                              | In Ferriki                                                      |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| `codeToHtml`, `codeToHast`, `codeToTokens` | Same calls and options                                          |
+| Reusable highlighters and the singleton    | Same factories; dispose long-lived instances explicitly         |
+| Standard languages, themes and aliases     | `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`    |
+| Custom TextMate grammars and themes        | Same JSON registrations, validated before they reach the engine |
+| `themes` map and `defaultColor: false`     | Supported for light and dark output                             |
+| `codeToHast` plus `hastToHtml`             | Supported; sanitize at your application boundary                |
+
+## What changes
+
+| Shiki surface                                                    | In Ferriki          | What to do                                                                      |
+| ---------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------- |
+| `engine`, `createOnigurumaEngine`, `createJavaScriptRegexEngine` | Removed             | Delete the engine option; Ferriki has one native engine                         |
+| `loadWasm`, `wasmBinary`                                         | Removed             | Install the platform package instead                                            |
+| Browser runtime                                                  | Not supported       | Highlight in Node.js at build or render time                                    |
+| `lang: "ansi"` with escape sequences                             | Rejected            | Strip or parse terminal output first                                            |
+| `rehype`, `markdown-it` and other adapters                       | Not part of Ferriki | Keep the adapter in your Markdown layer, on top of `codeToHtml` or `codeToHast` |
+
+"Shiki-compatible" means a tested subset: the baseline and the exclusions are
+checked by machine against a pinned mirror of Shiki's own test suite (see
+[Compatibility](/evidence/compatibility)).
+
+## Before you switch
+
+1. Confirm that every deployment target can install a Ferriki native binary.
+2. Run your build from an installed package in CI, not from a checkout.
+3. Keep the Shiki implementation behind the same interface until the switch is
+   done, so a target without a binary can fail the deployment explicitly.
+
+The full guide, including error handling and the Ferromark and Ardo contract,
+is [docs/migrations/shiki-to-ferriki.md](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).

@@ -1,0 +1,41 @@
+{
+  "name": "ferriki-homepage",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev",
+    "verify": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm build",
+    "build": "react-router build && node scripts/verify-build.mjs",
+    "sample:write": "node scripts/render-sample.mjs",
+    "sample:check": "node scripts/render-sample.mjs --check",
+    "lint": "pnpm lint:oxlint && pnpm lint:eslint",
+    "lint:eslint": "eslint . --max-warnings=0",
+    "lint:oxlint": "oxlint --config oxlint.config.ts .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ardo": "^4.2.0",
+    "ferramenta-family": "1.2.0",
+    "isbot": "^5.2.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^8.4.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.11.0",
+    "eslint-config-setup": "^0.5.2",
+    "jiti": "^2.7.0",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.0"
+  },
+  "packageManager": "pnpm@10.34.5+sha512.a4ee05f2f73658255bd6a89859c065a45c28a57daefae2c893a168ee2b73168c37b91e83e57ea67654ad03f03031746430e8bce38e362e042605fb8abc80192e"
+}

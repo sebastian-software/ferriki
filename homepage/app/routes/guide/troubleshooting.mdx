@@ -1,0 +1,44 @@
+---
+title: Troubleshooting
+order: 5
+---
+
+# Troubleshooting
+
+## No native binary for your platform
+
+The error starts with `[ferriki] No native binary for` and lists every path it
+tried. Check, in order:
+
+1. the matching platform package (`@ferriki/<platform>`) is installed; the
+   main package ships no addon itself;
+2. optional dependencies are allowed by your install and deployment policy;
+3. the target is on the [supported platform list](/evidence/compatibility).
+
+There is no JavaScript or WASM fallback to switch to: Ferriki fails clearly on
+an unsupported target instead.
+
+## Language or theme not found
+
+Load the language before rendering synchronously, or let the async factory
+load it. Check `bundledLanguagesAlias` when you use a file extension or an
+alias, and use a key of `bundledThemes` for themes.
+
+## "Shiki instance has been disposed"
+
+A highlighter cannot be used after `dispose()` or the end of its `using`
+scope. Create a new one instead of keeping the old reference.
+
+## Long lines
+
+Each line has a 500 ms tokenization budget by default. Set
+`tokenizeTimeLimit: 0` only for trusted input. With `tokenizeMaxLineLength`
+set, a longer line comes back as one unstyled token, so the degradation is
+visible instead of silently wrong.
+
+## ANSI input is rejected
+
+Ferriki does not parse terminal escape sequences. Strip or parse them before
+highlighting.
+
+More cases are collected in [docs/troubleshooting.md](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md).

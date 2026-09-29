@@ -1,0 +1,52 @@
+---
+title: API overview
+order: 4
+---
+
+# API overview
+
+`@ferriki/core` exports Shiki's highlighting surface. This page is the map;
+the complete reference, with every type and error code, is
+[docs/ferriki-api.md](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md).
+
+## One-shot functions
+
+Each one uses the shared singleton and returns a Promise; pass a highlighter as
+the first argument and it returns synchronously.
+
+| Function                                | Returns                                            |
+| --------------------------------------- | -------------------------------------------------- |
+| `codeToHtml(code, options)`             | Escaped HTML with Shiki's line and token structure |
+| `codeToHast(code, options)`             | The same result as a serializable HAST tree        |
+| `codeToTokens(code, options)`           | Tokens plus foreground and background colors       |
+| `codeToTokensBase(code, options)`       | The token matrix only                              |
+| `codeToTokensWithThemes(code, options)` | Aligned tokens for a theme map                     |
+| `getLastGrammarState(code, options)`    | A serializable state to continue from              |
+
+## Highlighters
+
+| Factory                              | Notes                                       |
+| ------------------------------------ | ------------------------------------------- |
+| `createHighlighter(options)`         | Resolves loaders and promises, then returns |
+| `createHighlighterCoreSync(options)` | Accepts already resolved registrations only |
+| `getSingletonHighlighter(options)`   | The instance the one-shot functions use     |
+
+A highlighter carries the methods above plus `loadLanguage`, `loadTheme` (and
+their `Sync` forms), `getLoadedLanguages`, `getLoadedThemes`,
+`resolveLangAlias` and `dispose`.
+
+## Highlight options
+
+The common ones: `lang`, `theme` or `themes`, `defaultColor`,
+`cssVariablePrefix`, `mergeWhitespaces`, `mergeSameStyleTokens`,
+`tabindex`, `rootStyle`, `structure`, `meta`, `grammarState` and
+`includeExplanation`. `tokenizeTimeLimit` (500 ms per line by default) and
+`tokenizeMaxLineLength` bound the work one line may take.
+
+## Errors
+
+Every user-facing failure is a `ShikiError` with a stable `code`
+(`ERR_USAGE`, `ERR_UNSUPPORTED`, `ERR_NATIVE_LOAD`, `ERR_ASSET`,
+`ERR_RESOURCE_LIMIT`, `ERR_INTERNAL`). Failures inside the native engine are
+its subclass `FerrikiError`, so existing `instanceof ShikiError` checks keep
+working.
