@@ -6,10 +6,10 @@
   load-bearing ones: ADR 0003 (the upstream mirror is never hand-edited)
   and ADR 0009 (native-only runtime; the bundled JS engine is deprecated).
   ADR 0010 defines the mechanical vscode-textmate port and crate boundary.
-- The execution backlog lives in
-  [`plans/native-only-migration.md`](plans/native-only-migration.md) —
-  including the measured decision to re-port the tokenizer (#30) and the
-  cut-over scope (#31).
+- [`plans/native-only-migration.md`](plans/native-only-migration.md) records
+  the migration history, including the measured decision to re-port the
+  tokenizer (#30) and the cut-over scope (#31). It is context, not the
+  backlog; see "Delivery source of truth" below.
 
 ## Hard rules
 
