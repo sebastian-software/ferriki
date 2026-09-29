@@ -410,11 +410,11 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: Some("1.0.0".to_owned()),
-                commit: Some("abc123".to_owned()),
-            },
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
         )
         .expect("generate");
 
@@ -442,11 +442,11 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: Some("1.0.0".to_owned()),
-                commit: Some("abc123".to_owned()),
-            },
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
         )
         .expect("generate");
 
@@ -478,11 +478,11 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: Some("1.0.0".to_owned()),
-                commit: Some("abc123".to_owned()),
-            },
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
         )
         .expect("generate");
 
@@ -510,11 +510,11 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: Some("1.0.0".to_owned()),
-                commit: Some("abc123".to_owned()),
-            },
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
         )
         .expect("generate");
 
@@ -539,11 +539,11 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: Some("1.0.0".to_owned()),
-                commit: Some("abc123".to_owned()),
-            },
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
         )
         .expect("generate");
 
@@ -605,11 +605,7 @@ mod tests {
         generate_catalogs_from_upstream(
             &upstream_dir,
             &output_dir,
-            AssetSourceRef {
-                upstream: "textmate-grammars-themes".to_owned(),
-                version: None,
-                commit: None,
-            },
+            AssetSourceRef::new("textmate-grammars-themes".to_owned(), None, None),
         )
         .expect("generate");
         let language_manifest =

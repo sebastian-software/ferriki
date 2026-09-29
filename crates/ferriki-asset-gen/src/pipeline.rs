@@ -5,6 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct GeneratedCatalogSet {
     pub languages: GeneratedCatalog,
     pub themes: GeneratedCatalog,

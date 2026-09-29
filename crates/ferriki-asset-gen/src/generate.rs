@@ -10,14 +10,16 @@ use std::path::{Path, PathBuf};
 const LANGUAGE_MANIFEST_FILE: &str = "manifest.fkindex";
 const THEME_MANIFEST_FILE: &str = "manifest.fkindex";
 
+/// The files written for one catalog.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct GeneratedCatalog {
     pub manifest_path: PathBuf,
     pub asset_paths: Vec<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LanguageSourceRecord {
+pub(crate) struct LanguageSourceRecord {
     pub id: String,
     pub scope_name: String,
     pub display_name: Option<String>,
@@ -29,14 +31,14 @@ pub struct LanguageSourceRecord {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ThemeSourceRecord {
+pub(crate) struct ThemeSourceRecord {
     pub id: String,
     pub display_name: Option<String>,
     pub theme_type: Option<String>,
     pub theme_json: String,
 }
 
-pub fn write_language_catalog(
+pub(crate) fn write_language_catalog(
     output_dir: &Path,
     source: AssetSourceRef,
     records: &[LanguageSourceRecord],
@@ -93,7 +95,7 @@ pub fn write_language_catalog(
     })
 }
 
-pub fn write_theme_catalog(
+pub(crate) fn write_theme_catalog(
     output_dir: &Path,
     source: AssetSourceRef,
     records: &[ThemeSourceRecord],

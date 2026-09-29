@@ -1,16 +1,16 @@
-pub mod generate;
-pub mod import;
-pub mod pipeline;
-pub mod schema;
+//! Encoder and decoder for Ferriki's binary grammar and theme catalogs, plus
+//! the generator that builds them from an upstream grammar collection.
+//!
+//! The format is versioned by [`FORMAT_VERSION`]. The schema types are
+//! `#[non_exhaustive]`: read them through their public fields and create
+//! catalogs with [`generate_catalogs_from_upstream`].
 
-pub use generate::{
-    GeneratedCatalog, LanguageSourceRecord, ThemeSourceRecord, write_language_catalog,
-    write_theme_catalog,
-};
-pub use import::{
-    UpstreamLanguageCatalog, UpstreamLanguageMeta, UpstreamThemeCatalog, UpstreamThemeMeta,
-    load_language_records_from_upstream, load_theme_records_from_upstream,
-};
+mod generate;
+mod import;
+mod pipeline;
+mod schema;
+
+pub use generate::GeneratedCatalog;
 pub use pipeline::{GeneratedCatalogSet, generate_catalogs_from_upstream};
 pub use schema::{
     AssetSourceRef, CodecError, FORMAT_VERSION, LanguageAsset, LanguageAssetEntry,

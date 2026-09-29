@@ -6,12 +6,12 @@ use std::io;
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-pub struct UpstreamLanguageCatalog {
+pub(crate) struct UpstreamLanguageCatalog {
     pub languages: Vec<UpstreamLanguageMeta>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-pub struct UpstreamLanguageMeta {
+pub(crate) struct UpstreamLanguageMeta {
     pub id: String,
     pub grammar_file: String,
     pub scope_name: String,
@@ -27,19 +27,19 @@ pub struct UpstreamLanguageMeta {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-pub struct UpstreamThemeCatalog {
+pub(crate) struct UpstreamThemeCatalog {
     pub themes: Vec<UpstreamThemeMeta>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-pub struct UpstreamThemeMeta {
+pub(crate) struct UpstreamThemeMeta {
     pub id: String,
     pub theme_file: String,
     pub display_name: Option<String>,
     pub theme_type: Option<String>,
 }
 
-pub fn load_language_records_from_upstream(
+pub(crate) fn load_language_records_from_upstream(
     source_dir: &Path,
 ) -> io::Result<Vec<LanguageSourceRecord>> {
     let catalog_path = source_dir.join("languages.json");
@@ -66,7 +66,9 @@ pub fn load_language_records_from_upstream(
     Ok(records)
 }
 
-pub fn load_theme_records_from_upstream(source_dir: &Path) -> io::Result<Vec<ThemeSourceRecord>> {
+pub(crate) fn load_theme_records_from_upstream(
+    source_dir: &Path,
+) -> io::Result<Vec<ThemeSourceRecord>> {
     let catalog_path = source_dir.join("themes.json");
     let catalog = read_json::<UpstreamThemeCatalog>(&catalog_path)?;
     let mut records = Vec::with_capacity(catalog.themes.len());

@@ -18,7 +18,7 @@ name = "ferriki_asset_gen"
 path = "src/lib.rs"
 
 [dependencies]
-bincode = { workspace = true }
+postcard = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

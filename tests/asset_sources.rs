@@ -102,6 +102,36 @@ fn verified_catalogs_are_lazy_and_reuse_decoded_assets() {
 }
 
 #[test]
+fn manifests_from_another_format_version_fail_with_a_format_error() {
+    let fixture = fixture();
+    // Every manifest starts with its format version as a one-byte varint.
+    let mut older = fixture.languages.clone();
+    assert_eq!(u32::from(older[0]), FORMAT_VERSION);
+    older[0] = 2;
+    // A format 2 file encoded with the previous codec starts `02 00 00 00`.
+    let mut legacy = vec![2, 0, 0, 0];
+    legacy.extend_from_slice(&fixture.languages[1..]);
+    for manifest in [older, legacy] {
+        let error = StandardAssetCatalogs::from_source(
+            &manifest,
+            &fixture.themes,
+            fixture.metadata.clone(),
+            EmbeddedAssetSource::new(fixture.bytes.clone()),
+        )
+        .err()
+        .expect("a manifest from another format version must fail");
+        assert_eq!(error.kind(), ErrorKind::AssetFormat);
+        let source = std::error::Error::source(&error).expect("codec error source");
+        assert!(
+            source
+                .to_string()
+                .contains(&format!("format version 2; expected {FORMAT_VERSION}")),
+            "{source}"
+        );
+    }
+}
+
+#[test]
 fn tampered_payloads_are_rejected_before_decoding() {
     let mut fixture = fixture();
     let digest = fixture.metadata["themes/nord.fktheme"].digest().clone();
