@@ -4,9 +4,7 @@
 
 Accepted
 
-ADR 0012 refines the publishing and runtime boundary established here: asset
-catalogs and rendering now live in the pure `ferriki` crate, and
-`ferriki-core` is the N-API host.
+Last updated: 2026-09-30
 
 ## Context
 
@@ -37,8 +35,19 @@ named `ferriki-textmate`.
   `ferriki-textmate` adapts vscode-textmate's Oniguruma calls to Ferroni's
   Scanner API and does not add another regex engine.
 - `ferriki-textmate` owns raw grammar models, selector matching, themes, rules,
-  grammar compilation, tokenization, and state stacks. `ferriki-core` owns
-  Ferriki asset catalogs, runtime orchestration, rendering, and N-API.
+  grammar compilation, tokenization, and state stacks. The `ferriki` crate
+  owns asset catalogs, runtime orchestration and rendering, and
+  `ferriki-core` is only the N-API host
+  ([ADR 0012](0012-publishable-rust-highlighter.md)).
+- The port's module structure is internal. All modules are private, and the
+  public API is a curated set of re-exports that follows vscode-textmate's
+  `main.ts` exports: the registry, grammars and their tokenize results, the
+  state stack, raw grammar and theme input, and token metadata. An upstream
+  sync can therefore reshape internals without a semver break
+  ([ADR 0014](0014-rust-crate-semver-surface.md)).
+- Port code that has no caller in Ferriki stays for upstream parity and is
+  marked with a `dead_code` allowance and its reason, instead of being
+  deleted.
 - The mirrored vscode-textmate suite is the inner oracle. The honestly aliased
   Shiki suite is the end-to-end oracle. Optimizations start only after both are
   green and the four structural gate failure classes have explicit coverage.
@@ -57,7 +66,10 @@ named `ferriki-textmate`.
 - The repository carries the upstream test corpus as development-only data.
   It is not included in the published Node package.
 
-## Validation Outcome
+## Validation Outcome (2026-07, issue #30)
+
+This section records the evidence measured when the port was accepted. The
+versions below were the baselines at that time.
 
 Issue #30 implements this decision against two immutable upstream references:
 
@@ -86,3 +98,9 @@ issue #31, including multi-theme output, explanation objects, grammar-state
 continuation, ANSI parsing, and transformers. Those exclusions do not change
 the interpreter boundary or the zero-structural-failure gate established by
 this decision.
+
+## History
+
+- 2026-07-26: Accepted.
+- 2026-09-26: Catalogs and rendering moved from `ferriki-core` to the `ferriki` crate (ADR 0012).
+- 2026-09-30: Records the curated public API of 0.6.0 and the handling of port code without callers.

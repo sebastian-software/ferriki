@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 Rendering behavior such as `colorReplacements`, `mergeWhitespaces`,
@@ -49,3 +51,13 @@ stable hast-shaped output for the JS layer to transform.
   "runtime behavior belongs in Rust" default of ADR 0001.
 - How much of the render pipeline can go native is now bounded: everything up
   to hast construction may move down; hast mutation stays up.
+- The Rust API has no callback transform surface. Its Markdown consumer,
+  Ferromark, owns line wrappers, titles, line numbers and code annotations
+  and receives escaped line fragments ([ADR 0012](0012-publishable-rust-highlighter.md)).
+  Whether Rust needs a typed, declarative decoration layer is an open design
+  question in #122; until it is decided, no such layer is added.
+
+## History
+
+- 2026-07-25: Accepted.
+- 2026-09-30: Records the Rust side of the boundary and the open question in #122.

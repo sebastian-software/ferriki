@@ -31,8 +31,9 @@ export const STALE_GUIDANCE = [
   ],
 ];
 
-// Files that state the *current* Shiki baseline. Dated records under `plans/`
-// and `adr/` keep the version that was pinned when they were written.
+// Files that state the *current* Shiki baseline. Dated records under `plans/`,
+// and dated evidence sections in `adr/`, keep the version that was pinned when
+// they were written.
 export const SHIKI_BASELINE_DOCS = [
   "README.md",
   "CONTRIBUTING.md",

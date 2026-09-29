@@ -7,8 +7,8 @@ publication, or published successfully.
 
 ## Release authority
 
-Ferriki follows the organization's release blueprint (ADR 0012, amended
-2026-09-27). The repository root is the `ferriki` Cargo package with
+Ferriki follows the organization's release blueprint (ADR 0012, section
+"Release"). The repository root is the `ferriki` Cargo package with
 `release-type: rust`, so one Release Please pull request versions the root
 package, every workspace member, their path-dependency requirements and
 `Cargo.lock`. The npm package, its platform sidecars and the pnpm lockfile

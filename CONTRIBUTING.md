@@ -105,8 +105,9 @@ Three facts are contract-checked instead of repeated by hand:
 `node/scripts/check-docs-drift.mjs` (`pnpm run check:docs-drift` from `node/`,
 also part of the mandatory core lane) fails when a documented baseline or floor
 disagrees with those files. Change the source of truth first, then the prose.
-Dated records under `plans/` and `adr/` keep the version that was pinned when
-they were written and are deliberately outside the check.
+Dated records under `plans/`, and dated evidence sections in `adr/` such as a
+`Validation Outcome`, keep the version that was pinned when they were written
+and are deliberately outside the check.
 `node/scripts/test-docs-drift.mjs` runs the same check against fixture copies
 of the documents with stale versions injected, so a change to the checker that
 stops detecting drift fails alongside it.
@@ -147,9 +148,12 @@ multi-platform binaries and npm Trusted Publishing.
 ## Where things are decided
 
 - Architectural decisions: [`adr/`](adr/) (see the index in
-  [`adr/README.md`](adr/README.md))
-- Execution backlog: [`plans/`](plans/), currently centered on
-  [`plans/native-only-migration.md`](plans/native-only-migration.md)
+  [`adr/README.md`](adr/README.md)). Records are living documents: a pull
+  request that changes a recorded decision updates the record in the same
+  pull request.
+- Delivery work: the GitHub issues and epics of the v1.0.0 milestone.
+  [`plans/`](plans/) keeps the migration history as context, not as a
+  status ledger.
 - Project language is US English, everywhere.
 
 #

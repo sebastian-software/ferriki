@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 [ADR 0006](0006-lazy-shiki-asset-loading.md) made standard grammars and themes
@@ -48,13 +50,17 @@ No release package bundles grammar or theme payloads. Ferriki downloads them
 itself, on demand, from a CDN that mirrors the repository at the release commit,
 and verifies every file against a digest that the release pins.
 
-- **Release manifest.** Each release carries a manifest with the release commit
-  SHA and, for every language ID, alias and theme ID, the payload path, SHA-256
-  digest, byte size and format version, together with the metadata the
-  manifests already hold (aliases, embedded-language references, injections).
-  The manifest ships inside `@ferriki/core` and inside the `ferriki` crate, so
-  language and theme resolution, aliases and error messages work without
-  network access.
+- **Release manifest.** Each release carries the release commit SHA and, for
+  every payload, its path, SHA-256 digest, byte size and format version,
+  together with the language and theme metadata (IDs, aliases,
+  embedded-language references, injections). The metadata stays in the two
+  binary catalog manifests; `assets/shiki/release-manifest.json` adds the
+  digest, size and format version per payload path. The repository copy has no
+  commit, because a file cannot contain the SHA of the commit that adds it; the
+  release build writes the release commit into the packaged copies. Both ship
+  inside `@ferriki/core` and inside the `ferriki` crate, so language and theme
+  resolution, aliases and error messages work without network access. A test
+  fails when a committed payload and the release manifest disagree.
 - **No bundled payloads.** `@ferriki/core` contains the JavaScript facade, the
   types and the manifest, but no grammar or theme payloads.
 - **CDN as a 1:1 mirror of the repository.** The default base URL is
@@ -82,15 +88,18 @@ and verifies every file against a digest that the release pins.
   remote base URL. `@ferriki/assets` holds every payload of the release and
   exists for offline and air-gapped use; installing it is never required.
 - **Remote fetching is on by default in Node.** Without bundled payloads,
-  nothing would highlight out of the box otherwise. An option and an
-  environment variable turn it off, and the base URL is configurable so
-  organizations can use their own mirror. With remote fetching off, a missing
+  nothing would highlight out of the box otherwise. `createHighlighter`
+  accepts `assets: { remote, baseUrl, cacheDir }`. For the shorthand functions,
+  whose internal highlighter no option reaches, and for CI, the process-wide
+  `FERRIKI_ASSETS_REMOTE=0` (or `false`), `FERRIKI_ASSETS_BASE_URL` and
+  `FERRIKI_CACHE_DIR` apply; an explicit option wins over the environment. The
+  base URL is configurable so organizations can use their own mirror. With remote fetching off, a missing
   asset fails with a typed error that names the remedies: install
   `@ferriki/assets`, pre-populate the cache, or allow remote assets.
 - **Cache location.** Node uses `node_modules/.cache/ferriki/` of the nearest
   package root, following the common `find-cache-dir` convention, and falls
   back to `$XDG_CACHE_HOME/ferriki` or `~/.cache/ferriki`. Rust uses the
-  platform cache directory. An environment variable overrides the location.
+  platform cache directory. `FERRIKI_CACHE_DIR` overrides the location.
   The cache is never evicted: entries are immutable and addressed by digest.
 - **Failure handling.** An unreachable CDN or a failed download is a typed
   error. There is no retry policy.
@@ -98,13 +107,19 @@ and verifies every file against a digest that the release pins.
   asynchronous `createHighlighter` and `loadLanguage`/`loadTheme` paths.
   Synchronous highlighting never performs I/O and reports an unloaded language
   as it does today.
-- **Rust asset sources.** The private `AssetStore` enum becomes a public
-  `AssetSource` trait keyed by digest. `ferriki` provides directory and
-  embedded sources, and a `remote` cargo feature provides the verified, caching
-  CDN source with the same URL scheme. The feature is off by default, so the
+- **Rust asset sources.** `ferriki` exposes a public `AssetSource` trait keyed
+  by digest, with directory and embedded sources, and a `remote` cargo feature
+  provides the verified, caching CDN source with the same URL scheme. The feature is off by default, so the
   library stays free of network code unless a consumer opts in. A
   `ferriki-assets` crate embeds the full catalog for Rust consumers that want
   everything offline.
+
+**Implementation state.** Implemented as of 0.6.x: the release manifest and
+its drift test, the Bunny pull zone, and the Rust `AssetSource` trait with
+digest verification. Still open in #141: the `remote` feature,
+`ferriki-assets`, shipping the manifests inside the `ferriki` crate, the Node
+download and cache path with its options, `@ferriki/assets`, and the release
+checks that stamp the commit and verify the CDN.
 
 ## Consequences
 
@@ -136,3 +151,9 @@ and verifies every file against a digest that the release pins.
   documents must list the new options and errors before they are frozen.
 - One package per language and a bundled subset of languages are both ruled
   out.
+
+## History
+
+- 2026-09-28: Proposed.
+- 2026-09-29: Accepted.
+- 2026-09-30: Records the release manifest layout (0.6.x), the Node option and environment variable names decided in #141, and the shipped `AssetSource` trait (0.5.0).

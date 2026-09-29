@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 Ferriki aims to be a Shiki-compatible highlighter with a leaner Rust core.
@@ -48,7 +50,15 @@ Ferriki remains responsible for the outputs those integrations build on:
 - Ferriki documentation should describe them as out of scope instead of
   "not yet integrated".
 - Consumers can build or keep such adapters externally against Ferriki's
-  direct outputs.
+  direct outputs. The Ardo integration (sebastian-software/ardo#315) calls
+  the public `codeToHast` API and decorates the HAST itself.
+- The Rust counterpart follows the same rule: the Ferromark adapter belongs to
+  Ferromark ([ADR 0012](0012-publishable-rust-highlighter.md)).
 - If Ferriki later takes on a higher-level integration again, that should be a
   fresh product decision, not an accidental inheritance from the old Shiki
   workspace.
+
+## History
+
+- 2026-03-09: Accepted.
+- 2026-09-30: Notes the Ardo and Ferromark integrations that follow this boundary.

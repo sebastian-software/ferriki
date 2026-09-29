@@ -4,6 +4,8 @@
 
 Accepted
 
+Last updated: 2026-09-30
+
 ## Context
 
 The old Shiki-shaped workspace included core highlighting behavior together with
@@ -30,4 +32,14 @@ separately and do not define the core release boundary by default.
 - Optional integrations can remain supported without dictating core
   architecture.
 - Specific adapter integrations that stay outside Ferriki are captured in
-  [`adr/0007-adapter-integrations-stay-outside-ferriki.md`](../adr/0007-adapter-integrations-stay-outside-ferriki.md).
+  [ADR 0007](0007-adapter-integrations-stay-outside-ferriki.md).
+- The same boundary applies to Rust consumers: the published crates provide
+  highlighting and rendering primitives, and Markdown integration such as the
+  Ferromark adapter lives in the consumer
+  ([ADR 0012](0012-publishable-rust-highlighter.md)).
+
+## History
+
+- 2026-03-09: Accepted.
+- 2026-07-09: Linked the adapter decisions of ADR 0007.
+- 2026-09-30: Extends the boundary to Rust consumers.
