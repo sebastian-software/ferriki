@@ -6,6 +6,7 @@ use std::ops::Range;
 use crate::{Error, ErrorKind, Result};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct TokenizeOptions {
     pub time_limit_millis: u64,
     pub max_line_length: usize,
@@ -26,6 +27,7 @@ impl Default for TokenizeOptions {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightToken {
     pub content: String,
     pub offset: usize,
@@ -41,6 +43,7 @@ pub struct HighlightToken {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightTokensResult {
     pub tokens: Vec<Vec<HighlightToken>>,
     #[serde(rename = "fg")]
@@ -175,6 +178,33 @@ pub(crate) fn split_lines(input: &str) -> Vec<(&str, usize)> {
     }
     lines.push((&input[start_byte..], start_utf16));
     lines
+}
+
+impl TokenizeOptions {
+    /// Sets `time_limit_millis`.
+    #[must_use]
+    pub fn with_time_limit_millis(mut self, value: u64) -> Self {
+        self.time_limit_millis = value;
+        self
+    }
+    /// Sets `max_line_length`.
+    #[must_use]
+    pub fn with_max_line_length(mut self, value: usize) -> Self {
+        self.max_line_length = value;
+        self
+    }
+    /// Sets `include_token_type`.
+    #[must_use]
+    pub fn with_include_token_type(mut self, value: bool) -> Self {
+        self.include_token_type = value;
+        self
+    }
+    /// Sets `include_scopes`.
+    #[must_use]
+    pub fn with_include_scopes(mut self, value: bool) -> Self {
+        self.include_scopes = value;
+        self
+    }
 }
 
 #[cfg(test)]

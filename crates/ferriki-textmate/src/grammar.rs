@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use ferroni::error::RegexError;
+use crate::RegexError;
 
 use crate::attributed_scope_stack::{AttributedScopeStack, ScopeAttributesProvider};
 use crate::basic_scope_attributes::{

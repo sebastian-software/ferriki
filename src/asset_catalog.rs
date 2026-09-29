@@ -10,7 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::{Error, ErrorKind, Result};
+use crate::{AssetMetadata, AssetSource, Error, ErrorKind, Result};
 
 pub struct StandardAssetCatalogs {
     pub(crate) languages: LanguageAssetCatalog,
@@ -32,13 +32,84 @@ impl StandardAssetCatalogs {
     /// filesystem or a Node package at runtime.
     pub fn from_embedded(
         language_manifest: &[u8],
-        language_assets: HashMap<String, Cow<'static, [u8]>>,
+        language_assets: impl IntoIterator<Item = (String, Cow<'static, [u8]>)>,
         theme_manifest: &[u8],
-        theme_assets: HashMap<String, Cow<'static, [u8]>>,
+        theme_assets: impl IntoIterator<Item = (String, Cow<'static, [u8]>)>,
     ) -> Result<Self> {
         Ok(Self {
-            languages: LanguageAssetCatalog::from_embedded(language_manifest, language_assets)?,
-            themes: ThemeAssetCatalog::from_embedded(theme_manifest, theme_assets)?,
+            languages: LanguageAssetCatalog::from_embedded(
+                language_manifest,
+                language_assets.into_iter().collect(),
+            )?,
+            themes: ThemeAssetCatalog::from_embedded(
+                theme_manifest,
+                theme_assets.into_iter().collect(),
+            )?,
+        })
+    }
+
+    /// Creates lazy, verified catalogs from binary manifests and a digest-addressed source.
+    /// Metadata keys are `languages/<asset_file>` and `themes/<asset_file>`.
+    /// The manifests and metadata must come from the same trusted release.
+    /// No payload is read until its language or theme is loaded.
+    pub fn from_source(
+        language_manifest: &[u8],
+        theme_manifest: &[u8],
+        metadata: impl IntoIterator<Item = (String, AssetMetadata)>,
+        source: impl AssetSource + 'static,
+    ) -> Result<Self> {
+        let languages = decode_language_manifest(language_manifest).map_err(|source| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                "Failed to decode language manifest.",
+            )
+            .with_source(source)
+        })?;
+        let themes = decode_theme_manifest(theme_manifest).map_err(|source| {
+            Error::new(ErrorKind::AssetFormat, "Failed to decode theme manifest.")
+                .with_source(source)
+        })?;
+        let metadata: HashMap<_, _> = metadata.into_iter().collect();
+        for path in languages
+            .entries
+            .iter()
+            .map(|entry| format!("languages/{}", entry.asset_file))
+            .chain(
+                themes
+                    .entries
+                    .iter()
+                    .map(|entry| format!("themes/{}", entry.asset_file)),
+            )
+        {
+            metadata
+                .get(&path)
+                .ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::AssetFormat,
+                        format!("Release metadata is missing `{path}`."),
+                    )
+                })?
+                .validate_format()?;
+        }
+        let metadata = Arc::new(metadata);
+        let source: Arc<dyn AssetSource> = Arc::new(source);
+        Ok(Self {
+            languages: LanguageAssetCatalog::from_manifest(
+                languages,
+                AssetStore::Verified {
+                    prefix: "languages",
+                    metadata: Arc::clone(&metadata),
+                    source: Arc::clone(&source),
+                },
+            )?,
+            themes: ThemeAssetCatalog::from_manifest(
+                themes,
+                AssetStore::Verified {
+                    prefix: "themes",
+                    metadata,
+                    source,
+                },
+            )?,
         })
     }
 
@@ -69,6 +140,11 @@ impl StandardAssetCatalogs {
 enum AssetStore {
     Directory(PathBuf),
     Embedded(HashMap<String, Cow<'static, [u8]>>),
+    Verified {
+        prefix: &'static str,
+        metadata: Arc<HashMap<String, AssetMetadata>>,
+        source: Arc<dyn AssetSource>,
+    },
 }
 
 impl AssetStore {
@@ -84,6 +160,21 @@ impl AssetStore {
             ));
         }
         match self {
+            Self::Verified {
+                prefix,
+                metadata,
+                source,
+            } => {
+                let metadata = metadata.get(&format!("{prefix}/{file}")).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::AssetFormat,
+                        format!("Release metadata is missing `{prefix}/{file}`."),
+                    )
+                })?;
+                let bytes = source.read(metadata.digest())?;
+                metadata.verify(&bytes)?;
+                Ok(bytes)
+            }
             Self::Directory(dir) => read_bytes(&dir.join(file)).map(Cow::Owned),
             Self::Embedded(assets) => assets
                 .get(file)
@@ -462,7 +553,7 @@ mod tests {
         let theme_manifest = fs::read(theme_dir.join("manifest.fkindex")).expect("manifest");
         let language_entries = decode_language_manifest(&language_manifest).expect("decode");
         let theme_entries = decode_theme_manifest(&theme_manifest).expect("decode");
-        let language_assets = language_entries
+        let language_assets: HashMap<String, Cow<'static, [u8]>> = language_entries
             .entries
             .iter()
             .map(|entry| {
@@ -474,7 +565,7 @@ mod tests {
                 )
             })
             .collect();
-        let theme_assets = theme_entries
+        let theme_assets: HashMap<String, Cow<'static, [u8]>> = theme_entries
             .entries
             .iter()
             .map(|entry| {

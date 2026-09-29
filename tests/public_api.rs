@@ -81,12 +81,9 @@ fn custom_rust_registrations_work_without_standard_assets() {
     )
     .expect("grammar");
     highlighter
-        .register_language(LanguageRegistration {
-            id: "sample".to_owned(),
-            grammar,
-            aliases: vec!["smp".to_owned()],
-            inject_to: Vec::new(),
-        })
+        .register_language(
+            LanguageRegistration::new("sample", grammar).with_aliases(["smp".to_owned()]),
+        )
         .expect("language registration");
     let theme = parse_theme_data(
         "sample-theme",

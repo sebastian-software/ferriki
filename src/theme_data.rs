@@ -9,6 +9,7 @@ const FALLBACK_DARK_FG: &str = "#bbbbbb";
 const FALLBACK_DARK_BG: &str = "#1e1e1e";
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct ThemeData {
     pub name: String,
     pub foreground: String,
@@ -166,6 +167,23 @@ fn string_property<'a>(object: &'a Map<String, Value>, key: &str) -> Option<&'a 
 
 fn color_property<'a>(colors: Option<&'a Map<String, Value>>, key: &str) -> Option<&'a str> {
     colors?.get(key).and_then(Value::as_str)
+}
+
+impl ThemeData {
+    /// Creates explicit theme colors and TextMate rules. Registration validates the name.
+    pub fn new(
+        name: impl Into<String>,
+        foreground: impl Into<String>,
+        background: impl Into<String>,
+        raw_theme: RawTheme,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            foreground: foreground.into(),
+            background: background.into(),
+            raw_theme,
+        }
+    }
 }
 
 #[cfg(test)]

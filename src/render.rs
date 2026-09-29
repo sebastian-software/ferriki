@@ -4,6 +4,7 @@ use serde_json::{Map, Value, json};
 use crate::{HighlightToken, HighlightTokensResult};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct RenderOptions {
     pub merge_whitespaces: bool,
     pub merge_same_style_tokens: bool,
@@ -294,10 +295,43 @@ fn escape_attribute(input: &str) -> String {
     escape_html(input).replace('"', "&#x22;")
 }
 
+impl RenderOptions {
+    /// Sets `merge_whitespaces`.
+    #[must_use]
+    pub fn with_merge_whitespaces(mut self, value: bool) -> Self {
+        self.merge_whitespaces = value;
+        self
+    }
+    /// Sets `merge_same_style_tokens`.
+    #[must_use]
+    pub fn with_merge_same_style_tokens(mut self, value: bool) -> Self {
+        self.merge_same_style_tokens = value;
+        self
+    }
+    /// Sets `root_style`.
+    #[must_use]
+    pub fn with_root_style(mut self, value: Option<String>) -> Self {
+        self.root_style = value;
+        self
+    }
+    /// Sets `include_root_style`.
+    #[must_use]
+    pub fn with_include_root_style(mut self, value: bool) -> Self {
+        self.include_root_style = value;
+        self
+    }
+    /// Sets `tabindex`.
+    #[must_use]
+    pub fn with_tabindex(mut self, value: Option<String>) -> Self {
+        self.tabindex = value;
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{HighlighterCore, TokenizeOptions};
+    use crate::{__private::HighlighterCore, TokenizeOptions};
     use std::path::Path;
 
     fn javascript_tokens(code: &str) -> HighlightTokensResult {

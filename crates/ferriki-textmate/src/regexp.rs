@@ -8,7 +8,7 @@ use std::array;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use ferroni::error::RegexError;
+use crate::RegexError;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
@@ -507,7 +507,9 @@ impl<T: Copy> CompiledRule<T> {
             syntax: ScannerSyntax::Oniguruma,
         };
         Ok(Self {
-            scanner: Mutex::new(Scanner::with_config(&scanner_reg_exps, &config)?),
+            scanner: Mutex::new(
+                Scanner::with_config(&scanner_reg_exps, &config).map_err(RegexError::new)?,
+            ),
             reg_exps,
             rules,
         })
