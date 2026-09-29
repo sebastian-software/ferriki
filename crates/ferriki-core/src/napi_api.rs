@@ -206,19 +206,17 @@ impl HighlightOptions {
         Ok(Self {
             language,
             theme,
-            tokenize: TokenizeOptions {
-                time_limit_millis,
-                max_line_length,
-                include_token_type,
-                include_scopes,
-            },
-            render: RenderOptions {
-                merge_whitespaces,
-                merge_same_style_tokens,
-                root_style,
-                include_root_style,
-                tabindex,
-            },
+            tokenize: TokenizeOptions::default()
+                .with_time_limit_millis(time_limit_millis)
+                .with_max_line_length(max_line_length)
+                .with_include_token_type(include_token_type)
+                .with_include_scopes(include_scopes),
+            render: RenderOptions::default()
+                .with_merge_whitespaces(merge_whitespaces)
+                .with_merge_same_style_tokens(merge_same_style_tokens)
+                .with_root_style(root_style)
+                .with_include_root_style(include_root_style)
+                .with_tabindex(tabindex),
         })
     }
 }

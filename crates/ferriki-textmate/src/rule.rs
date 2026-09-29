@@ -5,7 +5,7 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use ferroni::error::RegexError;
+use crate::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{

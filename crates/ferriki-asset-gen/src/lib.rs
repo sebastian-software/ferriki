@@ -13,8 +13,8 @@ pub use import::{
 };
 pub use pipeline::{GeneratedCatalogSet, generate_catalogs_from_upstream};
 pub use schema::{
-    AssetSourceRef, FORMAT_VERSION, LanguageAsset, LanguageAssetEntry, LanguageManifest,
-    ThemeAsset, ThemeAssetEntry, ThemeManifest, decode_language_asset, decode_language_manifest,
-    decode_theme_asset, decode_theme_manifest, encode_language_asset, encode_language_manifest,
-    encode_theme_asset, encode_theme_manifest,
+    AssetSourceRef, CodecError, FORMAT_VERSION, LanguageAsset, LanguageAssetEntry,
+    LanguageManifest, ThemeAsset, ThemeAssetEntry, ThemeManifest, decode_language_asset,
+    decode_language_manifest, decode_theme_asset, decode_theme_manifest, encode_language_asset,
+    encode_language_manifest, encode_theme_asset, encode_theme_manifest,
 };

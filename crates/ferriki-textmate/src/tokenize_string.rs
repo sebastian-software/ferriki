@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use ferroni::error::RegexError;
+use crate::RegexError;
 
 use crate::attributed_scope_stack::{AttributedScopeStack, ScopeAttributesProvider};
 use crate::line_output::{LineFonts, LineTokens};

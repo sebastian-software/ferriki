@@ -11,6 +11,7 @@ use crate::RawGrammar;
 use crate::plist::{PlistError, parse_plist};
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum ParseRawGrammarError {
     Json(serde_json::Error),
     Plist(PlistError),

@@ -63,3 +63,24 @@ pub use theme::{
     ScopeStack, StyleAttributes, Theme, ThemeError, font_style_to_string, parse_theme,
 };
 pub use tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
+
+/// A tokenizer regex compilation failure, independent of the regex engine's API.
+#[derive(Debug)]
+pub struct RegexError {
+    source: ferroni::error::RegexError,
+}
+impl RegexError {
+    pub(crate) fn new(source: ferroni::error::RegexError) -> Self {
+        Self { source }
+    }
+}
+impl std::fmt::Display for RegexError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.source.fmt(f)
+    }
+}
+impl std::error::Error for RegexError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.source)
+    }
+}

@@ -64,36 +64,57 @@ pub struct ThemeAsset {
     pub theme_json: String,
 }
 
-pub fn encode_language_manifest(manifest: &LanguageManifest) -> Result<Vec<u8>, bincode::Error> {
-    bincode::serialize(manifest)
+pub fn encode_language_manifest(manifest: &LanguageManifest) -> Result<Vec<u8>, CodecError> {
+    bincode::serialize(manifest).map_err(CodecError::new)
 }
 
-pub fn decode_language_manifest(bytes: &[u8]) -> Result<LanguageManifest, bincode::Error> {
-    bincode::deserialize(bytes)
+pub fn decode_language_manifest(bytes: &[u8]) -> Result<LanguageManifest, CodecError> {
+    bincode::deserialize(bytes).map_err(CodecError::new)
 }
 
-pub fn encode_theme_manifest(manifest: &ThemeManifest) -> Result<Vec<u8>, bincode::Error> {
-    bincode::serialize(manifest)
+pub fn encode_theme_manifest(manifest: &ThemeManifest) -> Result<Vec<u8>, CodecError> {
+    bincode::serialize(manifest).map_err(CodecError::new)
 }
 
-pub fn decode_theme_manifest(bytes: &[u8]) -> Result<ThemeManifest, bincode::Error> {
-    bincode::deserialize(bytes)
+pub fn decode_theme_manifest(bytes: &[u8]) -> Result<ThemeManifest, CodecError> {
+    bincode::deserialize(bytes).map_err(CodecError::new)
 }
 
-pub fn encode_language_asset(asset: &LanguageAsset) -> Result<Vec<u8>, bincode::Error> {
-    bincode::serialize(asset)
+pub fn encode_language_asset(asset: &LanguageAsset) -> Result<Vec<u8>, CodecError> {
+    bincode::serialize(asset).map_err(CodecError::new)
 }
 
-pub fn decode_language_asset(bytes: &[u8]) -> Result<LanguageAsset, bincode::Error> {
-    bincode::deserialize(bytes)
+pub fn decode_language_asset(bytes: &[u8]) -> Result<LanguageAsset, CodecError> {
+    bincode::deserialize(bytes).map_err(CodecError::new)
 }
 
-pub fn encode_theme_asset(asset: &ThemeAsset) -> Result<Vec<u8>, bincode::Error> {
-    bincode::serialize(asset)
+pub fn encode_theme_asset(asset: &ThemeAsset) -> Result<Vec<u8>, CodecError> {
+    bincode::serialize(asset).map_err(CodecError::new)
 }
 
-pub fn decode_theme_asset(bytes: &[u8]) -> Result<ThemeAsset, bincode::Error> {
-    bincode::deserialize(bytes)
+pub fn decode_theme_asset(bytes: &[u8]) -> Result<ThemeAsset, CodecError> {
+    bincode::deserialize(bytes).map_err(CodecError::new)
+}
+
+/// A versioned asset codec failure. The underlying codec is an implementation detail.
+#[derive(Debug)]
+pub struct CodecError {
+    source: bincode::Error,
+}
+impl CodecError {
+    fn new(source: bincode::Error) -> Self {
+        Self { source }
+    }
+}
+impl std::fmt::Display for CodecError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.source.fmt(f)
+    }
+}
+impl std::error::Error for CodecError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(self.source.as_ref())
+    }
 }
 
 #[cfg(test)]

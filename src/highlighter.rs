@@ -68,6 +68,7 @@ pub struct HighlightedLines {
 }
 
 /// A typed custom TextMate grammar registration.
+#[non_exhaustive]
 pub struct LanguageRegistration {
     /// Language identifier used by `highlight`.
     pub id: String,
@@ -897,6 +898,28 @@ fn theme_error(error: ferriki_textmate::ThemeError) -> Error {
         ErrorKind::Theme,
         format!("Failed to resolve TextMate theme: {error}"),
     )
+}
+
+impl LanguageRegistration {
+    /// Registers a parsed grammar under a language ID, without aliases or injections.
+    pub fn new(id: impl Into<String>, grammar: RawGrammar) -> Self {
+        Self {
+            id: id.into(),
+            grammar,
+            aliases: Vec::new(),
+            inject_to: Vec::new(),
+        }
+    }
+    #[must_use]
+    pub fn with_aliases(mut self, aliases: impl IntoIterator<Item = String>) -> Self {
+        self.aliases = aliases.into_iter().collect();
+        self
+    }
+    #[must_use]
+    pub fn with_injections(mut self, scopes: impl IntoIterator<Item = String>) -> Self {
+        self.inject_to = scopes.into_iter().collect();
+        self
+    }
 }
 
 #[cfg(test)]
