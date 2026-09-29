@@ -98,8 +98,9 @@ cannot load a musl addon.
 
 ## Packaging baseline
 
-The main package ships the native addon for the host target plus the standard
-asset catalogs, so its unpacked size is dominated by `assets/shiki`. It is
+The main package ships no native addon; each platform's addon comes from its
+`@ferriki/<platform>` sidecar. It does ship the standard asset catalogs, so its
+unpacked size is dominated by `assets/shiki`. It is
 measured on every run of the core gate rather than quoted here:
 `node/scripts/check-packed-consumer.mjs` packs the package, installs the
 tarball in a clean consumer, and prints the tarball name, unpacked size, and

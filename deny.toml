@@ -24,8 +24,8 @@ confidence-threshold = 0.9
 
 [bans]
 multiple-versions = "warn"
-# The workspace crates are `publish = false` and depend on each other by path,
-# which cargo-deny reports as a wildcard requirement.
+# The workspace crates depend on each other by path and version. Path-only
+# requirements stay allowed for unpublished members such as `ferriki-core`.
 wildcards = "deny"
 allow-wildcard-paths = true
 
