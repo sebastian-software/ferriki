@@ -433,7 +433,11 @@ export function createHighlighterCoreSync(options = {}) {
       source = transformer?.preprocess?.call(context, source, validated) || source;
     context.source = source;
     const result = highlightRaw(source, validated);
-    result.tokens = applyTokenTransformers(result.tokens, transformers, context);
+    result.tokens = applyTokenTransformers(
+      prepareRenderTokens(result.tokens, validated),
+      transformers,
+      context,
+    );
     if (validated.decorations?.length)
       result.tokens = splitTokensAtDecorations(result.tokens, validated.decorations, source);
     return renderTransformedHast(result, validated, transformers, context, source);
@@ -1156,11 +1160,12 @@ function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
   const styles = results.map((result) => variants[result.color] || {});
   const keys = new Set(styles.flatMap((style) => Object.keys(style)));
   const declarations = [];
-  for (const key of keys) {
-    for (let index = 0; index < results.length; index++) {
+  for (let index = 0; index < results.length; index++) {
+    for (const key of keys) {
       const value = styles[index][key] || "inherit";
       const color = results[index].color;
-      if (index === 0 && defaultColor) {
+      const isColor = key === "color" || key === "background-color";
+      if (index === 0 && defaultColor && isColor) {
         if (defaultColor === "light-dark()" && (key === "color" || key === "background-color")) {
           const lightIndex = results.findIndex((result) => result.color === "light");
           const darkIndex = results.findIndex((result) => result.color === "dark");
@@ -1173,7 +1178,7 @@ function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
           declarations.push(`${key}:${value}`);
         }
       }
-      if (index > 0 || !defaultColor || defaultColor === "light-dark()") {
+      if (index > 0 || !defaultColor || !isColor || defaultColor === "light-dark()") {
         const suffix = key === "color" ? "" : key === "background-color" ? "-bg" : `-${key}`;
         declarations.push(`${cssVariablePrefix}${color}${suffix}:${value}`);
       }
@@ -1210,9 +1215,56 @@ function themePropertyStyle(results, property, defaultColor, cssVariablePrefix) 
   return declarations.join(";");
 }
 
+// Rendering normalization follows Shiki's code-to-hast contract. Keep raw
+// token APIs unchanged and normalize before transformer token callbacks.
+function prepareRenderTokens(tokens, options) {
+  const merge = options.mergeWhitespaces ?? true;
+  return tokens.map((line) => {
+    let output = [];
+    if (merge === true) {
+      let pending = "";
+      let offset;
+      for (let index = 0; index < line.length; index++) {
+        const token = line[index];
+        const decorated = (token.fontStyle || 0) & 12;
+        if (!decorated && /^\s+$/.test(token.content) && index + 1 < line.length) {
+          offset ??= token.offset;
+          pending += token.content;
+          continue;
+        }
+        if (pending && decorated) output.push({ content: pending, offset });
+        output.push(
+          pending && !decorated ? { ...token, offset, content: pending + token.content } : token,
+        );
+        pending = "";
+        offset = undefined;
+      }
+    } else {
+      output = line;
+    }
+    if (!options.mergeSameStyleTokens) return output;
+    const merged = [];
+    for (const token of output) {
+      const previous = merged.at(-1);
+      const style = (value) => value.htmlStyle || JSON.stringify(tokenStyle(value));
+      if (
+        previous &&
+        !((previous.fontStyle || 0) & 12) &&
+        !((token.fontStyle || 0) & 12) &&
+        style(previous) === style(token)
+      )
+        previous.content += token.content;
+      else merged.push({ ...token });
+    }
+    return merged;
+  });
+}
+
 function renderTokenResultHast(result, options = {}) {
   const properties = {
-    class: result.themeName,
+    class: result.themeName.startsWith("shiki-themes ")
+      ? `shiki ${result.themeName}`
+      : result.themeName,
   };
   if (options.rootStyle !== false) {
     properties.style =
@@ -1220,14 +1272,15 @@ function renderTokenResultHast(result, options = {}) {
   }
   if (options.tabindex !== false && options.tabindex !== null)
     properties.tabindex = String(options.tabindex ?? 0);
+  const tokens = prepareRenderTokens(result.tokens, options);
   const children = [];
-  for (let lineIndex = 0; lineIndex < result.tokens.length; lineIndex++) {
+  for (let lineIndex = 0; lineIndex < tokens.length; lineIndex++) {
     if (lineIndex > 0) children.push({ type: "text", value: "\n" });
     children.push({
       type: "element",
       tagName: "span",
       properties: { class: "line" },
-      children: result.tokens[lineIndex].map((token) => ({
+      children: tokens[lineIndex].map((token) => ({
         type: "element",
         tagName: "span",
         properties: token.htmlStyle ? { style: token.htmlStyle } : {},

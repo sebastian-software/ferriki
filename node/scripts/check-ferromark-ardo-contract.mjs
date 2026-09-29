@@ -25,7 +25,7 @@ try {
     lang: "typescript",
     meta: { __raw: '{title="trusted-by-ardo" label="example"}' },
   });
-  assert.match(html, /class="shiki-themes vitesse-light nord"/);
+  assert.match(html, /class="shiki shiki-themes vitesse-light nord"/);
   assert.match(html, /class="line"/);
   assert.match(html, /--shiki-light:/);
   assert.match(html, /--shiki-dark:/);

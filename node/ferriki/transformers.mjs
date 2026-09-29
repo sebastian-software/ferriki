@@ -20,7 +20,9 @@ export function applyTokenTransformers(tokens, transformers, context) {
 
 export function renderTransformedHast(result, options, transformers, commonContext, source) {
   const properties = {
-    class: result.themeName,
+    class: result.themeName.startsWith("shiki-themes ")
+      ? `shiki ${result.themeName}`
+      : result.themeName,
   };
   if (options.rootStyle !== false)
     properties.style =
