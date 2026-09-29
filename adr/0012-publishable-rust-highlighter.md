@@ -24,8 +24,9 @@ still applies.
 - Asset providers are explicit catalogs. `StandardAssetCatalogs` reads a
   directory or embedded bytes, or takes the binary manifests plus trusted
   release metadata and a digest-keyed `AssetSource`, verifying size and
-  SHA-256 before it decodes a payload. Remote loading will come from the
-  `remote` feature of [ADR 0013](0013-cdn-loaded-standard-assets.md) (#141). No Node package path is
+  SHA-256 before it decodes a payload. The optional `remote` feature loads
+  the standard payloads from the release-pinned CDN
+  ([ADR 0013](0013-cdn-loaded-standard-assets.md)). No Node package path is
   part of the Rust API. Binary asset files are internal, versioned artifacts
   that must match the runtime release
   ([ADR 0015](0015-postcard-asset-codec.md)).
@@ -82,3 +83,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-09-26: Accepted.
 - 2026-09-27: Release section: one version and one Release Please pull request for the crates and npm.
 - 2026-09-30: Asset sources verify digests (0.5.0); links the semver and codec records.
+- 2026-09-30: The `remote` feature shipped (#141).

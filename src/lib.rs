@@ -7,6 +7,8 @@ mod asset_catalog;
 mod asset_source;
 mod error;
 mod highlighter;
+#[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+mod remote;
 mod render;
 mod theme_data;
 mod tokens;
@@ -16,6 +18,7 @@ pub use asset_source::{
     AssetDigest, AssetMetadata, AssetSource, DirectoryAssetSource, EmbeddedAssetSource,
 };
 pub use error::{Error, ErrorKind, Result};
+pub use ferriki_asset_gen::{ReleaseAsset, ReleaseManifest};
 pub use ferriki_textmate::{
     FontStyle, ParseRawGrammarError, RawGrammar, RawTheme, RawThemeScope, RawThemeSetting,
     RawThemeStyle, StandardTokenType, parse_raw_grammar,
@@ -30,6 +33,8 @@ pub mod __private {
     };
 }
 pub use highlighter::{HighlightedLines, Highlighter, HighlighterBuilder, LanguageRegistration};
+#[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+pub use remote::{DEFAULT_ASSETS_BASE_URL, RemoteAssets};
 pub use render::{RenderOptions, render_hast, render_html, render_html_lines};
 pub use theme_data::{ThemeData, parse_theme_data};
 pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};

@@ -20,15 +20,27 @@ categories.workspace = true
 publish = ["crates-io"]
 # The package sits at the repository root, so the published archive is an
 # explicit allow-list rather than everything Cargo finds. Node sources, the
-# upstream mirrors, the generated asset bundle and the other crates stay out.
+# upstream mirrors, the other crates and the grammar and theme payloads stay
+# out; only the two catalog manifests and the release manifest ship, so the
+# `remote` feature can resolve and verify payloads from the CDN (ADR 0013).
 include = [
+  "/build.rs",
   "/src",
   "/tests",
   "/examples",
+  "/assets/shiki/languages/manifest.fkindex",
+  "/assets/shiki/themes/manifest.fkindex",
+  "/assets/shiki/release-manifest.json",
   "/README.md",
   "/LICENSE-MIT",
   "/LICENSE-APACHE",
 ]
+
+[features]
+# Loads standard payloads on demand from the release-pinned CDN mirror,
+# verified and cached by digest (ADR 0013). Off by default, so the library
+# stays free of network code unless a consumer opts in.
+remote = ["dep:ureq", "dep:rustls"]
 
 [dependencies]
 ferriki-asset-gen = { version = "0.6.0", path = "crates/ferriki-asset-gen" }
@@ -36,6 +48,17 @@ ferriki-textmate = { version = "0.6.0", path = "crates/ferriki-textmate" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
+
+# The HTTP client exists only outside wasm32, where it cannot run; a wasm build
+# gets its own fetch path (ADR 0009). TLS uses rustls with ring and the
+# operating system's trust store, so corporate CAs and TLS inspection work.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rustls = { version = "0.23", default-features = false, features = [ "ring", "std", "tls12" ], optional = true }
+ureq = { version = "3", default-features = false, features = [ "rustls-no-provider", "platform-verifier", "gzip" ], optional = true }
+
+[[example]]
+name = "remote_assets"
+required-features = ["remote"]
 
 [lints]
 workspace = true

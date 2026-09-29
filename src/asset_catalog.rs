@@ -1,3 +1,6 @@
+#[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+use crate::remote::{RemoteAssetSource, RemoteAssets};
+use ferriki_asset_gen::ReleaseManifest;
 use ferriki_asset_gen::{
     FORMAT_VERSION, LanguageAsset, LanguageAssetEntry, LanguageManifest, ThemeAsset,
     ThemeAssetEntry, ThemeManifest, decode_language_asset, decode_language_manifest,
@@ -55,6 +58,52 @@ impl StandardAssetCatalogs {
                 theme_assets.into_iter().collect(),
             )?,
         })
+    }
+
+    /// Creates lazy, verified catalogs from binary manifests, a release manifest
+    /// that pins every payload, and a digest-addressed source. This is
+    /// [`Self::from_source`] with the metadata taken from the release manifest.
+    pub fn from_release_manifest(
+        language_manifest: &[u8],
+        theme_manifest: &[u8],
+        release: &ReleaseManifest,
+        source: impl AssetSource + 'static,
+    ) -> Result<Self> {
+        let metadata = release
+            .assets
+            .iter()
+            .map(|(path, asset)| {
+                Ok((
+                    path.clone(),
+                    AssetMetadata::new(asset.sha256.parse()?, asset.size, asset.format_version),
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Self::from_source(language_manifest, theme_manifest, metadata, source)
+    }
+
+    /// Loads this release's standard catalogs, downloading each payload from the
+    /// release-pinned CDN on first use and caching it by digest (ADR 0013).
+    ///
+    /// The catalog manifests and the release manifest are compiled in, so
+    /// language and theme resolution works offline. See [`RemoteAssets`] for
+    /// the mirror, cache, commit and download settings and their environment
+    /// variables.
+    #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+    pub fn remote(settings: RemoteAssets) -> Result<Self> {
+        const LANGUAGES: &[u8] = include_bytes!("../assets/shiki/languages/manifest.fkindex");
+        const THEMES: &[u8] = include_bytes!("../assets/shiki/themes/manifest.fkindex");
+        const RELEASE: &str = include_str!("../assets/shiki/release-manifest.json");
+        let release = ReleaseManifest::from_json(RELEASE).map_err(|source| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                "Failed to parse the release manifest.",
+            )
+            .with_source(source)
+        })?;
+        let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
+        let source = RemoteAssetSource::new(&release, resolved)?;
+        Self::from_release_manifest(LANGUAGES, THEMES, &release, source)
     }
 
     /// Creates lazy, verified catalogs from binary manifests and a digest-addressed source.
