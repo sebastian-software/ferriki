@@ -11,6 +11,8 @@ Catalogs:
 - `themes/` — `.fktheme` themes plus a `manifest.fkindex`
 - `catalog.mjs` — generated enumerable Node loader metadata; it contains no
   grammar or theme payloads
+- `release-manifest.json` — SHA-256, size and format version of every payload,
+  for verified CDN loading (ADR 0013)
 
 These files are the product-side asset format consumed by Ferriki, not the raw
 upstream source format. The Node package copies them during `build:native` via

@@ -160,6 +160,42 @@ Notes:
 - Theme interpretation belongs to the vscode-textmate-compatible runtime; the
   asset layer must not flatten selectors or collapse inherited font styles.
 
+## Release Manifest
+
+[`assets/shiki/release-manifest.json`](../assets/shiki/release-manifest.json)
+pins every payload for the CDN loading of
+[ADR 0013](../adr/0013-cdn-loaded-standard-assets.md). The generator writes it
+next to the two catalogs:
+
+```json
+{
+  "manifestVersion": 1,
+  "assets": {
+    "languages/typescript.fkgram": {
+      "sha256": "<lowercase hex>",
+      "size": 123456,
+      "formatVersion": 3
+    }
+  }
+}
+```
+
+- Keys are payload paths relative to `assets/shiki/`. Together with a commit
+  they form the CDN URL
+  `https://assets.ferriki.dev/<commit>/assets/shiki/<key>`.
+- `manifestVersion` versions this JSON layout, independently of the binary
+  `FORMAT_VERSION`.
+- The repository copy has no `commit`: a file cannot contain the SHA of the
+  commit that adds it. The release build writes the release commit into the
+  packaged copies.
+- The binary manifests keep the language and theme metadata (aliases,
+  embedded languages, injections); the release manifest adds only what is
+  needed to fetch and verify a payload. A consumer turns each entry into
+  `AssetMetadata::new(digest, size, format_version)` for
+  `StandardAssetCatalogs::from_source`.
+- `tests/release_manifest.rs` fails when a payload changes without the
+  manifest, when an entry is missing or stale, or when a digest does not match.
+
 ## Loader Behavior
 
 Current runtime behavior in

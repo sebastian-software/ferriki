@@ -1,6 +1,8 @@
 use crate::generate::{GeneratedCatalog, write_language_catalog, write_theme_catalog};
 use crate::import::{load_language_records_from_upstream, load_theme_records_from_upstream};
+use crate::release_manifest::{RELEASE_MANIFEST_FILE, ReleaseManifest};
 use crate::schema::AssetSourceRef;
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -11,6 +13,7 @@ pub struct GeneratedCatalogSet {
     pub themes: GeneratedCatalog,
     pub languages_dir: PathBuf,
     pub themes_dir: PathBuf,
+    pub release_manifest_path: PathBuf,
 }
 
 pub fn generate_catalogs_from_upstream(
@@ -25,12 +28,18 @@ pub fn generate_catalogs_from_upstream(
 
     let languages = write_language_catalog(&languages_dir, source.clone(), &language_records)?;
     let themes = write_theme_catalog(&themes_dir, source, &theme_records)?;
+    let release_manifest_path = output_dir.join(RELEASE_MANIFEST_FILE);
+    fs::write(
+        &release_manifest_path,
+        ReleaseManifest::from_catalog_dir(output_dir)?.to_json(),
+    )?;
 
     Ok(GeneratedCatalogSet {
         languages,
         themes,
         languages_dir,
         themes_dir,
+        release_manifest_path,
     })
 }
 
@@ -76,6 +85,24 @@ mod tests {
         assert_eq!(theme_manifest.source, source);
         assert_eq!(language_manifest.entries.len(), 1);
         assert_eq!(theme_manifest.entries.len(), 1);
+
+        let release = ReleaseManifest::from_json(
+            &fs::read_to_string(&generated.release_manifest_path).expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        let expected: Vec<String> = language_manifest
+            .entries
+            .iter()
+            .map(|entry| format!("languages/{}", entry.asset_file))
+            .chain(
+                theme_manifest
+                    .entries
+                    .iter()
+                    .map(|entry| format!("themes/{}", entry.asset_file)),
+            )
+            .collect();
+        assert_eq!(release.assets.keys().cloned().collect::<Vec<_>>(), expected);
+        assert_eq!(release.commit, None);
 
         fs::remove_dir_all(output_dir).expect("cleanup");
     }
