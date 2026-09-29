@@ -1,6 +1,6 @@
 {
   "version": "0.2",
-  "ignorePaths": [".standards/", "app/data/"],
+  "ignorePaths": ["app/data/"],
   "words": [
     "Ardo",
     "Ferramenta",

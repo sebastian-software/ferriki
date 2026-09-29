@@ -5,8 +5,8 @@ export default antfu(
   {
     type: "lib",
     pnpm: true,
-    // oxfmt is the formatter (@sebastian-software/standards owns the managed
-    // `.oxfmtrc.json` next to this file), so ESLint checks correctness only.
+    // oxfmt is the formatter (`.oxfmtrc.json` next to this file), so ESLint
+    // checks correctness only.
     stylistic: false,
     ignores: [
       "**/node_modules/**",
@@ -14,7 +14,7 @@ export default antfu(
       "**/*.d.mts",
       "compat/upstream/**",
       "pnpm-workspace.yaml",
-      // Seeded by `standards apply` for the org lint setup. Both import
+      // Prepared for the org lint setup (#110). Both import
       // `eslint-config-setup`, which needs ESLint >= 10, while this workspace
       // is on the ESLint 9 catalog entry it shares with the upstream mirror.
       // Until that bump lands they are not the entry point, so they are not

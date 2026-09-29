@@ -1,7 +1,6 @@
 catalogMode: prefer
 # The organization's own packages are exempt from pnpm's release cooldown, so
-# an internal release installs immediately instead of after a day
-# (@sebastian-software/standards, changes/0006).
+# an internal release installs immediately instead of after a day.
 minimumReleaseAgeExclude:
   - "@sebastian-gmbh/*"
   - "@sebastian-software/*"
