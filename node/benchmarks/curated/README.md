@@ -53,3 +53,10 @@ corpus and refuses comparisons across changed corpus, inputs, harness,
 assets, machine, build flags or output. A large public-API slowdown identifies
 a candidate for native-boundary/CPU profiling; it does not attribute all
 runtime to Ferroni or prove that a compiler optimization will help.
+
+## Retained baseline
+
+The [Ferroni 1.7.0 baseline and profiles](results/ferroni-1.7.0/README.md)
+retain two complete runs, focused repeats and native CPU profiles. SCSS and
+C++ are strong Ferroni targets; the larger JSON/TOML token ratios mostly
+point to costs elsewhere in the highlighter.

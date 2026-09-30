@@ -1,0 +1,667 @@
+{
+  "baselineFerroni": {
+    "version": "1.7.0",
+    "source": null,
+    "manifestPath": "/private/tmp/ferroni-curated-baseline/Cargo.toml",
+    "revision": {
+      "commit": "16af64c93e6ecf1cb6786d04a1f434b23bd21716",
+      "status": ""
+    },
+    "sourceSha256": "0e8636ed0343f896b9efe33740e6ca54e675c84086f9cbb882843c0d0a8f42bd",
+    "features": []
+  },
+  "candidateFerroni": {
+    "version": "1.7.0",
+    "source": null,
+    "manifestPath": "/private/tmp/ferroni-curated-baseline/Cargo.toml",
+    "revision": {
+      "commit": "16af64c93e6ecf1cb6786d04a1f434b23bd21716",
+      "status": ""
+    },
+    "sourceSha256": "0e8636ed0343f896b9efe33740e6ca54e675c84086f9cbb882843c0d0a8f42bd",
+    "features": []
+  },
+  "comparisons": [
+    {
+      "language": "Svelte",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 57.82835399999931,
+      "candidateMs": 108.58758350000062,
+      "changePercent": 87.77567748167606
+    },
+    {
+      "language": "Vue",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 29.281437500000266,
+      "candidateMs": 36.98072950000096,
+      "changePercent": 26.29410526720426
+    },
+    {
+      "language": "TypeScript",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.9682920000000195,
+      "candidateMs": 3.406583499999897,
+      "changePercent": 14.76578112934559
+    },
+    {
+      "language": "Astro",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 37.0289374999993,
+      "candidateMs": 41.714208500001405,
+      "changePercent": 12.652998752670651
+    },
+    {
+      "language": "Ruby",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.9588750000000346,
+      "candidateMs": 1.0767500000001746,
+      "changePercent": 12.293051753370964
+    },
+    {
+      "language": "Python",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 22.844333000000006,
+      "candidateMs": 25.42339549999997,
+      "changePercent": 11.289725552503382
+    },
+    {
+      "language": "Python",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.1275210000000015,
+      "candidateMs": 1.2516669999999408,
+      "changePercent": 11.010526633201433
+    },
+    {
+      "language": "Svelte",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.4761040000000776,
+      "candidateMs": 2.734042000000045,
+      "changePercent": 10.417090719935796
+    },
+    {
+      "language": "Vue",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.3909164999998893,
+      "candidateMs": 2.6229580000001533,
+      "changePercent": 9.70512771986285
+    },
+    {
+      "language": "Vue",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 48.26837499999965,
+      "candidateMs": 52.93760399999883,
+      "changePercent": 9.673474609408771
+    },
+    {
+      "language": "TypeScript",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.8984375,
+      "candidateMs": 2.0820000000001073,
+      "changePercent": 9.669135802474793
+    },
+    {
+      "language": "Astro",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 26.69379200000003,
+      "candidateMs": 29.247395499999584,
+      "changePercent": 9.566282302640072
+    },
+    {
+      "language": "Svelte",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 34.31154149999975,
+      "candidateMs": 37.564062499999636,
+      "changePercent": 9.479378826509176
+    },
+    {
+      "language": "Ruby",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.4288750000000618,
+      "candidateMs": 1.529708500000197,
+      "changePercent": 7.056845420357338
+    },
+    {
+      "language": "Bash",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.5572919999999613,
+      "candidateMs": 1.666832999999997,
+      "changePercent": 7.034069397392284
+    },
+    {
+      "language": "Python",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.6107704999999441,
+      "candidateMs": 1.7227499999999054,
+      "changePercent": 6.951921456220189
+    },
+    {
+      "language": "Vue",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 3.6162920000001577,
+      "candidateMs": 3.8625419999998485,
+      "changePercent": 6.809461182882348
+    },
+    {
+      "language": "Python",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 15.931250000000091,
+      "candidateMs": 16.891770500000348,
+      "changePercent": 6.029159670460582
+    },
+    {
+      "language": "Rust",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.88675000000012,
+      "candidateMs": 0.9392500000000155,
+      "changePercent": 5.920496193954139
+    },
+    {
+      "language": "SCSS",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 5.276083000000199,
+      "candidateMs": 5.583458999999948,
+      "changePercent": 5.8258370840591045
+    },
+    {
+      "language": "SCSS",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 78.33993699999974,
+      "candidateMs": 82.85116650000055,
+      "changePercent": 5.758530926570482
+    },
+    {
+      "language": "Svelte",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 4.015229500000032,
+      "candidateMs": 4.2319795000000795,
+      "changePercent": 5.398197039547692
+    },
+    {
+      "language": "HTML",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.8997500000002674,
+      "candidateMs": 3.03387500000008,
+      "changePercent": 4.625398741263909
+    },
+    {
+      "language": "Ruby",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 13.91012499999988,
+      "candidateMs": 14.535208500000408,
+      "changePercent": 4.493730286395947
+    },
+    {
+      "language": "Markdown",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.793500000000222,
+      "candidateMs": 1.8732500000000982,
+      "changePercent": 4.446612768322633
+    },
+    {
+      "language": "HTML",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.0801245000001245,
+      "candidateMs": 2.1592920000000504,
+      "changePercent": 3.8059020024965307
+    },
+    {
+      "language": "TypeScript",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 27.81035400000019,
+      "candidateMs": 28.779437499999403,
+      "changePercent": 3.4846140397896797
+    },
+    {
+      "language": "MDX",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 24.00820849999991,
+      "candidateMs": 24.78993750000018,
+      "changePercent": 3.256090515876142
+    },
+    {
+      "language": "HTML",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 28.506833500000084,
+      "candidateMs": 29.429916999999932,
+      "changePercent": 3.2381130650650736
+    },
+    {
+      "language": "TypeScript",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 47.175083500000255,
+      "candidateMs": 48.60258299999896,
+      "changePercent": 3.0259607277614897
+    },
+    {
+      "language": "Rust",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.258291999999983,
+      "candidateMs": 1.2945420000000922,
+      "changePercent": 2.880889332532477
+    },
+    {
+      "language": "Markdown",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 15.469895999999608,
+      "candidateMs": 15.79031299999997,
+      "changePercent": 2.0712291795650595
+    },
+    {
+      "language": "TSX",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 47.8042704999998,
+      "candidateMs": 48.7505000000001,
+      "changePercent": 1.9793827833860744
+    },
+    {
+      "language": "TOML",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.3346664999999973,
+      "candidateMs": 0.3412089999999921,
+      "changePercent": 1.9549312524542506
+    },
+    {
+      "language": "C++",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 82.77877050000006,
+      "candidateMs": 84.16283299999941,
+      "changePercent": 1.672001760402253
+    },
+    {
+      "language": "CSS",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 23.103437499999927,
+      "candidateMs": 23.456208499999775,
+      "changePercent": 1.5269199659135202
+    },
+    {
+      "language": "Swift",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 16.85020799999984,
+      "candidateMs": 17.092208500000197,
+      "changePercent": 1.4361870191772264
+    },
+    {
+      "language": "YAML",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 8.712082999999893,
+      "candidateMs": 8.836250000000291,
+      "changePercent": 1.4252274685675026
+    },
+    {
+      "language": "TOML",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 0.5460624999999482,
+      "candidateMs": 0.5538125000000491,
+      "changePercent": 1.4192514593295957
+    },
+    {
+      "language": "Astro",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 3.1932090000000244,
+      "candidateMs": 3.232666999999765,
+      "changePercent": 1.235684854944985
+    },
+    {
+      "language": "Bash",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.9618749999999636,
+      "candidateMs": 0.9720829999999978,
+      "changePercent": 1.0612605588080193
+    },
+    {
+      "language": "TSX",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.9893329999999878,
+      "candidateMs": 2.0095420000000104,
+      "changePercent": 1.0158681326868146
+    },
+    {
+      "language": "Bash",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 14.517228500000101,
+      "candidateMs": 14.643500499999845,
+      "changePercent": 0.8698078975593937
+    },
+    {
+      "language": "MDX",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 37.08900000000085,
+      "candidateMs": 37.40137549999963,
+      "changePercent": 0.84223219822257
+    },
+    {
+      "language": "TOML",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 5.604792000000089,
+      "candidateMs": 5.646624999999858,
+      "changePercent": 0.7463791698205657
+    },
+    {
+      "language": "JSON",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 15.699249999999665,
+      "candidateMs": 15.813687500000015,
+      "changePercent": 0.7289360956755919
+    },
+    {
+      "language": "C++",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 9.659208000000035,
+      "candidateMs": 9.72933299999977,
+      "changePercent": 0.7259911992756996
+    },
+    {
+      "language": "Rust",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 13.921541499999876,
+      "candidateMs": 14.003541000000041,
+      "changePercent": 0.5890116407020418
+    },
+    {
+      "language": "TSX",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 28.149062500000127,
+      "candidateMs": 28.234396000000288,
+      "changePercent": 0.3031486394978966
+    },
+    {
+      "language": "JSON",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 9.848707999999988,
+      "candidateMs": 9.870582999999897,
+      "changePercent": 0.22211035193560047
+    },
+    {
+      "language": "HTML",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 41.998021000000335,
+      "candidateMs": 42.03041699999994,
+      "changePercent": 0.07713696795286218
+    },
+    {
+      "language": "MDX",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.9587920000003578,
+      "candidateMs": 1.9600000000000364,
+      "changePercent": 0.06167066231015372
+    },
+    {
+      "language": "CSS",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 29.399729000000207,
+      "candidateMs": 29.355958499999815,
+      "changePercent": -0.14888062403701774
+    },
+    {
+      "language": "YAML",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.554540999999972,
+      "candidateMs": 0.5534999999999854,
+      "changePercent": -0.18772281941039637
+    },
+    {
+      "language": "YAML",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.1762079999998605,
+      "candidateMs": 1.1734999999998763,
+      "changePercent": -0.23023138764440843
+    },
+    {
+      "language": "Java",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.527541999999812,
+      "candidateMs": 2.5203539999999975,
+      "changePercent": -0.2843869656692144
+    },
+    {
+      "language": "Rust",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 18.343000500000016,
+      "candidateMs": 18.281332999999904,
+      "changePercent": -0.33619090835281806
+    },
+    {
+      "language": "C++",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 149.09093699999903,
+      "candidateMs": 148.57660400000168,
+      "changePercent": -0.34497938663927696
+    },
+    {
+      "language": "Ruby",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 20.983687500000087,
+      "candidateMs": 20.90685450000001,
+      "changePercent": -0.36615585320777244
+    },
+    {
+      "language": "Markdown",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 23.7045834999999,
+      "candidateMs": 23.56945850000102,
+      "changePercent": -0.5700374360042226
+    },
+    {
+      "language": "C++",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 5.639646000000084,
+      "candidateMs": 5.6058954999998605,
+      "changePercent": -0.5984506829014302
+    },
+    {
+      "language": "YAML",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 18.048999999999978,
+      "candidateMs": 17.91616649999969,
+      "changePercent": -0.7359604410232645
+    },
+    {
+      "language": "Java",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 38.75062499999967,
+      "candidateMs": 38.38958300000013,
+      "changePercent": -0.9317062628010464
+    },
+    {
+      "language": "Bash",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 23.632354500000474,
+      "candidateMs": 23.39245800000026,
+      "changePercent": -1.0151189125070403
+    },
+    {
+      "language": "CSS",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.627042000000074,
+      "candidateMs": 1.6099590000001172,
+      "changePercent": -1.0499421649813656
+    },
+    {
+      "language": "Java",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 23.391854500000136,
+      "candidateMs": 23.117021000000022,
+      "changePercent": -1.174911121305544
+    },
+    {
+      "language": "TSX",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 3.34237499999972,
+      "candidateMs": 3.302833499999906,
+      "changePercent": -1.1830360148043617
+    },
+    {
+      "language": "JSON",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.0157920000000331,
+      "candidateMs": 1.002375000000029,
+      "changePercent": -1.3208412745919995
+    },
+    {
+      "language": "Markdown",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.2664999999999509,
+      "candidateMs": 1.2495000000003529,
+      "changePercent": -1.3422818791629432
+    },
+    {
+      "language": "MDX",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.7895410000000993,
+      "candidateMs": 2.743396000000075,
+      "changePercent": -1.654214797345599
+    },
+    {
+      "language": "Astro",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.5373749999998836,
+      "candidateMs": 2.4945840000000317,
+      "changePercent": -1.686427902846599
+    },
+    {
+      "language": "TOML",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 8.327499999999873,
+      "candidateMs": 8.182041000000027,
+      "changePercent": -1.746730711496225
+    },
+    {
+      "language": "JSON",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.5805419999999231,
+      "candidateMs": 0.568958000000066,
+      "changePercent": -1.9953767341309603
+    },
+    {
+      "language": "SCSS",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 44.293333000000075,
+      "candidateMs": 43.36827050000011,
+      "changePercent": -2.0884915118037473
+    },
+    {
+      "language": "Java",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.5095005000000583,
+      "candidateMs": 1.477583500000037,
+      "changePercent": -2.1144080442517255
+    },
+    {
+      "language": "SCSS",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 3.3786250000000564,
+      "candidateMs": 3.281041000000073,
+      "changePercent": -2.888275555883879
+    },
+    {
+      "language": "Swift",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 25.323478999999224,
+      "candidateMs": 24.54541700000027,
+      "changePercent": -3.0724925275827153
+    },
+    {
+      "language": "Swift",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.2397084999999493,
+      "candidateMs": 1.1969160000001011,
+      "changePercent": -3.4518195204638724
+    },
+    {
+      "language": "Swift",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.7802080000001297,
+      "candidateMs": 1.7136255000000347,
+      "changePercent": -3.740152836078159
+    },
+    {
+      "language": "CSS",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.1542080000001533,
+      "candidateMs": 2.0220409999997173,
+      "changePercent": -6.135294270582348
+    }
+  ],
+  "excluded": []
+}
