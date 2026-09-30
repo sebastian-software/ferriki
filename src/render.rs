@@ -2,10 +2,29 @@ use ferriki_textmate::FontStyle;
 use serde_json::{Map, Value, json};
 
 use crate::{HighlightToken, HighlightTokensResult};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
+
+/// Controls how theme styles are emitted.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum StyleMode {
+    #[default]
+    Inline,
+    Classes,
+}
+
+/// Class-based HTML and the stylesheet required by its resolved theme.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HtmlWithCss {
+    pub html: String,
+    pub css: String,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct RenderOptions {
+    pub style_mode: StyleMode,
     pub merge_whitespaces: bool,
     pub merge_same_style_tokens: bool,
     pub root_style: Option<String>,
@@ -16,6 +35,7 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
+            style_mode: StyleMode::Inline,
             merge_whitespaces: true,
             merge_same_style_tokens: false,
             root_style: None,
@@ -40,6 +60,23 @@ pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> S
 /// renderer can own those structures and its line annotations. The number of
 /// fragments matches `result.tokens.len()`, including trailing empty lines.
 pub fn render_html_lines(result: &HighlightTokensResult, options: &RenderOptions) -> Vec<String> {
+    if options.style_mode == StyleMode::Classes {
+        let hast = render_hast(result, options);
+        return hast["children"][0]["children"][0]["children"]
+            .as_array()
+            .expect("code children")
+            .iter()
+            .filter(|node| node["type"] == "element")
+            .map(|line| {
+                line["children"]
+                    .as_array()
+                    .expect("line children")
+                    .iter()
+                    .map(hast_node_to_html)
+                    .collect()
+            })
+            .collect();
+    }
     prepare_tokens(&result.tokens, options)
         .iter()
         .map(|line| {
@@ -61,12 +98,16 @@ pub fn render_html_lines(result: &HighlightTokensResult, options: &RenderOptions
         .collect()
 }
 
-pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
+fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
     let tokens = prepare_tokens(&result.tokens, options);
     let mut pre_properties = Map::new();
     pre_properties.insert(
         "class".to_owned(),
-        Value::String(format!("shiki {}", result.theme_name)),
+        Value::String(if options.style_mode == StyleMode::Classes {
+            format!("ferriki {}", result.theme_name)
+        } else {
+            format!("shiki {}", result.theme_name)
+        }),
     );
     if options.include_root_style {
         pre_properties.insert(
@@ -88,7 +129,7 @@ pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> V
         if line_index > 0 {
             code_children.push(json!({ "type": "text", "value": "\n" }));
         }
-        let children = line
+        let mut children = line
             .iter()
             .map(|token| {
                 let mut properties = Map::new();
@@ -107,6 +148,9 @@ pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> V
                 })
             })
             .collect::<Vec<_>>();
+        if options.style_mode == StyleMode::Classes {
+            children = nest_scope_tokens(line, children);
+        }
         code_children.push(json!({
             "type": "element",
             "tagName": "span",
@@ -131,10 +175,135 @@ pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> V
     })
 }
 
+/// Renders a HAST tree, with styles extracted to classes when requested.
+pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
+    let mut tree = render_styled_hast(result, options);
+    if options.style_mode == StyleMode::Classes {
+        extract_styles(&mut tree, &mut BTreeMap::new());
+    }
+    tree
+}
+
+/// Renders class-based HTML with CSS for this block. Combine CSS from every block.
+/// Existing TextMate themes are resolved during tokenization and need no conversion.
+pub fn render_html_with_css(
+    result: &HighlightTokensResult,
+    options: &RenderOptions,
+) -> HtmlWithCss {
+    let options = options.clone().with_style_mode(StyleMode::Classes);
+    let mut tree = render_styled_hast(result, &options);
+    let mut rules = BTreeMap::new();
+    extract_styles(&mut tree, &mut rules);
+    HtmlWithCss {
+        html: hast_node_to_html(&tree["children"][0]),
+        css: rules.into_values().collect::<Vec<_>>().join("\n"),
+    }
+}
+
+fn extract_styles(node: &mut Value, rules: &mut BTreeMap<String, String>) {
+    if let Some(properties) = node.get_mut("properties").and_then(Value::as_object_mut)
+        && let Some(style) = properties
+            .remove("style")
+            .and_then(|value| value.as_str().map(str::to_owned))
+    {
+        let name = format!("ferriki-style-{:x}", Sha256::digest(style.as_bytes()));
+        let class = properties
+            .get("class")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        properties.insert(
+            "class".to_owned(),
+            Value::String(format!("{class} {name}").trim().to_owned()),
+        );
+        rules.insert(name.clone(), format!(":where(.{name}){{{style}}}"));
+    }
+    if let Some(children) = node.get_mut("children").and_then(Value::as_array_mut) {
+        for child in children {
+            extract_styles(child, rules);
+        }
+    }
+}
+
+fn scope_class(scope: &str) -> String {
+    scope
+        .chars()
+        .map(|character| {
+            if character == '.' {
+                "-".to_owned()
+            } else if character.is_ascii_alphanumeric() {
+                character.to_string()
+            } else {
+                format!("_{:x}_", u32::from(character))
+            }
+        })
+        .collect()
+}
+
+fn scope_prefixes(scope: &str, prefix: &str) -> Vec<String> {
+    let parts: Vec<_> = scope.split('.').collect();
+    (1..=parts.len())
+        .map(|end| format!("{prefix}-{}", scope_class(&parts[..end].join("."))))
+        .collect()
+}
+
+fn nest_scope_tokens(tokens: &[HighlightToken], nodes: Vec<Value>) -> Vec<Value> {
+    let mut output = Vec::new();
+    let mut stack: Vec<Value> = Vec::new();
+    let mut open: Vec<String> = Vec::new();
+    fn append(output: &mut Vec<Value>, stack: &mut [Value], node: Value) {
+        if let Some(parent) = stack.last_mut() {
+            parent["children"]
+                .as_array_mut()
+                .expect("scope children")
+                .push(node);
+        } else {
+            output.push(node);
+        }
+    }
+    for (token, mut node) in tokens.iter().zip(nodes) {
+        let scopes = token.scope_names.as_deref().unwrap_or_default();
+        let shared = open
+            .iter()
+            .zip(scopes)
+            .take_while(|(left, right)| left == right)
+            .count();
+        while stack.len() > shared {
+            let wrapper = stack.pop().expect("open scope");
+            append(&mut output, &mut stack, wrapper);
+        }
+        for scope in &scopes[shared..] {
+            let mut classes = scope_prefixes(scope, "scope");
+            classes.push(format!("exact-{}", scope_class(scope)));
+            stack.push(json!({"type":"element", "tagName":"span", "properties":{"class":classes.join(" ")}, "children":[]}));
+        }
+        let mut classes = vec!["token".to_owned()];
+        for scope in scopes {
+            for class in scope_prefixes(scope, "tok") {
+                if !classes.contains(&class) {
+                    classes.push(class);
+                }
+            }
+        }
+        if let Some(scope) = scopes.last() {
+            classes.extend(scope_prefixes(scope, "leaf"));
+        }
+        node["properties"]["class"] = Value::String(classes.join(" "));
+        append(&mut output, &mut stack, node);
+        open = scopes.to_vec();
+    }
+    while let Some(wrapper) = stack.pop() {
+        append(&mut output, &mut stack, wrapper);
+    }
+    output
+}
+
 fn prepare_tokens(
     source: &[Vec<HighlightToken>],
     options: &RenderOptions,
 ) -> Vec<Vec<HighlightToken>> {
+    if options.style_mode == StyleMode::Classes {
+        return source.to_vec();
+    }
     let tokens = if options.merge_whitespaces {
         merge_whitespace_tokens(source)
     } else {
@@ -296,6 +465,13 @@ fn escape_attribute(input: &str) -> String {
 }
 
 impl RenderOptions {
+    /// Emits nested scope classes. Tokenize with `preserve_scope_boundaries` to retain all scopes.
+    #[must_use]
+    pub fn with_style_mode(mut self, value: StyleMode) -> Self {
+        self.style_mode = value;
+        self
+    }
+
     /// Sets `merge_whitespaces`.
     #[must_use]
     pub fn with_merge_whitespaces(mut self, value: bool) -> Self {
@@ -348,6 +524,37 @@ mod tests {
                 },
             )
             .expect("tokens")
+    }
+
+    #[test]
+    fn class_rendering_retains_order_repetition_and_escapes_scope_names() {
+        let mut result = javascript_tokens("AB");
+        let mut first = result.tokens[0][0].clone();
+        first.content = "<😀&".to_owned();
+        first.scope_names = Some(vec![
+            "source.probe".to_owned(),
+            "meta.a".to_owned(),
+            "meta.a".to_owned(),
+            "entity.name.probe".to_owned(),
+        ]);
+        let mut second = first.clone();
+        second.content = "B".to_owned();
+        second.scope_names = Some(vec![
+            "source.probe".to_owned(),
+            "meta.a-b".to_owned(),
+            "entity.name.probe".to_owned(),
+        ]);
+        result.tokens = vec![vec![first, second], vec![]];
+        let options = RenderOptions::default().with_style_mode(StyleMode::Classes);
+        let rendered = render_html_with_css(&result, &options);
+        assert!(!rendered.html.contains(" style="));
+        assert!(!rendered.html.contains("exact-meta-a-b"));
+        assert!(rendered.html.contains("exact-meta-a_2d_b"));
+        assert_eq!(rendered.html.matches("exact-meta-a\"").count(), 2);
+        assert!(rendered.html.contains("&#x3C;😀&#x26;"));
+        assert_eq!(rendered.html, render_html(&result, &options));
+        assert_eq!(render_html_lines(&result, &options).len(), 2);
+        assert_eq!(rendered.css.lines().count(), 2);
     }
 
     #[test]

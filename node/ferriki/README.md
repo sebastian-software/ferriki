@@ -113,6 +113,16 @@ Terminal ANSI input is intentionally outside Ferriki's 1.0 contract. Strip or
 parse escape sequences before passing code to the highlighter; Ferriki rejects
 `lang: 'ansi'` with `ShikiError` rather than emitting control bytes.
 
+## Class-based output (next release)
+
+Inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
+and [wooorm's starry-night](https://github.com/wooorm/starry-night).
+
+Use `styleMode: "classes"` for nested scope classes and custom CSS.
+`codeToHtmlWithCss` returns `{ html, css }` using unchanged TextMate themes,
+including theme maps that switch via `data-ferriki-theme` without retokenizing.
+See the [class-based highlighting guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md) for examples and integration details.
+
 ## Current API
 
 The native runtime currently provides:

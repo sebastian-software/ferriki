@@ -37,6 +37,9 @@ pub mod __private {
 pub use highlighter::{HighlightedLines, Highlighter, HighlighterBuilder, LanguageRegistration};
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
 pub use remote::{DEFAULT_ASSETS_BASE_URL, RemoteAssets};
-pub use render::{RenderOptions, render_hast, render_html, render_html_lines};
+pub use render::{
+    HtmlWithCss, RenderOptions, StyleMode, render_hast, render_html, render_html_lines,
+    render_html_with_css,
+};
 pub use theme_data::{ThemeData, parse_theme_data};
 pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};

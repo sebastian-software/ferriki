@@ -12,6 +12,7 @@ const expectedPages = [
   "guide/getting-started/index.html",
   "guide/migrating-from-shiki/index.html",
   "guide/languages-and-themes/index.html",
+  "guide/class-highlighting/index.html",
   "guide/api/index.html",
   "guide/troubleshooting/index.html",
   "rust/getting-started/index.html",

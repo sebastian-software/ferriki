@@ -12,6 +12,8 @@ pub struct TokenizeOptions {
     pub max_line_length: usize,
     pub include_token_type: bool,
     pub include_scopes: bool,
+    /// Retains grammar boundaries even when adjacent tokens have equal styles.
+    pub preserve_scope_boundaries: bool,
 }
 
 impl Default for TokenizeOptions {
@@ -21,6 +23,7 @@ impl Default for TokenizeOptions {
             max_line_length: 0,
             include_token_type: false,
             include_scopes: false,
+            preserve_scope_boundaries: false,
         }
     }
 }
@@ -199,6 +202,12 @@ impl TokenizeOptions {
         self.include_token_type = value;
         self
     }
+    /// Retains full scope paths and theme-independent grammar boundaries.
+    #[must_use]
+    pub fn with_preserve_scope_boundaries(mut self, value: bool) -> Self {
+        self.preserve_scope_boundaries = value;
+        self
+    }
     /// Sets `include_scopes`.
     #[must_use]
     pub fn with_include_scopes(mut self, value: bool) -> Self {
@@ -220,6 +229,7 @@ mod tests {
                 max_line_length: 0,
                 include_token_type: false,
                 include_scopes: false,
+                preserve_scope_boundaries: false,
             }
         );
     }

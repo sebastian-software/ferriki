@@ -12,6 +12,7 @@ export const documentationSections = [
       ["Getting started", "/guide/getting-started"],
       ["Migrating from Shiki", "/guide/migrating-from-shiki"],
       ["Languages and themes", "/guide/languages-and-themes"],
+      ["Class-based output", "/guide/class-highlighting"],
       ["API overview", "/guide/api"],
       ["Troubleshooting", "/guide/troubleshooting"],
     ],

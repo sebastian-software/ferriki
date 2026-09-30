@@ -26,6 +26,7 @@
     "LICENSE-MIT",
     "README.md",
     "assets/shiki",
+    "classes.mjs",
     "index.d.mts",
     "index.mjs",
     "native.mjs",

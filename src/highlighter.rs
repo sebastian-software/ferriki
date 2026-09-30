@@ -140,9 +140,14 @@ impl Highlighter {
         theme: &str,
         render_options: &RenderOptions,
     ) -> Result<HighlightedLines> {
-        let tokens = self
-            .core
-            .tokenize(code, language, theme, &TokenizeOptions::default())?;
+        let tokens = self.core.tokenize(
+            code,
+            language,
+            theme,
+            &TokenizeOptions::default().with_preserve_scope_boundaries(
+                render_options.style_mode == crate::StyleMode::Classes,
+            ),
+        )?;
         let lines = render_html_lines(&tokens, render_options);
         Ok(HighlightedLines {
             lines,
@@ -150,6 +155,23 @@ impl Highlighter {
             background: tokens.background,
             theme_name: tokens.theme_name,
         })
+    }
+
+    /// Highlights nested scope classes and extracts CSS from an unchanged TextMate theme.
+    pub fn highlight_html_with_css(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme: &str,
+        render_options: &RenderOptions,
+    ) -> Result<crate::HtmlWithCss> {
+        let result = self.highlight_with_options(
+            code,
+            language,
+            theme,
+            &TokenizeOptions::default().with_preserve_scope_boundaries(true),
+        )?;
+        Ok(crate::render_html_with_css(&result, render_options))
     }
 
     /// Loads a standard language and its dependencies; returns false if absent.
@@ -721,7 +743,7 @@ impl HighlighterCore {
                 continue;
             }
 
-            let scope_result = if options.include_scopes {
+            let scope_result = if options.include_scopes || options.preserve_scope_boundaries {
                 Some(
                     grammar
                         .tokenize_line(line, state.clone(), options.time_limit_millis)
@@ -746,13 +768,38 @@ impl HighlighterCore {
                 })?;
             let utf16_map = utf16_to_byte_map(line);
             let mut line_tokens = Vec::with_capacity(result.tokens.len() / 2);
-            for token_index in 0..result.tokens.len() / 2 {
-                let start_index = result.tokens[token_index * 2] as usize;
-                let end_index = result
+            let mut boundaries: Vec<usize> = result
+                .tokens
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|token| token[0] as usize)
+                .filter(|start| *start < line_length)
+                .collect();
+            boundaries.push(line_length);
+            if options.preserve_scope_boundaries {
+                for token in &scope_result
+                    .as_ref()
+                    .expect("scope boundaries were requested")
+                    .tokens
+                {
+                    boundaries.push(token.start_index.min(line_length));
+                    boundaries.push(token.end_index.min(line_length));
+                }
+                boundaries.sort_unstable();
+                boundaries.dedup();
+            }
+            let mut token_index = 0;
+            for range in boundaries.windows(2) {
+                let start_index = range[0];
+                let end_index = range[1];
+                while result
                     .tokens
                     .get(token_index * 2 + 2)
-                    .copied()
-                    .map_or(line_length, |value| value as usize);
+                    .is_some_and(|next| *next as usize <= start_index)
+                {
+                    token_index += 1;
+                }
                 if let Some(token) = token_from_metadata(
                     line,
                     &utf16_map,
@@ -948,6 +995,46 @@ mod tests {
             time_limit_millis: 0,
             ..TokenizeOptions::default()
         }
+    }
+
+    #[test]
+    fn retained_scope_boundaries_are_independent_of_theme_merging() {
+        let mut highlighter = standard_highlighter();
+        let code = "{\"message\":\"hello😀\"}";
+        let options = unlimited_tokenize_options().with_preserve_scope_boundaries(true);
+        let monokai = highlighter
+            .tokenize(code, "json", "monokai", &options)
+            .expect("tokens");
+        let nord = highlighter
+            .tokenize(code, "json", "nord", &options)
+            .expect("tokens");
+        let paths = |result: &HighlightTokensResult| {
+            result.tokens[0]
+                .iter()
+                .map(|token| (token.content.clone(), token.scope_names.clone()))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(paths(&monokai), paths(&nord));
+        assert_eq!(
+            monokai.tokens[0]
+                .iter()
+                .map(|token| token.content.as_str())
+                .collect::<String>(),
+            code
+        );
+        let value = monokai.tokens[0]
+            .iter()
+            .find(|token| token.content == "hello😀")
+            .expect("JSON value");
+        assert_eq!(value.color.as_deref(), Some("#CFCFC2"));
+        assert!(
+            value
+                .scope_names
+                .as_ref()
+                .expect("scopes")
+                .iter()
+                .any(|scope| scope == "meta.structure.dictionary.json")
+        );
     }
 
     #[test]

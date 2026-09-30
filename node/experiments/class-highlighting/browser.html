@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ferriki class-highlighting experiment</title>
+    <style>
+      :root {
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        color: #1d2632;
+        background: #f3f5f8;
+      }
+      body {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 24px;
+      }
+      h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      p {
+        max-width: 85ch;
+      }
+      button,
+      select {
+        font: inherit;
+        padding: 6px 10px;
+        margin: 4px 12px 4px 0;
+      }
+      button {
+        cursor: pointer;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        background: white;
+        margin: 20px 0;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        padding: 16px;
+        border-radius: 6px;
+      }
+      .fixture {
+        font:
+          14px/1.5 ui-monospace,
+          monospace;
+        white-space: pre-wrap;
+      }
+      #test-fixtures {
+        position: absolute;
+        left: -100000px;
+        width: 1100px;
+      }
+      #status {
+        padding: 12px 16px;
+        background: white;
+        border-left: 4px solid #3b679b;
+      }
+      #task-results li {
+        padding: 4px 0;
+      }
+    </style>
+    <style id="theme-css"></style>
+    <style id="task-css"></style>
+  </head>
+  <body>
+    <h1>Ferriki class-highlighting experiment</h1>
+    <p>
+      Raw TextMate scopes, three output models, real themes, and a fixed catalog of styling tasks.
+      Experimental class names; no public API commitment.
+    </p>
+    <p id="inventory"></p>
+    <button id="run">Run browser verification</button>
+    <p id="status" role="status">Loading corpus…</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>HTML, gzip</th>
+          <th>Spans</th>
+          <th>Lost path groups</th>
+          <th>Theme conflicts</th>
+        </tr>
+      </thead>
+      <tbody id="metrics"></tbody>
+    </table>
+    <label
+      >Theme
+      <select id="theme"></select
+    ></label>
+    <label
+      >Example
+      <select id="case"></select
+    ></label>
+    <label
+      >Model
+      <select id="model">
+        <option>flat</option>
+        <option>nested</option>
+        <option>hybrid</option>
+      </select></label
+    >
+    <div id="gallery"></div>
+    <button id="palette">Toggle custom CSS light/dark</button>
+    <h2>Browser evidence</h2>
+    <pre id="result">Not run yet.</pre>
+    <h2>Handwritten CSS tasks</h2>
+    <p>
+      The browser checks both intended targets and unintended changes. Generated path selectors
+      count as a technical fallback, not as a simple task solution.
+    </p>
+    <ol id="task-results"></ol>
+    <div id="test-fixtures" aria-hidden="true"></div>
+    <script type="module" src="/browser.mjs"></script>
+  </body>
+</html>

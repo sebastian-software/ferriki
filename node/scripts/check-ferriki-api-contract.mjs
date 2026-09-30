@@ -16,9 +16,11 @@ const contract = await readFile(
   new URL("../../docs/ferriki-1.0-api-contract.md", import.meta.url),
   "utf8",
 );
+const normalizedContract = contract.replace(/\|[ \t]+/g, "| ").replace(/[ \t]+\|/g, " |");
 for (const row of [
   "| `bundledLanguages` / `bundledThemes` | Stable |",
   "| `themes` | Stable |",
+  "| `styleMode` | Stable |",
   "| `defaultColor` | Stable |",
   "| `transformers` | Stable |",
   "| `decorations` | Stable |",
@@ -26,7 +28,7 @@ for (const row of [
   "| `theme: 'none'` | Stable |",
   "- A highlighter handle owns its native state and must be disposable.",
 ]) {
-  assert(contract.includes(row), `API contract is missing the required row: ${row}`);
+  assert(normalizedContract.includes(row), `API contract is missing the required row: ${row}`);
 }
 
 assert(Object.isFrozen(bundledLanguages));

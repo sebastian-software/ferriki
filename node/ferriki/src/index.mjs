@@ -7,6 +7,7 @@ import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
   applyTokenTransformers,
+  classStylesByTree,
   renderTransformedHast,
   sortTransformers,
   splitTokensAtDecorations,
@@ -396,7 +397,7 @@ export function createHighlighterCoreSync(options = {}) {
           ? token.scopeNames
           : [scopeNameForLanguage(language)];
         const output = { ...token };
-        delete output.scopeNames;
+        if (options.styleMode !== "classes") delete output.scopeNames;
         if (includeScopes) {
           output.explanation = [
             {
@@ -479,6 +480,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function buildHast(code, options = {}) {
+    assertAnsiInput(code, options);
     const validated = validateHighlightOptions(options);
     const transformers = getTransformers(validated);
     const meta = {};
@@ -487,7 +489,13 @@ export function createHighlighterCoreSync(options = {}) {
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
     context.source = source;
-    const result = highlightRaw(source, validated);
+    assertAnsiInput(source, validated);
+    const input = prepareGrammarInput(source, validated);
+    const result = removeGrammarPrefix(
+      highlightRaw(input.source, validated),
+      input.prefixLength,
+      input.prefixLines,
+    );
     result.tokens = applyTokenTransformers(
       prepareRenderTokens(result.tokens, validated),
       transformers,
@@ -495,12 +503,26 @@ export function createHighlighterCoreSync(options = {}) {
     );
     if (validated.decorations?.length)
       result.tokens = splitTokensAtDecorations(result.tokens, validated.decorations, source);
-    return renderTransformedHast(result, validated, transformers, context, source);
+    const tree = renderTransformedHast(result, validated, transformers, context, source);
+    if (validated.styleMode === "classes" && !isSpecialLanguage(grammarLanguage(validated)))
+      grammarStateByObject.set(tree, makeGrammarState(input.source, validated, result));
+    return tree;
   }
 
   const highlighter = {
+    codeToHtmlWithCss(code, options) {
+      const validated = validateHighlightOptions(options);
+      const classOptions = { ...validated, styleMode: "classes" };
+      const tree = buildHast(code, classOptions);
+      return {
+        html: applyPostprocess(hastToHtml(tree), classOptions, code),
+        css: classStylesByTree.get(tree) || "",
+      };
+    },
     codeToHtml(code, options) {
       assertAnsiInput(code, options);
+      if (options?.styleMode === "classes")
+        return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
       if (options?.grammarState) {
         const result = highlightTokensPublic(code, options);
         return applyPostprocess(hastToHtml(renderTokenResultHast(result, options)), options, code);
@@ -519,6 +541,7 @@ export function createHighlighterCoreSync(options = {}) {
       );
     },
     codeToHast(code, options) {
+      if (options?.styleMode === "classes") return buildHast(code, options);
       assertAnsiInput(code, options);
       if (options?.grammarState) {
         const result = highlightTokensPublic(code, options);
@@ -604,6 +627,14 @@ export function codeToHtml(highlighterOrCode, codeOrOptions, options) {
     return highlighterOrCode.codeToHtml(codeOrOptions, options);
   return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
     highlighter.codeToHtml(highlighterOrCode, codeOrOptions),
+  );
+}
+
+export function codeToHtmlWithCss(highlighterOrCode, codeOrOptions, options) {
+  if (isHighlighter(highlighterOrCode, "codeToHtmlWithCss"))
+    return highlighterOrCode.codeToHtmlWithCss(codeOrOptions, options);
+  return getSingletonHighlighter().then((highlighter) =>
+    highlighter.codeToHtmlWithCss(highlighterOrCode, codeOrOptions),
   );
 }
 
@@ -723,6 +754,20 @@ function validateHighlightOptions(options) {
   if (typeof options !== "object" || Array.isArray(options))
     throw new ShikiError("Highlight options must be an object", "ERR_USAGE");
 
+  if (options.styleMode !== undefined && !["inline", "classes"].includes(options.styleMode))
+    throw new ShikiError("Highlight option `styleMode` must be inline or classes", "ERR_USAGE");
+  if (options.styleMode === "classes" && options.themes) {
+    if (Object.keys(options.themes).some((key) => !/^[a-zA-Z_][\w-]*$/u.test(key)))
+      throw new ShikiError("Class theme keys must be CSS identifiers", "ERR_USAGE");
+    if (
+      options.cssVariablePrefix !== undefined &&
+      !/^--[a-zA-Z_][\w-]*$/u.test(options.cssVariablePrefix)
+    )
+      throw new ShikiError(
+        "Class cssVariablePrefix must be a CSS custom property prefix",
+        "ERR_USAGE",
+      );
+  }
   const registrationFields = ["lang", "theme"];
   for (const field of registrationFields) {
     const value = options[field];
@@ -1159,11 +1204,29 @@ function combineThemeResults(results, options) {
   const tokens = alignThemeTokens(results).map((line) =>
     line.map((token) => ({
       ...token,
-      htmlStyle: tokenHtmlStyle(token.variants, results, defaultColor, cssVariablePrefix),
+      htmlStyle: tokenHtmlStyle(
+        token.variants,
+        results,
+        defaultColor,
+        cssVariablePrefix,
+        options.styleMode === "classes",
+      ),
     })),
   );
-  const foreground = themePropertyStyle(results, "foreground", defaultColor, cssVariablePrefix);
-  const background = themePropertyStyle(results, "background", defaultColor, cssVariablePrefix);
+  const foreground = themePropertyStyle(
+    results,
+    "foreground",
+    defaultColor,
+    cssVariablePrefix,
+    options.styleMode === "classes",
+  );
+  const background = themePropertyStyle(
+    results,
+    "background",
+    defaultColor,
+    cssVariablePrefix,
+    options.styleMode === "classes",
+  );
   return {
     tokens,
     fg: foreground,
@@ -1198,12 +1261,30 @@ function combineNativeThemeResult(result, options) {
         ...(token.type === undefined ? {} : { type: token.type }),
         ...(token.scopeNames ? { scopeNames: token.scopeNames } : {}),
         variants,
-        htmlStyle: tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix),
+        htmlStyle: tokenHtmlStyle(
+          variants,
+          results,
+          defaultColor,
+          cssVariablePrefix,
+          options.styleMode === "classes",
+        ),
       };
     }),
   );
-  const foreground = themePropertyStyle(results, "foreground", defaultColor, cssVariablePrefix);
-  const background = themePropertyStyle(results, "background", defaultColor, cssVariablePrefix);
+  const foreground = themePropertyStyle(
+    results,
+    "foreground",
+    defaultColor,
+    cssVariablePrefix,
+    options.styleMode === "classes",
+  );
+  const background = themePropertyStyle(
+    results,
+    "background",
+    defaultColor,
+    cssVariablePrefix,
+    options.styleMode === "classes",
+  );
   return {
     tokens,
     fg: foreground,
@@ -1283,7 +1364,13 @@ function tokenStyle(token) {
   return style;
 }
 
-function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
+function tokenHtmlStyle(
+  variants,
+  results,
+  defaultColor,
+  cssVariablePrefix,
+  includeDefaultVariant = false,
+) {
   const styles = results.map((result) => variants[result.color] || {});
   const keys = new Set(styles.flatMap((style) => Object.keys(style)));
   const declarations = [];
@@ -1292,7 +1379,7 @@ function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
       const value = styles[index][key] || "inherit";
       const color = results[index].color;
       const isColor = key === "color" || key === "background-color";
-      if (index === 0 && defaultColor && isColor) {
+      if (index === 0 && defaultColor && isColor && !includeDefaultVariant) {
         if (defaultColor === "light-dark()" && (key === "color" || key === "background-color")) {
           const lightIndex = results.findIndex((result) => result.color === "light");
           const darkIndex = results.findIndex((result) => result.color === "dark");
@@ -1305,16 +1392,32 @@ function tokenHtmlStyle(variants, results, defaultColor, cssVariablePrefix) {
           declarations.push(`${key}:${value}`);
         }
       }
-      if (index > 0 || !defaultColor || !isColor || defaultColor === "light-dark()") {
+      if (
+        includeDefaultVariant ||
+        index > 0 ||
+        !defaultColor ||
+        !isColor ||
+        defaultColor === "light-dark()"
+      ) {
         const suffix = key === "color" ? "" : key === "background-color" ? "-bg" : `-${key}`;
         declarations.push(`${cssVariablePrefix}${color}${suffix}:${value}`);
       }
     }
   }
+  if (includeDefaultVariant)
+    declarations.push(
+      "color:var(--ferriki-color);font-style:var(--ferriki-font-style,normal);font-weight:var(--ferriki-font-weight,normal);text-decoration:var(--ferriki-text-decoration,none)",
+    );
   return declarations.join(";");
 }
 
-function themePropertyStyle(results, property, defaultColor, cssVariablePrefix) {
+function themePropertyStyle(
+  results,
+  property,
+  defaultColor,
+  cssVariablePrefix,
+  includeDefaultVariant = false,
+) {
   const declarations = [];
   for (let index = 0; index < results.length; index++) {
     const value = results[index].result[property === "foreground" ? "fg" : "bg"] || "inherit";
@@ -1334,7 +1437,7 @@ function themePropertyStyle(results, property, defaultColor, cssVariablePrefix) 
         declarations.push(value);
       }
     }
-    if (index > 0 || !defaultColor || defaultColor === "light-dark()")
+    if (includeDefaultVariant || index > 0 || !defaultColor || defaultColor === "light-dark()")
       declarations.push(
         `${cssVariablePrefix}${color}${property === "background" ? "-bg" : ""}:${value}`,
       );
@@ -1345,6 +1448,8 @@ function themePropertyStyle(results, property, defaultColor, cssVariablePrefix) 
 // Rendering normalization follows Shiki's code-to-hast contract. Keep raw
 // token APIs unchanged and normalize before transformer token callbacks.
 function prepareRenderTokens(tokens, options) {
+  if (options.styleMode === "classes")
+    return tokens.map((line) => line.map((token) => ({ ...token })));
   const merge = options.mergeWhitespaces ?? true;
   return tokens.map((line) => {
     let output = [];
