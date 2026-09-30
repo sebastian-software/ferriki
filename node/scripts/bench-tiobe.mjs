@@ -141,7 +141,11 @@ async function worker(language) {
 if (values.worker) {
   const language = manifest.languages.find((entry) => entry.rank === Number(values.worker));
   if (!language?.file) throw new Error("Invalid worker rank");
-  process.stdout.write(JSON.stringify(await worker(language)));
+  const output = JSON.stringify(await worker(language));
+  // Await the pipe flush: process.exit can otherwise truncate large raw reports.
+  await new Promise((done, reject) =>
+    process.stdout.write(output, (error) => (error ? reject(error) : done())),
+  );
   process.exit(0);
 }
 
@@ -237,14 +241,19 @@ for (const language of selected) {
         maxBuffer: 64 * 1024 * 1024,
       },
     );
-    row =
-      child.status === 0
-        ? { ...JSON.parse(child.stdout), status: "measured" }
-        : {
-            ...language,
-            status: child.error?.code === "ETIMEDOUT" ? "timeout" : "error",
-            error: child.error?.message ?? child.stderr.trim(),
-          };
+    if (child.status === 0) {
+      try {
+        row = { ...JSON.parse(child.stdout), status: "measured" };
+      } catch (error) {
+        row = { ...language, status: "error", error: `Invalid worker report: ${error}` };
+      }
+    } else {
+      row = {
+        ...language,
+        status: child.error?.code === "ETIMEDOUT" ? "timeout" : "error",
+        error: child.error?.message ?? child.stderr.trim(),
+      };
+    }
   }
   report.languages.push(row);
   // Retain completed languages even if a later worker is interrupted.
