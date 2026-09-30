@@ -1,0 +1,110 @@
+{
+  "tokens": {
+    "mainThreadSamples": 7395,
+    "inclusive": {
+      "native_tokens_or_html": {
+        "inclusiveSamples": 7210,
+        "mainThreadPercent": 97.49830966869506
+      },
+      "ferroni": {
+        "inclusiveSamples": 6582,
+        "mainThreadPercent": 89.00608519269777
+      },
+      "scanner": {
+        "inclusiveSamples": 6555,
+        "mainThreadPercent": 88.64097363083164
+      },
+      "regset": {
+        "inclusiveSamples": 6548,
+        "mainThreadPercent": 88.54631507775524
+      },
+      "match_at": {
+        "inclusiveSamples": 5936,
+        "mainThreadPercent": 80.27045300878972
+      },
+      "fallback_search": {
+        "inclusiveSamples": 4556,
+        "mainThreadPercent": 61.60919540229885
+      },
+      "scope_tokenize_line": {
+        "inclusiveSamples": 3899,
+        "mainThreadPercent": 52.72481406355646
+      },
+      "binary_tokenize_line2": {
+        "inclusiveSamples": 3179,
+        "mainThreadPercent": 42.98850574712644
+      }
+    },
+    "ferroniExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 5255],
+      ["ferroni::regexec::stack_pop", 527],
+      ["ferroni::regset::regset_search_body_position_lead", 185],
+      ["ferroni::regexec::match_literal_trie", 109],
+      ["ferroni::regexec::forward_search", 104],
+      ["ferroni::regset::search_fallback_entry", 54],
+      ["ferroni::regset::attempt_fallback_entry", 51],
+      ["ferroni::regexec::is_word_boundary", 42],
+      ["ferroni::regset::attempt_fallback_entry_at_start", 18],
+      ["ferroni::scanner::build_scanner_match", 17],
+      ["ferroni::regexec::stack_pop_to_mark", 12],
+      ["ferroni::regexec::look_behind_body_matches", 9],
+      ["ferroni::scanner::Scanner::find_next_match_utf16", 7],
+      ["ferroni::regexec::prev_char_head", 7],
+      ["ferroni::regset::onig_regset_search_impl", 6]
+    ]
+  },
+  "html": {
+    "mainThreadSamples": 7508,
+    "inclusive": {
+      "native_tokens_or_html": {
+        "inclusiveSamples": 7411,
+        "mainThreadPercent": 98.70804475226426
+      },
+      "ferroni": {
+        "inclusiveSamples": 6324,
+        "mainThreadPercent": 84.23015450186467
+      },
+      "scanner": {
+        "inclusiveSamples": 6298,
+        "mainThreadPercent": 83.88385721896644
+      },
+      "regset": {
+        "inclusiveSamples": 6295,
+        "mainThreadPercent": 83.8438998401705
+      },
+      "match_at": {
+        "inclusiveSamples": 5686,
+        "mainThreadPercent": 75.73255194459243
+      },
+      "fallback_search": {
+        "inclusiveSamples": 4233,
+        "mainThreadPercent": 56.37986148108685
+      },
+      "scope_tokenize_line": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "binary_tokenize_line2": {
+        "inclusiveSamples": 6686,
+        "mainThreadPercent": 89.05167820990944
+      }
+    },
+    "ferroniExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 5052],
+      ["ferroni::regexec::stack_pop", 456],
+      ["ferroni::regset::regset_search_body_position_lead", 191],
+      ["ferroni::regexec::match_literal_trie", 122],
+      ["ferroni::regexec::forward_search", 107],
+      ["ferroni::regset::search_fallback_entry", 75],
+      ["ferroni::regset::attempt_fallback_entry", 43],
+      ["ferroni::regexec::is_word_boundary", 32],
+      ["ferroni::regset::attempt_fallback_entry_at_start", 29],
+      ["ferroni::regset::onig_regset_search_impl", 17],
+      ["ferroni::scanner::build_scanner_match", 14],
+      ["ferroni::regexec::look_behind_body_matches", 10],
+      ["ferroni::regexec::stack_pop_to_mark", 9],
+      ["ferroni::regexec::prev_char_head", 9],
+      ["ferroni::regexec::populate_region_for_match", 8]
+    ]
+  }
+}

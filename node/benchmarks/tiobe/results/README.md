@@ -1,5 +1,8 @@
 # Initial observations: September 30, 2026
 
+The follow-up [Ferroni 1.7.0 baseline and C++ investigation](ferroni-1.7.0/README.md)
+retains a controlled optimizer off/on comparison and warmed CPU profiles.
+
 Two complete, sequential runs on an Apple M1 Ultra (darwin-arm64), Node
 24.21.0, Rust 1.96.0, using the default measurement settings. Both runs used
 clean Ferriki commit `3ad8f0c834e92e0dd558682a18ce71129f1bf2f4`, Ferriki 0.6.0,

@@ -157,3 +157,9 @@ samply record --save-only --unstable-presymbolicate -o /tmp/cpp-tokens.json.gz \
 Keep profiler results separate from timing comparisons. Build receipts record
 `CARGO_PROFILE_*` overrides, and comparisons reject different settings. Restore
 the ordinary release profile and rebuild before collecting a timing baseline.
+
+On macOS, the built-in `sample` tool can attach after the ready marker:
+`sample <pid> 10 1 -file /tmp/cpp.sample.txt`. The retained
+[Ferroni 1.7.0 investigation](results/ferroni-1.7.0/README.md) includes a helper
+that starts the workload and attaches only after warmup, plus both symbolized
+profiles and an analysis script.

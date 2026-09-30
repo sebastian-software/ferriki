@@ -1,0 +1,640 @@
+{
+  "baselineFerroni": {
+    "version": "1.7.0",
+    "source": null,
+    "manifestPath": "/private/tmp/ferroni-tiobe-backtracking-on/Cargo.toml",
+    "revision": {
+      "commit": "3192dff5811c1ee47cfe75b2f2fd3e37771b8d10",
+      "status": ""
+    },
+    "sourceSha256": "90d6debeb5c0945bfb6c58496cee3da7a40935e218b0a02b505f17fcc405812a",
+    "features": []
+  },
+  "candidateFerroni": {
+    "version": "1.7.0",
+    "source": null,
+    "manifestPath": "/private/tmp/ferroni-tiobe-backtracking-on/Cargo.toml",
+    "revision": {
+      "commit": "3192dff5811c1ee47cfe75b2f2fd3e37771b8d10",
+      "status": ""
+    },
+    "sourceSha256": "90d6debeb5c0945bfb6c58496cee3da7a40935e218b0a02b505f17fcc405812a",
+    "features": []
+  },
+  "comparisons": [
+    {
+      "language": "C++",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 8.694083000000319,
+      "candidateMs": 9.23264549999999,
+      "changePercent": 6.194586594119822
+    },
+    {
+      "language": "Rust",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.2320420000000922,
+      "candidateMs": 1.298458500000038,
+      "changePercent": 5.39076589920966
+    },
+    {
+      "language": "C",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 24.367291499999737,
+      "candidateMs": 25.44818749999922,
+      "changePercent": 4.435847948055671
+    },
+    {
+      "language": "PHP",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 29.84189550000019,
+      "candidateMs": 31.009770499998922,
+      "changePercent": 3.9135416180206217
+    },
+    {
+      "language": "Ada",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.9727289999999584,
+      "candidateMs": 1.0052499999999327,
+      "changePercent": 3.3432744371737266
+    },
+    {
+      "language": "C",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 19.051583500000106,
+      "candidateMs": 19.651520999999775,
+      "changePercent": 3.1490164583939384
+    },
+    {
+      "language": "PHP",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.3022500000001855,
+      "candidateMs": 2.3550835000000916,
+      "changePercent": 2.294863720269369
+    },
+    {
+      "language": "JavaScript",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 3.477583999999979,
+      "candidateMs": 3.5546664999999393,
+      "changePercent": 2.2165532162547574
+    },
+    {
+      "language": "C++",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 5.006562499999973,
+      "candidateMs": 5.101395999999795,
+      "changePercent": 1.8941838836491698
+    },
+    {
+      "language": "Objective-C",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.384396000000038,
+      "candidateMs": 1.410395499999936,
+      "changePercent": 1.878039231541928
+    },
+    {
+      "language": "Ada",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 14.072957999999744,
+      "candidateMs": 14.328833499999973,
+      "changePercent": 1.8182069469704576
+    },
+    {
+      "language": "PHP",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 19.484458500000073,
+      "candidateMs": 19.832895500000177,
+      "changePercent": 1.788281670748515
+    },
+    {
+      "language": "Assembly language",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.4515000000001237,
+      "candidateMs": 1.4733750000000327,
+      "changePercent": 1.5070616603449771
+    },
+    {
+      "language": "Rust",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 18.074749999999767,
+      "candidateMs": 18.346437499999865,
+      "changePercent": 1.5031328234144326
+    },
+    {
+      "language": "Swift",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 24.24920850000035,
+      "candidateMs": 24.558291499999996,
+      "changePercent": 1.2746106744046637
+    },
+    {
+      "language": "Ada",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 15.302478999999494,
+      "candidateMs": 15.492062499999975,
+      "changePercent": 1.2389071077992364
+    },
+    {
+      "language": "Assembly language",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 15.452436999999463,
+      "candidateMs": 15.625291999999718,
+      "changePercent": 1.1186261429201094
+    },
+    {
+      "language": "Swift",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.7364790000001449,
+      "candidateMs": 1.7558750000002874,
+      "changePercent": 1.1169729089808067
+    },
+    {
+      "language": "Swift",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 16.31364600000029,
+      "candidateMs": 16.488958499999626,
+      "changePercent": 1.0746371473264293
+    },
+    {
+      "language": "COBOL",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.705459000000019,
+      "candidateMs": 2.732584000000088,
+      "changePercent": 1.002602515878781
+    },
+    {
+      "language": "Go",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 15.14120849999972,
+      "candidateMs": 15.291667000000416,
+      "changePercent": 0.9937020548967279
+    },
+    {
+      "language": "COBOL",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 41.438270999999986,
+      "candidateMs": 41.83404200000041,
+      "changePercent": 0.9550856984366529
+    },
+    {
+      "language": "COBOL",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 69.13931299999967,
+      "candidateMs": 69.79504199999974,
+      "changePercent": 0.9484170026393901
+    },
+    {
+      "language": "Objective-C",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.0765410000003612,
+      "candidateMs": 2.0921670000000177,
+      "changePercent": 0.7525013953326054
+    },
+    {
+      "language": "Fortran",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 47.92275000000018,
+      "candidateMs": 48.24918750000006,
+      "changePercent": 0.681174390033723
+    },
+    {
+      "language": "PHP",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.6241659999999456,
+      "candidateMs": 1.6338544999998703,
+      "changePercent": 0.596521537818484
+    },
+    {
+      "language": "Swift",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.1655210000000125,
+      "candidateMs": 1.1723540000000412,
+      "changePercent": 0.5862614230055518
+    },
+    {
+      "language": "Delphi/Object Pascal",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 15.16983300000038,
+      "candidateMs": 15.240708000000268,
+      "changePercent": 0.46721015320263515
+    },
+    {
+      "language": "Go",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.3809160000000702,
+      "candidateMs": 1.3869590000003882,
+      "changePercent": 0.4376080804565641
+    },
+    {
+      "language": "Rust",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 13.73110399999996,
+      "candidateMs": 13.790583500000139,
+      "changePercent": 0.4331734724329461
+    },
+    {
+      "language": "Objective-C",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 29.884062499999345,
+      "candidateMs": 30.00114549999944,
+      "changePercent": 0.39179077476529933
+    },
+    {
+      "language": "Go",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.0387290000000462,
+      "candidateMs": 1.0421660000000657,
+      "changePercent": 0.33088514906383093
+    },
+    {
+      "language": "Assembly language",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.0504165000000967,
+      "candidateMs": 1.0534165000001394,
+      "changePercent": 0.2856009973227325
+    },
+    {
+      "language": "R",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 13.730021000000079,
+      "candidateMs": 13.764062499999909,
+      "changePercent": 0.2479347992244918
+    },
+    {
+      "language": "JavaScript",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.371541500000035,
+      "candidateMs": 2.3758960000000116,
+      "changePercent": 0.183614750152028
+    },
+    {
+      "language": "COBOL",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 4.5423339999999826,
+      "candidateMs": 4.550125000000207,
+      "changePercent": 0.17151975174491962
+    },
+    {
+      "language": "SQL",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 4.3034999999999854,
+      "candidateMs": 4.308833999999933,
+      "changePercent": 0.12394562565232192
+    },
+    {
+      "language": "Rust",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.8780204999999626,
+      "candidateMs": 0.8780420000000504,
+      "changePercent": 0.002448689989331676
+    },
+    {
+      "language": "R",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 12.855395999999928,
+      "candidateMs": 12.812083000000257,
+      "changePercent": -0.33692466571757507
+    },
+    {
+      "language": "Assembly language",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 21.249854499999856,
+      "candidateMs": 21.1577084999999,
+      "changePercent": -0.43363120439228187
+    },
+    {
+      "language": "Delphi/Object Pascal",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 13.61304199999995,
+      "candidateMs": 13.550958499999751,
+      "changePercent": -0.4560589763860201
+    },
+    {
+      "language": "Fortran",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 29.55822900000021,
+      "candidateMs": 29.407436999999845,
+      "changePercent": -0.5101523504685068
+    },
+    {
+      "language": "Visual Basic",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 23.9336045,
+      "candidateMs": 23.80383400000028,
+      "changePercent": -0.5422104305255027
+    },
+    {
+      "language": "Objective-C",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 19.651124999999865,
+      "candidateMs": 19.527353999999832,
+      "changePercent": -0.6298418029503816
+    },
+    {
+      "language": "Delphi/Object Pascal",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.8586250000000177,
+      "candidateMs": 0.852854000000093,
+      "changePercent": -0.6721211238811531
+    },
+    {
+      "language": "C",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.3889579999998887,
+      "candidateMs": 1.379103999999984,
+      "changePercent": -0.7094526976269666
+    },
+    {
+      "language": "Python",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.5505210000000034,
+      "candidateMs": 1.538749999999709,
+      "changePercent": -0.7591641777373148
+    },
+    {
+      "language": "SQL",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 40.561000499999864,
+      "candidateMs": 40.229917000000114,
+      "changePercent": -0.8162606837071262
+    },
+    {
+      "language": "C#",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 42.51491700000042,
+      "candidateMs": 42.14656249999916,
+      "changePercent": -0.8664123700423909
+    },
+    {
+      "language": "Delphi/Object Pascal",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.002228999999943,
+      "candidateMs": 0.9899169999998776,
+      "changePercent": -1.2284617587463575
+    },
+    {
+      "language": "Visual Basic",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.6000840000001517,
+      "candidateMs": 1.579104499999744,
+      "changePercent": -1.311149914654841
+    },
+    {
+      "language": "Java",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 37.89939600000025,
+      "candidateMs": 37.31647899999962,
+      "changePercent": -1.5380640894663067
+    },
+    {
+      "language": "Fortran",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.0360829999999623,
+      "candidateMs": 2.003832999999929,
+      "changePercent": -1.5839236416213764
+    },
+    {
+      "language": "SQL",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 65.79187499999989,
+      "candidateMs": 64.74972949999938,
+      "changePercent": -1.584003343878737
+    },
+    {
+      "language": "Python",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 22.714646000000357,
+      "candidateMs": 22.338333000000148,
+      "changePercent": -1.6566976214386187
+    },
+    {
+      "language": "R",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.833417000000054,
+      "candidateMs": 0.8185829999999896,
+      "changePercent": -1.779901297917308
+    },
+    {
+      "language": "Java",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 22.58222899999987,
+      "candidateMs": 22.17114600000059,
+      "changePercent": -1.8203827443220133
+    },
+    {
+      "language": "Python",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 15.902854000000389,
+      "candidateMs": 15.60891649999985,
+      "changePercent": -1.8483317522787535
+    },
+    {
+      "language": "Go",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 20.255270999999993,
+      "candidateMs": 19.86443750000035,
+      "changePercent": -1.9295397232633626
+    },
+    {
+      "language": "C#",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.810771000000159,
+      "candidateMs": 2.752625500000022,
+      "changePercent": -2.0686672802634476
+    },
+    {
+      "language": "Fortran",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 3.2884375000001,
+      "candidateMs": 3.2173750000001746,
+      "changePercent": -2.1609807089209787
+    },
+    {
+      "language": "C#",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 28.637958499999968,
+      "candidateMs": 28.00612499999943,
+      "changePercent": -2.206279822636592
+    },
+    {
+      "language": "SQL",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 2.6347915000000057,
+      "candidateMs": 2.5698754999999665,
+      "changePercent": -2.463800266550087
+    },
+    {
+      "language": "C",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.8120840000001408,
+      "candidateMs": 1.7630834999999934,
+      "changePercent": -2.7040964988457317
+    },
+    {
+      "language": "C++",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 145.41166650000014,
+      "candidateMs": 141.35574999999972,
+      "changePercent": -2.789264848979922
+    },
+    {
+      "language": "Java",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.5066670000001068,
+      "candidateMs": 1.4635624999999663,
+      "changePercent": -2.8609175086556915
+    },
+    {
+      "language": "R",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 0.872291000000132,
+      "candidateMs": 0.8471660000000156,
+      "changePercent": -2.8803461230383687
+    },
+    {
+      "language": "Java",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 2.504165999999941,
+      "candidateMs": 2.4317499999999654,
+      "changePercent": -2.8918210693690938
+    },
+    {
+      "language": "C++",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 82.10195849999945,
+      "candidateMs": 79.47206200000028,
+      "changePercent": -3.203207996553692
+    },
+    {
+      "language": "JavaScript",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 33.773041499999636,
+      "candidateMs": 32.55958349999992,
+      "changePercent": -3.5929781450087406
+    },
+    {
+      "language": "Ada",
+      "size": "example",
+      "api": "tokens",
+      "baselineMs": 1.1027500000000146,
+      "candidateMs": 1.0626455000000306,
+      "changePercent": -3.6367717070943995
+    },
+    {
+      "language": "Python",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.073353999999938,
+      "candidateMs": 1.029083999999898,
+      "changePercent": -4.1244547465274835
+    },
+    {
+      "language": "C#",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 1.9275204999999005,
+      "candidateMs": 1.8467079999999783,
+      "changePercent": -4.192562413729261
+    },
+    {
+      "language": "Visual Basic",
+      "size": "large",
+      "api": "html",
+      "baselineMs": 14.139583499999844,
+      "candidateMs": 13.498604000000114,
+      "changePercent": -4.53322758764243
+    },
+    {
+      "language": "JavaScript",
+      "size": "large",
+      "api": "tokens",
+      "baselineMs": 51.57891699999891,
+      "candidateMs": 49.16247899999871,
+      "changePercent": -4.684933574701167
+    },
+    {
+      "language": "Visual Basic",
+      "size": "example",
+      "api": "html",
+      "baselineMs": 0.9294375000000059,
+      "candidateMs": 0.8851664999999684,
+      "changePercent": -4.763203550538597
+    }
+  ],
+  "excluded": [
+    {
+      "language": "Scratch",
+      "reason": "Scratch is block-based; these engines have no Scratch source-text grammar. Project JSON is not Scratch syntax."
+    }
+  ]
+}
