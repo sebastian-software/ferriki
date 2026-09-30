@@ -13,6 +13,12 @@ use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub(crate) use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
 
+#[cfg(test)]
+std::thread_local! {
+    // Count actual regex searches, including injections and capture retokenization.
+    pub(crate) static SCANNER_CALL_COUNT: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 #[derive(Clone, Debug)]
 struct AnchorCache {
     a0_g0: String,
@@ -530,6 +536,8 @@ impl<T: Copy> CompiledRule<T> {
         start_position: usize,
         options: ScannerFindOptions,
     ) -> Option<FindNextMatchResult<T>> {
+        #[cfg(test)]
+        SCANNER_CALL_COUNT.with(|count| count.set(count.get() + 1));
         let matched = self
             .scanner
             .lock()

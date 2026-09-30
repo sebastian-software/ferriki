@@ -743,33 +743,31 @@ impl HighlighterCore {
                 continue;
             }
 
-            let scope_result = if options.include_scopes || options.preserve_scope_boundaries {
-                Some(
-                    grammar
-                        .tokenize_line(line, state.clone(), options.time_limit_millis)
+            let (scope_tokens, binary_tokens, rule_stack) =
+                if options.include_scopes || options.preserve_scope_boundaries {
+                    let result = grammar
+                        .tokenize_line_with_scopes(line, state, options.time_limit_millis)
                         .map_err(|error| {
                             Error::new(
                                 ErrorKind::Tokenization,
                                 format!("Failed to tokenize `{language}` line scopes: {error}"),
                             )
-                        })?,
-                )
-            } else {
-                None
-            };
-
-            let result = grammar
-                .tokenize_line2(line, state, options.time_limit_millis)
-                .map_err(|error| {
-                    Error::new(
-                        ErrorKind::Tokenization,
-                        format!("Failed to tokenize `{language}` line: {error}"),
-                    )
-                })?;
+                        })?;
+                    (Some(result.tokens), result.binary_tokens, result.rule_stack)
+                } else {
+                    let result = grammar
+                        .tokenize_line2(line, state, options.time_limit_millis)
+                        .map_err(|error| {
+                            Error::new(
+                                ErrorKind::Tokenization,
+                                format!("Failed to tokenize `{language}` line: {error}"),
+                            )
+                        })?;
+                    (None, result.tokens, result.rule_stack)
+                };
             let utf16_map = utf16_to_byte_map(line);
-            let mut line_tokens = Vec::with_capacity(result.tokens.len() / 2);
-            let mut boundaries: Vec<usize> = result
-                .tokens
+            let mut line_tokens = Vec::with_capacity(binary_tokens.len() / 2);
+            let mut boundaries: Vec<usize> = binary_tokens
                 .as_chunks::<2>()
                 .0
                 .iter()
@@ -778,10 +776,9 @@ impl HighlighterCore {
                 .collect();
             boundaries.push(line_length);
             if options.preserve_scope_boundaries {
-                for token in &scope_result
+                for token in scope_tokens
                     .as_ref()
                     .expect("scope boundaries were requested")
-                    .tokens
                 {
                     boundaries.push(token.start_index.min(line_length));
                     boundaries.push(token.end_index.min(line_length));
@@ -793,8 +790,7 @@ impl HighlighterCore {
             for range in boundaries.windows(2) {
                 let start_index = range[0];
                 let end_index = range[1];
-                while result
-                    .tokens
+                while binary_tokens
                     .get(token_index * 2 + 2)
                     .is_some_and(|next| *next as usize <= start_index)
                 {
@@ -805,12 +801,11 @@ impl HighlighterCore {
                     &utf16_map,
                     start_index..end_index,
                     line_offset,
-                    result.tokens[token_index * 2 + 1],
+                    binary_tokens[token_index * 2 + 1],
                     &color_map,
                     options.include_token_type,
-                    scope_result.as_ref().and_then(|scopes| {
+                    scope_tokens.as_ref().and_then(|scopes| {
                         scopes
-                            .tokens
                             .iter()
                             .find(|token| {
                                 token.start_index <= start_index && token.end_index >= end_index
@@ -821,7 +816,7 @@ impl HighlighterCore {
                     line_tokens.push(token);
                 }
             }
-            state = Some(result.rule_stack);
+            state = Some(rule_stack);
             output_lines.push(line_tokens);
         }
 

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -35,7 +35,10 @@ Each crate publishes a deliberate, curated surface.
 
 - **Private modules, root re-exports.** Modules are private; the public API is
   the list of re-exports at the crate root. `ferriki-textmate` follows
-  vscode-textmate's `main.ts` exports.
+  vscode-textmate's `main.ts` exports, plus the documented combined scope/binary
+  result extension from [ADR 0010](0010-mechanical-vscode-textmate-port.md).
+  That extension is used across published crates and has the same semver
+  guarantee as other results.
 - **No third-party types in public signatures.** Engine and codec types stay
   behind crate-owned errors (`RegexError`, `CodecError`). `serde` and
   `serde_json` are the accepted exception: they are stable 1.x crates, and
@@ -88,3 +91,4 @@ Each crate publishes a deliberate, curated surface.
 ## History
 
 - 2026-09-30: Accepted. Implemented in 0.6.0 (#135, #159).
+- 2026-10-01: Includes the documented combined scope/binary result used by the highlighter (#172).

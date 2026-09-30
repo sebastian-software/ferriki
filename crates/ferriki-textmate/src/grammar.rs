@@ -86,6 +86,50 @@ pub struct TokenizeLineResult2 {
     pub stopped_early: bool,
 }
 
+/// Scope tokens and themed binary tokens produced by a single grammar scan.
+///
+/// The two outputs retain their own UTF-16 boundaries: adjacent binary tokens
+/// may merge when metadata is equal, while scope tokens keep grammar boundaries.
+#[derive(Clone)]
+#[non_exhaustive]
+pub struct TokenizeLineResultWithScopes {
+    /// Unmerged grammar tokens with scope paths and UTF-16 start/end offsets.
+    pub tokens: Vec<Token>,
+    /// Alternating UTF-16 start offsets and encoded metadata, as in `tokenize_line2`.
+    pub binary_tokens: Vec<u32>,
+    pub fonts: Vec<FontInfo>,
+    pub rule_stack: Arc<StateStack>,
+    pub stopped_early: bool,
+}
+
+impl std::fmt::Debug for TokenizeLineResultWithScopes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TokenizeLineResultWithScopes")
+            .field("tokens", &self.tokens)
+            .field("binary_tokens", &self.binary_tokens)
+            .field("fonts", &self.fonts)
+            .field("rule_stack", &format_args!("{}", self.rule_stack))
+            .field("stopped_early", &self.stopped_early)
+            .finish()
+    }
+}
+
+impl PartialEq for TokenizeLineResultWithScopes {
+    fn eq(&self, other: &Self) -> bool {
+        self.tokens == other.tokens
+            && self.binary_tokens == other.binary_tokens
+            && self.fonts == other.fonts
+            && self.rule_stack.equals(&other.rule_stack)
+            && self.stopped_early == other.stopped_early
+    }
+}
+
+enum TokenOutput {
+    Scopes,
+    Binary,
+    Both,
+}
+
 pub struct Grammar {
     root_id: RuleId,
     root_scope_name: String,
@@ -189,7 +233,12 @@ impl Grammar {
         previous_state: Option<Arc<StateStack>>,
         time_limit_millis: u64,
     ) -> Result<TokenizeLineResult, RegexError> {
-        let mut tokenized = self.tokenize(line_text, previous_state, false, time_limit_millis)?;
+        let mut tokenized = self.tokenize(
+            line_text,
+            previous_state,
+            TokenOutput::Scopes,
+            time_limit_millis,
+        )?;
         Ok(TokenizeLineResult {
             tokens: tokenized
                 .line_tokens
@@ -206,9 +255,42 @@ impl Grammar {
         previous_state: Option<Arc<StateStack>>,
         time_limit_millis: u64,
     ) -> Result<TokenizeLineResult2, RegexError> {
-        let mut tokenized = self.tokenize(line_text, previous_state, true, time_limit_millis)?;
+        let mut tokenized = self.tokenize(
+            line_text,
+            previous_state,
+            TokenOutput::Binary,
+            time_limit_millis,
+        )?;
         Ok(TokenizeLineResult2 {
             tokens: tokenized
+                .line_tokens
+                .binary_result(&tokenized.result.stack, tokenized.line_length),
+            fonts: tokenized.line_fonts.result(),
+            rule_stack: tokenized.result.stack,
+            stopped_early: tokenized.result.stopped_early,
+        })
+    }
+
+    /// Produces the outputs of [`Self::tokenize_line`] and [`Self::tokenize_line2`]
+    /// together, including captures and injections, without repeating the scan.
+    /// The time limit and returned state belong to this single scan.
+    pub fn tokenize_line_with_scopes(
+        &self,
+        line_text: &str,
+        previous_state: Option<Arc<StateStack>>,
+        time_limit_millis: u64,
+    ) -> Result<TokenizeLineResultWithScopes, RegexError> {
+        let mut tokenized = self.tokenize(
+            line_text,
+            previous_state,
+            TokenOutput::Both,
+            time_limit_millis,
+        )?;
+        Ok(TokenizeLineResultWithScopes {
+            tokens: tokenized
+                .line_tokens
+                .result(&tokenized.result.stack, tokenized.line_length),
+            binary_tokens: tokenized
                 .line_tokens
                 .binary_result(&tokenized.result.stack, tokenized.line_length),
             fonts: tokenized.line_fonts.result(),
@@ -221,7 +303,7 @@ impl Grammar {
         &self,
         line_text: &str,
         previous_state: Option<Arc<StateStack>>,
-        emit_binary_tokens: bool,
+        output: TokenOutput,
         time_limit_millis: u64,
     ) -> Result<TokenizedLine, RegexError> {
         let (is_first_line, previous_state) = match previous_state {
@@ -236,11 +318,14 @@ impl Grammar {
         let onig_line_text = OnigString::new(&line_text);
         let line_length = onig_line_text.utf16_len();
         let mut line_tokens = LineTokens::new(
-            emit_binary_tokens,
+            !matches!(output, TokenOutput::Scopes),
             &line_text,
             self.token_type_matchers.clone(),
             self.balanced_bracket_selectors.clone(),
         );
+        if matches!(output, TokenOutput::Both) {
+            line_tokens = line_tokens.with_scopes();
+        }
         let mut line_fonts = LineFonts::new();
         let result = tokenize_string(
             self,
@@ -496,6 +581,109 @@ mod tests {
         assert_eq!(
             grammar.color_map()[metadata.foreground() as usize],
             "#AABBCC"
+        );
+    }
+
+    #[test]
+    fn combined_scan_matches_both_outputs_without_repeating_regex_searches() {
+        use crate::regexp::SCANNER_CALL_COUNT;
+
+        let root = raw_grammar(
+            r##"{
+            "scopeName": "source.test",
+            "patterns": [
+                { "begin": "^(>)", "while": "^(>)", "name": "markup.block",
+                  "beginCaptures": { "1": { "name": "punctuation.begin" } },
+                  "whileCaptures": { "1": { "name": "punctuation.while" } },
+                  "patterns": [{ "begin": "(<)", "end": "(>)", "name": "meta.embedded",
+                    "contentName": "source.embedded",
+                    "beginCaptures": { "1": { "name": "punctuation.begin" } },
+                    "endCaptures": { "1": { "name": "punctuation.end" } },
+                    "patterns": [{ "include": "#captured" }] }] },
+                { "include": "#captured" },
+                { "begin": "\"", "end": "\"", "name": "string.quoted" }
+            ],
+            "repository": { "captured": { "match": "(x)(y)", "name": "outer.test",
+                "captures": {
+                    "1": { "name": "capture.test", "patterns": [{ "match": "x", "name": "inner.test" }] },
+                    "2": { "name": "comment.test" }
+                } } }
+        }"##,
+        );
+        let mut store = GrammarStore::new();
+        store.insert(raw_grammar(
+            r#"{
+            "scopeName": "source.injection", "injectionSelector": "L:source.test",
+            "patterns": [{ "match": "!", "name": "injected.test" }]
+        }"#,
+        ));
+        store.set_injections("source.test", vec!["source.injection".into()]);
+        let raw_theme: RawTheme = serde_json::from_str(r##"{
+            "settings": [
+                { "settings": { "foreground": "#010203" } },
+                { "scope": "inner, injected", "settings": { "foreground": "#aabbcc", "fontStyle": "bold", "fontFamily": "Test Mono", "fontSize": 1.2, "lineHeight": 1.5 } },
+                { "scope": "comment", "settings": { "foreground": "#112233", "fontStyle": "italic" } }
+            ]
+        }"##).unwrap();
+        let grammar = Grammar::new(
+            &root,
+            &store,
+            Theme::create_from_raw_theme(Some(&raw_theme), None).unwrap(),
+            GrammarConfiguration::default()
+                .with_initial_language_id(7)
+                .with_embedded_languages([("source.embedded".into(), 9)].into())
+                .with_token_types(vec![("inner.test".into(), StandardTokenType::String)])
+                .with_balanced_bracket_selectors(Some(vec!["source.embedded".into()]))
+                .with_unbalanced_bracket_selectors(vec!["comment".into()]),
+        );
+        let mut scope_state = None;
+        let mut binary_state = None;
+        let mut combined_state = None;
+        let mut font_runs = 0;
+        for line in [
+            "> <xy!😀א",
+            "> xy!>",
+            "xy\"open",
+            "",
+            "close\" xy",
+            "💻xy",
+            "!",
+        ] {
+            SCANNER_CALL_COUNT.with(|count| count.set(0));
+            let scopes = grammar.tokenize_line(line, scope_state, 0).unwrap();
+            let scope_calls = SCANNER_CALL_COUNT.with(std::cell::Cell::get);
+            SCANNER_CALL_COUNT.with(|count| count.set(0));
+            let binary = grammar.tokenize_line2(line, binary_state, 0).unwrap();
+            let binary_calls = SCANNER_CALL_COUNT.with(std::cell::Cell::get);
+            SCANNER_CALL_COUNT.with(|count| count.set(0));
+            let combined = grammar
+                .tokenize_line_with_scopes(line, combined_state, 0)
+                .unwrap();
+            let combined_calls = SCANNER_CALL_COUNT.with(std::cell::Cell::get);
+            assert!(scope_calls > 0);
+            assert_eq!(
+                combined_calls, binary_calls,
+                "{line:?}: duplicate binary scanner work"
+            );
+            assert_eq!(
+                combined_calls, scope_calls,
+                "{line:?}: duplicate scope scanner work"
+            );
+            assert_eq!(combined.tokens, scopes.tokens, "{line:?}");
+            assert_eq!(combined.binary_tokens, binary.tokens, "{line:?}");
+            assert_eq!(combined.fonts, scopes.fonts);
+            assert_eq!(combined.fonts, binary.fonts);
+            font_runs += combined.fonts.len();
+            assert!(combined.rule_stack.equals(&scopes.rule_stack));
+            assert!(combined.rule_stack.equals(&binary.rule_stack));
+            assert!(!combined.stopped_early);
+            scope_state = Some(scopes.rule_stack);
+            binary_state = Some(binary.rule_stack);
+            combined_state = Some(combined.rule_stack);
+        }
+        assert!(
+            font_runs > 0,
+            "font attributes must participate in the shared scan"
         );
     }
 }

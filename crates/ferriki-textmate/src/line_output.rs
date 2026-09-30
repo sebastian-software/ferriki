@@ -110,6 +110,7 @@ pub struct Token {
 
 pub(crate) struct LineTokens {
     emit_binary_tokens: bool,
+    emit_scope_tokens: bool,
     tokens: Vec<Token>,
     binary_tokens: Vec<u32>,
     last_token_end_index: isize,
@@ -128,6 +129,7 @@ impl LineTokens {
     ) -> Self {
         Self {
             emit_binary_tokens,
+            emit_scope_tokens: !emit_binary_tokens,
             tokens: Vec::new(),
             binary_tokens: Vec::new(),
             last_token_end_index: 0,
@@ -135,6 +137,12 @@ impl LineTokens {
             balanced_bracket_selectors,
             merge_consecutive_tokens_with_equal_metadata: !contains_rtl(line_text),
         }
+    }
+
+    /// Collect the upstream scope boundaries alongside binary metadata.
+    pub(crate) fn with_scopes(mut self) -> Self {
+        self.emit_scope_tokens = true;
+        self
     }
 
     pub(crate) fn produce(&mut self, stack: &StateStack, end_index: usize) {
@@ -150,24 +158,21 @@ impl LineTokens {
             return;
         }
 
-        if self.emit_binary_tokens {
-            self.produce_binary(scopes_list, end_index);
-        } else {
+        if self.emit_scope_tokens {
             let scopes = scopes_list.map_or_else(Vec::new, |scopes| scopes.scope_names());
             self.tokens.push(Token {
                 start_index: self.last_token_end_index.max(0) as usize,
                 end_index,
                 scopes,
             });
-            self.last_token_end_index = end_index as isize;
         }
+        if self.emit_binary_tokens {
+            self.produce_binary(scopes_list);
+        }
+        self.last_token_end_index = end_index as isize;
     }
 
-    fn produce_binary(
-        &mut self,
-        scopes_list: Option<&Arc<AttributedScopeStack>>,
-        end_index: usize,
-    ) {
+    fn produce_binary(&mut self, scopes_list: Option<&Arc<AttributedScopeStack>>) {
         let mut metadata = scopes_list.map_or_else(EncodedTokenAttributes::default, |scopes| {
             scopes.token_attributes
         });
@@ -217,14 +222,12 @@ impl LineTokens {
         if self.merge_consecutive_tokens_with_equal_metadata
             && self.binary_tokens.last() == Some(&metadata.bits())
         {
-            self.last_token_end_index = end_index as isize;
             return;
         }
 
         self.binary_tokens
             .push(self.last_token_end_index.max(0) as u32);
         self.binary_tokens.push(metadata.bits());
-        self.last_token_end_index = end_index as isize;
     }
 
     #[must_use]
@@ -237,12 +240,16 @@ impl LineTokens {
             self.tokens.pop();
         }
         if self.tokens.is_empty() {
-            self.last_token_end_index = -1;
-            self.produce(stack, line_length);
-            self.tokens
-                .last_mut()
-                .expect("fallback token must be produced")
-                .start_index = 0;
+            // Finalize each output independently: an empty scope result must
+            // not append to binary tokens that may already be finalized.
+            self.tokens.push(Token {
+                start_index: 0,
+                end_index: line_length,
+                scopes: stack
+                    .content_name_scopes_list
+                    .as_ref()
+                    .map_or_else(Vec::new, |scopes| scopes.scope_names()),
+            });
         }
         std::mem::take(&mut self.tokens)
     }
@@ -257,7 +264,7 @@ impl LineTokens {
         }
         if self.binary_tokens.is_empty() {
             self.last_token_end_index = -1;
-            self.produce(stack, line_length);
+            self.produce_binary(stack.content_name_scopes_list.as_ref());
             let start_index = self.binary_tokens.len() - 2;
             self.binary_tokens[start_index] = 0;
         }
@@ -524,6 +531,60 @@ mod tests {
         rtl.produce_from_scopes(Some(&scopes), 1);
         rtl.produce_from_scopes(Some(&scopes), 2);
         assert_eq!(rtl.binary_result(&stack, 3), [0, 1, 1, 1]);
+    }
+
+    #[test]
+    fn combined_outputs_keep_scope_boundaries_and_finalize_independently() {
+        let first = scopes(
+            "source.test first",
+            EncodedTokenAttributes::new(1),
+            FontAttribute::default(),
+        );
+        let second = scopes(
+            "source.test second",
+            EncodedTokenAttributes::new(1),
+            FontAttribute::default(),
+        );
+        let stack = state(Arc::clone(&second));
+        for line in ["ab\n", "אb\n", "\n"] {
+            for binary_first in [false, true] {
+                let mut tokens = LineTokens::new(true, line, Vec::new(), None).with_scopes();
+                let length = line.encode_utf16().count();
+                if length > 1 {
+                    tokens.produce_from_scopes(Some(&first), 1);
+                    tokens.produce_from_scopes(Some(&second), 2);
+                }
+                tokens.produce_from_scopes(Some(&second), length);
+                let (scoped, binary) = if binary_first {
+                    let binary = tokens.binary_result(&stack, length);
+                    (tokens.result(&stack, length), binary)
+                } else {
+                    let scoped = tokens.result(&stack, length);
+                    (scoped, tokens.binary_result(&stack, length))
+                };
+                if length == 1 {
+                    assert_eq!(scoped.len(), 1);
+                    assert_eq!((scoped[0].start_index, scoped[0].end_index), (0, 1));
+                    assert_eq!(scoped[0].scopes, ["source.test", "second"]);
+                    assert_eq!(binary, [0, 1]);
+                } else {
+                    assert_eq!(scoped.len(), 2);
+                    assert_eq!(scoped[0].scopes, ["source.test", "first"]);
+                    assert_eq!(scoped[1].scopes, ["source.test", "second"]);
+                    assert_eq!((scoped[1].start_index, scoped[1].end_index), (1, 2));
+                    assert_eq!(
+                        binary,
+                        if line == "ab\n" {
+                            vec![0, 1]
+                        } else {
+                            vec![0, 1, 1, 1]
+                        }
+                    );
+                }
+                assert!(tokens.tokens.is_empty());
+                assert!(tokens.binary_tokens.is_empty());
+            }
+        }
     }
 
     #[test]
