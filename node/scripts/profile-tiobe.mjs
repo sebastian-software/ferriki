@@ -1,0 +1,162 @@
+// Run one validated, warmed workload continuously for an external CPU profiler.
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import process from "node:process";
+import { parseArgs } from "node:util";
+import { loadFerrikiNativeBinding } from "../ferriki/native.mjs";
+import {
+  createEngine,
+  engines,
+  loadCases,
+  manifest,
+  plain,
+  repoRoot,
+  sha256,
+  statistics,
+  theme,
+  validateOutput,
+} from "./tiobe-benchmark.mjs";
+
+const { values } = parseArgs({
+  options: {
+    language: { type: "string", default: "cpp" },
+    size: { type: "string", default: "large" },
+    engine: { type: "string", default: "ferriki" },
+    api: { type: "string", default: "tokens" },
+    boundary: { type: "string", default: "facade" },
+    scopes: { type: "boolean", default: false },
+    seconds: { type: "string", default: "15" },
+    help: { type: "boolean" },
+  },
+});
+if (values.help) {
+  console.log(
+    "Usage: node scripts/profile-tiobe.mjs [--language cpp] [--size large|example] [--engine ferriki|shiki-wasm|shiki-js|prism] [--api tokens|html] [--boundary facade|native] [--scopes] [--seconds 15]",
+  );
+  process.exit(0);
+}
+const language = manifest.languages.find((entry) => entry.textmate === values.language);
+assert.ok(language?.file, "Choose a supported TextMate language ID");
+assert.ok(["example", "large"].includes(values.size), "Invalid --size");
+assert.ok(engines.includes(values.engine), "Invalid --engine");
+assert.ok(["html", "tokens"].includes(values.api), "Invalid --api");
+assert.ok(["facade", "native"].includes(values.boundary), "Invalid --boundary");
+assert.ok(
+  values.boundary === "facade" || values.engine === "ferriki",
+  "The native boundary requires Ferriki",
+);
+assert.ok(
+  !values.scopes || (values.boundary === "native" && values.api === "tokens"),
+  "--scopes requires native tokens",
+);
+const seconds = Number(values.seconds);
+assert.ok(Number.isFinite(seconds) && seconds > 0 && seconds <= 300, "Invalid --seconds");
+const { code, ...workload } = loadCases(language, [values.size])[0];
+const oracle = await createEngine("shiki-wasm", language);
+const reference = { tokens: plain(oracle.tokens(code)), html: oracle.html(code) };
+oracle.dispose();
+
+let run;
+let dispose;
+let validation;
+if (values.boundary === "facade") {
+  const highlighter = await createEngine(values.engine, language);
+  validation = validateOutput(
+    values.engine,
+    code,
+    highlighter.tokens(code),
+    highlighter.html(code),
+    reference,
+  );
+  if (validation.referenceParity)
+    assert.deepEqual(validation.referenceParity, { tokens: true, html: true });
+  run = () => highlighter[values.api](code);
+  dispose = () => highlighter.dispose();
+} else {
+  const highlighter = loadFerrikiNativeBinding().createHighlighter(
+    JSON.stringify({ standardAssetRoot: join(repoRoot, "node/ferriki/assets/shiki") }),
+  );
+  highlighter.loadStandardGrammar(language.textmate);
+  highlighter.loadStandardTheme(theme);
+  const options = JSON.stringify({
+    lang: language.textmate,
+    theme,
+    ...(values.scopes ? { includeExplanation: "scopeName" } : {}),
+  });
+  const raw = highlighter.codeToTokens(code, options);
+  const tokens = JSON.parse(raw).tokens.map((line) =>
+    line.map(({ scopeNames: _scopes, ...token }) => token),
+  );
+  validation = validateOutput(
+    "ferriki",
+    code,
+    tokens,
+    highlighter.codeToHtml(code, options),
+    reference,
+  );
+  assert.deepEqual(validation.referenceParity, { tokens: true, html: true });
+  run = () =>
+    values.api === "tokens"
+      ? highlighter.codeToTokens(code, options)
+      : highlighter.codeToHtml(code, options);
+  dispose = () => highlighter.dispose();
+}
+const receipt =
+  values.engine === "ferriki"
+    ? JSON.parse(readFileSync(join(repoRoot, "node/ferriki/.benchmark-build.json"), "utf8"))
+    : null;
+if (receipt) {
+  // Check the loaded sidecar as well as the development copies.
+  const { createRequire } = await import("node:module");
+  const { resolveFerrikiPlatformTarget } = await import("../ferriki/platforms.mjs");
+  const require = createRequire(new URL("../ferriki/native.mjs", import.meta.url));
+  const target = resolveFerrikiPlatformTarget();
+  const candidates = [
+    `${target.packageName}/ferriki.node`,
+    join(repoRoot, "node/ferriki/dist", target.binaryName),
+    join(repoRoot, "node/ferriki/dist/ferriki.node"),
+    join(repoRoot, "node/ferriki/ferriki.node"),
+  ];
+  let loaded;
+  for (const candidate of candidates) {
+    try {
+      const path = require.resolve(candidate);
+      require(path);
+      loaded = path;
+      break;
+    } catch {
+      // Follow the facade's native candidate order.
+    }
+  }
+  assert.ok(loaded, "No native addon loaded");
+  assert.equal(sha256(readFileSync(loaded)), receipt.binarySha256, "Stale build receipt");
+}
+let consumed = 0;
+try {
+  for (let i = 0; i < 5; i++) consumed += run().length;
+  process.stderr.write(`[profile-tiobe] Warm workload ready; pid=${process.pid}\n`);
+  const started = performance.now();
+  const samplesMs = [];
+  while (performance.now() - started < seconds * 1000) {
+    const start = performance.now();
+    const result = run();
+    samplesMs.push(performance.now() - start);
+    consumed += result.length;
+  }
+  console.log(
+    JSON.stringify({
+      options: values,
+      workload,
+      validation,
+      nativeBuild: receipt,
+      measurementStartedAtMs: started,
+      measurementEndedAtMs: performance.now(),
+      iterations: samplesMs.length,
+      consumed,
+      timing: statistics(samplesMs, workload.bytes),
+    }),
+  );
+} finally {
+  dispose();
+}

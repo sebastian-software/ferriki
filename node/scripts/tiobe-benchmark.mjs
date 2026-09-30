@@ -54,8 +54,8 @@ export function statistics(samplesMs, bytes) {
     samplesMs,
     medianMs,
     p95Ms: quantile(samplesMs, 0.95),
-    minMs: Math.min(...samplesMs),
-    maxMs: Math.max(...samplesMs),
+    minMs: samplesMs.reduce((a, b) => Math.min(a, b), Infinity),
+    maxMs: samplesMs.reduce((a, b) => Math.max(a, b), -Infinity),
     mibPerSecond: bytes / 2 ** 20 / (medianMs / 1000),
   };
 }
@@ -166,6 +166,7 @@ export function compareReports(baseline, candidate) {
     "rustflags",
     "encodedRustflags",
     "targetRustflags",
+    "cargoProfileEnv",
   ]) {
     assert.deepEqual(
       candidate.nativeBuild[key],

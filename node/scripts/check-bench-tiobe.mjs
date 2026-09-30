@@ -67,6 +67,44 @@ try {
   const changedSource = structuredClone(report);
   changedSource.languages[0].cases[0].sha256 = "changed";
   assert.throws(() => compareReports(report, changedSource), /Source changed/);
+  const changedProfile = structuredClone(report);
+  changedProfile.nativeBuild.cargoProfileEnv = { CARGO_PROFILE_RELEASE_DEBUG: "1" };
+  assert.throws(() => compareReports(report, changedProfile), /cargoProfileEnv/);
+
+  const profiler = fileURLToPath(new URL("./profile-tiobe.mjs", import.meta.url));
+  for (const args of [
+    [],
+    ["--api", "html"],
+    ["--boundary", "native"],
+    ["--boundary", "native", "--scopes"],
+    ["--engine", "shiki-wasm"],
+  ]) {
+    const profile = spawnSync(process.execPath, [profiler, ...args, "--seconds", "0.001"], {
+      cwd: join(repoRoot, "node"),
+      encoding: "utf8",
+      timeout: 120000,
+    });
+    assert.equal(profile.status, 0, profile.stderr);
+    const diagnostic = JSON.parse(profile.stdout);
+    assert.deepEqual(diagnostic.validation.referenceParity, { tokens: true, html: true });
+    assert.ok(diagnostic.iterations > 0);
+    assert.equal(diagnostic.timing.samplesMs.length, diagnostic.iterations);
+    assert.match(profile.stderr, /Warm workload ready/);
+  }
+  for (const args of [
+    ["--seconds", "0"],
+    ["--language", "missing"],
+    ["--boundary", "native", "--engine", "shiki-wasm"],
+    ["--scopes"],
+  ]) {
+    const profile = spawnSync(process.execPath, [profiler, ...args], {
+      cwd: join(repoRoot, "node"),
+      encoding: "utf8",
+      timeout: 10000,
+    });
+    assert.notEqual(profile.status, 0);
+    assert.doesNotMatch(profile.stderr, /Warm workload ready/);
+  }
 
   const timedOut = run(["--language", "rust", "--timeout-ms", "1"]);
   const largeOutput = run([

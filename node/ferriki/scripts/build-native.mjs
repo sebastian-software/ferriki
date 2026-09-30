@@ -222,6 +222,9 @@ const receipt = {
   targetRustflags: Object.fromEntries(
     Object.entries(cargoEnv).filter(([key]) => /^CARGO_TARGET_.*_RUSTFLAGS$/.test(key)),
   ),
+  cargoProfileEnv: Object.fromEntries(
+    Object.entries(cargoEnv).filter(([key]) => key.startsWith("CARGO_PROFILE_")),
+  ),
   cargoLockSha256: createHash("sha256")
     .update(await readFile(join(repoRoot, "Cargo.lock")))
     .digest("hex"),
