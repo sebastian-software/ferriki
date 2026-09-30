@@ -192,7 +192,9 @@ async function sourceFingerprint(directory) {
   return hash.digest("hex");
 }
 const metadata = JSON.parse(
-  command("cargo", ["metadata", "--offline", "--format-version", "1", ...cargoConfig]),
+  // Metadata resolves workspace/dev and foreign-target dependencies too. A
+  // successful target build does not guarantee those crates are cached.
+  command("cargo", ["metadata", "--locked", "--format-version", "1", ...cargoConfig]),
 );
 const ferroni = metadata.packages.find((pkg) => pkg.name === "ferroni");
 if (!ferroni) throw new Error("Ferroni was not resolved in the native build");
