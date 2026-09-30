@@ -28,6 +28,7 @@ dist
 
 # Native addon artifacts (rebuilt by build:native)
 node/ferriki/*.node
+node/ferriki/.benchmark-build.json
 node/ferriki/assets/
 node/platforms/*/ferriki.node
 

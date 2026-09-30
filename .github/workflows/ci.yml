@@ -354,6 +354,9 @@ jobs:
       - name: Run honest supported core compatibility gate
         run: pnpm run test:ferriki-compat:core
 
+      - name: Verify TIOBE benchmark outputs and comparison contracts
+        run: pnpm run check:bench-tiobe
+
   native-smoke:
     runs-on: ${{ matrix.os }}
     defaults:

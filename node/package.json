@@ -33,7 +33,9 @@
     "check:platform-matrix": "node ./scripts/check-ferriki-platform-matrix.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
-    "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks"
+    "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks",
+    "bench:tiobe": "node scripts/bench-tiobe.mjs",
+    "check:bench-tiobe": "node scripts/check-bench-tiobe.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",
@@ -56,9 +58,12 @@
     "eslint": "catalog:cli",
     "fast-glob": "catalog:testing",
     "fs-extra": "catalog:testing",
+    "hast-util-from-html": "catalog:inlined",
     "hast-util-to-html": "catalog:inlined",
+    "hast-util-to-string": "catalog:inlined",
     "oxfmt": "catalog:cli",
     "pathe": "catalog:bundling",
+    "prismjs": "catalog:",
     "rimraf": "catalog:cli",
     "rollup": "catalog:bundling",
     "rollup-plugin-dts": "catalog:bundling",

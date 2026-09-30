@@ -58,6 +58,13 @@ its decision record is
 options, errors, lifecycle, or compatibility classifications update that
 contract and the corresponding tests together.
 
+## Highlighting performance
+
+The [TIOBE benchmark](node/benchmarks/tiobe/README.md) compares Ferriki/Ferroni,
+Shiki WASM, Shiki JavaScript and Prism on a pinned top-20 language corpus. It
+retains individual timings and supports local Ferroni checkouts for controlled
+experiments. Run its correctness gate before collecting measurements.
+
 ## Coverage
 
 CI measures line coverage over the whole workspace and fails the `coverage`

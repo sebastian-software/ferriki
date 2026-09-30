@@ -87,3 +87,5 @@ onlyBuiltDependencies:
   - simple-git-hooks
   - unrs-resolver
   - workerd
+catalog:
+  prismjs: 1.30.0

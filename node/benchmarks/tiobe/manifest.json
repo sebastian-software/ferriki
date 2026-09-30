@@ -1,0 +1,168 @@
+{
+  "month": "2026-09",
+  "source": "https://www.tiobe.com/tiobe-index/",
+  "retrieved": "2026-09-30",
+  "languages": [
+    {
+      "rank": 1,
+      "name": "Python",
+      "textmate": "python",
+      "prism": "python",
+      "file": "orders.py",
+      "dialect": "Python 3"
+    },
+    {
+      "rank": 2,
+      "name": "C",
+      "textmate": "c",
+      "prism": "c",
+      "file": "orders.c",
+      "dialect": "C11"
+    },
+    {
+      "rank": 3,
+      "name": "C++",
+      "textmate": "cpp",
+      "prism": "cpp",
+      "file": "orders.cpp",
+      "dialect": "C++20"
+    },
+    {
+      "rank": 4,
+      "name": "Java",
+      "textmate": "java",
+      "prism": "java",
+      "file": "Orders.java",
+      "dialect": "Java 17"
+    },
+    {
+      "rank": 5,
+      "name": "C#",
+      "textmate": "csharp",
+      "prism": "csharp",
+      "file": "Orders.cs",
+      "dialect": "C# 12"
+    },
+    {
+      "rank": 6,
+      "name": "JavaScript",
+      "textmate": "javascript",
+      "prism": "javascript",
+      "file": "orders.js",
+      "dialect": "ECMAScript modules"
+    },
+    {
+      "rank": 7,
+      "name": "Visual Basic",
+      "textmate": "vb",
+      "prism": "visual-basic",
+      "file": "Orders.vb",
+      "dialect": "Visual Basic .NET"
+    },
+    {
+      "rank": 8,
+      "name": "SQL",
+      "textmate": "sql",
+      "prism": "sql",
+      "file": "orders.sql",
+      "dialect": "PostgreSQL"
+    },
+    {
+      "rank": 9,
+      "name": "R",
+      "textmate": "r",
+      "prism": "r",
+      "file": "orders.R",
+      "dialect": "Base R"
+    },
+    {
+      "rank": 10,
+      "name": "Rust",
+      "textmate": "rust",
+      "prism": "rust",
+      "file": "orders.rs",
+      "dialect": "Rust 2021"
+    },
+    {
+      "rank": 11,
+      "name": "Fortran",
+      "textmate": "fortran-free-form",
+      "prism": "fortran",
+      "file": "orders.f90",
+      "dialect": "Free-form Fortran 2008"
+    },
+    {
+      "rank": 12,
+      "name": "Go",
+      "textmate": "go",
+      "prism": "go",
+      "file": "orders.go",
+      "dialect": "Go"
+    },
+    {
+      "rank": 13,
+      "name": "Delphi/Object Pascal",
+      "textmate": "pascal",
+      "prism": "pascal",
+      "file": "Orders.pas",
+      "dialect": "Delphi mode (Free Pascal)"
+    },
+    {
+      "rank": 14,
+      "name": "PHP",
+      "textmate": "php",
+      "prism": "php",
+      "file": "orders.php",
+      "dialect": "PHP 8.2"
+    },
+    {
+      "rank": 15,
+      "name": "Scratch",
+      "textmate": null,
+      "prism": null,
+      "file": null,
+      "dialect": "Block-based Scratch",
+      "unsupported": "Scratch is block-based; these engines have no Scratch source-text grammar. Project JSON is not Scratch syntax."
+    },
+    {
+      "rank": 16,
+      "name": "Assembly language",
+      "textmate": "asm",
+      "prism": "nasm",
+      "file": "orders.asm",
+      "dialect": "NASM x86-64 Linux"
+    },
+    {
+      "rank": 17,
+      "name": "Ada",
+      "textmate": "ada",
+      "prism": "ada",
+      "file": "orders.adb",
+      "dialect": "Ada 2012"
+    },
+    {
+      "rank": 18,
+      "name": "Swift",
+      "textmate": "swift",
+      "prism": "swift",
+      "file": "Orders.swift",
+      "dialect": "Swift 5"
+    },
+    {
+      "rank": 19,
+      "name": "Objective-C",
+      "textmate": "objective-c",
+      "prism": "objectivec",
+      "file": "Orders.m",
+      "dialect": "Objective-C with Foundation"
+    },
+    {
+      "rank": 20,
+      "name": "COBOL",
+      "textmate": "cobol",
+      "prism": "cobol",
+      "file": "orders.cob",
+      "dialect": "Free-format COBOL"
+    }
+  ]
+}
