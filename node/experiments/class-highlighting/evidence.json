@@ -1,0 +1,2075 @@
+{
+  "capturedOn": "2026-09-30",
+  "baseCommit": "6aa0f6931c22df27a8ef7504eff954e2e1819a33",
+  "sources": {
+    "node/experiments/class-highlighting/browser.html": "a9827fee2ae6e487185b91c7fa7cbf65464cb599db6a58efeaaf4a881d2b1365",
+    "node/experiments/class-highlighting/browser.mjs": "a47f96706d939bc10f2884a2ffcc717ee8cc4fea0ccbc07f0ec8c6ab6aaa9f78",
+    "node/experiments/class-highlighting/corpus.mjs": "1393ba8efcedb92ea72c19eec7d04d2e4d6aa70dfd683b5dc9159c4080fab165",
+    "node/experiments/class-highlighting/custom-theme.css": "ab2085ac561e96f037a4d663678fea4c6328506f59336439ae23fcb3b50a29f6",
+    "node/experiments/class-highlighting/export-evidence.mjs": "d278f5ed48d58f0b60e11dd8421ab5ff57b5b841757b303924575694b6748735",
+    "node/experiments/class-highlighting/models.mjs": "5499801e9129df9583c90edcbfa5ba020f7bdf29d26b651b939febc671e854d3",
+    "node/experiments/class-highlighting/models.test.mjs": "75dfd4724855907c53e435e1fd47c2f4c458268b4f3cdce32e689866c4f3941a",
+    "node/experiments/class-highlighting/run.mjs": "39f550f2ac84687b2956eb7bdb9816f1afd03cd3a94bd80e5e7b54d2c01cb7a8",
+    "node/experiments/class-highlighting/serve.mjs": "909622fc85177aa2217143e3e6e5d1bf530f26fad7e087b95c906688fa3f398f",
+    "examples/class_highlighting_probe.rs": "808354764994042e52075cffca4e91765fa2c41c47505e70f2526f6173ed6b3e"
+  },
+  "corpus": [
+    {
+      "id": "ts-basics",
+      "lang": "typescript",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 162,
+      "sha256": "92f7b66e9e858c0817c8902d0a66c6184f6fbc5803d3366527df372377103eaf"
+    },
+    {
+      "id": "json-root",
+      "lang": "json",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 7,
+      "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+    },
+    {
+      "id": "json-object",
+      "lang": "json",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 80,
+      "sha256": "1b14f40893085cbf03eb868a8b3aab076f6917384ed75767cf18611c560c2570"
+    },
+    {
+      "id": "html-embedded",
+      "lang": "html",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 144,
+      "sha256": "1dae3e272e19a48e4919171795432909f6dab96ac4dfbc4d6d730f4b07345104"
+    },
+    {
+      "id": "css-selectors",
+      "lang": "css",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 86,
+      "sha256": "55c9971ec4ef250542616015801ff23f247a5e84d4ea7877e5bfd8f6af36c2f2"
+    },
+    {
+      "id": "python-context",
+      "lang": "python",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 129,
+      "sha256": "6ccc3c13b5368e06a68b81bd755d15842f12cd12bdae520592d7f166a417c3df"
+    },
+    {
+      "id": "js-regexp",
+      "lang": "javascript",
+      "source": "authored probe",
+      "split": "development",
+      "utf16Length": 84,
+      "sha256": "1b50967bf15410cc98d788bfe74fbb91b58b731ea8eeba41d964ba625d1da795"
+    },
+    {
+      "id": "md-embedded",
+      "lang": "markdown",
+      "source": "authored probe",
+      "split": "holdout",
+      "utf16Length": 86,
+      "sha256": "5c83e2dc8158203d73f969515bf023e765704208f1f8f13b4e1b817a01e6043e"
+    },
+    {
+      "id": "scope-context",
+      "lang": "class-probe",
+      "source": "authored probe",
+      "split": "holdout",
+      "utf16Length": 11,
+      "sha256": "0cbc74fb811ebc1abfa2cee3e04ac421cc3f38e8ab2d602c3c3ffd5e1b6ec80d"
+    },
+    {
+      "id": "file-rust",
+      "lang": "rust",
+      "source": "src/highlighter.rs (first 24 lines)",
+      "split": "development",
+      "utf16Length": 1009,
+      "sha256": "2618503c46af84189f9d9a24e0387493773e2506a9d4fc0044125ecdaec4426b"
+    },
+    {
+      "id": "file-typescript",
+      "lang": "typescript",
+      "source": "node/ferriki/src/api.mts (first 24 lines)",
+      "split": "development",
+      "utf16Length": 756,
+      "sha256": "9f8ae9d5c40478f1aadbc8d9031dff62efa6f63f199e53cd0c4e16b295664705"
+    },
+    {
+      "id": "file-javascript",
+      "lang": "javascript",
+      "source": "node/ferriki/src/index.mjs (first 24 lines)",
+      "split": "development",
+      "utf16Length": 794,
+      "sha256": "e6ed5ccfb14611886c2f1bbdfd48516c07d8531a04df6ca02cbf42cf9f090873"
+    },
+    {
+      "id": "file-markdown",
+      "lang": "markdown",
+      "source": "docs/ferriki-api.md (first 24 lines)",
+      "split": "development",
+      "utf16Length": 1417,
+      "sha256": "0799420a043f8b1f9e2f3d7bdfa92a5153ac6975062dcbd8290fbdf3ef467d56"
+    },
+    {
+      "id": "file-yaml",
+      "lang": "yaml",
+      "source": ".github/workflows/ci.yml (first 24 lines)",
+      "split": "development",
+      "utf16Length": 325,
+      "sha256": "5157d9e57cdd355424d11226109d4c291dbacd8b92dd2f82f1d383bf47eb8bb9"
+    },
+    {
+      "id": "file-css",
+      "lang": "css",
+      "source": "node/compat/upstream/shiki/packages/twoslash/style-rich.css (first 24 lines)",
+      "split": "development",
+      "utf16Length": 870,
+      "sha256": "1b819fbe19da233f03e3a8f17ab2b90170bdb89538b529dfeadb3bc14f838008"
+    },
+    {
+      "id": "file-json",
+      "lang": "json",
+      "source": "node/package.json (first 24 lines)",
+      "split": "development",
+      "utf16Length": 2128,
+      "sha256": "77815f094568e36f6616e9627c66f946937f60d82d2afe17874a8f23455fc9d4"
+    },
+    {
+      "id": "file-toml",
+      "lang": "toml",
+      "source": "Cargo.toml (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 1014,
+      "sha256": "3854ca5eb965aef57ba852d79c670c458de69fab89556fb842c0317ad90c2703"
+    },
+    {
+      "id": "file-python",
+      "lang": "python",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 530,
+      "sha256": "f0f4e2d73205d8b4764f91c2632210968e4c9e24f2b033bb2d9d804344a73ef8"
+    },
+    {
+      "id": "file-html",
+      "lang": "html",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 622,
+      "sha256": "08197cb8c63e7393587f31cdb8ea59daa9a9350d4eb75e0dbef38a0d57bd44c1"
+    },
+    {
+      "id": "file-go",
+      "lang": "go",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 572,
+      "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+    },
+    {
+      "id": "file-php",
+      "lang": "php",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 337,
+      "sha256": "57db5b231b9d7b4f3020b9c268ad88e413165ffc0cd8decc793d5f765cc686be"
+    },
+    {
+      "id": "file-shellscript",
+      "lang": "shellscript",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 569,
+      "sha256": "153cf194b9f33f62a7eafc5e3847ad82ea070cf26f861d995840a4771965b387"
+    },
+    {
+      "id": "file-sql",
+      "lang": "sql",
+      "source": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql (first 24 lines)",
+      "split": "holdout",
+      "utf16Length": 123,
+      "sha256": "65c2946d148989654c3273d28a84280d4fef7de781f9a139d318f36b6e5da6f6"
+    }
+  ],
+  "analysis": {
+    "corpus": {
+      "cases": 23,
+      "languages": 15,
+      "themes": 66,
+      "paths": 723,
+      "tokens": 2654,
+      "comparedCharacters": 761442,
+      "developmentCases": 14,
+      "holdoutCases": 9
+    },
+    "rawScopeParity": "passed",
+    "nativeStyleDifferenceCount": 0,
+    "nativeStyleDifferences": [],
+    "models": [
+      {
+        "model": "flat",
+        "htmlBytes": 1379654,
+        "gzipHtmlBytes": 46634,
+        "spans": 2654,
+        "scopeGroups": 702,
+        "lostPathGroups": [
+          ["path-d261c5b0b0c889d2", "path-7bccc0ac1626acd6"],
+          ["path-7bc616fbe0e446fc", "path-c20ebd34b07a425b"],
+          ["path-0135af2ec30cdac4", "path-a773a4b96e80b4f3"],
+          ["path-5551cbbf41aca44d", "path-140a38e6a2d978f1"],
+          ["path-85f3c604820c15df", "path-c6cdac3135163610"],
+          ["path-b7980916616faddc", "path-72a47b4cb763dd83"],
+          ["path-a3af4bdbc1377493", "path-5d4a6f9cdabaeb9c"],
+          ["path-a270e53e273ca878", "path-b66211b2fc43226c"],
+          ["path-9df7930789b3f0cb", "path-6fba5bd67b63f62c"],
+          ["path-a982e46ab97e6ce4", "path-06b9b8aa7ca52731"],
+          ["path-f397708f5299695c", "path-024ae81f1e783e71"],
+          ["path-e12e38d63e0b633f", "path-aa1810d55fa5b6c6"],
+          ["path-f1eeb3f9077b39c7", "path-bd8e7d30b7ef8be0"],
+          ["path-1583d8d97795a257", "path-49e156a0d68d9269"],
+          ["path-a153a1e3a67474f7", "path-d28692d198255f94"],
+          ["path-4a01baf2ea604ae7", "path-7975d2ad5e5092fc"],
+          ["path-0cb73766db1d5db1", "path-f73b828d2c3fe189"],
+          ["path-cfa37cb0bb255b24", "path-adea04e41ce49526"],
+          ["path-50b8adf498fdac00", "path-018614c0d743c822"],
+          ["path-6cf8e7c1a3a3740e", "path-9c7955d3b56c2820"],
+          ["path-34a62e0acf6bf8f5", "path-068e62ac9da86d3e"]
+        ],
+        "themeConflicts": [
+          {
+            "theme": "class-probe-context",
+            "paths": ["path-b7980916616faddc", "path-72a47b4cb763dd83"],
+            "key": "ctx-meta ctx-meta-a ctx-meta-b ctx-source ctx-source-class_2d_probe leaf-entity leaf-entity-name leaf-entity-name-probe tok-entity tok-entity-name tok-entity-name-probe tok-meta tok-meta-a tok-meta-b tok-source tok-source-class_2d_probe token"
+          },
+          {
+            "theme": "class-probe-context",
+            "paths": ["path-a3af4bdbc1377493", "path-5d4a6f9cdabaeb9c"],
+            "key": "ctx-meta ctx-meta-a ctx-source ctx-source-class_2d_probe leaf-entity leaf-entity-name leaf-entity-name-probe tok-entity tok-entity-name tok-entity-name-probe tok-meta tok-meta-a tok-source tok-source-class_2d_probe token"
+          },
+          {
+            "theme": "everforest-dark",
+            "paths": ["path-e12e38d63e0b633f", "path-aa1810d55fa5b6c6"],
+            "key": "ctx-meta ctx-meta-function ctx-meta-function-body ctx-meta-function-body-shell ctx-meta-function-shell ctx-meta-scope ctx-meta-scope-if_2d_block ctx-meta-scope-if_2d_block-shell ctx-source ctx-source-shell leaf-meta leaf-meta-statement leaf-meta-statement-shell tok-meta tok-meta-function tok-meta-function-body tok-meta-function-body-shell tok-meta-function-shell tok-meta-scope tok-meta-scope-if_2d_block tok-meta-scope-if_2d_block-shell tok-meta-statement tok-meta-statement-shell tok-source tok-source-shell token"
+          },
+          {
+            "theme": "everforest-light",
+            "paths": ["path-e12e38d63e0b633f", "path-aa1810d55fa5b6c6"],
+            "key": "ctx-meta ctx-meta-function ctx-meta-function-body ctx-meta-function-body-shell ctx-meta-function-shell ctx-meta-scope ctx-meta-scope-if_2d_block ctx-meta-scope-if_2d_block-shell ctx-source ctx-source-shell leaf-meta leaf-meta-statement leaf-meta-statement-shell tok-meta tok-meta-function tok-meta-function-body tok-meta-function-body-shell tok-meta-function-shell tok-meta-scope tok-meta-scope-if_2d_block tok-meta-scope-if_2d_block-shell tok-meta-statement tok-meta-statement-shell tok-source tok-source-shell token"
+          },
+          {
+            "theme": "everforest-dark",
+            "paths": ["path-a153a1e3a67474f7", "path-d28692d198255f94"],
+            "key": "ctx-meta ctx-meta-function ctx-meta-function-body ctx-meta-function-body-shell ctx-meta-function-shell ctx-meta-scope ctx-meta-scope-if_2d_block ctx-meta-scope-if_2d_block-shell ctx-meta-statement ctx-meta-statement-command ctx-meta-statement-command-shell ctx-meta-statement-shell ctx-source ctx-source-shell leaf-meta leaf-meta-argument leaf-meta-argument-shell tok-meta tok-meta-argument tok-meta-argument-shell tok-meta-function tok-meta-function-body tok-meta-function-body-shell tok-meta-function-shell tok-meta-scope tok-meta-scope-if_2d_block tok-meta-scope-if_2d_block-shell tok-meta-statement tok-meta-statement-command tok-meta-statement-command-shell tok-meta-statement-shell tok-source tok-source-shell token"
+          },
+          {
+            "theme": "everforest-light",
+            "paths": ["path-a153a1e3a67474f7", "path-d28692d198255f94"],
+            "key": "ctx-meta ctx-meta-function ctx-meta-function-body ctx-meta-function-body-shell ctx-meta-function-shell ctx-meta-scope ctx-meta-scope-if_2d_block ctx-meta-scope-if_2d_block-shell ctx-meta-statement ctx-meta-statement-command ctx-meta-statement-command-shell ctx-meta-statement-shell ctx-source ctx-source-shell leaf-meta leaf-meta-argument leaf-meta-argument-shell tok-meta tok-meta-argument tok-meta-argument-shell tok-meta-function tok-meta-function-body tok-meta-function-body-shell tok-meta-function-shell tok-meta-scope tok-meta-scope-if_2d_block tok-meta-scope-if_2d_block-shell tok-meta-statement tok-meta-statement-command tok-meta-statement-command-shell tok-meta-statement-shell tok-source tok-source-shell token"
+          }
+        ],
+        "perThemeCssBytes": {
+          "min": 484908,
+          "max": 486694
+        },
+        "perThemeGzipCssBytes": {
+          "min": 18677,
+          "max": 20029
+        }
+      },
+      {
+        "model": "nested",
+        "htmlBytes": 1808895,
+        "gzipHtmlBytes": 62015,
+        "spans": 5057,
+        "scopeGroups": 723,
+        "lostPathGroups": [],
+        "themeConflicts": [],
+        "perThemeCssBytes": {
+          "min": 183905,
+          "max": 185745
+        },
+        "perThemeGzipCssBytes": {
+          "min": 6109,
+          "max": 7212
+        }
+      },
+      {
+        "model": "hybrid",
+        "htmlBytes": 1438042,
+        "gzipHtmlBytes": 58931,
+        "spans": 2654,
+        "scopeGroups": 723,
+        "lostPathGroups": [],
+        "themeConflicts": [],
+        "perThemeCssBytes": {
+          "min": 85894,
+          "max": 87734
+        },
+        "perThemeGzipCssBytes": {
+          "min": 8245,
+          "max": 9154
+        }
+      }
+    ],
+    "inventory": [
+      {
+        "theme": "andromeeda",
+        "selectors": 88,
+        "contextual": 19
+      },
+      {
+        "theme": "aurora-x",
+        "selectors": 126,
+        "contextual": 37
+      },
+      {
+        "theme": "ayu-dark",
+        "selectors": 99,
+        "contextual": 25
+      },
+      {
+        "theme": "ayu-light",
+        "selectors": 99,
+        "contextual": 25
+      },
+      {
+        "theme": "ayu-mirage",
+        "selectors": 99,
+        "contextual": 25
+      },
+      {
+        "theme": "catppuccin-frappe",
+        "selectors": 427,
+        "contextual": 101
+      },
+      {
+        "theme": "catppuccin-latte",
+        "selectors": 427,
+        "contextual": 101
+      },
+      {
+        "theme": "catppuccin-macchiato",
+        "selectors": 427,
+        "contextual": 101
+      },
+      {
+        "theme": "catppuccin-mocha",
+        "selectors": 427,
+        "contextual": 101
+      },
+      {
+        "theme": "dark-plus",
+        "selectors": 169,
+        "contextual": 7
+      },
+      {
+        "theme": "dracula-soft",
+        "selectors": 238,
+        "contextual": 59
+      },
+      {
+        "theme": "dracula",
+        "selectors": 238,
+        "contextual": 59
+      },
+      {
+        "theme": "everforest-dark",
+        "selectors": 660,
+        "contextual": 2
+      },
+      {
+        "theme": "everforest-light",
+        "selectors": 660,
+        "contextual": 2
+      },
+      {
+        "theme": "github-dark-default",
+        "selectors": 87,
+        "contextual": 7
+      },
+      {
+        "theme": "github-dark-dimmed",
+        "selectors": 87,
+        "contextual": 7
+      },
+      {
+        "theme": "github-dark-high-contrast",
+        "selectors": 87,
+        "contextual": 7
+      },
+      {
+        "theme": "github-dark",
+        "selectors": 74,
+        "contextual": 7
+      },
+      {
+        "theme": "github-light-default",
+        "selectors": 87,
+        "contextual": 7
+      },
+      {
+        "theme": "github-light-high-contrast",
+        "selectors": 87,
+        "contextual": 7
+      },
+      {
+        "theme": "github-light",
+        "selectors": 74,
+        "contextual": 7
+      },
+      {
+        "theme": "gruvbox-dark-hard",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "gruvbox-dark-medium",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "gruvbox-dark-soft",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "gruvbox-light-hard",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "gruvbox-light-medium",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "gruvbox-light-soft",
+        "selectors": 189,
+        "contextual": 35
+      },
+      {
+        "theme": "horizon-bright",
+        "selectors": 49,
+        "contextual": 1
+      },
+      {
+        "theme": "horizon",
+        "selectors": 50,
+        "contextual": 1
+      },
+      {
+        "theme": "houston",
+        "selectors": 426,
+        "contextual": 16
+      },
+      {
+        "theme": "kanagawa-dragon",
+        "selectors": 146,
+        "contextual": 34
+      },
+      {
+        "theme": "kanagawa-lotus",
+        "selectors": 146,
+        "contextual": 34
+      },
+      {
+        "theme": "kanagawa-wave",
+        "selectors": 146,
+        "contextual": 34
+      },
+      {
+        "theme": "laserwave",
+        "selectors": 251,
+        "contextual": 0
+      },
+      {
+        "theme": "light-plus",
+        "selectors": 188,
+        "contextual": 8
+      },
+      {
+        "theme": "material-theme-darker",
+        "selectors": 119,
+        "contextual": 35
+      },
+      {
+        "theme": "material-theme-lighter",
+        "selectors": 119,
+        "contextual": 35
+      },
+      {
+        "theme": "material-theme-ocean",
+        "selectors": 119,
+        "contextual": 35
+      },
+      {
+        "theme": "material-theme-palenight",
+        "selectors": 119,
+        "contextual": 35
+      },
+      {
+        "theme": "material-theme",
+        "selectors": 119,
+        "contextual": 35
+      },
+      {
+        "theme": "min-dark",
+        "selectors": 69,
+        "contextual": 1
+      },
+      {
+        "theme": "min-light",
+        "selectors": 70,
+        "contextual": 1
+      },
+      {
+        "theme": "monokai",
+        "selectors": 66,
+        "contextual": 3
+      },
+      {
+        "theme": "night-owl-light",
+        "selectors": 348,
+        "contextual": 69
+      },
+      {
+        "theme": "night-owl",
+        "selectors": 361,
+        "contextual": 69
+      },
+      {
+        "theme": "nord",
+        "selectors": 196,
+        "contextual": 137
+      },
+      {
+        "theme": "one-dark-pro",
+        "selectors": 460,
+        "contextual": 16
+      },
+      {
+        "theme": "one-light",
+        "selectors": 356,
+        "contextual": 140
+      },
+      {
+        "theme": "plastic",
+        "selectors": 44,
+        "contextual": 0
+      },
+      {
+        "theme": "poimandres",
+        "selectors": 230,
+        "contextual": 60
+      },
+      {
+        "theme": "red",
+        "selectors": 64,
+        "contextual": 18
+      },
+      {
+        "theme": "rose-pine-dawn",
+        "selectors": 45,
+        "contextual": 0
+      },
+      {
+        "theme": "rose-pine-moon",
+        "selectors": 45,
+        "contextual": 0
+      },
+      {
+        "theme": "rose-pine",
+        "selectors": 45,
+        "contextual": 0
+      },
+      {
+        "theme": "slack-dark",
+        "selectors": 145,
+        "contextual": 1
+      },
+      {
+        "theme": "slack-ochin",
+        "selectors": 58,
+        "contextual": 7
+      },
+      {
+        "theme": "snazzy-light",
+        "selectors": 273,
+        "contextual": 121
+      },
+      {
+        "theme": "solarized-dark",
+        "selectors": 56,
+        "contextual": 1
+      },
+      {
+        "theme": "solarized-light",
+        "selectors": 56,
+        "contextual": 1
+      },
+      {
+        "theme": "synthwave-84",
+        "selectors": 131,
+        "contextual": 29
+      },
+      {
+        "theme": "tokyo-night",
+        "selectors": 342,
+        "contextual": 138
+      },
+      {
+        "theme": "vesper",
+        "selectors": 141,
+        "contextual": 39
+      },
+      {
+        "theme": "vitesse-black",
+        "selectors": 127,
+        "contextual": 7
+      },
+      {
+        "theme": "vitesse-dark",
+        "selectors": 127,
+        "contextual": 7
+      },
+      {
+        "theme": "vitesse-light",
+        "selectors": 127,
+        "contextual": 7
+      },
+      {
+        "theme": "class-probe-context",
+        "selectors": 4,
+        "contextual": 4
+      }
+    ],
+    "versions": {
+      "shiki": "v4.4.3",
+      "nativeTextmate": "v9.3.2",
+      "jsTextmate": "10.0.2"
+    }
+  },
+  "collidedPaths": [
+    {
+      "id": "path-d261c5b0b0c889d2",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "punctuation.separator.dictionary.key-value.json"
+      ]
+    },
+    {
+      "id": "path-7bc616fbe0e446fc",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json",
+        "punctuation.definition.string.begin.json"
+      ]
+    },
+    {
+      "id": "path-0135af2ec30cdac4",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json"
+      ]
+    },
+    {
+      "id": "path-5551cbbf41aca44d",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json",
+        "punctuation.definition.string.end.json"
+      ]
+    },
+    {
+      "id": "path-85f3c604820c15df",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "punctuation.separator.dictionary.pair.json"
+      ]
+    },
+    {
+      "id": "path-7bccc0ac1626acd6",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "punctuation.separator.dictionary.key-value.json"
+      ]
+    },
+    {
+      "id": "path-c20ebd34b07a425b",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json",
+        "punctuation.definition.string.begin.json"
+      ]
+    },
+    {
+      "id": "path-a773a4b96e80b4f3",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json"
+      ]
+    },
+    {
+      "id": "path-140a38e6a2d978f1",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "string.quoted.double.json",
+        "punctuation.definition.string.end.json"
+      ]
+    },
+    {
+      "id": "path-b7980916616faddc",
+      "scopes": ["source.class-probe", "meta.a", "meta.b", "entity.name.probe"]
+    },
+    {
+      "id": "path-72a47b4cb763dd83",
+      "scopes": ["source.class-probe", "meta.b", "meta.a", "entity.name.probe"]
+    },
+    {
+      "id": "path-a3af4bdbc1377493",
+      "scopes": ["source.class-probe", "meta.a", "meta.a", "entity.name.probe"]
+    },
+    {
+      "id": "path-5d4a6f9cdabaeb9c",
+      "scopes": ["source.class-probe", "meta.a", "entity.name.probe"]
+    },
+    {
+      "id": "path-a270e53e273ca878",
+      "scopes": [
+        "source.ts",
+        "meta.interface.ts",
+        "meta.field.declaration.ts",
+        "meta.type.annotation.ts",
+        "meta.type.parameters.ts",
+        "punctuation.definition.typeparameters.begin.ts"
+      ]
+    },
+    {
+      "id": "path-b66211b2fc43226c",
+      "scopes": [
+        "source.ts",
+        "meta.interface.ts",
+        "meta.field.declaration.ts",
+        "meta.type.annotation.ts",
+        "meta.type.parameters.ts",
+        "meta.type.parameters.ts",
+        "punctuation.definition.typeparameters.begin.ts"
+      ]
+    },
+    {
+      "id": "path-9df7930789b3f0cb",
+      "scopes": [
+        "source.ts",
+        "meta.interface.ts",
+        "meta.field.declaration.ts",
+        "meta.type.annotation.ts",
+        "meta.type.parameters.ts",
+        "meta.type.parameters.ts",
+        "punctuation.definition.typeparameters.end.ts"
+      ]
+    },
+    {
+      "id": "path-6fba5bd67b63f62c",
+      "scopes": [
+        "source.ts",
+        "meta.interface.ts",
+        "meta.field.declaration.ts",
+        "meta.type.annotation.ts",
+        "meta.type.parameters.ts",
+        "punctuation.definition.typeparameters.end.ts"
+      ]
+    },
+    {
+      "id": "path-c6cdac3135163610",
+      "scopes": [
+        "source.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "meta.structure.dictionary.json",
+        "meta.structure.dictionary.value.json",
+        "punctuation.separator.dictionary.pair.json"
+      ]
+    },
+    {
+      "id": "path-a982e46ab97e6ce4",
+      "scopes": [
+        "source.php",
+        "meta.function-call.php",
+        "punctuation.definition.arguments.begin.bracket.round.php"
+      ]
+    },
+    {
+      "id": "path-06b9b8aa7ca52731",
+      "scopes": [
+        "source.php",
+        "meta.function-call.php",
+        "meta.function-call.php",
+        "punctuation.definition.arguments.begin.bracket.round.php"
+      ]
+    },
+    {
+      "id": "path-f397708f5299695c",
+      "scopes": [
+        "source.php",
+        "meta.function-call.php",
+        "meta.function-call.php",
+        "punctuation.definition.arguments.end.bracket.round.php"
+      ]
+    },
+    {
+      "id": "path-024ae81f1e783e71",
+      "scopes": [
+        "source.php",
+        "meta.function-call.php",
+        "punctuation.definition.arguments.end.bracket.round.php"
+      ]
+    },
+    {
+      "id": "path-e12e38d63e0b633f",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell"
+      ]
+    },
+    {
+      "id": "path-f1eeb3f9077b39c7",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.scope.logical-expression.shell",
+        "punctuation.definition.logical-expression.shell"
+      ]
+    },
+    {
+      "id": "path-bd8e7d30b7ef8be0",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.scope.logical-expression.shell",
+        "meta.scope.logical-expression.shell",
+        "punctuation.definition.logical-expression.shell"
+      ]
+    },
+    {
+      "id": "path-1583d8d97795a257",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.statement.command.name.shell",
+        "entity.name.function.call.shell",
+        "entity.name.command.shell",
+        "support.function.builtin.shell"
+      ]
+    },
+    {
+      "id": "path-a153a1e3a67474f7",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell"
+      ]
+    },
+    {
+      "id": "path-4a01baf2ea604ae7",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "string.quoted.double.shell",
+        "punctuation.definition.string.begin.shell"
+      ]
+    },
+    {
+      "id": "path-0cb73766db1d5db1",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "string.quoted.double.shell",
+        "punctuation.definition.string.end.shell"
+      ]
+    },
+    {
+      "id": "path-cfa37cb0bb255b24",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "punctuation.terminator.statement.semicolon.shell"
+      ]
+    },
+    {
+      "id": "path-50b8adf498fdac00",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "punctuation.definition.subshell.single.shell"
+      ]
+    },
+    {
+      "id": "path-6cf8e7c1a3a3740e",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.statement.command.name.shell",
+        "entity.name.function.call.shell",
+        "entity.name.command.shell"
+      ]
+    },
+    {
+      "id": "path-34a62e0acf6bf8f5",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell"
+      ]
+    },
+    {
+      "id": "path-018614c0d743c822",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "punctuation.definition.subshell.single.shell"
+      ]
+    },
+    {
+      "id": "path-9c7955d3b56c2820",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.statement.command.name.shell",
+        "entity.name.function.call.shell",
+        "entity.name.command.shell"
+      ]
+    },
+    {
+      "id": "path-068e62ac9da86d3e",
+      "scopes": [
+        "source.shell",
+        "meta.scope.if-block.shell",
+        "meta.expression.assignment.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "meta.scope.subshell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell"
+      ]
+    },
+    {
+      "id": "path-adea04e41ce49526",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "punctuation.terminator.statement.semicolon.shell"
+      ]
+    },
+    {
+      "id": "path-aa1810d55fa5b6c6",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "meta.statement.shell"
+      ]
+    },
+    {
+      "id": "path-49e156a0d68d9269",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.statement.command.name.shell",
+        "entity.name.function.call.shell",
+        "entity.name.command.shell",
+        "support.function.builtin.shell"
+      ]
+    },
+    {
+      "id": "path-d28692d198255f94",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell"
+      ]
+    },
+    {
+      "id": "path-7975d2ad5e5092fc",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "string.quoted.double.shell",
+        "punctuation.definition.string.begin.shell"
+      ]
+    },
+    {
+      "id": "path-f73b828d2c3fe189",
+      "scopes": [
+        "source.shell",
+        "meta.function.shell",
+        "meta.function.body.shell",
+        "meta.scope.if-block.shell",
+        "meta.statement.shell",
+        "meta.statement.command.shell",
+        "meta.argument.shell",
+        "string.quoted.double.shell",
+        "punctuation.definition.string.end.shell"
+      ]
+    }
+  ],
+  "browser": {
+    "dataSha256": "47886282ea7825b0a16d771c579eb931f11f6403b6a366cf33385a8ac3908f7e",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "fidelity": [
+      {
+        "model": "flat",
+        "tokenChecks": 175164,
+        "mismatches": 10,
+        "byTheme": {
+          "everforest-dark": 4,
+          "everforest-light": 4,
+          "class-probe-context": 2
+        },
+        "examples": [
+          {
+            "theme": "everforest-dark",
+            "case": "file-shellscript",
+            "text": "\t\t",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell"
+            ],
+            "expected": "rgb(211, 198, 170)|normal|400|none",
+            "actual": "rgb(167, 192, 128)|normal|400|none"
+          },
+          {
+            "theme": "everforest-dark",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(211, 198, 170)|normal|400|none",
+            "actual": "rgb(167, 192, 128)|normal|400|none"
+          },
+          {
+            "theme": "everforest-dark",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(211, 198, 170)|normal|400|none",
+            "actual": "rgb(167, 192, 128)|normal|400|none"
+          },
+          {
+            "theme": "everforest-dark",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(211, 198, 170)|normal|400|none",
+            "actual": "rgb(167, 192, 128)|normal|400|none"
+          },
+          {
+            "theme": "everforest-light",
+            "case": "file-shellscript",
+            "text": "\t\t",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell"
+            ],
+            "expected": "rgb(92, 106, 114)|normal|400|none",
+            "actual": "rgb(141, 161, 1)|normal|400|none"
+          },
+          {
+            "theme": "everforest-light",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(92, 106, 114)|normal|400|none",
+            "actual": "rgb(141, 161, 1)|normal|400|none"
+          },
+          {
+            "theme": "everforest-light",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(92, 106, 114)|normal|400|none",
+            "actual": "rgb(141, 161, 1)|normal|400|none"
+          },
+          {
+            "theme": "everforest-light",
+            "case": "file-shellscript",
+            "text": " ",
+            "scopes": [
+              "source.shell",
+              "meta.function.shell",
+              "meta.function.body.shell",
+              "meta.scope.if-block.shell",
+              "meta.statement.shell",
+              "meta.statement.command.shell",
+              "meta.argument.shell"
+            ],
+            "expected": "rgb(92, 106, 114)|normal|400|none",
+            "actual": "rgb(141, 161, 1)|normal|400|none"
+          },
+          {
+            "theme": "class-probe-context",
+            "case": "scope-context",
+            "text": "BA",
+            "scopes": ["source.class-probe", "meta.b", "meta.a", "entity.name.probe"],
+            "expected": "rgb(0, 0, 255)|normal|400|none",
+            "actual": "rgb(255, 0, 0)|normal|400|none"
+          },
+          {
+            "theme": "class-probe-context",
+            "case": "scope-context",
+            "text": "A!",
+            "scopes": ["source.class-probe", "meta.a", "entity.name.probe"],
+            "expected": "rgb(255, 0, 255)|normal|400|none",
+            "actual": "rgb(0, 128, 0)|normal|400|none"
+          }
+        ]
+      },
+      {
+        "model": "nested",
+        "tokenChecks": 175164,
+        "mismatches": 0,
+        "byTheme": {},
+        "examples": []
+      },
+      {
+        "model": "hybrid",
+        "tokenChecks": 175164,
+        "mismatches": 0,
+        "byTheme": {},
+        "examples": []
+      }
+    ],
+    "taskSummary": [
+      {
+        "model": "flat",
+        "simplePassed": 18,
+        "total": 20,
+        "developmentPassed": 14,
+        "holdoutPassed": 4,
+        "withFallbackPassed": 18
+      },
+      {
+        "model": "nested",
+        "simplePassed": 20,
+        "total": 20,
+        "developmentPassed": 14,
+        "holdoutPassed": 6,
+        "withFallbackPassed": 20
+      },
+      {
+        "model": "hybrid",
+        "simplePassed": 18,
+        "total": 20,
+        "developmentPassed": 14,
+        "holdoutPassed": 4,
+        "withFallbackPassed": 20
+      }
+    ],
+    "tasks": [
+      {
+        "id": "strings",
+        "title": "Style all strings",
+        "flatSelector": ".tok-string",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-string",
+            "targets": 461,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-string",
+            "targets": 461,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-string",
+            "targets": 461,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "comments",
+        "title": "Style all comments",
+        "flatSelector": ".tok-comment",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-comment",
+            "targets": 52,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-comment",
+            "targets": 52,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-comment",
+            "targets": 52,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "keywords",
+        "title": "Style all keywords",
+        "flatSelector": ".tok-keyword",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-keyword",
+            "targets": 224,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-keyword",
+            "targets": 224,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-keyword",
+            "targets": 224,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "numbers",
+        "title": "Style numeric literals",
+        "flatSelector": ".tok-constant-numeric",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-constant-numeric",
+            "targets": 38,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-constant-numeric",
+            "targets": 38,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-constant-numeric",
+            "targets": 38,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "functions",
+        "title": "Style function names",
+        "flatSelector": ".tok-entity-name-function",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-entity-name-function",
+            "targets": 37,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-entity-name-function",
+            "targets": 37,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-entity-name-function",
+            "targets": 37,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "types",
+        "title": "Style type names",
+        "flatSelector": ".tok-entity-name-type",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-entity-name-type",
+            "targets": 39,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-entity-name-type",
+            "targets": 39,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-entity-name-type",
+            "targets": 39,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "parameters",
+        "title": "Style function parameters",
+        "flatSelector": ".tok-variable-parameter",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-variable-parameter",
+            "targets": 27,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-variable-parameter",
+            "targets": 27,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-variable-parameter",
+            "targets": 27,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "escapes",
+        "title": "Override escape sequences inside strings",
+        "flatSelector": ".tok-string.tok-constant-character-escape",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-string.tok-constant-character-escape",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-string.tok-constant-character-escape",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-string.tok-constant-character-escape",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "json-keys",
+        "title": "Style JSON property names",
+        "flatSelector": ".tok-support-type-property_2d_name-json",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-support-type-property_2d_name-json",
+            "targets": 84,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-support-type-property_2d_name-json",
+            "targets": 84,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-support-type-property_2d_name-json",
+            "targets": 84,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "json-values",
+        "title": "Style JSON string contents inside objects",
+        "flatSelector": ".ctx-meta-structure-dictionary-json.leaf-string-quoted-double-json",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-meta-structure-dictionary-json.leaf-string-quoted-double-json",
+            "targets": 26,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".ctx-meta-structure-dictionary-json.leaf-string-quoted-double-json",
+            "targets": 26,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-meta-structure-dictionary-json.leaf-string-quoted-double-json",
+            "targets": 26,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "template-variables",
+        "title": "Style variables inside template strings",
+        "flatSelector": ".ctx-string-template.tok-variable",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-string-template.tok-variable",
+            "targets": 3,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".ctx-string-template.tok-variable",
+            "targets": 3,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-string-template.tok-variable",
+            "targets": 3,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "html-tags",
+        "title": "Style HTML tag names",
+        "flatSelector": ".tok-entity-name-tag-html",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-entity-name-tag-html",
+            "targets": 23,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-entity-name-tag-html",
+            "targets": 23,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-entity-name-tag-html",
+            "targets": 23,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "html-attributes",
+        "title": "Style HTML attribute names",
+        "flatSelector": ".tok-entity-other-attribute_2d_name-html",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-html",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-html",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-html",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "embedded-js",
+        "title": "Style JavaScript keywords embedded in HTML",
+        "flatSelector": ".ctx-text-html.ctx-source-js.tok-keyword",
+        "split": "development",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-text-html.ctx-source-js.tok-keyword",
+            "targets": 2,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".ctx-text-html.ctx-source-js.tok-keyword",
+            "targets": 2,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-text-html.ctx-source-js.tok-keyword",
+            "targets": 2,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "css-classes",
+        "title": "Style CSS class selectors",
+        "flatSelector": ".tok-entity-other-attribute_2d_name-class",
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-class",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-class",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-entity-other-attribute_2d_name-class",
+            "targets": 4,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "markdown-heading",
+        "title": "Style Markdown headings",
+        "flatSelector": ".tok-markup-heading",
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-markup-heading",
+            "targets": 9,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-markup-heading",
+            "targets": 9,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-markup-heading",
+            "targets": 9,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "python-docstring",
+        "title": "Style Python docstrings",
+        "flatSelector": ".tok-string-quoted-docstring",
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".tok-string-quoted-docstring",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".tok-string-quoted-docstring",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".tok-string-quoted-docstring",
+            "targets": 8,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "regex-escapes",
+        "title": "Style escapes in regular expressions",
+        "flatSelector": ".ctx-string-regexp.tok-constant-character-escape",
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-string-regexp.tok-constant-character-escape",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".ctx-string-regexp.tok-constant-character-escape",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-string-regexp.tok-constant-character-escape",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "scope-order",
+        "title": "Distinguish reversed ancestor order",
+        "flatSelector": null,
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-meta-a.ctx-meta-b.leaf-entity-name-probe",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 1,
+            "passed": false
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".scope-meta-a > .scope-meta-b > .scope-entity-name-probe > .token",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-meta-a.ctx-meta-b.leaf-entity-name-probe",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 1,
+            "passed": false
+          },
+          {
+            "model": "hybrid",
+            "fallback": true,
+            "selector": ".path-b7980916616faddc",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "scope-repetition",
+        "title": "Distinguish repeated ancestor scopes",
+        "flatSelector": null,
+        "split": "holdout",
+        "results": [
+          {
+            "model": "flat",
+            "fallback": false,
+            "selector": ".ctx-meta-a.leaf-entity-name-probe",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 3,
+            "passed": false
+          },
+          {
+            "model": "nested",
+            "fallback": false,
+            "selector": ".scope-meta-a > .scope-meta-a > .scope-entity-name-probe > .token",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          },
+          {
+            "model": "hybrid",
+            "fallback": false,
+            "selector": ".ctx-meta-a.leaf-entity-name-probe",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 3,
+            "passed": false
+          },
+          {
+            "model": "hybrid",
+            "fallback": true,
+            "selector": ".path-a3af4bdbc1377493",
+            "targets": 1,
+            "missed": 0,
+            "unintended": 0,
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "customPalette": [
+      {
+        "palette": "light",
+        "passed": true
+      },
+      {
+        "palette": "dark",
+        "passed": true
+      }
+    ],
+    "themeSwitchPreservedNodes": true,
+    "sourcePreserved": true
+  }
+}

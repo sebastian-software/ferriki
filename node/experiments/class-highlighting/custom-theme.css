@@ -1,0 +1,42 @@
+/* Handwritten CSS only: no TextMate theme file or generated path selectors. */
+.demo {
+  --syntax-foreground: #24292f;
+  --syntax-background: #ffffff;
+  --syntax-string: #116329;
+  --syntax-keyword: #cf222e;
+  --syntax-comment: #6e7781;
+  --syntax-number: #0550ae;
+  --syntax-function: #8250df;
+}
+
+.demo[data-theme="dark"] {
+  --syntax-foreground: #c9d1d9;
+  --syntax-background: #0d1117;
+  --syntax-string: #a5d6ff;
+  --syntax-keyword: #ff7b72;
+  --syntax-comment: #8b949e;
+  --syntax-number: #79c0ff;
+  --syntax-function: #d2a8ff;
+}
+
+.demo .fixture {
+  color: var(--syntax-foreground);
+  background: var(--syntax-background);
+}
+
+.demo .tok-string {
+  color: var(--syntax-string);
+}
+.demo .tok-keyword {
+  color: var(--syntax-keyword);
+}
+.demo .tok-comment {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.demo .tok-constant-numeric {
+  color: var(--syntax-number);
+}
+.demo .tok-entity-name-function {
+  color: var(--syntax-function);
+}

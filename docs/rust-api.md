@@ -114,7 +114,7 @@ even when serialized; only the N-API host converts its results to the
 JavaScript UTF-16 contract. For example:
 
 ```json
-{"content":"fn","offset":0,"color":"#81A1C1","fontStyle":3,"type":1}
+{ "content": "fn", "offset": 0, "color": "#81A1C1", "fontStyle": 3, "type": 1 }
 ```
 
 `Error` owns a category, message, and optional source error. It deliberately
@@ -268,3 +268,11 @@ stable Rust releases, so a minor release may raise it; raising it is not
 treated as a breaking change. See
 [ADR 0012](../adr/0012-publishable-rust-highlighter.md) and the
 [release checklist](release-checklist.md).
+
+## Class-based output (next release)
+
+`Highlighter::highlight_html_with_css` returns nested scope classes and CSS
+resolved from an unchanged theme. For token-level rendering, enable
+`TokenizeOptions::with_preserve_scope_boundaries(true)` and select
+`RenderOptions::with_style_mode(StyleMode::Classes)`.
+See [Class-based highlighting](class-highlighting.md) for examples and the class contract.

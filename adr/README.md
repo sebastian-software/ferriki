@@ -21,6 +21,7 @@ changes the record first.
 | [0013](0013-cdn-loaded-standard-assets.md) | Standard assets loaded from a release-pinned CDN mirror | Accepted |
 | [0014](0014-rust-crate-semver-surface.md) | Semver surface of the published Rust crates | Accepted |
 | [0015](0015-postcard-asset-codec.md) | Encode binary assets with postcard, format version first | Accepted |
+| [0016](0016-optional-nested-scope-class-output.md) | Optional nested scope classes with resolved theme CSS | Accepted |
 
 Other decision records:
 

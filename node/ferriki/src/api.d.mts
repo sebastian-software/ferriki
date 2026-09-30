@@ -58,6 +58,8 @@ export interface HighlighterSyncOptions {
 }
 export interface HighlightOptions {
   lang: LanguageInput;
+  /** Nested scope classes; inline styles remain the default. */
+  styleMode?: "inline" | "classes";
   theme?: ThemeInput;
   themes?: Readonly<Record<string, ThemeInput>>;
   defaultColor?: string | false;
@@ -76,7 +78,14 @@ export interface HighlightOptions {
   transformers?: readonly ShikiTransformer[];
   decorations?: readonly DecorationItem[];
 }
+export interface HtmlWithCss {
+  html: string;
+  /** Rules for this result. Combine the CSS from all rendered blocks. */
+  css: string;
+}
 export interface ThemedToken {
+  /** Full grammar scope path in classes mode. */
+  scopeNames?: readonly string[];
   content: string;
   offset: number;
   htmlAttrs?: Readonly<Record<string, string>>;
@@ -202,6 +211,7 @@ export interface ShikiTransformer {
 }
 export interface Highlighter {
   codeToHtml: (code: string, options: HighlightOptions) => string;
+  codeToHtmlWithCss: (code: string, options: HighlightOptions) => HtmlWithCss;
   codeToHast: (code: string, options: HighlightOptions) => HastRoot;
   codeToTokens: (code: string, options: HighlightOptions) => TokensResult;
   codeToTokensBase: (code: string, options: HighlightOptions) => ThemedToken[][];
@@ -255,6 +265,16 @@ export declare function createHighlighterCoreSync(options?: HighlighterSyncOptio
 export declare function createShikiPrimitive(options?: HighlighterSyncOptions): Highlighter;
 export declare function getSingletonHighlighter(options?: HighlighterOptions): Promise<Highlighter>;
 export declare const getSingletonHighlighterCore: typeof getSingletonHighlighter;
+/** Renders nested scope classes and extracts styles from unchanged TextMate themes. */
+export declare function codeToHtmlWithCss(
+  code: string,
+  options: HighlightOptions,
+): Promise<HtmlWithCss>;
+export declare function codeToHtmlWithCss(
+  highlighter: Highlighter,
+  code: string,
+  options: HighlightOptions,
+): HtmlWithCss;
 export declare function codeToHtml(code: string, options: HighlightOptions): Promise<string>;
 export declare function codeToHtml(
   highlighter: Highlighter,
