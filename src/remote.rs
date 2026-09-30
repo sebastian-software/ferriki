@@ -319,20 +319,24 @@ mod tests {
         let resolved = RemoteAssets::default()
             .resolve(
                 &release(Some("abc")),
-                env(&[("HOME", "/home/me"), ("XDG_CACHE_HOME", "/xdg")]),
+                env(&[
+                    ("HOME", "/home/me"),
+                    ("XDG_CACHE_HOME", "/xdg"),
+                    ("LOCALAPPDATA", "/local"),
+                ]),
             )
             .expect("resolve");
         assert!(resolved.remote);
         assert_eq!(resolved.base_url, DEFAULT_ASSETS_BASE_URL);
         assert_eq!(resolved.commit.as_deref(), Some("abc"));
-        if cfg!(target_os = "macos") {
-            assert_eq!(
-                resolved.cache_dir,
-                PathBuf::from("/home/me/Library/Caches/ferriki")
-            );
-        } else if !cfg!(target_os = "windows") {
-            assert_eq!(resolved.cache_dir, PathBuf::from("/xdg/ferriki"));
-        }
+        let expected = if cfg!(target_os = "windows") {
+            PathBuf::from("/local").join("ferriki")
+        } else if cfg!(target_os = "macos") {
+            PathBuf::from("/home/me/Library/Caches").join("ferriki")
+        } else {
+            PathBuf::from("/xdg").join("ferriki")
+        };
+        assert_eq!(resolved.cache_dir, expected);
 
         let resolved = RemoteAssets::default()
             .resolve(
