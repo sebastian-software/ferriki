@@ -9,7 +9,7 @@ import {
   createEngine,
   engines,
   loadCases,
-  manifest,
+  loadCorpus,
   plain,
   repoRoot,
   sha256,
@@ -20,6 +20,7 @@ import {
 
 const { values } = parseArgs({
   options: {
+    corpus: { type: "string", default: "tiobe" },
     language: { type: "string", default: "cpp" },
     size: { type: "string", default: "large" },
     engine: { type: "string", default: "ferriki" },
@@ -32,10 +33,11 @@ const { values } = parseArgs({
 });
 if (values.help) {
   console.log(
-    "Usage: node scripts/profile-tiobe.mjs [--language cpp] [--size large|example] [--engine ferriki|shiki-wasm|shiki-js|prism] [--api tokens|html] [--boundary facade|native] [--scopes] [--seconds 15]",
+    "Usage: node scripts/profile-tiobe.mjs [--corpus tiobe|curated] [--language cpp] [--size large|example] [--engine ferriki|shiki-wasm|shiki-js|prism] [--api tokens|html] [--boundary facade|native] [--scopes] [--seconds 15]",
   );
   process.exit(0);
 }
+const manifest = loadCorpus(values.corpus);
 const language = manifest.languages.find((entry) => entry.textmate === values.language);
 assert.ok(language?.file, "Choose a supported TextMate language ID");
 assert.ok(["example", "large"].includes(values.size), "Invalid --size");
@@ -52,7 +54,7 @@ assert.ok(
 );
 const seconds = Number(values.seconds);
 assert.ok(Number.isFinite(seconds) && seconds > 0 && seconds <= 300, "Invalid --seconds");
-const { code, ...workload } = loadCases(language, [values.size])[0];
+const { code, ...workload } = loadCases(language, [values.size], values.corpus)[0];
 const oracle = await createEngine("shiki-wasm", language);
 const reference = { tokens: plain(oracle.tokens(code)), html: oracle.html(code) };
 oracle.dispose();
@@ -77,7 +79,8 @@ if (values.boundary === "facade") {
   const highlighter = loadFerrikiNativeBinding().createHighlighter(
     JSON.stringify({ standardAssetRoot: join(repoRoot, "node/ferriki/assets/shiki") }),
   );
-  highlighter.loadStandardGrammar(language.textmate);
+  for (const lang of [language.textmate, ...(language.embedded ?? [])])
+    highlighter.loadStandardGrammar(lang);
   highlighter.loadStandardTheme(theme);
   const options = JSON.stringify({
     lang: language.textmate,

@@ -1,0 +1,53 @@
+/* Responsive order dashboard with selectors and modern CSS. */
+:root {
+  --accent: #2563eb;
+  --surface: oklch(98% 0.01 240);
+  --spacing: 0.75rem;
+}
+
+.orders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--spacing);
+  padding: clamp(1rem, 3vw, 2rem);
+  background: linear-gradient(135deg, var(--surface), #fff);
+}
+.orders > article[data-status="paid"] {
+  border-inline-start: 4px solid var(--accent);
+}
+.orders a[href^="https://"]:hover {
+  color: color-mix(in srgb, var(--accent), black 20%);
+}
+.orders tr:nth-child(2n + 1) {
+  background: #f3f4f6;
+}
+.orders::before {
+  content: "München <team> & café";
+}
+
+@media (width <= 48rem) {
+  .orders {
+    grid-template-columns: 1fr;
+  }
+  .orders table {
+    font-size: 0.875rem;
+  }
+}
+@supports (container-type: inline-size) {
+  .orders {
+    container-type: inline-size;
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.orders article {
+  animation: appear 200ms ease-out;
+}

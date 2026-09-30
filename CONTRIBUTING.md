@@ -32,14 +32,14 @@ lanes.
 
 ## Test lanes
 
-| Lane | Command | Purpose |
-| --- | --- | --- |
-| TextMate inner oracle | `cargo test -p ferriki-textmate` (repository root) | Exact vscode-textmate v9.3.2 grammar semantics |
-| Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.4.3 tests (baseline pinned in `node/compat/upstream/shiki/.source.json`) |
-| Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Honest mandatory lane; resolver sentinel plus supported contracts |
-| Full core audit | `pnpm run test:ferriki-compat:core:full` (from `node/`) | Diagnostic issue #31 parity run; deferred failures are expected and classified |
-| Adapter compat | `pnpm run test:ferriki-compat:adapters` (from `node/`) | Optional adapter behavior outside the core product boundary |
-| Colorized brackets | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check |
+| Lane                       | Command                                                          | Purpose                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| TextMate inner oracle      | `cargo test -p ferriki-textmate` (repository root)               | Exact vscode-textmate v9.3.2 grammar semantics                                                                     |
+| Native structural compat   | `pnpm run test:ferriki-compat:textmate` (from `node/`)           | Issue #30 gate against unchanged Shiki v4.4.3 tests (baseline pinned in `node/compat/upstream/shiki/.source.json`) |
+| Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`)               | Honest mandatory lane; resolver sentinel plus supported contracts                                                  |
+| Full core audit            | `pnpm run test:ferriki-compat:core:full` (from `node/`)          | Diagnostic issue #31 parity run; deferred failures are expected and classified                                     |
+| Adapter compat             | `pnpm run test:ferriki-compat:adapters` (from `node/`)           | Optional adapter behavior outside the core product boundary                                                        |
+| Colorized brackets         | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check                                                                                      |
 
 The TextMate structural lane sets `FERRIKI_HONEST_ALIAS=1`, which routes the
 mirrored tests' remaining upstream imports through Ferriki as well. Its
@@ -64,6 +64,11 @@ The [TIOBE benchmark](node/benchmarks/tiobe/README.md) compares Ferriki/Ferroni,
 Shiki WASM, Shiki JavaScript and Prism on a pinned top-20 language corpus. It
 retains individual timings and supports local Ferroni checkouts for controlled
 experiments. Run its correctness gate before collecting measurements.
+
+The [curated 20-format corpus](node/benchmarks/curated/README.md) adds web
+components, Markdown/MDX, styles and configuration workloads. Use
+`pnpm run check:bench-curated` and `pnpm run bench:curated` from `node/`.
+Both corpora share the same measurement and profiling harness.
 
 ## Coverage
 

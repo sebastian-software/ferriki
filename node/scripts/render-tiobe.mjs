@@ -3,7 +3,7 @@ import { engines, readReport } from "./tiobe-benchmark.mjs";
 if (process.argv.length !== 3)
   throw new Error("Usage: node scripts/render-tiobe.mjs report.json[.gz]");
 const report = readReport(process.argv[2]);
-console.log(`# TIOBE ${report.corpus.month} highlighting benchmark\n`);
+console.log(`# ${report.corpus.name ?? `TIOBE ${report.corpus.month}`} highlighting benchmark\n`);
 console.log(
   `Measured ${report.measuredAt}. ${report.machine.cpu}, ${report.machine.platform}, Node ${report.machine.node}.\n`,
 );
@@ -40,3 +40,17 @@ for (const api of report.method.apis) {
 }
 for (const language of report.languages.filter((row) => row.status !== "measured"))
   console.log(`- ${language.name}: ${language.unsupported ?? language.error}`);
+
+for (const language of report.languages.filter((row) => row.status === "measured")) {
+  for (const id of engines) {
+    const problems = [
+      ...new Set(
+        language.cases
+          .map((entry) => entry.results[id])
+          .filter((r) => r.status !== "ok")
+          .map((r) => r.reason ?? r.error),
+      ),
+    ];
+    if (problems.length) console.log(`- ${language.name}/${id}: ${problems.join("; ")}`);
+  }
+}

@@ -357,6 +357,9 @@ jobs:
       - name: Verify TIOBE benchmark outputs and comparison contracts
         run: pnpm run check:bench-tiobe
 
+      - name: Verify curated highlighting benchmark outputs
+        run: pnpm run check:bench-curated
+
   native-smoke:
     runs-on: ${{ matrix.os }}
     defaults:

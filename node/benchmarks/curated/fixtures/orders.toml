@@ -1,0 +1,33 @@
+# Order service configuration with tables, arrays and multiline strings.
+title = "München <team> & café"
+enabled = true
+retry_delays = [0.25, 1.0, 2.5]
+created = 2026-09-30T12:00:00Z
+
+[server]
+host = "127.0.0.1"
+port = 8080
+root = '/srv/orders'
+message = """
+Paid orders are ready.
+Use \"customer\" to filter the list.
+"""
+query = '''
+SELECT id, total FROM orders
+WHERE status = 'paid';
+'''
+
+[features]
+cache = true
+experimental = false
+limits = { requests = 1_000, bytes = 0xFF }
+
+[[customers]]
+id = "C-01"
+name = "café"
+tags = ["priority", "EU"]
+
+[[customers]]
+id = "C-02"
+name = "München"
+tags = []

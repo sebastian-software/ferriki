@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orders &amp; customers</title>
+    <style>
+      :root {
+        --accent: #2563eb;
+      }
+      .orders {
+        display: grid;
+        gap: 1rem;
+      }
+      .orders [data-paid="true"] {
+        color: var(--accent);
+      }
+      @media (width < 40rem) {
+        .orders {
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Embedded CSS, JavaScript, entities, attributes and Unicode. -->
+    <main class="orders" aria-labelledby="title">
+      <h1 id="title">München &lt;team&gt; &amp; café</h1>
+      <form action="/orders" method="get">
+        <label>Customer <input name="customer" placeholder="Search…" required /></label>
+        <button type="submit">Search</button>
+      </form>
+      <template id="row"
+        ><article data-paid="true"><strong></strong><span></span></article
+      ></template>
+      <output id="total">€0.00</output>
+    </main>
+    <script type="module">
+      const orders = [{ id: "ORD-42", total: 39.9, customer: "café" }];
+      const total = orders.reduce((sum, { total }) => sum + total, 0);
+      document.querySelector("#total").textContent = `€${total.toFixed(2)}`;
+      console.log(/ORD-\d+/.test(orders[0].id));
+    </script>
+  </body>
+</html>
