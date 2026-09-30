@@ -69,6 +69,26 @@ try {
   assert.throws(() => compareReports(report, changedSource), /Source changed/);
 
   const timedOut = run(["--language", "rust", "--timeout-ms", "1"]);
+  const largeOutput = run([
+    "--language",
+    "r",
+    "--sizes",
+    "example",
+    "--rounds",
+    "600",
+    "--max-rounds",
+    "600",
+    "--budget-ms",
+    "0",
+  ]);
+  assert.equal(largeOutput.status, 0, largeOutput.stderr);
+  const largeRow = JSON.parse(largeOutput.stdout).languages[0];
+  assert.equal(largeRow.status, "measured", largeRow.error);
+  assert.ok(
+    JSON.stringify(largeRow).length > 65536,
+    "Exercise a worker report larger than a pipe buffer",
+  );
+  for (const id of engines) assert.equal(largeRow.cases[0].results[id].html.samplesMs.length, 600);
   assert.equal(timedOut.status, 0, timedOut.stderr);
   assert.equal(JSON.parse(timedOut.stdout).languages[0].status, "timeout");
   for (const args of [
