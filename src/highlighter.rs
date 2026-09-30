@@ -770,7 +770,9 @@ impl HighlighterCore {
             let mut line_tokens = Vec::with_capacity(result.tokens.len() / 2);
             let mut boundaries: Vec<usize> = result
                 .tokens
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|token| token[0] as usize)
                 .filter(|start| *start < line_length)
                 .collect();
