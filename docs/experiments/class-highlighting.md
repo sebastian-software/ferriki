@@ -4,6 +4,14 @@ Recorded September 30, 2026. This is a research result, not an accepted ADR or
 a public API contract. The reproducible prototype lives in
 [`node/experiments/class-highlighting`](../../node/experiments/class-highlighting/README.md).
 
+## Inspiration
+
+The starting point was [wooorm's starry-night](https://github.com/wooorm/starry-night)
+and its recreation of [GitHub's PrettyLights-style output](https://github.com/wooorm/starry-night#what-is-prettylights):
+syntax classes styled through CSS. This experiment evaluates how Ferriki can
+offer that workflow while retaining the native TextMate runtime's full scope
+detail and existing theme resolution.
+
 ## Result
 
 The nested model best meets the stated goal in this experiment: simple category

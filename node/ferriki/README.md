@@ -108,6 +108,9 @@ parse escape sequences before passing code to the highlighter; Ferriki rejects
 
 ## Class-based output (next release)
 
+Inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
+and [wooorm's starry-night](https://github.com/wooorm/starry-night).
+
 Use `styleMode: "classes"` for nested scope classes and custom CSS.
 `codeToHtmlWithCss` returns `{ html, css }` using unchanged TextMate themes,
 including theme maps that switch via `data-ferriki-theme` without retokenizing.
