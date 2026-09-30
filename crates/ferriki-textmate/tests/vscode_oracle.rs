@@ -93,6 +93,8 @@ fn perform_test(test_location: &Path, test: &RawTest) {
         GrammarConfiguration::default(),
     );
     let mut previous_state: Option<Arc<StateStack>> = None;
+    let mut binary_state = None;
+    let mut combined_state = None;
 
     for test_line in &test.lines {
         let result = grammar
@@ -103,6 +105,44 @@ fn perform_test(test_location: &Path, test: &RawTest) {
                     test_line.line, test.desc
                 )
             });
+        let binary = grammar
+            .tokenize_line2(&test_line.line, binary_state, 0)
+            .expect("binary oracle tokenization");
+        let combined = grammar
+            .tokenize_line_with_scopes(&test_line.line, combined_state, 0)
+            .expect("combined oracle tokenization");
+        assert_eq!(
+            combined.tokens, result.tokens,
+            "{}: scope tokens",
+            test.desc
+        );
+        assert_eq!(
+            combined.binary_tokens, binary.tokens,
+            "{}: metadata",
+            test.desc
+        );
+        assert_eq!(combined.fonts, result.fonts, "{}: scope fonts", test.desc);
+        assert_eq!(combined.fonts, binary.fonts, "{}: binary fonts", test.desc);
+        assert!(
+            combined.rule_stack.equals(&result.rule_stack),
+            "{}: scope state",
+            test.desc
+        );
+        assert!(
+            combined.rule_stack.equals(&binary.rule_stack),
+            "{}: binary state",
+            test.desc
+        );
+        assert_eq!(combined.stopped_early, result.stopped_early);
+        assert_eq!(combined.stopped_early, binary.stopped_early);
+        binary_state = Some(binary.rule_stack);
+        combined_state = Some(if let Some(previous) = previous_state.as_ref() {
+            let diff = diff_state_stacks_ref_eq(previous, &combined.rule_stack);
+            apply_state_stack_diff(Some(Arc::clone(previous)), &diff)
+                .expect("combined state diff should preserve tokenization")
+        } else {
+            combined.rule_stack
+        });
         let actual_tokens: Vec<_> = result
             .tokens
             .iter()

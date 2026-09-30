@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -45,6 +45,10 @@ named `ferriki-textmate`.
   state stack, raw grammar and theme input, and token metadata. An upstream
   sync can therefore reshape internals without a semver break
   ([ADR 0014](0014-rust-crate-semver-surface.md)).
+- The documented `tokenize_line_with_scopes` extension collects scope tokens
+  and binary theme metadata in one scan. Both outputs retain their upstream
+  boundaries and share the returned state, fonts, and time limit. Captures,
+  retokenization, injections, and rule traversal keep the upstream algorithm.
 - Port code that has no caller in Ferriki stays for upstream parity and is
   marked with a `dead_code` allowance and its reason, instead of being
   deleted.
@@ -104,3 +108,4 @@ this decision.
 - 2026-07-26: Accepted.
 - 2026-09-26: Catalogs and rendering moved from `ferriki-core` to the `ferriki` crate (ADR 0012).
 - 2026-09-30: Records the curated public API of 0.6.0 and the handling of port code without callers.
+- 2026-10-01: Documents the combined scope/binary output extension; removes duplicate scans without changing upstream grammar traversal (#172).

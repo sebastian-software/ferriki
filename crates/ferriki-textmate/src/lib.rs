@@ -29,11 +29,15 @@ mod tokenize_string;
 
 // The public surface follows vscode-textmate's `main.ts` exports: a registry,
 // grammars and their tokenize results, the rule stack, raw grammar and theme
-// input, and token metadata. Everything else is the mechanical port's internal
+// input, and token metadata, plus the combined-line output extension. Everything
+// else is the mechanical port's internal
 // structure and may change with any upstream sync.
 pub use basic_scope_attributes::EmbeddedLanguages;
 pub use encoded_token_attributes::{EncodedTokenAttributes, StandardTokenType};
-pub use grammar::{Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2};
+pub use grammar::{
+    Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2,
+    TokenizeLineResultWithScopes,
+};
 pub use line_output::{FontInfo, Token};
 pub use parse_raw_grammar::{ParseRawGrammarError, parse_raw_grammar};
 pub use plist::PlistError;
