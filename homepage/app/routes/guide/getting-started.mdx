@@ -25,6 +25,12 @@ The native addon comes from a platform package (`@ferriki/<platform>`) that npm
 installs as an optional dependency. Keep optional dependencies enabled in your
 deployment.
 
+Grammars and themes are not bundled. Ferriki downloads each one from
+`assets.ferriki.dev` the first time it is loaded, verifies it against the
+release's SHA-256 digest, and caches it in `node_modules/.cache/ferriki`.
+Offline builds reuse a populated cache or set `FERRIKI_ASSETS_BASE_URL` to a
+mirror; `FERRIKI_ASSETS_REMOTE=0` turns downloads off.
+
 ## Highlight once
 
 ```ts

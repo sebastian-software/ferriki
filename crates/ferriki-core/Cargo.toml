@@ -20,7 +20,8 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-ferriki = { version = "0.7.0", path = "../.." }
+# The N-API host loads standard payloads from the release-pinned CDN (ADR 0013).
+ferriki = { version = "0.7.0", path = "../..", features = [ "remote" ] }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }

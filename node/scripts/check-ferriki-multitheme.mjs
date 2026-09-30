@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-
 import { createHighlighter as createShikiHighlighter } from "shiki";
-import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
 
+import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
+
+import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
   langs: ["typescript"],

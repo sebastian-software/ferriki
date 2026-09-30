@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-
 import { createHighlighter, createHighlighterCoreSync, ShikiError } from "../ferriki/index.mjs";
+
+import "./test-asset-env.mjs";
 
 const language = {
   name: "ferriki-registration",

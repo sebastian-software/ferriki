@@ -5,6 +5,7 @@ import {
   FerrikiError,
   ShikiError,
 } from "../ferriki/index.mjs";
+import "./test-asset-env.mjs";
 
 function hasCode(code) {
   return (error) => {

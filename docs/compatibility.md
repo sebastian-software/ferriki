@@ -99,9 +99,11 @@ cannot load a musl addon.
 ## Packaging baseline
 
 The main package ships no native addon; each platform's addon comes from its
-`@ferriki/<platform>` sidecar. It does ship the standard asset catalogs, so its
-unpacked size is dominated by `assets/shiki`. It is
-measured on every run of the core gate rather than quoted here:
+`@ferriki/<platform>` sidecar. It ships no grammar or theme payloads either:
+only the catalog manifests and the release manifest that pins every payload,
+which the runtime downloads and caches on first use (ADR 0013). The core gate
+asserts that no payload is packaged. The size is measured on every run of the
+core gate rather than quoted here:
 `node/scripts/check-packed-consumer.mjs` packs the package, installs the
 tarball in a clean consumer, and prints the tarball name, unpacked size, and
 file count for the tree it ran against. The release workflow also validates

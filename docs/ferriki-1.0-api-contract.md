@@ -54,6 +54,7 @@ compatibility tests must converge on this matrix.
 | `langs` | Stable | Accepts names, synchronous registrations, arrays, promises, or loader functions. Custom registrations are validated and cached (#46). |
 | `themes` | Stable | Accepts names, synchronous registrations, arrays, promises, or loader functions. Custom registrations are validated and cached (#46). |
 | `langAlias` | Stable | Explicit alias-to-canonical mapping. Cycles and unknown targets produce `ShikiError`. |
+| `assets` | Stable | `{ remote, baseUrl, cacheDir }` for the release-pinned standard payloads (ADR 0013). Unset fields fall back to `FERRIKI_ASSETS_REMOTE`, `FERRIKI_ASSETS_BASE_URL` and `FERRIKI_CACHE_DIR`; an explicit option wins. Unknown keys and invalid values produce `ShikiError` with `ERR_USAGE`. |
 | `engine` | Removed | Engine injection is not a Ferriki runtime extension point; native matching is selected by the Ferriki binding. |
 | Unknown factory keys | Remove | Do not silently widen the public type. Unsupported keys are rejected by the typed API and validated at runtime where practical (#10, #42). |
 
@@ -109,6 +110,15 @@ sidecar is published (see #52).
   contract.
 - Missing native bindings fail at import/use with an actionable platform
   error. There is no JS, WASM, or silent plaintext fallback runtime.
+- Standard grammar and theme payloads are not bundled (ADR 0013). Only the
+  asynchronous paths (`createHighlighter`, `getSingletonHighlighter`,
+  `loadLanguage`, `loadTheme` and the one-shot functions for the `lang`,
+  `theme` and `themes` they receive) download, verify and cache payloads,
+  including a language's embedded languages. Synchronous factories, sync
+  loads and highlighting never perform I/O beyond the cache. A payload that
+  cannot be downloaded, fails its SHA-256 digest, or is missing from the cache
+  with downloads turned off fails with `FerrikiError` and `ERR_ASSET`, whose
+  message names the remedies. Downloads are not retried.
 
 ## Ardo and Ferromark traceability
 

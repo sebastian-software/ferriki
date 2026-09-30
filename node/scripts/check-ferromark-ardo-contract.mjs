@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import "./test-asset-env.mjs";
 
 process.env.FERRIKI_PACKAGE_PATH = new URL("../ferriki/index.mjs", import.meta.url).href;
 const exampleModuleUrl = new URL("../../docs/examples/ferromark-ardo.mjs", import.meta.url);

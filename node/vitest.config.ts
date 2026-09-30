@@ -2,6 +2,8 @@ import process from "node:process";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
+import { TEST_ASSET_CACHE_DIR } from "./scripts/test-asset-env.mjs";
+
 function compatPackage(entry: string) {
   return new URL(`./compat/upstream/shiki/packages/${entry}`, import.meta.url).pathname;
 }
@@ -144,6 +146,11 @@ export default ${defaultExportInteropExpression("loaded")}
     ],
   },
   test: {
+    // Workers read payloads from the seeded cache, never from the network.
+    env: {
+      FERRIKI_CACHE_DIR: process.env.FERRIKI_CACHE_DIR ?? TEST_ASSET_CACHE_DIR,
+      FERRIKI_ASSETS_REMOTE: process.env.FERRIKI_ASSETS_REMOTE ?? "0",
+    },
     testTimeout: 30_000,
     reporters: "dot",
     exclude: ["**/node_modules/**"],

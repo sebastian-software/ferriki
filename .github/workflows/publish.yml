@@ -267,11 +267,13 @@ jobs:
           path: node/platforms/win32-arm64-msvc
 
       # The main package ships no native addon; every platform package holds
-      # the matrix-built artifact downloaded above.
+      # the matrix-built artifact downloaded above. It ships no grammar or theme
+      # payloads either: the packaged release manifest is pinned to this commit,
+      # whose tree assets.ferriki.dev serves (ADR 0013).
       - name: Build package wrappers and sync standard assets
         run: |
           pnpm run build
-          node ./ferriki/scripts/sync-standard-assets.mjs
+          node ./ferriki/scripts/sync-standard-assets.mjs --release-commit "$(git rev-parse HEAD)"
 
       - name: Verify all release packages
         run: |

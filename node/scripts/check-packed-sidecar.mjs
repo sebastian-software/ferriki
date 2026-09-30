@@ -5,8 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-
 import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
+
+import "./test-asset-env.mjs";
 
 // The main package ships no native addon, so the loader can only come up by
 // resolving the matching sidecar package by name. This check installs both

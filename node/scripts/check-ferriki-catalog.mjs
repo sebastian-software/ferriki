@@ -1,19 +1,22 @@
 import assert from "node:assert/strict";
-import { constants } from "node:fs";
-import { access, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-
 import { languageCatalog, themeCatalog } from "../ferriki/assets/shiki/catalog.mjs";
+
 import {
   bundledLanguages,
   bundledLanguagesAlias,
   bundledThemes,
   createHighlighter,
 } from "../ferriki/index.mjs";
+import "./test-asset-env.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const assetRoot = join(packageDir, "ferriki", "assets", "shiki");
+// The package pins every payload in its release manifest and ships none of
+// them; the runtime downloads and caches them (ADR 0013).
+const release = JSON.parse(await readFile(join(assetRoot, "release-manifest.json"), "utf8"));
 
 assert(Object.isFrozen(bundledLanguages), "bundledLanguages must be immutable");
 assert(Object.isFrozen(bundledThemes), "bundledThemes must be immutable");
@@ -30,7 +33,7 @@ assert.deepEqual(
 );
 
 for (const entry of languageCatalog) {
-  await assertAsset(join(assetRoot, "languages", entry.assetFile));
+  assertPinned(`languages/${entry.assetFile}`);
   const registration = (await bundledLanguages[entry.id]())[0];
   assert.equal(registration.name, entry.id);
   assert.equal(registration.scopeName, entry.scopeName);
@@ -42,7 +45,7 @@ for (const entry of languageCatalog) {
 }
 
 for (const entry of themeCatalog) {
-  await assertAsset(join(assetRoot, "themes", entry.assetFile));
+  assertPinned(`themes/${entry.assetFile}`);
   const registration = await bundledThemes[entry.id]();
   assert.equal(registration.name, entry.id);
   assert.equal(registration.type, entry.themeType || undefined);
@@ -79,18 +82,20 @@ const [languageFiles, themeFiles] = await Promise.all([
   readdir(join(assetRoot, "languages")),
   readdir(join(assetRoot, "themes")),
 ]);
+assert.deepEqual(languageFiles, ["manifest.fkindex"], "the package must not bundle grammars");
+assert.deepEqual(themeFiles, ["manifest.fkindex"], "the package must not bundle themes");
 assert.equal(
-  languageFiles.filter((file) => file.endsWith(".fkgram")).length,
-  languageCatalog.length,
+  Object.keys(release.assets).length,
+  languageCatalog.length + themeCatalog.length,
+  "the release manifest pins exactly the catalog payloads",
 );
-assert.equal(themeFiles.filter((file) => file.endsWith(".fktheme")).length, themeCatalog.length);
 
 console.log(
   `Ferriki catalogs verified: ${languageCatalog.length} languages, ${themeCatalog.length} themes, ${Object.keys(bundledLanguagesAlias).length} aliases`,
 );
 
-async function assertAsset(file) {
-  await access(file, constants.R_OK);
+function assertPinned(path) {
+  assert.match(release.assets[path]?.sha256 ?? "", /^[0-9a-f]{64}$/, `${path} is not pinned`);
 }
 
 function compareIds(left, right) {

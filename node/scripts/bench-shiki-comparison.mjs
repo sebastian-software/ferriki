@@ -1,3 +1,11 @@
+import { execFileSync, spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import { join } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
+import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 // Measures Ferriki's native highlighter against Shiki on the same documents.
 //
 // Shiki runs twice: with its default Oniguruma engine compiled to WebAssembly,
@@ -16,14 +24,7 @@
 // Usage (after `pnpm run build:compat` and `pnpm run build:native`):
 //   node scripts/bench-shiki-comparison.mjs                 # print the report
 //   node scripts/bench-shiki-comparison.mjs --write <path>  # also write JSON
-import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import os from "node:os";
-import { join } from "node:path";
-import process from "node:process";
-import { fileURLToPath } from "node:url";
-import { isDeepStrictEqual } from "node:util";
-import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
+import "./test-asset-env.mjs";
 
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const repoRoot = join(nodeRoot, "..");

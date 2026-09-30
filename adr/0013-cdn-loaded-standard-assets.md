@@ -115,9 +115,19 @@ and verifies every file against a digest that the release pins.
 - **Failure handling.** An unreachable CDN or a failed download is a typed
   error. There is no retry policy.
 - **Loading stays asynchronous.** Remote resolution happens only in the
-  asynchronous `createHighlighter` and `loadLanguage`/`loadTheme` paths.
-  Synchronous highlighting never performs I/O and reports an unloaded language
-  as it does today.
+  asynchronous `createHighlighter`, `getSingletonHighlighter` and
+  `loadLanguage`/`loadTheme` paths, and in the one-shot functions for the
+  languages and themes they are given. Synchronous factories, loads and
+  highlighting never perform I/O beyond the cache and report a payload that is
+  not cached as `ERR_ASSET`, naming the remedies.
+- **Node downloads in Rust.** The Node facade does not fetch payloads itself.
+  An N-API async task runs the same Rust source as the `remote` feature on the
+  libuv thread pool: it resolves a language's embedded languages, downloads
+  the missing payloads a few at a time, verifies and caches them, and the
+  following synchronous load reads the cache. Node and Rust therefore share one
+  implementation, one cache layout, the operating system's trust store and
+  `HTTPS_PROXY` handling. The cost is the HTTP and TLS stack in every platform
+  addon.
 - **Rust asset sources.** `ferriki` exposes a public `AssetSource` trait keyed
   by digest, with directory and embedded sources, and
   `StandardAssetCatalogs::from_release_manifest` for any source. The `remote`
@@ -141,10 +151,12 @@ and verifies every file against a digest that the release pins.
 
 **Implementation state.** Implemented: the release manifest and its drift
 test, the Bunny pull zone, the Rust `AssetSource` trait with digest
-verification, and the Rust `remote` feature with the manifests shipped inside
-the `ferriki` crate. Still open in #141: the Node download and cache path with
-its options, dropping the payloads from `@ferriki/core`, and the release checks
-that stamp the commit into the npm package and verify the CDN.
+verification, the Rust `remote` feature with the manifests shipped inside the
+`ferriki` crate, and the Node path: `@ferriki/core` ships only the manifests,
+the release workflow stamps the release commit into the packaged release
+manifest, and the facade loads through the N-API prefetch. Repository checks
+read a cache seeded from `assets/shiki/` with downloads turned off. Still open
+in #141: the post-publish check that the CDN serves the release's payloads.
 
 ## Consequences
 
@@ -190,3 +202,6 @@ that stamp the commit into the npm package and verify the CDN.
   crate are dropped; offline use goes through a mirror or a pre-populated
   cache. Records the Rust `remote` feature: ureq with the OS trust store, the
   cache layout, and the release commit from `.cargo_vcs_info.json`.
+- 2026-09-30: Node path: payloads dropped from `@ferriki/core`, downloads run in
+  Rust through an N-API async task, the release workflow stamps the commit, and
+  the sync/async boundary is recorded.

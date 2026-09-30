@@ -27,6 +27,8 @@ pub use ferriki_textmate::{
 #[doc(hidden)]
 pub mod __private {
     pub use crate::highlighter::HighlighterCore;
+    #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+    pub use crate::remote::RemoteAssetHost;
     pub use crate::tokens::{
         HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle,
         HighlightTokensWithThemesResult,

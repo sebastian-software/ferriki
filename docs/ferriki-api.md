@@ -7,7 +7,7 @@ The CI docs gate checks that every generated public symbol is represented here.
 
 The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
-`RegistrationInput`, `HighlighterOptions`, `HighlighterSyncOptions`,
+`RegistrationInput`, `AssetOptions`, `HighlighterOptions`, `HighlighterSyncOptions`,
 `HighlightOptions`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
 `HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
 `ShikiTransformerContext`, `ShikiTransformer`, `ThemedTokenScopeExplanation`,
@@ -91,11 +91,42 @@ highlighter is no longer needed.
 | `themes` | `RegistrationInput<ThemeInput>[]` | Themes or loader functions to load before the factory resolves. |
 | `langAlias` | `Record<string, string>` | Per-highlighter aliases. Circular aliases throw `ShikiError`. |
 | `transformers` | `ShikiTransformer[]` | JavaScript-only callbacks for the documented token/HAST pipeline. |
+| `assets` | `AssetOptions` | Where standard grammars and themes come from; see below. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
 and are not a supported extension point. Additions require an explicit API
 contract and compatibility coverage.
+
+### Standard assets
+
+`@ferriki/core` ships the language and theme catalogs, but no grammar or theme
+payloads. A payload is downloaded from a mirror pinned to the package's release
+commit the first time it is loaded, verified against its SHA-256 digest, and
+cached; later loads, processes and releases with unchanged payloads read the
+cache ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
+
+| `AssetOptions` field | Environment variable | Default |
+| --- | --- | --- |
+| `remote: boolean` | `FERRIKI_ASSETS_REMOTE` (`0` or `false` turns downloads off) | `true` |
+| `baseUrl: string` | `FERRIKI_ASSETS_BASE_URL` | `https://assets.ferriki.dev` |
+| `cacheDir: string` | `FERRIKI_CACHE_DIR` | `node_modules/.cache/ferriki` of the nearest package root, else the platform cache directory |
+
+An explicit option wins over the environment. The one-shot functions use the
+singleton highlighter, which only the environment configures.
+
+Downloads happen only in the asynchronous paths: `createHighlighter`,
+`getSingletonHighlighter`, `loadLanguage`, `loadTheme` and the one-shot
+functions, which load the `lang`, `theme` and `themes` they are given. A
+language's embedded languages are fetched with it. The synchronous factories,
+`loadLanguageSync`, `loadThemeSync` and highlighting with an unloaded standard
+language or theme never perform I/O beyond the cache; a payload that is not
+cached fails with `ERR_ASSET` and names the remedies.
+
+Offline, air-gapped and network-less CI builds either reuse a cache populated
+by one online run, or point `FERRIKI_ASSETS_BASE_URL` at a mirror that serves
+the repository's `assets/shiki/` below `<release-commit>/assets/shiki/`. See
+[troubleshooting](./troubleshooting.md#offline-and-air-gapped-use).
 
 ## Highlighter methods
 
@@ -262,7 +293,7 @@ an `instanceof ShikiError` for existing consumers. The supported codes are:
 | `ERR_USAGE` | Invalid public options, registrations, aliases, or lifecycle use. |
 | `ERR_UNSUPPORTED` | A deliberate capability boundary, missing language/theme, or ANSI input. |
 | `ERR_NATIVE_LOAD` | No loadable platform addon for the current target. |
-| `ERR_ASSET` | Missing/corrupt bundled assets or invalid native registration payload. |
+| `ERR_ASSET` | A standard asset could not be downloaded, verified or found in the cache, or a native registration payload is invalid. |
 | `ERR_RESOURCE_LIMIT` | Tokenization exceeded a documented time/size/resource limit. |
 | `ERR_INTERNAL` | An unexpected native or facade failure. |
 
