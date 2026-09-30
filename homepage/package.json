@@ -7,6 +7,8 @@
     "dev": "react-router dev",
     "verify": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm build",
     "build": "react-router build && node scripts/verify-build.mjs",
+    "class-sample:write": "node scripts/render-class-sample.mjs",
+    "class-sample:check": "node scripts/render-class-sample.mjs --check",
     "sample:write": "node scripts/render-sample.mjs",
     "sample:check": "node scripts/render-sample.mjs --check",
     "lint": "pnpm lint:oxlint && pnpm lint:eslint",

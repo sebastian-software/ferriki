@@ -105,3 +105,26 @@ fn custom_rust_registrations_work_without_standard_assets() {
         .expect_err("empty theme name");
     assert_eq!(error.kind(), ErrorKind::InvalidRegistration);
 }
+
+#[test]
+fn class_output_reuses_theme_context_through_the_public_rust_api() {
+    let mut highlighter = Highlighter::builder()
+        .with_assets(assets())
+        .build()
+        .expect("highlighter");
+    let output = highlighter
+        .highlight_html_with_css(
+            "\"hello😀\"\n{\"message\":\"hello😀\"}",
+            "json",
+            "monokai",
+            &RenderOptions::default(),
+        )
+        .expect("class output");
+    assert!(output.html.starts_with("<pre class=\"ferriki monokai"));
+    assert!(!output.html.contains(" style="));
+    assert!(output.html.contains("scope-meta-structure-dictionary-json"));
+    assert!(output.html.contains("leaf-string-quoted-double-json"));
+    assert_eq!(output.html.matches("hello😀").count(), 2);
+    assert!(output.css.contains("#E6DB74"));
+    assert!(output.css.contains("#CFCFC2"));
+}

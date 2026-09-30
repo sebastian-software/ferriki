@@ -1,3 +1,4 @@
+import { addScopeClasses, extractClassStyles, nestScopes, themeSwitchStyles } from "./classes.mjs";
 import { ShikiError } from "./index.mjs";
 
 export function sortTransformers(transformers) {
@@ -18,21 +19,36 @@ export function applyTokenTransformers(tokens, transformers, context) {
   return result;
 }
 
+export const classStylesByTree = new WeakMap();
+
 export function renderTransformedHast(result, options, transformers, commonContext, source) {
   const properties = {
     class: result.themeName.startsWith("shiki-themes ")
       ? `shiki ${result.themeName}`
       : result.themeName,
   };
+  if (options.styleMode === "classes")
+    properties.class = `ferriki ${result.themeName.replace(/^shiki-themes /u, "")}`;
   if (options.rootStyle !== false)
     properties.style =
       options.rootStyle || result.rootStyle || `background-color:${result.bg};color:${result.fg}`;
+  if (options.styleMode === "classes" && options.themes && options.rootStyle === undefined) {
+    const variables = (result.rootStyle || `background-color:${result.bg};color:${result.fg}`)
+      .split(";")
+      .filter((part) => !part.startsWith("color:") && !part.startsWith("background-color:"))
+      .join(";");
+    properties.style = `background-color:var(--ferriki-background);color:var(--ferriki-color);${variables}`;
+  }
   if (options.tabindex !== false && options.tabindex !== null)
     properties.tabindex = String(options.tabindex ?? 0);
   for (const [key, value] of Object.entries(options.meta || {})) {
     if (!key.startsWith("_")) properties[key] = value;
   }
 
+  const themeStyles =
+    options.styleMode === "classes" ? themeSwitchStyles(options) : { className: "", css: "" };
+  if (themeStyles.className) properties.class += ` ${themeStyles.className}`;
+  const scopePaths = new WeakMap();
   const root = { type: "root", children: [] };
   const lines = [];
   let preNode;
@@ -72,13 +88,23 @@ export function renderTransformedHast(result, options, transformers, commonConte
         tagName: "span",
         properties: {
           ...(token.htmlAttrs || {}),
-          ...(token.htmlStyle ? { style: stringifyStyle(token.htmlStyle) } : {}),
+          ...(token.htmlStyle
+            ? { style: stringifyStyle(token.htmlStyle) }
+            : options.styleMode === "classes"
+              ? { style: tokenCss(token) }
+              : {}),
         },
         children: [{ type: "text", value: token.content }],
       };
       for (const transformer of transformers)
         span =
           transformer?.span?.call(context, span, lineIndex + 1, column, lineNode, token) || span;
+      if (options.styleMode === "classes") {
+        const scopes =
+          token.scopeNames || token.explanation?.[0]?.scopes.map((item) => item.scopeName) || [];
+        addScopeClasses(span, scopes);
+        scopePaths.set(span, scopes);
+      }
       lineNode.children.push(span);
     }
     let transformedLine = lineNode;
@@ -146,6 +172,18 @@ export function renderTransformedHast(result, options, transformers, commonConte
   let output = root;
   for (const transformer of transformers)
     output = transformer?.root?.call(context, output) || output;
+  if (options.styleMode === "classes") {
+    if (context.structure === "inline") {
+      output.children = [
+        { type: "element", tagName: "code", properties, children: output.children },
+      ];
+    }
+    nestScopes(output, scopePaths);
+    classStylesByTree.set(
+      output,
+      [extractClassStyles(output), themeStyles.css].filter(Boolean).join("\n"),
+    );
+  }
   return output;
 }
 
@@ -327,4 +365,12 @@ function applyDecorations(codeNode, decorations, source) {
 function textContentLength(node) {
   if (node.type === "text") return node.value.length;
   return (node.children || []).reduce((total, child) => total + textContentLength(child), 0);
+}
+
+function tokenCss(token) {
+  const font = token.fontStyle || 0;
+  const decorations =
+    [font & 4 ? "underline" : "", font & 8 ? "line-through" : ""].filter(Boolean).join(" ") ||
+    "none";
+  return `${token.color ? `color:${token.color};` : ""}font-style:${font & 1 ? "italic" : "normal"};font-weight:${font & 2 ? "bold" : "normal"};text-decoration:${decorations}`;
 }

@@ -210,7 +210,10 @@ impl HighlightOptions {
                 .with_time_limit_millis(time_limit_millis)
                 .with_max_line_length(max_line_length)
                 .with_include_token_type(include_token_type)
-                .with_include_scopes(include_scopes),
+                .with_include_scopes(include_scopes)
+                .with_preserve_scope_boundaries(
+                    value.get("styleMode").and_then(Value::as_str) == Some("classes"),
+                ),
             render: RenderOptions::default()
                 .with_merge_whitespaces(merge_whitespaces)
                 .with_merge_same_style_tokens(merge_same_style_tokens)

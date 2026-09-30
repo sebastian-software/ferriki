@@ -1,0 +1,321 @@
+{
+  "capturedOn": "2026-09-30",
+  "baseCommit": "0a7abbb61562b1625c130d956603c5391a574d16",
+  "packageVersion": "0.6.0",
+  "referenceCorpusSha256": "47886282ea7825b0a16d771c579eb931f11f6403b6a366cf33385a8ac3908f7e",
+  "sources": {
+    "src/tokens.rs": "a34bdc482347971537c52eefb67513ddcbc28b3f33e0aa564512ece4308e3e55",
+    "src/highlighter.rs": "2d349a001c23dead6b011c2be1410e719b332ae5710a8e78e4459d01f70a2339",
+    "src/render.rs": "ffb3ef8ee916acd578eca53a16653247ff216074e89a4495b8ff4a671dfd47ce",
+    "src/lib.rs": "86fc8c075a44476744c860f63aa10568a6afc90f20931682161727da4f0f7459",
+    "crates/ferriki-core/src/napi_api.rs": "8ed353cea92042d6f45abe08bd27a21ca90ee964b6ceb8ca878a526d562b4393",
+    "tests/public_api.rs": "bd26d1254bca588d170d5fad5d7de517961a094c06df5c93c2458b3375e774b3",
+    "node/ferriki/classes.mjs": "43cb91c8d25d6235b82b02d41573169a14e45204e52ccc7a491f036dbd4d5bcf",
+    "node/ferriki/transformers.mjs": "65baaf7968262f6599e4516e620ef30e61203aeae2fbb3dd28090bf175b20226",
+    "node/ferriki/src/index.mjs": "aa0dbc9be29e55f0e696a53a43e7fbe700d3203c835c19ab46d280e939176ab6",
+    "node/ferriki/src/api.mts": "71e2a675cd4800babbaae05420e2961295f2fe984c81154c484d1cc55a605463",
+    "node/scripts/check-class-highlighting.mjs": "93b85ffdbfd5e7035c802b16f2257902c71d8fcae56d77bd48660faf26f11a97",
+    "node/experiments/class-highlighting/production.mjs": "de40fd00ad097113b33ec7b19c3ff084771e346fe6d4b450b283f5a1f836b032",
+    "node/experiments/class-highlighting/production-browser.mjs": "c88f8fc04a811ecc7aa1fdc913e759f6edc8f22b03bd380500991b8118633e9a",
+    "node/experiments/class-highlighting/production-browser.html": "e83e429657c0857b1ea122e992ee36fc8cbc67cf066c0e6ffd8b9816c2960d90",
+    "node/experiments/class-highlighting/production-sizes.mjs": "bcb5d5b54393c30f19691c2518f8f8cf96fe0e5fbb4e60782dfb57f5928214ab",
+    "node/experiments/class-highlighting/export-production-evidence.mjs": "ad1a596c808261495709ac8c2ae299c361119ab5f6b3b54ed97c5cc78c973fb7"
+  },
+  "corpus": [
+    {
+      "id": "ts-basics",
+      "lang": "typescript",
+      "utf16Length": 162,
+      "sha256": "92f7b66e9e858c0817c8902d0a66c6184f6fbc5803d3366527df372377103eaf"
+    },
+    {
+      "id": "json-root",
+      "lang": "json",
+      "utf16Length": 7,
+      "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+    },
+    {
+      "id": "json-object",
+      "lang": "json",
+      "utf16Length": 80,
+      "sha256": "1b14f40893085cbf03eb868a8b3aab076f6917384ed75767cf18611c560c2570"
+    },
+    {
+      "id": "html-embedded",
+      "lang": "html",
+      "utf16Length": 144,
+      "sha256": "1dae3e272e19a48e4919171795432909f6dab96ac4dfbc4d6d730f4b07345104"
+    },
+    {
+      "id": "css-selectors",
+      "lang": "css",
+      "utf16Length": 86,
+      "sha256": "55c9971ec4ef250542616015801ff23f247a5e84d4ea7877e5bfd8f6af36c2f2"
+    },
+    {
+      "id": "python-context",
+      "lang": "python",
+      "utf16Length": 129,
+      "sha256": "6ccc3c13b5368e06a68b81bd755d15842f12cd12bdae520592d7f166a417c3df"
+    },
+    {
+      "id": "js-regexp",
+      "lang": "javascript",
+      "utf16Length": 84,
+      "sha256": "1b50967bf15410cc98d788bfe74fbb91b58b731ea8eeba41d964ba625d1da795"
+    },
+    {
+      "id": "md-embedded",
+      "lang": "markdown",
+      "utf16Length": 86,
+      "sha256": "5c83e2dc8158203d73f969515bf023e765704208f1f8f13b4e1b817a01e6043e"
+    },
+    {
+      "id": "scope-context",
+      "lang": "class-probe",
+      "utf16Length": 11,
+      "sha256": "0cbc74fb811ebc1abfa2cee3e04ac421cc3f38e8ab2d602c3c3ffd5e1b6ec80d"
+    },
+    {
+      "id": "file-rust",
+      "lang": "rust",
+      "utf16Length": 1009,
+      "sha256": "2618503c46af84189f9d9a24e0387493773e2506a9d4fc0044125ecdaec4426b"
+    },
+    {
+      "id": "file-typescript",
+      "lang": "typescript",
+      "utf16Length": 756,
+      "sha256": "9f8ae9d5c40478f1aadbc8d9031dff62efa6f63f199e53cd0c4e16b295664705"
+    },
+    {
+      "id": "file-javascript",
+      "lang": "javascript",
+      "utf16Length": 794,
+      "sha256": "e6ed5ccfb14611886c2f1bbdfd48516c07d8531a04df6ca02cbf42cf9f090873"
+    },
+    {
+      "id": "file-markdown",
+      "lang": "markdown",
+      "utf16Length": 1417,
+      "sha256": "0799420a043f8b1f9e2f3d7bdfa92a5153ac6975062dcbd8290fbdf3ef467d56"
+    },
+    {
+      "id": "file-yaml",
+      "lang": "yaml",
+      "utf16Length": 325,
+      "sha256": "5157d9e57cdd355424d11226109d4c291dbacd8b92dd2f82f1d383bf47eb8bb9"
+    },
+    {
+      "id": "file-css",
+      "lang": "css",
+      "utf16Length": 870,
+      "sha256": "1b819fbe19da233f03e3a8f17ab2b90170bdb89538b529dfeadb3bc14f838008"
+    },
+    {
+      "id": "file-json",
+      "lang": "json",
+      "utf16Length": 2128,
+      "sha256": "77815f094568e36f6616e9627c66f946937f60d82d2afe17874a8f23455fc9d4"
+    },
+    {
+      "id": "file-toml",
+      "lang": "toml",
+      "utf16Length": 1014,
+      "sha256": "3854ca5eb965aef57ba852d79c670c458de69fab89556fb842c0317ad90c2703"
+    },
+    {
+      "id": "file-python",
+      "lang": "python",
+      "utf16Length": 530,
+      "sha256": "f0f4e2d73205d8b4764f91c2632210968e4c9e24f2b033bb2d9d804344a73ef8"
+    },
+    {
+      "id": "file-html",
+      "lang": "html",
+      "utf16Length": 622,
+      "sha256": "08197cb8c63e7393587f31cdb8ea59daa9a9350d4eb75e0dbef38a0d57bd44c1"
+    },
+    {
+      "id": "file-go",
+      "lang": "go",
+      "utf16Length": 572,
+      "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+    },
+    {
+      "id": "file-php",
+      "lang": "php",
+      "utf16Length": 337,
+      "sha256": "57db5b231b9d7b4f3020b9c268ad88e413165ffc0cd8decc793d5f765cc686be"
+    },
+    {
+      "id": "file-shellscript",
+      "lang": "shellscript",
+      "utf16Length": 569,
+      "sha256": "153cf194b9f33f62a7eafc5e3847ad82ea070cf26f861d995840a4771965b387"
+    },
+    {
+      "id": "file-sql",
+      "lang": "sql",
+      "utf16Length": 123,
+      "sha256": "65c2946d148989654c3273d28a84280d4fef7de781f9a139d318f36b6e5da6f6"
+    }
+  ],
+  "sizes": {
+    "customCss": {
+      "htmlBytes": 1681629,
+      "gzipHtmlBytes": 50350,
+      "cssBytes": 274,
+      "gzipCssBytes": 207
+    },
+    "singleTheme": {
+      "htmlBytes": 1681698,
+      "gzipHtmlBytes": 55295,
+      "cssBytes": 2548,
+      "gzipCssBytes": 867
+    },
+    "dualTheme": {
+      "htmlBytes": 1683837,
+      "gzipHtmlBytes": 57821,
+      "cssBytes": 11364,
+      "gzipCssBytes": 1848
+    }
+  },
+  "browser": {
+    "checked": 175164,
+    "dataSha256": "684959e019ddab7b690dbc8036e30edab7464558038f336d22cb61bbf21d8e3c",
+    "tasks": [
+      {
+        "id": "strings",
+        "targets": 461,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "comments",
+        "targets": 52,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "keywords",
+        "targets": 224,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "numbers",
+        "targets": 38,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "functions",
+        "targets": 37,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "types",
+        "targets": 39,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "parameters",
+        "targets": 27,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "escapes",
+        "targets": 4,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "json-keys",
+        "targets": 84,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "json-values",
+        "targets": 26,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "template-variables",
+        "targets": 3,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "html-tags",
+        "targets": 23,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "html-attributes",
+        "targets": 8,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "embedded-js",
+        "targets": 2,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "css-classes",
+        "targets": 4,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "markdown-heading",
+        "targets": 9,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "python-docstring",
+        "targets": 8,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "regex-escapes",
+        "targets": 1,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "scope-order",
+        "targets": 1,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "id": "scope-repetition",
+        "targets": 1,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "mismatches": [],
+    "sourcePreserved": true,
+    "customOverride": true,
+    "domPreserved": true,
+    "metrics": {
+      "htmlBytes": 1705135,
+      "gzipHtmlBytes": 82149,
+      "cssBytes": 1218126,
+      "gzipCssBytes": 93265
+    },
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
+  }
+}

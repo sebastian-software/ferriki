@@ -8,13 +8,13 @@ The CI docs gate checks that every generated public symbol is represented here.
 The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
 `RegistrationInput`, `HighlighterOptions`, `HighlighterSyncOptions`,
-`HighlightOptions`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
+`HighlightOptions`, `HtmlWithCss`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
 `HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
 `ShikiTransformerContext`, `ShikiTransformer`, `ThemedTokenScopeExplanation`,
 `ThemedTokenExplanation`, `GrammarState`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
 `createHighlighter`, `createHighlighterCore`, `createShikiPrimitiveAsync`,
 `createHighlighterCoreSync`, `createShikiPrimitive`, `getSingletonHighlighter`,
-`getSingletonHighlighterCore`, `codeToHtml`, `codeToHast`, `codeToTokens`,
+`getSingletonHighlighterCore`, `codeToHtmlWithCss`, `codeToHtml`, `codeToHast`, `codeToTokens`,
 `codeToTokensBase`, `codeToTokensWithThemes`, `getLastGrammarState`,
 `CssVariablesThemeOptions`, `createCssVariablesTheme`, `hastToHtml`,
 `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`, and
@@ -42,6 +42,9 @@ highlighter as the first argument.
 codeToHtml(code, options): Promise<string>
 codeToHtml(highlighter, code, options): string
 
+codeToHtmlWithCss(code, options): Promise<HtmlWithCss>
+codeToHtmlWithCss(highlighter, code, options): HtmlWithCss
+
 codeToHast(code, options): Promise<HastRoot>
 codeToHast(highlighter, code, options): HastRoot
 
@@ -64,6 +67,12 @@ structure. `codeToHast` returns the equivalent serializable HAST tree.
 The `Base` and `WithThemes` helpers return only the token matrix from the
 corresponding result.
 
+`codeToHtmlWithCss` always renders classes and returns `{ html, css }`. Existing
+TextMate themes work unchanged. Combine CSS from every rendered block. With a
+`themes` map, set `data-ferriki-theme` on the root or an ancestor to switch themes
+without replacing tokens. See [Class-based highlighting](class-highlighting.md)
+for scope selectors, custom CSS, switching, and transformer behavior.
+
 ## Highlighter factories
 
 ```ts
@@ -85,12 +94,12 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option | Type | Meaning |
-| --- | --- | --- |
-| `langs` | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves. |
-| `themes` | `RegistrationInput<ThemeInput>[]` | Themes or loader functions to load before the factory resolves. |
-| `langAlias` | `Record<string, string>` | Per-highlighter aliases. Circular aliases throw `ShikiError`. |
-| `transformers` | `ShikiTransformer[]` | JavaScript-only callbacks for the documented token/HAST pipeline. |
+| Option         | Type                                 | Meaning                                                            |
+| -------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| `langs`        | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves. |
+| `themes`       | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.    |
+| `langAlias`    | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.      |
+| `transformers` | `ShikiTransformer[]`                 | JavaScript-only callbacks for the documented token/HAST pipeline.  |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
@@ -99,24 +108,24 @@ contract and compatibility coverage.
 
 ## Highlighter methods
 
-| Method | Result | Notes |
-| --- | --- | --- |
-| `codeToHtml(code, options)` | `string` | Render highlighted HTML. |
-| `codeToHast(code, options)` | `HastRoot` | Render the serializable HAST equivalent. |
-| `codeToTokens(code, options)` | `TokensResult` | Return tokens and theme metadata. |
-| `codeToTokensBase(code, options)` | `ThemedToken[][]` | Return the token matrix. |
-| `codeToTokensWithThemes(code, options)` | `ThemedToken[][]` | Return aligned tokens for a theme map. |
-| `highlighter.getLastGrammarState(code, options)` | `GrammarState` | Synchronous highlighter method for capturing grammar context. |
-| `getLastGrammarState(code, options)` | `Promise<GrammarState>` | Capture a serializable grammar context for continuation. |
-| `loadLanguage(...inputs)` | `Promise<void>` | Load standard or custom grammars. |
-| `loadLanguageSync(...inputs)` | `void` | Synchronous form for resolved registrations. |
-| `loadTheme(...inputs)` | `Promise<void>` | Load standard or custom themes. |
-| `loadThemeSync(...inputs)` | `void` | Synchronous form for resolved registrations. |
-| `getLoadedLanguages()` | `string[]` | Loaded canonical language IDs plus configured aliases. |
-| `getLoadedThemes()` | `string[]` | Loaded theme IDs. |
-| `resolveLangAlias(language)` | `string` | Resolve the configured alias chain. |
-| `dispose()` | `void` | Mark the highlighter disposed and release native state. |
-| `[Symbol.dispose]()` | `void` | Equivalent to `dispose()`. |
+| Method                                           | Result                  | Notes                                                         |
+| ------------------------------------------------ | ----------------------- | ------------------------------------------------------------- |
+| `codeToHtml(code, options)`                      | `string`                | Render highlighted HTML.                                      |
+| `codeToHast(code, options)`                      | `HastRoot`              | Render the serializable HAST equivalent.                      |
+| `codeToTokens(code, options)`                    | `TokensResult`          | Return tokens and theme metadata.                             |
+| `codeToTokensBase(code, options)`                | `ThemedToken[][]`       | Return the token matrix.                                      |
+| `codeToTokensWithThemes(code, options)`          | `ThemedToken[][]`       | Return aligned tokens for a theme map.                        |
+| `highlighter.getLastGrammarState(code, options)` | `GrammarState`          | Synchronous highlighter method for capturing grammar context. |
+| `getLastGrammarState(code, options)`             | `Promise<GrammarState>` | Capture a serializable grammar context for continuation.      |
+| `loadLanguage(...inputs)`                        | `Promise<void>`         | Load standard or custom grammars.                             |
+| `loadLanguageSync(...inputs)`                    | `void`                  | Synchronous form for resolved registrations.                  |
+| `loadTheme(...inputs)`                           | `Promise<void>`         | Load standard or custom themes.                               |
+| `loadThemeSync(...inputs)`                       | `void`                  | Synchronous form for resolved registrations.                  |
+| `getLoadedLanguages()`                           | `string[]`              | Loaded canonical language IDs plus configured aliases.        |
+| `getLoadedThemes()`                              | `string[]`              | Loaded theme IDs.                                             |
+| `resolveLangAlias(language)`                     | `string`                | Resolve the configured alias chain.                           |
+| `dispose()`                                      | `void`                  | Mark the highlighter disposed and release native state.       |
+| `[Symbol.dispose]()`                             | `void`                  | Equivalent to `dispose()`.                                    |
 
 Calls after disposal throw `ShikiError`. Disposal clears native grammar/theme
 registries and asset caches deterministically; a disposed wrapper cannot be
@@ -126,25 +135,26 @@ an explicit worker boundary; create one highlighter per worker instead.
 
 ## Highlight options
 
-| Option | Type | Meaning |
-| --- | --- | --- |
-| `lang` | `LanguageInput` | Language ID, alias, or a custom registration. Defaults to `text`. |
-| `theme` | `ThemeInput` | One theme ID or registration. Required unless `themes` is supplied. |
-| `themes` | `Record<string, ThemeInput>` | Ordered theme map, for example `{ light, dark }`. |
-| `defaultColor` | `string \| false` | Default foreground color; `false` disables the default color. |
-| `cssVariablePrefix` | `string` | Prefix used for multi-theme CSS variables. |
-| `includeExplanation` | `boolean \| 'scopeName' \| 'tokenType'` | Include the accepted token explanation metadata. |
-| `grammarState` | `GrammarState` | Continue grammar inference from a state returned by `getLastGrammarState` or `codeToTokens`. |
-| `mergeWhitespaces` | `boolean` | Merge adjacent whitespace tokens where possible. |
-| `mergeSameStyleTokens` | `boolean` | Merge adjacent tokens with the same style. |
-| `rootStyle` | `string \| false` | Inline style on the root element. |
-| `tabindex` | `string \| number \| false \| null` | Root `tabindex` attribute. |
-| `tokenizeMaxLineLength` | `number` | Maximum tokenized line length. |
-| `tokenizeTimeLimit` | `number` | Tokenization time budget in milliseconds. |
-| `structure` | `'classic' | 'inline'` | Select the classic `<pre><code>` tree or inline token tree. |
-| `meta` | `Record<string, unknown>` | Fence metadata copied to the root HAST element, except private `_` keys. |
-| `transformers` | `ShikiTransformer[]` | Ordered JS hooks; callbacks never cross the native boundary. |
-| `decorations` | `DecorationItem[]` | Validated UTF-16 ranges applied around highlighted HAST sections. |
+| Option                  | Type                                    | Meaning                                                                                      |
+| ----------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `styleMode`             | `"inline" \| "classes"`                 | Inline styles by default; classes preserve nested grammar scopes.                            |
+| `lang`                  | `LanguageInput`                         | Language ID, alias, or a custom registration. Defaults to `text`.                            |
+| `theme`                 | `ThemeInput`                            | One theme ID or registration. Required unless `themes` is supplied.                          |
+| `themes`                | `Record<string, ThemeInput>`            | Ordered theme map, for example `{ light, dark }`.                                            |
+| `defaultColor`          | `string \| false`                       | Default foreground color; `false` disables the default color.                                |
+| `cssVariablePrefix`     | `string`                                | Prefix used for multi-theme CSS variables.                                                   |
+| `includeExplanation`    | `boolean \| 'scopeName' \| 'tokenType'` | Include the accepted token explanation metadata.                                             |
+| `grammarState`          | `GrammarState`                          | Continue grammar inference from a state returned by `getLastGrammarState` or `codeToTokens`. |
+| `mergeWhitespaces`      | `boolean`                               | Merge adjacent whitespace tokens where possible.                                             |
+| `mergeSameStyleTokens`  | `boolean`                               | Merge adjacent tokens with the same style.                                                   |
+| `rootStyle`             | `string \| false`                       | Inline style on the root element.                                                            |
+| `tabindex`              | `string \| number \| false \| null`     | Root `tabindex` attribute.                                                                   |
+| `tokenizeMaxLineLength` | `number`                                | Maximum tokenized line length.                                                               |
+| `tokenizeTimeLimit`     | `number`                                | Tokenization time budget in milliseconds.                                                    |
+| `structure`             | `'classic'                              | 'inline'`                                                                                    | Select the classic `<pre><code>` tree or inline token tree. |
+| `meta`                  | `Record<string, unknown>`               | Fence metadata copied to the root HAST element, except private `_` keys.                     |
+| `transformers`          | `ShikiTransformer[]`                    | Ordered JS hooks; callbacks never cross the native boundary.                                 |
+| `decorations`           | `DecorationItem[]`                      | Validated UTF-16 ranges applied around highlighted HAST sections.                            |
 
 `tokenizeTimeLimit` defaults to 500 ms per line; `0` disables the time limit.
 `tokenizeMaxLineLength` defaults to `0` (unlimited). When a non-zero line
@@ -172,13 +182,12 @@ to the native runtime. A registration can be supplied directly, wrapped in a
 or returned by a promise (async factories only).
 
 ```ts
-type LanguageInput = string | LanguageRegistration
-type ThemeInput = string | ThemeRegistration
-type SyncRegistrationInput<T> = T | { default: SyncRegistrationInput<T> }
-  | readonly SyncRegistrationInput<T>[]
-type RegistrationInput<T> = SyncRegistrationInput<T>
-  | PromiseLike<RegistrationInput<T>>
-  | (() => RegistrationInput<T>)
+type LanguageInput = string | LanguageRegistration;
+type ThemeInput = string | ThemeRegistration;
+type SyncRegistrationInput<T> =
+  T | { default: SyncRegistrationInput<T> } | readonly SyncRegistrationInput<T>[];
+type RegistrationInput<T> =
+  SyncRegistrationInput<T> | PromiseLike<RegistrationInput<T>> | (() => RegistrationInput<T>);
 ```
 
 Custom language registrations need `name`, `scopeName`, and valid TextMate
@@ -195,41 +204,41 @@ provided for typed consumers such as Ardo configuration and language guards.
 
 ```ts
 interface ThemedToken {
-  content: string
-  offset: number
-  color?: string
-  fontStyle?: number
-  type?: number
-  htmlStyle?: Record<string, string>
-  variants?: Record<string, { color?: string; fontStyle?: number }>
-  explanation?: ThemedTokenExplanation[]
+  content: string;
+  offset: number;
+  color?: string;
+  fontStyle?: number;
+  type?: number;
+  htmlStyle?: Record<string, string>;
+  variants?: Record<string, { color?: string; fontStyle?: number }>;
+  explanation?: ThemedTokenExplanation[];
 }
 
 interface ThemedTokenScopeExplanation {
-  scopeName: string
+  scopeName: string;
 }
 
 interface ThemedTokenExplanation {
-  content: string
-  scopes: ThemedTokenScopeExplanation[]
+  content: string;
+  scopes: ThemedTokenScopeExplanation[];
 }
 
 interface GrammarState {
-  version: 1
-  lang: string
-  theme: string
-  themes: string[]
-  scopes: string[]
-  source: string
+  version: 1;
+  lang: string;
+  theme: string;
+  themes: string[];
+  scopes: string[];
+  source: string;
 }
 
 interface TokensResult {
-  tokens: ThemedToken[][]
-  fg: string
-  bg: string
-  themeName: string
-  rootStyle?: string
-  grammarState?: GrammarState
+  tokens: ThemedToken[][];
+  fg: string;
+  bg: string;
+  themeName: string;
+  rootStyle?: string;
+  grammarState?: GrammarState;
 }
 ```
 
@@ -257,14 +266,14 @@ and ANSI input are reported as `ShikiError` with a stable `code`. Native
 operation failures are reported as the `FerrikiError` subclass, which remains
 an `instanceof ShikiError` for existing consumers. The supported codes are:
 
-| Code | Meaning |
-| --- | --- |
-| `ERR_USAGE` | Invalid public options, registrations, aliases, or lifecycle use. |
-| `ERR_UNSUPPORTED` | A deliberate capability boundary, missing language/theme, or ANSI input. |
-| `ERR_NATIVE_LOAD` | No loadable platform addon for the current target. |
-| `ERR_ASSET` | Missing/corrupt bundled assets or invalid native registration payload. |
-| `ERR_RESOURCE_LIMIT` | Tokenization exceeded a documented time/size/resource limit. |
-| `ERR_INTERNAL` | An unexpected native or facade failure. |
+| Code                 | Meaning                                                                  |
+| -------------------- | ------------------------------------------------------------------------ |
+| `ERR_USAGE`          | Invalid public options, registrations, aliases, or lifecycle use.        |
+| `ERR_UNSUPPORTED`    | A deliberate capability boundary, missing language/theme, or ANSI input. |
+| `ERR_NATIVE_LOAD`    | No loadable platform addon for the current target.                       |
+| `ERR_ASSET`          | Missing/corrupt bundled assets or invalid native registration payload.   |
+| `ERR_RESOURCE_LIMIT` | Tokenization exceeded a documented time/size/resource limit.             |
+| `ERR_INTERNAL`       | An unexpected native or facade failure.                                  |
 
 `FerrikiError` preserves the original native exception in `cause` without
 making its implementation text part of the contract. Native loader messages

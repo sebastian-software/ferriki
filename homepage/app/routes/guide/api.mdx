@@ -1,6 +1,6 @@
 ---
 title: API overview
-order: 4
+order: 5
 ---
 
 # API overview
@@ -17,6 +17,7 @@ the first argument and it returns synchronously.
 | Function                                | Returns                                            |
 | --------------------------------------- | -------------------------------------------------- |
 | `codeToHtml(code, options)`             | Escaped HTML with Shiki's line and token structure |
+| `codeToHtmlWithCss(code, options)`      | Nested classes and a matching stylesheet           |
 | `codeToHast(code, options)`             | The same result as a serializable HAST tree        |
 | `codeToTokens(code, options)`           | Tokens plus foreground and background colors       |
 | `codeToTokensBase(code, options)`       | The token matrix only                              |
@@ -38,7 +39,7 @@ their `Sync` forms), `getLoadedLanguages`, `getLoadedThemes`,
 ## Highlight options
 
 The common ones: `lang`, `theme` or `themes`, `defaultColor`,
-`cssVariablePrefix`, `mergeWhitespaces`, `mergeSameStyleTokens`,
+`cssVariablePrefix`, `styleMode`, `mergeWhitespaces`, `mergeSameStyleTokens`,
 `tabindex`, `rootStyle`, `structure`, `meta`, `grammarState` and
 `includeExplanation`. `tokenizeTimeLimit` (500 ms per line by default) and
 `tokenizeMaxLineLength` bound the work one line may take.
@@ -50,3 +51,6 @@ Every user-facing failure is a `ShikiError` with a stable `code`
 `ERR_RESOURCE_LIMIT`, `ERR_INTERNAL`). Failures inside the native engine are
 its subclass `FerrikiError`, so existing `instanceof ShikiError` checks keep
 working.
+
+For nested scopes, unchanged theme files, and CSS-only theme switching, see
+[Class-based output](/guide/class-highlighting).

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Ferriki production class validation</title>
+  <style>
+    body {
+      font: 16px/1.5 system-ui;
+      margin: 24px;
+    }
+    pre {
+      padding: 16px;
+      overflow: auto;
+      font: 14px/1.5 monospace;
+    }
+    #fixtures {
+      position: absolute;
+      left: -100000px;
+      width: 1000px;
+    }
+    button,
+    select {
+      font: inherit;
+      padding: 8px;
+    }
+  </style>
+  <h1>Production class output</h1>
+  <p id="status">Loading corpus…</p>
+  <button id="run" type="button">Verify all themes</button>
+  <label
+    >Theme
+    <select id="theme"></select></label
+  ><label
+    >Example
+    <select id="case"></select
+  ></label>
+  <div id="gallery"></div>
+  <div id="fixtures" aria-hidden="true"></div>
+  <script type="module" src="/production-browser.mjs"></script>
+</html>
