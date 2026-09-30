@@ -13,6 +13,11 @@ scope detail used by TextMate themes. Unordered classes alone cannot distinguish
 scope order or repetition. Converting TextMate selectors to CSS selectors would
 also need to reproduce TextMate precedence and inheritance independently.
 
+The idea was inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
+and [wooorm's starry-night](https://github.com/wooorm/starry-night), whose
+PrettyLights-style class output prompted the exploration of CSS-based styling.
+Ferriki applies that direction to its existing native TextMate runtime.
+
 The [class-highlighting experiment](../docs/experiments/class-highlighting.md)
 compared flat classes, nested scopes, and path identifiers. Nested scopes retained
 the tested distinctions while ordinary category selectors covered simple tasks.
@@ -59,3 +64,4 @@ contract and integration rules. Enforcement lives in
 ## History
 
 - 2026-09-30: Accepted the optional nested-scope output and reuse of native theme resolution.
+- 2026-09-30: Recorded GitHub's PrettyLights and wooorm's starry-night as the design inspiration.

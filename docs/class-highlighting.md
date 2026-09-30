@@ -3,6 +3,16 @@
 Class-based output is available in the current repository build and will ship
 in the next release. Inline styles remain the default.
 
+## Inspiration
+
+This mode was inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
+and [wooorm's starry-night](https://github.com/wooorm/starry-night), which recreates
+PrettyLights-style class-based highlighting. Starry-night was the starting point
+for exploring CSS classes and stylesheet-driven themes in Ferriki.
+
+Ferriki implements the idea on its existing native TextMate runtime, preserving
+full nested scope paths and extracting CSS from resolved theme styles.
+
 ## Use your own CSS
 
 Select `styleMode: "classes"` on `codeToHtml` or `codeToHast`. Use `theme: "none"`
