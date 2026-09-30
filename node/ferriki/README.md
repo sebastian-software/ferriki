@@ -17,6 +17,13 @@ package managers select the matching OS/CPU/libc sidecar automatically. The
 main package ships no native addon of its own, so keep optional dependencies
 enabled in production installs.
 
+The package ships no grammar or theme payloads either. The first time a
+language or theme is loaded, Ferriki downloads it from `assets.ferriki.dev`,
+pinned to this release and verified by SHA-256, and caches it in
+`node_modules/.cache/ferriki`. Offline builds reuse a populated cache or point
+`FERRIKI_ASSETS_BASE_URL` at a mirror; `FERRIKI_ASSETS_REMOTE=0` turns
+downloads off. See [standard assets](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#standard-assets).
+
 ## Highlight code
 
 Use a shorthand for one-off highlighting:

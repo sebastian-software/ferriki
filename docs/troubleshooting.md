@@ -86,3 +86,42 @@ The gate packs `node/ferriki` and the host's platform package, installs both
 tarballs into a temporary consumer with lifecycle scripts disabled, and imports
 only the installed `@ferriki/core` package. A failure usually means a missing `files` entry, asset, declaration,
 or platform sidecar. Inspect `npm pack --dry-run` from `node/ferriki`.
+
+## `Ferriki could not download assets` or `… is not cached`
+
+Standard grammars and themes are not bundled; they are downloaded on first use
+from `https://assets.ferriki.dev/<release-commit>/assets/shiki/…`, verified by
+SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
+
+- **`Ferriki could not download assets: … HTTP 404` or a connection error**:
+  the mirror is unreachable or does not serve that release. Check network
+  access, a proxy (`HTTPS_PROXY` is honored), or `FERRIKI_ASSETS_BASE_URL`.
+  Downloads are not retried.
+- **`… did not match its release-pinned SHA-256`**: the mirror served
+  different bytes. Nothing was cached; fix the mirror.
+- **`… is not cached … Load it through the asynchronous createHighlighter,
+  loadLanguage or loadTheme first`**: a synchronous path met a language or theme
+  that was never loaded. Load it asynchronously once, or pre-populate the cache.
+- **`… remote assets are turned off`**: `remote: false` or
+  `FERRIKI_ASSETS_REMOTE=0` is set and the cache lacks the payload.
+
+TLS verification uses the operating system's trust store, so certificate
+authorities installed for a corporate proxy work without extra settings.
+
+## Offline and air-gapped use
+
+There is no offline package; use one of these instead:
+
+- **Reuse a populated cache.** Run the build once with network access, then
+  keep the cache directory (`node_modules/.cache/ferriki` by default, or
+  `FERRIKI_CACHE_DIR`) as a CI cache or container layer, and set
+  `FERRIKI_ASSETS_REMOTE=0` for the offline runs. The cache holds one file per
+  SHA-256 digest; entries never change and are reused across releases.
+- **Run a mirror.** Serve a copy of the repository's `assets/shiki/` at the
+  release commit below `<release-commit>/assets/shiki/` and set
+  `FERRIKI_ASSETS_BASE_URL` (or the `baseUrl` asset option) to its root. The
+  commit is recorded in `node_modules/@ferriki/core/assets/shiki/release-manifest.json`.
+
+Privacy: a default install contacts `assets.ferriki.dev` the first time a
+language or theme is used, sending an ordinary HTTPS request for that file.
+Set `FERRIKI_ASSETS_REMOTE=0`, or use a mirror, to avoid it.

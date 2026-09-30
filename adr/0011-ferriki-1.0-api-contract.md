@@ -27,13 +27,11 @@ keeps ecosystem adapters outside the public Ferriki package. The npm package
 exposes no Rust API; Rust consumers use the published crates of
 [ADR 0012](0012-publishable-rust-highlighter.md).
 
-Before the contract is frozen at 1.0 it must also list:
-
-- the `assets` option (`remote`, `baseUrl`, `cacheDir`), the `FERRIKI_ASSETS_*`
-  and `FERRIKI_CACHE_DIR` environment variables and the new typed asset errors
-  of [ADR 0013](0013-cdn-loaded-standard-assets.md) (#141);
-- a type-level check of the public TypeScript declarations against the
-  mirrored Shiki types, so the hand-written declarations cannot drift (#158).
+The contract lists the `assets` option, its environment variables and the
+sync/async download boundary of
+[ADR 0013](0013-cdn-loaded-standard-assets.md). Before it is frozen at 1.0,
+the public TypeScript declarations also need a type-level check against the
+mirrored Shiki types, so the hand-written declarations cannot drift (#158).
 
 ## Consequences
 
@@ -48,3 +46,4 @@ Before the contract is frozen at 1.0 it must also list:
 
 - 2026-09-05: Accepted.
 - 2026-09-30: Lists the ADR 0013 options and the type conformance check the contract must cover before the freeze.
+- 2026-09-30: The contract now lists the `assets` option and the download boundary (#141).

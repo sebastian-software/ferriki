@@ -5,8 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-
 import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
+
+import "./test-asset-env.mjs";
 
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const packageRoot = join(nodeRoot, "ferriki");

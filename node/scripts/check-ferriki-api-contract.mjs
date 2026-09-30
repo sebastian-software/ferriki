@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
 import {
   bundledLanguages,
   bundledLanguagesAlias,
@@ -10,6 +9,8 @@ import {
   createHighlighter,
   ShikiError,
 } from "../ferriki/index.mjs";
+
+import "./test-asset-env.mjs";
 
 const contract = await readFile(
   new URL("../../docs/ferriki-1.0-api-contract.md", import.meta.url),

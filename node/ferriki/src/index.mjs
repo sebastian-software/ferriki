@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
@@ -40,7 +42,12 @@ export async function createHighlighter(options = {}) {
   options = validateHighlighterOptions(options);
   const { langs = [], themes = [], ...coreOptions } = options;
   const highlighter = createHighlighterCoreSync(coreOptions);
-  await Promise.all([highlighter.loadLanguage(...langs), highlighter.loadTheme(...themes)]);
+  const [languages, resolvedThemes] = await Promise.all([
+    resolveRegistrations(langs),
+    resolveRegistrations(themes),
+  ]);
+  await highlighter.loadLanguage(...languages);
+  await highlighter.loadTheme(...resolvedThemes);
   return highlighter;
 }
 
@@ -49,11 +56,13 @@ export const createShikiPrimitiveAsync = createHighlighter;
 
 export function createHighlighterCoreSync(options = {}) {
   options = validateHighlighterOptions(options);
+  const assets = resolveAssetOptions(options.assets);
   let native;
   try {
     native = loadFerrikiNativeBinding().createHighlighter(
       JSON.stringify({
         standardAssetRoot,
+        assets,
       }),
     );
   } catch (cause) {
@@ -104,7 +113,9 @@ export function createHighlighterCoreSync(options = {}) {
             () => native.loadCustomGrammar(JSON.stringify(registration)),
             "language",
           )
-        : native.loadStandardGrammar(resolved);
+        : callNativeOperation(`Ferriki could not load language \`${resolved}\``, () =>
+            native.loadStandardGrammar(resolved),
+          );
       if (!scope)
         throw new ShikiError(
           `Language \`${resolved}\` not found, you may need to load it first`,
@@ -123,7 +134,33 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   async function loadLanguage(...inputs) {
-    loadLanguageSync(...(await resolveRegistrations(inputs)));
+    const registrations = await resolveRegistrations(inputs);
+    const names = registrations.flatMap((registration) =>
+      isCustomLanguageRegistration(registration)
+        ? [...(registration.embeddedLangs || [])]
+        : [resolveAlias(registrationName(registration))],
+    );
+    await prefetchAssets(names, []);
+    loadLanguageSync(...registrations);
+  }
+
+  // Downloads what the synchronous loads below will read from the cache.
+  async function prefetchAssets(languages, themes) {
+    assertActive();
+    const standardLanguages = [
+      ...new Set(languages.filter((name) => name && isStandardLanguageKey(name))),
+    ];
+    const standardThemes = [
+      ...new Set(
+        themes
+          .map((name) => (name === "none" ? NONE_THEME_BACKING : name))
+          .filter((name) => isStandardThemeKey(name)),
+      ),
+    ];
+    if (standardLanguages.length === 0 && standardThemes.length === 0) return;
+    await callNativeOperationAsync("Ferriki could not download assets", () =>
+      native.prefetchAssets(standardLanguages, standardThemes),
+    );
   }
 
   function loadThemeSync(...inputs) {
@@ -138,7 +175,9 @@ export function createHighlighterCoreSync(options = {}) {
               () => native.loadCustomTheme(JSON.stringify(registration)),
               "theme",
             )
-          : native.loadStandardTheme(name);
+          : callNativeOperation(`Ferriki could not load theme \`${name}\``, () =>
+              native.loadStandardTheme(name),
+            );
         if (!loaded)
           throw new ShikiError(
             `Theme \`${name}\` not found, you may need to load it first`,
@@ -150,7 +189,14 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   async function loadTheme(...inputs) {
-    loadThemeSync(...(await resolveRegistrations(inputs)));
+    const registrations = await resolveRegistrations(inputs);
+    await prefetchAssets(
+      [],
+      registrations
+        .filter((registration) => !isCustomThemeRegistration(registration))
+        .map(registrationName),
+    );
+    loadThemeSync(...registrations);
   }
 
   function prepareOptions(options) {
@@ -167,12 +213,21 @@ export function createHighlighterCoreSync(options = {}) {
         "Invalid options, either `theme` or `themes` must be provided",
         "ERR_USAGE",
       );
-    if (!isSpecialLanguage(language) && !native.resolveGrammarScope(language))
+    if (
+      !isSpecialLanguage(language) &&
+      !callNativeOperation(`Ferriki could not load language \`${language}\``, () =>
+        native.resolveGrammarScope(language),
+      )
+    )
       throw new ShikiError(
         `Language \`${language}\` not found, you may need to load it first`,
         "ERR_UNSUPPORTED",
       );
-    if (!native.loadStandardTheme(theme))
+    if (
+      !callNativeOperation(`Ferriki could not load theme \`${theme}\``, () =>
+        native.loadStandardTheme(theme),
+      )
+    )
       throw new ShikiError(
         `Theme \`${theme}\` not found, you may need to load it first`,
         "ERR_UNSUPPORTED",
@@ -570,7 +625,7 @@ export const getSingletonHighlighterCore = getSingletonHighlighter;
 export function codeToHtml(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "codeToHtml"))
     return highlighterOrCode.codeToHtml(codeOrOptions, options);
-  return getSingletonHighlighter().then((highlighter) =>
+  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
     highlighter.codeToHtml(highlighterOrCode, codeOrOptions),
   );
 }
@@ -586,7 +641,7 @@ export function codeToHtmlWithCss(highlighterOrCode, codeOrOptions, options) {
 export function codeToHast(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "codeToHast"))
     return highlighterOrCode.codeToHast(codeOrOptions, options);
-  return getSingletonHighlighter().then((highlighter) =>
+  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
     highlighter.codeToHast(highlighterOrCode, codeOrOptions),
   );
 }
@@ -594,7 +649,7 @@ export function codeToHast(highlighterOrCode, codeOrOptions, options) {
 export function codeToTokens(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "codeToTokens"))
     return highlighterOrCode.codeToTokens(codeOrOptions, options);
-  return getSingletonHighlighter().then((highlighter) =>
+  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
     highlighter.codeToTokens(highlighterOrCode, codeOrOptions),
   );
 }
@@ -615,7 +670,7 @@ export function getLastGrammarState(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "getLastGrammarState"))
     return highlighterOrCode.getLastGrammarState(codeOrOptions, options);
   if (typeof highlighterOrCode === "string") {
-    return getSingletonHighlighter().then((highlighter) =>
+    return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
       highlighter.getLastGrammarState(highlighterOrCode, codeOrOptions),
     );
   }
@@ -989,6 +1044,10 @@ function isStandardLanguageKey(name) {
   return standardLanguageKeys.has(name);
 }
 
+function isStandardThemeKey(name) {
+  return standardThemeKeys.has(name);
+}
+
 function callNativeOperation(message, operation) {
   try {
     return operation();
@@ -1001,6 +1060,74 @@ function callNativeOperation(message, operation) {
         ? "ERR_ASSET"
         : "ERR_INTERNAL";
     throw new FerrikiError(`${message}: ${detail}`, code, { cause });
+  }
+}
+
+async function callNativeOperationAsync(message, operation) {
+  try {
+    return await operation();
+  } catch (cause) {
+    if (cause instanceof ShikiError) throw cause;
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new FerrikiError(`${message}: ${detail}`, "ERR_ASSET", { cause });
+  }
+}
+
+// The shorthands load what their options name, as Shiki's do.
+function shorthandLoads(options) {
+  if (!options || typeof options !== "object") return {};
+  const langs =
+    options.lang && !isSpecialLanguage(registrationName(options.lang)) ? [options.lang] : [];
+  const themes = [options.theme, ...Object.values(options.themes || {})].filter(
+    (theme) => theme != null && theme !== false,
+  );
+  return { langs, themes };
+}
+
+// `assets: { remote, baseUrl, cacheDir }` (ADR 0013). Unset fields fall back to
+// FERRIKI_ASSETS_REMOTE, FERRIKI_ASSETS_BASE_URL and FERRIKI_CACHE_DIR in the
+// native runtime. Without an explicit or environment cache directory, the cache
+// follows the find-cache-dir convention: node_modules/.cache/ferriki of the
+// nearest package root, then the platform cache directory.
+function resolveAssetOptions(assets) {
+  const resolved = {};
+  if (assets !== undefined) {
+    if (!assets || typeof assets !== "object" || Array.isArray(assets))
+      throw new ShikiError("Highlighter option `assets` must be an object", "ERR_USAGE");
+    for (const key of Object.keys(assets)) {
+      if (!["remote", "baseUrl", "cacheDir"].includes(key))
+        throw new ShikiError(`Unknown asset option \`${key}\``, "ERR_USAGE");
+    }
+    if (assets.remote !== undefined) {
+      if (typeof assets.remote !== "boolean")
+        throw new ShikiError("Asset option `remote` must be a boolean", "ERR_USAGE");
+      resolved.remote = assets.remote;
+    }
+    if (assets.baseUrl !== undefined) {
+      if (typeof assets.baseUrl !== "string" || !/^https?:\/\//.test(assets.baseUrl))
+        throw new ShikiError("Asset option `baseUrl` must be an http(s) URL", "ERR_USAGE");
+      resolved.baseUrl = assets.baseUrl;
+    }
+    if (assets.cacheDir !== undefined) {
+      if (typeof assets.cacheDir !== "string" || !assets.cacheDir)
+        throw new ShikiError("Asset option `cacheDir` must be a non-empty path", "ERR_USAGE");
+      resolved.cacheDir = assets.cacheDir;
+    }
+  }
+  if (resolved.cacheDir === undefined && !process.env.FERRIKI_CACHE_DIR) {
+    const packageCache = findPackageCacheDir(process.cwd());
+    if (packageCache) resolved.cacheDir = packageCache;
+  }
+  return resolved;
+}
+
+function findPackageCacheDir(start) {
+  for (let dir = start; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, "package.json")))
+      return existsSync(join(dir, "node_modules"))
+        ? join(dir, "node_modules", ".cache", "ferriki")
+        : undefined;
+    if (dirname(dir) === dir) return undefined;
   }
 }
 

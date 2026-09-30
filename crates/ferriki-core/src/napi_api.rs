@@ -1,7 +1,11 @@
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-use napi::{Error, Result};
+use ferriki::__private::RemoteAssetHost;
+use ferriki::RemoteAssets;
+use napi::bindgen_prelude::AsyncTask;
+use napi::{Env, Error, JsUndefined, Result, Task};
 use napi_derive::napi;
 use serde_json::Value;
 
@@ -10,6 +14,30 @@ use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_hast, render
 #[napi]
 pub struct FerrikiHighlighter {
     core: RefCell<HighlighterCore>,
+    assets: Option<Arc<RemoteAssetHost>>,
+}
+
+/// Downloads payloads on the libuv thread pool, so the event loop keeps running.
+pub struct PrefetchTask {
+    assets: Option<Arc<RemoteAssetHost>>,
+    languages: Vec<String>,
+    themes: Vec<String>,
+}
+
+impl Task for PrefetchTask {
+    type Output = ();
+    type JsValue = JsUndefined;
+
+    fn compute(&mut self) -> Result<Self::Output> {
+        match &self.assets {
+            Some(assets) => native(assets.prefetch(&self.languages, &self.themes)),
+            None => Ok(()),
+        }
+    }
+
+    fn resolve(&mut self, env: Env, _output: Self::Output) -> Result<Self::JsValue> {
+        env.get_undefined()
+    }
 }
 
 #[napi]
@@ -127,6 +155,21 @@ impl FerrikiHighlighter {
         Ok(render_html(&tokens, &options.render))
     }
 
+    /// Makes the standard payloads of these languages, their embedded languages
+    /// and these themes available in the cache, downloading what is missing.
+    #[napi(js_name = "prefetchAssets", ts_return_type = "Promise<void>")]
+    pub fn prefetch_assets(
+        &self,
+        languages: Vec<String>,
+        themes: Vec<String>,
+    ) -> AsyncTask<PrefetchTask> {
+        AsyncTask::new(PrefetchTask {
+            assets: self.assets.clone(),
+            languages,
+            themes,
+        })
+    }
+
     #[napi]
     pub fn dispose(&self) {
         self.core.borrow_mut().dispose();
@@ -142,13 +185,33 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
         .get("standardAssetRoot")
         .and_then(Value::as_str)
         .map(Path::new);
-    let core = match standard_asset_root {
-        Some(root) => native(HighlighterCore::with_standard_assets(root))?,
-        None => native(HighlighterCore::new())?,
+    let Some(root) = standard_asset_root else {
+        return Ok(FerrikiHighlighter {
+            core: RefCell::new(native(HighlighterCore::new())?),
+            assets: None,
+        });
     };
+    let assets = Arc::new(native(RemoteAssetHost::from_root(
+        root,
+        &remote_assets(options.get("assets")),
+    ))?);
+    let core = native(HighlighterCore::with_assets(native(assets.catalogs())?))?;
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
+        assets: Some(assets),
     })
+}
+
+/// Reads `{ remote, baseUrl, cacheDir, commit }`; unset fields fall back to the
+/// `FERRIKI_*` environment variables in the Rust runtime.
+fn remote_assets(value: Option<&Value>) -> RemoteAssets {
+    let field = |name: &str| value.and_then(|value| value.get(name));
+    let string = |name: &str| field(name).and_then(Value::as_str).map(str::to_owned);
+    RemoteAssets::default()
+        .with_remote(field("remote").and_then(Value::as_bool))
+        .with_base_url(string("baseUrl"))
+        .with_cache_dir(string("cacheDir").map(PathBuf::from))
+        .with_commit(string("commit"))
 }
 
 fn native<T>(result: ferriki::Result<T>) -> Result<T> {
@@ -237,10 +300,40 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// Seeds a digest-addressed cache from the repository payloads once, so the
+    /// tests never download and never touch the user's cache.
+    fn test_cache(root: &Path) -> PathBuf {
+        static CACHE: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+        CACHE
+            .get_or_init(|| {
+                let cache = std::env::temp_dir()
+                    .join(format!("ferriki-core-test-cache-{}", std::process::id()));
+                std::fs::create_dir_all(&cache).expect("cache directory");
+                let release: Value = serde_json::from_str(
+                    &std::fs::read_to_string(root.join("release-manifest.json"))
+                        .expect("release manifest"),
+                )
+                .expect("release manifest json");
+                for (path, asset) in release["assets"].as_object().expect("assets") {
+                    let digest = asset["sha256"].as_str().expect("digest");
+                    std::fs::copy(root.join(path), cache.join(digest)).expect("seed payload");
+                }
+                cache
+            })
+            .clone()
+    }
+
     fn standard_highlighter() -> FerrikiHighlighter {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
-        create_highlighter(json!({ "standardAssetRoot": root.display().to_string() }).to_string())
-            .expect("highlighter")
+        let cache = test_cache(&root);
+        create_highlighter(
+            json!({
+                "standardAssetRoot": root.display().to_string(),
+                "assets": { "remote": false, "cacheDir": cache.display().to_string() },
+            })
+            .to_string(),
+        )
+        .expect("highlighter")
     }
 
     #[test]

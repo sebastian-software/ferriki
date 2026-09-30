@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
+import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
   langs: ["javascript", "typescript"],

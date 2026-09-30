@@ -102,7 +102,7 @@ impl StandardAssetCatalogs {
             .with_source(source)
         })?;
         let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
-        let source = RemoteAssetSource::new(&release, resolved)?;
+        let source = RemoteAssetSource::new(&release, resolved, true)?;
         Self::from_release_manifest(LANGUAGES, THEMES, &release, source)
     }
 

@@ -8,6 +8,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 import { createHighlighter } from "../../node/ferriki/index.mjs";
+import { TEST_ASSET_CACHE_DIR } from "../../node/scripts/test-asset-env.mjs";
+
+// Payloads come from the cache that `build:native` seeds, not the network.
+process.env.FERRIKI_CACHE_DIR ??= TEST_ASSET_CACHE_DIR;
+process.env.FERRIKI_ASSETS_REMOTE ??= "0";
 
 const artifact = new URL("../app/data/sample.json", import.meta.url);
 const input = readFileSync(new URL("sample-input.html", import.meta.url), "utf8");

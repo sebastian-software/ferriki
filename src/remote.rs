@@ -7,21 +7,22 @@
 //! across releases. There is no retry policy.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use ferriki_asset_gen::ReleaseManifest;
+use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
 use crate::asset_source::{AssetDigest, AssetSource};
-use crate::{Error, ErrorKind, Result};
+use crate::{Error, ErrorKind, Result, StandardAssetCatalogs};
 
 /// The default mirror of this repository's release commits.
 pub const DEFAULT_ASSETS_BASE_URL: &str = "https://assets.ferriki.dev";
 
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(60);
+const PREFETCH_WORKERS: usize = 6;
 
 /// Where and whether [`crate::StandardAssetCatalogs::remote`] loads payloads.
 ///
@@ -146,10 +147,17 @@ pub(crate) struct RemoteAssetSource {
     payloads: HashMap<AssetDigest, (String, u64)>,
     settings: ResolvedRemote,
     agent: ureq::Agent,
+    /// Rust's `remote()` downloads while it loads. The Node host reads only the
+    /// cache on its synchronous paths and downloads in `prefetch` instead.
+    download_on_read: bool,
 }
 
 impl RemoteAssetSource {
-    pub(crate) fn new(release: &ReleaseManifest, settings: ResolvedRemote) -> Result<Self> {
+    pub(crate) fn new(
+        release: &ReleaseManifest,
+        settings: ResolvedRemote,
+        download_on_read: bool,
+    ) -> Result<Self> {
         let mut payloads = HashMap::with_capacity(release.assets.len());
         for (path, asset) in &release.assets {
             payloads.insert(
@@ -173,7 +181,43 @@ impl RemoteAssetSource {
             payloads,
             settings,
             agent,
+            download_on_read,
         })
+    }
+
+    /// Makes sure a payload is in the cache, downloading it when allowed.
+    pub(crate) fn fetch(&self, digest: &AssetDigest) -> Result<()> {
+        let (path, size) = self.payload(digest)?;
+        if self.read_cached(digest).is_some() {
+            return Ok(());
+        }
+        if !self.settings.remote {
+            return Err(self.remote_off(path));
+        }
+        self.download(digest, path, size).map(|_| ())
+    }
+
+    fn payload(&self, digest: &AssetDigest) -> Result<(&str, u64)> {
+        self.payloads
+            .get(digest)
+            .map(|(path, size)| (path.as_str(), *size))
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::AssetUnavailable,
+                    format!("Asset {} is not part of this release.", digest.as_str()),
+                )
+            })
+    }
+
+    fn remote_off(&self, path: &str) -> Error {
+        Error::new(
+            ErrorKind::AssetUnavailable,
+            format!(
+                "Asset {path} is not cached in {} and remote assets are turned off. \
+                 Allow remote assets, point FERRIKI_ASSETS_BASE_URL at a mirror, or pre-populate the cache.",
+                self.settings.cache_dir.display()
+            ),
+        )
     }
 
     fn cache_path(&self, digest: &AssetDigest) -> PathBuf {
@@ -270,26 +314,182 @@ impl RemoteAssetSource {
 
 impl AssetSource for RemoteAssetSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
-        let (path, size) = self.payloads.get(digest).ok_or_else(|| {
-            Error::new(
-                ErrorKind::AssetUnavailable,
-                format!("Asset {} is not part of this release.", digest.as_str()),
-            )
-        })?;
+        let (path, size) = self.payload(digest)?;
         if let Some(bytes) = self.read_cached(digest) {
             return Ok(Cow::Owned(bytes));
         }
-        if !self.settings.remote {
+        if !self.download_on_read {
             return Err(Error::new(
                 ErrorKind::AssetUnavailable,
                 format!(
-                    "Asset {path} is not cached in {} and remote assets are turned off. \
-                     Allow remote assets, point FERRIKI_ASSETS_BASE_URL at a mirror, or pre-populate the cache.",
+                    "Asset {path} is not cached in {}. Load it through the asynchronous \
+                     createHighlighter, loadLanguage or loadTheme first, or pre-populate the cache.",
                     self.settings.cache_dir.display()
                 ),
             ));
         }
-        self.download(digest, path, *size).map(Cow::Owned)
+        if !self.settings.remote {
+            return Err(self.remote_off(path));
+        }
+        self.download(digest, path, size).map(Cow::Owned)
+    }
+}
+
+/// Shares one remote source between the catalogs and the Node host's prefetch.
+struct SharedRemoteSource(Arc<RemoteAssetSource>);
+
+impl AssetSource for SharedRemoteSource {
+    fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
+        self.0.read(digest)
+    }
+}
+
+/// Standard assets for the N-API host: catalogs that read only the cache, and
+/// a thread-safe `prefetch` that downloads what a load will need (ADR 0013).
+/// Exempt from semver guarantees.
+pub struct RemoteAssetHost {
+    source: Arc<RemoteAssetSource>,
+    release: ReleaseManifest,
+    language_manifest: Vec<u8>,
+    theme_manifest: Vec<u8>,
+    languages: HashMap<String, (String, Vec<String>)>,
+    language_aliases: HashMap<String, String>,
+    themes: HashMap<String, String>,
+}
+
+impl RemoteAssetHost {
+    /// Reads `languages/manifest.fkindex`, `themes/manifest.fkindex` and
+    /// `release-manifest.json` below `root`.
+    pub fn from_root(root: &Path, settings: &RemoteAssets) -> Result<Self> {
+        let read = |relative: &str| {
+            std::fs::read(root.join(relative)).map_err(|source| {
+                Error::new(
+                    ErrorKind::AssetIo,
+                    format!("Cannot read `{}`.", root.join(relative).display()),
+                )
+                .with_source(source)
+            })
+        };
+        let language_manifest = read("languages/manifest.fkindex")?;
+        let theme_manifest = read("themes/manifest.fkindex")?;
+        let release = ReleaseManifest::from_json(&String::from_utf8_lossy(&read(
+            ferriki_asset_gen::RELEASE_MANIFEST_FILE,
+        )?))
+        .map_err(|source| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                "Failed to parse the release manifest.",
+            )
+            .with_source(source)
+        })?;
+        let format = |source| {
+            Error::new(
+                ErrorKind::AssetFormat,
+                "Failed to decode a catalog manifest.",
+            )
+            .with_source(source)
+        };
+        let mut languages = HashMap::new();
+        let mut language_aliases = HashMap::new();
+        for entry in decode_language_manifest(&language_manifest)
+            .map_err(format)?
+            .entries
+        {
+            for alias in &entry.aliases {
+                language_aliases.insert(alias.clone(), entry.id.clone());
+            }
+            languages.insert(
+                entry.id.clone(),
+                (
+                    format!("languages/{}", entry.asset_file),
+                    entry.embedded_langs,
+                ),
+            );
+        }
+        let themes = decode_theme_manifest(&theme_manifest)
+            .map_err(format)?
+            .entries
+            .into_iter()
+            .map(|entry| (entry.id, format!("themes/{}", entry.asset_file)))
+            .collect();
+        let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
+        let source = Arc::new(RemoteAssetSource::new(&release, resolved, false)?);
+        Ok(Self {
+            source,
+            release,
+            language_manifest,
+            theme_manifest,
+            languages,
+            language_aliases,
+            themes,
+        })
+    }
+
+    /// Catalogs over the shared source; loading a payload never downloads.
+    pub fn catalogs(&self) -> Result<StandardAssetCatalogs> {
+        StandardAssetCatalogs::from_release_manifest(
+            &self.language_manifest,
+            &self.theme_manifest,
+            &self.release,
+            SharedRemoteSource(Arc::clone(&self.source)),
+        )
+    }
+
+    /// Downloads the payloads these languages, their embedded languages and
+    /// these themes need, unless they are cached. Unknown names are skipped;
+    /// loading them reports the error. Blocking; call it off the main thread.
+    pub fn prefetch(&self, languages: &[String], themes: &[String]) -> Result<()> {
+        let mut paths = BTreeSet::new();
+        let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
+        let mut visited = BTreeSet::new();
+        while let Some(requested) = pending.pop() {
+            let id = self
+                .language_aliases
+                .get(requested)
+                .map_or(requested, String::as_str);
+            let Some((path, embedded)) = self.languages.get(id) else {
+                continue;
+            };
+            if !visited.insert(id) {
+                continue;
+            }
+            paths.insert(path.as_str());
+            pending.extend(embedded.iter().map(String::as_str));
+        }
+        paths.extend(
+            themes
+                .iter()
+                .filter_map(|theme| self.themes.get(theme).map(String::as_str)),
+        );
+        let digests = paths
+            .into_iter()
+            .map(|path| self.release.assets[path].sha256.parse::<AssetDigest>())
+            .collect::<Result<Vec<_>>>()?;
+        // A language with its embedded languages is a dozen small files; fetch
+        // them concurrently, a few at a time, and report the first failure.
+        let workers = digests.len().min(PREFETCH_WORKERS);
+        let next = std::sync::atomic::AtomicUsize::new(0);
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..workers)
+                .map(|_| {
+                    scope.spawn(|| {
+                        loop {
+                            let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            let Some(digest) = digests.get(index) else {
+                                return Ok(());
+                            };
+                            self.source.fetch(digest)?;
+                        }
+                    })
+                })
+                .collect();
+            // The scope joins every worker before it returns, even after an error.
+            handles.into_iter().try_for_each(|handle| {
+                handle.join().unwrap_or_else(|_| {
+                    Err(Error::from_reason("An asset download thread panicked."))
+                })
+            })
+        })
     }
 }
 

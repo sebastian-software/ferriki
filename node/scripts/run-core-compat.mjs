@@ -6,6 +6,7 @@ import {
   coreCompatDeferredTests,
   coreCompatSupportedTests,
 } from "../compat/harness/core-compat-manifest.mjs";
+import "./test-asset-env.mjs";
 
 const nodeRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const vitestArgs = ["exec", "vitest"];
@@ -111,6 +112,17 @@ const errorCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-errors.
   stdio: "inherit",
 });
 if (errorCheck.status !== 0) process.exit(errorCheck.status || 1);
+
+const remoteAssetsCheck = spawnSync(
+  process.execPath,
+  ["./scripts/check-ferriki-remote-assets.mjs"],
+  {
+    cwd: nodeRoot,
+    env: process.env,
+    stdio: "inherit",
+  },
+);
+if (remoteAssetsCheck.status !== 0) process.exit(remoteAssetsCheck.status || 1);
 
 const multiThemeCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-multitheme.mjs"], {
   cwd: nodeRoot,

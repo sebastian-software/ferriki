@@ -45,11 +45,27 @@ export type RegistrationInput<T> =
   | PromiseLike<RegistrationInput<T>>
   | (() => RegistrationInput<T>);
 
+/**
+ * Where standard grammars and themes come from. Payloads are downloaded from a
+ * release-pinned CDN on first use, verified by SHA-256 and cached. Unset fields
+ * fall back to `FERRIKI_ASSETS_REMOTE`, `FERRIKI_ASSETS_BASE_URL` and
+ * `FERRIKI_CACHE_DIR`.
+ */
+export interface AssetOptions {
+  /** Allows downloads; `false` loads only cached payloads. Default: `true`. */
+  remote?: boolean;
+  /** Mirror serving `<commit>/assets/shiki/<path>`. Default: `https://assets.ferriki.dev`. */
+  baseUrl?: string;
+  /** Cache directory. Default: `node_modules/.cache/ferriki`, then the platform cache. */
+  cacheDir?: string;
+}
+
 export interface HighlighterOptions {
   langs?: readonly RegistrationInput<LanguageInput>[];
   themes?: readonly RegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
   transformers?: readonly ShikiTransformer[];
+  assets?: AssetOptions;
 }
 
 export interface HighlighterSyncOptions {
@@ -57,6 +73,8 @@ export interface HighlighterSyncOptions {
   themes?: readonly SyncRegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
   transformers?: readonly ShikiTransformer[];
+  /** A synchronous highlighter never downloads; it loads only cached payloads. */
+  assets?: AssetOptions;
 }
 
 export interface HighlightOptions {

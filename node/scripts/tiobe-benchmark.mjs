@@ -7,6 +7,7 @@ import { isDeepStrictEqual } from "node:util";
 import { gunzipSync } from "node:zlib";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
+import "./test-asset-env.mjs";
 
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 export const manifest = JSON.parse(
