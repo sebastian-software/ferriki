@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.0](https://github.com/sebastian-software/ferriki/compare/v0.6.0...v0.7.0) (2026-09-30)
+
+
+### Features
+
+* **assets:** pin every standard payload in a release manifest ([6c6bea3](https://github.com/sebastian-software/ferriki/commit/6c6bea36e51770cb0083ea4d8871bd65a466125d)), closes [#141](https://github.com/sebastian-software/ferriki/issues/141)
+* **bench:** add TIOBE workloads for Ferroni comparisons ([30ba288](https://github.com/sebastian-software/ferriki/commit/30ba2883570e160414c61fde60e2d63d4fc62559))
+* load standard assets from the CDN with the remote feature ([7635557](https://github.com/sebastian-software/ferriki/commit/7635557289fae3d860fbe419d94466c6df14e005)), closes [#141](https://github.com/sebastian-software/ferriki/issues/141)
+
+
+### Bug Fixes
+
+* **bench:** flush large worker reports before exiting ([fe52cbc](https://github.com/sebastian-software/ferriki/commit/fe52cbceda2d359d3c35eaea709730e091d8e317))
+* **build:** resolve benchmark metadata with locked dependencies ([4671bb1](https://github.com/sebastian-software/ferriki/commit/4671bb1e3d545f39c360e7abed90f6b8a01a3354))
+
+
+### Performance Improvements
+
+* **bench:** record two complete TIOBE baseline runs ([3b20bc7](https://github.com/sebastian-software/ferriki/commit/3b20bc77831ea96ec098fdd53b3c858d23928dd5))
+
 ## [0.6.0](https://github.com/sebastian-software/ferriki/compare/v0.5.0...v0.6.0) (2026-09-29)
 
 
