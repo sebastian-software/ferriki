@@ -1,0 +1,5 @@
+/target/
+/artifacts/
+
+# libFuzzer writes SHA-prefixed mutations beside the committed seed files.
+/corpus/*/[0-9a-f][0-9a-f][0-9a-f][0-9a-f]*

@@ -1,0 +1,2 @@
+{"name":"theme seed","settings":[{"scope":"word.fuzz","settings":{"foreground":"#2468ac","fontStyle":"bold"}},{"scope":["number.fuzz","string.quoted.fuzz"],"settings":{"foreground":"#abcdef","fontStyle":"italic"}}]}
+"quoted" and 23
