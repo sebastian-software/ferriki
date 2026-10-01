@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-asset-gen"
-version = "0.8.0"
+version = "0.8.1"
 description = "Binary asset catalog encoder and decoder for the Ferriki highlighter"
 readme = "README.md"
 edition.workspace = true

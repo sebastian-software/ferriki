@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/sebastian-software/ferriki/compare/v0.8.0...v0.8.1) (2026-10-01)
+
+
+### Performance Improvements
+
+* **render:** write inline HTML directly without building HAST ([#175](https://github.com/sebastian-software/ferriki/issues/175)) ([1c75617](https://github.com/sebastian-software/ferriki/commit/1c75617b86cb6f50dd8b67007ccdaa646b8887c9))
+
 ## [0.8.0](https://github.com/sebastian-software/ferriki/compare/v0.7.0...v0.8.0) (2026-09-30)
 
 
