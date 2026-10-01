@@ -1,0 +1,67 @@
+name: Compatibility gap with Shiki
+description: Ferriki behaves differently from Shiki for the same public call.
+title: "[Compat]: "
+labels:
+  - "area:compatibility"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ferriki aims to match the Shiki baseline recorded in `node/compat/upstream/shiki/.source.json`.
+        Check [the compatibility notes](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md)
+        first: some differences are deliberate.
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Ferriki and Shiki versions you compared.
+      placeholder: "@ferriki/core 0.8.2, shiki 4.4.3"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version and OS/architecture/libc.
+      placeholder: Node 22.13.0, Linux arm64 musl
+    validations:
+      required: true
+
+  - type: textarea
+    id: call
+    attributes:
+      label: Public call and input
+      description: The exact public call, its options, and the smallest source, grammar or theme that shows the difference.
+      render: ts
+    validations:
+      required: true
+
+  - type: textarea
+    id: shiki
+    attributes:
+      label: Shiki output
+      description: What Shiki returns for the same call.
+    validations:
+      required: true
+
+  - type: textarea
+    id: ferriki
+    attributes:
+      label: Ferriki output
+      description: What Ferriki returns, or the error it throws.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: packed
+    attributes:
+      label: Reproduces from an installed package?
+      description: Whether the difference also appears with the package installed from npm rather than a repository checkout.
+      options:
+        - "Yes"
+        - "No"
+        - Not checked
+    validations:
+      required: true
