@@ -15,6 +15,9 @@ compatibility tests must converge on this matrix.
   here. A shim is not a promise to reproduce the original implementation.
 - **Remove**: present only to ease pre-1.0 migration and removed before 1.0;
   new code must not depend on it.
+- **Deferred**: known upstream behavior that Ferriki does not implement today;
+  it is excluded from the Ferriki input type and tracked for a separate product
+  decision, without a promise that it will be implemented.
 - **Non-goal**: deliberately outside Ferriki's product boundary.
 
 ## Export and method matrix
@@ -75,24 +78,24 @@ HTML adds `postprocess`. The singleton retains its first creation's defaults.
 
 ### Highlight options
 
-| Option                                        | Status  | Rules                                                                                                                                                                                                                            |
-| --------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `styleMode`                                   | Stable  | `inline` (default) or nested `classes`; preserves full grammar boundaries. See [class guide](class-highlighting.md) and `check:classes`.                                                                                         |
-| `lang`                                        | Stable  | Required for highlighting; `text`, `txt`, `plain`, and `plaintext` are explicit plain-text languages.                                                                                                                            |
-| `theme`                                       | Stable  | Single-theme rendering with deterministic class, foreground, and background output.                                                                                                                                              |
-| `themes`                                      | Stable  | Ordered theme map for light/dark or multi-theme output; never silently collapsed to one theme. `defaultColor: false` emits CSS variables for every theme.                                                                        |
-| `defaultColor`                                | Stable  | `light`, `dark`, a named theme, or `false`; invalid combinations throw `ShikiError` (#43).                                                                                                                                       |
-| `meta`                                        | Stable  | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. Ardo parses title/label/line attributes; Ferriki never interpolates `meta.__raw` into HTML. |
-| `transformers`                                | Stable  | JS callbacks run in the documented HAST/token pipeline order (ADR 0008, #45).                                                                                                                                                    |
-| `decorations`                                 | Stable  | Declarative ranges are validated and applied in the JS rendering layer (ADR 0008, #45).                                                                                                                                          |
-| `includeExplanation`                          | Stable  | `true`, `scopeName`, and `tokenType` produce the documented explanation shape (#47).                                                                                                                                             |
-| `mergeWhitespaces` / `mergeSameStyleTokens`   | Stable  | Rendering controls with deterministic token boundaries.                                                                                                                                                                          |
-| `colorReplacements`                           | Stable  | Validated theme color substitutions; invalid colors produce `ShikiError` rather than corrupt output (#48).                                                                                                                       |
-| `rootStyle` / `tabindex`                      | Stable  | Explicit HTML root attributes; `false`/`null` disable the corresponding output.                                                                                                                                                  |
-| `tokenizeMaxLineLength` / `tokenizeTimeLimit` | Stable  | Resource limits with deterministic `ShikiError` failures (#51).                                                                                                                                                                  |
-| ANSI input                                    | Removed | Ferriki rejects terminal escape sequences with `ShikiError`; callers must strip or parse ANSI before highlighting.                                                                                                               |
-| `theme: 'none'`                               | Stable  | Explicit unstyled theme with documented inheritance in multi-theme output (#48).                                                                                                                                                 |
-| Unknown options                               | Remove  | No catch-all option type. New options require a contract entry and a compatibility test (#10, #42).                                                                                                                              |
+| Option                                        | Status   | Rules                                                                                                                                                                                                                            |
+| --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `styleMode`                                   | Stable   | `inline` (default) or nested `classes`; preserves full grammar boundaries. See [class guide](class-highlighting.md) and `check:classes`.                                                                                         |
+| `lang`                                        | Stable   | Required for highlighting; `text`, `txt`, `plain`, and `plaintext` are explicit plain-text languages.                                                                                                                            |
+| `theme`                                       | Stable   | Single-theme rendering with deterministic class, foreground, and background output.                                                                                                                                              |
+| `themes`                                      | Stable   | Ordered theme map for light/dark or multi-theme output; never silently collapsed to one theme. `defaultColor: false` emits CSS variables for every theme.                                                                        |
+| `defaultColor`                                | Stable   | `light`, `dark`, a named theme, or `false`; invalid combinations throw `ShikiError` (#43).                                                                                                                                       |
+| `meta`                                        | Stable   | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. Ardo parses title/label/line attributes; Ferriki never interpolates `meta.__raw` into HTML. |
+| `transformers`                                | Stable   | JS callbacks run in the documented HAST/token pipeline order (ADR 0008, #45).                                                                                                                                                    |
+| `decorations`                                 | Stable   | Declarative ranges are validated and applied in the JS rendering layer (ADR 0008, #45).                                                                                                                                          |
+| `includeExplanation`                          | Stable   | `true`, `scopeName`, and `tokenType` produce the documented explanation shape (#47).                                                                                                                                             |
+| `mergeWhitespaces` / `mergeSameStyleTokens`   | Stable   | Rendering controls with deterministic token boundaries.                                                                                                                                                                          |
+| `colorReplacements`                           | Deferred | Not implemented by Ferriki; supplying it throws `ShikiError` with `ERR_UNSUPPORTED`. Runtime support is tracked separately in #190.                                                                                              |
+| `rootStyle` / `tabindex`                      | Stable   | Explicit HTML root attributes; `false`/`null` disable the corresponding output.                                                                                                                                                  |
+| `tokenizeMaxLineLength` / `tokenizeTimeLimit` | Stable   | Resource limits with deterministic `ShikiError` failures (#51).                                                                                                                                                                  |
+| ANSI input                                    | Removed  | Ferriki rejects terminal escape sequences with `ShikiError`; callers must strip or parse ANSI before highlighting.                                                                                                               |
+| `theme: 'none'`                               | Stable   | Explicit unstyled theme with documented inheritance in multi-theme output (#48).                                                                                                                                                 |
+| Unknown options                               | Remove   | No catch-all option type. New options require a contract entry and a compatibility test (#10, #42).                                                                                                                              |
 
 ### Token and HAST outputs
 
@@ -149,6 +152,51 @@ sidecar is published (see #52).
 | No private native calls        | Node exports only                                                                 | #10, #31         |
 
 ## Compatibility and semver policy
+
+### TypeScript compatibility
+
+The CI typecheck job builds the pinned Shiki mirror and includes
+`node/ferriki/shiki-type-conformance.typecheck.ts` in the workspace TypeScript
+project. Key-set assertions catch new optional mirror fields that ordinary
+structural assignment would otherwise allow to disappear. Any new difference
+must be supported or added to the explicit boundary below.
+
+- Inputs are checked from Shiki's full code-to-HAST and factory option shapes
+  into Ferriki. Key guards account for every mirrored option, so new optional
+  fields cannot silently disappear. Theme registrations are narrowed to the
+  named values Ferriki accepts, and `undefined` entries in `themes` are filtered
+  at runtime. String `tabindex` is supported; `mergeWhitespaces` accepts
+  booleans only. `colorReplacements` is deferred and rejected at runtime with
+  `ERR_UNSUPPORTED` (#190); `grammarContextCode` and `colorsRendering` are
+  outside the Ferriki input contract. The broad HAST-options value comparison
+  separately lists `grammarState`, `transformers`, and `decorations` as native
+  type boundaries: grammar state and transformer contexts use Ferriki types,
+  and decoration transform callbacks receive Ferriki HAST nodes. Factory
+  `engine` injection is removed, and Shiki's `warnings` toggle is not a Ferriki
+  option.
+- Ferriki `ThemedToken` values and `TokensResult` values with
+  `grammarState` removed are assignable to the mirrored Shiki output types.
+  Full `TokensResult` assignment is intentionally rejected: Ferriki's
+  JSON-serializable `GrammarState` is retrieved via `getLastGrammarState()` and
+  passed back through Ferriki's `grammarState` option, while Shiki's state
+  exposes internal stack methods. Shiki's optional `fg`, `bg`, and `themeName`
+  fields do not promise the metadata Ferriki requires, so result compatibility
+  is not promised in the reverse direction.
+- The token boundary explicitly omits upstream per-token `bgColor` and
+  explanation `themeMatches`; Ferriki stores background on the result and emits
+  explanation scope names. Ferriki's `scopeNames` and multi-theme `variants`
+  are extensions. Explanation arrays are mutable to match Shiki's result shape.
+- `HastRoot` keeps property values as `unknown` for serializable consumer
+  metadata, so it is not a full `@types/hast` `Root`; use Ferriki's
+  `hastToHtml()` for Ferriki trees. JavaScript transformer hooks remain
+  supported, with shared token payload and context source/token fields checked
+  separately, but the full `ShikiTransformer` context is not interchangeable:
+  nested calls, native grammar state, and HAST nodes use Ferriki types. Type
+  transformers as Ferriki's `ShikiTransformer`. Decoration values without a
+  transform callback are structurally shared; callback node types follow the
+  same Ferriki HAST boundary.
+
+### Release guarantees
 
 - The accepted Stable rows are the Ferriki 1.x compatibility promise.
 - Shims are documented, covered by migration tests, and may emit a deprecation

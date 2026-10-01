@@ -84,7 +84,7 @@ export interface HighlightOptions {
   /** Nested scope classes; inline styles remain the default. */
   styleMode?: "inline" | "classes";
   theme?: ThemeInput;
-  themes?: Readonly<Record<string, ThemeInput>>;
+  themes?: Readonly<Partial<Record<string, ThemeInput | undefined>>>;
   defaultColor?: string | false;
   cssVariablePrefix?: string;
   includeExplanation?: boolean | "scopeName" | "tokenType";
@@ -96,7 +96,10 @@ export interface HighlightOptions {
   tokenizeMaxLineLength?: number;
   tokenizeTimeLimit?: number;
   structure?: "classic" | "inline";
-  meta?: Readonly<Record<string, unknown>>;
+  meta?: Readonly<{
+    __raw?: string;
+    [key: string]: unknown;
+  }>;
   data?: Readonly<Record<string, unknown>>;
   transformers?: readonly ShikiTransformer[];
   decorations?: readonly DecorationItem[];
@@ -127,7 +130,7 @@ export interface ThemedToken {
       }
     >
   >;
-  explanation?: readonly ThemedTokenExplanation[];
+  explanation?: ThemedTokenExplanation[];
 }
 
 export interface ThemedTokenScopeExplanation {
@@ -136,7 +139,7 @@ export interface ThemedTokenScopeExplanation {
 
 export interface ThemedTokenExplanation {
   content: string;
-  scopes: readonly ThemedTokenScopeExplanation[];
+  scopes: ThemedTokenScopeExplanation[];
 }
 
 export interface GrammarState {

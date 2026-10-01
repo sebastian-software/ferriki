@@ -24,6 +24,7 @@ for (const row of [
   "| `defaultColor` | Stable |",
   "| `transformers` | Stable |",
   "| `decorations` | Stable |",
+  "| `colorReplacements` | Deferred |",
   "| ANSI input | Removed |",
   "| `theme: 'none'` | Stable |",
   "- A highlighter handle owns its native state and must be disposable.",

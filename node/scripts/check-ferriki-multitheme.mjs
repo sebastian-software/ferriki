@@ -34,6 +34,18 @@ try {
   assert.match(html, /--shiki-light:/);
   assert.match(html, /--shiki-dark:/);
 
+  const lightOnly = highlighter.codeToHtml("const answer = 42", {
+    lang: "typescript",
+    themes: { light: "vitesse-light" },
+    defaultColor: "light",
+  });
+  const lightWithUndefinedDark = highlighter.codeToHtml("const answer = 42", {
+    lang: "typescript",
+    themes: { light: "vitesse-light", dark: undefined },
+    defaultColor: "light",
+  });
+  assert.equal(lightWithUndefinedDark, lightOnly);
+
   const lightDark = highlighter.codeToHtml("const answer = 42", {
     ...options,
     defaultColor: "light-dark()",
