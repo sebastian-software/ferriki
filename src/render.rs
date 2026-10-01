@@ -46,11 +46,56 @@ impl Default for RenderOptions {
 }
 
 pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> String {
-    render_hast(result, options)
-        .get("children")
-        .and_then(Value::as_array)
-        .and_then(|children| children.first())
-        .map_or_else(String::new, hast_node_to_html)
+    if options.style_mode == StyleMode::Classes {
+        return render_hast(result, options)
+            .get("children")
+            .and_then(Value::as_array)
+            .and_then(|children| children.first())
+            .map_or_else(String::new, hast_node_to_html);
+    }
+
+    // Match the HAST serializer's property order without constructing a tree.
+    let mut html = String::from("<pre class=\"");
+    html.push_str(&escape_attribute(&format!("shiki {}", result.theme_name)));
+    html.push('"');
+    if options.include_root_style {
+        let style = options.root_style.clone().unwrap_or_else(|| {
+            format!(
+                "background-color:{};color:{}",
+                result.background, result.foreground
+            )
+        });
+        html.push_str(" style=\"");
+        html.push_str(&escape_attribute(&style));
+        html.push('"');
+    }
+    if let Some(tabindex) = options.tabindex.as_ref() {
+        html.push_str(" tabindex=\"");
+        html.push_str(&escape_attribute(tabindex));
+        html.push('"');
+    }
+    html.push_str("><code>");
+    for (line_index, line) in prepare_tokens(&result.tokens, options).iter().enumerate() {
+        if line_index > 0 {
+            html.push('\n');
+        }
+        html.push_str("<span class=\"line\">");
+        for token in line {
+            html.push_str("<span");
+            let style = token_style(token);
+            if !style.is_empty() {
+                html.push_str(" style=\"");
+                html.push_str(&escape_attribute(&style));
+                html.push('"');
+            }
+            html.push('>');
+            html.push_str(&escape_html(&token.content));
+            html.push_str("</span>");
+        }
+        html.push_str("</span>");
+    }
+    html.push_str("</code></pre>");
+    html
 }
 
 /// Renders trusted, tag-balanced HTML fragments for each highlighted line.
@@ -524,6 +569,113 @@ mod tests {
                 },
             )
             .expect("tokens")
+    }
+
+    fn assert_html_matches_hast(result: &HighlightTokensResult, options: &RenderOptions) {
+        let tree = render_hast(result, options);
+        let expected = hast_node_to_html(&tree["children"][0]);
+        assert_eq!(render_html(result, options), expected, "{options:?}");
+    }
+
+    #[test]
+    fn direct_inline_html_matches_hast_for_render_controls_and_escaping() {
+        let mut line = Vec::new();
+        for bits in -1..=15 {
+            let token = HighlightToken {
+                content: "<😀&\"' >\t".to_owned(),
+                offset: 0,
+                color: Some("color<&\"'".to_owned()),
+                font_style: Some(FontStyle::from_bits(bits)),
+                token_type: None,
+                scope_names: Some(vec!["source.probe".to_owned()]),
+            };
+            line.push(token.clone());
+            line.push(token);
+            line.push(HighlightToken {
+                content: " \t\u{a0}".to_owned(),
+                offset: 0,
+                color: None,
+                font_style: None,
+                token_type: None,
+                scope_names: None,
+            });
+        }
+        line.push(HighlightToken {
+            content: String::new(),
+            offset: 0,
+            color: Some(String::new()),
+            font_style: Some(FontStyle::NONE),
+            token_type: None,
+            scope_names: None,
+        });
+        let mut result = HighlightTokensResult {
+            tokens: vec![line, Vec::new(), Vec::new()],
+            foreground: "fg<&\"".to_owned(),
+            background: "bg<&\"".to_owned(),
+            theme_name: "theme<&\"'".to_owned(),
+        };
+        for merge_whitespaces in [false, true] {
+            for merge_same_style_tokens in [false, true] {
+                for include_root_style in [false, true] {
+                    for root_style in [None, Some(""), Some("custom:<&\"'")] {
+                        for tabindex in [None, Some(""), Some("-1<&\"'")] {
+                            let options = RenderOptions::default()
+                                .with_merge_whitespaces(merge_whitespaces)
+                                .with_merge_same_style_tokens(merge_same_style_tokens)
+                                .with_include_root_style(include_root_style)
+                                .with_root_style(root_style.map(str::to_owned))
+                                .with_tabindex(tabindex.map(str::to_owned));
+                            assert_html_matches_hast(&result, &options);
+                        }
+                    }
+                }
+            }
+        }
+        result.tokens = vec![Vec::new()];
+        assert_html_matches_hast(&result, &RenderOptions::default());
+        result.tokens.clear();
+        assert_html_matches_hast(&result, &RenderOptions::default());
+    }
+
+    #[test]
+    fn direct_inline_html_matches_hast_for_benchmark_fixtures() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let corpus = root.join("node/benchmarks/tiobe");
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(corpus.join("manifest.json")).expect("fixture manifest"),
+        )
+        .expect("fixture manifest JSON");
+        let mut highlighter =
+            HighlighterCore::with_standard_assets(&root.join("assets/shiki")).expect("highlighter");
+        for language in manifest["languages"].as_array().expect("fixture languages") {
+            let Some(grammar) = language["textmate"].as_str() else {
+                continue;
+            };
+            let code = std::fs::read_to_string(
+                corpus
+                    .join("fixtures")
+                    .join(language["file"].as_str().expect("fixture file")),
+            )
+            .expect("fixture source");
+            for theme in ["github-dark", "nord"] {
+                let result = highlighter
+                    .tokenize(
+                        &code,
+                        grammar,
+                        theme,
+                        &TokenizeOptions::default().with_time_limit_millis(0),
+                    )
+                    .expect("fixture tokens");
+                for merge_whitespaces in [false, true] {
+                    for merge_same_style_tokens in [false, true] {
+                        let options = RenderOptions::default()
+                            .with_merge_whitespaces(merge_whitespaces)
+                            .with_merge_same_style_tokens(merge_same_style_tokens);
+                        assert_html_matches_hast(&result, &options);
+                    }
+                }
+            }
+        }
     }
 
     #[test]
