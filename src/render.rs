@@ -433,28 +433,42 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 }
 
 fn token_style(token: &HighlightToken) -> String {
-    let mut declarations = Vec::new();
-    if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
-        declarations.push(format!("color:{color}"));
-    }
+    let color = token.color.as_deref().filter(|color| !color.is_empty());
     let style = token.font_style.unwrap_or_default();
-    if style.contains(FontStyle::ITALIC) {
-        declarations.push("font-style:italic".to_owned());
+    let italic = style
+        .contains(FontStyle::ITALIC)
+        .then_some("font-style:italic");
+    let bold = style
+        .contains(FontStyle::BOLD)
+        .then_some("font-weight:bold");
+    let decoration = match (
+        style.contains(FontStyle::UNDERLINE),
+        style.contains(FontStyle::STRIKETHROUGH),
+    ) {
+        (true, true) => Some("text-decoration:underline line-through"),
+        (true, false) => Some("text-decoration:underline"),
+        (false, true) => Some("text-decoration:line-through"),
+        (false, false) => None,
+    };
+    // Allocate the final declaration string once instead of joining owned parts.
+    let capacity = color.map_or(0, |color| "color:".len() + color.len())
+        + [italic, bold, decoration]
+            .into_iter()
+            .flatten()
+            .map(|declaration| declaration.len() + 1)
+            .sum::<usize>();
+    let mut declarations = String::with_capacity(capacity);
+    if let Some(color) = color {
+        declarations.push_str("color:");
+        declarations.push_str(color);
     }
-    if style.contains(FontStyle::BOLD) {
-        declarations.push("font-weight:bold".to_owned());
+    for declaration in [italic, bold, decoration].into_iter().flatten() {
+        if !declarations.is_empty() {
+            declarations.push(';');
+        }
+        declarations.push_str(declaration);
     }
-    let mut decorations = Vec::new();
-    if style.contains(FontStyle::UNDERLINE) {
-        decorations.push("underline");
-    }
-    if style.contains(FontStyle::STRIKETHROUGH) {
-        decorations.push("line-through");
-    }
-    if !decorations.is_empty() {
-        declarations.push(format!("text-decoration:{}", decorations.join(" ")));
-    }
-    declarations.join(";")
+    declarations
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
@@ -575,6 +589,39 @@ mod tests {
         let tree = render_hast(result, options);
         let expected = hast_node_to_html(&tree["children"][0]);
         assert_eq!(render_html(result, options), expected, "{options:?}");
+    }
+
+    #[test]
+    fn token_styles_preserve_declaration_order_and_combined_decorations() {
+        let mut token = HighlightToken {
+            content: String::new(),
+            offset: 0,
+            color: Some("var(--color-色)".to_owned()),
+            font_style: Some(
+                FontStyle::ITALIC
+                    | FontStyle::BOLD
+                    | FontStyle::UNDERLINE
+                    | FontStyle::STRIKETHROUGH,
+            ),
+            token_type: None,
+            scope_names: None,
+        };
+        assert_eq!(
+            super::token_style(&token),
+            "color:var(--color-色);font-style:italic;font-weight:bold;text-decoration:underline line-through"
+        );
+        token.color = Some(String::new());
+        token.font_style = Some(FontStyle::STRIKETHROUGH);
+        assert_eq!(super::token_style(&token), "text-decoration:line-through");
+        token.font_style = Some(FontStyle::UNDERLINE);
+        assert_eq!(super::token_style(&token), "text-decoration:underline");
+        token.font_style = None;
+        assert_eq!(super::token_style(&token), "");
+        token.font_style = Some(FontStyle::NOT_SET);
+        assert_eq!(
+            super::token_style(&token),
+            "font-style:italic;font-weight:bold;text-decoration:underline line-through"
+        );
     }
 
     #[test]
