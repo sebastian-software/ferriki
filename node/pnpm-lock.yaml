@@ -560,25 +560,25 @@ importers:
         version: 25.3.3
     optionalDependencies:
       '@ferriki/darwin-arm64':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/darwin-arm64
       '@ferriki/linux-arm64-gnu':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/linux-arm64-gnu
       '@ferriki/linux-arm64-musl':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/linux-arm64-musl
       '@ferriki/linux-x64-gnu':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/linux-x64-gnu
       '@ferriki/linux-x64-musl':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/linux-x64-musl
       '@ferriki/win32-arm64-msvc':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/win32-arm64-msvc
       '@ferriki/win32-x64-msvc':
-        specifier: 0.7.0
+        specifier: 0.8.0
         version: link:../platforms/win32-x64-msvc
   platforms/darwin-arm64: {}
   platforms/linux-arm64-gnu: {}

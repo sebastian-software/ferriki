@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.8.0](https://github.com/sebastian-software/ferriki/compare/v0.7.0...v0.8.0) (2026-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* @ferriki/core no longer bundles grammar and theme payloads. The first load of a language or theme downloads it, so offline environments need a populated cache or a mirror (FERRIKI_ASSETS_BASE_URL). Synchronous factories and highlighting no longer load standard languages or themes that were never loaded asynchronously and are not cached; they throw ERR_ASSET.
+
+### Features
+
+* add optional nested scope class highlighting ([661ee1e](https://github.com/sebastian-software/ferriki/commit/661ee1e104c7888e4d07f00d13b24a72823ef96a))
+* load Node standard assets from the CDN instead of bundling them ([#170](https://github.com/sebastian-software/ferriki/issues/170)) ([a8eecc1](https://github.com/sebastian-software/ferriki/commit/a8eecc1485a1024e00a54fa2b5ba1285b8016318))
+
+
+### Bug Fixes
+
+* use fixed-size token chunks for current Clippy ([6c25aa8](https://github.com/sebastian-software/ferriki/commit/6c25aa8bfd07a2740285fd7d40f5a6e73935fac7))
+
+
+### Performance Improvements
+
+* avoid duplicate grammar scans for scoped tokens ([#174](https://github.com/sebastian-software/ferriki/issues/174)) ([f0afd51](https://github.com/sebastian-software/ferriki/commit/f0afd51935a20e8b233ec46e2fb23a575c9b0680))
+
 ## [0.7.0](https://github.com/sebastian-software/ferriki/compare/v0.6.0...v0.7.0) (2026-09-30)
 
 

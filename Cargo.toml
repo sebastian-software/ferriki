@@ -5,7 +5,7 @@
 # See ADR 0012 and docs/release-checklist.md.
 [package]
 name = "ferriki"
-version = "0.7.0"
+version = "0.8.0"
 description = "Reusable native Rust syntax highlighter with TextMate grammars"
 readme = "README.md"
 documentation = "https://docs.rs/ferriki"
@@ -43,8 +43,8 @@ include = [
 remote = ["dep:ureq", "dep:rustls"]
 
 [dependencies]
-ferriki-asset-gen = { version = "0.7.0", path = "crates/ferriki-asset-gen" }
-ferriki-textmate = { version = "0.7.0", path = "crates/ferriki-textmate" }
+ferriki-asset-gen = { version = "0.8.0", path = "crates/ferriki-asset-gen" }
+ferriki-textmate = { version = "0.8.0", path = "crates/ferriki-textmate" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
