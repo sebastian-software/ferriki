@@ -65,6 +65,11 @@ Shiki WASM, Shiki JavaScript and Prism on a pinned top-20 language corpus. It
 retains individual timings and supports local Ferroni checkouts for controlled
 experiments. Run its correctness gate before collecting measurements.
 
+The [curated 20-format corpus](node/benchmarks/curated/README.md) adds web
+components, Markdown/MDX, styles and configuration workloads. Use
+`pnpm run check:bench-curated` and `pnpm run bench:curated` from `node/`.
+Both corpora share the same measurement and profiling harness.
+
 ## Coverage
 
 CI measures line coverage over the whole workspace and fails the `coverage`
