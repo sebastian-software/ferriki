@@ -56,6 +56,7 @@ export const createShikiPrimitiveAsync = createHighlighter;
 
 export function createHighlighterCoreSync(options = {}) {
   options = validateHighlighterOptions(options);
+  const defaultTransformers = sortTransformers(options.transformers);
   const assets = resolveAssetOptions(options.assets);
   let native;
   try {
@@ -461,6 +462,11 @@ export function createHighlighterCoreSync(options = {}) {
     };
   }
 
+  function withTransformerDefaults(options) {
+    if (options?.transformers !== undefined || defaultTransformers.length === 0) return options;
+    return { ...validateHighlightOptions(options), transformers: defaultTransformers };
+  }
+
   function getTransformers(options) {
     return sortTransformers(options?.transformers);
   }
@@ -511,6 +517,7 @@ export function createHighlighterCoreSync(options = {}) {
 
   const highlighter = {
     codeToHtmlWithCss(code, options) {
+      options = withTransformerDefaults(options);
       const validated = validateHighlightOptions(options);
       const classOptions = { ...validated, styleMode: "classes" };
       const tree = buildHast(code, classOptions);
@@ -520,6 +527,7 @@ export function createHighlighterCoreSync(options = {}) {
       };
     },
     codeToHtml(code, options) {
+      options = withTransformerDefaults(options);
       assertAnsiInput(code, options);
       if (options?.styleMode === "classes")
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
@@ -541,6 +549,7 @@ export function createHighlighterCoreSync(options = {}) {
       );
     },
     codeToHast(code, options) {
+      options = withTransformerDefaults(options);
       if (options?.styleMode === "classes") return buildHast(code, options);
       assertAnsiInput(code, options);
       if (options?.grammarState) {
@@ -567,6 +576,7 @@ export function createHighlighterCoreSync(options = {}) {
       return tree;
     },
     codeToTokens(code, options) {
+      options = withTransformerDefaults(options);
       assertAnsiInput(code, options);
       return highlightTokensPublic(code, options);
     },
@@ -574,6 +584,7 @@ export function createHighlighterCoreSync(options = {}) {
       return this.codeToTokens(code, options).tokens;
     },
     codeToTokensWithThemes(code, options) {
+      options = withTransformerDefaults(options);
       return highlightTokensPublic(code, options).tokens;
     },
     getLoadedLanguages() {
@@ -869,7 +880,7 @@ function validateHighlighterOptions(options) {
   if (options == null) return {};
   if (typeof options !== "object" || Array.isArray(options))
     throw new ShikiError("Highlighter options must be an object", "ERR_USAGE");
-  for (const field of ["langs", "themes"]) {
+  for (const field of ["langs", "themes", "transformers"]) {
     if (options[field] !== undefined && !Array.isArray(options[field]))
       throw new ShikiError(`Highlighter option \`${field}\` must be an array`, "ERR_USAGE");
   }

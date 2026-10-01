@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
+import { createHighlighter, createHighlighterCoreSync, ShikiError } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
@@ -86,5 +86,97 @@ try {
 } finally {
   highlighter.dispose();
 }
+
+for (const create of [createHighlighter, createHighlighterCoreSync]) {
+  const calls = [];
+  const marker = (name, enforce) => ({
+    name,
+    enforce,
+    preprocess(code, options) {
+      assert.equal(this.options, options);
+      assert(options.transformers.some((transformer) => transformer.name === name));
+      calls.push(`preprocess:${name}`);
+      return code;
+    },
+    tokens(tokens) {
+      calls.push(`tokens:${name}`);
+      return tokens;
+    },
+    pre(node) {
+      node.properties["data-transformer"] = name;
+    },
+    postprocess(html) {
+      calls.push(`postprocess:${name}`);
+      return `${html}<!-- ${name} -->`;
+    },
+  });
+  const defaults = [marker("normal"), marker("post", "post"), marker("pre", "pre")];
+  const configured = await create({
+    langs: ["javascript"],
+    themes: ["nord", "github-light-default"],
+    transformers: defaults,
+  });
+  // The constructor snapshots the list without sorting or retaining the caller's array.
+  assert.deepEqual(
+    defaults.map((transformer) => transformer.name),
+    ["normal", "post", "pre"],
+  );
+  defaults.push(marker("late"));
+
+  try {
+    for (const method of [
+      "codeToHtml",
+      "codeToHtmlWithCss",
+      "codeToHast",
+      "codeToTokens",
+      "codeToTokensBase",
+      "codeToTokensWithThemes",
+    ]) {
+      for (const selection of [undefined, [], [marker("override")]]) {
+        calls.length = 0;
+        const options = {
+          lang: "javascript",
+          ...(method === "codeToTokensWithThemes"
+            ? { themes: { light: "github-light-default", dark: "nord" } }
+            : { theme: "nord" }),
+          ...(selection === undefined ? {} : { transformers: selection }),
+        };
+        const result = configured[method]("const answer = 42", options);
+        const names =
+          selection === undefined ? ["pre", "normal", "post"] : selection.map((t) => t.name);
+        const expected = [
+          ...names.map((name) => `preprocess:${name}`),
+          ...names.map((name) => `tokens:${name}`),
+        ];
+        if (method === "codeToHtml" || method === "codeToHtmlWithCss") {
+          expected.push(...names.map((name) => `postprocess:${name}`));
+          const html = typeof result === "string" ? result : result.html;
+          if (names.length) assert.match(html, new RegExp(`data-transformer="${names.at(-1)}"`));
+          else assert.doesNotMatch(html, /data-transformer/);
+        }
+        if (method === "codeToHast") {
+          assert.equal(result.children[0].properties["data-transformer"], names.at(-1));
+        }
+        assert.deepEqual(calls, expected, `${create.name}.${method}`);
+        assert.equal(Object.hasOwn(options, "transformers"), selection !== undefined);
+      }
+    }
+    assert.throws(
+      () => configured.codeToHtml("code", "invalid"),
+      (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+    );
+  } finally {
+    configured.dispose();
+  }
+}
+
+assert.throws(
+  () => createHighlighterCoreSync({ transformers: {} }),
+  (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+);
+await assert.rejects(
+  createHighlighter({ transformers: {} }),
+  (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+);
 
 console.log("Ferriki transformer and decoration contract verified");

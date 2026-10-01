@@ -64,6 +64,7 @@ export interface HighlighterOptions {
   langs?: readonly RegistrationInput<LanguageInput>[];
   themes?: readonly RegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
+  /** Default hooks. A call's `transformers` replaces these; `[]` disables them. */
   transformers?: readonly ShikiTransformer[];
   assets?: AssetOptions;
 }
@@ -72,6 +73,7 @@ export interface HighlighterSyncOptions {
   langs?: readonly SyncRegistrationInput<LanguageInput>[];
   themes?: readonly SyncRegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
+  /** Default hooks. A call's `transformers` replaces these; `[]` disables them. */
   transformers?: readonly ShikiTransformer[];
   /** A synchronous highlighter never downloads; it loads only cached payloads. */
   assets?: AssetOptions;

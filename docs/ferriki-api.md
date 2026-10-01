@@ -107,6 +107,16 @@ functions. Unknown options are rejected by the public TypeScript declarations
 and are not a supported extension point. Additions require an explicit API
 contract and compatibility coverage.
 
+Constructor `transformers` are defaults for HTML, HAST, and token methods,
+including `codeToHtmlWithCss`, `codeToTokensBase`, and `codeToTokensWithThemes`.
+A call with no `transformers` (or `undefined`) inherits them. An explicit list
+replaces them; `[]` disables them for that call. Both async and sync constructors
+copy the array and keep the existing `enforce: 'pre'`, normal, `enforce: 'post'`
+ordering, preserving list order within each tier. Token methods run only
+`preprocess` and `tokens`; HAST methods also run node hooks, and HTML methods
+add `postprocess`. The singleton keeps the defaults from its first creation;
+later singleton calls only add languages and themes.
+
 ### Standard assets
 
 `@ferriki/core` ships the language and theme catalogs, but no grammar or theme

@@ -56,6 +56,14 @@ core gate. See [Class-based highlighting](class-highlighting.md).
 
 ### Factory inputs
 
+`transformers` is a stable factory input for both async and sync constructors.
+It supplies defaults to HTML, HAST, and token methods. A call's explicit list
+replaces the defaults, including `[]` to disable them; omission or `undefined`
+inherits them. The constructor copies the array. Hooks follow the existing
+`enforce: 'pre'`, normal, `enforce: 'post'` tiers with stable order within each
+tier. Token methods run `preprocess` and `tokens`; HAST adds node hooks and
+HTML adds `postprocess`. The singleton retains its first creation's defaults.
+
 | Input                | Status  | Rules                                                                                                                                                                                                                                                                                      |
 | -------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `langs`              | Stable  | Accepts names, synchronous registrations, arrays, promises, or loader functions. Custom registrations are validated and cached (#46).                                                                                                                                                      |
