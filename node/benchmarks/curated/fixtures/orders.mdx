@@ -1,0 +1,39 @@
+import { OrderTable } from "./Orders";
+export const orders = [
+  { id: "ORD-42", customer: "München <team> & café", total: 39.9, paid: true },
+  { id: "ORD-43", customer: "Pending", total: 12.5, paid: false },
+];
+
+# Order dashboard
+
+**Paid orders** appear in the table. The total is
+{orders.filter((order) => order.paid).reduce((sum, order) => sum + order.total, 0).toFixed(2)} EUR.
+
+<OrderTable orders={orders} onSelect={(id) => console.log(id)} />
+
+<aside className="note">
+  Markdown, JSX and expressions share a document.
+  <strong>{orders.length} customers</strong> include München &amp; café.
+</aside>
+
+## Typed response
+
+```typescript
+interface Order {
+  id: string;
+  total: number;
+  paid: boolean;
+}
+const paid = (orders: Order[]) => orders.filter((order) => order.paid);
+```
+
+```tsx
+export const Total = ({ value }: { value: number }) => <strong>€{value.toFixed(2)}</strong>;
+```
+
+```json
+{ "customer": "München <team> & café", "total": 39.9, "paid": true }
+```
+
+- Inspect `orders` before sending the request.
+- See [the API](https://example.test/orders).

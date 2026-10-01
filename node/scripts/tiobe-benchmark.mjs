@@ -10,9 +10,13 @@ import { toString } from "hast-util-to-string";
 import "./test-asset-env.mjs";
 
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-export const manifest = JSON.parse(
-  readFileSync(new URL("../benchmarks/tiobe/manifest.json", import.meta.url), "utf8"),
-);
+export function loadCorpus(id = "tiobe") {
+  assert.ok(["tiobe", "curated"].includes(id), "Invalid --corpus: choose tiobe or curated");
+  return JSON.parse(
+    readFileSync(new URL(`../benchmarks/${id}/manifest.json`, import.meta.url), "utf8"),
+  );
+}
+export const manifest = loadCorpus();
 export const engines = ["ferriki", "shiki-wasm", "shiki-js", "prism"];
 export const theme = "github-dark";
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -22,10 +26,10 @@ export function readReport(path) {
   return JSON.parse((path.endsWith(".gz") ? gunzipSync(bytes) : bytes).toString("utf8"));
 }
 
-export function loadCases(language, sizes) {
+export function loadCases(language, sizes, corpus = "tiobe") {
   if (!language.file) return [];
   const source = readFileSync(
-    new URL(`../benchmarks/tiobe/fixtures/${language.file}`, import.meta.url),
+    new URL(`../benchmarks/${corpus}/fixtures/${language.file}`, import.meta.url),
     "utf8",
   );
   return sizes.map((size) => {
@@ -55,8 +59,8 @@ export function statistics(samplesMs, bytes) {
     samplesMs,
     medianMs,
     p95Ms: quantile(samplesMs, 0.95),
-    minMs: Math.min(...samplesMs),
-    maxMs: Math.max(...samplesMs),
+    minMs: samplesMs.reduce((a, b) => Math.min(a, b), Infinity),
+    maxMs: samplesMs.reduce((a, b) => Math.max(a, b), -Infinity),
     mibPerSecond: bytes / 2 ** 20 / (medianMs / 1000),
   };
 }
@@ -126,7 +130,7 @@ export async function createEngine(id, language) {
         ? module.createOnigurumaEngine(import("shiki/wasm"))
         : module.createJavaScriptRegexEngine();
   const highlighter = await module.createHighlighter({
-    langs: [language.textmate],
+    langs: [language.textmate, ...(language.embedded ?? [])],
     themes: [theme],
     engine,
     assets: { remote: false },
@@ -167,6 +171,7 @@ export function compareReports(baseline, candidate) {
     "rustflags",
     "encodedRustflags",
     "targetRustflags",
+    "cargoProfileEnv",
   ]) {
     assert.deepEqual(
       candidate.nativeBuild[key],

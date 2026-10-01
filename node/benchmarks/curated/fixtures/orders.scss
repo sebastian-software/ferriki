@@ -1,0 +1,44 @@
+// Variables, nesting, interpolation, mixins and loops.
+@use "sass:color";
+$accent: #2563eb;
+$spacing: 0.75rem;
+$statuses: (
+  paid: #15803d,
+  pending: #b45309,
+  shipped: #2563eb,
+);
+
+@mixin panel($border: $accent) {
+  border: 1px solid $border;
+  border-radius: 0.5rem;
+  padding: $spacing * 2;
+}
+
+.orders {
+  @include panel();
+  display: grid;
+  gap: $spacing;
+  > article {
+    @include panel(color.adjust($accent, $lightness: 25%));
+    &:hover {
+      background: rgba($accent, 0.05);
+    }
+    &::before {
+      content: "München <team> & café";
+    }
+  }
+  @each $status, $color in $statuses {
+    .status-#{$status} {
+      color: $color;
+      font-weight: 600;
+    }
+  }
+  @for $i from 1 through 4 {
+    .columns-#{$i} {
+      grid-template-columns: repeat($i, 1fr);
+    }
+  }
+  @media (width < 40rem) {
+    grid-template-columns: 1fr;
+  }
+}
