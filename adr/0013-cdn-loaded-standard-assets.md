@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -155,8 +155,10 @@ verification, the Rust `remote` feature with the manifests shipped inside the
 `ferriki` crate, and the Node path: `@ferriki/core` ships only the manifests,
 the release workflow stamps the release commit into the packaged release
 manifest, and the facade loads through the N-API prefetch. Repository checks
-read a cache seeded from `assets/shiki/` with downloads turned off. Still open
-in #141: the post-publish check that the CDN serves the release's payloads.
+read a cache seeded from `assets/shiki/` with downloads turned off. After
+publishing, `verify-npm-publish.mjs` installs the public package, checks its
+commit, highlights from an empty cache, and verifies every pinned payload on
+`assets.ferriki.dev` by SHA-256.
 
 ## Consequences
 
@@ -205,3 +207,4 @@ in #141: the post-publish check that the CDN serves the release's payloads.
 - 2026-09-30: Node path: payloads dropped from `@ferriki/core`, downloads run in
   Rust through an N-API async task, the release workflow stamps the commit, and
   the sync/async boundary is recorded.
+- 2026-10-01: The post-publish CDN check is in place; ADR 0013 is fully implemented.

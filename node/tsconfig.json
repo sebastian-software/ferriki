@@ -19,8 +19,6 @@
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
-    "compat/upstream/**",
-    "eslint.config.ts",
-    "oxlint.config.ts"
+    "compat/upstream/**"
   ]
 }
