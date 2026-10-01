@@ -12,7 +12,7 @@ import {
   createEngine,
   engines,
   loadCases,
-  manifest,
+  loadCorpus,
   plain,
   repoRoot,
   sha256,
@@ -24,6 +24,7 @@ import {
 const script = fileURLToPath(import.meta.url);
 const nodeRoot = join(repoRoot, "node");
 const options = {
+  corpus: { type: "string", default: "tiobe" },
   write: { type: "string" },
   language: { type: "string" },
   sizes: { type: "string", default: "example,large" },
@@ -37,10 +38,11 @@ const options = {
 const { values } = parseArgs({ options });
 if (values.help) {
   console.log(
-    "Usage: pnpm bench:tiobe [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000]",
+    "Usage: pnpm bench:tiobe [--corpus tiobe|curated] [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000]",
   );
   process.exit(0);
 }
+const manifest = loadCorpus(values.corpus);
 const integer = (name, min, max) => {
   const number = Number(values[name]);
   if (!Number.isSafeInteger(number) || number < min || number > max)
@@ -74,6 +76,10 @@ async function worker(language) {
   const highlighters = {};
   const setup = {};
   for (const id of engines) {
+    if (id === "prism" && !language.prism) {
+      setup[id] = { status: "unsupported", reason: language.prismUnsupported };
+      continue;
+    }
     const start = performance.now();
     try {
       highlighters[id] = await createEngine(id, language);
@@ -85,7 +91,7 @@ async function worker(language) {
   const cases = [];
   let consumed = 0;
   try {
-    for (const { code, ...entry } of loadCases(language, method.sizes)) {
+    for (const { code, ...entry } of loadCases(language, method.sizes, values.corpus)) {
       const results = plain(setup);
       let reference;
       try {
@@ -199,6 +205,8 @@ const report = {
     readFileSync(script) + readFileSync(new URL("./tiobe-benchmark.mjs", import.meta.url)),
   ),
   corpus: {
+    id: values.corpus,
+    name: manifest.name ?? `TIOBE ${manifest.month}`,
     month: manifest.month,
     source: manifest.source,
     manifestSha256: sha256(JSON.stringify(manifest)),

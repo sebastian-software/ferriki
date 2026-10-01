@@ -1,0 +1,178 @@
+{
+  "name": "Curated 20-format",
+  "month": "2026-09",
+  "source": "https://github.com/sebastian-software/ferroni/blob/16af64c93e6ecf1cb6786d04a1f434b23bd21716/benches/highlighting_corpus.md",
+  "selected": "2026-09-30",
+  "languages": [
+    {
+      "rank": 1,
+      "name": "TypeScript",
+      "textmate": "typescript",
+      "prism": "typescript",
+      "file": "orders.ts",
+      "dialect": "TypeScript"
+    },
+    {
+      "rank": 2,
+      "name": "TSX",
+      "textmate": "tsx",
+      "prism": "tsx",
+      "file": "Orders.tsx",
+      "dialect": "React with TypeScript"
+    },
+    {
+      "rank": 3,
+      "name": "Rust",
+      "textmate": "rust",
+      "prism": "rust",
+      "file": "orders.rs",
+      "dialect": "Rust 2021"
+    },
+    {
+      "rank": 4,
+      "name": "CSS",
+      "textmate": "css",
+      "prism": "css",
+      "file": "orders.css",
+      "dialect": "CSS with custom properties"
+    },
+    {
+      "rank": 5,
+      "name": "HTML",
+      "textmate": "html",
+      "prism": "markup",
+      "file": "orders.html",
+      "dialect": "HTML5 with scripts and styles",
+      "embedded": ["javascript", "css"]
+    },
+    {
+      "rank": 6,
+      "name": "C++",
+      "textmate": "cpp",
+      "prism": "cpp",
+      "file": "orders.cpp",
+      "dialect": "C++20"
+    },
+    {
+      "rank": 7,
+      "name": "Swift",
+      "textmate": "swift",
+      "prism": "swift",
+      "file": "Orders.swift",
+      "dialect": "Swift 5"
+    },
+    {
+      "rank": 8,
+      "name": "Java",
+      "textmate": "java",
+      "prism": "java",
+      "file": "Orders.java",
+      "dialect": "Java 17"
+    },
+    {
+      "rank": 9,
+      "name": "Markdown",
+      "textmate": "markdown",
+      "prism": "markdown",
+      "file": "orders.md",
+      "dialect": "Markdown with fenced code",
+      "embedded": ["typescript", "tsx", "json", "bash"]
+    },
+    {
+      "rank": 10,
+      "name": "TOML",
+      "textmate": "toml",
+      "prism": "toml",
+      "file": "orders.toml",
+      "dialect": "TOML 1.0"
+    },
+    {
+      "rank": 11,
+      "name": "YAML",
+      "textmate": "yaml",
+      "prism": "yaml",
+      "file": "orders.yaml",
+      "dialect": "YAML 1.2"
+    },
+    {
+      "rank": 12,
+      "name": "JSON",
+      "textmate": "json",
+      "prism": "json",
+      "file": "orders.json",
+      "dialect": "JSON"
+    },
+    {
+      "rank": 13,
+      "name": "Astro",
+      "textmate": "astro",
+      "prism": null,
+      "file": "Orders.astro",
+      "dialect": "Astro component",
+      "embedded": ["typescript", "css", "javascript"],
+      "prismUnsupported": "Prism 1.30.0 has no Astro component; no markup/JS/Markdown substitution is used."
+    },
+    {
+      "rank": 14,
+      "name": "Svelte",
+      "textmate": "svelte",
+      "prism": null,
+      "file": "Orders.svelte",
+      "dialect": "Svelte 5 component",
+      "embedded": ["typescript", "css", "javascript"],
+      "prismUnsupported": "Prism 1.30.0 has no Svelte component; no markup/JS/Markdown substitution is used."
+    },
+    {
+      "rank": 15,
+      "name": "Ruby",
+      "textmate": "ruby",
+      "prism": "ruby",
+      "file": "orders.rb",
+      "dialect": "Ruby 3"
+    },
+    {
+      "rank": 16,
+      "name": "Python",
+      "textmate": "python",
+      "prism": "python",
+      "file": "orders.py",
+      "dialect": "Python 3"
+    },
+    {
+      "rank": 17,
+      "name": "Vue",
+      "textmate": "vue",
+      "prism": null,
+      "file": "Orders.vue",
+      "dialect": "Vue 3 SFC",
+      "embedded": ["typescript", "scss", "css", "javascript"],
+      "prismUnsupported": "Prism 1.30.0 has no Vue component; no markup/JS/Markdown substitution is used."
+    },
+    {
+      "rank": 18,
+      "name": "MDX",
+      "textmate": "mdx",
+      "prism": null,
+      "file": "orders.mdx",
+      "dialect": "MDX with JSX and expressions",
+      "embedded": ["typescript", "tsx", "json"],
+      "prismUnsupported": "Prism 1.30.0 has no MDX component; no markup/JS/Markdown substitution is used."
+    },
+    {
+      "rank": 19,
+      "name": "SCSS",
+      "textmate": "scss",
+      "prism": "scss",
+      "file": "orders.scss",
+      "dialect": "SCSS"
+    },
+    {
+      "rank": 20,
+      "name": "Bash",
+      "textmate": "shellscript",
+      "prism": "bash",
+      "file": "orders.sh",
+      "dialect": "Bash 5"
+    }
+  ]
+}

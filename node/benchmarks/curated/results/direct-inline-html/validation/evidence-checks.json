@@ -1,0 +1,19 @@
+{
+  "revision": "e625623925952e38257197503c79383bbc2c7336",
+  "artifactChecks": [
+    {
+      "command": "pnpm run format:check",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm run lint",
+      "exitCode": 0
+    },
+    {
+      "command": "node summarize.mjs FERRIKI_ROOT RESULT_DIRECTORY",
+      "exitCode": 0,
+      "comparedCellsPerComparison": 80,
+      "excluded": 0
+    }
+  ]
+}

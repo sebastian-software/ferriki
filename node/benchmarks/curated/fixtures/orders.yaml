@@ -1,0 +1,35 @@
+# Anchors, aliases, flow values and both block scalar styles.
+version: 1
+service: "München <team> & café"
+defaults: &defaults
+  retries: 3
+  timeout: 2.5
+  enabled: true
+  labels: [orders, public]
+
+jobs:
+  summarize:
+    <<: *defaults
+    environment:
+      API_URL: https://example.test/orders?status=paid
+      CACHE_DIR: /tmp/orders
+    script: |
+      set -eu
+      printf '%s\n' "Fetching paid orders"
+      curl --fail "$API_URL" > orders.json
+    description: >-
+      Collect paid orders and compute totals
+      without losing Unicode customer names.
+  publish:
+    <<: *defaults
+    enabled: false
+    depends_on: [summarize]
+    metadata: { region: EU, owner: null }
+
+customers:
+  - id: C-01
+    name: café
+    total: 39.90
+  - id: C-02
+    name: München
+    total: 12.50

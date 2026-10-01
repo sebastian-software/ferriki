@@ -7,3 +7,6 @@ compat/upstream/
 
 # Generated declaration output of `check:api` (tsconfig.api.json).
 .generated/
+
+# Preserve calibrated benchmark inputs byte-for-byte across engine trials.
+benchmarks/curated/fixtures/

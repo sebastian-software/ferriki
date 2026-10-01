@@ -10,9 +10,13 @@ import { toString } from "hast-util-to-string";
 import "./test-asset-env.mjs";
 
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-export const manifest = JSON.parse(
-  readFileSync(new URL("../benchmarks/tiobe/manifest.json", import.meta.url), "utf8"),
-);
+export function loadCorpus(id = "tiobe") {
+  assert.ok(["tiobe", "curated"].includes(id), "Invalid --corpus: choose tiobe or curated");
+  return JSON.parse(
+    readFileSync(new URL(`../benchmarks/${id}/manifest.json`, import.meta.url), "utf8"),
+  );
+}
+export const manifest = loadCorpus();
 export const engines = ["ferriki", "shiki-wasm", "shiki-js", "prism"];
 export const theme = "github-dark";
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -22,10 +26,10 @@ export function readReport(path) {
   return JSON.parse((path.endsWith(".gz") ? gunzipSync(bytes) : bytes).toString("utf8"));
 }
 
-export function loadCases(language, sizes) {
+export function loadCases(language, sizes, corpus = "tiobe") {
   if (!language.file) return [];
   const source = readFileSync(
-    new URL(`../benchmarks/tiobe/fixtures/${language.file}`, import.meta.url),
+    new URL(`../benchmarks/${corpus}/fixtures/${language.file}`, import.meta.url),
     "utf8",
   );
   return sizes.map((size) => {
@@ -55,8 +59,8 @@ export function statistics(samplesMs, bytes) {
     samplesMs,
     medianMs,
     p95Ms: quantile(samplesMs, 0.95),
-    minMs: Math.min(...samplesMs),
-    maxMs: Math.max(...samplesMs),
+    minMs: samplesMs.reduce((a, b) => Math.min(a, b), Infinity),
+    maxMs: samplesMs.reduce((a, b) => Math.max(a, b), -Infinity),
     mibPerSecond: bytes / 2 ** 20 / (medianMs / 1000),
   };
 }
@@ -126,7 +130,7 @@ export async function createEngine(id, language) {
         ? module.createOnigurumaEngine(import("shiki/wasm"))
         : module.createJavaScriptRegexEngine();
   const highlighter = await module.createHighlighter({
-    langs: [language.textmate],
+    langs: [language.textmate, ...(language.embedded ?? [])],
     themes: [theme],
     engine,
     assets: { remote: false },
@@ -139,7 +143,8 @@ export async function createEngine(id, language) {
   };
 }
 
-export function compareReports(baseline, candidate) {
+export function compareReports(baseline, candidate, { isolation = "ferroni" } = {}) {
+  assert.ok(["ferroni", "ferriki"].includes(isolation), "Invalid comparison isolation");
   assert.equal(baseline.schema, 1);
   assert.equal(candidate.schema, 1);
   assert.ok(
@@ -156,17 +161,31 @@ export function compareReports(baseline, candidate) {
   ]) {
     assert.deepEqual(candidate[key], baseline[key], `Cannot compare reports with different ${key}`);
   }
-  assert.equal(
-    candidate.nativeBuild.ferriki.commit,
-    baseline.nativeBuild.ferriki.commit,
-    "Ferriki must stay on the same commit when isolating Ferroni",
-  );
+  if (isolation === "ferroni") {
+    assert.equal(
+      candidate.nativeBuild.ferriki.commit,
+      baseline.nativeBuild.ferriki.commit,
+      "Ferriki must stay on the same commit when isolating Ferroni",
+    );
+    assert.equal(
+      candidate.nativeBuild.rustSourceSha256,
+      baseline.nativeBuild.rustSourceSha256,
+      "Ferriki Rust source must stay unchanged when isolating Ferroni",
+    );
+  } else {
+    assert.deepEqual(
+      candidate.nativeBuild.ferroni,
+      baseline.nativeBuild.ferroni,
+      "Ferroni must stay unchanged when isolating Ferriki",
+    );
+    assert.equal(candidate.revision.commit, baseline.revision.commit, "Benchmark facade changed");
+  }
   for (const key of [
     "rustc",
-    "rustSourceSha256",
     "rustflags",
     "encodedRustflags",
     "targetRustflags",
+    "cargoProfileEnv",
   ]) {
     assert.deepEqual(
       candidate.nativeBuild[key],
