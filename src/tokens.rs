@@ -58,58 +58,77 @@ pub struct HighlightTokensResult {
 
 /// The Rust `Highlighter` returns token offsets in UTF-8 bytes. The internal
 /// Node compatibility core keeps UTF-16 offsets for the JavaScript API.
-pub(crate) fn convert_token_offsets_to_utf8(
-    result: &mut HighlightTokensResult,
+pub(crate) fn convert_token_offsets_to_utf8<'a>(
+    offsets: impl IntoIterator<Item = &'a mut usize>,
     input: &str,
 ) -> Result<()> {
     let map = utf16_to_byte_map(input);
-    for line in &mut result.tokens {
-        for token in line {
-            token.offset = *map.get(token.offset).ok_or_else(|| {
-                Error::new(
-                    ErrorKind::Internal,
-                    "Token offset exceeds the highlighted source.",
-                )
-            })?;
-        }
+    for offset in offsets {
+        *offset = *map.get(*offset).ok_or_else(|| {
+            Error::new(
+                ErrorKind::Internal,
+                "Token offset exceeds the highlighted source.",
+            )
+        })?;
     }
     Ok(())
 }
 
-#[derive(Clone, Debug, Serialize)]
+/// Owned style for one named theme variant of a token.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightThemeTokenStyle {
+    /// Resolved foreground color, absent for unstyled plain text.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
+    /// TextMate font-style bits, absent for unstyled plain text.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub font_style: Option<FontStyle>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+/// A source segment aligned across all requested themes.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightThemeToken {
+    /// Owned source text for this segment, excluding line endings.
     pub content: String,
+    /// UTF-8 byte position in the full input when returned by `Highlighter`.
     pub offset: usize,
+    /// Styles keyed by the caller's variant names, in lexical key order.
     pub variants: BTreeMap<String, HighlightThemeTokenStyle>,
+    /// Token type from the first requested theme, when enabled.
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<StandardTokenType>,
+    /// Scope path from the first requested theme, when enabled.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope_names: Option<Vec<String>>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+/// Resolved metadata for a requested theme variant.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightThemeMetadata {
+    /// Caller-provided variant key (for example `light`), rather than a CSS color.
     pub color: String,
+    /// Registered theme name.
     pub name: String,
+    /// Default foreground color for the code block.
     pub foreground: String,
+    /// Default background color for the code block.
     pub background: String,
 }
 
-#[derive(Clone, Debug, Serialize)]
+/// Owned tokens and theme metadata for multi-theme highlighting.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct HighlightTokensWithThemesResult {
+    /// One vector per source line, including trailing empty lines.
     pub tokens: Vec<Vec<HighlightThemeToken>>,
+    /// Theme metadata in the caller's request order.
     pub themes: Vec<HighlightThemeMetadata>,
 }
 

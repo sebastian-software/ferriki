@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -33,6 +33,10 @@ stable hast-shaped output for the JS layer to transform.
 - `transformers` stay in JS permanently. They are a JS-callback API by nature;
   crossing the native boundary per hook invocation would add FFI overhead and
   break the ecosystem contract that makes Ferriki a drop-in Shiki replacement.
+- Async and sync highlighter constructors retain transformer defaults for
+  HTML, HAST, and token calls. A call's explicit list replaces the defaults,
+  including an empty list to disable them. Both use the existing stable
+  `pre`/normal/`post` enforcement tiers.
 - `decorations` stay in JS for now. They interleave with transformers during
   `codeToHast`, so applying them natively while transformers run in JS would
   risk ordering drift against Shiki semantics. Because decorations are
@@ -61,3 +65,4 @@ stable hast-shaped output for the JS layer to transform.
 
 - 2026-07-25: Accepted.
 - 2026-09-30: Records the Rust side of the boundary and the open question in #122.
+- 2026-10-01: Constructor transformer defaults and per-call replacement are explicit facade contracts (#182).
