@@ -79,7 +79,11 @@ automatic.
       dist-tag, and that crates.io lists the same version for all three crates.
 - [ ] Install the published tarball in a clean consumer and run the public
       `@ferriki/core` smoke checks. The workflow also performs
-      this install check against the public registry after publication.
+      this install check against the public registry after publication: it
+      confirms the packaged release manifest is pinned to the release commit,
+      highlights from an empty cache through the CDN, and checks that
+      `assets.ferriki.dev` serves every pinned payload with its SHA-256
+      (ADR 0013).
 - [ ] Verify npm provenance on the main package and all platform packages.
 
 ## Go/no-go and rollback
