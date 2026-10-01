@@ -1,0 +1,42 @@
+[
+  {
+    "label": "custom-target",
+    "command": ["node", "node/ferriki/scripts/build-native.mjs"],
+    "exitCode": 0,
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/ferriki-final-rounds/target-directory-check",
+      "CARGO_PROFILE_RELEASE_DEBUG": "line-tables-only",
+      "CARGO_PROFILE_RELEASE_STRIP": "none"
+    }
+  },
+  {
+    "label": "core-compat",
+    "command": ["pnpm", "run", "test:ferriki-compat:core"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "curated",
+    "command": ["node", "scripts/check-bench-curated.mjs"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "format",
+    "command": ["pnpm", "run", "format:check"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "lint",
+    "command": ["pnpm", "run", "lint"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "typecheck",
+    "command": ["pnpm", "run", "typecheck"],
+    "exitCode": 0,
+    "environment": {}
+  }
+]

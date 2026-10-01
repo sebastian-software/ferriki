@@ -1,0 +1,407 @@
+{
+  "cpp": {
+    "mainThreadSamples": 7317,
+    "inclusive": {
+      "native_call": {
+        "inclusiveSamples": 7301,
+        "mainThreadPercent": 99.7813311466448
+      },
+      "renderer": {
+        "inclusiveSamples": 150,
+        "mainThreadPercent": 2.050020500205002
+      },
+      "prepare_tokens": {
+        "inclusiveSamples": 39,
+        "mainThreadPercent": 0.5330053300533005
+      },
+      "token_style": {
+        "inclusiveSamples": 46,
+        "mainThreadPercent": 0.6286729533962007
+      },
+      "string_replace": {
+        "inclusiveSamples": 35,
+        "mainThreadPercent": 0.4783381167145005
+      },
+      "token_conversion": {
+        "inclusiveSamples": 13,
+        "mainThreadPercent": 0.17766844335110019
+      },
+      "allocation": {
+        "inclusiveSamples": 365,
+        "mainThreadPercent": 4.988383217165505
+      },
+      "textmate": {
+        "inclusiveSamples": 7047,
+        "mainThreadPercent": 96.30996309963099
+      },
+      "scope_pass": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "binary_pass": {
+        "inclusiveSamples": 7047,
+        "mainThreadPercent": 96.30996309963099
+      },
+      "theme": {
+        "inclusiveSamples": 142,
+        "mainThreadPercent": 1.940686073527402
+      },
+      "serde_json": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "ferroni": {
+        "inclusiveSamples": 6331,
+        "mainThreadPercent": 86.52453191198579
+      },
+      "scanner": {
+        "inclusiveSamples": 6287,
+        "mainThreadPercent": 85.92319256525899
+      },
+      "regset": {
+        "inclusiveSamples": 6284,
+        "mainThreadPercent": 85.88219215525488
+      },
+      "match_at": {
+        "inclusiveSamples": 5263,
+        "mainThreadPercent": 71.92838595052618
+      },
+      "fallback_search": {
+        "inclusiveSamples": 4177,
+        "mainThreadPercent": 57.08623752904196
+      },
+      "string_setup": {
+        "inclusiveSamples": 12,
+        "mainThreadPercent": 0.16400164001640016
+      }
+    },
+    "rustExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 4085],
+      ["ferroni::regexec::stack_pop", 571],
+      ["ferroni::regexec::match_literal_trie", 463],
+      ["ferroni::regset::regset_search_body_position_lead", 343],
+      ["ferroni::regexec::forward_search", 186],
+      ["ferroni::regset::search_fallback_entry", 129],
+      ["ferroni::regset::attempt_fallback_entry", 79],
+      ["ferroni::regexec::is_word_boundary", 53],
+      ["ferriki_textmate::tokenize_string", 44],
+      ["ferriki_textmate::tokenize_string::tokenize_string", 40],
+      ["ferroni::regset::attempt_fallback_entry_at_start", 40],
+      ["ferriki_textmate::theme::Theme::match_scope", 37],
+      ["ferriki_textmate::attributed_scope_stack::AttributedScopeStack::push_attributed", 25],
+      ["ferroni::regexec::look_behind_body_matches", 24],
+      ["ferroni::scanner::build_scanner_match", 24],
+      ["ferroni::regexec::stack_pop_to_mark", 16],
+      ["ferriki_textmate::regexp::CompiledRule$LT$T$GT$::find_next_match", 15],
+      ["ferroni::regset::onig_regset_search_impl", 15],
+      ["ferriki_textmate::grammar::Grammar::tokenize", 13],
+      ["ferroni::regexec::prev_char_head", 12]
+    ]
+  },
+  "css": {
+    "mainThreadSamples": 6564,
+    "inclusive": {
+      "native_call": {
+        "inclusiveSamples": 6526,
+        "mainThreadPercent": 99.4210847044485
+      },
+      "renderer": {
+        "inclusiveSamples": 1274,
+        "mainThreadPercent": 19.408897014015842
+      },
+      "prepare_tokens": {
+        "inclusiveSamples": 243,
+        "mainThreadPercent": 3.70201096892139
+      },
+      "token_style": {
+        "inclusiveSamples": 381,
+        "mainThreadPercent": 5.804387568555758
+      },
+      "string_replace": {
+        "inclusiveSamples": 382,
+        "mainThreadPercent": 5.819622181596587
+      },
+      "token_conversion": {
+        "inclusiveSamples": 92,
+        "mainThreadPercent": 1.401584399756246
+      },
+      "allocation": {
+        "inclusiveSamples": 2062,
+        "mainThreadPercent": 31.413772090188907
+      },
+      "textmate": {
+        "inclusiveSamples": 4482,
+        "mainThreadPercent": 68.28153564899452
+      },
+      "scope_pass": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "binary_pass": {
+        "inclusiveSamples": 4481,
+        "mainThreadPercent": 68.26630103595369
+      },
+      "theme": {
+        "inclusiveSamples": 483,
+        "mainThreadPercent": 7.358318098720293
+      },
+      "serde_json": {
+        "inclusiveSamples": 1,
+        "mainThreadPercent": 0.015234613040828763
+      },
+      "ferroni": {
+        "inclusiveSamples": 2019,
+        "mainThreadPercent": 30.758683729433272
+      },
+      "scanner": {
+        "inclusiveSamples": 1940,
+        "mainThreadPercent": 29.5551492992078
+      },
+      "regset": {
+        "inclusiveSamples": 1934,
+        "mainThreadPercent": 29.46374162096283
+      },
+      "match_at": {
+        "inclusiveSamples": 1261,
+        "mainThreadPercent": 19.210847044485067
+      },
+      "fallback_search": {
+        "inclusiveSamples": 221,
+        "mainThreadPercent": 3.3668494820231563
+      },
+      "string_setup": {
+        "inclusiveSamples": 31,
+        "mainThreadPercent": 0.4722730042656917
+      }
+    },
+    "rustExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 981],
+      ["ferroni::regset::regset_search_body_position_lead", 442],
+      ["ferriki_textmate::tokenize_string::tokenize_string", 118],
+      ["ferroni::regexec::match_literal_trie", 118],
+      ["ferriki_textmate::theme::Theme::match_scope", 88],
+      ["ferriki::highlighter::HighlighterCore::tokenize", 81],
+      ["ferriki_textmate::attributed_scope_stack::AttributedScopeStack::push_attributed", 64],
+      ["ferriki_textmate::tokenize_string", 64],
+      ["ferriki_textmate::grammar::Grammar::tokenize", 63],
+      ["ferroni::regset::onig_regset_search_impl", 63],
+      ["ferriki_textmate::line_output::LineFonts::produce_from_scopes", 58],
+      ["ferroni::regexec::look_behind_body_matches", 54],
+      ["ferroni::regexec::forward_search", 52],
+      [
+        "ferriki_textmate::basic_scope_attributes::BasicScopeAttributesProvider::basic_scope_attributes",
+        50
+      ],
+      ["ferroni::regset::search_fallback_entry", 48],
+      ["ferriki::tokens::utf16_to_byte_map", 47],
+      ["ferroni::scanner::build_scanner_match", 45],
+      ["ferriki_textmate::regexp::CompiledRule$LT$T$GT$::find_next_match", 39],
+      ["ferriki_textmate::line_output::LineTokens::produce_binary", 38],
+      ["ferriki::render::prepare_tokens", 38]
+    ]
+  },
+  "toml": {
+    "mainThreadSamples": 6568,
+    "inclusive": {
+      "native_call": {
+        "inclusiveSamples": 6513,
+        "mainThreadPercent": 99.1626065773447
+      },
+      "renderer": {
+        "inclusiveSamples": 1362,
+        "mainThreadPercent": 20.736906211936663
+      },
+      "prepare_tokens": {
+        "inclusiveSamples": 206,
+        "mainThreadPercent": 3.136419001218027
+      },
+      "token_style": {
+        "inclusiveSamples": 429,
+        "mainThreadPercent": 6.5316686967113275
+      },
+      "string_replace": {
+        "inclusiveSamples": 424,
+        "mainThreadPercent": 6.455542021924482
+      },
+      "token_conversion": {
+        "inclusiveSamples": 125,
+        "mainThreadPercent": 1.903166869671133
+      },
+      "allocation": {
+        "inclusiveSamples": 2301,
+        "mainThreadPercent": 35.03349573690621
+      },
+      "textmate": {
+        "inclusiveSamples": 4275,
+        "mainThreadPercent": 65.08830694275274
+      },
+      "scope_pass": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "binary_pass": {
+        "inclusiveSamples": 4272,
+        "mainThreadPercent": 65.04263093788063
+      },
+      "theme": {
+        "inclusiveSamples": 547,
+        "mainThreadPercent": 8.328258221680878
+      },
+      "serde_json": {
+        "inclusiveSamples": 4,
+        "mainThreadPercent": 0.06090133982947624
+      },
+      "ferroni": {
+        "inclusiveSamples": 1343,
+        "mainThreadPercent": 20.447624847746653
+      },
+      "scanner": {
+        "inclusiveSamples": 1224,
+        "mainThreadPercent": 18.635809987819734
+      },
+      "regset": {
+        "inclusiveSamples": 1201,
+        "mainThreadPercent": 18.285627283800242
+      },
+      "match_at": {
+        "inclusiveSamples": 574,
+        "mainThreadPercent": 8.73934226552984
+      },
+      "fallback_search": {
+        "inclusiveSamples": 75,
+        "mainThreadPercent": 1.1419001218026796
+      },
+      "string_setup": {
+        "inclusiveSamples": 59,
+        "mainThreadPercent": 0.8982947624847746
+      }
+    },
+    "rustExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 480],
+      ["ferroni::regset::regset_search_body_position_lead", 394],
+      ["ferriki_textmate::tokenize_string::tokenize_string", 124],
+      ["ferriki_textmate::grammar::Grammar::tokenize", 123],
+      ["ferriki_textmate::attributed_scope_stack::AttributedScopeStack::push_attributed", 97],
+      ["ferriki::highlighter::HighlighterCore::tokenize", 92],
+      ["ferriki_textmate::tokenize_string", 76],
+      ["ferroni::regexec::forward_search", 70],
+      ["ferriki_textmate::theme::Theme::match_scope", 70],
+      ["ferroni::regset::onig_regset_search_impl", 66],
+      ["ferriki_textmate::line_output::LineTokens::produce_binary", 64],
+      ["ferriki::tokens::utf16_to_byte_map", 61],
+      ["ferroni::scanner::build_scanner_match", 57],
+      ["ferriki_textmate::regexp::CompiledRule$LT$T$GT$::find_next_match", 48],
+      [
+        "ferriki_textmate::basic_scope_attributes::BasicScopeAttributesProvider::basic_scope_attributes",
+        46
+      ],
+      ["ferriki::render::render_html", 42],
+      ["ferroni::regset::search_fallback_entry", 35],
+      ["ferriki_textmate::line_output::LineFonts::produce_from_scopes", 34],
+      ["ferroni::scanner::OnigString::new", 31],
+      ["ferriki::render::prepare_tokens", 29]
+    ]
+  },
+  "tsx": {
+    "mainThreadSamples": 6963,
+    "inclusive": {
+      "native_call": {
+        "inclusiveSamples": 6932,
+        "mainThreadPercent": 99.55478960218296
+      },
+      "renderer": {
+        "inclusiveSamples": 668,
+        "mainThreadPercent": 9.593565991670257
+      },
+      "prepare_tokens": {
+        "inclusiveSamples": 125,
+        "mainThreadPercent": 1.7952032170041647
+      },
+      "token_style": {
+        "inclusiveSamples": 204,
+        "mainThreadPercent": 2.9297716501507973
+      },
+      "string_replace": {
+        "inclusiveSamples": 186,
+        "mainThreadPercent": 2.6712623869021974
+      },
+      "token_conversion": {
+        "inclusiveSamples": 40,
+        "mainThreadPercent": 0.5744650294413327
+      },
+      "allocation": {
+        "inclusiveSamples": 1283,
+        "mainThreadPercent": 18.42596581933075
+      },
+      "textmate": {
+        "inclusiveSamples": 5838,
+        "mainThreadPercent": 83.84317104696251
+      },
+      "scope_pass": {
+        "inclusiveSamples": 0,
+        "mainThreadPercent": 0.0
+      },
+      "binary_pass": {
+        "inclusiveSamples": 5833,
+        "mainThreadPercent": 83.77136291828235
+      },
+      "theme": {
+        "inclusiveSamples": 317,
+        "mainThreadPercent": 4.552635358322562
+      },
+      "serde_json": {
+        "inclusiveSamples": 1,
+        "mainThreadPercent": 0.014361625736033319
+      },
+      "ferroni": {
+        "inclusiveSamples": 4137,
+        "mainThreadPercent": 59.41404566996984
+      },
+      "scanner": {
+        "inclusiveSamples": 3992,
+        "mainThreadPercent": 57.33160993824501
+      },
+      "regset": {
+        "inclusiveSamples": 3966,
+        "mainThreadPercent": 56.95820766910814
+      },
+      "match_at": {
+        "inclusiveSamples": 2739,
+        "mainThreadPercent": 39.33649289099526
+      },
+      "fallback_search": {
+        "inclusiveSamples": 1892,
+        "mainThreadPercent": 27.17219589257504
+      },
+      "string_setup": {
+        "inclusiveSamples": 11,
+        "mainThreadPercent": 0.1579778830963665
+      }
+    },
+    "rustExclusiveTop": [
+      ["ferroni::regexec::match_at_impl", 2114],
+      ["ferroni::regset::regset_search_body_position_lead", 568],
+      ["ferroni::regexec::stack_pop", 297],
+      ["ferroni::regexec::forward_search", 205],
+      ["ferroni::regset::search_fallback_entry", 187],
+      ["ferroni::scanner::build_scanner_match", 124],
+      ["ferroni::regexec::look_behind_body_matches", 113],
+      ["ferriki_textmate::tokenize_string::tokenize_string", 103],
+      ["ferroni::regexec::populate_region_for_match", 79],
+      ["ferriki_textmate::tokenize_string", 71],
+      ["ferriki_textmate::grammar::Grammar::tokenize", 53],
+      ["ferriki_textmate::attributed_scope_stack::AttributedScopeStack::push_attributed", 48],
+      ["ferriki_textmate::theme::Theme::match_scope", 48],
+      ["ferroni::regset::attempt_fallback_entry_at_start", 47],
+      ["ferroni::regset::onig_regset_search_impl", 37],
+      ["ferriki::highlighter::HighlighterCore::tokenize", 35],
+      ["ferriki_textmate::line_output::LineFonts::produce_from_scopes", 34],
+      ["ferroni::regset::attempt_fallback_entry", 31],
+      [
+        "ferriki_textmate::basic_scope_attributes::BasicScopeAttributesProvider::basic_scope_attributes",
+        27
+      ],
+      ["ferriki::tokens::utf16_to_byte_map", 26]
+    ]
+  }
+}

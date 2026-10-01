@@ -1,0 +1,7 @@
+{
+  "sameBinaryAsMeasuredCandidate": true,
+  "sameRustSourceAsMeasuredCandidate": true,
+  "measuredCommit": "25cc596da7aa93ffe93af9a55c471e0a98ede8a4",
+  "finalCommit": "5e9ab9160cefc11bcf47e87d1f9766015a59c578",
+  "binarySha256": "ff792a4555b3737ea1e2c73ef958999cbd891d1a27aa0d3bac767123d8eac75c"
+}

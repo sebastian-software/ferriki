@@ -1,0 +1,17 @@
+{
+  "restored": true,
+  "paths": [
+    "node/ferriki/ferriki.node",
+    "node/ferriki/dist/ferriki.node",
+    "node/ferriki/dist/ferriki.darwin-arm64.node",
+    "node/platforms/darwin-arm64/ferriki.node",
+    "node/ferriki/.benchmark-build.json"
+  ],
+  "sha256": [
+    "b46b0f9b5442e33f12c435c6f0a476dda58a090b034ec5aa1bdbd392421576f2",
+    "b46b0f9b5442e33f12c435c6f0a476dda58a090b034ec5aa1bdbd392421576f2",
+    "b46b0f9b5442e33f12c435c6f0a476dda58a090b034ec5aa1bdbd392421576f2",
+    "b46b0f9b5442e33f12c435c6f0a476dda58a090b034ec5aa1bdbd392421576f2",
+    "55f53bf601347bd6a3e6cdf4fc9e111f7969f0c89cc76ba2bc786f7987244906"
+  ]
+}

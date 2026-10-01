@@ -1,0 +1,14 @@
+{
+  "format": "passed",
+  "lint": "passed with four existing fixture warnings",
+  "strictComparisons": {
+    "style": {
+      "cells": 80,
+      "excluded": 0
+    },
+    "escaping": {
+      "cells": 80,
+      "excluded": 0
+    }
+  }
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "label": "fmt",
+    "command": ["cargo", "fmt", "--all", "--check"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "tests",
+    "command": ["cargo", "test", "--workspace", "--all-features", "--locked"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "rustdoc",
+    "command": ["cargo", "doc", "--workspace", "--no-deps", "--all-features", "--locked"],
+    "exitCode": 0,
+    "environment": {
+      "RUSTDOCFLAGS": "-D warnings"
+    }
+  },
+  {
+    "label": "deny",
+    "command": ["cargo", "deny", "--all-features", "--locked", "check"],
+    "exitCode": 0,
+    "environment": {}
+  },
+  {
+    "label": "adrs",
+    "command": ["node", "scripts/check-adrs.mjs"],
+    "exitCode": 0,
+    "environment": {}
+  }
+]
