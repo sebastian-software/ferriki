@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-core"
-version = "0.8.0"
+version = "0.8.1"
 description = "Native N-API core of the Ferriki Shiki-compatible highlighter"
 readme = "README.md"
 edition.workspace = true
@@ -21,7 +21,7 @@ path = "src/lib.rs"
 
 [dependencies]
 # The N-API host loads standard payloads from the release-pinned CDN (ADR 0013).
-ferriki = { version = "0.8.0", path = "../..", features = [ "remote" ] }
+ferriki = { version = "0.8.1", path = "../..", features = [ "remote" ] }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }
