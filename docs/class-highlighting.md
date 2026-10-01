@@ -1,7 +1,10 @@
 # Class-based highlighting
 
-Class-based output is available in the current repository build and will ship
-in the next release. Inline styles remain the default.
+HTML is Ferriki's primary Node output. `codeToHtml` keeps inline styles as its
+default; use `styleMode: "classes"` or `codeToHtmlWithCss` when the page should
+style nested grammar scopes with CSS. HAST and token outputs remain available
+for consumers that need structured results. Class-based output is available in
+the current repository build and will ship in the next release.
 
 ## Inspiration
 

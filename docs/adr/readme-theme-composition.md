@@ -4,7 +4,7 @@
 
 Active. Update this document when the contract changes.
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Decision
 
@@ -36,8 +36,16 @@ The project pins mdtheme 0.4.0 and uses one `mdtheme:badges:start` /
 Ferramenta's header and footer stay unchanged. Upgrade the CLI and lockfile
 before adopting this theme revision. Keep badge markup outside raw HTML blocks.
 
+## Published README badges
+
+The root README keeps its project and registry badges in `README.md.src` inside
+the mdtheme markers. The npm README uses a compact authored row for npm
+version, license, and Node floor. Its generated family registry block stays
+owned by `scripts/sync-readme-family.mjs`.
+
 ## History
 
 - 2026-09-11: Adopted, with the theme badge placement.
 - 2026-09-30: The organization's standards tooling was removed from this
   repository (#155); mdtheme remains the only README writer.
+- 2026-10-01: Records the compact npm README badge row separately from the root badges.
