@@ -3,7 +3,8 @@
 Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
 Node bindings. The grammar interpreter is a mechanical port of vscode-textmate
 onto [Ferroni](https://github.com/sebastian-software/ferroni); the Node layer
-loads the native addon and the bundled standard languages and themes.
+loads the native addon and fetches the standard languages and themes on first
+use from a release-pinned CDN.
 
 ## Install
 
@@ -131,7 +132,8 @@ The native runtime currently provides:
 - `createHighlighter`, `createHighlighterCore`, and their synchronous core
   constructor
 - asynchronous and synchronous language and theme loading
-- bundled standard TextMate grammars and themes
+- the standard TextMate grammars and themes, downloaded on first use, verified
+  and cached
 - deterministically enumerable `bundledLanguages` and `bundledThemes` loader maps
 - `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
 - language aliases, lazy embedded languages, and external grammar injections
