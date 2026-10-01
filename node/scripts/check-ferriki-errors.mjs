@@ -37,6 +37,15 @@ assert.throws(
 );
 assert.throws(
   () =>
+    highlighter.codeToHtml("const answer = 42", {
+      lang: "javascript",
+      theme: "nord",
+      colorReplacements: { "#112233": "#445566" },
+    }),
+  hasCode("ERR_UNSUPPORTED"),
+);
+assert.throws(
+  () =>
     highlighter.codeToHtml("const answer = 42", { lang: "javascript", theme: "nord", engine: {} }),
   hasCode("ERR_UNSUPPORTED"),
 );

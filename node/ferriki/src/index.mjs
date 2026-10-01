@@ -866,7 +866,7 @@ function validateHighlightOptions(options) {
     options.structure !== "inline"
   )
     throw new ShikiError("Highlight option structure must be classic or inline", "ERR_USAGE");
-  for (const field of ["engine", "loadWasm", "wasmBinary"]) {
+  for (const field of ["colorReplacements", "engine", "loadWasm", "wasmBinary"]) {
     if (options[field] !== undefined)
       throw new ShikiError(
         `Highlight option \`${field}\` is not supported by Ferriki`,

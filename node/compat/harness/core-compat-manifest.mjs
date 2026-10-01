@@ -38,8 +38,8 @@ export const coreCompatDeferredTests = [
   {
     path: "compat/upstream/shiki/packages/shiki/test/color-replacement.test.ts",
     reason:
-      "the upstream bundle fixture exercises Shiki-only theme plumbing; Ferriki colorReplacements are validated by the native option contract",
-    issue: 48,
+      "Ferriki colorReplacements has no runtime implementation and is deferred pending a product decision",
+    issue: 190,
   },
   {
     path: "compat/upstream/shiki/packages/shiki/test/css-variables.test.ts",

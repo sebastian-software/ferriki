@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -19,7 +19,7 @@ integration drift again.
 Adopt [`docs/ferriki-1.0-api-contract.md`](../docs/ferriki-1.0-api-contract.md)
 as the normative 1.0 Node API matrix. It classifies every public export,
 factory input, highlight option, output shape, lifecycle rule, and error policy
-as Stable, Shim, Remove, or Non-goal.
+as Stable, Shim, Remove, Deferred, or Non-goal.
 
 The contract prioritizes the synchronous reusable highlighter path required by
 Ferromark and Ardo, keeps transformers/decorations in the JavaScript layer, and
@@ -30,8 +30,9 @@ exposes no Rust API; Rust consumers use the published crates of
 The contract lists the `assets` option, its environment variables and the
 sync/async download boundary of
 [ADR 0013](0013-cdn-loaded-standard-assets.md). Before it is frozen at 1.0,
-the public TypeScript declarations also need a type-level check against the
-mirrored Shiki types, so the hand-written declarations cannot drift (#158).
+the CI typecheck checks the hand-written declarations against mirrored Shiki
+types; the API contract documents the intentional native-state, HAST, and
+transformer-context boundaries (#158).
 
 ## Consequences
 
@@ -47,3 +48,5 @@ mirrored Shiki types, so the hand-written declarations cannot drift (#158).
 - 2026-09-05: Accepted.
 - 2026-09-30: Lists the ADR 0013 options and the type conformance check the contract must cover before the freeze.
 - 2026-09-30: The contract now lists the `assets` option and the download boundary (#141).
+- 2026-10-01: Adds Shiki type drift checks with explicit native API boundaries (#158).
+- 2026-10-01: Classifies `colorReplacements` as deferred until runtime support is implemented (#190).

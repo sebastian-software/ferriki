@@ -8,16 +8,15 @@ Last updated: 2026-10-01
 
 ## Context
 
-Rendering behavior such as `colorReplacements`, `mergeWhitespaces`,
-`mergeSameStyleTokens`, and the `codeToHast` render options has moved into the
-Rust core (see ADR 0001). Two features were still unassigned to either side of
-the native/JS boundary:
+Whitespace and same-style token merging and the `codeToHast` render options
+live in the Rust core (see ADR 0001). `colorReplacements` is not implemented
+by Ferriki and remains deferred under #190. Two features were still
+unassigned to either side of the native/JS boundary:
 
-- `transformers`: user-supplied callback hooks that receive hast nodes and
-  token structures at defined pipeline points. The Shiki ecosystem
-  (`@shikijs/transformers`, twoslash, colorized-brackets, and downstream
-  consumers such as Ardo's line-number/line-highlight transformers) depends on
-  this callback contract.
+- `transformers`: user-supplied callback hooks that receive Ferriki HAST nodes
+  and token structures at defined pipeline points. Some Shiki ecosystem
+  transformers can use the shared fields and payloads, but the full Shiki
+  transformer context is not type-interchangeable with Ferriki's (ADR 0011).
 - `decorations`: declarative offset ranges with classes/properties, applied to
   the rendered output. Unlike transformers they carry data, not code.
 
@@ -32,7 +31,7 @@ stable hast-shaped output for the JS layer to transform.
 
 - `transformers` stay in JS permanently. They are a JS-callback API by nature;
   crossing the native boundary per hook invocation would add FFI overhead and
-  break the ecosystem contract that makes Ferriki a drop-in Shiki replacement.
+  break Ferriki's supported JS hook pipeline.
 - Async and sync highlighter constructors retain transformer defaults for
   HTML, HAST, and token calls. A call's explicit list replaces the defaults,
   including an empty list to disable them. Both use the existing stable
@@ -48,8 +47,9 @@ stable hast-shaped output for the JS layer to transform.
 
 - The Rust core's public surface is token- and render-oriented; it does not
   need to model callbacks or hast mutation.
-- Shiki ecosystem transformers keep working unchanged, which keeps the
-  drop-in story credible for consumers like Ardo.
+- Transformers using the shared callback fields and payloads can run through
+  Ferriki's hook pipeline; full Shiki context interchangeability is not
+  promised (ADR 0011).
 - The JS layer retains a bounded amount of runtime logic (transformer
   dispatch, decoration application). This is a deliberate exception to the
   "runtime behavior belongs in Rust" default of ADR 0001.
@@ -66,3 +66,4 @@ stable hast-shaped output for the JS layer to transform.
 - 2026-07-25: Accepted.
 - 2026-09-30: Records the Rust side of the boundary and the open question in #122.
 - 2026-10-01: Constructor transformer defaults and per-call replacement are explicit facade contracts (#182).
+- 2026-10-01: Clarifies the Ferriki-typed transformer boundary and that `colorReplacements` remains deferred (#190).
