@@ -1,5 +1,9 @@
 # Ferriki
 
+[![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
+[![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
+
 Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
 Node bindings. The grammar interpreter is a mechanical port of vscode-textmate
 onto [Ferroni](https://github.com/sebastian-software/ferroni); the Node layer
@@ -52,11 +56,6 @@ const html = highlighter.codeToHtml("const answer = 42", {
   lang: "javascript",
   theme: "nord",
 });
-
-const tokens = highlighter.codeToTokens("# Hello", {
-  lang: "markdown",
-  theme: "nord",
-});
 ```
 
 For Ardo-style light/dark output, pass an ordered theme map. With
@@ -73,9 +72,10 @@ const html = highlighter.codeToHtml("const answer = 42", {
 });
 ```
 
-`codeToHast` returns the same highlighted output as a HAST root. Languages
-embedded by a grammar are loaded with it; lazy embeddings are loaded only
-after an explicit `loadLanguage`.
+`codeToHast` returns the highlighted result as a typed HAST root. Languages
+embedded by a grammar load with it; lazy embeddings load only after an explicit
+`loadLanguage`. Token APIs remain available for callers that need token lines,
+explanations, or multi-theme token data.
 
 Custom registrations use the same TextMate shapes as Shiki and are validated
 before they cross the native boundary:
@@ -124,32 +124,25 @@ Use `styleMode: "classes"` for nested scope classes and custom CSS.
 including theme maps that switch via `data-ferriki-theme` without retokenizing.
 See the [class-based highlighting guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md) for examples and integration details.
 
-## Current API
+## Supported API
 
-The native runtime currently provides:
+HTML is the primary Node output: `codeToHtml` produces the highlighted markup,
+and `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also
+returns the resolved CSS for stylesheet theming. `codeToHast`,
+`codeToTokens`, `codeToTokensBase`, and `codeToTokensWithThemes` remain
+available for consumers that need structured output.
 
-- `codeToHtml`, `codeToHast`, `codeToTokens`, and `codeToTokensBase`
-- `createHighlighter`, `createHighlighterCore`, and their synchronous core
-  constructor
-- asynchronous and synchronous language and theme loading
-- the standard TextMate grammars and themes, downloaded on first use, verified
-  and cached
-- deterministically enumerable `bundledLanguages` and `bundledThemes` loader maps
-- `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
-- language aliases, lazy embedded languages, and external grammar injections
-- validated custom TextMate grammar and theme registrations
-- `ferrikiVersion`, which reports the loaded native core version
-
-The renderer supports the classic single-theme structure and ordered
-light/dark CSS-variable themes. ANSI escape sequences are rejected explicitly;
-token explanations, grammar-state continuation, transformers, and decoration
-adapters remain separately scoped facade work (see issues
-[#47](https://github.com/sebastian-software/ferriki/issues/47) and
-[#45](https://github.com/sebastian-software/ferriki/issues/45)).
+The API also includes reusable highlighter factories, synchronous and
+asynchronous language and theme loading, lazy standard assets, enumerable
+language/theme catalogs, aliases, grammar injections, custom registrations,
+CSS-variable themes, token explanations, grammar-state continuation,
+transformers, and decorations. Transformers and decorations run in the
+JavaScript facade (ADR 0008). ANSI escape sequences are rejected explicitly.
 
 For the complete retained API, option semantics, deliberate removals, and
 error behavior, see the repository documentation:
 
+- [Ferriki 1.0 Node API contract](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-1.0-api-contract.md)
 - [Ferriki API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md)
 - [Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md)
 - [Compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md) — the exact Shiki v4.4.3
@@ -171,10 +164,8 @@ injections.
 
 ## License
 
-Licensed under either of
-[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or
-[Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
-at your option.
+Licensed under either of [MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT)
+or [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE) at your option.
 
 <!-- ferramenta-family:start -->
 

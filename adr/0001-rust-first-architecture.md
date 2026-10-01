@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -31,8 +31,14 @@ Ferriki is Rust-first.
   and transformer and decoration dispatch, the bounded exception of
   [ADR 0008](0008-transformers-and-decorations-stay-in-js.md).
 - Token JSON is a compatibility surface, not the preferred internal pipeline.
-  Results cross the N-API boundary as JSON strings; for object-heavy APIs such
-  as `codeToHast` and `codeToTokensBase` that cost is measurable (#147).
+  Structured Node results cross the N-API boundary as JSON strings and are
+  parsed by the facade. The comparison in
+  [`docs/benchmarks/shiki-comparison.json`](../docs/benchmarks/shiki-comparison.json)
+  is a historical measurement from Ferriki 0.4.1 at `be45fef5`; it showed
+  `codeToHast` behind Shiki + WASM on that corpus. It does not establish the
+  per-token N-API object construction described in issue #147 as the cause, or
+  describe current performance targets. Node output priority is recorded in
+  [ADR 0017](0017-node-html-output-priority.md).
 - Architectural cleanliness is prioritized over preserving the old Shiki
   package topology.
 
@@ -40,3 +46,4 @@ Ferriki is Rust-first.
 
 - 2026-03-09: Accepted.
 - 2026-09-30: Consequences describe the implemented split between the Rust crates and the JS facade.
+- 2026-10-01: Clarifies the JSON-string N-API transport and dates the API comparison to Ferriki 0.4.1.
