@@ -143,7 +143,8 @@ export async function createEngine(id, language) {
   };
 }
 
-export function compareReports(baseline, candidate) {
+export function compareReports(baseline, candidate, { isolation = "ferroni" } = {}) {
+  assert.ok(["ferroni", "ferriki"].includes(isolation), "Invalid comparison isolation");
   assert.equal(baseline.schema, 1);
   assert.equal(candidate.schema, 1);
   assert.ok(
@@ -160,14 +161,27 @@ export function compareReports(baseline, candidate) {
   ]) {
     assert.deepEqual(candidate[key], baseline[key], `Cannot compare reports with different ${key}`);
   }
-  assert.equal(
-    candidate.nativeBuild.ferriki.commit,
-    baseline.nativeBuild.ferriki.commit,
-    "Ferriki must stay on the same commit when isolating Ferroni",
-  );
+  if (isolation === "ferroni") {
+    assert.equal(
+      candidate.nativeBuild.ferriki.commit,
+      baseline.nativeBuild.ferriki.commit,
+      "Ferriki must stay on the same commit when isolating Ferroni",
+    );
+    assert.equal(
+      candidate.nativeBuild.rustSourceSha256,
+      baseline.nativeBuild.rustSourceSha256,
+      "Ferriki Rust source must stay unchanged when isolating Ferroni",
+    );
+  } else {
+    assert.deepEqual(
+      candidate.nativeBuild.ferroni,
+      baseline.nativeBuild.ferroni,
+      "Ferroni must stay unchanged when isolating Ferriki",
+    );
+    assert.equal(candidate.revision.commit, baseline.revision.commit, "Benchmark facade changed");
+  }
   for (const key of [
     "rustc",
-    "rustSourceSha256",
     "rustflags",
     "encodedRustflags",
     "targetRustflags",

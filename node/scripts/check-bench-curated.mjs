@@ -95,6 +95,20 @@ try {
     }
   }
   assert.equal(compareReports(report, report).comparisons.length, 80);
+  const rendererChange = structuredClone(report);
+  rendererChange.nativeBuild.ferriki.commit = "renderer-candidate";
+  rendererChange.nativeBuild.rustSourceSha256 = "changed-renderer";
+  assert.throws(() => compareReports(report, rendererChange), /Ferriki must stay/);
+  assert.equal(
+    compareReports(report, rendererChange, { isolation: "ferriki" }).comparisons.length,
+    80,
+  );
+  rendererChange.nativeBuild.ferroni.sourceSha256 = "changed-engine";
+  assert.throws(
+    () => compareReports(report, rendererChange, { isolation: "ferriki" }),
+    /Ferroni must stay unchanged/,
+  );
+  assert.throws(() => compareReports(report, report, { isolation: "other" }), /Invalid comparison/);
   const changed = structuredClone(report);
   changed.corpus.id = "tiobe";
   assert.throws(() => compareReports(report, changed), /different corpus/);
