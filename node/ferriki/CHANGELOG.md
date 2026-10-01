@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.2](https://github.com/sebastian-software/ferriki/compare/v0.8.1...v0.8.2) (2026-10-01)
+
+
+### Bug Fixes
+
+* **bench:** complete profiling receipts and benchmark gates ([#169](https://github.com/sebastian-software/ferriki/issues/169)) ([5ba30d7](https://github.com/sebastian-software/ferriki/commit/5ba30d7327d97001f5278646201bd20deeff7aaf))
+
+
+### Performance Improvements
+
+* **render:** avoid copying HTML strings without escape characters ([#178](https://github.com/sebastian-software/ferriki/issues/178)) ([002ae02](https://github.com/sebastian-software/ferriki/commit/002ae0270925ba6e487fb66d9dc69b2c285af4c0))
+
 ## [0.8.1](https://github.com/sebastian-software/ferriki/compare/v0.8.0...v0.8.1) (2026-10-01)
 
 
