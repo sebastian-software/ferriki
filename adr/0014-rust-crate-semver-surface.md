@@ -58,6 +58,11 @@ Each crate publishes a deliberate, curated surface.
 - **Serialized shapes are part of the contract.** Typed Rust fields serialize
   to the documented JSON shape that the N-API boundary and the Node facade
   rely on (for example `fontStyle` as integer bits), and tests pin it.
+- **Public multi-theme results.** `HighlightTokensWithThemesResult`,
+  `HighlightThemeToken`, `HighlightThemeTokenStyle`, and `HighlightThemeMetadata`
+  are documented, owned, non-exhaustive results produced by `Highlighter`.
+  Public token offsets are UTF-8 bytes; the semver-exempt N-API bridge retains
+  its UTF-16 convention using the same result shapes.
 - **Common traits.** Public types implement `Debug`, and `Clone` and
   `PartialEq` where the data allows; types that hold large payloads implement
   `Debug` by hand without printing them.
@@ -92,3 +97,4 @@ Each crate publishes a deliberate, curated surface.
 
 - 2026-09-30: Accepted. Implemented in 0.6.0 (#135, #159).
 - 2026-10-01: Includes the documented combined scope/binary result used by the highlighter (#172).
+- 2026-10-01: Named multi-theme result types join the public contract with UTF-8 offsets (#183).

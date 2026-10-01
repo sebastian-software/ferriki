@@ -42,4 +42,7 @@ pub use render::{
     render_html_with_css,
 };
 pub use theme_data::{ThemeData, parse_theme_data};
-pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};
+pub use tokens::{
+    HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,
+};

@@ -1,8 +1,9 @@
 use std::path::Path;
 
 use ferriki::{
-    ErrorKind, Highlighter, LanguageRegistration, RenderOptions, StandardAssetCatalogs,
-    parse_raw_grammar, parse_theme_data, render_html, render_html_lines,
+    ErrorKind, FontStyle, HighlightTokensWithThemesResult, Highlighter, LanguageRegistration,
+    RenderOptions, StandardAssetCatalogs, TokenizeOptions, parse_raw_grammar, parse_theme_data,
+    render_html, render_html_lines,
 };
 
 fn assets() -> StandardAssetCatalogs {
@@ -11,6 +12,196 @@ fn assets() -> StandardAssetCatalogs {
         "/assets/shiki"
     )))
     .expect("fixture assets")
+}
+
+#[test]
+fn multi_theme_tokens_merge_different_boundaries_and_keep_utf8_offsets() {
+    let mut highlighter = Highlighter::builder().build().expect("highlighter");
+    let grammar = parse_raw_grammar(
+        r#"{"scopeName":"source.sample","patterns":[{"match":"foo","name":"keyword.sample"},{"match":"bar","name":"string.sample"}]}"#,
+        Some("sample.json"),
+    )
+    .expect("grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("sample", grammar))
+        .expect("grammar registration");
+    for (name, source) in [
+        (
+            "light-theme",
+            r##"{"colors":{"editor.foreground":"#111111","editor.background":"#ffffff"},"tokenColors":[{"scope":"string.sample","settings":{"foreground":"#ff0000","fontStyle":"italic"}}]}"##,
+        ),
+        (
+            "dark-theme",
+            r##"{"colors":{"editor.foreground":"#eeeeee","editor.background":"#000000"},"tokenColors":[{"scope":"keyword.sample","settings":{"foreground":"#00ff00","fontStyle":"bold"}}]}"##,
+        ),
+    ] {
+        highlighter
+            .register_theme(parse_theme_data(name, source).expect("theme"))
+            .expect("registration");
+    }
+
+    let code = "😀foo bar\r\n\r\n😀bar\n";
+    let light = highlighter
+        .highlight(code, "sample", "light-theme")
+        .expect("light");
+    let dark = highlighter
+        .highlight(code, "sample", "dark-theme")
+        .expect("dark");
+    assert_ne!(
+        light.tokens[0]
+            .iter()
+            .map(|token| &token.content)
+            .collect::<Vec<_>>(),
+        dark.tokens[0]
+            .iter()
+            .map(|token| &token.content)
+            .collect::<Vec<_>>()
+    );
+
+    let themes = [("light", "light-theme"), ("dark", "dark-theme")];
+    let result = highlighter
+        .highlight_with_themes(code, "sample", &themes)
+        .expect("multi-theme");
+    assert_eq!(result.tokens.len(), 4);
+    assert!(result.tokens[1].is_empty());
+    assert!(result.tokens[3].is_empty());
+    assert_eq!(
+        result.tokens[0]
+            .iter()
+            .map(|token| token.content.as_str())
+            .collect::<Vec<_>>(),
+        ["😀", "foo", " ", "bar"]
+    );
+    assert_eq!(result.tokens[2][0].offset, "😀foo bar\r\n\r\n".len());
+    assert_eq!(
+        result
+            .themes
+            .iter()
+            .map(|theme| theme.color.as_str())
+            .collect::<Vec<_>>(),
+        ["light", "dark"]
+    );
+    assert_eq!(result.themes[0].foreground, light.foreground);
+    assert_eq!(result.themes[1].background, dark.background);
+    assert_eq!(
+        result.tokens[0][1].variants["dark"].font_style,
+        Some(FontStyle::BOLD)
+    );
+    assert_eq!(
+        result.tokens[0][3].variants["light"].font_style,
+        Some(FontStyle::ITALIC)
+    );
+    for (line_index, line) in result.tokens.iter().enumerate() {
+        for token in line {
+            assert_eq!(
+                &code[token.offset..token.offset + token.content.len()],
+                token.content
+            );
+            for (key, single) in [("light", &light), ("dark", &dark)] {
+                let source = single.tokens[line_index]
+                    .iter()
+                    .find(|source| {
+                        source.offset <= token.offset
+                            && source.offset + source.content.len()
+                                >= token.offset + token.content.len()
+                    })
+                    .expect("covering token");
+                assert_eq!(token.variants[key].color, source.color);
+                assert_eq!(token.variants[key].font_style, source.font_style);
+            }
+        }
+    }
+    // Owned results remain readable after the highlighter is reused and dropped.
+    let detailed = highlighter
+        .highlight_with_themes_and_options(
+            code,
+            "sample",
+            &themes,
+            &TokenizeOptions::default()
+                .with_include_scopes(true)
+                .with_preserve_scope_boundaries(true)
+                .with_include_token_type(true),
+        )
+        .expect("metadata");
+    assert!(detailed.tokens[0][1].scope_names.is_some());
+    assert!(detailed.tokens[0][1].token_type.is_some());
+    let empty = highlighter
+        .highlight_with_themes("", "sample", &themes)
+        .expect("empty input");
+    assert_eq!(empty.tokens, vec![vec![]]);
+    let one = highlighter
+        .highlight_with_themes(code, "sample", &themes[..1])
+        .expect("one theme");
+    assert_eq!(one.tokens[0].len(), light.tokens[0].len());
+    drop(highlighter);
+    let json = serde_json::to_string(&result).expect("serialize");
+    assert!(json.contains("\"fontStyle\":2"));
+    assert_eq!(
+        serde_json::from_str::<HighlightTokensWithThemesResult>(&json).expect("deserialize"),
+        result
+    );
+}
+
+#[test]
+fn multi_theme_api_reuses_standard_assets_and_typed_errors() {
+    let mut highlighter = Highlighter::builder()
+        .with_assets(assets())
+        .build()
+        .expect("highlighter");
+    let themes = [("light", "github-light-default"), ("dark", "nord")];
+    for _ in 0..2 {
+        let result = highlighter
+            .highlight_with_themes("let value = \"😀\";\n", "rs", &themes)
+            .expect("standard assets and alias");
+        assert_eq!(result.themes[1].name, "nord");
+        assert_eq!(result.tokens.len(), 2);
+    }
+    assert_eq!(
+        highlighter
+            .highlight_with_themes("code", "unknown", &themes)
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownLanguage
+    );
+    assert_eq!(
+        highlighter
+            .highlight_with_themes("code", "rust", &[("light", "nord"), ("dark", "unknown")])
+            .unwrap_err()
+            .kind(),
+        ErrorKind::UnknownTheme
+    );
+    for invalid in [
+        &[][..],
+        &[("", "nord")][..],
+        &[("light", "nord"), ("light", "nord")][..],
+    ] {
+        assert_eq!(
+            highlighter
+                .highlight_with_themes("code", "rust", invalid)
+                .unwrap_err()
+                .kind(),
+            ErrorKind::Theme
+        );
+    }
+
+    let missing = StandardAssetCatalogs::from_embedded(
+        include_bytes!("../assets/shiki/languages/manifest.fkindex"),
+        [],
+        include_bytes!("../assets/shiki/themes/manifest.fkindex"),
+        [],
+    )
+    .expect("catalogs without payloads");
+    let mut offline = Highlighter::builder()
+        .with_assets(missing)
+        .build()
+        .expect("offline highlighter");
+    assert_eq!(
+        offline
+            .highlight_with_themes("code", "rust", &themes)
+            .unwrap_err()
+            .kind(),
+        ErrorKind::AssetIo
+    );
 }
 
 #[test]

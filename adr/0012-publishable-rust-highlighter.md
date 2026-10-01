@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Context
 
@@ -31,6 +31,10 @@ still applies.
   that must match the runtime release
   ([ADR 0015](0015-postcard-asset-codec.md)).
 - Rust token offsets are UTF-8 bytes. The Node facade retains UTF-16 offsets.
+- The public `Highlighter` returns owned named multi-theme tokens, aligned
+  at the union of each theme's boundaries, through `highlight_with_themes`
+  and `highlight_with_themes_and_options`. They reuse its catalogs and custom
+  registrations and preserve the single-theme offset and error contracts.
 - The N-API compatibility core lives in `ferriki::__private`, hidden from the
   Rust API documentation and exempt from semver guarantees. The catalog's
   binary manifest and asset structs are not exposed through the `ferriki` API.
@@ -84,3 +88,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-09-27: Release section: one version and one Release Please pull request for the crates and npm.
 - 2026-09-30: Asset sources verify digests (0.5.0); links the semver and codec records.
 - 2026-09-30: The `remote` feature shipped (#141).
+- 2026-10-01: Public named multi-theme tokens support downstream Rust renderers without the N-API bridge (#183).
