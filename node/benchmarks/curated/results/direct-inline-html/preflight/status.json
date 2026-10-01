@@ -1,0 +1,6 @@
+{
+  "status": "failed before any benchmark",
+  "reason": "Control addon source and destination were the same path",
+  "timedMatrices": 0,
+  "restored": true
+}

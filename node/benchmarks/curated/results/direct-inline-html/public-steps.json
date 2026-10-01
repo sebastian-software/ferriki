@@ -1,0 +1,60 @@
+[
+  {
+    "label": "parity-control",
+    "command": ["node", "node/scripts/check-bench-curated.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "parity-candidate",
+    "command": ["node", "node/scripts/check-bench-curated.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "public-control-1",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-direct-html-perf/public-control-1.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-candidate-1",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-direct-html-perf/public-candidate-1.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-candidate-2",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-direct-html-perf/public-candidate-2.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-control-2",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-direct-html-perf/public-control-2.json"
+    ],
+    "exitCode": 0
+  }
+]

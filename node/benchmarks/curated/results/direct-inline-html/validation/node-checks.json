@@ -1,0 +1,22 @@
+[
+  {
+    "label": "core-compat",
+    "command": ["pnpm", "run", "test:ferriki-compat:core"],
+    "exitCode": 0
+  },
+  {
+    "label": "curated-published-engine",
+    "command": ["node", "scripts/check-bench-curated.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "lint",
+    "command": ["pnpm", "run", "lint"],
+    "exitCode": 0
+  },
+  {
+    "label": "typecheck",
+    "command": ["pnpm", "run", "typecheck"],
+    "exitCode": 0
+  }
+]

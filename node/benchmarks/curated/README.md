@@ -30,3 +30,7 @@ Repeat baseline/candidate in ABBA order with the same source fixtures,
 assets, dependencies, features and build flags. Never run builds or CPU
 profiles alongside timed workloads. Preserve outputs, source hashes and
 full reports; do not rank engines when their highlighting differs.
+
+The [direct inline HTML experiment](results/direct-inline-html/README.md)
+retains the full ABBA comparison on Ferriki 0.8.0 / Ferroni 1.8.0, exact parity
+gates, ordinary build receipts and final compatibility validation.

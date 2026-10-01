@@ -1,0 +1,11 @@
+{
+  "registryDirectory": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-1.8.0",
+  "vcs": {
+    "git": {
+      "sha1": "e7ca9c42872687d6a0fde82b5a7e0a1c7cc71f13"
+    },
+    "path_in_vcs": ""
+  },
+  "comparedRustFiles": 34,
+  "differences": []
+}
