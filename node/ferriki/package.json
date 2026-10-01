@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/core",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Shiki-compatible syntax highlighting with a leaner Rust core and Node bindings",
   "keywords": [
     "highlighter",
@@ -56,13 +56,13 @@
     "@types/node": "catalog:types"
   },
   "optionalDependencies": {
-    "@ferriki/darwin-arm64": "0.8.1",
-    "@ferriki/linux-arm64-gnu": "0.8.1",
-    "@ferriki/linux-arm64-musl": "0.8.1",
-    "@ferriki/linux-x64-gnu": "0.8.1",
-    "@ferriki/linux-x64-musl": "0.8.1",
-    "@ferriki/win32-arm64-msvc": "0.8.1",
-    "@ferriki/win32-x64-msvc": "0.8.1"
+    "@ferriki/darwin-arm64": "0.8.2",
+    "@ferriki/linux-arm64-gnu": "0.8.2",
+    "@ferriki/linux-arm64-musl": "0.8.2",
+    "@ferriki/linux-x64-gnu": "0.8.2",
+    "@ferriki/linux-x64-musl": "0.8.2",
+    "@ferriki/win32-arm64-msvc": "0.8.2",
+    "@ferriki/win32-x64-msvc": "0.8.2"
   },
   "engines": {
     "node": ">=22.13.0"
