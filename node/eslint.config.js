@@ -14,13 +14,6 @@ export default antfu(
       "**/*.d.mts",
       "compat/upstream/**",
       "pnpm-workspace.yaml",
-      // Prepared for the org lint setup (#110). Both import
-      // `eslint-config-setup`, which needs ESLint >= 10, while this workspace
-      // is on the ESLint 9 catalog entry it shares with the upstream mirror.
-      // Until that bump lands they are not the entry point, so they are not
-      // linted either.
-      "eslint.config.ts",
-      "oxlint.config.ts",
     ],
   },
   {
