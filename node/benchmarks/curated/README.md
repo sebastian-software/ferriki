@@ -11,13 +11,14 @@ existing offline asset cache. `example` highlights one complete fixture;
 `large` repeats it 16 times. These large inputs are synthetic highlighting
 traffic, rather than standalone runnable applications.
 
-Run from the repository root after preparing comparator packages and the
+Run from `node/` after preparing comparator packages and the
 ordinary native addon:
 
 ```sh
-FERRIKI_FERRONI_PATH=/path/to/ferroni node node/ferriki/scripts/build-native.mjs
-node node/scripts/check-bench-curated.mjs
-node node/scripts/bench-tiobe.mjs --corpus curated --write report.json
+pnpm run build:native
+pnpm run check:bench-curated
+pnpm run bench:curated --write /tmp/curated-report.json
+node scripts/profile-tiobe.mjs --corpus curated --language vue --boundary native --api html
 ```
 
 The TIOBE method is reused: warmed public tokens and HTML measured separately,
@@ -25,6 +26,10 @@ rotating engine order, one fresh worker per format, sequential formats, raw
 samples, ordinary addon receipts, and exact TextMate token/HTML parity before
 timing. HTML is the primary decision boundary; tokens are diagnostic.
 Prism's Astro/Svelte/Vue/MDX cells are explicitly unsupported.
+
+For a local Ferroni experiment, set `FERRIKI_FERRONI_PATH=/absolute/path/to/ferroni`
+when building. The [profiling instructions](../tiobe/README.md#profile-one-workload)
+also apply to this corpus with `--corpus curated`.
 
 Repeat baseline/candidate in ABBA order with the same source fixtures,
 assets, dependencies, features and build flags. Never run builds or CPU

@@ -122,3 +122,39 @@ The existing real-repository benchmark in `scripts/bench-shiki-comparison.mjs`
 remains complementary: it includes embedded-language documents and startup
 workloads outside these top-20 examples. This corpus alone cannot rule out all
 regex or highlighting regressions.
+
+## Profile one workload
+
+`profile-tiobe.mjs` checks source preservation and exact Shiki parity, warms
+the selected API, then repeats only that workload for a bounded duration.
+Its stdout includes raw diagnostic timings, workload identity and the native
+build receipt. Setup and validation happen before the stderr ready marker.
+
+```sh
+node scripts/profile-tiobe.mjs --language cpp --api tokens --seconds 15
+node scripts/profile-tiobe.mjs --language cpp --api html --seconds 15
+node scripts/profile-tiobe.mjs --language cpp --boundary native --api tokens
+node scripts/profile-tiobe.mjs --language cpp --boundary native --api tokens --scopes
+```
+
+The native boundary includes tokenization, JSON serialization and N-API string
+transfer, but omits the public facade's parsing and metadata processing. The
+public token API requests scope paths for grammar state even without an
+explanation option; `--scopes` reproduces that native work. These diagnostic
+lanes perform different work and are not equivalent API speed comparisons.
+
+For readable Rust stacks, rebuild with symbols and line tables using Cargo's
+profile overrides, then use an installed sampling profiler, for example:
+
+```sh
+CARGO_PROFILE_RELEASE_DEBUG=line-tables-only CARGO_PROFILE_RELEASE_STRIP=none \
+  pnpm run build:native
+samply record --save-only --unstable-presymbolicate -o /tmp/cpp-tokens.json.gz \
+  node scripts/profile-tiobe.mjs --language cpp --api tokens --seconds 15
+```
+
+Keep profiler results separate from timing comparisons. Build receipts record
+`CARGO_PROFILE_*` overrides, and comparisons reject different settings. Restore
+the ordinary release profile and rebuild before collecting timing measurements.
+On macOS, the built-in `sample` tool can attach after the ready marker:
+`sample <pid> 10 1 -file /tmp/cpp.sample.txt`.

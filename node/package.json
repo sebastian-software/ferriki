@@ -37,7 +37,9 @@
     "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks",
     "bench:tiobe": "node scripts/bench-tiobe.mjs",
-    "check:bench-tiobe": "node scripts/check-bench-tiobe.mjs"
+    "check:bench-tiobe": "node scripts/check-bench-tiobe.mjs",
+    "bench:curated": "node scripts/bench-tiobe.mjs --corpus curated",
+    "check:bench-curated": "node scripts/check-bench-curated.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",
