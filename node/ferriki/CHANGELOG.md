@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/sebastian-software/ferriki/compare/v0.8.2...v0.8.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* **release:** verify the CDN after publishing and give npm twenty minutes ([#179](https://github.com/sebastian-software/ferriki/issues/179)) ([ad651b4](https://github.com/sebastian-software/ferriki/commit/ad651b411b46c1b497fa5085bc0bce6c5a690b39))
+
 ## [0.8.2](https://github.com/sebastian-software/ferriki/compare/v0.8.1...v0.8.2) (2026-10-01)
 
 
