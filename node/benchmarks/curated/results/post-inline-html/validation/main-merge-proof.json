@@ -1,0 +1,9 @@
+{
+  "main": "5ba30d7327d97001f5278646201bd20deeff7aaf",
+  "candidate": "6fad1d513e6c3a7718d803e9080ca95bab6bb9de",
+  "mergedTree": "6f94745dd29e7ab55c2f50e0483a721b48ac6b4a",
+  "profilingReceiptFields": 1,
+  "mergedHelperEqualsCandidate": true,
+  "allRustAndCargoSourcesUnchanged": true,
+  "checkedSources": 58
+}

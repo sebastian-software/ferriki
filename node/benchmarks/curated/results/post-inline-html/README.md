@@ -183,3 +183,12 @@ audit cases; this does not claim the full upstream audit suite passes.
 addon after the build-helper fix has the exact same Rust source and binary hash
 as measured commit `25cc596da7aa93ffe93af9a55c471e0a98ede8a4`. Classes and advanced
 HAST route semantics are checked; their performance remains unmeasured.
+
+The concurrent benchmark-gate changes on main
+`5ba30d7327d97001f5278646201bd20deeff7aaf` are also validated. The profiling
+receipt field is aligned with main in
+`6fad1d513e6c3a7718d803e9080ca95bab6bb9de`; a local merge-tree proof confirms
+one field and byte-identical Rust/Cargo sources. The current-main benchmark
+gate passes using an external copy with only its three module/script URLs
+adapted. Its driver, log and aligned native receipt are retained in
+`validation/`. The ordinary addon still matches the measured source and binary.
