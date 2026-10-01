@@ -98,6 +98,18 @@ const cargo = spawnSync("cargo", cargoArgs, {
 
 if (cargo.status !== 0) process.exit(cargo.status ?? 1);
 
+function command(program, args, cwd = repoRoot) {
+  const result = spawnSync(program, args, { cwd, env: cargoEnv, encoding: "utf8" });
+  if (result.status !== 0) throw new Error(result.stderr || `${program} failed`);
+  return result.stdout.trim();
+}
+
+const metadata = JSON.parse(
+  // Metadata resolves workspace/dev and foreign-target dependencies too. A
+  // successful target build does not guarantee those crates are cached.
+  command("cargo", ["metadata", "--locked", "--format-version", "1", ...cargoConfig]),
+);
+
 const dylibName =
   process.platform === "darwin"
     ? "libferriki_core.dylib"
@@ -106,7 +118,7 @@ const dylibName =
       : "ferriki_core.dll";
 
 const candidates = [
-  join(repoRoot, "target", ...(rustTarget ? [rustTarget] : []), "release", dylibName),
+  join(metadata.target_directory, ...(rustTarget ? [rustTarget] : []), "release", dylibName),
 ];
 
 let selectedInput = null;
@@ -145,11 +157,6 @@ if (syncAssets.status !== 0) process.exit(syncAssets.status ?? 1);
 
 // Bind benchmark provenance to the binary actually built, rather than inferring
 // its Ferroni version from a lockfile that could have changed since the build.
-function command(program, args, cwd = repoRoot) {
-  const result = spawnSync(program, args, { cwd, env: cargoEnv, encoding: "utf8" });
-  if (result.status !== 0) throw new Error(result.stderr || `${program} failed`);
-  return result.stdout.trim();
-}
 function revision(directory) {
   try {
     return {
@@ -191,11 +198,6 @@ async function sourceFingerprint(directory) {
       .update(await readFile(join(directory, file)));
   return hash.digest("hex");
 }
-const metadata = JSON.parse(
-  // Metadata resolves workspace/dev and foreign-target dependencies too. A
-  // successful target build does not guarantee those crates are cached.
-  command("cargo", ["metadata", "--locked", "--format-version", "1", ...cargoConfig]),
-);
 const ferroni = metadata.packages.find((pkg) => pkg.name === "ferroni");
 if (!ferroni) throw new Error("Ferroni was not resolved in the native build");
 if (cargoConfig.length && ferroni.source)

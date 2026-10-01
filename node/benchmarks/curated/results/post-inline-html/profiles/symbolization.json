@@ -1,0 +1,6 @@
+{
+  "binarySha256": "6206d1d27d878cfe13f61568ba281879a5279b858351bd40b39fcf6c4728b119",
+  "relativeAddresses": 0,
+  "commands": ["atos -o SYMBOLIZED_DYLIB RELATIVE_ADDRESSES", "rustfilt"],
+  "unresolved": 0
+}

@@ -39,3 +39,8 @@ full reports; do not rank engines when their highlighting differs.
 The [direct inline HTML experiment](results/direct-inline-html/README.md)
 retains the full ABBA comparison on Ferriki 0.8.0 / Ferroni 1.8.0, exact parity
 gates, ordinary build receipts and final compatibility validation.
+
+The [post-inline-HTML profiling round](results/post-inline-html/README.md)
+retains the final two independent trials on Ferriki 0.8.1 / Ferroni 1.8.0,
+including the accepted borrowed escaping path, rejected style buffer, verified
+CPU profiles and all eight complete comparison reports.

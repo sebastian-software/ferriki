@@ -1,0 +1,6 @@
+{
+  "status": "stopped before build or timing",
+  "reason": "An empty diagnostic output was written in the runner checkout; the clean-state gate rejected it",
+  "timedMatrices": 0,
+  "restored": true
+}

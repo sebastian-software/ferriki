@@ -1,0 +1,9 @@
+{
+  "candidate": "6fad1d513e6c3a7718d803e9080ca95bab6bb9de",
+  "main": "5ba30d7327d97001f5278646201bd20deeff7aaf",
+  "benchmarkGate": "passed",
+  "checkerAdapter": "Only three script/module URLs use the candidate checkout instead of the external evidence directory. Assertions match the checker on main.",
+  "sameBinaryAsMeasuredCandidate": true,
+  "sameRustSourceAsMeasuredCandidate": true,
+  "mergeTreeProof": "main-merge-proof.json"
+}

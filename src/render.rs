@@ -3,6 +3,7 @@ use serde_json::{Map, Value, json};
 
 use crate::{HighlightToken, HighlightTokensResult};
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 /// Controls how theme styles are emitted.
@@ -468,7 +469,8 @@ fn hast_node_to_html(node: &Value) -> String {
             node.get("value")
                 .and_then(Value::as_str)
                 .unwrap_or_default(),
-        ),
+        )
+        .into_owned(),
         Some("element") => {
             let tag_name = node
                 .get("tagName")
@@ -501,12 +503,21 @@ fn hast_node_to_html(node: &Value) -> String {
     }
 }
 
-fn escape_html(input: &str) -> String {
-    input.replace('&', "&#x26;").replace('<', "&#x3C;")
+fn escape_html(input: &str) -> Cow<'_, str> {
+    if input.contains(['&', '<']) {
+        Cow::Owned(input.replace('&', "&#x26;").replace('<', "&#x3C;"))
+    } else {
+        Cow::Borrowed(input)
+    }
 }
 
-fn escape_attribute(input: &str) -> String {
-    escape_html(input).replace('"', "&#x22;")
+fn escape_attribute(input: &str) -> Cow<'_, str> {
+    let escaped = escape_html(input);
+    if escaped.contains('"') {
+        Cow::Owned(escaped.replace('"', "&#x22;"))
+    } else {
+        escaped
+    }
 }
 
 impl RenderOptions {
@@ -575,6 +586,24 @@ mod tests {
         let tree = render_hast(result, options);
         let expected = hast_node_to_html(&tree["children"][0]);
         assert_eq!(render_html(result, options), expected, "{options:?}");
+    }
+
+    #[test]
+    fn escaping_preserves_unicode_and_literal_entities() {
+        for (input, text, attribute) in [
+            ("", "", ""),
+            (
+                "色🦀 plain > text",
+                "色🦀 plain > text",
+                "色🦀 plain > text",
+            ),
+            ("\"quoted\"", "\"quoted\"", "&#x22;quoted&#x22;"),
+            ("&<\"色🦀", "&#x26;&#x3C;\"色🦀", "&#x26;&#x3C;&#x22;色🦀"),
+            ("&#x26;<", "&#x26;#x26;&#x3C;", "&#x26;#x26;&#x3C;"),
+        ] {
+            assert_eq!(super::escape_html(input), text);
+            assert_eq!(super::escape_attribute(input), attribute);
+        }
     }
 
     #[test]

@@ -1,0 +1,70 @@
+[
+  {
+    "label": "build-control",
+    "command": ["node", "node/ferriki/scripts/build-native.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "parity-control",
+    "command": ["node", "node/scripts/check-bench-curated.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "build-candidate",
+    "command": ["node", "node/ferriki/scripts/build-native.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "parity-candidate",
+    "command": ["node", "node/scripts/check-bench-curated.mjs"],
+    "exitCode": 0
+  },
+  {
+    "label": "public-control-1",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-final-rounds/style/public-control-1.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-candidate-1",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-final-rounds/style/public-candidate-1.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-candidate-2",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-final-rounds/style/public-candidate-2.json"
+    ],
+    "exitCode": 0
+  },
+  {
+    "label": "public-control-2",
+    "command": [
+      "node",
+      "node/scripts/bench-tiobe.mjs",
+      "--corpus",
+      "curated",
+      "--write",
+      "/private/tmp/ferriki-final-rounds/style/public-control-2.json"
+    ],
+    "exitCode": 0
+  }
+]

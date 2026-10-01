@@ -1,0 +1,7 @@
+{
+  "status": "excluded diagnostic attempt",
+  "reason": "Profile helper selected repoRoot/target instead of the custom symbol-enabled target; symbol mapping used a different binary",
+  "loadedUUID": "F79AE008-2505-361B-A964-A7B484D70794",
+  "symbolsUUID": "2222A616-1192-37E3-9407-21D17C4B74BF",
+  "timedComparisonImpact": false
+}
