@@ -95,8 +95,9 @@ SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 
 - **`Ferriki could not download assets: … HTTP 404` or a connection error**:
   the mirror is unreachable or does not serve that release. Check network
-  access, a proxy (`HTTPS_PROXY` is honored), or `FERRIKI_ASSETS_BASE_URL`.
-  Downloads are not retried.
+  access, Node's proxy configuration and `FERRIKI_ASSETS_BASE_URL`. See
+  [asset loading](asset-loading.md) for Node-version requirements. Downloads
+  are not retried.
 - **`… did not match its release-pinned SHA-256`**: the mirror served
   different bytes. Nothing was cached; fix the mirror.
 - **`… is not cached … Load it through the asynchronous createHighlighter,
@@ -105,8 +106,9 @@ SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 - **`… remote assets are turned off`**: `remote: false` or
   `FERRIKI_ASSETS_REMOTE=0` is set and the cache lacks the payload.
 
-TLS verification uses the operating system's trust store, so certificate
-authorities installed for a corporate proxy work without extra settings.
+Node fetch uses Node's TLS configuration. For a corporate certificate
+authority, set `NODE_EXTRA_CA_CERTS` before starting Node, or enable system CA
+loading on a Node version that supports it; see [asset loading](asset-loading.md).
 
 ## Offline and air-gapped use
 

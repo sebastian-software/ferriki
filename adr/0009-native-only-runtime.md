@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 ## Context
 
@@ -31,9 +31,10 @@ no longer had a justification as a product component.
 Ferriki is a native-only runtime. The published package executes highlighting
 exclusively in the Rust core.
 
-- JavaScript remains only as a thin facade: addon loading, public API wiring,
-  hast-level transformation (transformers and decorations per ADR 0008), the
-  catalog projection, and the type surface.
+- JavaScript remains a thin host: addon loading, public API wiring, standard
+  asset transport through Node's built-in `fetch` (ADR 0013), hast-level
+  transformation (transformers and decorations per ADR 0008), the catalog
+  projection, and the type surface.
 - The bundled JS engine and `FERRIKI_BACKEND=js` are removed. The
   native-boundary check in the core gate forbids the removed runtime paths from
   returning.
@@ -75,3 +76,5 @@ exclusively in the Rust core.
 - 2026-09-30: Rewritten to the current state. Records the `@ferriki` scope and
   sidecars (0.4.0), musl and Windows arm64 targets, the dropped macOS Intel
   target and the internal loader.
+- 2026-10-02: Records Node's built-in fetch as the standard-asset transport;
+  Rust continues to plan and verify release-pinned assets.

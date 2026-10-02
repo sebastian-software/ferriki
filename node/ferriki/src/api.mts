@@ -47,9 +47,9 @@ export type RegistrationInput<T> =
 
 /**
  * Where standard grammars and themes come from. Payloads are downloaded from a
- * release-pinned CDN on first use, verified by SHA-256 and cached. Unset fields
- * fall back to `FERRIKI_ASSETS_REMOTE`, `FERRIKI_ASSETS_BASE_URL` and
- * `FERRIKI_CACHE_DIR`.
+ * release-pinned CDN with Node's built-in fetch on first use, verified by
+ * SHA-256 and cached. Unset fields fall back to `FERRIKI_ASSETS_REMOTE`,
+ * `FERRIKI_ASSETS_BASE_URL` and `FERRIKI_CACHE_DIR`.
  */
 export interface AssetOptions {
   /** Allows downloads; `false` loads only cached payloads. Default: `true`. */

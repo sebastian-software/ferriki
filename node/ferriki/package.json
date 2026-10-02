@@ -32,6 +32,7 @@
     "native.mjs",
     "platforms.mjs",
     "src/api.d.mts",
+    "src/asset-download.mjs",
     "src/index.mjs",
     "transformers.mjs"
   ],

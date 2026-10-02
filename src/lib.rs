@@ -4,9 +4,11 @@
 //! explicitly and cached for reuse across code blocks and documents.
 
 mod asset_catalog;
+mod asset_settings;
 mod asset_source;
 mod error;
 mod highlighter;
+mod node_assets;
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
 mod remote;
 mod render;
@@ -27,6 +29,7 @@ pub use ferriki_textmate::{
 #[doc(hidden)]
 pub mod __private {
     pub use crate::highlighter::HighlighterCore;
+    pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions};
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
     pub use crate::remote::RemoteAssetHost;
     pub use crate::tokens::{

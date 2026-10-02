@@ -15,11 +15,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
+pub use crate::asset_settings::DEFAULT_ASSETS_BASE_URL;
+use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_asset_settings};
 use crate::asset_source::{AssetDigest, AssetSource};
 use crate::{Error, ErrorKind, Result, StandardAssetCatalogs};
-
-/// The default mirror of this repository's release commits.
-pub const DEFAULT_ASSETS_BASE_URL: &str = "https://assets.ferriki.dev";
 
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(60);
 const PREFETCH_WORKERS: usize = 6;
@@ -74,88 +73,36 @@ impl RemoteAssets {
         &self,
         release: &ReleaseManifest,
         env: impl Fn(&str) -> Option<String>,
-    ) -> Result<ResolvedRemote> {
-        let remote = self.remote.unwrap_or_else(|| {
-            env("FERRIKI_ASSETS_REMOTE").is_none_or(|value| {
-                !matches!(value.trim().to_ascii_lowercase().as_str(), "0" | "false")
-            })
-        });
-        let base_url = self
-            .base_url
-            .clone()
-            .or_else(|| env("FERRIKI_ASSETS_BASE_URL").filter(|value| !value.trim().is_empty()))
-            .unwrap_or_else(|| DEFAULT_ASSETS_BASE_URL.to_owned())
-            .trim()
-            .trim_end_matches('/')
-            .to_owned();
-        let cache_dir = self
-            .cache_dir
-            .clone()
-            .or_else(|| env("FERRIKI_CACHE_DIR").filter(|value| !value.is_empty()).map(PathBuf::from))
-            .or_else(|| platform_cache_dir(&env))
-            .ok_or_else(|| {
-                Error::new(
-                    ErrorKind::AssetIo,
-                    "No cache directory for Ferriki assets; set FERRIKI_CACHE_DIR or RemoteAssets::with_cache_dir.",
-                )
-            })?;
-        let commit = self
-            .commit
-            .clone()
-            .or_else(|| release.commit.clone())
-            .or_else(|| option_env!("FERRIKI_RELEASE_COMMIT").map(str::to_owned));
-        Ok(ResolvedRemote {
-            remote,
-            base_url,
-            cache_dir,
-            commit,
-        })
+    ) -> Result<ResolvedAssetSettings> {
+        resolve_asset_settings(
+            AssetSettingsInput {
+                remote: self.remote,
+                base_url: self.base_url.clone(),
+                cache_dir: self.cache_dir.clone(),
+                commit: self.commit.clone(),
+                release_commit: release.commit.clone(),
+                compiled_commit: option_env!("FERRIKI_RELEASE_COMMIT"),
+                cache_hint: "set FERRIKI_CACHE_DIR or RemoteAssets::with_cache_dir",
+            },
+            env,
+        )
     }
-}
-
-#[derive(Debug)]
-pub(crate) struct ResolvedRemote {
-    pub(crate) remote: bool,
-    pub(crate) base_url: String,
-    pub(crate) cache_dir: PathBuf,
-    pub(crate) commit: Option<String>,
-}
-
-fn platform_cache_dir(env: &impl Fn(&str) -> Option<String>) -> Option<PathBuf> {
-    let home = || {
-        env("HOME")
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-    };
-    let base = if cfg!(target_os = "windows") {
-        env("LOCALAPPDATA")
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-    } else if cfg!(target_os = "macos") {
-        home().map(|home| home.join("Library").join("Caches"))
-    } else {
-        env("XDG_CACHE_HOME")
-            .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-            .or_else(|| home().map(|home| home.join(".cache")))
-    };
-    base.map(|base| base.join("ferriki"))
 }
 
 /// Fetches, verifies and caches payloads named in a release manifest.
 pub(crate) struct RemoteAssetSource {
     payloads: HashMap<AssetDigest, (String, u64)>,
-    settings: ResolvedRemote,
+    settings: ResolvedAssetSettings,
     agent: ureq::Agent,
-    /// Rust's `remote()` downloads while it loads. The Node host reads only the
-    /// cache on its synchronous paths and downloads in `prefetch` instead.
+    /// Rust's `remote()` downloads while it loads. Node plans downloads in Rust
+    /// and lets the JavaScript host fetch and install bytes asynchronously.
     download_on_read: bool,
 }
 
 impl RemoteAssetSource {
     pub(crate) fn new(
         release: &ReleaseManifest,
-        settings: ResolvedRemote,
+        settings: ResolvedAssetSettings,
         download_on_read: bool,
     ) -> Result<Self> {
         let mut payloads = HashMap::with_capacity(release.assets.len());
@@ -335,7 +282,7 @@ impl AssetSource for RemoteAssetSource {
     }
 }
 
-/// Shares one remote source between the catalogs and the Node host's prefetch.
+/// Shares one remote source between the catalogs and a blocking prefetch host.
 struct SharedRemoteSource(Arc<RemoteAssetSource>);
 
 impl AssetSource for SharedRemoteSource {
@@ -344,8 +291,8 @@ impl AssetSource for SharedRemoteSource {
     }
 }
 
-/// Standard assets for the N-API host: catalogs that read only the cache, and
-/// a thread-safe `prefetch` that downloads what a load will need (ADR 0013).
+/// Standard assets for internal Rust hosts: catalogs that read only the cache,
+/// and a thread-safe `prefetch` that downloads what a load will need (ADR 0013).
 /// Exempt from semver guarantees.
 pub struct RemoteAssetHost {
     source: Arc<RemoteAssetSource>,

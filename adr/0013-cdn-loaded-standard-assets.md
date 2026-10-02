@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Context
 
@@ -120,14 +120,19 @@ and verifies every file against a digest that the release pins.
   languages and themes they are given. Synchronous factories, loads and
   highlighting never perform I/O beyond the cache and report a payload that is
   not cached as `ERR_ASSET`, naming the remedies.
-- **Node downloads in Rust.** The Node facade does not fetch payloads itself.
-  An N-API async task runs the same Rust source as the `remote` feature on the
-  libuv thread pool: it resolves a language's embedded languages, downloads
-  the missing payloads a few at a time, verifies and caches them, and the
-  following synchronous load reads the cache. Node and Rust therefore share one
-  implementation, one cache layout, the operating system's trust store and
-  `HTTPS_PROXY` handling. The cost is the HTTP and TLS stack in every platform
-  addon.
+- **Node transport.** An N-API async task runs the network-free Rust planner
+  on the libuv thread pool. It resolves aliases and embedded languages from
+  the packaged manifests, verifies existing cache entries and returns only
+  missing assets with their pinned path, digest, size and URL. The JavaScript
+  host uses Node's built-in `fetch` with at most six download workers per load.
+  Separate loads can have more downloads in flight, while matching in-process
+  cache targets share one transfer. Each request has a 60-second timeout; the
+  stream enforces the release-pinned byte limit, hashes bytes as they arrive,
+  and installs verified files through a temporary file and rename.
+  Rust verifies the cache again when the synchronous catalog reads a payload.
+  The addon does not compile the Rust HTTP or TLS stack. Node proxy and
+  certificate configuration is documented in
+  [`docs/asset-loading.md`](../docs/asset-loading.md).
 - **Rust asset sources.** `ferriki` exposes a public `AssetSource` trait keyed
   by digest, with directory and embedded sources, and
   `StandardAssetCatalogs::from_release_manifest` for any source. The `remote`
@@ -154,11 +159,11 @@ test, the Bunny pull zone, the Rust `AssetSource` trait with digest
 verification, the Rust `remote` feature with the manifests shipped inside the
 `ferriki` crate, and the Node path: `@ferriki/core` ships only the manifests,
 the release workflow stamps the release commit into the packaged release
-manifest, and the facade loads through the N-API prefetch. Repository checks
-read a cache seeded from `assets/shiki/` with downloads turned off. After
-publishing, `verify-npm-publish.mjs` installs the public package, checks its
-commit, highlights from an empty cache, and verifies every pinned payload on
-`assets.ferriki.dev` by SHA-256.
+manifest, Rust plans and verifies payloads, and the facade downloads them with
+Node's built-in fetch. Repository checks read a cache seeded from `assets/shiki/`
+with downloads turned off. After publishing, `verify-npm-publish.mjs` installs
+the public package, checks its commit, highlights from an empty cache, and
+verifies every pinned payload on `assets.ferriki.dev` by SHA-256.
 
 ## Consequences
 
@@ -208,3 +213,6 @@ commit, highlights from an empty cache, and verifies every pinned payload on
   Rust through an N-API async task, the release workflow stamps the commit, and
   the sync/async boundary is recorded.
 - 2026-10-01: The post-publish CDN check is in place; ADR 0013 is fully implemented.
+- 2026-10-02: Node uses built-in fetch for bounded, digest-checked downloads;
+  Rust keeps manifest planning and cache verification, while the optional Rust
+  `remote` feature retains its independent ureq transport.

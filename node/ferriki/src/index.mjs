@@ -12,6 +12,7 @@ import {
   sortTransformers,
   splitTokensAtDecorations,
 } from "../transformers.mjs";
+import { createAssetDownloader } from "./asset-download.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const standardAssetRoot = join(packageDir, "assets", "shiki");
@@ -80,6 +81,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
   const loadedLanguages = new Set();
   const loadedThemes = new Set();
+  const downloadStandardAssets = createAssetDownloader(native);
   const languageAliases = { ...(options.langAlias || {}) };
   let disposed = false;
 
@@ -160,7 +162,7 @@ export function createHighlighterCoreSync(options = {}) {
     ];
     if (standardLanguages.length === 0 && standardThemes.length === 0) return;
     await callNativeOperationAsync("Ferriki could not download assets", () =>
-      native.prefetchAssets(standardLanguages, standardThemes),
+      downloadStandardAssets(standardLanguages, standardThemes),
     );
   }
 
