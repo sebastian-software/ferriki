@@ -23,9 +23,11 @@ export const classStylesByTree = new WeakMap();
 
 export function renderTransformedHast(result, options, transformers, commonContext, source) {
   const properties = {
-    class: result.themeName.startsWith("shiki-themes ")
-      ? `shiki ${result.themeName}`
-      : result.themeName,
+    class:
+      result.hastClass ||
+      (result.themeName.startsWith("shiki-themes ")
+        ? `shiki ${result.themeName}`
+        : result.themeName),
   };
   if (options.styleMode === "classes")
     properties.class = `ferriki ${result.themeName.replace(/^shiki-themes /u, "")}`;

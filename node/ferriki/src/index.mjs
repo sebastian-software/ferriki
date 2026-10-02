@@ -509,7 +509,13 @@ export function createHighlighterCoreSync(options = {}) {
     );
     if (validated.decorations?.length)
       result.tokens = splitTokensAtDecorations(result.tokens, validated.decorations, source);
-    const tree = renderTransformedHast(result, validated, transformers, context, source);
+    const tree = renderTransformedHast(
+      prepareHastRenderResult(result, validated),
+      validated,
+      transformers,
+      context,
+      source,
+    );
     if (validated.styleMode === "classes" && !isSpecialLanguage(grammarLanguage(validated)))
       grammarStateByObject.set(tree, makeGrammarState(input.source, validated, result));
     return tree;
@@ -1209,6 +1215,29 @@ function normalizeNoneThemeResult(result) {
   };
 }
 
+function prepareHastRenderResult(result, options) {
+  if (
+    options.styleMode === "classes" ||
+    result.themeName === "none" ||
+    result.themeName.startsWith("shiki-themes ")
+  )
+    return result;
+
+  return {
+    ...result,
+    hastClass: `shiki ${result.themeName}`,
+    tokens: result.tokens.map((line) =>
+      line.map((token) => {
+        if (Object.hasOwn(token, "htmlStyle")) return token;
+        const htmlStyle = Object.entries(tokenStyle(token))
+          .map(([key, value]) => `${key}:${value}`)
+          .join(";");
+        return htmlStyle ? { ...token, htmlStyle } : token;
+      }),
+    ),
+  };
+}
+
 function combineThemeResults(results, options) {
   const defaultColor = options.defaultColor === undefined ? "light" : options.defaultColor;
   const cssVariablePrefix = options.cssVariablePrefix || "--shiki-";
@@ -1504,10 +1533,13 @@ function prepareRenderTokens(tokens, options) {
 }
 
 function renderTokenResultHast(result, options = {}) {
+  result = prepareHastRenderResult(result, options);
   const properties = {
-    class: result.themeName.startsWith("shiki-themes ")
-      ? `shiki ${result.themeName}`
-      : result.themeName,
+    class:
+      result.hastClass ||
+      (result.themeName.startsWith("shiki-themes ")
+        ? `shiki ${result.themeName}`
+        : result.themeName),
   };
   if (options.rootStyle !== false) {
     properties.style =
