@@ -19,6 +19,10 @@ assert.equal(
   registryVersionUrl("@ferriki/core", "0.2.0"),
   "https://registry.npmjs.org/%40ferriki%2Fcore/0.2.0",
 );
+assert.equal(
+  registryVersionUrl("@ferriki/vite", "0.2.0"),
+  "https://registry.npmjs.org/%40ferriki%2Fvite/0.2.0",
+);
 
 let attempts = 0;
 await verifyNpmPublication({
@@ -40,6 +44,28 @@ await verifyNpmPublication({
   sleepImpl: async () => {},
 });
 assert.equal(attempts, 2);
+
+let viteAttempts = 0;
+await verifyNpmPublication({
+  packageName: "@ferriki/vite",
+  version: "0.8.3",
+  publishResult: "success",
+  fetchImpl: async (url) => {
+    viteAttempts += 1;
+    assert.equal(url, "https://registry.npmjs.org/%40ferriki%2Fvite/0.8.3");
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        name: "@ferriki/vite",
+        version: "0.8.3",
+        dist: { attestations: { provenance: {} } },
+      }),
+    };
+  },
+  sleepImpl: async () => {},
+});
+assert.equal(viteAttempts, 1);
 
 let wrongVersionAttempts = 0;
 await assert.rejects(

@@ -14,6 +14,7 @@ trustPolicy: no-downgrade
 
 packages:
   - ferriki
+  - vite
   - platforms/*
   - compat/upstream/shiki/packages/*
 catalogs:
@@ -51,6 +52,7 @@ catalogs:
     tm-themes: 1.12.3
     vscode-oniguruma: 1.7.0
   integrations:
+    "@babel/parser": ^7.29.9
     lz-string: ^1.5.0
     magic-string: ^0.30.21
     markdown-it: ^14.1.0

@@ -20,6 +20,16 @@
         },
         {
           "type": "json",
+          "path": "/node/vite/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "/node/vite/package.json",
+          "jsonpath": "$.dependencies['@ferriki/core']"
+        },
+        {
+          "type": "json",
           "path": "/node/platforms/*/package.json",
           "glob": true,
           "jsonpath": "$.version"
@@ -28,6 +38,11 @@
           "type": "yaml",
           "path": "/node/pnpm-lock.yaml",
           "jsonpath": "$.importers.ferriki.optionalDependencies[*].specifier"
+        },
+        {
+          "type": "yaml",
+          "path": "/node/pnpm-lock.yaml",
+          "jsonpath": "$.importers.vite.dependencies['@ferriki/core'].specifier"
         }
       ]
     }

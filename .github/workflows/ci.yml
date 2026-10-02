@@ -355,6 +355,9 @@ jobs:
       - name: Run honest supported core compatibility gate
         run: pnpm run test:ferriki-compat:core
 
+      - name: Test the optional Vite adapter
+        run: pnpm run test:vite
+
       - name: Verify TIOBE benchmark outputs and comparison contracts
         run: pnpm run check:bench-tiobe
 

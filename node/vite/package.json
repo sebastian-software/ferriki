@@ -1,0 +1,53 @@
+{
+  "name": "@ferriki/vite",
+  "version": "0.8.3",
+  "description": "Build-time HTML and JSX highlighting with Ferriki",
+  "keywords": [
+    "vite",
+    "syntax-highlighting",
+    "shiki",
+    "ferriki"
+  ],
+  "homepage": "https://ferriki.dev",
+  "bugs": {
+    "url": "https://github.com/sebastian-software/ferriki/issues"
+  },
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-software/ferriki.git",
+    "directory": "node/vite"
+  },
+  "files": [
+    "README.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "index.d.mts",
+    "index.mjs"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./index.mjs",
+  "module": "./index.mjs",
+  "types": "./index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./index.d.mts",
+      "default": "./index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@babel/parser": "catalog:integrations",
+    "@ferriki/core": "0.8.3",
+    "hast-util-from-html": "catalog:inlined",
+    "hast-util-to-html": "catalog:inlined",
+    "magic-string": "catalog:integrations"
+  },
+  "peerDependencies": {
+    "vite": "^7.3.1 || ^8.0.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

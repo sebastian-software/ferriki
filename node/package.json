@@ -35,6 +35,8 @@
     "check:platform-matrix": "node ./scripts/check-ferriki-platform-matrix.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
+    "test:vite": "vitest run vite/test/plugin.test.mjs",
+    "check:packed-vite": "node ./scripts/check-packed-vite-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks",
     "bench:tiobe": "node scripts/bench-tiobe.mjs",
     "check:bench-tiobe": "node scripts/check-bench-tiobe.mjs",
