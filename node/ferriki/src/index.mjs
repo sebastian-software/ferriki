@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { createAssetDownloader } from "./asset-download.mjs";
 import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
@@ -80,6 +81,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
   const loadedLanguages = new Set();
   const loadedThemes = new Set();
+  const downloadStandardAssets = createAssetDownloader(native);
   const languageAliases = { ...(options.langAlias || {}) };
   let disposed = false;
 
@@ -160,7 +162,7 @@ export function createHighlighterCoreSync(options = {}) {
     ];
     if (standardLanguages.length === 0 && standardThemes.length === 0) return;
     await callNativeOperationAsync("Ferriki could not download assets", () =>
-      native.prefetchAssets(standardLanguages, standardThemes),
+      downloadStandardAssets(standardLanguages, standardThemes),
     );
   }
 

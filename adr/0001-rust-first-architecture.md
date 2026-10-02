@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ## Context
 
@@ -19,8 +19,12 @@ Ferriki is Rust-first.
 - Runtime behavior belongs in Rust.
 - JavaScript exists to host the native addon, expose the public API, and keep
   the compatibility contract stable.
-- New business logic should not be added in JavaScript unless it is strictly
-  binding-related.
+- The Node host uses built-in `fetch` to transport release-pinned standard
+  assets; Rust still resolves manifests, plans downloads and verifies cached
+  payloads ([ADR 0013](0013-cdn-loaded-standard-assets.md)).
+- Product behavior stays in Rust except for Node host mechanics such as the
+  standard-asset transport in ADR 0013. Rust retains asset resolution and
+  integrity policy.
 
 ## Consequences
 
@@ -47,3 +51,5 @@ Ferriki is Rust-first.
 - 2026-03-09: Accepted.
 - 2026-09-30: Consequences describe the implemented split between the Rust crates and the JS facade.
 - 2026-10-01: Clarifies the JSON-string N-API transport and dates the API comparison to Ferriki 0.4.1.
+- 2026-10-02: Records Node's standard-asset transport as a host boundary while
+  keeping manifest planning and cache verification in Rust.

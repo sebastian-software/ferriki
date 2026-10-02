@@ -33,6 +33,7 @@
     "platforms.mjs",
     "src/api.d.mts",
     "src/index.mjs",
+    "src/asset-download.mjs",
     "transformers.mjs"
   ],
   "type": "module",

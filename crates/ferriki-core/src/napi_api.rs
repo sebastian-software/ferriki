@@ -2,10 +2,9 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ferriki::__private::RemoteAssetHost;
-use ferriki::RemoteAssets;
+use ferriki::__private::{NodeAssetHost, NodeAssetOptions};
 use napi::bindgen_prelude::AsyncTask;
-use napi::{Env, Error, JsUndefined, Result, Task};
+use napi::{Env, Error, Result, Task};
 use napi_derive::napi;
 use serde_json::Value;
 
@@ -14,29 +13,29 @@ use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_hast, render
 #[napi]
 pub struct FerrikiHighlighter {
     core: RefCell<HighlighterCore>,
-    assets: Option<Arc<RemoteAssetHost>>,
+    assets: Option<Arc<NodeAssetHost>>,
 }
 
-/// Downloads payloads on the libuv thread pool, so the event loop keeps running.
-pub struct PrefetchTask {
-    assets: Option<Arc<RemoteAssetHost>>,
+/// Plans payloads on the libuv thread pool without doing network I/O.
+pub struct PlanAssetsTask {
+    assets: Option<Arc<NodeAssetHost>>,
     languages: Vec<String>,
     themes: Vec<String>,
 }
 
-impl Task for PrefetchTask {
-    type Output = ();
-    type JsValue = JsUndefined;
+impl Task for PlanAssetsTask {
+    type Output = String;
+    type JsValue = String;
 
     fn compute(&mut self) -> Result<Self::Output> {
         match &self.assets {
-            Some(assets) => native(assets.prefetch(&self.languages, &self.themes)),
-            None => Ok(()),
+            Some(assets) => native(assets.plan_json(&self.languages, &self.themes)),
+            None => Ok("[]".to_owned()),
         }
     }
 
-    fn resolve(&mut self, env: Env, _output: Self::Output) -> Result<Self::JsValue> {
-        env.get_undefined()
+    fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
+        Ok(output)
     }
 }
 
@@ -155,19 +154,25 @@ impl FerrikiHighlighter {
         Ok(render_html(&tokens, &options.render))
     }
 
-    /// Makes the standard payloads of these languages, their embedded languages
-    /// and these themes available in the cache, downloading what is missing.
-    #[napi(js_name = "prefetchAssets", ts_return_type = "Promise<void>")]
-    pub fn prefetch_assets(
+    /// Plans missing standard payloads for Node to fetch and install.
+    #[napi(js_name = "planAssets", ts_return_type = "Promise<string>")]
+    pub fn plan_assets(
         &self,
         languages: Vec<String>,
         themes: Vec<String>,
-    ) -> AsyncTask<PrefetchTask> {
-        AsyncTask::new(PrefetchTask {
+    ) -> AsyncTask<PlanAssetsTask> {
+        AsyncTask::new(PlanAssetsTask {
             assets: self.assets.clone(),
             languages,
             themes,
         })
+    }
+
+    #[napi(js_name = "assetCacheDir")]
+    pub fn asset_cache_dir(&self) -> Option<String> {
+        self.assets
+            .as_ref()
+            .map(|assets| assets.cache_dir().to_string_lossy().into_owned())
     }
 
     #[napi]
@@ -191,9 +196,9 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
             assets: None,
         });
     };
-    let assets = Arc::new(native(RemoteAssetHost::from_root(
+    let assets = Arc::new(native(NodeAssetHost::from_root(
         root,
-        &remote_assets(options.get("assets")),
+        &node_asset_options(options.get("assets")),
     ))?);
     let core = native(HighlighterCore::with_assets(native(assets.catalogs())?))?;
     Ok(FerrikiHighlighter {
@@ -202,16 +207,16 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
     })
 }
 
-/// Reads `{ remote, baseUrl, cacheDir, commit }`; unset fields fall back to the
-/// `FERRIKI_*` environment variables in the Rust runtime.
-fn remote_assets(value: Option<&Value>) -> RemoteAssets {
+/// Reads the Node asset options; environment and platform defaults are applied
+/// by the network-free native asset host.
+fn node_asset_options(value: Option<&Value>) -> NodeAssetOptions {
     let field = |name: &str| value.and_then(|value| value.get(name));
     let string = |name: &str| field(name).and_then(Value::as_str).map(str::to_owned);
-    RemoteAssets::default()
-        .with_remote(field("remote").and_then(Value::as_bool))
-        .with_base_url(string("baseUrl"))
-        .with_cache_dir(string("cacheDir").map(PathBuf::from))
-        .with_commit(string("commit"))
+    NodeAssetOptions {
+        remote: field("remote").and_then(Value::as_bool),
+        base_url: string("baseUrl"),
+        cache_dir: string("cacheDir").map(PathBuf::from),
+    }
 }
 
 fn native<T>(result: ferriki::Result<T>) -> Result<T> {

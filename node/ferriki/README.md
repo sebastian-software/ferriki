@@ -27,7 +27,8 @@ language or theme is loaded, Ferriki downloads it from `assets.ferriki.dev`,
 pinned to this release and verified by SHA-256, and caches it in
 `node_modules/.cache/ferriki`. Offline builds reuse a populated cache or point
 `FERRIKI_ASSETS_BASE_URL` at a mirror; `FERRIKI_ASSETS_REMOTE=0` turns
-downloads off. See [standard assets](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#standard-assets).
+downloads off. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
+for cache, proxy and certificate settings.
 
 ## Highlight code
 
