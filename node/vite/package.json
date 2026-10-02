@@ -3,10 +3,10 @@
   "version": "0.8.3",
   "description": "Build-time HTML and JSX highlighting with Ferriki",
   "keywords": [
-    "vite",
-    "syntax-highlighting",
+    "ferriki",
     "shiki",
-    "ferriki"
+    "syntax-highlighting",
+    "vite"
   ],
   "homepage": "https://ferriki.dev",
   "bugs": {
@@ -19,9 +19,9 @@
     "directory": "node/vite"
   },
   "files": [
-    "README.md",
     "LICENSE-APACHE",
     "LICENSE-MIT",
+    "README.md",
     "index.d.mts",
     "index.mjs"
   ],

@@ -26,4 +26,11 @@ export default antfu(
       "unicorn/number-literal-case": "off",
     },
   },
+  {
+    files: ["vite/package.json"],
+    rules: {
+      // Core follows the shared product version, not an external catalog.
+      "pnpm/json-enforce-catalog": ["error", { ignores: ["@ferriki/core"] }],
+    },
+  },
 );

@@ -358,6 +358,9 @@ jobs:
       - name: Test the optional Vite adapter
         run: pnpm run test:vite
 
+      - name: Verify packed Vite consumers
+        run: pnpm run check:packed-vite
+
       - name: Verify TIOBE benchmark outputs and comparison contracts
         run: pnpm run check:bench-tiobe
 
