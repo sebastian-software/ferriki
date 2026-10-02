@@ -3,7 +3,6 @@ import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { createAssetDownloader } from "./asset-download.mjs";
 import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
@@ -13,6 +12,7 @@ import {
   sortTransformers,
   splitTokensAtDecorations,
 } from "../transformers.mjs";
+import { createAssetDownloader } from "./asset-download.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const standardAssetRoot = join(packageDir, "assets", "shiki");

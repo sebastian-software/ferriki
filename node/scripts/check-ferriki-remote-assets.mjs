@@ -3,23 +3,15 @@
 // streams, hashes and atomically installs the bytes.
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import {
-  copyFile,
-  mkdtemp,
-  mkdir,
-  readdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createHighlighter, createHighlighterCoreSync } from "../ferriki/index.mjs";
-import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
 import { loadFerrikiNativeBinding } from "../ferriki/native.mjs";
+import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
 
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
 const repoAssets = fileURLToPath(new URL("../../assets/shiki/", import.meta.url));
@@ -31,9 +23,7 @@ await mkdir(join(assetRoot, "languages"), { recursive: true });
 await mkdir(join(assetRoot, "themes"), { recursive: true });
 for (const relative of ["languages/manifest.fkindex", "themes/manifest.fkindex"])
   await copyFile(join(packageAssets, relative), join(assetRoot, relative));
-const release = JSON.parse(
-  await readFile(join(packageAssets, "release-manifest.json"), "utf8"),
-);
+const release = JSON.parse(await readFile(join(packageAssets, "release-manifest.json"), "utf8"));
 release.commit = COMMIT;
 await writeFile(join(assetRoot, "release-manifest.json"), JSON.stringify(release));
 
@@ -120,7 +110,10 @@ try {
   native.dispose();
 
   const offline = createNative({ remote: false, baseUrl, cacheDir: join(tempRoot, "empty") });
-  await assert.rejects(createAssetDownloader(offline)(["rust"], []), /remote assets are turned off/);
+  await assert.rejects(
+    createAssetDownloader(offline)(["rust"], []),
+    /remote assets are turned off/,
+  );
   assert.equal(requests.length, downloads);
   offline.dispose();
 
@@ -158,10 +151,7 @@ try {
   const invalidPath = settlePlan.at(-1).path;
   delayed.add(slowPath);
   replaced.set(invalidPath, Buffer.from("bad bytes"));
-  await assert.rejects(
-    createAssetDownloader(settling)(["vue"], ["dracula"]),
-    /did not match/,
-  );
+  await assert.rejects(createAssetDownloader(settling)(["vue"], ["dracula"]), /did not match/);
   assert(delayedFinished.has(slowPath), "rejection waits for slower in-flight downloads to settle");
   assert(
     !(await readdir(settleCache)).some((name) => name.endsWith(".tmp")),
@@ -180,9 +170,7 @@ try {
   );
   assert(!(await readdir(oversizedCache)).some((name) => name.endsWith(".tmp")));
   assert(
-    !(await readdir(oversizedCache)).includes(
-      release.assets["themes/monokai.fktheme"].sha256,
-    ),
+    !(await readdir(oversizedCache)).includes(release.assets["themes/monokai.fktheme"].sha256),
     "oversized decoded response bytes are never installed",
   );
   oversized.delete("themes/monokai.fktheme");
