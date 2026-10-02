@@ -42,6 +42,7 @@ Ferriki is intentionally narrow right now.
 | HTML output | Primary Node path | `codeToHtml` renders HTML; `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also returns resolved theme CSS |
 | HAST and token output | Supported | `codeToHast` and token APIs remain available for consumers that need structured output |
 | Transformers | Integrated | User-supplied JavaScript hooks run in the facade (ADR 0008) |
+| Optional Vite adapter | Available | [`@ferriki/vite`](node/vite/README.md) highlights marked HTML and static JSX during Vite transforms, outside the core runtime |
 | `colorized-brackets`, `markdown-it`, `rehype`, and VitePress integrations | Out of scope | These remain optional adapter projects, not Ferriki core exports |
 
 Whether every public Node HAST and token export remains in the 1.0 contract is

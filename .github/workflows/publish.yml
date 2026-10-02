@@ -211,6 +211,8 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
+          # Node 24 supplies npm 11; pnpm 10 delegates publish so npm's OIDC
+          # Trusted Publishing and provenance support remain available.
           node-version: '24'
           registry-url: https://registry.npmjs.org
           cache: pnpm
@@ -291,6 +293,11 @@ jobs:
         env:
           FERRIKI_PLATFORM_ID: linux-x64-gnu
 
+      - name: Verify packed Vite consumer
+        run: pnpm run check:packed-vite
+        env:
+          FERRIKI_PLATFORM_ID: linux-x64-gnu
+
       - name: Publish platform packages with npm provenance
         working-directory: node
         run: |
@@ -301,6 +308,12 @@ jobs:
       - name: Publish main package with npm provenance
         working-directory: node/ferriki
         run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
+
+      # pnpm rewrites the package's catalog: dependency specifiers before the
+      # npm 11 publish, preserving OIDC authentication and provenance.
+      - name: Publish Vite integration with npm provenance
+        working-directory: node
+        run: pnpm --dir vite publish --access public --no-git-checks --provenance --tag "$NPM_DIST_TAG"
 
   verify-npm-publish:
     needs:

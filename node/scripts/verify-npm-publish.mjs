@@ -207,6 +207,57 @@ async function verifyPublicInstall(packageName, version) {
   }
 }
 
+async function verifyPublicViteInstall(packageName, version) {
+  const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-public-vite-install-"));
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const run = (args, options = {}) => {
+    const result = spawnSync(npm, args, {
+      cwd: tempRoot,
+      encoding: "utf8",
+      stdio: options.stdio ?? "pipe",
+      shell: process.platform === "win32",
+      ...options,
+    });
+    if (result.status !== 0)
+      throw new Error(
+        `npm ${args.join(" ")} failed:\n${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+      );
+  };
+
+  try {
+    run(["init", "--yes"], { stdio: "ignore" });
+    run(["install", "--ignore-scripts", "--no-audit", "--no-fund", `${packageName}@${version}`], {
+      stdio: "ignore",
+    });
+    const probe = join(tempRoot, "probe.mjs");
+    await writeFile(
+      probe,
+      `
+      import assert from 'node:assert/strict'
+      import { createServer } from 'vite'
+      import { ferriki } from ${JSON.stringify(packageName)}
+      assert.equal(typeof createServer, 'function', 'the Vite peer dependency did not install')
+      assert.equal(typeof ferriki, 'function', 'the public package did not export ferriki')
+      const plugin = ferriki({ assets: { remote: false } })
+      assert.equal(plugin.name, '@ferriki/vite')
+      assert.equal(plugin.enforce, 'pre')
+    `,
+    );
+    const nodeResult = spawnSync(process.execPath, [probe], {
+      cwd: tempRoot,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+    if (nodeResult.status !== 0)
+      throw new Error(
+        `public Vite package probe failed:\n${nodeResult.stdout}\n${nodeResult.stderr}`,
+      );
+    console.log(`public npm install verified for ${packageName}@${version} with its Vite peer`);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   const scriptsDirectory = fileURLToPath(new URL(".", import.meta.url));
   const packagePath = join(scriptsDirectory, "..", "ferriki", "package.json");
@@ -215,9 +266,23 @@ async function main() {
     typeof packageJson.name === "string" && typeof packageJson.version === "string",
     "invalid Ferriki package manifest",
   );
+  const vitePackagePath = join(scriptsDirectory, "..", "vite", "package.json");
+  const vitePackageJson = JSON.parse(await readFile(vitePackagePath, "utf8"));
+  assert.equal(vitePackageJson.name, "@ferriki/vite", "invalid Vite integration package manifest");
+  assert.equal(
+    vitePackageJson.version,
+    packageJson.version,
+    "the Vite integration must use the Ferriki release version",
+  );
+  assert.equal(
+    vitePackageJson.dependencies?.["@ferriki/core"],
+    packageJson.version,
+    "the Vite integration must depend on the matching Ferriki core version",
+  );
 
   const packages = [
     { name: packageJson.name, version: packageJson.version },
+    { name: vitePackageJson.name, version: vitePackageJson.version },
     ...FERRIKI_PLATFORM_TARGETS.map((target) => ({
       name: target.packageName,
       version: packageJson.optionalDependencies?.[target.packageName],
@@ -240,7 +305,10 @@ async function main() {
     .filter((result) => result.status === "rejected")
     .map((result) => result.reason.message);
   if (failures.length > 0) throw new Error(failures.join("\n"));
-  await verifyPublicInstall(packageJson.name, packageJson.version);
+  await Promise.all([
+    verifyPublicInstall(packageJson.name, packageJson.version),
+    verifyPublicViteInstall(vitePackageJson.name, vitePackageJson.version),
+  ]);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
