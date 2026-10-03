@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/sebastian-software/ferriki/compare/v0.10.0...v0.10.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ci:** keep fuzz releases pinned and publish Vite tarballs ([#209](https://github.com/sebastian-software/ferriki/issues/209)) ([e0e05c8](https://github.com/sebastian-software/ferriki/commit/e0e05c8f378e5afffa95159a6125c11044aae163))
+
 ## [0.10.0](https://github.com/sebastian-software/ferriki/compare/v0.9.0...v0.10.0) (2026-10-03)
 
 
