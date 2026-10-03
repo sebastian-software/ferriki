@@ -3,12 +3,10 @@ import { fileURLToPath } from 'node:url'
 const { createHighlighter } = await import(process.env.FERRIKI_PACKAGE_PATH || '@ferriki/core')
 
 /**
- * Build the synchronous highlighter contract consumed by Ferromark 0.8.
+ * Build a Ferriki wrapper with asynchronous setup and synchronous rendering.
  *
- * The async factory boundary is intentional: Ardo/Ferromark must finish
- * loading every language used by a document before fenced rendering starts.
- * Ardo still owns the surrounding figure, title, label, line metadata, and
- * trusted-output decision.
+ * This repository fixture exercises Ferriki's API and escaping boundary. It
+ * does not import or certify a released Ferromark or Ardo Node integration.
  */
 export async function createFerrikiCodeHighlighter({
   languages = ['typescript', 'markdown'],
