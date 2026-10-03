@@ -4,15 +4,15 @@ import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PassThrough } from "node:stream";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { PassThrough } from "node:stream";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import * as shiki from "shiki";
 import {
-  JsonLineWorker,
   checkPhikiPrerequisites,
   createPhikiSetup,
+  JsonLineWorker,
   renderPhikiCold,
   startPhikiWorker,
 } from "./phiki-benchmark.mjs";

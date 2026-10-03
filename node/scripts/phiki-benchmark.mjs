@@ -92,7 +92,7 @@ export function checkPhikiPrerequisites(nodeRoot) {
     );
   }
 
-  const version = composerResult.stdout.match(/^Composer version\s+([^\s]+)/m)?.[1] ?? "unknown";
+  const version = composerResult.stdout.match(/^Composer version\s+(\S+)/m)?.[1] ?? "unknown";
   return {
     status: "available",
     php,
