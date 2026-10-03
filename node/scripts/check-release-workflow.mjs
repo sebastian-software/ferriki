@@ -99,6 +99,18 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     ),
     "release config must update the Vite importer dependency in the pnpm lockfile",
   );
+  // The pinned Release Please TOML parser wraps scalar names in `.value`.
+  // A registry copy of the same crate must keep its separately pinned version.
+  for (const crate of ["ferriki-textmate", "ferriki-asset-gen"])
+    assert(
+      extraFiles.some(
+        (file) =>
+          file.path === "/fuzz/Cargo.lock" &&
+          file.type === "toml" &&
+          file.jsonpath === `$.package[?(@.name.value=='${crate}' && !@.source)].version`,
+      ),
+      `release config must update ${crate} in the separate fuzz lockfile`,
+    );
   assert.match(
     nodePackage?.packageManager ?? "",
     /^pnpm@10\./,
@@ -124,7 +136,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "timeout-minutes:",
     "actions/download-artifact@",
     "npm publish --access public --provenance",
-    'pnpm --dir vite publish --access public --no-git-checks --provenance --tag "$NPM_DIST_TAG"',
+    'pnpm --dir vite pack --pack-destination "$RUNNER_TEMP" --json',
+    'npm publish "$vite_tarball" --access public --provenance --tag "$NPM_DIST_TAG"',
     "NPM_PUBLISH_RESULT:",
     "write-release-summary.mjs",
     // The package ships no payloads; its release manifest must name the commit
@@ -187,7 +200,7 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "name: Publish main package with npm provenance",
   );
   const vitePublishIndex = publishWorkflow.indexOf(
-    "name: Publish Vite integration with npm provenance",
+    "name: Pack and publish Vite integration with npm provenance",
   );
   assert(corePublishIndex >= 0 && vitePublishIndex >= 0);
   assert(
@@ -198,6 +211,16 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     publishWorkflow,
     /^\s+id-token: write\s*$/m,
     "publish-npm needs an OIDC token for npm Trusted Publishing",
+  );
+  assert(
+    publishWorkflow.indexOf("pnpm --dir vite pack --pack-destination") <
+      publishWorkflow.indexOf('npm publish "$vite_tarball"'),
+    "pnpm must pack the Vite integration before npm publishes its tarball",
+  );
+  assert.doesNotMatch(
+    publishWorkflow,
+    /pnpm --dir vite publish\b/,
+    "publish-npm must pass the packed Vite tarball directly to npm",
   );
 
   for (const required of [

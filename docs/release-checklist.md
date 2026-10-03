@@ -14,9 +14,11 @@ package, every workspace member, their path-dependency requirements and
 `Cargo.lock`. The npm package, its platform sidecars, `@ferriki/vite` and the
 pnpm lockfile specifiers follow through typed `extra-files`. The Vite
 integration shares the product version and depends on the matching
-`@ferriki/core` version. Merging the release pull request tags `v<version>` and
-`publish.yml` publishes the npm packages and the crates `ferriki-textmate`,
-`ferriki-asset-gen` and `ferriki` from that release. Product releases use
+`@ferriki/core` version. Typed TOML `extra-files` also update only the local
+crate versions in the separate `fuzz/Cargo.lock`; registry dependencies and
+the private fuzz package version stay pinned. Merging the release pull request
+tags `v<version>` and `publish.yml` publishes the npm packages and the crates
+`ferriki-textmate`, `ferriki-asset-gen` and `ferriki` from that release. Product releases use
 Trusted Publishing in both registries.
 
 Before 1.0, `bump-minor-pre-major` keeps a breaking change on a minor bump
@@ -46,7 +48,8 @@ automatic.
    ```
 
    Revoke the token afterwards; it is not needed again.
-3. For each of the three crates, open *Settings → Trusted Publishing* on
+
+3. For each of the three crates, open _Settings → Trusted Publishing_ on
    crates.io and add a GitHub publisher: owner `sebastian-software`,
    repository `ferriki`, workflow `publish.yml`, no environment.
 4. Re-run the failed `Publish to crates.io` job. It skips versions that are
@@ -77,12 +80,13 @@ part of release verification.
    mkdir "$bootstrap_dir/package"
    tar -xzf "$tarball" --strip-components=1 -C "$bootstrap_dir/package"
    npm --prefix "$bootstrap_dir/package" pkg set version=0.0.0-bootstrap.0
-   pnpm --dir "$bootstrap_dir/package" publish --access public --no-git-checks --tag bootstrap
+   npm publish "$bootstrap_dir/package" --access public --tag bootstrap
    pnpm logout --registry https://registry.npmjs.org
    ```
 
    Keep the seed on the `bootstrap` dist-tag. Do not publish it with `latest`
    or `next`, and do not edit the checkout's package manifest.
+
 2. In npm package settings, configure a Trusted Publisher for owner
    `sebastian-software`, repository `ferriki`, workflow `publish.yml`, and no
    GitHub environment. Revoke the temporary token and remove the temporary
@@ -100,6 +104,10 @@ part of release verification.
       manifest and `optionalDependency`, plus `@ferriki/vite`, its matching
       `@ferriki/core` dependency, and the Vite importer in `pnpm-lock.yaml`; no
       workflow step is needed to repair versions after generation.
+- [ ] `fuzz/Cargo.lock` carries the product version for `ferriki-textmate` and
+      `ferriki-asset-gen`. Using the fuzz workflow's pinned nightly,
+      `cargo fetch --manifest-path fuzz/Cargo.toml --locked` and all four fuzz
+      smoke jobs pass on the release PR without rewriting either lockfile.
 - [ ] `pnpm run test:ferriki-compat:core`, `pnpm run lint`, and
       `pnpm run typecheck` pass from a clean checkout.
 - [ ] The action SHAs in `.github/workflows/publish.yml` were reviewed and its
