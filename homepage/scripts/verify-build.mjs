@@ -171,6 +171,7 @@ if (missing.length > 0) {
 
 const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, await read(page)]));
 const linkCount = await verifyRenderedPages(pageFiles);
+verifyFocusableMarkdownTables(await read("guide/api/index.html"));
 verifyArdoAcceptanceHtml(await read("evidence/compatibility/index.html"));
 
 console.log(
@@ -191,6 +192,20 @@ async function verifyRenderedPages(pages) {
   let internalLinks = 0;
   for (const [page, html] of pages) internalLinks += await verifyPageLinks(page, html, context);
   return internalLinks;
+}
+
+function verifyFocusableMarkdownTables(html) {
+  const tables = htmlTags(html).filter((tag) => tag.name === "table");
+  if (tables.length === 0) {
+    throw new Error("The rendered API guide has no Markdown tables to verify.");
+  }
+
+  const missingTabIndex = tables.filter((table) => attribute(table.raw, "tabindex") !== "0");
+  if (missingTabIndex.length > 0) {
+    throw new Error(
+      `The rendered API guide has ${missingTabIndex.length} Markdown table(s) without keyboard focus.`,
+    );
+  }
 }
 
 function assertPageStructure(page, tags) {
