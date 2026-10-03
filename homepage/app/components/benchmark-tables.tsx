@@ -117,7 +117,7 @@ function documentComparisonRow(
   },
 ): ComparisonRow {
   const { api, engines, phikiRows } = options;
-  const times = row.medianMs as Partial<Record<EngineId, number>>;
+  const times = row.medianMs;
   const ferriki = times.ferriki;
   const wasm = times["shiki-wasm"];
   const phiki = phikiRows.get(row.path);
@@ -156,7 +156,7 @@ export function PhikiSharedHtmlBenchmark() {
         No documents passed the four-engine HTML output checks ({phikiMatchingDocuments} of{" "}
         {report.agreement.phiki?.of ?? report.warm.codeToHtml.length} Phiki outputs match
         Shiki&rsquo;s visible source text and character styles). Per-document Phiki timings remain
-        visible above; no equivalent-work aggregate is reported.
+        visible in the HTML table below; no equivalent-work aggregate is reported.
       </p>
     );
   }

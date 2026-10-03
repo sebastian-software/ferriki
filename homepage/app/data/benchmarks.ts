@@ -5,9 +5,23 @@
 // prerendered pages carry them.
 import sourceReport from "../../../docs/benchmarks/shiki-comparison.json";
 
+export type EngineId = "ferriki" | "phiki" | "shiki-js" | "shiki-wasm";
+export type NodeEngineId = Exclude<EngineId, "phiki">;
+export type Api = "codeToHast" | "codeToHtml" | "codeToTokensBase";
+
+type BenchmarkRow = {
+  lang: string;
+  path: string;
+  lines: number;
+  bytes: number;
+  medianMs: Partial<Record<EngineId, number>>;
+};
+
+type EngineAgreement = { documents: number; of: number };
+
 type OutputAgreementRow = {
   path: string;
-  status: "different" | "error" | "match" | "unavailable";
+  status: string;
   textAgrees?: boolean;
   stylesAgree?: boolean;
   reason?: string;
@@ -15,31 +29,58 @@ type OutputAgreementRow = {
 };
 
 type ExtendedReport = {
+  measured: string;
+  revision: string;
+  machine: {
+    cores: number;
+    cpu: string;
+    memoryGiB: number;
+    platform: string;
+    os: string;
+    node: string;
+  };
   versions: {
+    ferriki: string;
+    shiki: string;
     tmGrammars?: string;
     tmThemes?: string;
     phiki?: null | string;
     psrSimpleCache?: null | string;
     php?: null | string;
     composer?: null | string;
-  } & typeof sourceReport.versions;
+  };
   agreement: {
+    ferriki: EngineAgreement;
+    "shiki-wasm": EngineAgreement;
+    "shiki-js": EngineAgreement;
     phiki?: { status: string; documents: number; of: number; unavailableOperations?: string[] };
-  } & typeof sourceReport.agreement;
+  };
   outputAgreement?: { criteria: string; documents: OutputAgreementRow[] };
   phiki?: { status: string; reason?: string };
   runtime?: {
+    node?: string;
+    phpIniArguments?: string[];
     phiki?: {
       php?: string;
+      version?: string;
+      versionId?: number;
       os?: string;
       architecture?: string;
       sapi?: string;
       mbstring?: boolean;
       oniguruma?: null | string;
+      opcacheLoaded?: boolean;
+      opcacheEnabled?: string;
+      opcacheCli?: string;
+      jit?: string;
+      jitBufferSize?: string;
+      xdebug?: boolean;
       opcache?: { enabledForCli?: string; jit?: string; jitBufferSize?: string };
     } | null;
   };
   assets?: {
+    tmGrammars?: string;
+    tmThemes?: string;
     phiki?: {
       grammarCount?: number;
       unsupportedInjectionCount?: number;
@@ -58,14 +99,14 @@ type ExtendedReport = {
     runs?: number;
     reason?: string;
   };
-} & typeof sourceReport;
+  theme: string;
+  warm: Record<Api, BenchmarkRow[]>;
+  cold: Record<NodeEngineId, { medianMs: number; runs: number }>;
+  warmTotalMs: Record<Api, Partial<Record<NodeEngineId, number>>>;
+};
 
-export const report = sourceReport as ExtendedReport;
+export const report: ExtendedReport = sourceReport;
 export type PhpRuntime = NonNullable<NonNullable<ExtendedReport["runtime"]>["phiki"]>;
-
-export type EngineId = "ferriki" | "phiki" | "shiki-js" | "shiki-wasm";
-export type NodeEngineId = Exclude<EngineId, "phiki">;
-export type Api = "codeToHast" | "codeToHtml" | "codeToTokensBase";
 
 export const engineLabels: Record<EngineId, string> = {
   ferriki: "Ferriki (native)",
@@ -80,8 +121,8 @@ export const htmlEngines: EngineId[] = [...nodeEngines, "phiki"];
 export const apis: Api[] = ["codeToHtml", "codeToHast", "codeToTokensBase"];
 
 /** How many times faster Ferriki is than `other`: their time over Ferriki's. */
-export function speedup(api: Api, other: EngineId): number {
-  const totals = report.warmTotalMs[api] as Partial<Record<EngineId, number>>;
+export function speedup(api: Api, other: NodeEngineId): number {
+  const totals = report.warmTotalMs[api];
   const ferriki = totals.ferriki;
   const baseline = totals[other];
   if (ferriki === undefined || baseline === undefined) {

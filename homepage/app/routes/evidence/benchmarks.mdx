@@ -40,8 +40,10 @@ Node engines' existing strict output gate. HAST and token calls cross the native
 addon boundary as JSON strings and the JavaScript facade parses those strings;
 their timings include that transport and parsing work. Phiki's per-document
 HTML timings stay visible with an output-agreement status. Differing output is
-excluded from shared totals, and the Phiki table appears only when at least one
-document passes the four-engine agreement check.
+excluded from shared totals, and the shared-cohort timing table appears only
+when at least one document passes the four-engine agreement check. The
+per-document HTML table still shows every Phiki timing and its output status
+when that cohort is empty.
 
 ## Method
 
