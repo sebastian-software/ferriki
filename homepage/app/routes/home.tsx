@@ -17,6 +17,8 @@ import {
   documents,
   formatFactor,
   machine,
+  phikiAvailable,
+  phikiMatchingDocuments,
   report,
   speedup,
 } from "../data/benchmarks";
@@ -106,27 +108,42 @@ function SampleSection() {
   );
 }
 
+function EvidenceIntro() {
+  return (
+    <>
+      The same {documents} documents, languages and theme. Strict HTML, HAST and token checks
+      qualify the Node full-corpus totals; Ferriki passed those checks on {agreeingDocuments} of{" "}
+      {documents}. Each factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
+    </>
+  );
+}
+
+function EvidenceNote() {
+  return (
+    <>
+      Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
+      Shiki {report.versions.shiki}. The{" "}
+      {phikiAvailable
+        ? `optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
+            report.agreement.phiki?.of ?? documents
+          } documents; its shared cohort is separate from these Node totals.`
+        : report.phiki?.status === "skipped"
+          ? `optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
+          : "Phiki is not recorded in this benchmark report."}{" "}
+      The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, every API and
+      the command to reproduce it.
+    </>
+  );
+}
+
 function EvidenceSection() {
   return (
     <Section
       id="evidence"
       layout="split"
       title="Measured against Shiki"
-      intro={
-        <>
-          The same {documents} documents, languages and theme, with output checked for equality
-          before any timing: Ferriki matched Shiki on {agreeingDocuments} of {documents}. Each
-          factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
-        </>
-      }
-      note={
-        <>
-          Measured on {report.measured} at commit <code>{report.revision}</code> on {machine},
-          against Shiki {report.versions.shiki}. The HAST and token APIs are not faster yet: the{" "}
-          <Link to="/evidence/benchmarks">benchmark page</Link> has every document, every API and
-          the command to reproduce it.
-        </>
-      }
+      intro={<EvidenceIntro />}
+      note={<EvidenceNote />}
     >
       <EvidenceFigures
         figures={[

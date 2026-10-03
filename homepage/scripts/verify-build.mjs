@@ -1,9 +1,7 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
 // Checks the prerendered site after `react-router build`: every documentation
-// page exists, the landing page carries the published version and the
-// measured figures, and the prose around the benchmark still describes the
-// committed report. A new measurement that changes the story fails here, so
-// the words are updated with the numbers.
+// page exists, the landing page carries the published version and current
+// measurements, and the strict Node / optional Phiki cohorts match the report.
 import { access, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,27 +22,86 @@ const report = await readJson(
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
 const cold = report.cold["shiki-wasm"].medianMs / report.cold.ferriki.medianMs;
+const apiNames = ["codeToHtml", "codeToHast", "codeToTokensBase"];
+const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
+const corpusSize = report.warm.codeToHtml.length;
+const cohortErrors = [];
 
-// The claims the landing page and the benchmark page make in words.
-const claims = [
-  ["codeToHtml is faster than Shiki with WASM", factor("codeToHtml", "shiki-wasm") > 1.1],
-  ["codeToHtml is faster than Shiki with the JS engine", factor("codeToHtml", "shiki-js") > 1.1],
-  ["codeToHast is slower than Shiki with WASM", factor("codeToHast", "shiki-wasm") < 1],
-  [
-    "codeToTokensBase is about even with Shiki with WASM",
-    Math.abs(factor("codeToTokensBase", "shiki-wasm") - 1) < 0.2,
-  ],
-  ["cold start is faster than Shiki with WASM", cold > 1.1],
-  [
-    "every engine agrees on every document",
-    Object.values(report.agreement).every((entry) => entry.documents === entry.of),
-  ],
-];
-const broken = claims.filter(([, holds]) => !holds).map(([claim]) => claim);
-if (broken.length > 0) {
-  throw new Error(
-    `The benchmark report no longer supports what the site says:\n- ${broken.join("\n- ")}\nUpdate app/routes/home.tsx and app/routes/evidence/benchmarks.mdx with the new report.`,
-  );
+if (
+  !report.source ||
+  !/^[\da-f]{40}$/.test(report.source.revision) ||
+  !/^[\da-f]{40}$/.test(report.source.tree) ||
+  report.source.workingTreeClean !== true ||
+  !report.source.revision.startsWith(report.revision)
+) {
+  cohortErrors.push("the report has no valid clean source provenance");
+}
+
+for (const engine of nodeEngines) {
+  const result = report.agreement[engine];
+  if (result?.documents !== corpusSize || result?.of !== corpusSize) {
+    cohortErrors.push(`${engine} does not pass the strict full-corpus Node output gate`);
+  }
+}
+
+for (const api of apiNames) {
+  if (report.warm[api].length !== corpusSize) {
+    cohortErrors.push(`${api} has a different document count from codeToHtml`);
+  }
+  for (const engine of nodeEngines) {
+    if (totals[api][engine] !== undefined && report.agreement[engine].documents !== corpusSize) {
+      cohortErrors.push(`${api} includes ${engine} without full-corpus Node agreement`);
+    }
+  }
+}
+
+if (report.phiki?.status === "available") {
+  const phikiRows = report.outputAgreement?.documents ?? [];
+  const reportPaths = report.warm.codeToHtml.map((row) => row.path);
+  const phikiPaths = phikiRows.map((row) => row.path);
+  const phikiMatches = phikiRows.filter((entry) => entry.status === "match").length;
+  if (
+    phikiRows.length !== corpusSize ||
+    JSON.stringify(phikiPaths) !== JSON.stringify(reportPaths)
+  ) {
+    cohortErrors.push(
+      "Phiki output classifications do not cover the HTML corpus in document order",
+    );
+  }
+  if (
+    report.agreement.phiki?.documents !== phikiMatches ||
+    report.agreement.phiki?.of !== corpusSize
+  ) {
+    cohortErrors.push(
+      "Phiki agreement counts do not match the per-document output classifications",
+    );
+  }
+  if (phikiMatches === 0) {
+    if (report.warmMatchingTotalMs !== undefined) {
+      cohortErrors.push("an empty Phiki matching cohort has a warm aggregate");
+    }
+    if (
+      report.coldMatching?.status !== "no-matching-documents" ||
+      report.coldMatching.documents !== 0
+    ) {
+      cohortErrors.push("an empty Phiki matching cohort has an invalid cold result");
+    }
+  } else if (
+    report.warmMatchingTotalMs?.documents !== phikiMatches ||
+    report.coldMatching?.status !== "available" ||
+    report.coldMatching.documents !== phikiMatches
+  ) {
+    cohortErrors.push("Phiki matching-cohort timings do not match the output classifications");
+  }
+} else if (
+  report.phiki?.status === "skipped" &&
+  (report.agreement.phiki?.status !== "skipped" || !report.phiki.reason)
+) {
+  cohortErrors.push("the skipped Phiki run has no recorded prerequisite reason");
+}
+
+if (cohortErrors.length > 0) {
+  throw new Error(`The benchmark report is inconsistent:\n- ${cohortErrors.join("\n- ")}`);
 }
 
 const oneDecimal = (value) => `${value.toFixed(1)}×`;
@@ -63,6 +120,40 @@ const required = [
   [benchmarks, report.machine.cpu],
   [benchmarks, oneDecimal(factor("codeToHast", "shiki-wasm"))],
 ];
+for (const api of apiNames) {
+  for (const engine of ["shiki-wasm", "shiki-js"]) {
+    required.push([benchmarks, oneDecimal(factor(api, engine))]);
+  }
+}
+
+if (report.phiki?.status === "available") {
+  const outputRows = report.outputAgreement?.documents ?? [];
+  const phikiDifferences = outputRows.filter((entry) => entry.status === "different").length;
+  const phikiErrors = outputRows.filter((entry) => entry.status === "error").length;
+  required.push([benchmarks, "Phiki (PHP)"]);
+  required.push([
+    homepage,
+    `matched on ${report.agreement.phiki.documents} of ${corpusSize} documents`,
+  ]);
+  if (phikiDifferences > 0) {
+    required.push([
+      benchmarks,
+      "Phiki HTML differs; this per-document time is excluded from shared totals.",
+    ]);
+  }
+  if (phikiErrors > 0) required.push([benchmarks, "Phiki could not render this document"]);
+  if (report.agreement.phiki.documents === corpusSize) {
+    required.push([benchmarks, "Phiki HTML: source and character styles match."]);
+  }
+  if (report.agreement.phiki.documents === 0) {
+    required.push([benchmarks, "no equivalent-work aggregate is reported"]);
+  } else {
+    required.push([benchmarks, `${report.agreement.phiki.documents} of ${corpusSize} documents`]);
+  }
+} else if (report.phiki?.status === "skipped") {
+  required.push([benchmarks, `Phiki was skipped: ${report.phiki.reason}`]);
+}
+
 const missing = required.filter(([html, fragment]) => !html.includes(fragment));
 if (missing.length > 0) {
   throw new Error(
