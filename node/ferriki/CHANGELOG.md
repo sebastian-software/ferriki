@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/sebastian-software/ferriki/compare/v0.9.0...v0.10.0) (2026-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove public Node token and HAST outputs ([#208](https://github.com/sebastian-software/ferriki/issues/208))
+
+### Features
+
+* **bench:** include Phiki in the highlighting comparison ([#205](https://github.com/sebastian-software/ferriki/issues/205)) ([d06967e](https://github.com/sebastian-software/ferriki/commit/d06967e319b01b380675f09d8c66d9b85e963058))
+* expose advisory grammar backtracking diagnostics ([#202](https://github.com/sebastian-software/ferriki/issues/202)) ([5608d0c](https://github.com/sebastian-software/ferriki/commit/5608d0cd12d2840116c92148fb2981eff2b586e3))
+* remove public Node token and HAST outputs ([#208](https://github.com/sebastian-software/ferriki/issues/208)) ([6658dea](https://github.com/sebastian-software/ferriki/commit/6658dea1c63291ffaa82eff4ff1de17a80ef2e7e))
+* **vite:** support code authoring transformers ([#204](https://github.com/sebastian-software/ferriki/issues/204)) ([8d315fc](https://github.com/sebastian-software/ferriki/commit/8d315fc64ea658a1b2a403962c61f63b0fa4f24f))
+
 ## [0.9.0](https://github.com/sebastian-software/ferriki/compare/v0.8.3...v0.9.0) (2026-10-03)
 
 
