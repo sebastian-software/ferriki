@@ -4,6 +4,13 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export function verifyArdoAcceptanceHtml(output) {
+  verifyTypeScript(output);
+  verifyTsx(output);
+  verifyEmbeddedHtml(output);
+  verifyUnknownLanguage(output);
+}
+
+function verifyTypeScript(output) {
   const typescript = codeBlockByTitle(output, "src/add.ts");
   requireFragments(typescript, "TypeScript", [
     'data-label="typescript"',
@@ -16,7 +23,9 @@ export function verifyArdoAcceptanceHtml(output) {
   requireStyledText(typescript, "export", "TypeScript");
   requireHighlightedLine(typescript, 2, "TypeScript");
   requireText(typescript, "return left + right;");
+}
 
+function verifyTsx(output) {
   const tsx = codeBlockByTitle(output, "src/Button.tsx");
   requireFragments(tsx, "TSX", [
     'data-label="tsx"',
@@ -29,7 +38,9 @@ export function verifyArdoAcceptanceHtml(output) {
   requireStyledText(tsx, "button", "TSX");
   requireHighlightedLine(tsx, 3, "TSX");
   requireText(tsx, 'return <button type="button">{label}</button>;');
+}
 
+function verifyEmbeddedHtml(output) {
   const embeddedHtml = codeBlockByTitle(output, "public/widget.html");
   requireFragments(embeddedHtml, "embedded HTML", [
     'data-label="embedded"',
@@ -46,14 +57,16 @@ export function verifyArdoAcceptanceHtml(output) {
   requireText(embeddedHtml, "color: rebeccapurple;");
   requireStyledText(embeddedHtml, "rebeccapurple", "embedded HTML CSS");
   requireStyledText(embeddedHtml, "querySelector", "embedded HTML JavaScript");
+}
 
+function verifyUnknownLanguage(output) {
   const fallback = codeBlockByTitle(output, "data/example.unknown");
   requireFragments(fallback, "unknown-language fallback", [
     'data-label="fallback"',
     "&lt;raw value=&quot;literal &amp; safe&quot;&gt;",
   ]);
   requireText(fallback, '<raw value="literal & safe">');
-  if (hasClass(fallback, "shiki") || /<span\b[^>]*style=/i.test(fallback)) {
+  if (hasClass(fallback, "shiki") || /<span\b[^<>]+style=/i.test(fallback)) {
     throw new Error("The unknown-language example retained syntax-token styling.");
   }
 }
@@ -61,14 +74,14 @@ export function verifyArdoAcceptanceHtml(output) {
 function codeBlockByTitle(html, title) {
   const marker = `data-code-title="${title}"`;
   const markerIndex = html.indexOf(marker);
-  if (markerIndex < 0) throw new Error(`The rendered page is missing ${marker}.`);
+  if (markerIndex === -1) throw new Error(`The rendered page is missing ${marker}.`);
 
   const start = html.lastIndexOf("<pre", markerIndex);
   const end = html.indexOf("</pre>", markerIndex);
-  if (start < 0 || end < 0) {
+  if (start === -1 || end === -1) {
     throw new Error(`Could not isolate the rendered code block titled ${JSON.stringify(title)}.`);
   }
-  if (html.indexOf(marker, markerIndex + marker.length) >= 0) {
+  if (html.includes(marker, markerIndex + marker.length)) {
     throw new Error(
       `The rendered page contains duplicate code block title ${JSON.stringify(title)}.`,
     );
@@ -96,8 +109,8 @@ function hasClass(block, className) {
 }
 
 function requireHighlightedLine(block, line, label) {
-  const lineSpan = [...block.matchAll(/<span\b([^>]*)>/g)].find(([, attributes]) =>
-    new RegExp(`\\bdata-ln="${line}"`).test(attributes),
+  const lineSpan = [...block.matchAll(/<span\b([^<>]*)>/g)].find(
+    ([, attributes]) => /\bdata-ln="(\d+)"/.exec(attributes)?.[1] === String(line),
   );
   if (!lineSpan) throw new Error(`${label} output is missing line ${line}.`);
 
@@ -108,10 +121,9 @@ function requireHighlightedLine(block, line, label) {
 }
 
 function requireStyledText(block, text, label) {
-  const spans = [...block.matchAll(/<span\b([^>]*)>([^<]*)<\/span>/gs)];
+  const spans = [...block.matchAll(/<span\b([^<>]*)>([^<]*)<\/span>/g)];
   const highlighted = spans.some(
-    ([, attributes, content]) =>
-      /\bstyle=/.test(attributes) && decodeHtml(content.replace(/<[^>]*>/g, "")).includes(text),
+    ([, attributes, content]) => /\bstyle=/.test(attributes) && decodeHtml(content).includes(text),
   );
   if (!highlighted) {
     throw new Error(`${label} output is missing syntax-token styling for ${JSON.stringify(text)}.`);
@@ -119,7 +131,7 @@ function requireStyledText(block, text, label) {
 }
 
 function requireText(block, text) {
-  const actual = decodeHtml(block.replace(/<[^>]*>/g, ""));
+  const actual = decodeHtml(block.replaceAll(/<[^<>]*>/g, ""));
   if (!actual.includes(text)) {
     throw new Error(`The rendered code block is missing source text ${JSON.stringify(text)}.`);
   }
