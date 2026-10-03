@@ -1,11 +1,5 @@
 import assert from "node:assert/strict";
-import { toHtml } from "hast-util-to-html";
-import {
-  createHighlighter,
-  createHighlighterCoreSync,
-  hastToHtml,
-  ShikiError,
-} from "../ferriki/index.mjs";
+import { createHighlighter, createHighlighterCoreSync, ShikiError } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
@@ -100,6 +94,8 @@ for (const create of [createHighlighter, createHighlighterCoreSync]) {
     enforce,
     preprocess(code, options) {
       assert.equal(this.options, options);
+      assert.equal(this.codeToHast, undefined);
+      assert.equal(this.codeToTokens, undefined);
       assert(options.transformers.some((transformer) => transformer.name === name));
       calls.push(`preprocess:${name}`);
       return code;
@@ -130,19 +126,20 @@ for (const create of [createHighlighter, createHighlighterCoreSync]) {
   defaults.push(marker("late"));
 
   try {
-    for (const method of [
-      "codeToHtml",
-      "codeToHtmlWithCss",
+    for (const removedMethod of [
       "codeToHast",
       "codeToTokens",
       "codeToTokensBase",
       "codeToTokensWithThemes",
     ]) {
+      assert.equal(typeof configured[removedMethod], "undefined");
+    }
+    for (const method of ["codeToHtml", "codeToHtmlWithCss"]) {
       for (const selection of [undefined, [], [marker("override")]]) {
         calls.length = 0;
         const options = {
           lang: "javascript",
-          ...(method === "codeToTokensWithThemes"
+          ...(method === "codeToHtmlWithCss"
             ? { themes: { light: "github-light-default", dark: "nord" } }
             : { theme: "nord" }),
           ...(selection === undefined ? {} : { transformers: selection }),
@@ -154,15 +151,10 @@ for (const create of [createHighlighter, createHighlighterCoreSync]) {
           ...names.map((name) => `preprocess:${name}`),
           ...names.map((name) => `tokens:${name}`),
         ];
-        if (method === "codeToHtml" || method === "codeToHtmlWithCss") {
-          expected.push(...names.map((name) => `postprocess:${name}`));
-          const html = typeof result === "string" ? result : result.html;
-          if (names.length) assert.match(html, new RegExp(`data-transformer="${names.at(-1)}"`));
-          else assert.doesNotMatch(html, /data-transformer/);
-        }
-        if (method === "codeToHast") {
-          assert.equal(result.children[0].properties["data-transformer"], names.at(-1));
-        }
+        expected.push(...names.map((name) => `postprocess:${name}`));
+        const html = typeof result === "string" ? result : result.html;
+        if (names.length) assert.match(html, new RegExp(`data-transformer="${names.at(-1)}"`));
+        else assert.doesNotMatch(html, /data-transformer/);
         assert.deepEqual(calls, expected, `${create.name}.${method}`);
         assert.equal(Object.hasOwn(options, "transformers"), selection !== undefined);
       }
@@ -242,17 +234,49 @@ try {
     assertSingleThemeStyles(
       renderHighlighter.codeToHtml("styled", { ...baseOptions, transformers }),
     );
-  const metadataTree = renderHighlighter.codeToHast("styled", {
+  const metadataHtml = renderHighlighter.codeToHtml("styled", {
     ...baseOptions,
     meta: {},
   });
-  assertSingleThemeStyles(hastToHtml(metadataTree));
-  assertSingleThemeStyles(toHtml(metadataTree));
+  assertSingleThemeStyles(metadataHtml);
 
-  const tokens = renderHighlighter.codeToTokens("styled", baseOptions).tokens[0][0];
-  assert.equal(tokens.color, "#FF00AA");
-  assert.equal(tokens.fontStyle, 15);
-  assert.equal(Object.hasOwn(tokens, "htmlStyle"), false);
+  const callbackOnlyData = {
+    marker: "callback-only",
+    private: { value: "must-not-be-serialized" },
+  };
+  let receivedCallbackData;
+  const callbackDataHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    data: callbackOnlyData,
+    transformers: [
+      {
+        pre(node) {
+          receivedCallbackData = node.data;
+          node.properties["data-callback-marker"] = node.data?.marker;
+          return node;
+        },
+      },
+    ],
+  });
+  assert.equal(receivedCallbackData, callbackOnlyData);
+  assert.match(callbackDataHtml, /data-callback-marker="callback-only"/);
+  assert.doesNotMatch(callbackDataHtml, /must-not-be-serialized/);
+
+  let callbackToken;
+  const callbackHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        tokens(lines) {
+          callbackToken = lines[0][0];
+          return lines;
+        },
+      },
+    ],
+  });
+  assertSingleThemeStyles(callbackHtml);
+  assert.equal(callbackToken.color, "#FF00AA");
+  assert.equal(callbackToken.fontStyle, 15);
 
   const suppressedStyle = renderHighlighter.codeToHtml("styled", {
     ...baseOptions,
@@ -285,12 +309,11 @@ try {
 
   const grammarState = renderHighlighter.getLastGrammarState("styled", baseOptions);
   assertSingleThemeStyles(renderHighlighter.codeToHtml("styled", { ...baseOptions, grammarState }));
-  const grammarStateTree = renderHighlighter.codeToHast("styled", {
+  const grammarStateHtml = renderHighlighter.codeToHtml("styled", {
     ...baseOptions,
     grammarState,
   });
-  assertSingleThemeStyles(hastToHtml(grammarStateTree));
-  assertSingleThemeStyles(toHtml(grammarStateTree));
+  assertSingleThemeStyles(grammarStateHtml);
 
   const decorated = renderHighlighter.codeToHtml("styled", {
     ...baseOptions,

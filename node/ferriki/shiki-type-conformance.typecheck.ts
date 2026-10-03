@@ -56,6 +56,27 @@ type ShikiHighlightOptionsWithinFerrikiContract<T> = T extends unknown
 type _ShikiHighlightOptionKeyCoverage = AssertTrue<
   HasKeyCoverage<Shiki.CodeToHastOptions, Ferriki.HighlightOptions, ShikiOnlyHighlightOptionKeys>
 >;
+
+type RemovedNodeOutputNames =
+  | "codeToHast"
+  | "codeToTokens"
+  | "codeToTokensBase"
+  | "codeToTokensWithThemes"
+  | "hastToHtml";
+type FerrikiPublicApi = typeof import("./index.d.mts");
+type _StructuredNodeOutputExportsAreRemoved = AssertTrue<
+  [Extract<keyof FerrikiPublicApi, RemovedNodeOutputNames>] extends [never] ? true : false
+>;
+type _StructuredNodeOutputMethodsAreRemoved = AssertTrue<
+  [Extract<keyof Ferriki.Highlighter, RemovedNodeOutputNames>] extends [never] ? true : false
+>;
+type _StructuredTransformerHelpersAreRemoved = AssertTrue<
+  [Extract<keyof Ferriki.ShikiTransformerContextCommon, "codeToHast" | "codeToTokens">] extends [
+    never,
+  ]
+    ? true
+    : false
+>;
 // Ordinary structural assignment permits extra optional source properties to
 // disappear, so this synthetic failure verifies the key guard catches drift.
 type _SyntheticOptionalMirrorFieldDrift = AssertTrue<
@@ -74,42 +95,14 @@ const shikiToken: Shiki.ThemedToken = ferrikiToken;
 declare const shikiTokenValue: Shiki.ThemedToken;
 const ferrikiTokenValue: Ferriki.ThemedToken = shikiTokenValue;
 
-type ShikiThemedTokenKeyExceptions = "bgColor";
+type ShikiThemedTokenKeyExceptions = "bgColor" | "explanation";
 type FerrikiThemedTokenExtensions = "scopeNames" | "variants";
-type ShikiExplanationScopeKeyExceptions = "themeMatches";
 type _ThemedTokenKeyCoverage = AssertTrue<
   HasKeyCoverage<Shiki.ThemedToken, Ferriki.ThemedToken, ShikiThemedTokenKeyExceptions>
->;
-type _ThemedTokenScopeKeyCoverage = AssertTrue<
-  HasKeyCoverage<
-    Shiki.ThemedTokenScopeExplanation,
-    Ferriki.ThemedTokenScopeExplanation,
-    ShikiExplanationScopeKeyExceptions
-  >
 >;
 type _FerrikiThemedTokenExtensionsAreListed = AssertTrue<
   HasKeyCoverage<Ferriki.ThemedToken, Shiki.ThemedToken, FerrikiThemedTokenExtensions>
 >;
-type _ThemedTokenExplanationKeyCoverage = AssertTrue<
-  HasKeyCoverage<Shiki.ThemedTokenExplanation, Ferriki.ThemedTokenExplanation, never>
->;
-
-declare const ferrikiExplanation: Ferriki.ThemedTokenExplanation;
-const shikiExplanation: Shiki.ThemedTokenExplanation = ferrikiExplanation;
-declare const shikiExplanationValue: Shiki.ThemedTokenExplanation;
-const ferrikiExplanationValue: Ferriki.ThemedTokenExplanation = shikiExplanationValue;
-
-declare const ferrikiResult: Ferriki.TokensResult;
-const { grammarState: nativeGrammarState, ...ferrikiResultWithoutNativeState } = ferrikiResult;
-const shikiResultShape: Omit<Shiki.TokensResult, "grammarState"> = ferrikiResultWithoutNativeState;
-type _TokensResultKeyCoverage = AssertTrue<
-  HasKeyCoverage<Shiki.TokensResult, Ferriki.TokensResult, never>
->;
-
-// The omitted state is Ferriki's JSON-serializable continuation token, passed
-// back only through Ferriki's `grammarState` highlight option/getLastGrammarState.
-// @ts-expect-error Full TokensResult assignment must expose the native state difference.
-const incompatibleShikiResult: Shiki.TokensResult = ferrikiResult;
 
 // Check the complete Shiki code-to-HAST option union after named-theme
 // registrations, the documented callback/state boundaries, and the boolean-only
@@ -241,6 +234,19 @@ const ferrikiMetaTransformer: Ferriki.ShikiTransformer = {
   },
 };
 
+const ferrikiCallbackOnlyDataOptions = {
+  lang: "javascript",
+  theme: "nord",
+  data: { marker: "from-options.data" },
+} satisfies Ferriki.HighlightOptions;
+const ferrikiDataTransformer: Ferriki.ShikiTransformer = {
+  pre(node) {
+    const marker = node.data?.marker;
+    if (typeof marker === "string") node.properties["data-callback-marker"] = marker;
+    return node;
+  },
+};
+
 const shikiDecorationWithoutTransform = {
   start: 0,
   end: 1,
@@ -276,13 +282,8 @@ const removedEngineInput: Ferriki.HighlighterSyncOptions = { engine: shikiEngine
 // @ts-expect-error Shiki's warning toggle is not a Ferriki factory option.
 const unsupportedWarnings: Ferriki.HighlighterOptions = { warnings: false };
 
-void nativeGrammarState;
 void shikiToken;
 void ferrikiTokenValue;
-void shikiExplanation;
-void ferrikiExplanationValue;
-void shikiResultShape;
-void incompatibleShikiResult;
 void ferrikiHighlightOptions;
 void ferrikiUndefinedThemeOption;
 void ferrikiNamedShikiThemeOption;
@@ -299,6 +300,8 @@ void shikiContextSource;
 void ferrikiContextTokens;
 void shikiContextTokens;
 void ferrikiMetaTransformer;
+void ferrikiCallbackOnlyDataOptions;
+void ferrikiDataTransformer;
 void ferrikiDecorationWithoutTransform;
 void incompatibleFerrikiDecoration;
 void incompatibleShikiHast;

@@ -6,8 +6,8 @@ order: 1
 # Getting started
 
 Ferriki highlights code with the TextMate grammars and themes from Shiki's
-catalog, on a native Rust engine. From Node.js it keeps Shiki's API; from Rust
-it is a regular crate ([Start with Rust](/rust/getting-started)).
+catalog, on a native Rust engine. From Node.js it keeps Shiki's rendered HTML
+API; from Rust it is a regular crate ([Start with Rust](/rust/getting-started)).
 
 ## Requirements
 
@@ -74,12 +74,10 @@ try {
 A highlighter belongs to one thread: create one per worker for parallel builds.
 Dispose it when the build or server no longer needs it.
 
-## Other outputs
+## HTML with CSS
 
-- `codeToHast` returns the same result as a serializable HAST tree.
-- `codeToTokens` returns themed tokens with foreground and background colors.
-- `getLastGrammarState` captures where a grammar stopped, to continue
-  highlighting in a later call.
+For reusable CSS classes and the matching theme stylesheet, use
+`codeToHtmlWithCss()` or set `styleMode: "classes"` on `codeToHtml()`.
 
 The [API overview](/guide/api) lists every function and option.
 

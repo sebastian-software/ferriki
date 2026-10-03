@@ -8,6 +8,7 @@ import {
   engineLabels,
   formatFactor,
   formatMs,
+  hasArchivedApiMeasurements,
   htmlEngines,
   nodeEngines,
   phikiAvailable,
@@ -74,21 +75,21 @@ export function BenchmarkSummary() {
 }
 
 /** Every document for one API, with its size and each engine's median. */
-export function BenchmarkDocuments({ api }: { api: Api }) {
-  const engines = api === "codeToHtml" && phikiAvailable ? htmlEngines : nodeEngines;
+export function BenchmarkDocuments() {
+  const engines = phikiAvailable ? htmlEngines : nodeEngines;
   const phikiRows = new Map(
     (report.outputAgreement?.documents ?? []).map((row) => [row.path, row]),
   );
-  const rows = report.warm[api].map((row) =>
-    documentComparisonRow(row, { api, engines, phikiRows }),
+  const rows = report.warm.codeToHtml.map((row) =>
+    documentComparisonRow(row, { engines, phikiRows }),
   );
 
   return (
     <ComparisonTable
       caption={
-        api === "codeToHtml" && phikiAvailable
-          ? "Per-document median time in milliseconds. Phiki results are shown with their output agreement; differing-output samples are descriptive only and excluded from aggregate totals."
-          : "Median time per document in milliseconds; lower is faster."
+        phikiAvailable
+          ? "Per-document HTML median time in milliseconds. Phiki results are shown with their output agreement; differing-output samples are descriptive only and excluded from aggregate totals."
+          : "Median HTML time per document in milliseconds; lower is faster."
       }
       subject="Source file"
       contenders={contendersFor(engines)}
@@ -96,6 +97,21 @@ export function BenchmarkDocuments({ api }: { api: Api }) {
       verdictLabel="Shiki WASM / Ferriki"
       align="end"
     />
+  );
+}
+
+/** Explain why the committed report may contain measurements for retired Node APIs. */
+export function HistoricalApiNote() {
+  if (!hasArchivedApiMeasurements) return null;
+  return (
+    <p>
+      This is a pre-removal HTML baseline measured {report.measured} at Ferriki source revision{" "}
+      <a href={`https://github.com/sebastian-software/ferriki/commit/${report.source.revision}`}>
+        {report.revision}
+      </a>
+      . This page presents its HTML results only. The HAST and token timings in the committed JSON
+      are archival measurements from the former Node API, not current API or performance claims.
+    </p>
   );
 }
 
@@ -109,22 +125,20 @@ function phikiAgreementDetail(status?: string, reason?: string) {
 }
 
 function documentComparisonRow(
-  row: (typeof report.warm)[Api][number],
+  row: (typeof report.warm.codeToHtml)[number],
   options: {
-    api: Api;
     engines: EngineId[];
     phikiRows: Map<string, { status?: string; reason?: string }>;
   },
 ): ComparisonRow {
-  const { api, engines, phikiRows } = options;
+  const { engines, phikiRows } = options;
   const times = row.medianMs;
   const ferriki = times.ferriki;
   const wasm = times["shiki-wasm"];
   const phiki = phikiRows.get(row.path);
-  const phikiDetail =
-    api === "codeToHtml" && phikiAvailable
-      ? phikiAgreementDetail(phiki?.status, phiki?.reason)
-      : undefined;
+  const phikiDetail = phikiAvailable
+    ? phikiAgreementDetail(phiki?.status, phiki?.reason)
+    : undefined;
 
   return {
     label: row.path,
@@ -253,7 +267,7 @@ function versionDetail() {
 
 function nodeAgreementDetail() {
   return {
-    label: "Node output agreement",
+    label: "Node HTML agreement",
     value: nodeEngines
       .map(
         (id) =>

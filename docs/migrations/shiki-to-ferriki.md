@@ -18,13 +18,15 @@ pre-1.0 package.
 
 | Shiki surface | Ferriki status | Migration |
 | --- | --- | --- |
-| `codeToHtml`, `codeToHast`, `codeToTokens` | Supported | Keep the call shape and use a Ferriki theme/language ID. Token and HAST object shapes are not byte-for-byte identical; see the notes below. |
+| `codeToHtml` | Supported | Keep the call shape and use a Ferriki theme/language ID. HTML is the only public Node render output. |
+| `codeToHast`, `codeToTokens`, `codeToTokensBase`, `codeToTokensWithThemes`, `hastToHtml` | Removed before 1.0 | Remove these imports and highlighter calls. Use `codeToHtml`/`codeToHtmlWithCss` and the HTML transformer callbacks; Rust consumers retain the published Rust token APIs. |
 | Reusable highlighters and singleton | Supported | Keep the factory pattern and dispose long-lived instances explicitly. |
 | Standard language/theme loaders and aliases | Supported | Use `bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`. |
 | Custom TextMate grammar/theme registrations | Supported | Pass validated JSON-shaped registrations to the factory or load methods. |
 | Ordered `themes` map and `defaultColor: false` | Supported | Use for Ardo/Ferromark light/dark output. |
-| HAST serialization | Supported | Use `codeToHast` plus `hastToHtml`; sanitize at your application boundary. |
-| `transformers` and `decorations` | Supported in the JavaScript facade | Keep callbacks and decoration processing in JavaScript; they do not cross the native boundary. |
+| HAST serialization | Removed before 1.0 | Use the HTML renderer and transformer hooks. There is no public standalone HAST tree or serializer. |
+| `transformers` and `decorations` | Supported in the JavaScript facade | Hooks still receive Ferriki-typed token/HAST callback data while rendering HTML; the transformer context has no nested `codeToHast` or `codeToTokens` helpers. |
+| Grammar-state continuation | Supported for HTML | Call `getLastGrammarState(code, options)` and pass its result to a later HTML call through `grammarState`; token/HAST-result overloads are removed. |
 | Class-based HTML and generated CSS | Ferriki extension | Use `styleMode: 'classes'` or `codeToHtmlWithCss()`; inline styles remain the default. |
 | Standard grammar/theme assets | Downloaded asynchronously | `createHighlighter`, async loads and one-shot calls fetch missing release-pinned payloads. The package contains catalog metadata, not payloads. |
 | `rehype`, `markdown-it`, and other adapters | Separate packages | Keep Markdown integration in its adapter; Ferriki core does not include these packages. |
@@ -36,7 +38,15 @@ pre-1.0 package.
 
 The exact baseline and exclusions are machine-checked from the pinned Shiki
 mirror. “Shiki-compatible” means a tested subset, not that every Shiki package
-is a Ferriki feature. In the [published `@ferriki/core@0.8.3` and Shiki 4.4.3 migration sample](https://github.com/sebastian-software/ferriki/issues/38#issuecomment-5968270993), JSON-serialized HAST matches, while raw objects can differ where Shiki includes a property such as `data: undefined` that Ferriki omits. In multi-theme token output, Ferriki represents `htmlStyle` as a CSS string and exposes aligned `variants`; Shiki 4.4.3 represents `htmlStyle` as an object and has no `variants` field. A custom token renderer should normalize those shapes, or use `codeToHtml` and `codeToHtmlWithCss` when it needs rendered HTML.
+is a Ferriki feature. The [published `@ferriki/core@0.8.3` and Shiki 4.4.3
+migration sample](https://github.com/sebastian-software/ferriki/issues/38#issuecomment-5968270993)
+is historical evidence for the earlier structured-output boundary: its
+JSON-serialized HAST matched, while raw objects could differ where Shiki
+included properties such as `data: undefined`; multi-theme token output also
+had Ferriki-specific `htmlStyle` and `variants` shapes. These methods are
+removed from the pre-1.0 Node contract, so that comparison does not describe
+the current API. Use `codeToHtml` or `codeToHtmlWithCss` for rendered output;
+Rust consumers can use the Rust token APIs.
 
 The asynchronous factory and loading methods download standard grammar and
 theme payloads by default, then verify and cache them. Highlighting on a loaded

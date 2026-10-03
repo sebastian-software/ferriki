@@ -41,20 +41,30 @@ try {
         const result = entry.results[id];
         assert.equal(result.status, "ok", `${row.name}/${id}: ${result.error}`);
         assert.equal(result.validation.sourcePreserved, true);
-        if (id !== "prism")
-          assert.deepEqual(result.validation.referenceParity, { tokens: true, html: true });
-        for (const api of ["html", "tokens"]) assert.equal(result[api].samplesMs.length, 2);
+        if (id !== "prism") assert.deepEqual(result.validation.referenceParity, { html: true });
+        assert.equal(result.html.samplesMs.length, 2);
       }
     }
   }
   const same = compareReports(report, report);
-  assert.equal(same.comparisons.length, 19 * 2 * 2);
+  assert.equal(same.comparisons.length, 19 * 2);
   assert.ok(same.comparisons.every((row) => row.changePercent === 0));
   const different = structuredClone(report);
   different.languages[0].cases[0].results.ferriki.html.medianMs *= 1.2;
   assert.ok(Math.abs(compareReports(report, different).comparisons[0].changePercent - 20) < 1e-8);
   different.languages[0].cases[0].results.ferriki.validation.htmlSha256 = "changed";
-  assert.equal(compareReports(report, different).excluded.length, 2);
+  const changedOutputComparison = compareReports(report, different);
+  assert.equal(changedOutputComparison.excluded.length, 2);
+  assert.ok(
+    changedOutputComparison.excluded.some(
+      (row) => row.reason === "Missing timing or changed/non-parity output",
+    ),
+    "Changed HTML output must be excluded from the comparison",
+  );
+  assert.ok(
+    changedOutputComparison.excluded.some((row) => row.language === "Scratch"),
+    "The unsupported Scratch row must remain visible in exclusions",
+  );
   different.languages[0].cases = undefined;
   different.languages[0].status = "timeout";
   assert.equal(
@@ -73,13 +83,7 @@ try {
   assert.throws(() => compareReports(report, changedProfile), /cargoProfileEnv/);
 
   const profiler = fileURLToPath(new URL("./profile-tiobe.mjs", import.meta.url));
-  for (const args of [
-    [],
-    ["--api", "html"],
-    ["--boundary", "native"],
-    ["--boundary", "native", "--scopes"],
-    ["--engine", "shiki-wasm"],
-  ]) {
+  for (const args of [[], ["--boundary", "native"], ["--engine", "shiki-wasm"]]) {
     const profile = spawnSync(process.execPath, [profiler, ...args, "--seconds", "0.001"], {
       cwd: join(repoRoot, "node"),
       encoding: "utf8",
@@ -87,7 +91,7 @@ try {
     });
     assert.equal(profile.status, 0, profile.stderr);
     const diagnostic = JSON.parse(profile.stdout);
-    assert.deepEqual(diagnostic.validation.referenceParity, { tokens: true, html: true });
+    assert.deepEqual(diagnostic.validation.referenceParity, { html: true });
     assert.ok(diagnostic.iterations > 0);
     assert.equal(diagnostic.timing.samplesMs.length, diagnostic.iterations);
     assert.match(profile.stderr, /Warm workload ready/);
@@ -96,7 +100,6 @@ try {
     ["--seconds", "0"],
     ["--language", "missing"],
     ["--boundary", "native", "--engine", "shiki-wasm"],
-    ["--scopes"],
   ]) {
     const profile = spawnSync(process.execPath, [profiler, ...args], {
       cwd: join(repoRoot, "node"),
@@ -114,9 +117,9 @@ try {
     "--sizes",
     "example",
     "--rounds",
-    "600",
+    "1000",
     "--max-rounds",
-    "600",
+    "1000",
     "--budget-ms",
     "0",
   ]);
@@ -127,7 +130,7 @@ try {
     JSON.stringify(largeRow).length > 65536,
     "Exercise a worker report larger than a pipe buffer",
   );
-  for (const id of engines) assert.equal(largeRow.cases[0].results[id].html.samplesMs.length, 600);
+  for (const id of engines) assert.equal(largeRow.cases[0].results[id].html.samplesMs.length, 1000);
   assert.equal(timedOut.status, 0, timedOut.stderr);
   assert.equal(JSON.parse(timedOut.stdout).languages[0].status, "timeout");
   for (const args of [
@@ -136,13 +139,30 @@ try {
     ["--budget-ms", "NaN"],
   ])
     assert.notEqual(run(args).status, 0);
+  assert.throws(() => validateOutput("prism", "<secret>", "<span><secret></span>"), /HTML changed/);
+  assert.throws(() => validateOutput("prism", "text", "text"), /plaintext fallback/);
+  const plainSpanHtml = "<pre><code><span>text</span></code></pre>";
   assert.throws(
-    () => validateOutput("prism", "<secret>", [{ content: "<secret>" }], "<span><secret></span>"),
-    /HTML changed/,
+    () => validateOutput("shiki-wasm", "text", plainSpanHtml, { html: plainSpanHtml }),
+    /distinct syntax colors or token classes/,
+    "A plain span must not pass the highlighted-output check",
   );
-  assert.throws(() => validateOutput("prism", "text", ["text"], "text"), /plaintext fallback/);
+  const coloredHtml =
+    '<pre><code><span style="color:#111">a</span><span style="color:#222">b</span></code></pre>';
+  assert.equal(
+    validateOutput("shiki-wasm", "ab", coloredHtml, { html: coloredHtml }).highlighted,
+    true,
+    "Distinct HTML colors should satisfy the highlighting check",
+  );
+  const classedHtml =
+    '<pre><code><span class="token keyword">const</span> <span class="token number">1</span></code></pre>';
+  assert.equal(
+    validateOutput("prism", "const 1", classedHtml).highlighted,
+    true,
+    "Distinct Prism token classes should satisfy the highlighting check",
+  );
   console.log(
-    "[check-bench-tiobe] 19 languages × 2 sizes × 4 engines preserve source; native and Shiki outputs match; failure/timeout/comparison contracts pass.",
+    "[check-bench-tiobe] 19 languages × 2 sizes × 4 engines preserve source; native and Shiki HTML match; failure/timeout/comparison contracts pass.",
   );
 } finally {
   rmSync(directory, { recursive: true, force: true });

@@ -4,8 +4,8 @@ const ferriki: Contender[] = [{ id: "ferriki", label: "Ferriki", own: true }];
 
 const scopeRows: ComparisonRow[] = [
   {
-    label: "Highlighting runtime and direct output APIs",
-    detail: "codeToHtml, codeToHast and codeToTokens.",
+    label: "Highlighting runtime and HTML output APIs",
+    detail: "codeToHtml and codeToHtmlWithCss, with reusable highlighters.",
     values: { ferriki: { mark: "yes", note: "Part of Ferriki" } },
   },
   {
@@ -17,7 +17,7 @@ const scopeRows: ComparisonRow[] = [
   },
   {
     label: "rehype, markdown-it and other adapters",
-    detail: "Adapters build on codeToHtml and codeToHast.",
+    detail: "Adapters stay in the Markdown layer and consume rendered HTML.",
     values: { ferriki: { mark: "no", note: "Outside Ferriki." } },
   },
   {

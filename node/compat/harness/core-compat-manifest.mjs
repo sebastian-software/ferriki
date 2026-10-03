@@ -18,12 +18,6 @@ export const coreCompatDeferredTests = [
     issue: 48,
   },
   {
-    path: "compat/upstream/shiki/packages/core/test/tokens.test.ts",
-    reason:
-      "remaining upstream token snapshots and native projection edge cases are tracked in the Ferriki token contract",
-    issue: 47,
-  },
-  {
     path: "compat/upstream/shiki/packages/core/test/transformers.test.ts",
     reason:
       "upstream engine transformer fixtures are outside the native boundary; the JS facade contract is covered by check-ferriki-transformers",
@@ -40,6 +34,13 @@ export const coreCompatDeferredTests = [
     reason:
       "Ferriki colorReplacements has no runtime implementation and is deferred pending a product decision",
     issue: 190,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/shorthands.test.ts",
+    testName: "should allow subsequent valid calls after first invalid language",
+    reason:
+      "the fixture expects Shiki's invalid-language wording; Ferriki's recovery behavior is covered by its native error contract",
+    issue: 50,
   },
   {
     path: "compat/upstream/shiki/packages/shiki/test/css-variables.test.ts",
@@ -59,28 +60,10 @@ export const coreCompatDeferredTests = [
     issue: 42,
   },
   {
-    path: "compat/upstream/shiki/packages/shiki/test/grammar-state.test.ts",
-    reason:
-      "remaining upstream grammar-state snapshots and native stack parity are tracked in the Ferriki grammar-state contract",
-    issue: 47,
-  },
-  {
-    path: "compat/upstream/shiki/packages/shiki/test/hast.test.ts",
-    reason:
-      "the upstream HAST fixture combines adapter-owned metadata with engine behavior; Ferriki HAST, decoration, and multi-theme contracts are covered by dedicated checks",
-    issue: 45,
-  },
-  {
     path: "compat/upstream/shiki/packages/shiki/test/shorthands-markdown.test.ts",
     reason:
       "Markdown shorthand expansion belongs to an optional adapter, not the Ferriki core product boundary",
     issue: 42,
-  },
-  {
-    path: "compat/upstream/shiki/packages/shiki/test/shorthands.test.ts",
-    reason:
-      "the upstream shorthand fixture asserts Shiki-specific adapter wording; Ferriki usage errors and native recovery are covered by the error contract",
-    issue: 50,
   },
   {
     path: "compat/upstream/shiki/packages/shiki/test/theme-none.test.ts",
@@ -88,10 +71,68 @@ export const coreCompatDeferredTests = [
       "Ferriki theme-none and dual-theme behavior is covered by the dedicated multi-theme contract rather than the upstream adapter fixture",
     issue: 43,
   },
+];
+
+export const coreCompatSupportedHtmlTests = [
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/hast.test.ts",
+    testNamePattern:
+      "^(hasfocus support|render whitespace|merge same style (merges adjacent tokens with same style|merges adjacent tokens with dual themes|merges adjacent tokens with the same dual themes|does not merge tokens with decorations))$",
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/shorthands.test.ts",
+    testNamePattern: "^should codeToHtml$",
+  },
   {
     path: "compat/upstream/shiki/packages/shiki/test/themes.test.ts",
+    testNamePattern:
+      "^(codeToHtml (dual themes|multiple themes|multiple themes without default|should support font style|should not have empty style)|errors (throws on empty theme|throws on missing default color|not throws when .* set to false))$",
+  },
+];
+
+export const coreCompatExcludedTests = [
+  {
+    path: "compat/upstream/shiki/packages/core/test/tokens.test.ts",
     reason:
-      "Ferriki multi-theme and defaultColor behavior is covered by the dedicated native contract with deterministic output assertions",
-    issue: 43,
+      "the file tests the standalone Node token result contract removed in #207; Rust token APIs remain supported",
+    issue: 207,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/grammar-state.test.ts",
+    reason:
+      "the suite's state assertions depend on removed standalone token/HAST results or HAST-to-state overloads; code-input state and HTML continuation are covered by native checks",
+    issue: 207,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/hast.test.ts",
+    testNames: ["should works", "should structure inline", "merge same style supports data"],
+    reason:
+      "these fixtures require the removed standalone HAST result API; the same file's HTML, whitespace, merging, and decoration cases run separately",
+    issue: 207,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/shorthands.test.ts",
+    testNames: ["should codeToTokensBase"],
+    reason:
+      "this fixture requires the removed codeToTokensBase shorthand; the same file's HTML shorthand and recovery cases run separately",
+    issue: 207,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/themes.test.ts",
+    testNames: [
+      "alignThemesTokenization two themes",
+      "alignThemesTokenization three themes",
+      "codeToTokensWithThemes generates",
+    ],
+    reason:
+      "these fixtures assert standalone token output; the same file's multi-theme HTML and usage-error cases run separately",
+    issue: 207,
+  },
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/general.test.ts",
+    testNames: ["should have correct offset"],
+    reason:
+      "the upstream offset fixture reads token results; UTF-16 offsets remain covered through HTML transformer callbacks",
+    issue: 207,
   },
 ];

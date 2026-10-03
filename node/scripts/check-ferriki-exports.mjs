@@ -6,6 +6,11 @@ import { fileURLToPath } from "node:url";
 const scriptDir = fileURLToPath(new URL(".", import.meta.url));
 const ferriki = await import("../ferriki/index.mjs");
 for (const removed of [
+  "codeToHast",
+  "codeToTokens",
+  "codeToTokensBase",
+  "codeToTokensWithThemes",
+  "hastToHtml",
   "createJavaScriptRegexEngine",
   "createOnigurumaEngine",
   "loadWasm",

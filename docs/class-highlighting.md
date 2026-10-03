@@ -2,9 +2,10 @@
 
 HTML is Ferriki's primary Node output. `codeToHtml` keeps inline styles as its
 default; use `styleMode: "classes"` or `codeToHtmlWithCss` when the page should
-style nested grammar scopes with CSS. HAST and token outputs remain available
-for consumers that need structured results. Class-based output is available in
-the current `@ferriki/core` release.
+style nested grammar scopes with CSS. The Node renderer uses token and HAST
+data internally, and transformer callbacks can inspect those typed payloads.
+Standalone HAST and token results are removed before 1.0. Class-based output is
+available in the current `@ferriki/core` release.
 
 ## Inspiration
 
@@ -18,8 +19,8 @@ full nested scope paths and extracting CSS from resolved theme styles.
 
 ## Use your own CSS
 
-Select `styleMode: "classes"` on `codeToHtml` or `codeToHast`. Use `theme: "none"`
-when your stylesheet owns all colors:
+Select `styleMode: "classes"` on `codeToHtml`. Use `theme: "none"` when your
+stylesheet owns all colors:
 
 ```ts
 import { codeToHtml } from "@ferriki/core";
@@ -156,8 +157,8 @@ no TextMate theme registration is required. Use `theme: "none"` for that route.
 - `styleMode: "inline"` and omitted `styleMode` retain the existing output.
 - Classes mode preserves grammar boundaries and scope paths. Whitespace and
   equal-style merging are skipped even if the merge options are enabled.
-- `codeToTokens` exposes `scopeNames` in classes mode. Normal token output is
-  unchanged.
+- Token transformer callbacks receive `scopeNames` in classes mode. The Node
+  package does not expose a standalone token result method.
 - Token/span transformers still run on individual source tokens. Scope nesting
   and style extraction run after HAST hooks and decorations. Transformers that
   depend on the default flat DOM must be adapted; transformer-created tokens

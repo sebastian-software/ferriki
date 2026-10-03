@@ -5,8 +5,9 @@ order: 5
 
 # API overview
 
-`@ferriki/core` provides a tested subset of Shiki's direct highlighting API for
-Node.js. This page is the map; the complete reference, with every type and error code, is
+`@ferriki/core` provides a tested, HTML-focused subset of Shiki's direct
+highlighting API for Node.js. This page is the map; the complete reference,
+with every type and error code, is
 [docs/ferriki-api.md](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md).
 
 ## One-shot functions
@@ -14,15 +15,11 @@ Node.js. This page is the map; the complete reference, with every type and error
 Each one uses the shared singleton and returns a Promise; pass a highlighter as
 the first argument and it returns synchronously.
 
-| Function                                | Returns                                              |
-| --------------------------------------- | ---------------------------------------------------- |
-| `codeToHtml(code, options)`             | Escaped HTML with Shiki's line and token structure   |
-| `codeToHtmlWithCss(code, options)`      | `{ html, css }` with nested classes and a stylesheet |
-| `codeToHast(code, options)`             | The same result as a serializable HAST tree          |
-| `codeToTokens(code, options)`           | Tokens plus foreground and background colors         |
-| `codeToTokensBase(code, options)`       | The token matrix only                                |
-| `codeToTokensWithThemes(code, options)` | Aligned tokens for a theme map                       |
-| `getLastGrammarState(code, options)`    | A serializable state to continue from                |
+| Function                             | Returns                                              |
+| ------------------------------------ | ---------------------------------------------------- |
+| `codeToHtml(code, options)`          | Escaped HTML with Shiki's line and token structure   |
+| `codeToHtmlWithCss(code, options)`   | `{ html, css }` with nested classes and a stylesheet |
+| `getLastGrammarState(code, options)` | A serializable state to continue highlighting later  |
 
 ## Highlighters
 

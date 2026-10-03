@@ -3,7 +3,6 @@ import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { isDeepStrictEqual } from "node:util";
 import { gunzipSync } from "node:zlib";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
@@ -65,48 +64,61 @@ export function statistics(samplesMs, bytes) {
   };
 }
 
-export function validateOutput(id, code, tokens, html, reference) {
-  const tokenText =
-    id === "prism"
-      ? flattenPrism(tokens)
-      : tokens.map((line) => line.map((token) => token.content).join("")).join("\n");
-  assert.equal(tokenText, code, `${id}: tokenization changed the source`);
-  assert.equal(
-    toString(fromHtml(html, { fragment: true })),
-    code,
-    `${id}: HTML changed the source or failed to escape it`,
-  );
+export function validateOutput(id, code, html, reference) {
+  const tree = fromHtml(html, { fragment: true });
+  assert.equal(toString(tree), code, `${id}: HTML changed the source or failed to escape it`);
   assert.match(html, /<span\b/, `${id}: no highlighted spans (plaintext fallback)`);
-  if (id === "prism") {
-    assert.ok(
-      tokens.some((token) => typeof token !== "string"),
-      "Prism returned only plaintext",
-    );
-  } else {
-    assert.ok(
-      new Set(tokens.flat().map((token) => token.color)).size > 1,
-      `${id}: only one token color (plaintext fallback)`,
-    );
-  }
+  assert.ok(
+    collectHighlightSignatures(tree).size > 1,
+    `${id}: no distinct syntax colors or token classes (plaintext fallback)`,
+  );
   return {
     sourcePreserved: true,
     highlighted: true,
-    referenceParity:
-      id === "prism"
-        ? null
-        : {
-            tokens: isDeepStrictEqual(plain(tokens), reference.tokens),
-            html: html === reference.html,
-          },
-    tokensSha256: sha256(JSON.stringify(plain(tokens))),
+    referenceParity: id === "prism" ? null : { html: html === reference.html },
     htmlSha256: sha256(html),
   };
 }
 
-function flattenPrism(value) {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.map(flattenPrism).join("");
-  return flattenPrism(value.content);
+function collectHighlightSignatures(root) {
+  const signatures = new Set();
+  const styledProperties = new Set([
+    "color",
+    "background-color",
+    "font-style",
+    "font-weight",
+    "text-decoration",
+  ]);
+  const visit = (node) => {
+    if (node.type === "element" && node.tagName === "span") {
+      const style = node.properties?.style;
+      if (typeof style === "string") {
+        const declarations = style
+          .split(";")
+          .map((declaration) => declaration.trim())
+          .filter((declaration) => {
+            const separator = declaration.indexOf(":");
+            return separator > 0 && styledProperties.has(declaration.slice(0, separator).trim());
+          })
+          .sort();
+        if (declarations.length > 0) signatures.add(`style:${declarations.join(";")}`);
+      }
+
+      const classNames = node.properties?.className;
+      const classes = Array.isArray(classNames)
+        ? classNames
+        : typeof classNames === "string"
+          ? classNames.split(/\s+/)
+          : [];
+      if (classes.includes("token")) {
+        const tokenClasses = classes.filter((className) => className !== "token").sort();
+        if (tokenClasses.length > 0) signatures.add(`class:${tokenClasses.join(" ")}`);
+      }
+    }
+    for (const child of node.children ?? []) visit(child);
+  };
+  visit(root);
+  return signatures;
 }
 
 export async function createEngine(id, language) {
@@ -118,7 +130,6 @@ export async function createEngine(id, language) {
     if (!grammar) throw new Error(`Prism has no ${language.prism} grammar`);
     return {
       html: (code) => Prism.highlight(code, grammar, language.prism),
-      tokens: (code) => Prism.tokenize(code, grammar),
       dispose() {},
     };
   }
@@ -138,7 +149,6 @@ export async function createEngine(id, language) {
   const options = { lang: language.textmate, theme };
   return {
     html: (code) => highlighter.codeToHtml(code, options),
-    tokens: (code) => highlighter.codeToTokensBase(code, options),
     dispose: () => highlighter.dispose(),
   };
 }
@@ -225,16 +235,8 @@ export function compareReports(baseline, candidate, { isolation = "ferroni" } = 
       assert.equal(entry.sha256, old.sha256, "Source changed between runs");
       const a = old.results.ferriki;
       const b = entry.results.ferriki;
-      const exact = (result) =>
-        result?.status === "ok" &&
-        result.validation.referenceParity.tokens &&
-        result.validation.referenceParity.html;
-      if (
-        !exact(a) ||
-        !exact(b) ||
-        a.validation.tokensSha256 !== b.validation.tokensSha256 ||
-        a.validation.htmlSha256 !== b.validation.htmlSha256
-      ) {
+      const exact = (result) => result?.status === "ok" && result.validation.referenceParity.html;
+      if (!exact(a) || !exact(b) || a.validation.htmlSha256 !== b.validation.htmlSha256) {
         excluded.push({
           language: language.name,
           size: entry.size,
@@ -242,18 +244,16 @@ export function compareReports(baseline, candidate, { isolation = "ferroni" } = 
         });
         continue;
       }
-      for (const api of ["html", "tokens"]) {
-        const baselineMs = a[api].medianMs;
-        const candidateMs = b[api].medianMs;
-        comparisons.push({
-          language: language.name,
-          size: entry.size,
-          api,
-          baselineMs,
-          candidateMs,
-          changePercent: 100 * (candidateMs / baselineMs - 1),
-        });
-      }
+      const baselineMs = a.html.medianMs;
+      const candidateMs = b.html.medianMs;
+      comparisons.push({
+        language: language.name,
+        size: entry.size,
+        api: "html",
+        baselineMs,
+        candidateMs,
+        changePercent: 100 * (candidateMs / baselineMs - 1),
+      });
     }
   }
   return {

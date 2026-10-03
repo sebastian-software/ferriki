@@ -16,6 +16,7 @@ import {
   coldSpeedup,
   documents,
   formatFactor,
+  hasArchivedApiMeasurements,
   machine,
   phikiAvailable,
   phikiMatchingDocuments,
@@ -31,7 +32,7 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="A native syntax highlighter for Node.js and Rust."
-      lede="It uses the TextMate grammars and themes VS Code uses, behind the familiar Shiki API."
+      lede="It uses the TextMate grammars and themes VS Code uses, with Shiki's familiar HTML rendering calls."
       facts={[
         { label: "Succeeds", value: "Shiki" },
         { label: "Checked against", value: "Pinned Shiki release" },
@@ -68,8 +69,8 @@ const pillars = [
     text: "A TextMate grammar follows a language's structure across lines: CSS and JavaScript inside HTML, code fences in Markdown, template literals, heredocs. Ferriki's tokenizer is a mechanical port of vscode-textmate, checked against its own tests.",
   },
   {
-    heading: "The API you know",
-    text: "codeToHtml, codeToHast, codeToTokens, reusable highlighters and the singleton keep Shiki's shape. Checked against a pinned Shiki release, not just claimed.",
+    heading: "The rendered API you need",
+    text: "codeToHtml, codeToHtmlWithCss, reusable highlighters and the singleton keep the Shiki workflow centered on ready-to-use HTML. Checked against a pinned Shiki release, not just claimed.",
   },
   {
     heading: "No WASM, no regex translation",
@@ -111,9 +112,9 @@ function SampleSection() {
 function EvidenceIntro() {
   return (
     <>
-      The same {documents} documents, languages and theme. Strict HTML, HAST and token checks
-      qualify the Node full-corpus totals; Ferriki passed those checks on {agreeingDocuments} of{" "}
-      {documents}. Each factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
+      The same {documents} documents, languages and theme. Strict HTML checks qualify the Node
+      full-corpus totals; Ferriki passed those checks on {agreeingDocuments} of {documents}. Each
+      factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
     </>
   );
 }
@@ -122,7 +123,10 @@ function EvidenceNote() {
   return (
     <>
       Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
-      Shiki {report.versions.shiki}. The{" "}
+      Shiki {report.versions.shiki}.{" "}
+      {hasArchivedApiMeasurements
+        ? "This is a pre-removal HTML baseline; archived HAST and token measurements are not shown as current APIs or claims."
+        : "This report measures the current HTML API."}{" "}
       {phikiAvailable
         ? `optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
             report.agreement.phiki?.of ?? documents
@@ -130,8 +134,8 @@ function EvidenceNote() {
         : report.phiki?.status === "skipped"
           ? `optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
           : "Phiki is not recorded in this benchmark report."}{" "}
-      The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, every API and
-      the command to reproduce it.
+      The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, HTML timings and
+      the command to reproduce them.
     </>
   );
 }

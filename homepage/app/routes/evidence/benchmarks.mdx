@@ -7,6 +7,7 @@ import {
   BenchmarkContext,
   BenchmarkDocuments,
   BenchmarkSummary,
+  HistoricalApiNote,
   PhikiSharedHtmlBenchmark,
 } from "../../components/benchmark-tables";
 
@@ -17,11 +18,14 @@ Shiki runs twice: with its default Oniguruma engine compiled to WebAssembly,
 and with its JavaScript regex engine. When PHP and Composer are available, the
 benchmark also runs pinned Phiki as a fourth HTML renderer. Its output check
 and any equivalent-work totals are reported separately from the full-corpus
-Node totals.
+Node HTML totals. HTML is the current public Node output; the report runner no
+longer measures the removed HAST and token APIs.
 
 Every number on this site comes from one committed report,
 [docs/benchmarks/shiki-comparison.json](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/shiki-comparison.json).
 The landing page and this page read it at build time.
+
+<HistoricalApiNote />
 
 ## Summary
 
@@ -35,35 +39,32 @@ faster, and a factor below 1× means Ferriki is slower.
 
 <PhikiSharedHtmlBenchmark />
 
-The table reports full-corpus Node totals for each API and keeps the three
-Node engines' existing strict output gate. HAST and token calls cross the native
-addon boundary as JSON strings and the JavaScript facade parses those strings;
-their timings include that transport and parsing work. Phiki's per-document
-HTML timings stay visible with an output-agreement status. Differing output is
-excluded from shared totals, and the shared-cohort timing table appears only
-when at least one document passes the four-engine agreement check. The
-per-document HTML table still shows every Phiki timing and its output status
-when that cohort is empty.
+The headline is a full-corpus HTML comparison. Ferriki and both Shiki engines
+must produce identical serialized HTML on every document before their totals
+are included. Phiki's per-document HTML timings stay visible with an
+output-agreement status. Differing output is excluded from shared totals, and
+the shared-cohort timing table appears only when at least one document passes
+the four-renderer agreement check. The per-document HTML table still shows
+every Phiki timing and its output status when that cohort is empty.
 
 ## Method
 
-1. **Strict Node agreement.** Ferriki, Shiki with WebAssembly, and Shiki with
-   JavaScript are compared for serialized HTML, HAST and base tokens against
-   Shiki with WebAssembly. Full-corpus headline totals include an engine only
-   when every document passes all three checks.
+1. **Strict Node HTML agreement.** Ferriki, Shiki with WebAssembly, and Shiki
+   with JavaScript are compared for exact serialized HTML against Shiki with
+   WebAssembly. Full-corpus headline totals include an engine only when every
+   document passes this check.
 2. **Phiki HTML agreement.** The pinned Phiki renderer is compared with Shiki's
    WebAssembly HTML by visible source text and per-character foreground color,
    font style, font weight and text decoration. HTML wrappers and token
    boundaries may differ. The reference and Phiki text must each equal the
    source; CRLF and CR normalize to LF, and exactly one artificial final LF is
-   removed only when output text is precisely source plus that LF. Missing
-   HAST and token APIs have no counterpart and are reported as unavailable.
+   removed only when output text is precisely source plus that LF.
 3. **Warm timings.** One highlighter per engine, with every corpus language and
    the theme loaded. Phiki uses one long-lived PHP process and highlighter;
    each sample forces `PendingHtmlOutput::toString()` and the worker's
-   `hrtime()` excludes JSON IPC and post-render output checks. Per document and
-   API, five warm-up rounds run before at least 30 measured samples and the
-   time budget is spent. The eligible engine order rotates by
+   `hrtime()` excludes JSON IPC and post-render output checks. For each
+   document, five warm-up rounds run before at least 30 measured samples and
+   the time budget is spent. The eligible engine order rotates by
    `documentIndex + round`, separately for warmup and measurement rounds. The
    statistic is the median. Phiki per-document times remain visible when output
    differs, but only four-engine matching documents contribute to its shared
@@ -119,14 +120,4 @@ corpus stay the same, so the command above measures yours.
 
 ## Every document
 
-### codeToHtml
-
-<BenchmarkDocuments api="codeToHtml" />
-
-### codeToHast
-
-<BenchmarkDocuments api="codeToHast" />
-
-### codeToTokensBase
-
-<BenchmarkDocuments api="codeToTokensBase" />
+<BenchmarkDocuments />

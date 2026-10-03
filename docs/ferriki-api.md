@@ -8,17 +8,24 @@ The CI docs gate checks that every generated public symbol is represented here.
 The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
 `RegistrationInput`, `AssetOptions`, `HighlighterOptions`, `HighlighterSyncOptions`,
-`HighlightOptions`, `HtmlWithCss`, `ThemedToken`, `TokensResult`, `HastText`, `HastElement`,
+`HighlightOptions`, `HtmlWithCss`, `ThemedToken`, `HastText`, `HastElement`,
 `HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
-`ShikiTransformerContext`, `ShikiTransformer`, `ThemedTokenScopeExplanation`,
-`ThemedTokenExplanation`, `GrammarState`, `Highlighter`, `ShikiError`, `ferrikiVersion`,
+`ShikiTransformerContext`, `ShikiTransformer`, `GrammarState`, `Highlighter`,
+`ShikiError`, `ferrikiVersion`,
 `createHighlighter`, `createHighlighterCore`, `createShikiPrimitiveAsync`,
 `createHighlighterCoreSync`, `createShikiPrimitive`, `getSingletonHighlighter`,
-`getSingletonHighlighterCore`, `codeToHtmlWithCss`, `codeToHtml`, `codeToHast`, `codeToTokens`,
-`codeToTokensBase`, `codeToTokensWithThemes`, `getLastGrammarState`,
-`CssVariablesThemeOptions`, `createCssVariablesTheme`, `hastToHtml`,
-`bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`, and
-`BundledLanguage`, `BundledTheme`, `FerrikiErrorCode`, `FerrikiError`.
+`getSingletonHighlighterCore`, `codeToHtmlWithCss`, `codeToHtml`,
+`getLastGrammarState`, `CssVariablesThemeOptions`, `createCssVariablesTheme`,
+`bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`,
+`BundledLanguage`, `BundledTheme`, `FerrikiErrorCode`, and `FerrikiError`.
+
+The Node package exposes HTML as its only public render output. Before 1.0,
+`codeToHast`, `codeToTokens`, `codeToTokensBase`,
+`codeToTokensWithThemes`, and `hastToHtml` are removed from both the top-level
+exports and reusable highlighters. Ferriki makes this breaking divergence from
+Shiki without deprecated aliases or a compatibility package. Transformer
+callbacks still receive typed token payloads and Ferriki HAST nodes as part of
+HTML rendering; those types do not add standalone result methods.
 
 ## Runtime requirements
 
@@ -45,27 +52,29 @@ codeToHtml(highlighter, code, options): string
 codeToHtmlWithCss(code, options): Promise<HtmlWithCss>
 codeToHtmlWithCss(highlighter, code, options): HtmlWithCss
 
-codeToHast(code, options): Promise<HastRoot>
-codeToHast(highlighter, code, options): HastRoot
-
-codeToTokens(code, options): Promise<TokensResult>
-codeToTokens(highlighter, code, options): TokensResult
-
-codeToTokensBase(code, options): Promise<ThemedToken[][]>
-codeToTokensBase(highlighter, code, options): ThemedToken[][]
-
-codeToTokensWithThemes(code, options): Promise<ThemedToken[][]>
-codeToTokensWithThemes(highlighter, code, options): ThemedToken[][]
-
 getLastGrammarState(code, options): Promise<GrammarState>
 getLastGrammarState(highlighter, code, options): GrammarState
 ```
 
-`codeToHtml` returns escaped HTML with Shiki-compatible line and token
-structure. `codeToHast` returns the equivalent serializable HAST tree.
-`codeToTokens` returns token metadata plus foreground/background information.
-The `Base` and `WithThemes` helpers return only the token matrix from the
-corresponding result.
+`codeToHtml` returns HTML with source text escaped and Shiki-compatible line and
+token structure. `codeToHtmlWithCss` returns the same rendered markup plus
+resolved theme CSS. Transformer and decoration callbacks can change the HAST,
+and a transformer `postprocess` hook can replace the HTML. Ferriki does not
+sanitize callback changes; the caller is responsible for callback-generated
+markup.
+
+`getLastGrammarState` accepts source text and highlight options; pass its result
+to a later HTML call through `grammarState` to continue grammar inference. It
+requires a grammar-backed language: `text`, `txt`, `plain`, `plaintext`, and
+`ansi` are rejected. Although `lang` is required by the TypeScript declaration,
+HTML calls default an omitted runtime value to `text`, so pass a grammar language
+explicitly to `getLastGrammarState`. It does not accept a token or HAST result.
+
+The renderer uses token and HAST structures internally for transformer and
+decoration callbacks. Those callback payloads retain Ferriki's typed token and
+HAST data, including `scopeNames` and `type` metadata selected by
+`includeExplanation`, but the package has no public method that returns them
+directly.
 
 `codeToHtmlWithCss` always renders classes and returns `{ html, css }`. Existing
 TextMate themes work unchanged. Combine CSS from every rendered block. With a
@@ -94,28 +103,31 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option         | Type                                 | Meaning                                                            |
-| -------------- | ------------------------------------ | ------------------------------------------------------------------ |
-| `langs`        | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves. |
-| `themes`       | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.    |
-| `langAlias`    | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.      |
-| `transformers` | `ShikiTransformer[]`                 | JavaScript-only callbacks for the documented token/HAST pipeline.  |
-| `assets`       | `AssetOptions`                       | Where standard grammars and themes come from; see below.           |
+| Option         | Type                                 | Meaning                                                                      |
+| -------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
+| `langs`        | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.           |
+| `themes`       | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.              |
+| `langAlias`    | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                |
+| `transformers` | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering. |
+| `assets`       | `AssetOptions`                       | Where standard grammars and themes come from; see below.                     |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
 and are not a supported extension point. Additions require an explicit API
 contract and compatibility coverage.
 
-Constructor `transformers` are defaults for HTML, HAST, and token methods,
-including `codeToHtmlWithCss`, `codeToTokensBase`, and `codeToTokensWithThemes`.
-A call with no `transformers` (or `undefined`) inherits them. An explicit list
-replaces them; `[]` disables them for that call. Both async and sync constructors
-copy the array and keep the existing `enforce: 'pre'`, normal, `enforce: 'post'`
-ordering, preserving list order within each tier. Token methods run only
-`preprocess` and `tokens`; HAST methods also run node hooks, and HTML methods
-add `postprocess`. The singleton keeps the defaults from its first creation;
-later singleton calls only add languages and themes.
+Constructor `transformers` are defaults for `codeToHtml` and
+`codeToHtmlWithCss`. A call with no `transformers` (or `undefined`) inherits
+them. An explicit list replaces them; `[]` disables them for that call. Both
+async and sync constructors copy the array and keep the existing
+`enforce: 'pre'`, normal, `enforce: 'post'` ordering, preserving list order
+within each tier. HTML rendering runs token and HAST hooks internally before
+`postprocess`. Their typed token payloads, HAST nodes, and `scopeNames`/`type`
+metadata selected by `includeExplanation` are available to callbacks, but the
+public API has no standalone HAST or token methods, including
+`codeToHast`/`codeToTokens` helpers on transformer contexts.
+The singleton keeps the defaults from its first creation; later singleton
+calls only add languages and themes.
 
 ### Standard assets
 
@@ -152,10 +164,7 @@ the repository's `assets/shiki/` below `<release-commit>/assets/shiki/`. See
 | Method                                           | Result                  | Notes                                                         |
 | ------------------------------------------------ | ----------------------- | ------------------------------------------------------------- |
 | `codeToHtml(code, options)`                      | `string`                | Render highlighted HTML.                                      |
-| `codeToHast(code, options)`                      | `HastRoot`              | Render the serializable HAST equivalent.                      |
-| `codeToTokens(code, options)`                    | `TokensResult`          | Return tokens and theme metadata.                             |
-| `codeToTokensBase(code, options)`                | `ThemedToken[][]`       | Return the token matrix.                                      |
-| `codeToTokensWithThemes(code, options)`          | `ThemedToken[][]`       | Return aligned tokens for a theme map.                        |
+| `codeToHtmlWithCss(code, options)`               | `HtmlWithCss`           | Render class-based HTML and return resolved CSS.              |
 | `highlighter.getLastGrammarState(code, options)` | `GrammarState`          | Synchronous highlighter method for capturing grammar context. |
 | `getLastGrammarState(code, options)`             | `Promise<GrammarState>` | Capture a serializable grammar context for continuation.      |
 | `loadLanguage(...inputs)`                        | `Promise<void>`         | Load standard or custom grammars.                             |
@@ -176,43 +185,45 @@ an explicit worker boundary; create one highlighter per worker instead.
 
 ## Highlight options
 
-| Option                  | Type                                    | Meaning                                                                                      |
-| ----------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `styleMode`             | `"inline" \| "classes"`                 | Inline styles by default; classes preserve nested grammar scopes.                            |
-| `lang`                  | `LanguageInput`                         | Language ID, alias, or a custom registration. Defaults to `text`.                            |
-| `theme`                 | `ThemeInput`                            | One theme ID or registration. Required unless `themes` is supplied.                          |
-| `themes`                | `Record<string, ThemeInput>`            | Ordered theme map, for example `{ light, dark }`.                                            |
-| `defaultColor`          | `string \| false`                       | Default foreground color; `false` disables the default color.                                |
-| `cssVariablePrefix`     | `string`                                | Prefix used for multi-theme CSS variables.                                                   |
-| `includeExplanation`    | `boolean \| 'scopeName' \| 'tokenType'` | Include the accepted token explanation metadata.                                             |
-| `grammarState`          | `GrammarState`                          | Continue grammar inference from a state returned by `getLastGrammarState` or `codeToTokens`. |
-| `mergeWhitespaces`      | `boolean`                               | Merge adjacent whitespace tokens where possible.                                             |
-| `mergeSameStyleTokens`  | `boolean`                               | Merge adjacent tokens with the same style.                                                   |
-| `rootStyle`             | `string \| false`                       | Inline style on the root element.                                                            |
-| `tabindex`              | `string \| number \| false \| null`     | Root `tabindex` attribute.                                                                   |
-| `tokenizeMaxLineLength` | `number`                                | Maximum tokenized line length.                                                               |
-| `tokenizeTimeLimit`     | `number`                                | Tokenization time budget in milliseconds.                                                    |
-| `structure`             | `'classic'                              | 'inline'`                                                                                    | Select the classic `<pre><code>` tree or inline token tree. |
-| `meta`                  | `Record<string, unknown>`               | Fence metadata copied to the root HAST element, except private `_` keys.                     |
-| `transformers`          | `ShikiTransformer[]`                    | Ordered JS hooks; callbacks never cross the native boundary.                                 |
-| `decorations`           | `DecorationItem[]`                      | Validated UTF-16 ranges applied around highlighted HAST sections.                            |
+| Option                  | Type                                    | Meaning                                                                                                                              |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `styleMode`             | `"inline" \| "classes"`                 | Inline styles by default; classes preserve nested grammar scopes.                                                                    |
+| `lang`                  | `LanguageInput`                         | Required by the TypeScript declaration; HTML calls default an omitted runtime value to `text`.                                       |
+| `theme`                 | `ThemeInput`                            | One theme ID or registration. Required unless `themes` is supplied.                                                                  |
+| `themes`                | `Record<string, ThemeInput>`            | Ordered theme map, for example `{ light, dark }`.                                                                                    |
+| `defaultColor`          | `string \| false`                       | Default foreground color; `false` disables the default color.                                                                        |
+| `cssVariablePrefix`     | `string`                                | Prefix used for multi-theme CSS variables.                                                                                           |
+| `includeExplanation`    | `boolean \| 'scopeName' \| 'tokenType'` | Include `scopeNames` and `type` metadata in token callback payloads.                                                                 |
+| `grammarState`          | `GrammarState`                          | Continue HTML grammar inference from a state returned by `getLastGrammarState(code, options)`.                                       |
+| `mergeWhitespaces`      | `boolean`                               | Merge adjacent whitespace tokens where possible.                                                                                     |
+| `mergeSameStyleTokens`  | `boolean`                               | Merge adjacent tokens with the same style.                                                                                           |
+| `rootStyle`             | `string \| false`                       | Inline style on the root element.                                                                                                    |
+| `tabindex`              | `string \| number \| false \| null`     | Root `tabindex` attribute.                                                                                                           |
+| `tokenizeMaxLineLength` | `number`                                | Maximum tokenized line length.                                                                                                       |
+| `tokenizeTimeLimit`     | `number`                                | Tokenization time budget in milliseconds.                                                                                            |
+| `structure`             | `'classic'                              | 'inline'`                                                                                                                            | Select the classic `<pre><code>` tree or inline token tree. |
+| `meta`                  | `Record<string, unknown>`               | Fence metadata copied to the root HAST element, except private `_` keys.                                                             |
+| `data`                  | `Record<string, unknown>`               | Callback-only metadata on the classic root `<pre>` HAST node; omitted from HTML serialization. Inline structure has no `<pre>` node. |
+| `transformers`          | `ShikiTransformer[]`                    | Ordered JS hooks; callbacks never cross the native boundary.                                                                         |
+| `decorations`           | `DecorationItem[]`                      | Validated UTF-16 ranges applied around highlighted HAST sections.                                                                    |
 
 `tokenizeTimeLimit` defaults to 500 ms per line; `0` disables the time limit.
 `tokenizeMaxLineLength` defaults to `0` (unlimited). When a non-zero line
-length limit is reached, Ferriki returns that line as one deliberately
-unstyled token instead of silently claiming syntax-level highlighting. A
-tokenization timeout follows the native TextMate stopped-early behavior and
-remains observable through the unstyled/partial token result.
+length limit is reached, Ferriki renders that line as deliberately unstyled
+HTML instead of silently claiming syntax-level highlighting. A tokenization
+timeout follows the native TextMate stopped-early behavior and remains
+observable in the HTML and transformer callback payloads.
 
 ANSI escape sequences are outside the Ferriki 1.0 contract. Passing escape
 bytes with `lang: 'ansi'` throws `ShikiError`; strip or parse terminal output
 before highlighting.
 
 Transformers run in this order: `preprocess`, `tokens`, `span`, `line`, `code`,
-`pre`, `root`, and (for `codeToHtml`) `postprocess`. `enforce: 'pre'` and
-`enforce: 'post'` group transformers around the normal tier. Decoration
-callbacks run in the JS HAST layer and receive `meta.__raw` through the
-transformer context without serializing callbacks into N-API.
+`pre`, `root`, and `postprocess` during HTML rendering. `enforce: 'pre'` and
+`enforce: 'post'` group transformers around the normal tier. When provided,
+`meta.__raw` is available to transformer callbacks through
+`this.options.meta.__raw`. A `DecorationItem.transform` callback instead
+receives `(element, type)` and does not receive the transformer context.
 
 ## Registrations and loaders
 
@@ -245,23 +256,15 @@ provided for typed consumers such as Ardo configuration and language guards.
 
 ```ts
 interface ThemedToken {
+  scopeNames?: readonly string[];
   content: string;
   offset: number;
+  htmlAttrs?: Readonly<Record<string, string>>;
   color?: string;
   fontStyle?: number;
   type?: number;
-  htmlStyle?: Record<string, string>;
-  variants?: Record<string, { color?: string; fontStyle?: number }>;
-  explanation?: ThemedTokenExplanation[];
-}
-
-interface ThemedTokenScopeExplanation {
-  scopeName: string;
-}
-
-interface ThemedTokenExplanation {
-  content: string;
-  scopes: ThemedTokenScopeExplanation[];
+  htmlStyle?: Readonly<Record<string, string>>;
+  variants?: Readonly<Record<string, { color?: string; fontStyle?: number }>>;
 }
 
 interface GrammarState {
@@ -272,27 +275,25 @@ interface GrammarState {
   scopes: string[];
   source: string;
 }
-
-interface TokensResult {
-  tokens: ThemedToken[][];
-  fg: string;
-  bg: string;
-  themeName: string;
-  rootStyle?: string;
-  grammarState?: GrammarState;
-}
 ```
 
-`includeExplanation: 'scopeName'` (or `true`) adds a serializable
-`explanation` entry to every token with its TextMate scope path. The
-`'tokenType'` mode retains the numeric `type` metadata without scope paths.
+`includeExplanation: 'scopeName'` (or `true`) includes the TextMate
+`scopeNames` in token callback payloads. The `'tokenType'` mode includes numeric
+`type` metadata without scope paths. It does not create a standalone token
+result or an `explanation` array.
 `getLastGrammarState` and the `grammarState` option provide a validated,
 serializable continuation context. A state from another language or a theme
 not present in the current highlight call is rejected with `ShikiError`.
 
-`HastRoot`, `HastElement`, and `HastText` are the small serializable HAST
-subset returned by Ferriki. `hastToHtml(tree)` serializes a root or element;
-it does not sanitize arbitrary user-created nodes.
+`HighlightOptions.data` is callback-only metadata. In classic structure it is
+attached to the internal root `<pre>` HAST node's `data` field for callbacks;
+the HTML serializer omits that field, and no public render method returns the
+node. Inline structure has no `<pre>` node.
+
+`HastRoot`, `HastElement`, `HastText`, and `HastNode` are the small serializable
+HAST types used by transformer and decoration callbacks. They are not returned
+by a public render method, and `hastToHtml` is not exported. Apply the same
+trust boundary to HTML changes made by callbacks as to any generated markup.
 
 `createCssVariablesTheme(options)` creates a theme registration whose default
 foreground/background use CSS variables. It does not load the theme itself.
@@ -322,8 +323,9 @@ remain actionable and start with the documented `[ferriki]` prefix.
 
 Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
 Transformer callbacks and decoration processing stay in JavaScript; callback
-objects do not cross the native boundary. Ferriki does not export Shiki's
-JavaScript/Oniguruma engine factories or WASM loading. Markdown adapters such as
+objects do not cross the native boundary. Public Node rendering returns HTML
+only, as an intentional pre-1.0 divergence from Shiki. Ferriki does not export
+Shiki's JavaScript/Oniguruma engine factories or WASM loading. Markdown adapters such as
 `rehype` and `markdown-it`, and the optional Vite integration, are separate
 packages rather than `@ferriki/core` exports. See the
 [migration guide](./migrations/shiki-to-ferriki.md) for the supported boundary.

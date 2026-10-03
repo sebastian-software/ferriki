@@ -163,12 +163,23 @@ try {
         mergeSameStyleTokens: false,
       };
       const reference = shiki.codeToTokens(item.code, options);
-      const actual = native.codeToTokens(item.code, options);
+      let actual;
+      native.codeToHtml(item.code, {
+        ...options,
+        transformers: [
+          {
+            tokens(tokens) {
+              actual = tokens;
+            },
+          },
+        ],
+      });
+      assert(actual, `Native HTML token hook must run: ${item.id}`);
       let globalOffset = 0;
       const allReference = new Map();
       for (const [index, line] of item.code.split("\n").entries()) {
         const expected = characterStyles(reference.tokens[index]);
-        const received = characterStyles(actual.tokens[index]);
+        const received = characterStyles(actual[index]);
         assert.equal(expected.length, line.length, `Reference source preservation: ${item.id}`);
         assert.equal(received.length, line.length, `Native source preservation: ${item.id}`);
         for (let position = 0; position < line.length; position++) {

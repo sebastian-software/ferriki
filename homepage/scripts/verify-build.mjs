@@ -1,6 +1,6 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
 // Checks the prerendered site after `react-router build`: every documentation
-// page exists, the landing page carries the published version and current
+// page exists, the landing page carries the published version and HTML
 // measurements, and the strict Node / optional Phiki cohorts match the report.
 import { access, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
@@ -22,10 +22,14 @@ const report = await readJson(
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
 const cold = report.cold["shiki-wasm"].medianMs / report.cold.ferriki.medianMs;
-const apiNames = ["codeToHtml", "codeToHast", "codeToTokensBase"];
+const apiNames = ["codeToHtml"];
 const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
 const corpusSize = report.warm.codeToHtml.length;
 const cohortErrors = [];
+
+if (!report.method?.apis?.includes("codeToHtml")) {
+  cohortErrors.push("the report does not identify its HTML measurement");
+}
 
 if (
   !report.source ||
@@ -114,16 +118,19 @@ const required = [
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
   [homepage, oneDecimal(cold)],
   [homepage, report.revision],
+  [homepage, "codeToHtmlWithCss, reusable highlighters"],
   [homepage, 'class="site-header"'],
   [homepage, 'class="site-footer"'],
   [benchmarks, report.revision],
   [benchmarks, report.machine.cpu],
-  [benchmarks, oneDecimal(factor("codeToHast", "shiki-wasm"))],
+  [benchmarks, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
 ];
-for (const api of apiNames) {
-  for (const engine of ["shiki-wasm", "shiki-js"]) {
-    required.push([benchmarks, oneDecimal(factor(api, engine))]);
-  }
+for (const engine of ["shiki-wasm", "shiki-js"]) {
+  required.push([benchmarks, oneDecimal(factor("codeToHtml", engine))]);
+}
+if (report.method?.apis?.some((api) => api !== "codeToHtml")) {
+  required.push([benchmarks, "pre-removal HTML baseline"]);
+  required.push([benchmarks, "archival measurements from the former Node API"]);
 }
 
 if (report.phiki?.status === "available") {

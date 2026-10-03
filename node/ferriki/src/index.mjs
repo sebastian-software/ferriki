@@ -17,7 +17,6 @@ import { createAssetDownloader } from "./asset-download.mjs";
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const standardAssetRoot = join(packageDir, "assets", "shiki");
 const NONE_THEME_BACKING = "nord";
-const grammarStateByObject = new WeakMap();
 let singleton;
 
 export class ShikiError extends Error {
@@ -250,28 +249,28 @@ export function createHighlighterCoreSync(options = {}) {
     return prepared;
   }
 
-  function highlightSingleTheme(code, options = {}) {
+  function getHtmlRenderData(code, options = {}) {
     assertAnsiInput(code, options);
     const result = callNativeOperation("Ferriki tokenization failed", () =>
-      JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options)))),
+      JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepareOptions(options)))),
     );
     if (registrationName(options.theme) === "none") return normalizeNoneThemeResult(result);
     return result;
   }
 
-  function highlightMultiTheme(code, options) {
+  function getHtmlRenderDataWithThemes(code, options) {
     assertAnsiInput(code, options);
     const themes = resolveThemeEntries(options);
     loadThemeSync(...themes.map((theme) => theme.input));
     if (
-      typeof native.codeToTokensWithThemes === "function" &&
+      typeof native.getHtmlRenderDataWithThemes === "function" &&
       !themes.some((theme) => theme.name === "none")
     ) {
       const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
       prepared.themeEntries = themes;
       return combineNativeThemeResult(
         callNativeOperation("Ferriki multi-theme tokenization failed", () =>
-          JSON.parse(native.codeToTokensWithThemes(code, JSON.stringify(prepared))),
+          JSON.parse(native.getHtmlRenderDataWithThemes(code, JSON.stringify(prepared))),
         ),
         options,
       );
@@ -280,26 +279,26 @@ export function createHighlighterCoreSync(options = {}) {
       ...theme,
       result:
         theme.name === "none"
-          ? normalizeNoneThemeResult(highlightNativeTheme(code, options, NONE_THEME_BACKING))
-          : highlightNativeTheme(code, options, theme.name),
+          ? normalizeNoneThemeResult(getHtmlRenderDataForTheme(code, options, NONE_THEME_BACKING))
+          : getHtmlRenderDataForTheme(code, options, theme.name),
     }));
     return combineThemeResults(results, options);
   }
 
-  function highlightNativeTheme(code, options, theme) {
+  function getHtmlRenderDataForTheme(code, options, theme) {
     assertAnsiInput(code, options);
     const prepared = prepareOptions({ ...options, theme, themes: undefined });
     return callNativeOperation("Ferriki tokenization failed", () =>
-      JSON.parse(native.codeToTokens(code, JSON.stringify(prepared))),
+      JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepared))),
     );
   }
 
-  function highlightRaw(code, options) {
-    if (hasThemes(options)) return highlightMultiTheme(code, options);
+  function renderHtmlDataRaw(code, options) {
+    if (hasThemes(options)) return getHtmlRenderDataWithThemes(code, options);
     return registrationName(options?.theme) === "none"
-      ? highlightSingleTheme(code, options)
+      ? getHtmlRenderData(code, options)
       : callNativeOperation("Ferriki tokenization failed", () =>
-          JSON.parse(native.codeToTokens(code, JSON.stringify(prepareOptions(options)))),
+          JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepareOptions(options)))),
         );
   }
 
@@ -390,39 +389,14 @@ export function createHighlighterCoreSync(options = {}) {
     };
   }
 
-  function addTokenMetadata(result, options) {
-    const language = grammarLanguage(options);
-    const includeScopes =
-      options?.includeExplanation === true || options?.includeExplanation === "scopeName";
-    const tokens = result.tokens.map((line) =>
-      line.map((token) => {
-        const scopeNames = token.scopeNames?.length
-          ? token.scopeNames
-          : [scopeNameForLanguage(language)];
-        const output = { ...token };
-        if (options.styleMode !== "classes") delete output.scopeNames;
-        if (includeScopes) {
-          output.explanation = [
-            {
-              content: token.content,
-              scopes: scopeNames.map((scopeName) => ({ scopeName })),
-            },
-          ];
-        }
-        return output;
-      }),
-    );
-    return { ...result, tokens };
-  }
-
-  function highlightTokensPublic(code, options = {}) {
+  function collectGrammarState(code, options = {}) {
     const validated = validateHighlightOptions(options);
     const input = prepareGrammarInput(code, validated);
     const sourceOptions = input.prefixLength
       ? { ...validated, grammarState: undefined }
       : { ...validated };
-    // Capture scope paths for the serializable grammar state even when the
-    // caller did not request explanation metadata in the returned tokens.
+    // Grammar state uses the final token scope path, so request scopes when no
+    // callback metadata mode selected them.
     if (sourceOptions.includeExplanation === undefined)
       sourceOptions.includeExplanation = "scopeName";
     let result;
@@ -432,25 +406,19 @@ export function createHighlighterCoreSync(options = {}) {
       )
     )
       result = highlightWithTransformers(input.source, sourceOptions);
-    else if (hasThemes(sourceOptions)) result = highlightMultiTheme(input.source, sourceOptions);
-    else if (registrationName(sourceOptions?.theme) === "none")
-      result = highlightSingleTheme(input.source, sourceOptions);
-    else result = highlightSingleTheme(input.source, sourceOptions);
+    else result = renderHtmlDataRaw(input.source, sourceOptions);
     result = removeGrammarPrefix(result, input.prefixLength, input.prefixLines);
-    const grammarState = makeGrammarState(input.source, validated, result);
-    result = addTokenMetadata(result, validated);
-    result.grammarState = grammarState;
-    grammarStateByObject.set(result.tokens, grammarState);
-    return result;
+    return makeGrammarState(input.source, validated, result);
   }
 
-  function getGrammarState(codeOrElement, options) {
-    if (typeof codeOrElement !== "string") return grammarStateByObject.get(codeOrElement);
+  function getGrammarState(code, options) {
+    if (typeof code !== "string")
+      throw new ShikiError("Grammar state source must be a string", "ERR_USAGE");
     const validated = validateHighlightOptions(options);
     const language = grammarLanguage(validated);
     if (isSpecialLanguage(language) || language === "ansi")
       throw new ShikiError("Plain language does not have grammar state", "ERR_USAGE");
-    return highlightTokensPublic(codeOrElement, validated).grammarState;
+    return collectGrammarState(code, validated);
   }
 
   function createTransformerContext(source, options, meta) {
@@ -458,9 +426,6 @@ export function createHighlighterCoreSync(options = {}) {
       meta,
       options,
       source,
-      codeToHast: (nestedCode, nestedOptions) => buildHast(nestedCode, nestedOptions),
-      codeToTokens: (nestedCode, nestedOptions) =>
-        highlightWithTransformers(nestedCode, nestedOptions),
     };
   }
 
@@ -482,7 +447,7 @@ export function createHighlighterCoreSync(options = {}) {
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
     context.source = source;
-    const result = highlightRaw(source, validated);
+    const result = renderHtmlDataRaw(source, validated);
     result.tokens = applyTokenTransformers(result.tokens, transformers, context);
     return result;
   }
@@ -500,7 +465,7 @@ export function createHighlighterCoreSync(options = {}) {
     assertAnsiInput(source, validated);
     const input = prepareGrammarInput(source, validated);
     const result = removeGrammarPrefix(
-      highlightRaw(input.source, validated),
+      renderHtmlDataRaw(input.source, validated),
       input.prefixLength,
       input.prefixLines,
     );
@@ -518,8 +483,6 @@ export function createHighlighterCoreSync(options = {}) {
       context,
       source,
     );
-    if (validated.styleMode === "classes" && !isSpecialLanguage(grammarLanguage(validated)))
-      grammarStateByObject.set(tree, makeGrammarState(input.source, validated, result));
     return tree;
   }
 
@@ -539,61 +502,22 @@ export function createHighlighterCoreSync(options = {}) {
       assertAnsiInput(code, options);
       if (options?.styleMode === "classes")
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
-      if (options?.grammarState) {
-        const result = highlightTokensPublic(code, options);
-        return applyPostprocess(hastToHtml(renderTokenResultHast(result, options)), options, code);
-      }
+      if (options?.grammarState)
+        return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
       if (hasHastPipeline(options)) {
         const validated = validateHighlightOptions(options);
         const html = hastToHtml(buildHast(code, validated));
         return applyPostprocess(html, validated, code);
       }
       if (hasThemes(options))
-        return hastToHtml(renderTokenResultHast(highlightMultiTheme(code, options), options));
+        return hastToHtml(
+          renderTokenResultHast(getHtmlRenderDataWithThemes(code, options), options),
+        );
       if (registrationName(options?.theme) === "none")
-        return hastToHtml(renderTokenResultHast(highlightSingleTheme(code, options), options));
+        return hastToHtml(renderTokenResultHast(getHtmlRenderData(code, options), options));
       return callNativeOperation("Ferriki HTML rendering failed", () =>
         native.codeToHtml(code, JSON.stringify(prepareOptions(options))),
       );
-    },
-    codeToHast(code, options) {
-      options = withTransformerDefaults(options);
-      if (options?.styleMode === "classes") return buildHast(code, options);
-      assertAnsiInput(code, options);
-      if (options?.grammarState) {
-        const result = highlightTokensPublic(code, options);
-        const tree = renderTokenResultHast(result, options);
-        grammarStateByObject.set(tree, result.grammarState);
-        return tree;
-      }
-      if (hasHastPipeline(options)) return buildHast(code, options);
-      if (hasThemes(options) || registrationName(options?.theme) === "none") {
-        const result = hasThemes(options)
-          ? highlightMultiTheme(code, options)
-          : highlightSingleTheme(code, options);
-        const tree = renderTokenResultHast(result, options);
-        if (!isSpecialLanguage(grammarLanguage(options)))
-          grammarStateByObject.set(tree, getGrammarState(code, options));
-        return tree;
-      }
-      const tree = callNativeOperation("Ferriki HAST rendering failed", () =>
-        JSON.parse(native.codeToHast(code, JSON.stringify(prepareOptions(options)))),
-      );
-      if (!isSpecialLanguage(grammarLanguage(options)))
-        grammarStateByObject.set(tree, getGrammarState(code, options));
-      return tree;
-    },
-    codeToTokens(code, options) {
-      options = withTransformerDefaults(options);
-      assertAnsiInput(code, options);
-      return highlightTokensPublic(code, options);
-    },
-    codeToTokensBase(code, options) {
-      return this.codeToTokens(code, options).tokens;
-    },
-    codeToTokensWithThemes(code, options) {
-      options = withTransformerDefaults(options);
-      return highlightTokensPublic(code, options).tokens;
     },
     getLoadedLanguages() {
       const nativeLanguages = native.getLoadedLanguages();
@@ -657,43 +581,14 @@ export function codeToHtmlWithCss(highlighterOrCode, codeOrOptions, options) {
   );
 }
 
-export function codeToHast(highlighterOrCode, codeOrOptions, options) {
-  if (isHighlighter(highlighterOrCode, "codeToHast"))
-    return highlighterOrCode.codeToHast(codeOrOptions, options);
-  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
-    highlighter.codeToHast(highlighterOrCode, codeOrOptions),
-  );
-}
-
-export function codeToTokens(highlighterOrCode, codeOrOptions, options) {
-  if (isHighlighter(highlighterOrCode, "codeToTokens"))
-    return highlighterOrCode.codeToTokens(codeOrOptions, options);
-  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
-    highlighter.codeToTokens(highlighterOrCode, codeOrOptions),
-  );
-}
-
-export function codeToTokensBase(highlighterOrCode, codeOrOptions, options) {
-  if (isHighlighter(highlighterOrCode, "codeToTokensBase"))
-    return highlighterOrCode.codeToTokensBase(codeOrOptions, options);
-  return codeToTokens(highlighterOrCode, codeOrOptions).then((result) => result.tokens);
-}
-
-export function codeToTokensWithThemes(highlighterOrCode, codeOrOptions, options) {
-  if (isHighlighter(highlighterOrCode, "codeToTokensWithThemes"))
-    return highlighterOrCode.codeToTokensWithThemes(codeOrOptions, options);
-  return codeToTokens(highlighterOrCode, codeOrOptions).then((result) => result.tokens);
-}
-
 export function getLastGrammarState(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "getLastGrammarState"))
     return highlighterOrCode.getLastGrammarState(codeOrOptions, options);
-  if (typeof highlighterOrCode === "string") {
-    return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
-      highlighter.getLastGrammarState(highlighterOrCode, codeOrOptions),
-    );
-  }
-  return undefined;
+  if (typeof highlighterOrCode !== "string")
+    throw new ShikiError("Grammar state source must be a string", "ERR_USAGE");
+  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
+    highlighter.getLastGrammarState(highlighterOrCode, codeOrOptions),
+  );
 }
 
 export function createCssVariablesTheme(options = {}) {
@@ -706,7 +601,7 @@ export function createCssVariablesTheme(options = {}) {
   };
 }
 
-export function hastToHtml(tree) {
+function hastToHtml(tree) {
   return (tree.children || []).map(nodeToHtml).join("");
 }
 
@@ -1487,8 +1382,8 @@ function themePropertyStyle(
   return declarations.join(";");
 }
 
-// Rendering normalization follows Shiki's code-to-hast contract. Keep raw
-// token APIs unchanged and normalize before transformer token callbacks.
+// Rendering normalization follows Shiki's HTML contract and applies before
+// transformer token callbacks.
 function prepareRenderTokens(tokens, options) {
   if (options.styleMode === "classes")
     return tokens.map((line) => line.map((token) => ({ ...token })));

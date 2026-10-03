@@ -1,5 +1,9 @@
 # Initial observations: September 30, 2026
 
+These are archived captures from Ferriki revisions that still exposed Node
+token output. Their token timings describe those recorded revisions only and
+are not measurements or performance claims for the current HTML-only Node API.
+
 Two complete, sequential runs on an Apple M1 Ultra (darwin-arm64), Node
 24.21.0, Rust 1.96.0, using the default measurement settings. Both runs used
 clean Ferriki commit `3ad8f0c834e92e0dd558682a18ce71129f1bf2f4`, Ferriki 0.6.0,

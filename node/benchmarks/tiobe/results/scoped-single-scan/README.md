@@ -1,5 +1,11 @@
 # Single-scan scoped tokenization: issue #172
 
+This is a dated archive from Ferriki revisions that still exposed Node token
+output. All token timings and API descriptions below apply to the source
+revisions in the retained reports; they do not describe the current HTML-only
+Node API or make a current performance claim. The measurement files are kept
+unchanged for historical reference.
+
 Measured September 30–October 1, 2026 on Apple M1 Ultra,
 darwin-arm64, Node v24.21.0 and Rust 1.96.0 (LLVM 22.1.2).
 All runs use Ferriki 0.7.0,
@@ -101,16 +107,8 @@ results, resumed results and serializable states have identical hashes in the
 - [Candidate boundary control 1](boundary-after-1.json)
 - [Candidate boundary control 2](boundary-after-2.json)
 
-From `node/`, build the revision before measuring; keep other workloads idle:
-
-```sh
-pnpm run build:native
-node scripts/check-scoped-token-parity.mjs --compare benchmarks/tiobe/results/scoped-single-scan/api-before.json.gz
-node scripts/bench-scoped-tokens.mjs --write /tmp/scoped-boundary.json
-node scripts/bench-tiobe.mjs --write /tmp/scoped-matrix.json
-node scripts/render-tiobe.mjs /tmp/scoped-matrix.json
-```
-
-Capture a new baseline with `check-scoped-token-parity.mjs --write report.json`
-before changing tokenizer behavior. The matrix follows the existing
-[benchmark methodology](../../README.md); the ranking and fixtures are fixed.
+The measurement commands shown in the original experiment belong to its
+measured checkout and are not a reproduction path for today's public API. The
+current TIOBE runner measures HTML only; it does not reproduce these
+scoped-token captures. The ranking and fixtures remain described in the
+[benchmark methodology](../../README.md).
