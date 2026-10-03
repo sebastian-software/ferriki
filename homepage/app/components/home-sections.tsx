@@ -80,7 +80,7 @@ export function CodeSection() {
         </>
       }
     >
-      <div className="ferriki-code-grid">
+      <div className="fam-code-grid">
         <MigrationExample />
         <RustExample />
       </div>
@@ -100,7 +100,8 @@ const coverage = [
     name: "Standard grammars and themes",
     status: "260 · 65",
     settled: true,
-    detail: "Shiki's catalog, shipped with the package and loaded lazily on first use.",
+    detail:
+      "Ferriki ships catalog metadata. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
   },
   {
     name: "Custom TextMate grammars and themes",

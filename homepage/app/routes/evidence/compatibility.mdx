@@ -3,6 +3,11 @@ title: Compatibility
 order: 2
 ---
 
+import {
+  CompatibilityPlatformTable,
+  CompatibilityScopeTable,
+} from "../../components/compatibility-tables";
+
 # Compatibility
 
 "Shiki-compatible" is checked, not claimed. Ferriki tracks one approved Shiki
@@ -25,24 +30,13 @@ registrations, multi-theme output and the public exports.
 
 ## Scope
 
-| Area                                                             | Status                                                                                                  |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Highlighting runtime, `codeToHtml`, `codeToHast`, `codeToTokens` | Part of Ferriki                                                                                         |
-| Transformers and decorations                                     | JavaScript hooks around the native pipeline; the `@shikijs/transformers` package is not part of Ferriki |
-| `rehype`, `markdown-it` and other adapters                       | Outside Ferriki; they build on `codeToHtml` and `codeToHast`                                            |
-| Browser runtime, WASM, engine selection                          | Not a goal                                                                                              |
+<CompatibilityScopeTable />
 
 ## Platforms
 
 Node.js 22.13.0 or newer, with a native binary per target:
 
-| Target                               | Platform               | Status        |
-| ------------------------------------ | ---------------------- | ------------- |
-| `linux-x64-gnu`, `linux-arm64-gnu`   | Linux, glibc           | Supported     |
-| `linux-x64-musl`, `linux-arm64-musl` | Linux, musl (Alpine)   | Supported     |
-| `darwin-arm64`                       | macOS on Apple Silicon | Supported     |
-| `win32-x64-msvc`, `win32-arm64-msvc` | Windows                | Supported     |
-| `darwin-x64`                         | macOS on Intel         | Not supported |
+<CompatibilityPlatformTable />
 
 The full policy, including how to report a gap, is
 [docs/compatibility.md](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md).

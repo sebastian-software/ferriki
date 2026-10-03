@@ -1,3 +1,5 @@
+import { type ComparisonRow, ComparisonTable, type Contender, Measured } from "ferramenta-family";
+
 import {
   type Api,
   apis,
@@ -11,154 +13,113 @@ import {
 } from "../data/benchmarks";
 
 const engines: EngineId[] = ["ferriki", "shiki-wasm", "shiki-js"];
+const contenders: Contender[] = engines.map((id) => ({
+  id,
+  label: engineLabels[id],
+  own: id === "ferriki",
+}));
 
-/** Corpus totals per API: the headline numbers, including the slower ones. */
-export function BenchmarkSummary() {
-  return (
-    <div className="ferriki-table">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">API</th>
-            {engines.map((id) => (
-              <th key={id} scope="col">
-                {engineLabels[id]}
-              </th>
-            ))}
-            <th scope="col">vs WASM</th>
-            <th scope="col">vs JS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {apis.map((api) => {
-            const totals = report.warmTotalMs[api] as Partial<Record<EngineId, number>>;
-            return (
-              <tr key={api}>
-                <td>
-                  <code>{api}</code>
-                </td>
-                {engines.map((id) => (
-                  <td key={id}>{totals[id] === undefined ? "–" : formatMs(totals[id])}</td>
-                ))}
-                <Factor value={speedup(api, "shiki-wasm")} />
-                <Factor value={speedup(api, "shiki-js")} />
-              </tr>
-            );
-          })}
-          <tr>
-            <td>Cold start</td>
-            {engines.map((id) => (
-              <td key={id}>{formatMs(report.cold[id].medianMs)}</td>
-            ))}
-            <Factor value={coldSpeedup("shiki-wasm")} />
-            <Factor value={coldSpeedup("shiki-js")} />
-          </tr>
-        </tbody>
-      </table>
-    </div>
+function measuredValues(times: Partial<Record<EngineId, number>>): Record<string, string> {
+  return Object.fromEntries(
+    engines.map((id) => [id, times[id] === undefined ? "–" : formatMs(times[id])]),
   );
 }
 
-function Factor({ value }: { value: number }) {
-  return <td className={value < 1 ? "ferriki-slower" : undefined}>{formatFactor(value)}</td>;
+function speedupPair(api: Api): string {
+  return `${formatFactor(speedup(api, "shiki-wasm"))} · ${formatFactor(speedup(api, "shiki-js"))}`;
+}
+
+/** Corpus totals per API: the headline numbers, including the slower ones. */
+export function BenchmarkSummary() {
+  const rows: ComparisonRow[] = apis.map((api) => ({
+    label: api,
+    values: measuredValues(report.warmTotalMs[api] as Partial<Record<EngineId, number>>),
+    verdict: speedupPair(api),
+    behind: speedup(api, "shiki-wasm") < 1 || speedup(api, "shiki-js") < 1,
+  }));
+
+  rows.push({
+    label: "Cold start",
+    detail: "Import, highlighter creation and corpus rendering in a fresh process.",
+    values: measuredValues(Object.fromEntries(engines.map((id) => [id, report.cold[id].medianMs]))),
+    verdict: `${formatFactor(coldSpeedup("shiki-wasm"))} · ${formatFactor(coldSpeedup("shiki-js"))}`,
+    behind: coldSpeedup("shiki-wasm") < 1 || coldSpeedup("shiki-js") < 1,
+  });
+
+  return (
+    <ComparisonTable
+      caption="Corpus total: summed median time in milliseconds, lower is faster. Speedup is Shiki's time divided by Ferriki's (WASM · JavaScript; higher is faster)."
+      subject="API or run"
+      contenders={contenders}
+      rows={rows}
+      verdictLabel="Speedup (WASM · JS)"
+      align="end"
+    />
+  );
 }
 
 /** Every document for one API, with its size and each engine's median. */
 export function BenchmarkDocuments({ api }: { api: Api }) {
+  const rows: ComparisonRow[] = report.warm[api].map((row) => {
+    const times = row.medianMs as Partial<Record<EngineId, number>>;
+    const ferriki = times.ferriki;
+    const wasm = times["shiki-wasm"];
+
+    return {
+      label: row.path,
+      detail: (
+        <>
+          {row.lang} · {row.lines} lines ·{" "}
+          <a
+            href={`https://github.com/sebastian-software/ferriki/blob/${report.revision}/${row.path}`}
+          >
+            Source file
+          </a>
+        </>
+      ),
+      values: measuredValues(times),
+      verdict: ferriki === undefined || wasm === undefined ? "–" : formatFactor(wasm / ferriki),
+      behind: ferriki !== undefined && wasm !== undefined && wasm / ferriki < 1,
+    };
+  });
+
   return (
-    <div className="ferriki-table">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Document</th>
-            <th scope="col">Lines</th>
-            {engines.map((id) => (
-              <th key={id} scope="col">
-                {engineLabels[id]}
-              </th>
-            ))}
-            <th scope="col">vs WASM</th>
-          </tr>
-        </thead>
-        <tbody>
-          {report.warm[api].map((row) => {
-            const times = row.medianMs as Partial<Record<EngineId, number>>;
-            const ferriki = times.ferriki;
-            const wasm = times["shiki-wasm"];
-            return (
-              <tr key={row.path}>
-                <td>
-                  <a
-                    href={`https://github.com/sebastian-software/ferriki/blob/${report.revision}/${row.path}`}
-                  >
-                    {row.lang}
-                  </a>
-                </td>
-                <td>{row.lines}</td>
-                {engines.map((id) => (
-                  <td key={id}>{times[id] === undefined ? "–" : formatMs(times[id])}</td>
-                ))}
-                {ferriki === undefined || wasm === undefined ? (
-                  <td>–</td>
-                ) : (
-                  <Factor value={wasm / ferriki} />
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <ComparisonTable
+      caption="Median time per document in milliseconds; lower is faster."
+      subject="Source file"
+      contenders={contenders}
+      rows={rows}
+      verdictLabel="Shiki WASM / Ferriki"
+      align="end"
+    />
   );
 }
 
 /** Where and with what the report was measured. */
 export function BenchmarkContext() {
   return (
-    <div className="ferriki-table">
-      <table>
-        <tbody>
-          <tr>
-            <th scope="row">Measured</th>
-            <td>
-              {report.measured}, commit <code>{report.revision}</code>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Machine</th>
-            <td>
-              {report.machine.cores} × {report.machine.cpu}, {report.machine.memoryGiB} GiB
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">System</th>
-            <td>
-              {report.machine.os} ({report.machine.platform}), Node {report.machine.node}
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Versions</th>
-            <td>
-              Ferriki {report.versions.ferriki}, Shiki {report.versions.shiki}
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Theme</th>
-            <td>{report.theme}</td>
-          </tr>
-          <tr>
-            <th scope="row">Output agreement</th>
-            <td>
-              {engines
-                .map(
-                  (id) =>
-                    `${engineLabels[id]}: ${report.agreement[id].documents} of ${report.agreement[id].of}`,
-                )
-                .join(" · ")}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Measured
+      on={report.measured}
+      machine={`${report.machine.cores} × ${report.machine.cpu}, ${report.machine.memoryGiB} GiB, ${report.machine.os} (${report.machine.platform}), Node ${report.machine.node}`}
+      revision={<code>{report.revision}</code>}
+      more={[
+        {
+          label: "Versions",
+          value: `Ferriki ${report.versions.ferriki} · Shiki ${report.versions.shiki}`,
+        },
+        { label: "Theme", value: report.theme },
+        {
+          label: "Output agreement",
+          value: engines
+            .map(
+              (id) =>
+                `${engineLabels[id]}: ${report.agreement[id].documents} of ${report.agreement[id].of}`,
+            )
+            .join(" · "),
+        },
+      ]}
+    >
+      <a href="#method">Method and reproduction command</a>
+    </Measured>
   );
 }
