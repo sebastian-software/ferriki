@@ -5,15 +5,15 @@ order: 3
 
 # Languages and themes
 
-Ferriki ships Shiki's catalog: **260 TextMate grammars** and **65 themes**,
-converted into a compact binary format and loaded lazily. A grammar or theme
-is decoded the first time a highlighter needs it.
+Ferriki provides Shiki's catalog: **260 TextMate grammars** and **65 themes**.
+The package ships catalog metadata; grammar and theme payloads are downloaded
+and cached on first use by an asynchronous API call.
 
 ## Standard languages
 
 Name a language by its ID or one of its aliases (`ts`, `rs`, `sh`, …):
 
-```ts
+```js ferriki-check=catalogs
 import { bundledLanguages, bundledLanguagesAlias, createHighlighter } from "@ferriki/core";
 
 const highlighter = await createHighlighter({
@@ -21,7 +21,11 @@ const highlighter = await createHighlighter({
   themes: ["github-dark"],
 });
 
-bundledLanguagesAlias.ts; // "typescript"
+const html = highlighter.codeToHtml("const answer = 42", {
+  lang: bundledLanguagesAlias.ts,
+  theme: "github-dark",
+});
+highlighter.dispose();
 ```
 
 Embedded languages load with their host: an HTML grammar brings the CSS and
@@ -34,11 +38,22 @@ Use any key of `bundledThemes`, such as `github-light`, `github-dark`,
 `nord` or `vitesse-dark`. The special theme `none` returns unstyled output.
 For light and dark output from one call, pass a `themes` map:
 
-```ts
-const html = highlighter.codeToHtml(source, {
-  lang: "typescript",
-  themes: { light: "github-light", dark: "github-dark" },
+```js ferriki-check=theme-map
+import { createHighlighter } from "@ferriki/core";
+
+const highlighter = await createHighlighter({
+  langs: ["typescript"],
+  themes: ["github-light", "github-dark"],
 });
+let html;
+try {
+  html = highlighter.codeToHtml("const answer: number = 42", {
+    lang: "typescript",
+    themes: { light: "github-light", dark: "github-dark" },
+  });
+} finally {
+  highlighter.dispose();
+}
 ```
 
 `createCssVariablesTheme` builds a theme whose colors are CSS variables, for

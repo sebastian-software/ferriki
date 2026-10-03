@@ -320,11 +320,13 @@ an `instanceof ShikiError` for existing consumers. The supported codes are:
 making its implementation text part of the contract. Native loader messages
 remain actionable and start with the documented `[ferriki]` prefix.
 
-The following historical Shiki extension points are deliberately not Ferriki
-exports: JavaScript/Oniguruma engine factories, WASM loading, transformer
-callbacks, decoration adapters, and adapter packages such as `rehype` or
-`markdown-it`. See the [migration guide](./migrations/shiki-to-ferriki.md) for
-the supported replacement boundary.
+Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
+Transformer callbacks and decoration processing stay in JavaScript; callback
+objects do not cross the native boundary. Ferriki does not export Shiki's
+JavaScript/Oniguruma engine factories or WASM loading. Markdown adapters such as
+`rehype` and `markdown-it`, and the optional Vite integration, are separate
+packages rather than `@ferriki/core` exports. See the
+[migration guide](./migrations/shiki-to-ferriki.md) for the supported boundary.
 
 ## Native binding
 

@@ -4,9 +4,20 @@
  * Load order (ferramenta-family README): tokens.css, fonts.css, theme.css,
  * docs.css, landing.css, this file, then chrome.css last. The family package
  * owns the documentation shell, header controls, tables and code grid. This
- * file keeps the class-highlighting demo and two narrow navigation details:
- * the docs flyout scrolls on short screens, and nested pages mark their section.
+ * file keeps the class-highlighting demo, an accessible code-block ground and
+ * two narrow navigation details: the docs flyout scrolls on short screens, and
+ * nested pages mark their section.
  */
+
+:root.light {
+  --ardo-color-codeBg: #fff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) {
+    --ardo-color-codeBg: #fff;
+  }
+}
 
 .class-demo {
   margin-block: 1.5rem;

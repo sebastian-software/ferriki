@@ -2,11 +2,11 @@ import type { LinksFunction, MetaFunction } from "react-router";
 
 import {
   ArdoErrorBoundary,
-  ArdoGeneratedSidebar,
   ArdoRoot,
   ArdoRootLayout,
   ArdoSearch,
   ArdoSidebar,
+  ArdoSidebarLink,
   ArdoSidebarSection,
   ArdoThemeToggle,
 } from "ardo/ui";
@@ -69,7 +69,8 @@ export const ErrorBoundary = ArdoErrorBoundary;
 /*
  * The family header and footer replace Ardo's chrome, so Ardo must not render
  * either: `chrome` is read from every route match and no route below this one
- * overrides it. The sidebar rail and its generated navigation stay Ardo's.
+ * overrides it. Ardo provides the sidebar rail and link primitives; the page
+ * list comes from Ferriki's shared documentationSections.
  */
 // oxlint-disable-next-line react/only-export-components -- Ardo reads this route handle.
 export const handle = { chrome: false };
@@ -153,7 +154,11 @@ export default function Root() {
                 label={section.label}
                 to={section.to}
               >
-                <ArdoGeneratedSidebar section={section.id} />
+                {section.pages.map(([label, to]) => (
+                  <ArdoSidebarLink key={to} to={to}>
+                    {label}
+                  </ArdoSidebarLink>
+                ))}
               </ArdoSidebarSection>
             ))}
           </ArdoSidebar>
