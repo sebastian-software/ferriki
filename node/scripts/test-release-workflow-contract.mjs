@@ -313,7 +313,12 @@ try {
       { cwd: fixtureRoot, encoding: "utf8", env: npmEnv },
     ),
   );
-  assert.equal(publishResult.id, `${fixtureManifest.name}@${fixtureManifest.version}`);
+  // npm 11.19 keys publish results by package name; earlier npm 11 returns
+  // the package object directly. Both must identify the one packed fixture.
+  const publishedPackage = publishResult[fixtureManifest.name] ?? publishResult;
+  if (publishedPackage !== publishResult)
+    assert.deepEqual(Object.keys(publishResult), [fixtureManifest.name]);
+  assert.equal(publishedPackage.id, `${fixtureManifest.name}@${fixtureManifest.version}`);
 } finally {
   await rm(fixtureRoot, { recursive: true, force: true });
 }
