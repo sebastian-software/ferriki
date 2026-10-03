@@ -89,19 +89,24 @@ pub(crate) fn initialize_grammar(grammar: &RawGrammar, base: Option<Arc<RawRule>
 #[derive(Clone)]
 struct RepositoryContext {
     layers: Vec<RawRepository>,
+    scope_name: String,
 }
 
 impl RepositoryContext {
-    fn new(repository: &RawRepository) -> Self {
+    fn new(repository: &RawRepository, scope_name: &str) -> Self {
         Self {
             layers: vec![repository.clone()],
+            scope_name: scope_name.to_owned(),
         }
     }
 
     fn with_overlay(&self, repository: &RawRepository) -> Self {
         let mut layers = self.layers.clone();
         layers.push(repository.clone());
-        Self { layers }
+        Self {
+            layers,
+            scope_name: self.scope_name.clone(),
+        }
     }
 
     fn get(&self, name: &str) -> Option<Arc<RawRule>> {
@@ -135,7 +140,7 @@ impl<'a> RuleFactory<'a> {
 
     pub(crate) fn compile_root(&mut self) -> RuleId {
         let grammar = Arc::clone(&self.root_grammar);
-        let repository = RepositoryContext::new(&grammar.repository);
+        let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
         let root = repository
             .get("$self")
             .expect("initialized grammar must define $self");
@@ -147,7 +152,10 @@ impl<'a> RuleFactory<'a> {
         rule: Arc<RawRule>,
         repository: &RawRepository,
     ) -> RuleId {
-        self.get_compiled_rule_id(rule, RepositoryContext::new(repository))
+        self.get_compiled_rule_id(
+            rule,
+            RepositoryContext::new(repository, &self.root_grammar.scope_name),
+        )
     }
 
     pub(crate) fn compile_external_grammar(
@@ -155,9 +163,10 @@ impl<'a> RuleFactory<'a> {
         scope_name: &str,
     ) -> Option<(Arc<RawGrammar>, RuleId)> {
         let root_repository = self.root_grammar.repository.clone();
-        let root_repository = RepositoryContext::new(&root_repository);
+        let root_repository =
+            RepositoryContext::new(&root_repository, &self.root_grammar.scope_name);
         let grammar = self.get_external_grammar(scope_name, &root_repository)?;
-        let repository = RepositoryContext::new(&grammar.repository);
+        let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
         let rule = repository.get("$self")?;
         let rule_id = self.get_compiled_rule_id(rule, repository);
         Some((grammar, rule_id))
@@ -193,7 +202,9 @@ impl<'a> RuleFactory<'a> {
 
         let id = self.registry.reserve_rule();
         self.compiled_rule_ids.insert(identity, id);
-        let rule = self.compile_rule(id, &description, repository);
+        let scope_name = repository.scope_name.clone();
+        let mut rule = self.compile_rule(id, &description, repository);
+        rule.set_source_scope_name(scope_name);
         self.registry.set_rule(id, rule);
         id
     }
@@ -395,7 +406,7 @@ impl<'a> RuleFactory<'a> {
                 .map(|rule| self.get_compiled_rule_id(rule, repository)),
             IncludeReference::TopLevelReference { scope_name } => {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
-                let repository = RepositoryContext::new(&grammar.repository);
+                let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
                 let rule = repository.get("$self")?;
                 Some(self.get_compiled_rule_id(rule, repository))
             }
@@ -404,7 +415,7 @@ impl<'a> RuleFactory<'a> {
                 rule_name,
             } => {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
-                let repository = RepositoryContext::new(&grammar.repository);
+                let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
                 let rule = repository.get(rule_name)?;
                 Some(self.get_compiled_rule_id(rule, repository))
             }

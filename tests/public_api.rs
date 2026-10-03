@@ -1,9 +1,9 @@
 use std::path::Path;
 
 use ferriki::{
-    ErrorKind, FontStyle, HighlightTokensWithThemesResult, Highlighter, LanguageRegistration,
-    RenderOptions, StandardAssetCatalogs, TokenizeOptions, parse_raw_grammar, parse_theme_data,
-    render_html, render_html_lines,
+    BacktrackingRisk, ErrorKind, FontStyle, HighlightTokensWithThemesResult, Highlighter,
+    LanguageRegistration, RenderOptions, StandardAssetCatalogs, TokenizeOptions, parse_raw_grammar,
+    parse_theme_data, render_html, render_html_lines,
 };
 
 fn assets() -> StandardAssetCatalogs {
@@ -139,6 +139,185 @@ fn multi_theme_tokens_merge_different_boundaries_and_keep_utf8_offsets() {
     assert_eq!(
         serde_json::from_str::<HighlightTokensWithThemesResult>(&json).expect("deserialize"),
         result
+    );
+}
+
+#[test]
+fn highlighter_exposes_lazy_advisory_backtracking_warnings() {
+    let mut highlighter = Highlighter::builder().build().expect("highlighter");
+    let grammar = parse_raw_grammar(
+        r#"{"scopeName":"source.diagnostics","patterns":[{"match":"([0-9]+(_?))+(\\.)([0-9]+)","name":"constant.numeric.risky"},{"match":"[a-z]+","name":"word.clean"}]}"#,
+        Some("diagnostics.json"),
+    )
+    .expect("grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("diagnostics", grammar))
+        .expect("grammar registration");
+    highlighter
+        .register_theme(parse_theme_data("diagnostics-theme", "{}").expect("theme"))
+        .expect("theme registration");
+
+    assert_eq!(
+        highlighter.backtracking_warnings("diagnostics").unwrap(),
+        Some(vec![])
+    );
+    assert_eq!(highlighter.backtracking_warnings("missing").unwrap(), None);
+
+    highlighter
+        .highlight("123.45 clean", "diagnostics", "diagnostics-theme")
+        .expect("first highlight");
+    let warnings = highlighter
+        .backtracking_warnings("diagnostics")
+        .unwrap()
+        .expect("registered language");
+    assert_eq!(warnings.len(), 1);
+    assert_eq!(warnings[0].grammar_scope_name, "source.diagnostics");
+    assert_eq!(warnings[0].rule, "constant.numeric.risky");
+    assert_eq!(warnings[0].pattern, r"([0-9]+(_?))+(\.)([0-9]+)");
+
+    highlighter
+        .highlight("99.1 clean", "diagnostics", "diagnostics-theme")
+        .expect("second highlight");
+    assert_eq!(
+        highlighter.backtracking_warnings("diagnostics").unwrap(),
+        Some(warnings)
+    );
+}
+
+#[test]
+fn warning_snapshots_reset_after_grammar_and_theme_cache_invalidation() {
+    let mut highlighter = Highlighter::builder().build().expect("highlighter");
+    let grammar = parse_raw_grammar(
+        r#"{"scopeName":"source.lifecycle","patterns":[{"begin":"BEGIN","end":"(a+)+$","name":"meta.risky"},{"match":"[a-z]+","name":"word.clean"}]}"#,
+        Some("lifecycle.json"),
+    )
+    .expect("grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("lifecycle", grammar))
+        .expect("grammar registration");
+    highlighter
+        .register_theme(parse_theme_data("light", "{}").expect("light theme"))
+        .expect("light theme registration");
+    highlighter
+        .register_theme(parse_theme_data("dark", "{}").expect("dark theme"))
+        .expect("dark theme registration");
+
+    highlighter
+        .highlight("BEGIN", "lifecycle", "light")
+        .expect("initial risky highlight");
+    assert_eq!(
+        highlighter
+            .backtracking_warnings("lifecycle")
+            .unwrap()
+            .expect("registered language")
+            .len(),
+        1
+    );
+
+    let unrelated = parse_raw_grammar(
+        r#"{"scopeName":"source.unrelated","patterns":[{"match":"x","name":"word"}]}"#,
+        Some("unrelated.json"),
+    )
+    .expect("unrelated grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("unrelated", unrelated))
+        .expect("unrelated grammar registration");
+    assert_eq!(
+        highlighter.backtracking_warnings("lifecycle").unwrap(),
+        Some(vec![])
+    );
+    highlighter
+        .highlight("ordinary", "lifecycle", "light")
+        .expect("clean highlight after grammar invalidation");
+    assert_eq!(
+        highlighter.backtracking_warnings("lifecycle").unwrap(),
+        Some(vec![])
+    );
+    highlighter
+        .highlight("BEGIN", "lifecycle", "light")
+        .expect("rediscover after grammar invalidation");
+    assert_eq!(
+        highlighter
+            .backtracking_warnings("lifecycle")
+            .unwrap()
+            .expect("registered language")
+            .len(),
+        1
+    );
+
+    highlighter
+        .highlight("ordinary", "lifecycle", "dark")
+        .expect("clean highlight after theme activation");
+    assert_eq!(
+        highlighter.backtracking_warnings("lifecycle").unwrap(),
+        Some(vec![])
+    );
+    highlighter
+        .highlight("BEGIN", "lifecycle", "dark")
+        .expect("rediscover after theme activation");
+    assert_eq!(
+        highlighter
+            .backtracking_warnings("lifecycle")
+            .unwrap()
+            .expect("registered language")
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn dynamic_end_backreferences_report_resolved_risk_and_authored_pattern() {
+    let mut highlighter = Highlighter::builder().build().expect("highlighter");
+    let grammar = parse_raw_grammar(
+        r#"{
+            "scopeName":"source.dynamic",
+            "patterns":[
+                {
+                    "begin":"BEGIN (.)",
+                    "end":"(\\1|a)+Z",
+                    "name":"meta.dynamic-risky",
+                    "$vscodeTextmateLocation":{"filename":"dynamic.json","line":8,"char":2}
+                },
+                {
+                    "begin":"CLEAN (.)",
+                    "end":"(\\1|a)+Z",
+                    "name":"meta.dynamic-clean"
+                }
+            ]
+        }"#,
+        Some("dynamic.json"),
+    )
+    .expect("grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("dynamic", grammar))
+        .expect("grammar registration");
+    highlighter
+        .register_theme(parse_theme_data("dynamic-theme", "{}").expect("theme"))
+        .expect("theme registration");
+
+    highlighter
+        .highlight("BEGIN a", "dynamic", "dynamic-theme")
+        .expect("overlapping captured end pattern");
+    let warnings = highlighter
+        .backtracking_warnings("dynamic")
+        .unwrap()
+        .expect("registered language");
+    assert_eq!(warnings.len(), 1);
+    assert_eq!(warnings[0].grammar_scope_name, "source.dynamic");
+    assert_eq!(warnings[0].rule, "meta.dynamic-risky");
+    assert_eq!(
+        warnings[0].rule_location.as_deref(),
+        Some("dynamic.json:8:2")
+    );
+    assert_eq!(warnings[0].pattern, r"(\1|a)+Z");
+    assert_eq!(warnings[0].risk, BacktrackingRisk::OverlappingAlternation);
+
+    highlighter
+        .highlight("CLEAN b", "dynamic", "dynamic-theme")
+        .expect("non-overlapping captured end pattern");
+    assert_eq!(
+        highlighter.backtracking_warnings("dynamic").unwrap(),
+        Some(warnings)
     );
 }
 
