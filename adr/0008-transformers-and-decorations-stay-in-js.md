@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-01
+Last updated: 2026-10-03
 
 ## Context
 
@@ -42,6 +42,9 @@ stable hast-shaped output for the JS layer to transform.
   declarative, native ownership remains possible later — but only as a
   deliberate follow-up with compat coverage, not as a side effect of other
   native migrations.
+- The optional Vite adapter may forward caller-supplied transformers to this
+  same JS pipeline. Shiki notation helpers remain opt-in callbacks; neither
+  Vite nor Rust adds a parallel code-comment annotation parser.
 
 ## Consequences
 
@@ -67,3 +70,4 @@ stable hast-shaped output for the JS layer to transform.
 - 2026-09-30: Records the Rust side of the boundary and the open question in #122.
 - 2026-10-01: Constructor transformer defaults and per-call replacement are explicit facade contracts (#182).
 - 2026-10-01: Clarifies the Ferriki-typed transformer boundary and that `colorReplacements` remains deferred (#190).
+- 2026-10-03: Records Vite's forwarding of caller-supplied JS transformers for Shiki notation without adding a second annotation dialect (#166).

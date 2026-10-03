@@ -327,6 +327,8 @@ JavaScript/Oniguruma engine factories or WASM loading. Markdown adapters such as
 `rehype` and `markdown-it`, and the optional Vite integration, are separate
 packages rather than `@ferriki/core` exports. See the
 [migration guide](./migrations/shiki-to-ferriki.md) for the supported boundary.
+For focus, highlights, diffs, and collapsible examples across Node, Vite, and
+Ferromark, see [code example authoring](./code-example-authoring.md).
 
 ## Native binding
 

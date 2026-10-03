@@ -4,6 +4,8 @@
 Ferriki's native highlighter. It emits HTML and CSS at build time; it does not
 add a browser highlighter, a React runtime, or custom elements.
 
+The current adapter source is in this repository at [`node/vite`](https://github.com/sebastian-software/ferriki/tree/main/node/vite). As of 2026-10-03, `@ferriki/vite@0.9.0` is not available from npm; check the registry before adding it to an application. To run the source example or exercise a local packed consumer, follow [code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md). After a matching package release exists, install it with:
+
 ```sh
 npm install @ferriki/vite
 ```
@@ -57,6 +59,16 @@ enabled globally with `lineNumbers: true`. For class output, Ferriki injects
 the generated stylesheet into HTML and imports a content-addressed CSS virtual
 module from transformed JSX. Editing a block produces a new stylesheet ID so
 Vite's module graph replaces the prior CSS during HMR.
+
+Pass optional Ferriki `transformers` callbacks to apply Shiki notation
+transformers to each marked block. For example, install a compatible
+`@shikijs/transformers` version and pass `transformerNotationFocus()`,
+`transformerNotationHighlight()`, `transformerNotationDiff()`, or
+`transformerNotationWordHighlight()` in that array. These are JavaScript
+callbacks; the Vite package does not add another annotation syntax or a browser
+runtime. See the [code example authoring guide](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
+for feature ownership, CSS, accessible collapse and copy behavior, and a
+runnable example.
 
 The package requires Node.js 22.13 or newer and Vite 7 or 8. It shares Ferriki's
 release version and native asset settings. See the [Vite integration decision](https://github.com/sebastian-software/ferriki/blob/main/adr/0007-adapter-integrations-stay-outside-ferriki.md)

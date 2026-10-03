@@ -241,6 +241,11 @@ let mut highlighter = Highlighter::builder()
 Ferriki owns grammar resolution, tokenization, theme application, and escaping
 of highlighted code. Ferromark owns Markdown parsing, the `<pre><code>` and
 line wrappers, fence metadata, titles, line numbers, annotations, and fallback.
+That annotation path includes Ferromark's own VitePress-style focus, highlight,
+and diff line behavior. The Node Shiki code-comment transformers described in
+[code example authoring](./code-example-authoring.md) do not run in the Rust
+adapter. Word-level styles, copy controls, and collapsible supporting blocks
+remain renderer or page concerns.
 Ferromark's opt-in `HtmlRenderHooks::highlight_code_block` in
 [`ferromark#458`](https://github.com/sebastian-software/ferromark/pull/458)
 passes the displayed code, normalized optional language, original info field,
@@ -286,9 +291,15 @@ HTML contains only token-level styles.
 
 The contract is exercised in the Ferriki Rust tests for token offsets, escaped
 line fragments, trailing lines, and typed fallback errors. Ferromark's hook
-tests cover both fenced and indented blocks and wrapper metadata. A dedicated
-`ferromark-ferriki` adapter can use this public API after the crate release;
-Ferriki itself does not depend on Ferromark.
+tests cover both fenced and indented blocks and wrapper metadata. Published
+`ferromark@3.0.0` exposes `FerrikiHighlightHooks` through its optional
+`ferriki` feature, pinned to `ferriki@0.7.0`; it does not select
+`ferriki@0.9.0`. The custom hook above shows how a consumer can use the current
+Ferriki API through Ferromark's generic hooks. The separate, open
+[`ferromark#502`](https://github.com/sebastian-software/ferromark/pull/502)
+adds framework-neutral JSX and native Ferriki highlighting plus Node
+`compileJsx`/`JsxCompiler` support, targeting Ferromark 3.1. Ferriki itself
+does not depend on Ferromark.
 
 ## Publishing
 
