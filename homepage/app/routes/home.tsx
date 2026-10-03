@@ -1,10 +1,10 @@
 import {
   EvidenceFigures,
-  IronBand,
   Mark,
-  PipelineAssembly,
+  Principles,
   ProjectHero,
   RegistryFacts,
+  Relations,
   RunSample,
   Section,
 } from "ferramenta-family";
@@ -26,19 +26,15 @@ import { version } from "../version";
 function HeroSection() {
   return (
     <ProjectHero
-      mark="ferriki"
-      title={
-        <>
-          Code that looks like your editor. <em>Rendered natively.</em>
-        </>
-      }
-      lede={
-        <>
-          <strong>Ferriki is Shiki-compatible syntax highlighting with a Rust core.</strong> The
-          same TextMate grammars and themes VS Code uses, behind the API you already know from
-          Shiki, for Node.js and Rust.
-        </>
-      }
+      icon="ferriki"
+      title="Ferriki"
+      what="A native syntax highlighter for Node.js and Rust."
+      lede="It uses the TextMate grammars and themes VS Code uses, behind the familiar Shiki API."
+      facts={[
+        { label: "Succeeds", value: "Shiki" },
+        { label: "Checked against", value: "Pinned Shiki release" },
+        { label: "Release", value: `v${version}` },
+      ]}
       actions={
         <>
           <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
@@ -54,7 +50,6 @@ function HeroSection() {
           <code translate="no">npm install @ferriki/core</code>
           <span> · </span>
           <code translate="no">cargo add ferriki</code>
-          <span className="ferriki-release">{` · v${version}`}</span>
         </>
       }
     />
@@ -64,7 +59,7 @@ function HeroSection() {
 const pillars = [
   {
     heading: "The grammars editors trust",
-    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki ships Shiki's catalog: 260 grammars and 65 editor themes.",
+    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki ships catalog metadata for 260 grammars and 65 editor themes. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
   },
   {
     heading: "Context, not keyword lists",
@@ -82,18 +77,8 @@ const pillars = [
 
 function PipelineSection() {
   return (
-    <Section
-      id="pipeline"
-      title="Where Ferriki sits"
-      intro={
-        <>
-          Ferroni runs the regular expressions of the TextMate grammars, Ferriki turns them into
-          highlighted code, and Ferromark renders the whole Markdown document around it. Each tool
-          also works on its own.
-        </>
-      }
-    >
-      <PipelineAssembly current="ferriki" />
+    <Section id="pipeline" title="Where Ferriki fits">
+      <Relations current="ferriki" />
     </Section>
   );
 }
@@ -174,12 +159,13 @@ export default function HomePage() {
     <RegistryFacts>
       <div className="fam-page ferriki-home">
         <HeroSection />
-        <IronBand
+        <Section
           id="why"
           title="Highlighting that understands the language."
           intro="Many highlighters describe each language with a short list of patterns of their own. Ferriki uses the grammars your editor uses, so code on the page reads the way it does where you wrote it."
-          rows={pillars}
-        />
+        >
+          <Principles items={pillars} />
+        </Section>
         <SampleSection />
         <EvidenceSection />
         <CodeSection />
