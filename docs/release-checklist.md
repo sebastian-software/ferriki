@@ -89,8 +89,10 @@ part of release verification.
 
 2. In npm package settings, configure a Trusted Publisher for owner
    `sebastian-software`, repository `ferriki`, workflow `publish.yml`, and no
-   GitHub environment. Revoke the temporary token and remove the temporary
-   npm config after the seed publish.
+   GitHub environment. Enable direct publishing with `npm publish` in its
+   allowed actions; the workflow publishes directly rather than staging a
+   release. Revoke the temporary token and remove the temporary npm config
+   after the seed publish.
 3. The first product release then publishes its distinct product version from
    `publish.yml` with OIDC and npm provenance. The release verifier checks that
    version, not the bootstrap prerelease.
