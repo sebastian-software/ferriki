@@ -4,6 +4,7 @@
 //! semantic changes remain reviewable against the oracle mirror.
 
 mod attributed_scope_stack;
+mod backtracking;
 mod basic_scope_attributes;
 mod diff_state_stacks;
 mod encoded_token_attributes;
@@ -32,6 +33,7 @@ mod tokenize_string;
 // input, and token metadata, plus the combined-line output extension. Everything
 // else is the mechanical port's internal
 // structure and may change with any upstream sync.
+pub use backtracking::{BacktrackingRisk, BacktrackingWarning};
 pub use basic_scope_attributes::EmbeddedLanguages;
 pub use encoded_token_attributes::{EncodedTokenAttributes, StandardTokenType};
 pub use grammar::{

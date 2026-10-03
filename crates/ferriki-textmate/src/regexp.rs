@@ -6,9 +6,10 @@
 
 use std::array;
 use std::fmt;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::RegexError;
+use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub(crate) use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
@@ -30,6 +31,7 @@ struct AnchorCache {
 #[derive(Clone, Debug)]
 pub(crate) struct RegExpSource<T> {
     pub source: String,
+    pub original_source: String,
     pub rule_id: T,
     pub has_anchor: bool,
     pub has_back_references: bool,
@@ -39,12 +41,13 @@ pub(crate) struct RegExpSource<T> {
 impl<T> RegExpSource<T> {
     #[must_use]
     pub(crate) fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
-        let reg_exp_source = reg_exp_source.into();
-        let (source, has_anchor) = rewrite_end_anchor(&reg_exp_source);
+        let original_source = reg_exp_source.into();
+        let (source, has_anchor) = rewrite_end_anchor(&original_source);
         let anchor_cache = has_anchor.then(|| build_anchor_cache(&source));
         let has_back_references = has_back_references(&source);
         Self {
             source,
+            original_source,
             rule_id,
             has_anchor,
             has_back_references,
@@ -469,6 +472,10 @@ impl<T: Copy> RegExpSourceList<T> {
         }
         let compiled = Arc::new(CompiledRule::new(
             self.items.iter().map(|item| item.source.clone()).collect(),
+            self.items
+                .iter()
+                .map(|item| item.original_source.as_str())
+                .collect::<Vec<_>>(),
             self.items.iter().map(|item| item.rule_id).collect(),
         )?);
         self.cached = Some(Arc::clone(&compiled));
@@ -493,6 +500,10 @@ impl<T: Copy> RegExpSourceList<T> {
                 .iter()
                 .map(|item| item.resolve_anchors(allow_a, allow_g).to_owned())
                 .collect(),
+            self.items
+                .iter()
+                .map(|item| item.original_source.as_str())
+                .collect(),
             self.items.iter().map(|item| item.rule_id).collect(),
         )?);
         self.anchor_cache[cache_index] = Some(Arc::clone(&compiled));
@@ -504,10 +515,22 @@ pub(crate) struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
     reg_exps: Vec<String>,
     rules: Vec<T>,
+    backtracking_warnings: Vec<CompiledBacktrackingWarning<T>>,
+    backtracking_warnings_recorded: OnceLock<()>,
+}
+
+struct CompiledBacktrackingWarning<T> {
+    rule: T,
+    pattern: String,
+    warning: FerroniBacktrackWarning,
 }
 
 impl<T: Copy> CompiledRule<T> {
-    fn new(reg_exps: Vec<String>, rules: Vec<T>) -> Result<Self, RegexError> {
+    fn new(
+        reg_exps: Vec<String>,
+        original_patterns: Vec<&str>,
+        rules: Vec<T>,
+    ) -> Result<Self, RegexError> {
         let compiled_reg_exps: Vec<_> = reg_exps
             .iter()
             .map(|pattern| normalize_ferroni_pattern(pattern))
@@ -520,13 +543,38 @@ impl<T: Copy> CompiledRule<T> {
             options: ONIG_OPTION_CAPTURE_GROUP,
             syntax: ScannerSyntax::Oniguruma,
         };
+        let scanner = Scanner::with_config(&scanner_reg_exps, &config).map_err(RegexError::new)?;
+        let mut backtracking_warnings = Vec::new();
+        for (index, warnings) in scanner.warnings().iter().enumerate() {
+            for warning in warnings {
+                backtracking_warnings.push(CompiledBacktrackingWarning {
+                    rule: rules[index],
+                    pattern: original_patterns[index].to_owned(),
+                    warning: warning.clone(),
+                });
+            }
+        }
         Ok(Self {
-            scanner: Mutex::new(
-                Scanner::with_config(&scanner_reg_exps, &config).map_err(RegexError::new)?,
-            ),
+            scanner: Mutex::new(scanner),
             reg_exps,
             rules,
+            backtracking_warnings,
+            backtracking_warnings_recorded: OnceLock::new(),
         })
+    }
+
+    pub(crate) fn record_backtracking_warnings_once(
+        &self,
+        mut visit: impl FnMut(T, &str, &FerroniBacktrackWarning),
+    ) {
+        if self.backtracking_warnings.is_empty() {
+            return;
+        }
+        self.backtracking_warnings_recorded.get_or_init(|| {
+            for finding in &self.backtracking_warnings {
+                visit(finding.rule, &finding.pattern, &finding.warning);
+            }
+        });
     }
 
     #[must_use]

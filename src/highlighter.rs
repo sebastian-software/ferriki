@@ -2,7 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use ferriki_textmate::{
-    FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType, SyncRegistry, parse_raw_grammar,
+    BacktrackingWarning, FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType,
+    SyncRegistry, parse_raw_grammar,
 };
 use serde_json::Value;
 
@@ -244,6 +245,27 @@ impl Highlighter {
         self.core
             .load_standard_language(language)
             .map(|scope| scope.is_some())
+    }
+
+    /// Returns advisory regex backtracking warnings from the current compiled
+    /// grammar instance for a language.
+    ///
+    /// Scanners compile lazily during tokenization, so an empty list can mean
+    /// that no risky pattern has been found in the scanners built so far. The
+    /// list does not cover rules that tokenized input has not reached. Returns
+    /// `None` when the language is not registered. Registering a grammar or
+    /// injection, or activating a different theme, can invalidate the compiled
+    /// grammar cache and reset this snapshot; tokenizing the language again
+    /// rediscovers warnings as its scanners compile. This is not a complete
+    /// grammar lint.
+    pub fn backtracking_warnings(
+        &mut self,
+        language: &str,
+    ) -> Result<Option<Vec<BacktrackingWarning>>> {
+        let Some(grammar) = self.core.grammar_for_language(language)? else {
+            return Ok(None);
+        };
+        Ok(Some(grammar.backtracking_warnings()))
     }
 
     /// Loads a standard theme; returns false if absent.

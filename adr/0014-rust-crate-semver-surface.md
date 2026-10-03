@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-01
+Last updated: 2026-10-03
 
 ## Context
 
@@ -36,9 +36,9 @@ Each crate publishes a deliberate, curated surface.
 - **Private modules, root re-exports.** Modules are private; the public API is
   the list of re-exports at the crate root. `ferriki-textmate` follows
   vscode-textmate's `main.ts` exports, plus the documented combined scope/binary
-  result extension from [ADR 0010](0010-mechanical-vscode-textmate-port.md).
-  That extension is used across published crates and has the same semver
-  guarantee as other results.
+  result extension from [ADR 0010](0010-mechanical-vscode-textmate-port.md) and
+  crate-owned advisory backtracking diagnostics (#153). These extensions are
+  documented and have the same semver guarantee as other results.
 - **No third-party types in public signatures.** Engine and codec types stay
   behind crate-owned errors (`RegexError`, `CodecError`). `serde` and
   `serde_json` are the accepted exception: they are stable 1.x crates, and
@@ -63,6 +63,11 @@ Each crate publishes a deliberate, curated surface.
   are documented, owned, non-exhaustive results produced by `Highlighter`.
   Public token offsets are UTF-8 bytes; the semver-exempt N-API bridge retains
   its UTF-16 convention using the same result shapes.
+- **Backtracking diagnostics.** `BacktrackingWarning` and `BacktrackingRisk`
+  are owned, non-exhaustive results. They expose Ferroni's advisory findings
+  without exposing Ferroni types, and report only scanners compiled so far by
+  lazy tokenization; they do not provide a complete grammar lint. Both
+  `ferriki-textmate::Grammar` and `ferriki::Highlighter` expose a snapshot.
 - **Common traits.** Public types implement `Debug`, and `Clone` and
   `PartialEq` where the data allows; types that hold large payloads implement
   `Debug` by hand without printing them.
@@ -98,3 +103,4 @@ Each crate publishes a deliberate, curated surface.
 - 2026-09-30: Accepted. Implemented in 0.6.0 (#135, #159).
 - 2026-10-01: Includes the documented combined scope/binary result used by the highlighter (#172).
 - 2026-10-01: Named multi-theme result types join the public contract with UTF-8 offsets (#183).
+- 2026-10-03: Adds owned lazy backtracking diagnostics to the documented `ferriki-textmate` and `ferriki` surfaces (#153).

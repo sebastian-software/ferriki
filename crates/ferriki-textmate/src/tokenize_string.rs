@@ -316,7 +316,8 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
             .rule(grammar.rule_registry())
             .as_begin_while()
             .expect("collected while state must reference BeginWhileRule");
-        let scanner = while_rule.compile_while_ag(
+        let scanner = while_rule.compile_while_ag_and_record(
+            grammar.rule_registry(),
             while_stack.end_rule.as_deref(),
             is_first_line,
             line_pos as isize == anchor_position,
