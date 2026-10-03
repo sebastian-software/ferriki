@@ -4,11 +4,11 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
-Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
-Node bindings. The grammar interpreter is a mechanical port of vscode-textmate
-onto [Ferroni](https://github.com/sebastian-software/ferroni); the Node layer
-loads the native addon and fetches the standard languages and themes on first
-use from a release-pinned CDN.
+Ferriki is native syntax highlighting with HTML and CSS-class output. The
+grammar interpreter is a mechanical port of vscode-textmate onto
+[Ferroni](https://github.com/sebastian-software/ferroni); the Node layer loads
+the native addon and fetches the standard languages and themes on first use
+from a release-pinned CDN.
 
 ## Install
 
@@ -73,10 +73,11 @@ const html = highlighter.codeToHtml("const answer = 42", {
 });
 ```
 
-`codeToHast` returns the highlighted result as a typed HAST root. Languages
-embedded by a grammar load with it; lazy embeddings load only after an explicit
-`loadLanguage`. Token APIs remain available for callers that need token lines,
-explanations, or multi-theme token data.
+Transformers can inspect and change typed token payloads and HAST nodes while
+Ferriki renders HTML. Those callback types are not standalone result methods.
+Languages embedded by a grammar load with the HTML call; lazy embeddings load
+only after an explicit `loadLanguage`. For Rust token output, use the public
+Rust API.
 
 Custom registrations use the same TextMate shapes as Shiki and are validated
 before they cross the native boundary:
@@ -127,16 +128,19 @@ See the [class-based highlighting guide](https://github.com/sebastian-software/f
 
 ## Supported API
 
-HTML is the primary Node output: `codeToHtml` produces the highlighted markup,
-and `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also
-returns the resolved CSS for stylesheet theming. `codeToHast`,
-`codeToTokens`, `codeToTokensBase`, and `codeToTokensWithThemes` remain
-available for consumers that need structured output.
+HTML is the only public Node render output: `codeToHtml` produces the
+highlighted markup, and `styleMode: "classes"` adds nested scope classes;
+`codeToHtmlWithCss` also returns the resolved CSS for stylesheet theming.
+Before 1.0, Ferriki removes `codeToHast`, `codeToTokens`,
+`codeToTokensBase`, `codeToTokensWithThemes`, and `hastToHtml` from top-level
+exports and reusable highlighters. This is a breaking divergence from Shiki;
+there are no deprecated aliases or compatibility package. The JavaScript
+transformer pipeline still receives token/HAST data during HTML rendering.
 
 The API also includes reusable highlighter factories, synchronous and
 asynchronous language and theme loading, lazy standard assets, enumerable
 language/theme catalogs, aliases, grammar injections, custom registrations,
-CSS-variable themes, token explanations, grammar-state continuation,
+CSS-variable themes, token scope/type callback metadata, grammar-state continuation,
 transformers, and decorations. Transformers and decorations run in the
 JavaScript facade (ADR 0008). ANSI escape sequences are rejected explicitly.
 

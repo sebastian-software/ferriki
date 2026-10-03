@@ -1,5 +1,17 @@
 import type { HighlighterOptions, HighlighterSyncOptions, HighlightOptions } from "./index.d.mts";
 
+type AssertTrue<T extends true> = T;
+type FerrikiPublicApi = typeof import("./index.d.mts");
+type RemovedOutputNames =
+  | "codeToHast"
+  | "codeToTokens"
+  | "codeToTokensBase"
+  | "codeToTokensWithThemes"
+  | "hastToHtml";
+type _NoStructuredOutputExports = AssertTrue<
+  [Extract<keyof FerrikiPublicApi, RemovedOutputNames>] extends [never] ? true : false
+>;
+
 const highlighterOptions: HighlighterOptions = {
   langs: ["typescript"],
   themes: ["nord"],

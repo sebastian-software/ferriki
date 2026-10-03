@@ -4,6 +4,8 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
   coreCompatDeferredTests,
+  coreCompatExcludedTests,
+  coreCompatSupportedHtmlTests,
   coreCompatSupportedTests,
 } from "../compat/harness/core-compat-manifest.mjs";
 import "./test-asset-env.mjs";
@@ -11,7 +13,7 @@ import "./test-asset-env.mjs";
 const nodeRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const vitestArgs = ["exec", "vitest"];
 const testNamePattern =
-  "^(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects|bundle-(full|web))";
+  "^(?!.*should have correct offset)(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects|bundle-(full|web))";
 
 const catalogCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-catalog.mjs"], {
   cwd: nodeRoot,
@@ -238,10 +240,23 @@ run([
   "--no-file-parallelism",
 ]);
 
+for (const test of coreCompatSupportedHtmlTests)
+  run(["run", test.path, "-t", test.testNamePattern, "--maxWorkers", "1", "--no-file-parallelism"]);
+
 console.log("\nFerriki core compatibility summary");
 console.log(`- supported contracts: ${coreCompatSupportedTests.length} test files (mandatory)`);
 console.log(
-  `- deferred contracts: ${coreCompatDeferredTests.length} test files (each linked to its owning issue)`,
+  `- additional HTML compatibility fixtures: ${coreCompatSupportedHtmlTests.length} targeted test files (mandatory)`,
+);
+console.log(
+  `- deferred contracts: ${coreCompatDeferredTests.length} fixtures (each linked to its owning issue)`,
 );
 for (const test of coreCompatDeferredTests)
-  console.log(`  - ${test.path}: ${test.reason} (see #${test.issue})`);
+  console.log(
+    `  - ${test.path}${test.testName ? ` (${test.testName})` : ""}: ${test.reason} (see #${test.issue})`,
+  );
+console.log(`- intentionally excluded output fixtures: ${coreCompatExcludedTests.length} entries`);
+for (const test of coreCompatExcludedTests)
+  console.log(
+    `  - ${test.path}${test.testNames ? ` (${test.testNames.join(", ")})` : ""}: ${test.reason} (see #${test.issue})`,
+  );

@@ -8,7 +8,7 @@ use napi::{Env, Error, Result, Task};
 use napi_derive::napi;
 use serde_json::Value;
 
-use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_hast, render_html};
+use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 
 #[napi]
 pub struct FerrikiHighlighter {
@@ -82,8 +82,8 @@ impl FerrikiHighlighter {
         self.core.borrow().loaded_languages()
     }
 
-    #[napi(js_name = "codeToTokens")]
-    pub fn code_to_tokens(&self, code: String, options_json: String) -> Result<String> {
+    #[napi(js_name = "getHtmlRenderData")]
+    pub fn get_html_render_data(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
         let tokens = native(self.core.borrow_mut().tokenize(
             &code,
@@ -95,8 +95,12 @@ impl FerrikiHighlighter {
             .map_err(|error| Error::from_reason(format!("Failed to serialize tokens: {error}")))
     }
 
-    #[napi(js_name = "codeToTokensWithThemes")]
-    pub fn code_to_tokens_with_themes(&self, code: String, options_json: String) -> Result<String> {
+    #[napi(js_name = "getHtmlRenderDataWithThemes")]
+    pub fn get_html_render_data_with_themes(
+        &self,
+        code: String,
+        options_json: String,
+    ) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
         let value: Value = serde_json::from_str(&options_json).map_err(|error| {
             Error::from_reason(format!("Failed to parse multi-theme options: {error}"))
@@ -127,19 +131,6 @@ impl FerrikiHighlighter {
         serde_json::to_string(&tokens).map_err(|error| {
             Error::from_reason(format!("Failed to serialize themed tokens: {error}"))
         })
-    }
-
-    #[napi(js_name = "codeToHast")]
-    pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
-        let options = HighlightOptions::parse(&options_json)?;
-        let tokens = native(self.core.borrow_mut().tokenize(
-            &code,
-            &options.language,
-            &options.theme,
-            &options.tokenize,
-        ))?;
-        serde_json::to_string(&render_hast(&tokens, &options.render))
-            .map_err(|error| Error::from_reason(format!("Failed to serialize HAST: {error}")))
     }
 
     #[napi(js_name = "codeToHtml")]
@@ -342,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn napi_surface_returns_json_tokens_and_html() {
+    fn napi_surface_returns_private_html_render_data_and_html() {
         let highlighter = standard_highlighter();
         let options = json!({
             "lang": "javascript",
@@ -354,7 +345,7 @@ mod tests {
 
         let tokens: Value = serde_json::from_str(
             &highlighter
-                .code_to_tokens("const x = 1".to_owned(), options.clone())
+                .get_html_render_data("const x = 1".to_owned(), options.clone())
                 .expect("tokens"),
         )
         .expect("json");
@@ -402,7 +393,7 @@ mod tests {
         .to_string();
         let result: Value = serde_json::from_str(
             &highlighter
-                .code_to_tokens_with_themes("const x = 1".to_owned(), options)
+                .get_html_render_data_with_themes("const x = 1".to_owned(), options)
                 .expect("multi-theme tokens"),
         )
         .expect("JSON result");

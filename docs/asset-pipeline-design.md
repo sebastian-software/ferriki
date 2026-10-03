@@ -74,8 +74,10 @@ given process. The asset model therefore optimizes for:
 6. [`crates/ferriki-core`](../../crates/ferriki-core)
    uses manifests plus embedded bytes to lazy-load and compile requested
    grammars and themes.
-7. The Node package exposes the standard Shiki-compatible API, but no longer
-   depends on Shiki chunk files as the catalog source of truth.
+7. The Node package exposes Ferriki's supported Shiki-shaped HTML API and
+   enumerable catalogs, but no longer depends on Shiki chunk files as the
+   catalog source of truth. Its public contract intentionally omits standalone
+   Node HAST and token output methods (ADR 0017).
 
 ## Runtime Behavior
 

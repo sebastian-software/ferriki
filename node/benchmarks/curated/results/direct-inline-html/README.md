@@ -1,5 +1,10 @@
 # Direct inline HTML writer: October 1, 2026
 
+This is an archived measurement from Ferriki 0.8.0, before removal of the
+public Node token APIs. Its HTML figures apply to the recorded revision; any
+token measurements and parity fields are historical and are not current Node
+API or performance claims. The raw reports are unchanged.
+
 The control wins 15/20 formats at both sizes in both repetitions. The candidate
 wins **20/20** at both sizes in both repetitions, against
 `MIN(Shiki WASM, Shiki JavaScript)` on warmed public inline HTML. All 40

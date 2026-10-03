@@ -4,7 +4,6 @@ import os from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { isDeepStrictEqual } from "node:util";
 import {
   checkPhikiPrerequisites,
   createPhikiSetup,
@@ -14,8 +13,8 @@ import {
 import { compareHighlightedHtml, phikiStyleCriteria } from "./phiki-html-agreement.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 // Measures Ferriki, Shiki with two regex engines, and optional Phiki on the
-// same repository corpus. The Node engines keep their strict HTML/HAST/token
-// equality gate. Phiki is compared separately by visible source text and
+// same repository corpus. Ferriki and both Shiki engines must produce the
+// same serialized HTML. Phiki is compared by visible source text and
 // per-character styles because it produces HTML with different wrappers.
 //
 // Warm Phiki timing forces PendingHtmlOutput::toString() and uses one
@@ -23,7 +22,7 @@ import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 // so sending JSON over stdin and receiving the response are outside the sample.
 // Phiki per-document warm timings remain visible when its output differs;
 // aggregate Phiki comparisons use only documents where its output and every
-// Node engine's existing strict checks agree. Full Node headline totals stay
+// Node engine's strict HTML check agree. Full Node headline totals stay
 // full-corpus.
 //
 // Usage (from node/ after native/compat builds and optional Composer install):
@@ -38,7 +37,7 @@ const corpus = comparisonCorpus;
 const theme = "github-dark";
 const langs = [...new Set(corpus.map(([lang]) => lang))];
 const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
-const allNodeApis = ["codeToHtml", "codeToHast", "codeToTokensBase"];
+const htmlApi = "codeToHtml";
 
 async function createEngine(id) {
   if (id === "ferriki") {
@@ -100,22 +99,16 @@ const highlighters = Object.fromEntries(
   await Promise.all(nodeEngines.map(async (id) => [id, await createEngine(id)])),
 );
 
-// The existing compatibility contract is unchanged: all three Node engines
-// must agree with Shiki + Oniguruma on serialized HTML, HAST and base tokens.
-const plain = (value) => (typeof value === "string" ? value : JSON.parse(JSON.stringify(value)));
+// Keep the strict output gate across all three Node engines: serialized HTML
+// must match Shiki + Oniguruma for every document before its timing is counted.
 const nodeAgreement = Object.fromEntries(nodeEngines.map((id) => [id, []]));
 const wasmHtml = new Map();
 for (const doc of docs) {
   const options = { lang: doc.lang, theme };
-  const reference = allNodeApis.map((api) =>
-    plain(highlighters["shiki-wasm"][api](doc.code, options)),
-  );
-  wasmHtml.set(doc.path, reference[0]);
+  const reference = highlighters["shiki-wasm"][htmlApi](doc.code, options);
+  wasmHtml.set(doc.path, reference);
   for (const id of nodeEngines) {
-    // JSON equality ignores object-key order and fields JSON omits, as before.
-    const same = allNodeApis.every((api, index) =>
-      isDeepStrictEqual(plain(highlighters[id][api](doc.code, options)), reference[index]),
-    );
+    const same = highlighters[id][htmlApi](doc.code, options) === reference;
     if (same) nodeAgreement[id].push(doc.path);
   }
 }
@@ -199,18 +192,18 @@ if (prerequisites.status === "available") {
 const warmup = 5;
 const minSamples = 30;
 const coldRuns = 10;
-const minMilliseconds = { codeToHtml: 1500, codeToHast: 500, codeToTokensBase: 500 };
+const minMilliseconds = 1500;
 
 function rotate(values, start) {
   const offset = start % values.length;
   return [...values.slice(offset), ...values.slice(0, offset)];
 }
 
-async function measure(api, doc, documentIndex) {
+async function measure(doc, documentIndex) {
   const options = { lang: doc.lang, theme };
   const timed = nodeEngines.filter((id) => nodeAgreement[id].includes(doc.path));
   const phikiOutputStatus = phikiAgreement.get(doc.path)?.status;
-  if (api === "codeToHtml" && phikiWorker && ["match", "different"].includes(phikiOutputStatus)) {
+  if (phikiWorker && ["match", "different"].includes(phikiOutputStatus)) {
     timed.push("phiki");
   }
   const samples = Object.fromEntries(timed.map((id) => [id, []]));
@@ -224,7 +217,7 @@ async function measure(api, doc, documentIndex) {
     }
 
     const before = performance.now();
-    highlighters[id][api](doc.code, options);
+    highlighters[id][htmlApi](doc.code, options);
     if (collectSample) samples[id].push(performance.now() - before);
   };
 
@@ -236,7 +229,7 @@ async function measure(api, doc, documentIndex) {
   let round = 0;
   while (
     timed.some((id) => samples[id].length < minSamples) ||
-    performance.now() - started < minMilliseconds[api] * timed.length
+    performance.now() - started < minMilliseconds * timed.length
   ) {
     // Serial cyclic order avoids running engines concurrently and gives each
     // engine each position in the repeating order over successive samples.
@@ -252,18 +245,15 @@ async function measure(api, doc, documentIndex) {
     bytes: doc.bytes,
     medianMs,
     samples: samples[timed[0]].length,
-    ...(api === "codeToHtml" && phikiWorker
-      ? { phikiAgreement: phikiAgreement.get(doc.path)?.status ?? "error" }
-      : {}),
+    ...(phikiWorker ? { phikiAgreement: phikiAgreement.get(doc.path)?.status ?? "error" } : {}),
   };
 }
 
-const warm = {};
-warm.codeToHtml = [];
+const warm = { [htmlApi]: [] };
 let htmlMeasurementError;
 try {
   for (const [documentIndex, doc] of docs.entries()) {
-    warm.codeToHtml.push(await measure("codeToHtml", doc, documentIndex));
+    warm[htmlApi].push(await measure(doc, documentIndex));
   }
 } catch (error) {
   htmlMeasurementError = error;
@@ -285,13 +275,6 @@ if (htmlWorker) {
   }
 }
 if (htmlMeasurementError) throw htmlMeasurementError;
-
-for (const api of allNodeApis.slice(1)) {
-  warm[api] = [];
-  for (const [documentIndex, doc] of docs.entries()) {
-    warm[api].push(await measure(api, doc, documentIndex));
-  }
-}
 
 function runNodeCold(id, selectedPaths) {
   const child = spawnSync(
@@ -405,7 +388,7 @@ const report = {
   },
   theme,
   method: {
-    apis: allNodeApis,
+    apis: [htmlApi],
     warmup,
     minSamples,
     minMilliseconds,
@@ -428,7 +411,6 @@ const report = {
         "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
       eolNormalization:
         "CRLF and CR normalize to LF; one final artificial LF is removed only when rendered text is exactly source plus one LF",
-      unavailableOperations: ["codeToHast", "codeToTokensBase"],
       differingOutputTimings:
         "per-document warm timings are shown with their output status but excluded from every aggregate total; cold Phiki timing requires a matching shared cohort",
       grammarRegistration:
@@ -443,7 +425,6 @@ const report = {
       status: phikiStatus.status,
       documents: [...phikiAgreement.values()].filter((row) => row.status === "match").length,
       of: docs.length,
-      unavailableOperations: ["codeToHast", "codeToTokensBase"],
     },
   },
   outputAgreement: {
@@ -455,8 +436,6 @@ const report = {
     reason: phikiStatus.reason,
     operations: {
       codeToHtml: phikiStatus.status === "available" ? "available" : "skipped",
-      codeToHast: "unavailable",
-      codeToTokensBase: "unavailable",
     },
     runtime: phikiRuntime ?? prerequisites.runtime ?? null,
   },
@@ -469,7 +448,7 @@ if (warmMatchingTotalMs) report.warmMatchingTotalMs = warmMatchingTotalMs;
 
 // Existing headline totals intentionally remain Node-only and full-corpus.
 report.warmTotalMs = Object.fromEntries(
-  allNodeApis.map((api) => [
+  [htmlApi].map((api) => [
     api,
     Object.fromEntries(
       nodeEngines

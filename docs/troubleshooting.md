@@ -68,9 +68,10 @@ strip the control sequences before calling Ferriki.
 
 ## Output is escaped incorrectly
 
-Ferriki escapes source text and serializes its own HAST. It does not sanitize
-arbitrary HAST nodes or HTML returned by a transformer because transformers
-are outside the core API. Keep untrusted code and fence metadata on the
+Ferriki escapes source text and serializes its internal HAST during HTML
+rendering. Transformer and decoration callbacks can change that tree or return
+HTML, and Ferriki does not sanitize those changes. Treat callback-generated
+markup as application HTML and keep untrusted code and fence metadata on the
 escaped side of the Ferromark/Ardo adapter boundary.
 
 ## Packed package works in the checkout but not after install

@@ -87,6 +87,7 @@ export interface HighlightOptions {
   themes?: Readonly<Partial<Record<string, ThemeInput | undefined>>>;
   defaultColor?: string | false;
   cssVariablePrefix?: string;
+  /** Includes TextMate scopes or token types in HTML transformer callback tokens. */
   includeExplanation?: boolean | "scopeName" | "tokenType";
   grammarState?: GrammarState;
   mergeWhitespaces?: boolean;
@@ -112,7 +113,7 @@ export interface HtmlWithCss {
 }
 
 export interface ThemedToken {
-  /** Full grammar scope path in classes mode. */
+  /** Full grammar scope path in classes mode or when requested for callbacks. */
   scopeNames?: readonly string[];
   content: string;
   offset: number;
@@ -130,16 +131,6 @@ export interface ThemedToken {
       }
     >
   >;
-  explanation?: ThemedTokenExplanation[];
-}
-
-export interface ThemedTokenScopeExplanation {
-  scopeName: string;
-}
-
-export interface ThemedTokenExplanation {
-  content: string;
-  scopes: ThemedTokenScopeExplanation[];
 }
 
 export interface GrammarState {
@@ -152,15 +143,6 @@ export interface GrammarState {
   readonly source: string;
 }
 
-export interface TokensResult {
-  tokens: ThemedToken[][];
-  fg: string;
-  bg: string;
-  themeName: string;
-  rootStyle?: string;
-  grammarState?: GrammarState;
-}
-
 export interface HastText {
   type: "text";
   value: string;
@@ -171,6 +153,8 @@ export interface HastElement {
   tagName: string;
   properties: Record<string, unknown>;
   children: HastNode[];
+  /** Callback-only metadata from `HighlightOptions.data`; omitted from HTML. */
+  data?: Readonly<Record<string, unknown>>;
 }
 
 export interface HastRoot {
@@ -192,8 +176,6 @@ export interface DecorationItem {
 export interface ShikiTransformerContextCommon {
   meta: Record<string, unknown>;
   options: HighlightOptions;
-  codeToHast: (code: string, options: HighlightOptions) => HastRoot;
-  codeToTokens: (code: string, options: HighlightOptions) => TokensResult;
 }
 
 export interface ShikiTransformerContext extends ShikiTransformerContextCommon {
@@ -241,13 +223,8 @@ export interface ShikiTransformer {
 export interface Highlighter {
   codeToHtml: (code: string, options: HighlightOptions) => string;
   codeToHtmlWithCss: (code: string, options: HighlightOptions) => HtmlWithCss;
-  codeToHast: (code: string, options: HighlightOptions) => HastRoot;
-  codeToTokens: (code: string, options: HighlightOptions) => TokensResult;
-  codeToTokensBase: (code: string, options: HighlightOptions) => ThemedToken[][];
-  codeToTokensWithThemes: (code: string, options: HighlightOptions) => ThemedToken[][];
   getLastGrammarState: {
     (code: string, options: HighlightOptions): GrammarState;
-    (element: ThemedToken[][] | HastRoot): GrammarState | undefined;
   };
   getLoadedLanguages: () => string[];
   getLoadedThemes: () => string[];
@@ -307,43 +284,6 @@ export declare function codeToHtml(
   options: HighlightOptions,
 ): string;
 
-export declare function codeToHast(code: string, options: HighlightOptions): Promise<HastRoot>;
-export declare function codeToHast(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): HastRoot;
-
-export declare function codeToTokens(
-  code: string,
-  options: HighlightOptions,
-): Promise<TokensResult>;
-export declare function codeToTokens(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): TokensResult;
-
-export declare function codeToTokensBase(
-  code: string,
-  options: HighlightOptions,
-): Promise<ThemedToken[][]>;
-export declare function codeToTokensBase(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): ThemedToken[][];
-
-export declare function codeToTokensWithThemes(
-  code: string,
-  options: HighlightOptions,
-): Promise<ThemedToken[][]>;
-export declare function codeToTokensWithThemes(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): ThemedToken[][];
-
 export declare function getLastGrammarState(
   code: string,
   options: HighlightOptions,
@@ -353,11 +293,6 @@ export declare function getLastGrammarState(
   code: string,
   options: HighlightOptions,
 ): GrammarState;
-export declare function getLastGrammarState(
-  highlighter: Highlighter,
-  element: ThemedToken[][] | HastRoot,
-): GrammarState | undefined;
-
 export interface CssVariablesThemeOptions {
   name?: string;
   type?: "dark" | "light" | string;
@@ -370,8 +305,6 @@ export interface CssVariablesThemeOptions {
 export declare function createCssVariablesTheme(
   options?: CssVariablesThemeOptions,
 ): ThemeRegistration;
-export declare function hastToHtml(tree: HastRoot | HastElement): string;
-
 export declare const bundledLanguages: Readonly<
   Record<string, () => Promise<LanguageRegistration[]>>
 >;

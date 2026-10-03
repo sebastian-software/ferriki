@@ -109,7 +109,12 @@ try {
   await writeFile(
     consumerProbe,
     `
-import { codeToHast, codeToHtml, codeToTokens, createHighlighter, ferrikiVersion } from '@ferriki/core'
+import * as ferriki from '@ferriki/core'
+const { codeToHtml, createHighlighter, ferrikiVersion } = ferriki
+const removedOutputs = ['codeToHast', 'codeToTokens', 'codeToTokensBase', 'codeToTokensWithThemes', 'hastToHtml']
+for (const name of removedOutputs)
+  if (name in ferriki)
+    throw new Error('removed output is still exported by the packed package: ' + name)
 
 if (!ferrikiVersion())
   throw new Error('the packed @ferriki/core native binding did not load')
@@ -127,13 +132,32 @@ if (nativeSubpathExported)
   throw new Error('the internal native loader must not be exported as @ferriki/core/native')
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
+for (const name of removedOutputs)
+  if (name in highlighter)
+    throw new Error('removed output is still on the packed highlighter: ' + name)
 await highlighter.loadLanguage('javascript')
 const options = { lang: 'javascript', theme: 'nord' }
-const html = highlighter.codeToHtml('const answer = 42', options)
-const hast = highlighter.codeToHast('const answer = 42', options)
-const tokens = highlighter.codeToTokens('const answer = 42', options)
-if (!html.includes('const') || hast.type !== 'root' || tokens.tokens.length === 0)
-  throw new Error('the packed Ferriki HTML/HAST/tokens calls did not produce output')
+let tokenHookRan = false
+let preHookRan = false
+const html = highlighter.codeToHtml('const answer = 42', {
+  ...options,
+  transformers: [{
+    tokens(tokens) {
+      tokenHookRan = tokens.flat().map(token => token.content).join('') === 'const answer = 42'
+      if ('codeToTokens' in this || 'codeToHast' in this)
+        throw new Error('removed nested output methods remain in packed transformer context')
+    },
+    pre(node) {
+      preHookRan = node.tagName === 'pre' && this.root.type === 'root'
+      this.addClassToHast(node, 'packed-hook')
+    },
+  }],
+})
+if (!html.includes('const') || !html.includes('packed-hook') || !tokenHookRan || !preHookRan)
+  throw new Error('the packed Ferriki HTML transformer pipeline did not produce the expected output')
+const classOutput = highlighter.codeToHtmlWithCss('const answer = 42', options)
+if (!classOutput.html.includes('const') || !classOutput.css || classOutput.html.includes(' style='))
+  throw new Error('the packed Ferriki CSS-class renderer did not produce HTML and CSS')
 
 try {
   await codeToHtml('const missing = true', { lang: 'not-a-real-ferriki-language', theme: 'nord' })
@@ -146,8 +170,10 @@ catch (error) {
 
 const lazy = await createHighlighter({ themes: ['nord'] })
 await lazy.loadLanguage('typescript')
-if (!lazy.codeToTokens('const answer: number = 42', { lang: 'typescript', theme: 'nord' }).tokens.length)
-  throw new Error('packed lazy language loading did not produce tokens')
+if (!lazy.codeToHtml('const answer: number = 42', { lang: 'typescript', theme: 'nord' }).includes('answer'))
+  throw new Error('packed lazy language loading did not produce HTML')
+lazy.dispose()
+highlighter.dispose()
 `,
   );
   run(process.execPath, [consumerProbe], { cwd: consumer, stdio: "inherit" });
@@ -156,7 +182,16 @@ if (!lazy.codeToTokens('const answer: number = 42', { lang: 'typescript', theme:
   await writeFile(
     typecheck,
     `
-import { codeToHtml, createHighlighter } from '@ferriki/core'
+import * as ferriki from '@ferriki/core'
+import type { Highlighter, ShikiTransformerContextCommon } from '@ferriki/core'
+// @ts-expect-error Standalone structured-output results are removed from the public contract.
+import type { TokensResult } from '@ferriki/core'
+const { codeToHtml, createHighlighter } = ferriki
+type Assert<T extends true> = T
+type RemovedOutputs = 'codeToHast' | 'codeToTokens' | 'codeToTokensBase' | 'codeToTokensWithThemes' | 'hastToHtml'
+type _NoOutputExports = Assert<Extract<keyof typeof ferriki, RemovedOutputs> extends never ? true : false>
+type _NoOutputMethods = Assert<Extract<keyof Highlighter, RemovedOutputs> extends never ? true : false>
+type _NoNestedOutputs = Assert<Extract<keyof ShikiTransformerContextCommon, RemovedOutputs> extends never ? true : false>
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
 const html: string = highlighter.codeToHtml('const answer = 42', { lang: 'javascript', theme: 'nord' })

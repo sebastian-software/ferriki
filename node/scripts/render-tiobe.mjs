@@ -11,10 +11,17 @@ console.log(
   `Ferriki ${report.versions.ferriki}; Ferroni ${report.nativeBuild.ferroni.version}; Shiki ${report.versions.shiki}; Prism ${report.versions.prism}.\n`,
 );
 console.log(
-  "Warm medians in milliseconds per document. Smaller values are faster. Prism uses independent grammars and class-based HTML; it does not provide TextMate/color parity. A dagger marks a TextMate output mismatch; errors and timeouts are visible.\n",
+  "Warm medians in milliseconds per document. Current runs use HTML only; historical token tables are labeled as archives. Smaller values are faster. Prism uses independent grammars and class-based HTML; it does not provide TextMate/color parity. A dagger marks an output mismatch; errors and timeouts are visible.\n",
 );
 for (const api of report.method.apis) {
-  console.log(`## ${api === "html" ? "HTML rendering" : "Tokenization"}\n`);
+  const title =
+    api === "html" ? "HTML rendering" : "Archived token API (historical Node measurement)";
+  console.log(`## ${title}\n`);
+  if (api !== "html") {
+    console.log(
+      "This timing records a Node API removed after this report was measured. It is archival evidence, not a current API or performance claim.\n",
+    );
+  }
   console.log(`| Rank | Language | Size | Bytes | ${engines.join(" | ")} |`);
   console.log(`| --- | --- | --- | --- | ${engines.map(() => "---:").join(" | ")} |`);
   for (const language of report.languages) {
@@ -29,7 +36,8 @@ for (const api of report.method.apis) {
         const result = entry.results[id];
         if (result.status !== "ok") return result.status;
         const parity = result.validation.referenceParity;
-        return `${result[api].medianMs.toFixed(3)}${parity && (!parity.tokens || !parity.html) ? " †" : ""}`;
+        const mismatch = parity && Object.values(parity).includes(false);
+        return `${result[api].medianMs.toFixed(3)}${mismatch ? " †" : ""}`;
       });
       console.log(
         `| ${language.rank} | ${language.name} | ${entry.size} | ${entry.bytes} | ${cells.join(" | ")} |`,

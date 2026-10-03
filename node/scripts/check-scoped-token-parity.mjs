@@ -1,5 +1,5 @@
-// Capture the public token/state contract before a native tokenizer change,
-// then compare with --compare. Hashes include explanations and grammarState.
+// Capture HTML scope-class continuation before a native tokenizer change,
+// then compare with --compare. Reports hash class HTML and callback scope paths.
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
@@ -36,45 +36,54 @@ const highlighter = await createHighlighter({
   assets: { remote: false },
 });
 const cases = [];
+const scopeSignature = (lines) =>
+  lines.map((line) => line.map(({ content, scopeNames, type }) => ({ content, scopeNames, type })));
+function renderWithScopes(code, options) {
+  let lines;
+  const html = highlighter.codeToHtml(code, {
+    ...options,
+    transformers: [
+      {
+        tokens(tokens) {
+          lines = tokens;
+          return tokens;
+        },
+      },
+    ],
+  });
+  return { html, scopes: scopeSignature(lines) };
+}
+
 try {
   for (const fixture of fixtures) {
-    for (const styleMode of ["inline", "classes"]) {
-      for (const includeExplanation of [undefined, false, true, "scopeName", "tokenType"]) {
-        for (const multitheme of [false, true]) {
-          const options = {
-            lang: fixture.lang,
-            styleMode,
-            includeExplanation,
-            ...(multitheme
-              ? { themes: { dark: "nord", light: "github-dark" } }
-              : { theme: "nord" }),
-          };
-          const state = highlighter.getLastGrammarState(fixture.prefix, options);
-          const grammarState = JSON.parse(JSON.stringify(state));
-          const resumed = highlighter.codeToTokens(fixture.code, { ...options, grammarState });
-          assert.deepEqual(
-            resumed,
-            highlighter.codeToTokens(fixture.code, { ...options, grammarState }),
-          );
-          const full = highlighter.codeToTokens(`${fixture.prefix}\n${fixture.code}`, options);
-          cases.push({
-            fixture,
-            options,
-            stateSha256: sha256(JSON.stringify(state)),
-            resumedSha256: sha256(JSON.stringify(resumed)),
-            fullSha256: sha256(JSON.stringify(full)),
-          });
-        }
-      }
+    for (const multitheme of [false, true]) {
+      const options = {
+        lang: fixture.lang,
+        styleMode: "classes",
+        ...(multitheme ? { themes: { dark: "nord", light: "github-dark" } } : { theme: "nord" }),
+      };
+      const state = highlighter.getLastGrammarState(fixture.prefix, options);
+      const grammarState = JSON.parse(JSON.stringify(state));
+      const resumed = renderWithScopes(fixture.code, { ...options, grammarState });
+      const full = renderWithScopes(`${fixture.prefix}\n${fixture.code}`, options);
+      const prefixLines = fixture.prefix.split("\n").length;
+      assert.deepEqual(resumed.scopes, full.scopes.slice(prefixLines));
+      assert.match(resumed.html, /class="ferriki/);
+      cases.push({
+        fixture,
+        options,
+        stateSha256: sha256(JSON.stringify(state)),
+        resumedHtmlSha256: sha256(resumed.html),
+        resumedScopesSha256: sha256(JSON.stringify(resumed.scopes)),
+        fullHtmlSha256: sha256(full.html),
+        fullScopesSha256: sha256(JSON.stringify(full.scopes)),
+      });
     }
   }
 } finally {
   highlighter.dispose();
 }
-// Normalize omitted properties before comparing a saved JSON report.
 const report = JSON.parse(JSON.stringify({ cases }));
 if (values.compare) assert.deepEqual(report, readReport(values.compare));
 if (values.write) writeFileSync(values.write, `${JSON.stringify(report, null, 2)}\n`);
-console.log(
-  `Verified ${cases.length} public token, explanation, multi-theme and resumed-state cases`,
-);
+console.log(`Verified ${cases.length} HTML scope-class and resumed-state cases`);

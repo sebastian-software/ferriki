@@ -10,7 +10,6 @@ import {
   engines,
   loadCases,
   loadCorpus,
-  plain,
   repoRoot,
   sha256,
   statistics,
@@ -24,16 +23,14 @@ const { values } = parseArgs({
     language: { type: "string", default: "cpp" },
     size: { type: "string", default: "large" },
     engine: { type: "string", default: "ferriki" },
-    api: { type: "string", default: "tokens" },
     boundary: { type: "string", default: "facade" },
-    scopes: { type: "boolean", default: false },
     seconds: { type: "string", default: "15" },
     help: { type: "boolean" },
   },
 });
 if (values.help) {
   console.log(
-    "Usage: node scripts/profile-tiobe.mjs [--corpus tiobe|curated] [--language cpp] [--size large|example] [--engine ferriki|shiki-wasm|shiki-js|prism] [--api tokens|html] [--boundary facade|native] [--scopes] [--seconds 15]",
+    "Usage: node scripts/profile-tiobe.mjs [--corpus tiobe|curated] [--language cpp] [--size large|example] [--engine ferriki|shiki-wasm|shiki-js|prism] [--boundary facade|native] [--seconds 15]",
   );
   process.exit(0);
 }
@@ -42,21 +39,16 @@ const language = manifest.languages.find((entry) => entry.textmate === values.la
 assert.ok(language?.file, "Choose a supported TextMate language ID");
 assert.ok(["example", "large"].includes(values.size), "Invalid --size");
 assert.ok(engines.includes(values.engine), "Invalid --engine");
-assert.ok(["html", "tokens"].includes(values.api), "Invalid --api");
 assert.ok(["facade", "native"].includes(values.boundary), "Invalid --boundary");
 assert.ok(
   values.boundary === "facade" || values.engine === "ferriki",
   "The native boundary requires Ferriki",
 );
-assert.ok(
-  !values.scopes || (values.boundary === "native" && values.api === "tokens"),
-  "--scopes requires native tokens",
-);
 const seconds = Number(values.seconds);
 assert.ok(Number.isFinite(seconds) && seconds > 0 && seconds <= 300, "Invalid --seconds");
 const { code, ...workload } = loadCases(language, [values.size], values.corpus)[0];
 const oracle = await createEngine("shiki-wasm", language);
-const reference = { tokens: plain(oracle.tokens(code)), html: oracle.html(code) };
+const reference = { html: oracle.html(code) };
 oracle.dispose();
 
 let run;
@@ -64,16 +56,9 @@ let dispose;
 let validation;
 if (values.boundary === "facade") {
   const highlighter = await createEngine(values.engine, language);
-  validation = validateOutput(
-    values.engine,
-    code,
-    highlighter.tokens(code),
-    highlighter.html(code),
-    reference,
-  );
-  if (validation.referenceParity)
-    assert.deepEqual(validation.referenceParity, { tokens: true, html: true });
-  run = () => highlighter[values.api](code);
+  validation = validateOutput(values.engine, code, highlighter.html(code), reference);
+  if (validation.referenceParity) assert.deepEqual(validation.referenceParity, { html: true });
+  run = () => highlighter.html(code);
   dispose = () => highlighter.dispose();
 } else {
   const highlighter = loadFerrikiNativeBinding().createHighlighter(
@@ -82,27 +67,11 @@ if (values.boundary === "facade") {
   for (const lang of [language.textmate, ...(language.embedded ?? [])])
     highlighter.loadStandardGrammar(lang);
   highlighter.loadStandardTheme(theme);
-  const options = JSON.stringify({
-    lang: language.textmate,
-    theme,
-    ...(values.scopes ? { includeExplanation: "scopeName" } : {}),
-  });
-  const raw = highlighter.codeToTokens(code, options);
-  const tokens = JSON.parse(raw).tokens.map((line) =>
-    line.map(({ scopeNames: _scopes, ...token }) => token),
-  );
-  validation = validateOutput(
-    "ferriki",
-    code,
-    tokens,
-    highlighter.codeToHtml(code, options),
-    reference,
-  );
-  assert.deepEqual(validation.referenceParity, { tokens: true, html: true });
-  run = () =>
-    values.api === "tokens"
-      ? highlighter.codeToTokens(code, options)
-      : highlighter.codeToHtml(code, options);
+  const options = JSON.stringify({ lang: language.textmate, theme });
+  const html = highlighter.codeToHtml(code, options);
+  validation = validateOutput("ferriki", code, html, reference);
+  assert.deepEqual(validation.referenceParity, { html: true });
+  run = () => highlighter.codeToHtml(code, options);
   dispose = () => highlighter.dispose();
 }
 const receipt =

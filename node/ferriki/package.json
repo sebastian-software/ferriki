@@ -1,7 +1,7 @@
 {
   "name": "@ferriki/core",
   "version": "0.9.0",
-  "description": "Shiki-compatible syntax highlighting with a leaner Rust core and Node bindings",
+  "description": "native syntax highlighting with HTML and CSS-class output",
   "keywords": [
     "highlighter",
     "napi",

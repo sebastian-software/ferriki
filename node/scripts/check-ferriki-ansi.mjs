@@ -6,18 +6,11 @@ import "./test-asset-env.mjs";
 const highlighter = await createHighlighter({ themes: ["nord"] });
 const ansi = `${String.fromCharCode(27)}[31mred${String.fromCharCode(27)}[0m`;
 try {
-  for (const render of [
+  assert.throws(
     () => highlighter.codeToHtml(ansi, { lang: "ansi", theme: "nord" }),
-    () => highlighter.codeToHast(ansi, { lang: "ansi", theme: "nord" }),
-    () => highlighter.codeToTokens(ansi, { lang: "ansi", theme: "nord" }),
-  ]) {
-    assert.throws(
-      render,
-      (error) =>
-        error instanceof ShikiError &&
-        /ANSI control sequences are not supported/.test(error.message),
-    );
-  }
+    (error) =>
+      error instanceof ShikiError && /ANSI control sequences are not supported/.test(error.message),
+  );
 } finally {
   highlighter.dispose();
 }

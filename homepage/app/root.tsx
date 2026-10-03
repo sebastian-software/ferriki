@@ -48,13 +48,13 @@ export const meta: MetaFunction = ({ location }) => {
   const page = section?.pages.find(([, to]) => to === path);
   const title = page
     ? `${page[0]} · ${section?.label} · Ferriki`
-    : "Ferriki — Shiki-compatible highlighting, native speed";
+    : "Ferriki — Shiki-shaped HTML highlighting, native engine";
   return [
     { title },
     {
       name: "description",
       content:
-        "Ferriki highlights code with the TextMate grammars and themes VS Code uses, behind the API you know from Shiki, on a native Rust engine for Node.js and Rust.",
+        "Ferriki renders code with the TextMate grammars and themes VS Code uses, through Shiki-shaped HTML calls and a native Rust engine for Node.js and Rust.",
     },
   ];
 };

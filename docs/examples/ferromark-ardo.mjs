@@ -75,15 +75,24 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!rendered.includes('shiki-themes') || !rendered.includes('class="line"'))
     throw new Error('Ferriki example did not render the dual-theme line contract')
 
-  const hastHighlighter = await createHighlighter({ langs: ['typescript'], themes: ['nord'] })
-  const hast = hastHighlighter.codeToHast('const answer = 42', {
+  const callbackHighlighter = await createHighlighter({
+    langs: ['typescript'],
+    themes: ['nord'],
+    transformers: [{
+      name: 'adapter-example-class',
+      pre(hast) {
+        return this.addClassToHast(hast, 'ferromark-example')
+      },
+    }],
+  })
+  const callbackHtml = callbackHighlighter.codeToHtml('const answer = 42', {
     lang: 'typescript',
     theme: 'nord',
   })
-  if (hast.type !== 'root')
-    throw new Error('Ferriki example did not produce HAST output')
+  if (!callbackHtml.includes('ferromark-example'))
+    throw new Error('Ferriki example did not apply the HTML transformer callback')
 
   adapter.dispose()
-  hastHighlighter.dispose()
+  callbackHighlighter.dispose()
   console.log('Ferriki + Ferromark adapter example rendered successfully')
 }

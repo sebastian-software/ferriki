@@ -12,25 +12,25 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
-Node bindings.
+Ferriki provides Shiki-shaped HTML syntax highlighting through a lean Rust
+core and Node bindings.
 
-It keeps the API shape people already know from Shiki, but removes the old
-JS/WASM multi-engine direction from the runtime. The goal is simple: keep the
-developer experience familiar, move the heavy lifting into Rust, and end up
-with a smaller, cleaner architecture that is easier to reason about and easier
-to ship.
+It keeps familiar highlighter factories and HTML calls, while removing the
+old JS/WASM multi-engine direction from the runtime. The goal is simple: keep
+the developer experience familiar, move the heavy lifting into Rust, and end
+up with a smaller, cleaner architecture that is easier to reason about and
+easier to ship.
 
 ## Why Ferriki
 
-- Shiki-compatible where it matters: existing highlighting-oriented Node APIs stay recognizable.
+- Shiki-shaped HTML API: reusable highlighters and familiar highlight options support common migrations.
 - Rust-first by design: grammar handling, theme application, state management, and rendering belong in the native core.
 - Standard language and theme assets load lazily from a release-pinned CDN, so their payloads stay out of the packages.
 - Leaner runtime shape: no product dependency on the historical JS/WASM engine stack.
 - Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite, while the tokenizer is checked against a pinned vscode-textmate oracle.
 
-Ferriki is for teams that like the Shiki contract, but want a cleaner native
-foundation under it.
+Ferriki is for teams that like Shiki's familiar highlighter and HTML flow and
+want a cleaner native foundation underneath.
 
 ## Product Scope
 
@@ -38,15 +38,17 @@ Ferriki is intentionally narrow right now.
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-compatible highlighting API |
+| Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-shaped HTML rendering API |
 | HTML output | Primary Node path | `codeToHtml` renders HTML; `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also returns resolved theme CSS |
-| HAST and token output | Supported | `codeToHast` and token APIs remain available for consumers that need structured output |
-| Transformers | Integrated | User-supplied JavaScript hooks run in the facade (ADR 0008) |
+| HAST and token output | Removed before 1.0 | Standalone Node methods are removed; typed token/HAST data remain available to HTML transformer callbacks, and Rust token APIs remain public |
+| Transformers | Integrated | User-supplied JavaScript hooks receive internal token/HAST data while rendering HTML (ADR 0008) |
 | Optional Vite adapter | Available | [`@ferriki/vite`](node/vite/README.md) highlights marked HTML and static JSX during Vite transforms, outside the core runtime |
 | `colorized-brackets`, `markdown-it`, `rehype`, and VitePress integrations | Out of scope | These remain optional adapter projects, not Ferriki core exports |
 
-Whether every public Node HAST and token export remains in the 1.0 contract is
-still open; see [ADR 0017](adr/0017-node-html-output-priority.md).
+Removing public Node HAST and token methods before 1.0 is an intentional
+breaking divergence from Shiki, with no deprecated aliases or compatibility
+package. See [ADR 0017](adr/0017-node-html-output-priority.md) and the
+[migration guide](docs/migrations/shiki-to-ferriki.md) for the supported path.
 
 The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
 

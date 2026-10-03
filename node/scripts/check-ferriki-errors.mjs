@@ -89,12 +89,30 @@ assert.throws(
   () => highlighter.codeToHtml("const answer = 42", { lang: "javascript" }),
   hasCode("ERR_USAGE"),
 );
-const limited = highlighter.codeToTokens("const answer = 42", {
+const limited = highlighter.codeToHtml("const answer = 42", {
   lang: "javascript",
   theme: "nord",
   tokenizeMaxLineLength: 4,
 });
-assert.equal(limited.tokens[0][0].color, "");
+assert.match(limited, /const answer = 42/);
+assert.doesNotMatch(limited, /<span style="color:/);
+let limitedTokens;
+highlighter.codeToHtml("const answer = 42", {
+  lang: "javascript",
+  theme: "nord",
+  tokenizeMaxLineLength: 4,
+  transformers: [
+    {
+      tokens(lines) {
+        limitedTokens = lines;
+        return lines;
+      },
+    },
+  ],
+});
+assert.equal(limitedTokens[0].length, 1);
+assert.equal(limitedTokens[0][0].content, "const answer = 42");
+assert.equal(limitedTokens[0][0].color, "");
 
 const rendered = await codeToHtml("const answer = 42", { lang: "javascript", theme: "nord" });
 assert(rendered.includes("const"));
