@@ -9,6 +9,16 @@
       "bump-minor-pre-major": true,
       "extra-files": [
         {
+          "type": "toml",
+          "path": "/fuzz/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='ferriki-asset-gen' && !@.source)].version"
+        },
+        {
+          "type": "toml",
+          "path": "/fuzz/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='ferriki-textmate' && !@.source)].version"
+        },
+        {
           "type": "json",
           "path": "/node/ferriki/package.json",
           "jsonpath": "$.version"

@@ -68,6 +68,11 @@ version, one release signal; see Ferromark ADR-0020 and
   its platform sidecars, `@ferriki/vite` and the pnpm lockfile specifiers follow
   through typed `extra-files`. The Vite package shares the product version and
   depends on the matching `@ferriki/core` version.
+- The separate fuzz workspace keeps its own dependency lockfile. Typed TOML
+  `extra-files` update only its local `ferriki-asset-gen` and
+  `ferriki-textmate` package versions in the release PR; registry dependencies
+  and the private fuzz package version stay pinned. Fuzz CI verifies that
+  `cargo fetch --locked` can use the generated release candidate.
 - All crates and npm product packages share one version. The crates therefore
   start at the next Ferriki release rather than at `0.1.0`, as originally
   planned.
@@ -86,8 +91,8 @@ version, one release signal; see Ferromark ADR-0020 and
   published once by hand from the release tag. The steps are in
   `docs/release-checklist.md`.
 - `@ferriki/vite` includes pnpm catalog dependencies. Its release uses the
-  workspace-pinned pnpm 10 publish command so catalogs become concrete and
-  npm 11 handles OIDC authentication and provenance.
+  workspace-pinned pnpm 10 pack command so catalogs become concrete, then
+  npm 11 publishes the explicit tarball with OIDC authentication and provenance.
 
 ## Consequences
 
@@ -111,3 +116,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-10-01: Public named multi-theme tokens support downstream Rust renderers without the N-API bridge (#183).
 - 2026-10-02: Add `@ferriki/vite` to the shared version and release, with a one-time npm Trusted Publishing bootstrap.
 - 2026-10-03: Clarifies Ferromark fence annotations, its published Ferriki 0.7.0 integration, and keeps Node comment transformers and page presentation outside the Rust API (#166).
+- 2026-10-03: Include the separate fuzz lockfile's local crate versions in generated release candidates; pack the Vite tarball with pnpm and publish it explicitly with npm.
