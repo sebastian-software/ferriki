@@ -2,9 +2,14 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use ferroni::backtrack_lint::BacktrackRisk as FerroniBacktrackRisk;
+
+use crate::BacktrackingRisk;
+use crate::BacktrackingWarning;
 use crate::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
@@ -27,6 +32,7 @@ struct RuleData {
         reason = "part of the vscode-textmate port, kept for upstream parity"
     )]
     location: Option<Location>,
+    source_scope_name: String,
     id: RuleId,
     name: Option<String>,
     name_is_capturing: bool,
@@ -45,6 +51,7 @@ impl RuleData {
         let content_name_is_capturing = has_captures(content_name.as_deref());
         Self {
             location,
+            source_scope_name: String::new(),
             id,
             name,
             name_is_capturing,
@@ -96,6 +103,23 @@ impl RuleData {
             return Some(content_name.clone());
         }
         Some(replace_captures(content_name, line_text, capture_indices))
+    }
+
+    fn backtracking_rule_name(&self) -> String {
+        self.name
+            .as_ref()
+            .filter(|name| !name.is_empty())
+            .cloned()
+            .unwrap_or_else(|| format!("rule #{}", self.id.get()))
+    }
+
+    fn backtracking_rule_location(&self) -> Option<String> {
+        self.location.as_ref().map(|location| {
+            format!(
+                "{}:{}:{}",
+                location.filename, location.line, location.character
+            )
+        })
     }
 }
 
@@ -386,6 +410,18 @@ impl BeginWhileRule {
         }
         sources.compile_ag(allow_a, allow_g)
     }
+
+    pub(crate) fn compile_while_ag_and_record(
+        &self,
+        registry: &RuleRegistry,
+        end_regex_source: Option<&str>,
+        allow_a: bool,
+        allow_g: bool,
+    ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
+        let compiled = self.compile_while_ag(end_regex_source, allow_a, allow_g)?;
+        registry.record_backtracking_warnings(self.data.id, &compiled);
+        Ok(compiled)
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -502,7 +538,7 @@ impl Rule {
         allow_a: bool,
         allow_g: bool,
     ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
-        match self {
+        let compiled = match self {
             Self::Capture(_) => panic!("capture rules cannot compile scanner patterns"),
             Self::Match(rule) => {
                 let mut cached = rule
@@ -555,7 +591,11 @@ impl Rule {
                 allow_a,
                 allow_g,
             ),
+        };
+        if let Ok(compiled) = &compiled {
+            registry.record_backtracking_warnings(self.id(), compiled);
         }
+        compiled
     }
 
     #[must_use]
@@ -611,11 +651,30 @@ impl Rule {
             Self::BeginWhile(rule) => &rule.data,
         }
     }
+
+    pub(crate) fn set_source_scope_name(&mut self, scope_name: String) {
+        match self {
+            Self::Capture(_) => {}
+            Self::Match(rule) => rule.data.source_scope_name = scope_name,
+            Self::IncludeOnly(rule) => rule.data.source_scope_name = scope_name,
+            Self::BeginEnd(rule) => rule.data.source_scope_name = scope_name,
+            Self::BeginWhile(rule) => rule.data.source_scope_name = scope_name,
+        }
+    }
 }
 
 #[derive(Default)]
 pub(crate) struct RuleRegistry {
     rules: Vec<Option<Rule>>,
+    backtracking_warnings: Mutex<BTreeMap<BacktrackingWarningKey, BacktrackingWarning>>,
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct BacktrackingWarningKey {
+    rule_id: RuleId,
+    pattern: String,
+    risk: BacktrackingRisk,
+    message: String,
 }
 
 impl RuleRegistry {
@@ -666,6 +725,61 @@ impl RuleRegistry {
     #[must_use]
     pub(crate) fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
         self.rules.get(rule_index(id)).and_then(Option::as_ref)
+    }
+
+    pub(crate) fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
+        self.backtracking_warnings
+            .lock()
+            .expect("backtracking warning lock poisoned")
+            .values()
+            .cloned()
+            .collect()
+    }
+
+    fn record_backtracking_warnings(
+        &self,
+        owner_rule_id: RuleId,
+        compiled: &CompiledRule<RuleScannerId>,
+    ) {
+        let mut findings = Vec::new();
+        compiled.record_backtracking_warnings_once(|scanner_rule_id, pattern, ferroni_warning| {
+            let source_rule_id = match scanner_rule_id {
+                RuleScannerId::Rule(rule_id) => rule_id,
+                RuleScannerId::End | RuleScannerId::While => owner_rule_id,
+            };
+            let data = self.get_rule(source_rule_id).data();
+            let risk = match ferroni_warning.risk {
+                FerroniBacktrackRisk::NestedQuantifier => BacktrackingRisk::NestedQuantifier,
+                FerroniBacktrackRisk::OverlappingAlternation => {
+                    BacktrackingRisk::OverlappingAlternation
+                }
+            };
+            let warning = BacktrackingWarning::new(
+                data.source_scope_name.clone(),
+                data.backtracking_rule_name(),
+                data.backtracking_rule_location(),
+                pattern.to_owned(),
+                risk,
+                ferroni_warning.message.clone(),
+            );
+            let key = BacktrackingWarningKey {
+                rule_id: source_rule_id,
+                pattern: warning.pattern.clone(),
+                risk: warning.risk,
+                message: warning.message.clone(),
+            };
+            findings.push((key, warning));
+        });
+        if findings.is_empty() {
+            return;
+        }
+        let mut recorded = self
+            .backtracking_warnings
+            .lock()
+            .expect("backtracking warning lock poisoned");
+        for (key, warning) in findings {
+            recorded.entry(key).or_insert(warning);
+        }
     }
 
     #[must_use]

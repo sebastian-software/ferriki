@@ -51,7 +51,7 @@ const integer = (name, min, max) => {
 };
 const method = {
   theme,
-  apis: ["html", "tokens"],
+  apis: ["html"],
   sizes: values.sizes.split(","),
   warmup: 5,
   budgetMsPerEngine: integer("budget-ms", 0, 10000),
@@ -96,7 +96,6 @@ async function worker(language) {
       let reference;
       try {
         reference = {
-          tokens: plain(highlighters["shiki-wasm"].tokens(code)),
           html: highlighters["shiki-wasm"].html(code),
         };
       } catch (error) {
@@ -104,9 +103,8 @@ async function worker(language) {
       }
       for (const id of engines.filter((id) => highlighters[id])) {
         try {
-          const tokens = highlighters[id].tokens(code);
           const html = highlighters[id].html(code);
-          results[id].validation = validateOutput(id, code, tokens, html, reference);
+          results[id].validation = validateOutput(id, code, html, reference);
         } catch (error) {
           results[id] = { status: "error", error: String(error) };
         }

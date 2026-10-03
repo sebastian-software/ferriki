@@ -6,6 +6,11 @@ purpose is to compare **Ferroni changes on a fixed Ferriki build** and find
 language-specific regressions or optimization candidates. It does not measure
 isolated regex execution time.
 
+The current runner measures the public HTML path only. Reports under
+[`results/`](results/README.md) are dated archives from the former Node token
+API and remain evidence for their recorded revisions; their token timings do
+not describe the current API or a current performance promise.
+
 The language selection is the [TIOBE September 2026 top 20](https://www.tiobe.com/tiobe-index/),
 retrieved September 30, 2026 and pinned in `manifest.json`. Updating the ranking
 is a separate corpus change; never update it during an engine comparison.
@@ -63,7 +68,7 @@ binary. The report retains both build-time and run-time Git status.
 
 The comparison rejects different workloads, harnesses, assets, machines,
 comparator versions, Ferriki commits/sources or compiler settings. It reports
-percentage changes per language, size and API, sorted with the largest
+HTML percentage changes per language and size, sorted with the largest
 regressions first. Positive means slower. Failed, timed-out or output-changing
 cases remain explicit exclusions, never speedups. Repeat comparisons in
 baseline/candidate/candidate/baseline order and inspect raw samples and tails
@@ -93,21 +98,18 @@ local observation, not a portable performance guarantee.
   in a fixed engine order. It is **not** a fair cold-start benchmark and is
   excluded from warm timings. Corpus loading and output validation are also
   outside timing. Highlighters are reused and disposed at the end.
-- Before timing, every engine must preserve the source in tokens and parsed
-  HTML and produce highlighted spans. Ferriki and both Shiki variants record
-  exact token and HTML parity against Shiki WASM. Mismatches may still be timed
-  for diagnosis, but are marked and excluded from Ferroni speedup comparisons.
+- Before timing, every engine must preserve the source in parsed HTML and
+  produce highlighted spans. Ferriki and both Shiki variants record exact HTML
+  parity against Shiki WASM. Mismatches may still be timed for diagnosis, but
+  are marked and excluded from Ferroni speedup comparisons.
 - Prism's own component loader includes grammar dependencies. Its output uses
-  independent regex grammars, nested tokens and CSS classes. TextMate engines
-  produce themed tokens and styled HTML with a `pre`/`code` wrapper. These costs
-  are included in each engine's public API measurements; identical coloring,
-  token taxonomy, output size or highlighting fidelity is not claimed. There
-  is no DOM insertion, layout, CSS application or language autodetection.
-- HTML measurements include tokenization, escaping and rendering. Token
-  measurements omit HTML rendering but include token allocation and native
-  marshaling. Tokenization is closer to Ferroni's workload, but is still an
-  end-to-end API measurement. Profile a slow language before changing Ferroni.
-- Five warmup calls precede each API. Engine order rotates every round.
+  independent regex grammars and class-based HTML. TextMate engines produce
+  themed HTML with a `pre`/`code` wrapper. Identical coloring, output size or
+  highlighting fidelity is not claimed. There is no DOM insertion, layout, CSS
+  application or language autodetection.
+- HTML measurements include tokenization, escaping and rendering. Five warmup
+  calls precede each measurement; engine order rotates every round. Profile a
+  slow language before changing Ferroni.
   Defaults require 30 rounds and target a shared duration of 300 ms times the
   number of timed engines, up to 1,000 rounds;
   slow cases can exceed the time budget to meet minimum samples. The parent
@@ -125,23 +127,19 @@ regex or highlighting regressions.
 
 ## Profile one workload
 
-`profile-tiobe.mjs` checks source preservation and exact Shiki parity, warms
-the selected API, then repeats only that workload for a bounded duration.
-Its stdout includes raw diagnostic timings, workload identity and the native
-build receipt. Setup and validation happen before the stderr ready marker.
+`profile-tiobe.mjs` checks source preservation and exact Shiki HTML parity,
+warms the selected HTML workload, then repeats it for a bounded duration. Its
+stdout includes raw diagnostic timings, workload identity and the native build
+receipt. Setup and validation happen before the stderr ready marker.
 
 ```sh
-node scripts/profile-tiobe.mjs --language cpp --api tokens --seconds 15
-node scripts/profile-tiobe.mjs --language cpp --api html --seconds 15
-node scripts/profile-tiobe.mjs --language cpp --boundary native --api tokens
-node scripts/profile-tiobe.mjs --language cpp --boundary native --api tokens --scopes
+node scripts/profile-tiobe.mjs --language cpp --seconds 15
+node scripts/profile-tiobe.mjs --language cpp --boundary native --seconds 15
 ```
 
-The native boundary includes tokenization, JSON serialization and N-API string
-transfer, but omits the public facade's parsing and metadata processing. The
-public token API requests scope paths for grammar state even without an
-explanation option; `--scopes` reproduces that native work. These diagnostic
-lanes perform different work and are not equivalent API speed comparisons.
+The `--boundary native` option profiles Ferriki's direct native HTML call;
+the default profiles the public Node facade. Both use the same rendered output
+and exact HTML validation before timing.
 
 For readable Rust stacks, rebuild with symbols and line tables using Cargo's
 profile overrides, then use an installed sampling profiler, for example:
@@ -149,8 +147,8 @@ profile overrides, then use an installed sampling profiler, for example:
 ```sh
 CARGO_PROFILE_RELEASE_DEBUG=line-tables-only CARGO_PROFILE_RELEASE_STRIP=none \
   pnpm run build:native
-samply record --save-only --unstable-presymbolicate -o /tmp/cpp-tokens.json.gz \
-  node scripts/profile-tiobe.mjs --language cpp --api tokens --seconds 15
+samply record --save-only --unstable-presymbolicate -o /tmp/cpp-html.json.gz \
+  node scripts/profile-tiobe.mjs --language cpp --seconds 15
 ```
 
 Keep profiler results separate from timing comparisons. Build receipts record

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-03
 
 ## Context
 
@@ -31,6 +31,10 @@ still applies.
   that must match the runtime release
   ([ADR 0015](0015-postcard-asset-codec.md)).
 - Rust token offsets are UTF-8 bytes. The Node facade retains UTF-16 offsets.
+- The public `Highlighter` returns owned named multi-theme tokens, aligned
+  at the union of each theme's boundaries, through `highlight_with_themes`
+  and `highlight_with_themes_and_options`. They reuse its catalogs and custom
+  registrations and preserve the single-theme offset and error contracts.
 - The N-API compatibility core lives in `ferriki::__private`, hidden from the
   Rust API documentation and exempt from semver guarantees. The catalog's
   binary manifest and asset structs are not exposed through the `ferriki` API.
@@ -41,6 +45,16 @@ still applies.
 - Ferriki emits escaped, balanced line fragments for composable Markdown
   rendering. Ferromark owns code block structure, metadata, and fallback.
   The adapter belongs in Ferromark or a separate adapter crate, not Ferriki.
+- Published Ferromark 3.0.0 exposes its optional Ferriki adapter, pinned to
+  `ferriki` 0.7.0. Consumers can implement the generic Ferromark hook with a
+  current Ferriki API without changing Ferriki's Rust API. Open Ferromark
+  PR #502 separately adds framework-neutral JSX and Node compile support for
+  a planned Ferromark 3.1 release.
+- Ferromark remains the owner of Markdown fence annotations, including its
+  VitePress-style focus, highlight, and diff line behavior. Node code-comment
+  transformers do not run on the Rust path. Word-level styles, copy controls,
+  and collapsible supporting blocks belong to the renderer or consuming page;
+  they add no Rust highlighter API.
 
 ### Release
 
@@ -51,19 +65,34 @@ version, one release signal; see Ferromark ADR-0020 and
 - `ferriki` is the repository's root Cargo package, so Release Please's native
   `rust` strategy updates the root package, all workspace members, their
   explicit path-dependency requirements and `Cargo.lock`. The npm package,
-  its platform sidecars and the pnpm lockfile specifiers follow through typed
-  `extra-files`.
-- All crates and the npm package share one version. The crates therefore start
-  at the next Ferriki release rather than at `0.1.0`, as originally planned.
+  its platform sidecars, `@ferriki/vite` and the pnpm lockfile specifiers follow
+  through typed `extra-files`. The Vite package shares the product version and
+  depends on the matching `@ferriki/core` version.
+- The separate fuzz workspace keeps its own dependency lockfile. Typed TOML
+  `extra-files` update only its local `ferriki-asset-gen` and
+  `ferriki-textmate` package versions in the release PR; registry dependencies
+  and the private fuzz package version stay pinned. Fuzz CI verifies that
+  `cargo fetch --locked` can use the generated release candidate.
+- All crates and npm product packages share one version. The crates therefore
+  start at the next Ferriki release rather than at `0.1.0`, as originally
+  planned.
 - Merging the release pull request tags `v<version>`; `publish.yml` then
-  publishes npm and, through the shared `publish-crates` action, the three
-  crates in dependency order: `ferriki-textmate`, `ferriki-asset-gen`, then
-  `ferriki`. `ferriki-core` remains private.
-- Both registries authenticate through Trusted Publishing; no long-lived
-  registry token is stored. crates.io only offers Trusted Publishing for an
-  existing crate, so the very first version of each crate is published once by
-  hand from the release tag, then the trusted publisher is configured. The
-  steps are in `docs/release-checklist.md`.
+  publishes the platform packages, `@ferriki/core` and `@ferriki/vite`, and,
+  through the shared `publish-crates` action, the three crates in dependency
+  order: `ferriki-textmate`, `ferriki-asset-gen`, then `ferriki`. `ferriki-core`
+  remains private.
+- Product releases authenticate through Trusted Publishing; no long-lived
+  registry token is stored in CI. The first npm package version must exist
+  before its Trusted Publisher can be configured, so `@ferriki/vite` is seeded
+  once with the `0.0.0-bootstrap.0` prerelease on the `bootstrap` dist-tag. The
+  first product version remains available for OIDC publication with
+  provenance. crates.io likewise requires each crate to exist before Trusted
+  Publishing can be configured, so the first version of each crate is
+  published once by hand from the release tag. The steps are in
+  `docs/release-checklist.md`.
+- `@ferriki/vite` includes pnpm catalog dependencies. Its release uses the
+  workspace-pinned pnpm 10 pack command so catalogs become concrete, then
+  npm 11 publishes the explicit tarball with OIDC authentication and provenance.
 
 ## Consequences
 
@@ -84,3 +113,7 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-09-27: Release section: one version and one Release Please pull request for the crates and npm.
 - 2026-09-30: Asset sources verify digests (0.5.0); links the semver and codec records.
 - 2026-09-30: The `remote` feature shipped (#141).
+- 2026-10-01: Public named multi-theme tokens support downstream Rust renderers without the N-API bridge (#183).
+- 2026-10-02: Add `@ferriki/vite` to the shared version and release, with a one-time npm Trusted Publishing bootstrap.
+- 2026-10-03: Clarifies Ferromark fence annotations, its published Ferriki 0.7.0 integration, and keeps Node comment transformers and page presentation outside the Rust API (#166).
+- 2026-10-03: Include the separate fuzz lockfile's local crate versions in generated release candidates; pack the Vite tarball with pnpm and publish it explicitly with npm.

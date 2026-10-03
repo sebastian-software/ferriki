@@ -9,8 +9,8 @@ import { ClassHighlightingDemo } from "../../components/class-highlighting-demo"
 
 Nested scope classes make simple styling a few lines of CSS while keeping
 ancestor context, scope order, and repeated scopes available for precise rules.
-This feature is in the current repository build and ships in the next release.
-Inline styles remain the default.
+Class-based output is available in the current `@ferriki/core` release. Inline
+styles remain the default for `codeToHtml`.
 
 The idea was inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
 and [wooorm's starry-night](https://github.com/wooorm/starry-night), which recreates
@@ -22,13 +22,12 @@ CSS from resolved theme styles.
 
 ## Use your own CSS
 
-```ts
-import { codeToHtml } from "@ferriki/core";
+```js ferriki-check=class-output
+import { codeToHtmlWithCss } from "@ferriki/core";
 
-const html = await codeToHtml('const message = "hello";', {
+const { html, css } = await codeToHtmlWithCss('const message = "hello";', {
   lang: "javascript",
-  theme: "none",
-  styleMode: "classes",
+  theme: "github-dark",
 });
 ```
 

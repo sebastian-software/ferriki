@@ -4,9 +4,11 @@
 //! explicitly and cached for reuse across code blocks and documents.
 
 mod asset_catalog;
+mod asset_settings;
 mod asset_source;
 mod error;
 mod highlighter;
+mod node_assets;
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
 mod remote;
 mod render;
@@ -20,13 +22,14 @@ pub use asset_source::{
 pub use error::{Error, ErrorKind, Result};
 pub use ferriki_asset_gen::{ReleaseAsset, ReleaseManifest};
 pub use ferriki_textmate::{
-    FontStyle, ParseRawGrammarError, RawGrammar, RawTheme, RawThemeScope, RawThemeSetting,
-    RawThemeStyle, StandardTokenType, parse_raw_grammar,
+    BacktrackingRisk, BacktrackingWarning, FontStyle, ParseRawGrammarError, RawGrammar, RawTheme,
+    RawThemeScope, RawThemeSetting, RawThemeStyle, StandardTokenType, parse_raw_grammar,
 };
 /// Implementation bridge for Ferriki's N-API host, exempt from semver guarantees.
 #[doc(hidden)]
 pub mod __private {
     pub use crate::highlighter::HighlighterCore;
+    pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions};
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
     pub use crate::remote::RemoteAssetHost;
     pub use crate::tokens::{
@@ -42,4 +45,7 @@ pub use render::{
     render_html_with_css,
 };
 pub use theme_data::{ThemeData, parse_theme_data};
-pub use tokens::{HighlightToken, HighlightTokensResult, TokenizeOptions};
+pub use tokens::{
+    HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,
+};

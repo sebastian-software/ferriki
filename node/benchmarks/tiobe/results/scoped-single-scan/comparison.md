@@ -1,6 +1,8 @@
 # Complete native before/after comparison
 
-All 19 supported languages, both fixture sizes, HTML and public tokens. Positive percentages mean slower. Every cell preserves its output hashes and exact Shiki WASM parity across all three runs. Scratch is unsupported at rank 15.
+> **Historical archive:** Measured September 30–October 1, 2026, against Ferriki 0.7.0 from baseline `0abac9c679c61d08f66f2e22eae73a61eaacb498` and two candidate runs. “Public tokens” below refers to the former Node token API; these timings describe their recorded revisions only, not the current HTML-only Node API or current performance.
+
+All 19 supported languages, both fixture sizes, HTML and the then-public Node token API on the recorded revisions. Positive percentages mean slower. Every cell preserves its output hashes and exact Shiki WASM parity across all three runs. Scratch is unsupported at rank 15.
 
 | Language             | Size    | API    | Before ms | After 1 ms | After 2 ms | Change 1 | Change 2 |
 | -------------------- | ------- | ------ | --------: | ---------: | ---------: | -------: | -------: |

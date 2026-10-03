@@ -4,18 +4,30 @@ on:
   pull_request:
     paths:
       - 'homepage/**'
-      - 'docs/benchmarks/**'
-      - 'node/ferriki/package.json'
+      - 'docs/**'
+      - 'node/**'
+      - 'crates/**'
+      - 'src/**'
+      - 'assets/shiki/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/deploy-homepage.yml'
   push:
     branches: [main]
     paths:
       - 'homepage/**'
+      - 'docs/**'
+      - 'node/**'
+      - 'crates/**'
+      - 'src/**'
+      - 'assets/shiki/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       # The site states the measured figures of this report and the version
       # of this manifest (homepage/app/data/benchmarks.ts, app/version.ts), so
       # a new measurement or a release pull request must redeploy it.
-      - 'docs/benchmarks/**'
-      - 'node/ferriki/package.json'
       - '.github/workflows/deploy-homepage.yml'
   workflow_dispatch:
 
@@ -46,10 +58,37 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: homepage/pnpm-lock.yaml
+          cache-dependency-path: |
+            node/pnpm-lock.yaml
+            homepage/pnpm-lock.yaml
 
-      - name: Install dependencies
+      - name: Set Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Install Ferriki dependencies
+        working-directory: node
         run: pnpm install --frozen-lockfile
+
+      - name: Build native Ferriki package and seed its asset cache
+        working-directory: node
+        run: pnpm run build:native
+
+      - name: Install homepage dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check source samples and packed-package guide examples
+        run: |
+          pnpm sample:check
+          pnpm class-sample:check
+          node scripts/check-guide-examples.mjs
+
+      - name: Check the optional packed Vite adapter
+        working-directory: node
+        run: pnpm run check:packed-vite
 
       - name: Lint, typecheck and format
         run: pnpm lint && pnpm typecheck && pnpm format:check
@@ -57,6 +96,12 @@ jobs:
       # Also verifies the prerendered pages against the benchmark report.
       - name: Build
         run: pnpm build
+
+      - name: Install Chromium for browser checks
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Check responsive layout, accessibility and keyboard navigation
+        run: node scripts/check-browser.mjs
 
       - name: Upload artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

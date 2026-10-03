@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
+import { createHighlighter, createHighlighterCoreSync, ShikiError } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
@@ -85,6 +85,278 @@ try {
   );
 } finally {
   highlighter.dispose();
+}
+
+for (const create of [createHighlighter, createHighlighterCoreSync]) {
+  const calls = [];
+  const marker = (name, enforce) => ({
+    name,
+    enforce,
+    preprocess(code, options) {
+      assert.equal(this.options, options);
+      assert.equal(this.codeToHast, undefined);
+      assert.equal(this.codeToTokens, undefined);
+      assert(options.transformers.some((transformer) => transformer.name === name));
+      calls.push(`preprocess:${name}`);
+      return code;
+    },
+    tokens(tokens) {
+      calls.push(`tokens:${name}`);
+      return tokens;
+    },
+    pre(node) {
+      node.properties["data-transformer"] = name;
+    },
+    postprocess(html) {
+      calls.push(`postprocess:${name}`);
+      return `${html}<!-- ${name} -->`;
+    },
+  });
+  const defaults = [marker("normal"), marker("post", "post"), marker("pre", "pre")];
+  const configured = await create({
+    langs: ["javascript"],
+    themes: ["nord", "github-light-default"],
+    transformers: defaults,
+  });
+  // The constructor snapshots the list without sorting or retaining the caller's array.
+  assert.deepEqual(
+    defaults.map((transformer) => transformer.name),
+    ["normal", "post", "pre"],
+  );
+  defaults.push(marker("late"));
+
+  try {
+    for (const removedMethod of [
+      "codeToHast",
+      "codeToTokens",
+      "codeToTokensBase",
+      "codeToTokensWithThemes",
+    ]) {
+      assert.equal(typeof configured[removedMethod], "undefined");
+    }
+    for (const method of ["codeToHtml", "codeToHtmlWithCss"]) {
+      for (const selection of [undefined, [], [marker("override")]]) {
+        calls.length = 0;
+        const options = {
+          lang: "javascript",
+          ...(method === "codeToHtmlWithCss"
+            ? { themes: { light: "github-light-default", dark: "nord" } }
+            : { theme: "nord" }),
+          ...(selection === undefined ? {} : { transformers: selection }),
+        };
+        const result = configured[method]("const answer = 42", options);
+        const names =
+          selection === undefined ? ["pre", "normal", "post"] : selection.map((t) => t.name);
+        const expected = [
+          ...names.map((name) => `preprocess:${name}`),
+          ...names.map((name) => `tokens:${name}`),
+        ];
+        expected.push(...names.map((name) => `postprocess:${name}`));
+        const html = typeof result === "string" ? result : result.html;
+        if (names.length) assert.match(html, new RegExp(`data-transformer="${names.at(-1)}"`));
+        else assert.doesNotMatch(html, /data-transformer/);
+        assert.deepEqual(calls, expected, `${create.name}.${method}`);
+        assert.equal(Object.hasOwn(options, "transformers"), selection !== undefined);
+      }
+    }
+    assert.throws(
+      () => configured.codeToHtml("code", "invalid"),
+      (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+    );
+  } finally {
+    configured.dispose();
+  }
+}
+
+assert.throws(
+  () => createHighlighterCoreSync({ transformers: {} }),
+  (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+);
+await assert.rejects(
+  createHighlighter({ transformers: {} }),
+  (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+);
+
+const renderLanguage = {
+  name: "ferriki-rendering",
+  scopeName: "source.ferriki-rendering",
+  patterns: [{ match: "\\bstyled\\b", name: "keyword.styled" }],
+};
+const renderTheme = {
+  name: "ferriki-rendering-theme",
+  type: "light",
+  fg: "#111111",
+  bg: "#ffffff",
+  settings: [
+    {
+      scope: "keyword.styled",
+      settings: {
+        foreground: "#ff00aa",
+        fontStyle: "italic bold underline strikethrough",
+      },
+    },
+  ],
+};
+const renderDarkTheme = {
+  ...renderTheme,
+  name: "ferriki-rendering-dark",
+  type: "dark",
+  fg: "#eeeeee",
+  bg: "#111111",
+  settings: [
+    {
+      scope: "keyword.styled",
+      settings: {
+        foreground: "#55aaff",
+        fontStyle: "italic bold underline strikethrough",
+      },
+    },
+  ],
+};
+const renderHighlighter = await createHighlighter({
+  langs: [renderLanguage],
+  themes: [renderTheme, renderDarkTheme],
+});
+try {
+  const baseOptions = { lang: renderLanguage.name, theme: renderTheme.name };
+  const assertSingleThemeStyles = (html) => {
+    assert.match(html, /class="shiki ferriki-rendering-theme"/);
+    assert.match(html, /color:#ff00aa/i);
+    assert.match(html, /font-style:italic/);
+    assert.match(html, /font-weight:bold/);
+    assert.match(html, /text-decoration:underline line-through/);
+  };
+
+  assertSingleThemeStyles(renderHighlighter.codeToHtml("styled", baseOptions));
+  for (const meta of [{}, { __raw: "" }, { __raw: "{1}" }])
+    assertSingleThemeStyles(renderHighlighter.codeToHtml("styled", { ...baseOptions, meta }));
+  for (const transformers of [[{}], [{ tokens: (tokens) => tokens }]])
+    assertSingleThemeStyles(
+      renderHighlighter.codeToHtml("styled", { ...baseOptions, transformers }),
+    );
+  const metadataHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    meta: {},
+  });
+  assertSingleThemeStyles(metadataHtml);
+
+  const callbackOnlyData = {
+    marker: "callback-only",
+    private: { value: "must-not-be-serialized" },
+  };
+  let receivedCallbackData;
+  const callbackDataHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    data: callbackOnlyData,
+    transformers: [
+      {
+        pre(node) {
+          receivedCallbackData = node.data;
+          node.properties["data-callback-marker"] = node.data?.marker;
+          return node;
+        },
+      },
+    ],
+  });
+  assert.equal(receivedCallbackData, callbackOnlyData);
+  assert.match(callbackDataHtml, /data-callback-marker="callback-only"/);
+  assert.doesNotMatch(callbackDataHtml, /must-not-be-serialized/);
+
+  let callbackToken;
+  const callbackHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        tokens(lines) {
+          callbackToken = lines[0][0];
+          return lines;
+        },
+      },
+    ],
+  });
+  assertSingleThemeStyles(callbackHtml);
+  assert.equal(callbackToken.color, "#FF00AA");
+  assert.equal(callbackToken.fontStyle, 15);
+
+  const suppressedStyle = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        tokens(lines) {
+          return lines.map((line) => line.map((token) => ({ ...token, htmlStyle: "" })));
+        },
+      },
+    ],
+  });
+  assert.match(suppressedStyle, /class="shiki ferriki-rendering-theme"/);
+  assert.doesNotMatch(suppressedStyle, /color:#ff00aa|font-style:italic|font-weight:bold/i);
+
+  const changedTokenStyle = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        tokens(lines) {
+          return lines.map((line) =>
+            line.map((token) => ({ ...token, color: "#123456", fontStyle: 2 })),
+          );
+        },
+      },
+    ],
+  });
+  assert.match(changedTokenStyle, /color:#123456/i);
+  assert.match(changedTokenStyle, /font-weight:bold/);
+  assert.doesNotMatch(changedTokenStyle, /color:#ff00aa|font-style:italic|text-decoration:/i);
+
+  const grammarState = renderHighlighter.getLastGrammarState("styled", baseOptions);
+  assertSingleThemeStyles(renderHighlighter.codeToHtml("styled", { ...baseOptions, grammarState }));
+  const grammarStateHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    grammarState,
+  });
+  assertSingleThemeStyles(grammarStateHtml);
+
+  const decorated = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    decorations: [
+      {
+        start: { line: 0, character: 1 },
+        end: { line: 0, character: 5 },
+        properties: { class: "marked" },
+      },
+    ],
+  });
+  assertSingleThemeStyles(decorated);
+  assert.match(decorated, /class="marked"/);
+
+  const classMode = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    meta: {},
+    styleMode: "classes",
+  });
+  assert.match(classMode, /class="ferriki ferriki-rendering-theme(?: |")/);
+  assert.doesNotMatch(classMode, /class="shiki ferriki-rendering-theme"/);
+
+  const noneTheme = renderHighlighter.codeToHtml("styled", {
+    lang: renderLanguage.name,
+    theme: "none",
+    meta: {},
+  });
+  assert.match(noneTheme, /class="none"/);
+  assert.doesNotMatch(noneTheme, /class="shiki none"|color:#ff00aa/i);
+
+  const multiTheme = renderHighlighter.codeToHtml("styled", {
+    lang: renderLanguage.name,
+    themes: { light: renderTheme.name, dark: renderDarkTheme.name },
+    meta: {},
+  });
+  assert.match(
+    multiTheme,
+    /class="shiki shiki-themes ferriki-rendering-theme ferriki-rendering-dark"/,
+  );
+  assert.match(multiTheme, /color:#ff00aa/i);
+  assert.match(multiTheme, /--shiki-dark:#55aaff/i);
+} finally {
+  renderHighlighter.dispose();
 }
 
 console.log("Ferriki transformer and decoration contract verified");

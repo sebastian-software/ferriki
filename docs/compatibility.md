@@ -18,9 +18,10 @@ and after compatibility preparation.
 ## What is covered
 
 The mandatory core gate covers the native TextMate oracle, standard catalogs,
-language aliases, themes, HAST/HTML/tokens, lazy embedded grammars, injections,
-custom registrations, multi-theme output, ANSI rejection, public exports, and
-the current docs contract. Adapter suites for transformers, Twoslash,
+language aliases, themes, HTML rendering and its internal token/HAST callback
+pipeline, lazy embedded grammars, injections, custom registrations,
+multi-theme output, ANSI rejection, public exports, and the current docs
+contract. Adapter suites for transformers, Twoslash,
 Markdown, and colorized brackets are separate because those packages are not
 Ferriki's core product boundary.
 

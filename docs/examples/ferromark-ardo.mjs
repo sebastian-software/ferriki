@@ -3,12 +3,10 @@ import { fileURLToPath } from 'node:url'
 const { createHighlighter } = await import(process.env.FERRIKI_PACKAGE_PATH || '@ferriki/core')
 
 /**
- * Build the synchronous highlighter contract consumed by Ferromark 0.8.
+ * Build a Ferriki wrapper with asynchronous setup and synchronous rendering.
  *
- * The async factory boundary is intentional: Ardo/Ferromark must finish
- * loading every language used by a document before fenced rendering starts.
- * Ardo still owns the surrounding figure, title, label, line metadata, and
- * trusted-output decision.
+ * This repository fixture exercises Ferriki's API and escaping boundary. It
+ * does not import or certify a released Ferromark or Ardo Node integration.
  */
 export async function createFerrikiCodeHighlighter({
   languages = ['typescript', 'markdown'],
@@ -77,15 +75,24 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!rendered.includes('shiki-themes') || !rendered.includes('class="line"'))
     throw new Error('Ferriki example did not render the dual-theme line contract')
 
-  const hastHighlighter = await createHighlighter({ langs: ['typescript'], themes: ['nord'] })
-  const hast = hastHighlighter.codeToHast('const answer = 42', {
+  const callbackHighlighter = await createHighlighter({
+    langs: ['typescript'],
+    themes: ['nord'],
+    transformers: [{
+      name: 'adapter-example-class',
+      pre(hast) {
+        return this.addClassToHast(hast, 'ferromark-example')
+      },
+    }],
+  })
+  const callbackHtml = callbackHighlighter.codeToHtml('const answer = 42', {
     lang: 'typescript',
     theme: 'nord',
   })
-  if (hast.type !== 'root')
-    throw new Error('Ferriki example did not produce HAST output')
+  if (!callbackHtml.includes('ferromark-example'))
+    throw new Error('Ferriki example did not apply the HTML transformer callback')
 
   adapter.dispose()
-  hastHighlighter.dispose()
+  callbackHighlighter.dispose()
   console.log('Ferriki + Ferromark adapter example rendered successfully')
 }

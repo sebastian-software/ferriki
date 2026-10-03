@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
+const repositoryRoot = dirname(nodeRoot);
 const packageRoot = join(nodeRoot, "ferriki");
 const packageJson = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
 
@@ -58,4 +60,24 @@ for (const relative of await walk()) {
   );
 }
 
-console.log("Ferriki native-only package boundary verified");
+function cargoTree(args) {
+  const result = spawnSync("cargo", ["tree", ...args, "--prefix", "none", "--locked"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr || "cargo tree failed");
+  return result.stdout;
+}
+
+const addonDependencies = cargoTree(["-p", "ferriki-core"]);
+assert(
+  !/^ureq v/m.test(addonDependencies) && !/^rustls v/m.test(addonDependencies),
+  "the N-API addon must not pull in the Rust HTTP or TLS stack",
+);
+const rustRemoteDependencies = cargoTree(["-p", "ferriki", "--features", "remote"]);
+assert(
+  /^ureq v/m.test(rustRemoteDependencies) && /^rustls v/m.test(rustRemoteDependencies),
+  "the Rust remote feature must retain its HTTP and TLS transport",
+);
+
+console.log("Ferriki native-only package and asset transport boundaries verified");

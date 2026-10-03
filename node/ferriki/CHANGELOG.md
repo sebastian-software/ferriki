@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.10.0](https://github.com/sebastian-software/ferriki/compare/v0.9.0...v0.10.0) (2026-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove public Node token and HAST outputs ([#208](https://github.com/sebastian-software/ferriki/issues/208))
+
+### Features
+
+* **bench:** include Phiki in the highlighting comparison ([#205](https://github.com/sebastian-software/ferriki/issues/205)) ([d06967e](https://github.com/sebastian-software/ferriki/commit/d06967e319b01b380675f09d8c66d9b85e963058))
+* expose advisory grammar backtracking diagnostics ([#202](https://github.com/sebastian-software/ferriki/issues/202)) ([5608d0c](https://github.com/sebastian-software/ferriki/commit/5608d0cd12d2840116c92148fb2981eff2b586e3))
+* remove public Node token and HAST outputs ([#208](https://github.com/sebastian-software/ferriki/issues/208)) ([6658dea](https://github.com/sebastian-software/ferriki/commit/6658dea1c63291ffaa82eff4ff1de17a80ef2e7e))
+* **vite:** support code authoring transformers ([#204](https://github.com/sebastian-software/ferriki/issues/204)) ([8d315fc](https://github.com/sebastian-software/ferriki/commit/8d315fc64ea658a1b2a403962c61f63b0fa4f24f))
+
+## [0.9.0](https://github.com/sebastian-software/ferriki/compare/v0.8.3...v0.9.0) (2026-10-03)
+
+
+### Features
+
+* fetch Node assets with built-in fetch ([89cf88b](https://github.com/sebastian-software/ferriki/commit/89cf88bffe7c2d8696bee375292714f674d1b1b9))
+* **homepage:** migrate to Ferramenta Family 2 ([#200](https://github.com/sebastian-software/ferriki/issues/200)) ([a2d59e3](https://github.com/sebastian-software/ferriki/commit/a2d59e3613157dd2b06b893118c1c10cf5095bcf))
+* support reusable transformer defaults and Rust multi-theme tokens ([#185](https://github.com/sebastian-software/ferriki/issues/185)) ([8e9dcfa](https://github.com/sebastian-software/ferriki/commit/8e9dcfa36a2bdb4b3499a66b706a0edde8d79e3b))
+* **vite:** add optional build-time highlighting adapter ([050c128](https://github.com/sebastian-software/ferriki/commit/050c128987b43f046c7c48c525445bfd870a2897))
+* **vite:** highlight marked HTML and JSX at build time ([daa27c5](https://github.com/sebastian-software/ferriki/commit/daa27c59edbde693fe769d8c28a6d7bef61dd9f8))
+* **vite:** highlight marked HTML and JSX at build time ([#197](https://github.com/sebastian-software/ferriki/issues/197)) ([daa27c5](https://github.com/sebastian-software/ferriki/commit/daa27c59edbde693fe769d8c28a6d7bef61dd9f8))
+
+
+### Bug Fixes
+
+* **api:** check and correct Shiki type compatibility ([#191](https://github.com/sebastian-software/ferriki/issues/191)) ([a0da6f8](https://github.com/sebastian-software/ferriki/commit/a0da6f8bd2355e45db2c58bfe2be0f2c80f181a2))
+* **node:** preserve single-theme HAST styles ([b939526](https://github.com/sebastian-software/ferriki/commit/b9395269f3130c46820cd76806d51458f9bcf41d))
+* **node:** preserve single-theme HAST styles ([7229109](https://github.com/sebastian-software/ferriki/commit/72291092e4183b67f541d18480c881a9c781b102))
+* **node:** preserve single-theme HAST styles ([#195](https://github.com/sebastian-software/ferriki/issues/195)) ([b939526](https://github.com/sebastian-software/ferriki/commit/b9395269f3130c46820cd76806d51458f9bcf41d))
+
+
+### Performance Improvements
+
+* **node:** download standard assets with fetch ([1467e18](https://github.com/sebastian-software/ferriki/commit/1467e1872892e5faf3dc7d98aebf243a6e498152))
+* **node:** download standard assets with fetch ([#196](https://github.com/sebastian-software/ferriki/issues/196)) ([1467e18](https://github.com/sebastian-software/ferriki/commit/1467e1872892e5faf3dc7d98aebf243a6e498152))
+
 ## [0.8.3](https://github.com/sebastian-software/ferriki/compare/v0.8.2...v0.8.3) (2026-10-01)
 
 

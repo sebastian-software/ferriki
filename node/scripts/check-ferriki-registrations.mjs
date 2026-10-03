@@ -60,14 +60,9 @@ try {
   });
   assert.match(html, /ff00aa/i);
 
-  const direct = highlighter.codeToHast("TODO", { lang: language, theme });
-  assert.equal(direct.type, "root");
-  const tokens = highlighter.codeToTokens("TODO", {
-    lang: "ferriki-registration",
-    theme,
-  });
-  assert.equal(tokens.tokens[0][0].content, "TODO");
-  assert.equal(tokens.tokens[0][0].color?.toLowerCase(), "#ff00aa");
+  const direct = highlighter.codeToHtml("TODO", { lang: language, theme });
+  assert.match(direct, /TODO/);
+  assert.match(direct, /ff00aa/i);
 
   highlighter.loadThemeSync(includedTheme);
   const included = highlighter.codeToHtml("TODO", {

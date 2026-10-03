@@ -66,11 +66,11 @@ export function CodeSection() {
   return (
     <Section
       id="code"
-      title="Keep your code. Change one import."
+      title="Keep the same HTML. Change one import."
       intro={
         <>
-          Ferriki keeps Shiki&rsquo;s calls and options, so moving over is mostly an import. From
-          Rust, the same engine is a crate with no Node.js in sight.
+          For Node.js, Ferriki keeps Shiki&rsquo;s rendered HTML calls and options. From Rust, the
+          same engine is a crate with no Node.js in sight.
         </>
       }
       note={
@@ -80,7 +80,7 @@ export function CodeSection() {
         </>
       }
     >
-      <div className="ferriki-code-grid">
+      <div className="fam-code-grid">
         <MigrationExample />
         <RustExample />
       </div>
@@ -90,17 +90,17 @@ export function CodeSection() {
 
 const coverage = [
   {
-    name: "Shiki's highlighting API",
+    name: "Shiki's rendered HTML API",
     status: "Covered",
     settled: true,
-    detail:
-      "codeToHtml, codeToHast, codeToTokens, reusable highlighters, the singleton and language aliases.",
+    detail: "codeToHtml, reusable highlighters, the singleton and language aliases.",
   },
   {
     name: "Standard grammars and themes",
     status: "260 · 65",
     settled: true,
-    detail: "Shiki's catalog, shipped with the package and loaded lazily on first use.",
+    detail:
+      "Ferriki ships catalog metadata. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
   },
   {
     name: "Custom TextMate grammars and themes",
@@ -119,8 +119,7 @@ const coverage = [
     name: "Markdown adapters (rehype, markdown-it)",
     status: "Outside",
     settled: false,
-    detail:
-      "Adapters build on codeToHtml and codeToHast; Ferromark integrates Ferriki for Markdown.",
+    detail: "Adapters stay in the Markdown layer; Ferromark integrates Ferriki from Rust.",
   },
   {
     name: "Browsers",
@@ -135,7 +134,7 @@ export function CoverageSection() {
     <Section
       id="coverage"
       title="What it covers"
-      intro="Ferriki is deliberately narrow: the highlighting engine and Shiki's direct outputs, native on every major platform."
+      intro="Ferriki is deliberately narrow: native highlighting with rendered HTML and CSS output on every supported Node platform."
       note={<Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>}
     >
       <Ledger entries={coverage} />

@@ -5,9 +5,9 @@ order: 2
 
 # Migrating from Shiki
 
-Ferriki follows the API shape of Shiki **v4.4.3** and runs it on a native
-engine. For the highlighting calls themselves, moving over is usually an
-import:
+Ferriki follows the direct API shape of Shiki **v4.4.3** for a tested,
+HTML-focused subset and runs it on a native engine. For HTML highlighting,
+moving over is usually an import:
 
 ```diff
 - import { createHighlighter } from "shiki";
@@ -23,28 +23,35 @@ import:
 
 ## What stays
 
-| Shiki surface                              | In Ferriki                                                      |
-| ------------------------------------------ | --------------------------------------------------------------- |
-| `codeToHtml`, `codeToHast`, `codeToTokens` | Same calls and options                                          |
-| Reusable highlighters and the singleton    | Same factories; dispose long-lived instances explicitly         |
-| Standard languages, themes and aliases     | `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`    |
-| Custom TextMate grammars and themes        | Same JSON registrations, validated before they reach the engine |
-| `themes` map and `defaultColor: false`     | Supported for light and dark output                             |
-| `codeToHast` plus `hastToHtml`             | Supported; sanitize at your application boundary                |
+| Shiki surface                           | In Ferriki                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| `codeToHtml`                            | Supported call shape for rendered HTML                                         |
+| Reusable highlighters and the singleton | Same factories; dispose long-lived instances explicitly                        |
+| Standard languages, themes and aliases  | `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`                   |
+| Custom TextMate grammars and themes     | JSON-shaped registrations validated before they reach the engine               |
+| `themes` map and `defaultColor: false`  | Supported for light and dark output                                            |
+| `transformers` and decorations          | Supported in the JavaScript facade; callbacks stay outside the native boundary |
+| CSS class output                        | Ferriki extension: `styleMode: 'classes'` or `codeToHtmlWithCss()`             |
 
 ## What changes
 
-| Shiki surface                                                    | In Ferriki          | What to do                                                                      |
-| ---------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------- |
-| `engine`, `createOnigurumaEngine`, `createJavaScriptRegexEngine` | Removed             | Delete the engine option; Ferriki has one native engine                         |
-| `loadWasm`, `wasmBinary`                                         | Removed             | Install the platform package instead                                            |
-| Browser runtime                                                  | Not supported       | Highlight in Node.js at build or render time                                    |
-| `lang: "ansi"` with escape sequences                             | Rejected            | Strip or parse terminal output first                                            |
-| `rehype`, `markdown-it` and other adapters                       | Not part of Ferriki | Keep the adapter in your Markdown layer, on top of `codeToHtml` or `codeToHast` |
+| Shiki surface                                                    | In Ferriki           | What to do                                                                                                                           |
+| ---------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `engine`, `createOnigurumaEngine`, `createJavaScriptRegexEngine` | Removed              | Delete the engine option; Ferriki has one native engine                                                                              |
+| `loadWasm`, `wasmBinary`                                         | Removed              | Install the platform package instead                                                                                                 |
+| `codeToHast`, `hastToHtml`, `codeToTokens*`                      | Removed from Node    | Use the supported HTML output; the Rust API retains token-oriented access for Rust consumers.                                        |
+| Standard grammar and theme payloads                              | Downloaded on demand | Async factory, load and one-shot calls fetch and verify missing release assets; configure the asset cache or mirror for offline use. |
+| Browser runtime                                                  | Not supported        | Highlight in Node.js at build or render time                                                                                         |
+| `lang: "ansi"` with escape sequences                             | Rejected             | Strip or parse terminal output first                                                                                                 |
+| `rehype`, `markdown-it` and other adapters                       | Not part of Ferriki  | Keep the adapter in your Markdown layer and use an HTML integration                                                                  |
 
 "Shiki-compatible" means a tested subset: the baseline and the exclusions are
 checked by machine against a pinned mirror of Shiki's own test suite (see
 [Compatibility](/evidence/compatibility)).
+
+The Node contract centers on rendered HTML and CSS. If your integration
+requires structured HAST or token values, plan a separate migration; the former
+Node exports are no longer part of `@ferriki/core`.
 
 ## Before you switch
 
@@ -53,5 +60,12 @@ checked by machine against a pinned mirror of Shiki's own test suite (see
 3. Keep the Shiki implementation behind the same interface until the switch is
    done, so a target without a binary can fail the deployment explicitly.
 
-The full guide, including error handling and the Ferromark and Ardo contract,
-is [docs/migrations/shiki-to-ferriki.md](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
+The full guide, including asset loading, output-shape differences, and
+downstream adapter boundaries, is
+[docs/migrations/shiki-to-ferriki.md](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
+
+The repository also contains a separate optional Vite adapter. It transforms
+marked HTML and JSX during a build; it does not run in the browser and has not
+been published with the current `@ferriki/core` release. See the
+[@ferriki/vite source README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
+for its current contract and release status.

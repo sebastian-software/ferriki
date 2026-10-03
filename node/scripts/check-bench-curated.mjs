@@ -79,7 +79,7 @@ try {
         if (id === "prism" && !row.prism) {
           assert.equal(result.status, "unsupported");
           assert.equal(result.reason, row.prismUnsupported);
-          assert.equal(result.tokens, undefined, "Unsupported grammars cannot produce timings");
+          assert.equal(result.html, undefined, "Unsupported grammars cannot produce timings");
           continue;
         }
         assert.equal(result.status, "ok", `${row.name}/${entry.size}/${id}: ${result.error}`);
@@ -87,21 +87,21 @@ try {
         if (id !== "prism")
           assert.deepEqual(
             result.validation.referenceParity,
-            { tokens: true, html: true },
+            { html: true },
             `${row.name}/${entry.size}/${id}`,
           );
-        for (const api of ["html", "tokens"]) assert.equal(result[api].samplesMs.length, 2);
+        assert.equal(result.html.samplesMs.length, 2);
       }
     }
   }
-  assert.equal(compareReports(report, report).comparisons.length, 80);
+  assert.equal(compareReports(report, report).comparisons.length, 40);
   const rendererChange = structuredClone(report);
   rendererChange.nativeBuild.ferriki.commit = "renderer-candidate";
   rendererChange.nativeBuild.rustSourceSha256 = "changed-renderer";
   assert.throws(() => compareReports(report, rendererChange), /Ferriki must stay/);
   assert.equal(
     compareReports(report, rendererChange, { isolation: "ferriki" }).comparisons.length,
-    80,
+    40,
   );
   rendererChange.nativeBuild.ferroni.sourceSha256 = "changed-engine";
   assert.throws(
@@ -140,12 +140,9 @@ try {
     { cwd: join(repoRoot, "node"), encoding: "utf8", timeout: 30000 },
   );
   assert.equal(profile.status, 0, profile.stderr);
-  assert.deepEqual(JSON.parse(profile.stdout).validation.referenceParity, {
-    tokens: true,
-    html: true,
-  });
+  assert.deepEqual(JSON.parse(profile.stdout).validation.referenceParity, { html: true });
   console.log(
-    "[check-bench-curated] 20 formats × 2 sizes preserve source and exact TextMate output; 16 Prism components pass, 4 remain explicitly unsupported; corpus and native embedded-language profiling contracts pass.",
+    "[check-bench-curated] 20 formats × 2 sizes preserve source and exact TextMate HTML; 16 Prism components pass, 4 remain explicitly unsupported; corpus and native embedded-language profiling contracts pass.",
   );
 } finally {
   rmSync(directory, { recursive: true, force: true });

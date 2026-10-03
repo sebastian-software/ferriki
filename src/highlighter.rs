@@ -2,7 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use ferriki_textmate::{
-    FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType, SyncRegistry, parse_raw_grammar,
+    BacktrackingWarning, FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType,
+    SyncRegistry, parse_raw_grammar,
 };
 use serde_json::Value;
 
@@ -125,7 +126,72 @@ impl Highlighter {
         options: &TokenizeOptions,
     ) -> Result<HighlightTokensResult> {
         let mut result = self.core.tokenize(code, language, theme, options)?;
-        convert_token_offsets_to_utf8(&mut result, code)?;
+        convert_token_offsets_to_utf8(
+            result
+                .tokens
+                .iter_mut()
+                .flatten()
+                .map(|token| &mut token.offset),
+            code,
+        )?;
+        Ok(result)
+    }
+
+    /// Highlights source into aligned tokens with named theme variants.
+    ///
+    /// Each pair is `(variant_name, registered_theme_name)`. Variant names
+    /// must be non-empty and unique, and at least one theme is required.
+    /// Token boundaries are the union of each theme's boundaries; offsets
+    /// are UTF-8 byte positions in the full source. Metadata follows request
+    /// order, while token styles are keyed by variant name.
+    pub fn highlight_with_themes(
+        &mut self,
+        code: &str,
+        language: &str,
+        themes: &[(&str, &str)],
+    ) -> Result<HighlightTokensWithThemesResult> {
+        self.highlight_with_themes_and_options(code, language, themes, &TokenizeOptions::default())
+    }
+
+    /// Highlights named theme variants with explicit tokenizer options.
+    ///
+    /// Empty or duplicate variant names and an empty theme list return
+    /// [`ErrorKind::Theme`]. Missing registrations and assets retain the same
+    /// error categories as [`Self::highlight`]. Optional token types and scope
+    /// paths come from the first requested theme.
+    pub fn highlight_with_themes_and_options(
+        &mut self,
+        code: &str,
+        language: &str,
+        themes: &[(&str, &str)],
+        options: &TokenizeOptions,
+    ) -> Result<HighlightTokensWithThemesResult> {
+        let mut names = BTreeSet::new();
+        if themes.is_empty()
+            || themes
+                .iter()
+                .any(|(name, _)| name.is_empty() || !names.insert(*name))
+        {
+            return Err(Error::new(
+                ErrorKind::Theme,
+                "At least one theme with non-empty, unique variant names is required.",
+            ));
+        }
+        let themes: Vec<_> = themes
+            .iter()
+            .map(|(name, theme)| ((*name).to_owned(), (*theme).to_owned()))
+            .collect();
+        let mut result = self
+            .core
+            .tokenize_with_themes(code, language, &themes, options)?;
+        convert_token_offsets_to_utf8(
+            result
+                .tokens
+                .iter_mut()
+                .flatten()
+                .map(|token| &mut token.offset),
+            code,
+        )?;
         Ok(result)
     }
 
@@ -179,6 +245,27 @@ impl Highlighter {
         self.core
             .load_standard_language(language)
             .map(|scope| scope.is_some())
+    }
+
+    /// Returns advisory regex backtracking warnings from the current compiled
+    /// grammar instance for a language.
+    ///
+    /// Scanners compile lazily during tokenization, so an empty list can mean
+    /// that no risky pattern has been found in the scanners built so far. The
+    /// list does not cover rules that tokenized input has not reached. Returns
+    /// `None` when the language is not registered. Registering a grammar or
+    /// injection, or activating a different theme, can invalidate the compiled
+    /// grammar cache and reset this snapshot; tokenizing the language again
+    /// rediscovers warnings as its scanners compile. This is not a complete
+    /// grammar lint.
+    pub fn backtracking_warnings(
+        &mut self,
+        language: &str,
+    ) -> Result<Option<Vec<BacktrackingWarning>>> {
+        let Some(grammar) = self.core.grammar_for_language(language)? else {
+            return Ok(None);
+        };
+        Ok(Some(grammar.backtracking_warnings()))
     }
 
     /// Loads a standard theme; returns false if absent.

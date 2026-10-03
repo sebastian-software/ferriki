@@ -7,17 +7,25 @@ import {
   BenchmarkContext,
   BenchmarkDocuments,
   BenchmarkSummary,
+  HistoricalApiNote,
+  PhikiSharedHtmlBenchmark,
 } from "../../components/benchmark-tables";
 
 # Benchmarks
 
-Ferriki is measured against Shiki itself, in the same Node.js process, on the
-same documents, languages and theme. Shiki runs twice: with its default
-Oniguruma engine compiled to WebAssembly, and with its JavaScript regex engine.
+Ferriki is measured against Shiki on the same documents, languages and theme.
+Shiki runs twice: with its default Oniguruma engine compiled to WebAssembly,
+and with its JavaScript regex engine. When PHP and Composer are available, the
+benchmark also runs pinned Phiki as a fourth HTML renderer. Its output check
+and any equivalent-work totals are reported separately from the full-corpus
+Node HTML totals. HTML is the current public Node output; the report runner no
+longer measures the removed HAST and token APIs.
 
 Every number on this site comes from one committed report,
 [docs/benchmarks/shiki-comparison.json](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/shiki-comparison.json).
 The landing page and this page read it at build time.
+
+<HistoricalApiNote />
 
 ## Summary
 
@@ -27,35 +35,60 @@ faster, and a factor below 1× means Ferriki is slower.
 
 <BenchmarkSummary />
 
-What this says today:
+### Phiki shared HTML cohort
 
-- **HTML is where Ferriki is faster.** `codeToHtml` runs tokenizing, theming
-  and rendering natively and hands one string back to JavaScript. That is the
-  call a site build or a Markdown pipeline makes.
-- **HAST and tokens are not faster yet.** `codeToHast` is slower than with
-  Shiki and `codeToTokensBase` is about even. Both return many small JavaScript
-  objects, and building them across the native boundary currently costs about
-  as much as the native tokenizing saves, or more ([ferriki#147](https://github.com/sebastian-software/ferriki/issues/147)).
-- **Small documents are close.** Below about a hundred lines the fixed cost of a
-  call dominates, and some small documents are slower than with Shiki; the
-  tables below show which.
-- **Cold start is faster.** There is no WebAssembly module to instantiate and no
-  regex translation before the first line.
+<PhikiSharedHtmlBenchmark />
+
+The headline is a full-corpus HTML comparison. Ferriki and both Shiki engines
+must produce identical serialized HTML on every document before their totals
+are included. Phiki's per-document HTML timings stay visible with an
+output-agreement status. Differing output is excluded from shared totals, and
+the shared-cohort timing table appears only when at least one document passes
+the four-renderer agreement check. The per-document HTML table still shows
+every Phiki timing and its output status when that cohort is empty.
 
 ## Method
 
-1. **Equal output first.** For every document, Ferriki's and Shiki's JavaScript
-   engine's HTML, HAST and tokens are compared with Shiki's Oniguruma output.
-   The HTML must match byte for byte; HAST and tokens must match once
-   serialized. A document an engine renders differently would be excluded
-   from its timings and counted below.
-2. **Warm timings.** One highlighter per engine, with every corpus language and
-   the theme loaded. Per document and API, five warm-up rounds, then engines
-   take turns round by round until each has at least 30 samples and the time
-   budget is spent. The statistic is the median.
-3. **Cold start.** A fresh Node.js process per run imports the package, creates
-   a highlighter for the corpus languages and renders every document once; the
-   median of ten runs.
+1. **Strict Node HTML agreement.** Ferriki, Shiki with WebAssembly, and Shiki
+   with JavaScript are compared for exact serialized HTML against Shiki with
+   WebAssembly. Full-corpus headline totals include an engine only when every
+   document passes this check.
+2. **Phiki HTML agreement.** The pinned Phiki renderer is compared with Shiki's
+   WebAssembly HTML by visible source text and per-character foreground color,
+   font style, font weight and text decoration. HTML wrappers and token
+   boundaries may differ. The reference and Phiki text must each equal the
+   source; CRLF and CR normalize to LF, and exactly one artificial final LF is
+   removed only when output text is precisely source plus that LF.
+3. **Warm timings.** One highlighter per engine, with every corpus language and
+   the theme loaded. Phiki uses one long-lived PHP process and highlighter;
+   each sample forces `PendingHtmlOutput::toString()` and the worker's
+   `hrtime()` excludes JSON IPC and post-render output checks. For each
+   document, five warm-up rounds run before at least 30 measured samples and
+   the time budget is spent. The eligible engine order rotates by
+   `documentIndex + round`, separately for warmup and measurement rounds. The
+   statistic is the median. Phiki per-document times remain visible when output
+   differs, but only four-engine matching documents contribute to its shared
+   warm totals.
+4. **Cold start.** A fresh process per run imports the Node package or loads
+   Composer, creates a highlighter and renders the selected documents once;
+   process creation is excluded. Phiki cold timings are collected only for the
+   four-engine matching cohort. Full-corpus cold runs execute ten consecutive
+   processes per Node engine in Ferriki, Shiki + Oniguruma WASM, then Shiki +
+   JavaScript order. For the shared cohort, the runner executes ten rounds in
+   that fixed Node order, followed by ten consecutive Phiki processes. No ratio
+   or aggregate is shown when that cohort is empty.
+
+Phiki is pinned in `node/benchmarks/phiki/composer.lock`, separate from the
+shipped packages. The benchmark loads the same `tm-grammars` assets and theme
+used by the Node runs, including each selected grammar's recursive `embedded`
+dependencies. Phiki 2.2.1 registers grammars by name but does not populate its
+scope lookup for external assets, so the adapter uses a narrow
+`ReflectionProperty` bridge for the pinned version to resolve embedded
+includes by scope. `tm-grammars` external `injectionSelector`/`injectTo` assets
+that target selected grammar scopes are hashed and listed in the report; Phiki
+2.2.1 has no equivalent public external-injection registration API, so those
+assets are not activated. The report names this limitation instead of
+presenting those cases as equivalent.
 
 The corpus is real files from this repository and its pinned upstream mirrors,
 from small editor fixtures to source files of more than a thousand lines. Reproduce it from
@@ -66,8 +99,17 @@ cd node
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm run build:compat
 pnpm run build:native
-node scripts/bench-shiki-comparison.mjs --write ../docs/benchmarks/shiki-comparison.json
+composer install --working-dir=benchmarks/phiki --no-interaction --prefer-dist
+pnpm run bench:comparison -- --write ../docs/benchmarks/shiki-comparison.json
 ```
+
+The optional Phiki run requires PHP 8.3 or newer, mbstring with Oniguruma, and
+Composer. If any prerequisite or the pinned dependencies are missing, the
+benchmark skips Phiki with a recorded reason. Its report records PHP,
+Oniguruma, Composer, Phiki, grammar/theme package versions and asset hashes,
+plus PHP SAPI, OPcache/JIT settings and machine details. Ferriki's version is
+read from workspace source; this benchmark does not certify a registry
+artifact.
 
 ## Measurement context
 
@@ -78,14 +120,4 @@ corpus stay the same, so the command above measures yours.
 
 ## Every document
 
-### codeToHtml
-
-<BenchmarkDocuments api="codeToHtml" />
-
-### codeToHast
-
-<BenchmarkDocuments api="codeToHast" />
-
-### codeToTokensBase
-
-<BenchmarkDocuments api="codeToTokensBase" />
+<BenchmarkDocuments />

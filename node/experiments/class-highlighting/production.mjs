@@ -29,14 +29,25 @@ try {
       styleMode: "classes",
       tokenizeTimeLimit: 0,
     };
-    const raw = highlighter.codeToTokens(item.code, options).tokens.flat();
+    let renderedTokens;
+    const output = highlighter.codeToHtmlWithCss(item.code, {
+      ...options,
+      transformers: [
+        {
+          tokens(tokens) {
+            renderedTokens = tokens;
+          },
+        },
+      ],
+    });
+    assert(renderedTokens, `${item.id}: HTML token hook must run`);
+    const raw = renderedTokens.flat();
     const expected = item.tokens.filter((token) => token.end > token.start);
     assert.equal(raw.length, expected.length, item.id);
     for (const [index, token] of raw.entries()) {
       assert.deepEqual(token.scopeNames, expected[index].scopes, `${item.id} scope ${index}`);
       assert.equal(token.content, item.code.slice(expected[index].start, expected[index].end));
     }
-    const output = highlighter.codeToHtmlWithCss(item.code, options);
     assert(!output.html.includes(" style="));
     cases.push({ id: item.id, code: item.code, expected, ...output });
   }

@@ -4,6 +4,7 @@
 
 use std::sync::Arc;
 
+use crate::BacktrackingWarning;
 use crate::RegexError;
 
 use crate::attributed_scope_stack::{AttributedScopeStack, ScopeAttributesProvider};
@@ -211,6 +212,18 @@ impl Grammar {
     #[must_use]
     pub fn root_scope_name(&self) -> &str {
         &self.root_scope_name
+    }
+
+    /// Returns advisory backtracking warnings discovered by scanners compiled
+    /// so far while tokenizing this grammar.
+    ///
+    /// TextMate scanners are compiled lazily. The returned list can grow as
+    /// more input reaches rules; it does not lint rules that have not yet been
+    /// compiled and is not a complete grammar lint. Call this after
+    /// tokenization to inspect the findings seen so far.
+    #[must_use]
+    pub fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
+        self.registry.backtracking_warnings()
     }
 
     #[must_use]
@@ -427,7 +440,8 @@ const fn priority_order(priority: MatcherPriority) -> i8 {
 mod tests {
     use super::{Grammar, GrammarConfiguration};
     use crate::{
-        EncodedTokenAttributes, GrammarStore, RawGrammar, RawTheme, StandardTokenType, Theme,
+        BacktrackingRisk, EncodedTokenAttributes, GrammarStore, RawGrammar, RawTheme,
+        StandardTokenType, Theme,
     };
 
     fn raw_grammar(source: &str) -> RawGrammar {
@@ -436,6 +450,150 @@ mod tests {
 
     fn default_theme() -> Theme {
         Theme::create_from_raw_theme(None, None).unwrap()
+    }
+
+    #[test]
+    fn reports_lazy_backtracking_warnings_for_included_grammar_rules() {
+        let root = raw_grammar(
+            r#"{
+                "scopeName": "source.host",
+                "patterns": [
+                    { "include": "source.embedded" },
+                    { "match": "[a-z]+", "name": "word.clean" }
+                ]
+            }"#,
+        );
+        let embedded = raw_grammar(
+            r#"{
+                "scopeName": "source.embedded",
+                "patterns": [{
+                    "match": "([0-9]+(_?))+(\\.)([0-9]+)",
+                    "name": "constant.numeric.risky",
+                    "$vscodeTextmateLocation": {
+                        "filename": "embedded.tmLanguage.json",
+                        "line": 12,
+                        "char": 4
+                    }
+                }, {
+                    "match": "(a|aa)*Z",
+                    "name": "comment.overlapping.risky"
+                }]
+            }"#,
+        );
+        let mut store = GrammarStore::new();
+        store.insert(embedded);
+        let grammar = Grammar::new(
+            &root,
+            &store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+
+        assert!(grammar.backtracking_warnings().is_empty());
+        grammar.tokenize_line("123.45 clean", None, 0).unwrap();
+        let warnings = grammar.backtracking_warnings();
+
+        assert_eq!(warnings.len(), 2);
+        let nested = warnings
+            .iter()
+            .find(|warning| warning.rule == "constant.numeric.risky")
+            .expect("nested quantifier warning");
+        assert_eq!(nested.grammar_scope_name, "source.embedded");
+        assert_eq!(
+            nested.rule_location.as_deref(),
+            Some("embedded.tmLanguage.json:12:4")
+        );
+        assert_eq!(nested.pattern, r"([0-9]+(_?))+(\.)([0-9]+)");
+        assert_eq!(nested.risk, BacktrackingRisk::NestedQuantifier);
+        assert!(!nested.message.is_empty());
+        let overlapping = warnings
+            .iter()
+            .find(|warning| warning.rule == "comment.overlapping.risky")
+            .expect("overlapping alternatives warning");
+        assert_eq!(overlapping.grammar_scope_name, "source.embedded");
+        assert_eq!(overlapping.pattern, "(a|aa)*Z");
+        assert_eq!(overlapping.risk, BacktrackingRisk::OverlappingAlternation);
+
+        grammar.tokenize_line("aaZ clean", None, 0).unwrap();
+        grammar.tokenize_line("99.1 clean", None, 0).unwrap();
+        assert_eq!(grammar.backtracking_warnings(), warnings);
+    }
+
+    #[test]
+    fn attributes_end_and_while_warnings_to_their_owning_rules() {
+        let raw = raw_grammar(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "(a+)+$",
+                        "end": "Z",
+                        "name": "meta.begin-risky",
+                        "$vscodeTextmateLocation": {
+                            "filename": "begin.tmLanguage.json",
+                            "line": 7,
+                            "char": 2
+                        }
+                    },
+                    {
+                        "begin": "END",
+                        "end": "(c+)+$",
+                        "name": "meta.end-risky",
+                        "$vscodeTextmateLocation": {
+                            "filename": "end.tmLanguage.json",
+                            "line": 12,
+                            "char": 5
+                        }
+                    },
+                    {
+                        "begin": "WHILE",
+                        "while": "(b+)+$",
+                        "name": "meta.while-risky",
+                        "$vscodeTextmateLocation": {
+                            "filename": "while.tmLanguage.json",
+                            "line": 18,
+                            "char": 3
+                        }
+                    }
+                ]
+            }"#,
+        );
+        let grammar = Grammar::new(
+            &raw,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+
+        let begin_state = grammar.tokenize_line("aaa", None, 0).unwrap().rule_stack;
+        grammar.tokenize_line("aaa", Some(begin_state), 0).unwrap();
+
+        let end_state = grammar.tokenize_line("END", None, 0).unwrap().rule_stack;
+        grammar.tokenize_line("ccc", Some(end_state), 0).unwrap();
+
+        let while_state = grammar.tokenize_line("WHILE", None, 0).unwrap().rule_stack;
+        grammar.tokenize_line("bbb", Some(while_state), 0).unwrap();
+
+        let warnings = grammar.backtracking_warnings();
+        assert_eq!(warnings.len(), 3);
+        assert!(warnings.iter().any(|warning| {
+            warning.grammar_scope_name == "source.test"
+                && warning.rule == "meta.begin-risky"
+                && warning.pattern == "(a+)+$"
+                && warning.rule_location.as_deref() == Some("begin.tmLanguage.json:7:2")
+        }));
+        assert!(warnings.iter().any(|warning| {
+            warning.grammar_scope_name == "source.test"
+                && warning.rule == "meta.end-risky"
+                && warning.pattern == "(c+)+$"
+                && warning.rule_location.as_deref() == Some("end.tmLanguage.json:12:5")
+        }));
+        assert!(warnings.iter().any(|warning| {
+            warning.grammar_scope_name == "source.test"
+                && warning.rule == "meta.while-risky"
+                && warning.pattern == "(b+)+$"
+                && warning.rule_location.as_deref() == Some("while.tmLanguage.json:18:3")
+        }));
     }
 
     #[test]

@@ -6,8 +6,8 @@ order: 1
 # Getting started
 
 Ferriki highlights code with the TextMate grammars and themes from Shiki's
-catalog, on a native Rust engine. From Node.js it keeps Shiki's API; from Rust
-it is a regular crate ([Start with Rust](/rust/getting-started)).
+catalog, on a native Rust engine. From Node.js it keeps Shiki's rendered HTML
+API; from Rust it is a regular crate ([Start with Rust](/rust/getting-started)).
 
 ## Requirements
 
@@ -25,15 +25,18 @@ The native addon comes from a platform package (`@ferriki/<platform>`) that npm
 installs as an optional dependency. Keep optional dependencies enabled in your
 deployment.
 
-Grammars and themes are not bundled. Ferriki downloads each one from
-`assets.ferriki.dev` the first time it is loaded, verifies it against the
-release's SHA-256 digest, and caches it in `node_modules/.cache/ferriki`.
-Offline builds reuse a populated cache or set `FERRIKI_ASSETS_BASE_URL` to a
-mirror; `FERRIKI_ASSETS_REMOTE=0` turns downloads off.
+Grammar and theme payloads are not bundled. The asynchronous APIs download
+them from `assets.ferriki.dev` the first time they are loaded, verify each
+payload against the release's SHA-256 digest, and cache it in
+`node_modules/.cache/ferriki`. To use a mirror, set `FERRIKI_ASSETS_BASE_URL`.
+For offline builds, prepopulate the cache or set `FERRIKI_ASSETS_REMOTE=0` and
+use cached payloads only. Downloads happen during `createHighlighter`,
+`loadLanguage`, `loadTheme`, and one-shot calls; rendering on a loaded
+highlighter stays synchronous.
 
 ## Highlight once
 
-```ts
+```js ferriki-check=one-shot
 import { codeToHtml } from "@ferriki/core";
 
 const html = await codeToHtml("const answer = 42;", {
@@ -48,29 +51,33 @@ They load the language and theme on first use.
 ## Reuse a highlighter
 
 For a site build or a server, create one highlighter with the languages and
-themes you need. After creation every call is synchronous.
+themes you need. Rendering with loaded languages and themes is synchronous;
+you can still load additional ones through the asynchronous methods.
 
-```ts
+```js ferriki-check=reusable
 import { createHighlighter } from "@ferriki/core";
 
-using highlighter = await createHighlighter({
+const source = "const answer: number = 42;";
+const highlighter = await createHighlighter({
   langs: ["typescript", "rust", "css"],
   themes: ["github-light", "github-dark"],
 });
 
-const html = highlighter.codeToHtml(source, { lang: "typescript", theme: "github-light" });
+let html;
+try {
+  html = highlighter.codeToHtml(source, { lang: "typescript", theme: "github-light" });
+} finally {
+  highlighter.dispose();
+}
 ```
 
-`using` disposes the highlighter at the end of the scope; call
-`highlighter.dispose()` yourself where `using` is not available. A highlighter
-belongs to one thread: create one per worker for parallel builds.
+A highlighter belongs to one thread: create one per worker for parallel builds.
+Dispose it when the build or server no longer needs it.
 
-## Other outputs
+## HTML with CSS
 
-- `codeToHast` returns the same result as a serializable HAST tree.
-- `codeToTokens` returns themed tokens with foreground and background colors.
-- `getLastGrammarState` captures where a grammar stopped, to continue
-  highlighting in a later call.
+For reusable CSS classes and the matching theme stylesheet, use
+`codeToHtmlWithCss()` or set `styleMode: "classes"` on `codeToHtml()`.
 
 The [API overview](/guide/api) lists every function and option.
 

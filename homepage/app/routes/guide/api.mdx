@@ -5,8 +5,9 @@ order: 5
 
 # API overview
 
-`@ferriki/core` exports Shiki's highlighting surface. This page is the map;
-the complete reference, with every type and error code, is
+`@ferriki/core` provides a tested, HTML-focused subset of Shiki's direct
+highlighting API for Node.js. This page is the map; the complete reference,
+with every type and error code, is
 [docs/ferriki-api.md](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md).
 
 ## One-shot functions
@@ -14,15 +15,11 @@ the complete reference, with every type and error code, is
 Each one uses the shared singleton and returns a Promise; pass a highlighter as
 the first argument and it returns synchronously.
 
-| Function                                | Returns                                            |
-| --------------------------------------- | -------------------------------------------------- |
-| `codeToHtml(code, options)`             | Escaped HTML with Shiki's line and token structure |
-| `codeToHtmlWithCss(code, options)`      | Nested classes and a matching stylesheet           |
-| `codeToHast(code, options)`             | The same result as a serializable HAST tree        |
-| `codeToTokens(code, options)`           | Tokens plus foreground and background colors       |
-| `codeToTokensBase(code, options)`       | The token matrix only                              |
-| `codeToTokensWithThemes(code, options)` | Aligned tokens for a theme map                     |
-| `getLastGrammarState(code, options)`    | A serializable state to continue from              |
+| Function                             | Returns                                              |
+| ------------------------------------ | ---------------------------------------------------- |
+| `codeToHtml(code, options)`          | Escaped HTML with Shiki's line and token structure   |
+| `codeToHtmlWithCss(code, options)`   | `{ html, css }` with nested classes and a stylesheet |
+| `getLastGrammarState(code, options)` | A serializable state to continue highlighting later  |
 
 ## Highlighters
 
@@ -54,3 +51,22 @@ working.
 
 For nested scopes, unchanged theme files, and CSS-only theme switching, see
 [Class-based output](/guide/class-highlighting).
+
+## Assets and asynchronous loading
+
+The package ships language and theme catalog metadata, not the grammar and
+theme payloads. `createHighlighter`, `loadLanguage`, `loadTheme`, and one-shot
+calls download missing payloads from the release-pinned asset host, verify
+their SHA-256 digests, and cache them. Calls on a loaded highlighter are
+synchronous. Configure `assets: { remote: false }` or
+`FERRIKI_ASSETS_REMOTE=0` to use a populated cache without network access;
+`assets.baseUrl` and `FERRIKI_ASSETS_BASE_URL` select a mirror.
+
+## Vite
+
+The repository also contains an optional `@ferriki/vite` adapter. It highlights
+explicitly marked static HTML and JSX blocks during Vite builds; it does not
+add a browser runtime and is separate from `@ferriki/core`. The adapter has not
+been published to npm with the current Ferriki release. See its
+[package README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
+for the current source contract and release status.

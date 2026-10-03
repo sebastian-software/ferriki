@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-03
 
 ## Context
 
@@ -31,9 +31,10 @@ no longer had a justification as a product component.
 Ferriki is a native-only runtime. The published package executes highlighting
 exclusively in the Rust core.
 
-- JavaScript remains only as a thin facade: addon loading, public API wiring,
-  hast-level transformation (transformers and decorations per ADR 0008), the
-  catalog projection, and the type surface.
+- JavaScript remains a thin host: addon loading, public API wiring, standard
+  asset transport through Node's built-in `fetch` (ADR 0013), hast-level
+  transformation (transformers and decorations per ADR 0008), the catalog
+  projection, and the type surface.
 - The bundled JS engine and `FERRIKI_BACKEND=js` are removed. The
   native-boundary check in the core gate forbids the removed runtime paths from
   returning.
@@ -57,11 +58,64 @@ exclusively in the Rust core.
   the prebuild matrix cannot reach, including browsers, is a future `wasm32`
   build of the Rust core, not a JS reimplementation.
 - The binding loader is internal. Consumers import `@ferriki/core` only.
+- `ferriki-core` currently uses NAPI-RS v2 crates and enables Node-API 8 in
+  `Cargo.toml`. These version numbers describe different things: the NAPI-RS
+  crate major does not select the Node-API level.
+
+Before the 1.0 freeze, adopting NAPI-RS v3 and `@napi-rs/cli` v3 is deferred;
+it is not a 1.0 migration requirement. The current Ferriki-owned build,
+platform registry, loader, sidecar names and release workflow remain the
+source of truth. They cover the seven targets in
+[`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs), keep the
+published `@ferriki/core` and `@ferriki/<platform>` names, and report
+unsupported targets or missing sidecars with Ferriki-specific errors. The
+package runtime floor remains the `>=22.13.0` value in
+[`node/ferriki/package.json`](../node/ferriki/package.json).
+
+The current matrix covers Linux x64 and arm64 on glibc and musl, macOS arm64,
+and Windows x64 and arm64. CI builds and exercises all seven targets. Linux
+musl builds use `cargo-zigbuild` and run their packed-consumer and native-import
+checks on Alpine. Ferriki's ESM loader selects by OS, architecture and Linux
+libc; for an unsupported host it prints the supported matrix, and for a
+missing sidecar it suggests the package to install and includes each failed
+resolution. A generated loader would need to preserve those package names and
+actionable errors; no loader defect is identified. NAPI-RS uses the same broad
+root-package-plus-optional-sidecars model, but adopting its `napi.targets`,
+generated packages, loader and artifact conventions would need to preserve
+Ferriki's current package names and ESM facade.
+
+The NAPI-RS v3 templates cover additional targets such as macOS x64, Windows
+x86, Linux ARMv7, Android, FreeBSD and WASI. Its accepted target strings are
+broader than its maintained templates, and neither list is Ferriki's tested
+support promise. The CLI adds cross-build helpers, but its cross-build modes
+are experimental; Ferriki already builds the supported OS targets on matching
+CI runners and cross-builds musl on same-architecture glibc runners. The CLI
+requires Node `^20.17.0 || ^22.13.0 || >=23.5.0` at build time; this does not
+raise Ferriki's `>=22.13.0` runtime floor. The v2-to-v3 migration also changes
+CLI and package configuration and parts of the Rust API.
+
+The release workflow checks the platform matrix and sidecar packages, tests
+packed main and Vite consumers before publication, and verifies the npm
+publication afterward. NAPI-RS's release command can warn and skip a target
+whose artifact is missing, so Ferriki would still need its explicit
+missing-artifact gates. The current path has no identified compatibility
+defect or release-maintenance gap that justifies replacing these checks now.
+See the official
+[v2-to-v3 migration guide](https://napi.rs/docs/more/v2-v3-migration-guide),
+[support and compatibility policy](https://napi.rs/docs/more/support-compatibility),
+the [cross-build reference](https://napi.rs/docs/cli/build), and the
+[release command reference](https://napi.rs/docs/cli/pre-publish).
 
 ## Consequences
 
 - Any operation the Rust core cannot serve is a gap to close in the Rust
   crates, not a reason to run JavaScript.
+- Deferring the NAPI-RS v3 toolchain does not change package names, the Node
+  runtime floor, supported targets or release behavior. Keep the existing
+  native smoke, packed-consumer, sidecar and publication-verification gates
+  required for 1.0. Reconsider the migration only when a concrete loader,
+  build or release-maintenance problem outweighs the work to preserve these
+  contracts and gates.
 - Adding a target means a sidecar package, a release matrix entry and a row in
   `platforms.mjs`; removing one is a breaking change.
 - Environments outside the matrix, and browsers, have no supported runtime
@@ -75,3 +129,8 @@ exclusively in the Rust core.
 - 2026-09-30: Rewritten to the current state. Records the `@ferriki` scope and
   sidecars (0.4.0), musl and Windows arm64 targets, the dropped macOS Intel
   target and the internal loader.
+- 2026-10-02: Records Node's built-in fetch as the standard-asset transport;
+  Rust continues to plan and verify release-pinned assets.
+- 2026-10-03: Deferred NAPI-RS v3 and `@napi-rs/cli` adoption because the
+  current seven-target build, loader and release checks meet the 1.0 support
+  contract without a demonstrated defect or maintenance gap.

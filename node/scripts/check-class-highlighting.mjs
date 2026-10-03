@@ -1,6 +1,21 @@
 import assert from "node:assert/strict";
+import { fromHtml } from "hast-util-from-html";
 import { scopeClass } from "../ferriki/classes.mjs";
-import { codeToHtmlWithCss, createHighlighter, hastToHtml, ShikiError } from "../ferriki/index.mjs";
+import { codeToHtmlWithCss, createHighlighter, ShikiError } from "../ferriki/index.mjs";
+import "./test-asset-env.mjs";
+
+const parseHtml = (html) => fromHtml(html, { fragment: true });
+const text = (node) =>
+  node.type === "text" ? node.value : (node.children || []).map(text).join("");
+const all = (node) => [node, ...(node.children || []).flatMap(all)];
+const classes = (node) => {
+  const value = node.properties?.className ?? node.properties?.class ?? [];
+  return Array.isArray(value) ? value : String(value).split(/\s+/u).filter(Boolean);
+};
+const parents = (node, target, path = []) =>
+  node === target
+    ? path
+    : (node.children || []).map((child) => parents(child, target, [...path, node])).find(Boolean);
 
 const grammar = {
   name: "class-probe",
@@ -18,15 +33,10 @@ const highlighter = await createHighlighter({
 try {
   const options = { lang: "class-probe", theme: "nord", styleMode: "classes" };
   const code = "AB BA AA <&😀\n\n";
-  const tree = highlighter.codeToHast(code, options);
-  const text = (node) => (node.type === "text" ? node.value : node.children.map(text).join(""));
+  const rendered = highlighter.codeToHtmlWithCss(code, options);
+  const tree = parseHtml(rendered.html);
   assert.equal(text(tree), code);
-  const all = (node) => [node, ...(node.children || []).flatMap(all)];
-  const tokens = all(tree).filter((node) => node.properties?.class?.split(" ").includes("token"));
-  const parents = (node, target, path = []) =>
-    node === target
-      ? path
-      : (node.children || []).map((child) => parents(child, target, [...path, node])).find(Boolean);
+  const tokens = all(tree).filter((node) => classes(node).includes("token"));
   for (const [word, expected] of [
     ["AB", ["meta-a", "meta-b"]],
     ["BA", ["meta-b", "meta-a"]],
@@ -34,15 +44,12 @@ try {
   ]) {
     const token = tokens.find((node) => text(node) === word);
     const path = parents(tree, token).flatMap((node) =>
-      (node.properties?.class || "")
-        .split(" ")
+      classes(node)
         .filter((name) => name.startsWith("exact-meta"))
         .map((name) => name.slice(6)),
     );
     assert.deepEqual(path, expected);
   }
-  const rendered = highlighter.codeToHtmlWithCss(code, options);
-  assert.equal(rendered.html, hastToHtml(tree));
   assert.equal(rendered.html, highlighter.codeToHtml(code, options));
   assert(!rendered.html.includes(" style="));
   assert(rendered.css.includes(":where(.ferriki-style-"));
@@ -103,12 +110,12 @@ try {
   assert(inlineClasses.startsWith("<code class="));
   assert(inlineClasses.includes("<br>"));
   assert(!inlineClasses.includes("style="));
-  const stateTree = highlighter.codeToHast("/* open", {
+  const classGrammarState = highlighter.getLastGrammarState("/* open", {
     lang: "javascript",
     theme: "nord",
     styleMode: "classes",
   });
-  assert.equal(highlighter.getLastGrammarState(stateTree).lang, "javascript");
+  assert.equal(classGrammarState.lang, "javascript");
   assert.throws(
     () =>
       highlighter.codeToHtmlWithCss("x", {
@@ -118,7 +125,7 @@ try {
       }),
     (error) => error.code === "ERR_USAGE",
   );
-  for (const method of ["codeToHtmlWithCss", "codeToHast"]) {
+  for (const method of ["codeToHtmlWithCss", "codeToHtml"]) {
     assert.throws(
       () =>
         highlighter[method]("\u001B[31mred", { lang: "ansi", theme: "nord", styleMode: "classes" }),
@@ -126,19 +133,25 @@ try {
     );
   }
   const json = '"hello"\n{"message":"hello"}';
-  const raw = highlighter.codeToTokens(json, {
+  let callbackTokens;
+  highlighter.codeToHtml(json, {
     lang: "json",
     theme: "monokai",
     styleMode: "classes",
+    transformers: [
+      {
+        tokens(lines) {
+          callbackTokens = lines.flat();
+          return lines;
+        },
+      },
+    ],
   });
   assert.deepEqual(
-    raw.tokens
-      .flat()
-      .filter((token) => token.content === "hello")
-      .map((token) => token.color),
+    callbackTokens.filter((token) => token.content === "hello").map((token) => token.color),
     ["#E6DB74", "#CFCFC2"],
   );
-  assert(raw.tokens.flat().every((token) => token.scopeNames.length));
+  assert(callbackTokens.every((token) => token.scopeNames.length));
   const themed = highlighter.codeToHtmlWithCss(json, {
     lang: "json",
     themes: { light: "vitesse-light", dark: "monokai" },
@@ -147,7 +160,7 @@ try {
   assert(themed.css.includes("--shiki-dark:"));
   assert(!themed.html.includes(" style="));
 
-  const decorated = highlighter.codeToHast("const answer = 42", {
+  const decorated = highlighter.codeToHtml("const answer = 42", {
     lang: "javascript",
     theme: "nord",
     styleMode: "classes",
@@ -160,42 +173,42 @@ try {
       },
     ],
   });
-  assert.equal(text(decorated), "const answer = 42");
+  const decoratedTree = parseHtml(decorated);
+  assert.equal(text(decoratedTree), "const answer = 42");
   assert.equal(
-    text(all(decorated).find((node) => node.properties?.class?.includes("selected"))),
+    text(all(decoratedTree).find((node) => classes(node).includes("selected"))),
     "answer",
   );
   assert(
-    all(decorated).some(
-      (node) =>
-        node.properties?.class?.includes("transformed") && node.properties.class.includes("token"),
+    all(decoratedTree).some(
+      (node) => classes(node).includes("transformed") && classes(node).includes("token"),
     ),
   );
   const state = highlighter.getLastGrammarState("/* open", { lang: "javascript", theme: "nord" });
-  const continued = highlighter.codeToTokens("comment */ const x = 1", {
+  let continuedTokens;
+  const continued = highlighter.codeToHtml("comment */ const x = 1", {
     lang: "javascript",
     theme: "nord",
     styleMode: "classes",
     grammarState: state,
+    transformers: [
+      {
+        tokens(lines) {
+          continuedTokens = lines.flat();
+          return lines;
+        },
+      },
+    ],
   });
-  assert(continued.tokens[0][0].scopeNames.some((scope) => scope.startsWith("comment")));
-  assert(
-    highlighter
-      .codeToHtml("comment */", {
-        lang: "javascript",
-        theme: "nord",
-        styleMode: "classes",
-        grammarState: state,
-      })
-      .includes("tok-comment"),
-  );
+  assert(continuedTokens[0].scopeNames.some((scope) => scope.startsWith("comment")));
+  assert(continued.includes("tok-comment"));
   for (const source of ["", "<&😀\r\n\r\n", "trailing\n"]) {
-    const plain = highlighter.codeToHast(source, {
+    const plain = highlighter.codeToHtml(source, {
       lang: "text",
       theme: "none",
       styleMode: "classes",
     });
-    assert.equal(text(plain), source.replaceAll("\r\n", "\n"));
+    assert.equal(text(parseHtml(plain)), source.replaceAll("\r\n", "\n"));
   }
   assert.equal(
     (await codeToHtmlWithCss(highlighter, json, { lang: "json", theme: "monokai" })).html,

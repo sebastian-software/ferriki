@@ -8,26 +8,29 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![Coverage gate >= 89%](https://img.shields.io/badge/coverage%20gate-%3E%3D%2089%25-brightgreen.svg)](./.github/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](./LICENSE-MIT)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
+[![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
+[![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
-Node bindings.
+Ferriki provides Shiki-shaped HTML syntax highlighting through a lean Rust
+core and Node bindings.
 
-It keeps the API shape people already know from Shiki, but removes the old
-JS/WASM multi-engine direction from the runtime. The goal is simple: keep the
-developer experience familiar, move the heavy lifting into Rust, and end up
-with a smaller, cleaner architecture that is easier to reason about and easier
-to ship.
+It keeps familiar highlighter factories and HTML calls, while removing the
+old JS/WASM multi-engine direction from the runtime. The goal is simple: keep
+the developer experience familiar, move the heavy lifting into Rust, and end
+up with a smaller, cleaner architecture that is easier to reason about and
+easier to ship.
 
 ## Why Ferriki
 
-- Shiki-compatible where it matters: existing highlighting-oriented Node APIs stay recognizable.
+- Shiki-shaped HTML API: reusable highlighters and familiar highlight options support common migrations.
 - Rust-first by design: grammar handling, theme application, state management, and rendering belong in the native core.
-- Shiki-derived standard assets should ship with Ferriki, but load lazily instead of living as an always-on bundled runtime catalog.
+- Standard language and theme assets load lazily from a release-pinned CDN, so their payloads stay out of the packages.
 - Leaner runtime shape: no product dependency on the historical JS/WASM engine stack.
 - Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite, while the tokenizer is checked against a pinned vscode-textmate oracle.
 
-Ferriki is for teams that like the Shiki contract, but want a cleaner native
-foundation under it.
+Ferriki is for teams that like Shiki's familiar highlighter and HTML flow and
+want a cleaner native foundation underneath.
 
 ## Product Scope
 
@@ -35,11 +38,17 @@ Ferriki is intentionally narrow right now.
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-compatible highlighting API |
-| Direct outputs like `codeToHtml`, `codeToTokens`, `codeToHast` | Integrated | Part of the main product surface |
-| `transformers`, `colorized-brackets` | Not integrated | These may exist in the mirrored compatibility workspace, but they are not part of the Ferriki product boundary |
-| `markdown-it`, `rehype`, `VitePress integrations` | Out of scope | These are adapters on top of `codeToHtml` / `codeToHast`, so Ferriki does not treat them as product features |
-| Future native extension lanes | Possible later | If Ferriki takes on these areas, the preferred direction is Rust-native ownership, not a permanent JS wrapper stack |
+| Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-shaped HTML rendering API |
+| HTML output | Primary Node path | `codeToHtml` renders HTML; `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also returns resolved theme CSS |
+| HAST and token output | Removed before 1.0 | Standalone Node methods are removed; typed token/HAST data remain available to HTML transformer callbacks, and Rust token APIs remain public |
+| Transformers | Integrated | User-supplied JavaScript hooks receive internal token/HAST data while rendering HTML (ADR 0008) |
+| Optional Vite adapter | Available | [`@ferriki/vite`](node/vite/README.md) highlights marked HTML and static JSX during Vite transforms, outside the core runtime |
+| `colorized-brackets`, `markdown-it`, `rehype`, and VitePress integrations | Out of scope | These remain optional adapter projects, not Ferriki core exports |
+
+Removing public Node HAST and token methods before 1.0 is an intentional
+breaking divergence from Shiki, with no deprecated aliases or compatibility
+package. See [ADR 0017](adr/0017-node-html-output-priority.md) and the
+[migration guide](docs/migrations/shiki-to-ferriki.md) for the supported path.
 
 The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
 
@@ -73,6 +82,7 @@ User-facing documentation lives in the [`docs/`](docs) directory:
 - [Shiki migration guide](docs/migrations/shiki-to-ferriki.md)
 - [Compatibility and support policy](docs/compatibility.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Code example authoring](docs/code-example-authoring.md)
 - [Ferromark + Ardo example](docs/examples/ferromark-ardo.mjs)
 
 The repository root is intentionally Rust-first. All Node, npm, and upstream
@@ -161,28 +171,23 @@ at your option.
 
 [Ferramenta](https://ferramenta.dev) — A family of Rust tools.
 
-**The content pipeline**
+**Engines**
 
 | Tool | Job |
 | --- | --- |
-| [ferroni](https://sebastian-software.github.io/ferroni/) | Oniguruma-compatible regex engine |
-| [ferromark](https://sebastian-software.github.io/ferromark/) | Markdown to HTML with a secure default and every GFM extension included. |
-
-**The language workshop**
-
-| Tool | Job |
-| --- | --- |
+| [ferroni](https://ferroni.dev) | Oniguruma-compatible regex engine |
+| [ferromark](https://ferromark.dev) | Markdown to HTML, sanitized by default |
 | [ferrolex](https://github.com/sebastian-software/ferrolex) | Spell checking for text and code |
 | [ferrocat](https://ferrocat.dev) | Translation catalog engine |
-| [palamedes](https://palamedes.dev) | Internationalization for TypeScript applications |
+| [ferralk](https://github.com/sebastian-software/ferralk) | Glob matching and parallel filesystem walking |
+| [ferrugo](https://github.com/sebastian-software/ferrugo) | PDF previews for untrusted files |
 
-**On the workbench**
+**Applications**
 
 | Tool | Job |
 | --- | --- |
-| [ferrovia](https://github.com/sebastian-software/ferrovia) | SVGO-compatible SVG optimizer |
-| [ferralk](https://github.com/sebastian-software/ferralk) | Glob matching and parallel filesystem walking |
-| [ferrugo](https://github.com/sebastian-software/ferrugo) | PDF previews for untrusted files |
+| [palamedes](https://palamedes.dev) | Internationalization for TypeScript applications |
+| [dalo](https://dalo.sh) | Your team's agent setup, versioned like code |
 
 ---
 

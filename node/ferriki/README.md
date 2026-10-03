@@ -1,10 +1,14 @@
 # Ferriki
 
-Ferriki is Shiki-compatible syntax highlighting with a leaner Rust core and
-Node bindings. The grammar interpreter is a mechanical port of vscode-textmate
-onto [Ferroni](https://github.com/sebastian-software/ferroni); the Node layer
-loads the native addon and fetches the standard languages and themes on first
-use from a release-pinned CDN.
+[![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
+[![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
+
+Ferriki is native syntax highlighting with HTML and CSS-class output. The
+grammar interpreter is a mechanical port of vscode-textmate onto
+[Ferroni](https://github.com/sebastian-software/ferroni); the Node layer loads
+the native addon and fetches the standard languages and themes on first use
+from a release-pinned CDN.
 
 ## Install
 
@@ -23,7 +27,8 @@ language or theme is loaded, Ferriki downloads it from `assets.ferriki.dev`,
 pinned to this release and verified by SHA-256, and caches it in
 `node_modules/.cache/ferriki`. Offline builds reuse a populated cache or point
 `FERRIKI_ASSETS_BASE_URL` at a mirror; `FERRIKI_ASSETS_REMOTE=0` turns
-downloads off. See [standard assets](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#standard-assets).
+downloads off. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
+for cache, proxy and certificate settings.
 
 ## Highlight code
 
@@ -52,11 +57,6 @@ const html = highlighter.codeToHtml("const answer = 42", {
   lang: "javascript",
   theme: "nord",
 });
-
-const tokens = highlighter.codeToTokens("# Hello", {
-  lang: "markdown",
-  theme: "nord",
-});
 ```
 
 For Ardo-style light/dark output, pass an ordered theme map. With
@@ -73,9 +73,11 @@ const html = highlighter.codeToHtml("const answer = 42", {
 });
 ```
 
-`codeToHast` returns the same highlighted output as a HAST root. Languages
-embedded by a grammar are loaded with it; lazy embeddings are loaded only
-after an explicit `loadLanguage`.
+Transformers can inspect and change typed token payloads and HAST nodes while
+Ferriki renders HTML. Those callback types are not standalone result methods.
+Languages embedded by a grammar load with the HTML call; lazy embeddings load
+only after an explicit `loadLanguage`. For Rust token output, use the public
+Rust API.
 
 Custom registrations use the same TextMate shapes as Shiki and are validated
 before they cross the native boundary:
@@ -124,38 +126,35 @@ Use `styleMode: "classes"` for nested scope classes and custom CSS.
 including theme maps that switch via `data-ferriki-theme` without retokenizing.
 See the [class-based highlighting guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md) for examples and integration details.
 
-## Current API
+## Supported API
 
-The native runtime currently provides:
+HTML is the only public Node render output: `codeToHtml` produces the
+highlighted markup, and `styleMode: "classes"` adds nested scope classes;
+`codeToHtmlWithCss` also returns the resolved CSS for stylesheet theming.
+Before 1.0, Ferriki removes `codeToHast`, `codeToTokens`,
+`codeToTokensBase`, `codeToTokensWithThemes`, and `hastToHtml` from top-level
+exports and reusable highlighters. This is a breaking divergence from Shiki;
+there are no deprecated aliases or compatibility package. The JavaScript
+transformer pipeline still receives token/HAST data during HTML rendering.
 
-- `codeToHtml`, `codeToHast`, `codeToTokens`, and `codeToTokensBase`
-- `createHighlighter`, `createHighlighterCore`, and their synchronous core
-  constructor
-- asynchronous and synchronous language and theme loading
-- the standard TextMate grammars and themes, downloaded on first use, verified
-  and cached
-- deterministically enumerable `bundledLanguages` and `bundledThemes` loader maps
-- `bundledLanguagesAlias`, mapping each bundled alias to its canonical language ID
-- language aliases, lazy embedded languages, and external grammar injections
-- validated custom TextMate grammar and theme registrations
-- `ferrikiVersion`, which reports the loaded native core version
-
-The renderer supports the classic single-theme structure and ordered
-light/dark CSS-variable themes. ANSI escape sequences are rejected explicitly;
-token explanations, grammar-state continuation, transformers, and decoration
-adapters remain separately scoped facade work (see issues
-[#47](https://github.com/sebastian-software/ferriki/issues/47) and
-[#45](https://github.com/sebastian-software/ferriki/issues/45)).
+The API also includes reusable highlighter factories, synchronous and
+asynchronous language and theme loading, lazy standard assets, enumerable
+language/theme catalogs, aliases, grammar injections, custom registrations,
+CSS-variable themes, token scope/type callback metadata, grammar-state continuation,
+transformers, and decorations. Transformers and decorations run in the
+JavaScript facade (ADR 0008). ANSI escape sequences are rejected explicitly.
 
 For the complete retained API, option semantics, deliberate removals, and
 error behavior, see the repository documentation:
 
+- [Ferriki 1.0 Node API contract](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-1.0-api-contract.md)
 - [Ferriki API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md)
 - [Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md)
 - [Compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md) — the exact Shiki v4.4.3
   baseline and supported CI targets
 - [Troubleshooting](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md) — native-loader and
   packed-install failures
+- [Code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md) — focus, highlights, diffs, copy policy, and accessible collapse
 
 ## Compatibility
 
@@ -171,14 +170,12 @@ injections.
 
 ## License
 
-Licensed under either of
-[MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or
-[Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
-at your option.
+Licensed under either of [MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT)
+or [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE) at your option.
 
 <!-- ferramenta-family:start -->
 
 **ferriki** is part of the [Ferramenta](https://ferramenta.dev) family — A family of Rust tools.
 
-Siblings: [ferroni](https://sebastian-software.github.io/ferroni/) — Oniguruma-compatible regex engine · [ferromark](https://sebastian-software.github.io/ferromark/) — Markdown to HTML with a secure default and every GFM extension included. · [ferrolex](https://github.com/sebastian-software/ferrolex) — Spell checking for text and code · [ferrocat](https://ferrocat.dev) — Translation catalog engine · [palamedes](https://palamedes.dev) — Internationalization for TypeScript applications · [ferrovia](https://github.com/sebastian-software/ferrovia) — SVGO-compatible SVG optimizer · [ferralk](https://github.com/sebastian-software/ferralk) — Glob matching and parallel filesystem walking · [ferrugo](https://github.com/sebastian-software/ferrugo) — PDF previews for untrusted files.
+Siblings: [ferroni](https://ferroni.dev) — Oniguruma-compatible regex engine · [ferromark](https://ferromark.dev) — Markdown to HTML, sanitized by default · [ferrolex](https://github.com/sebastian-software/ferrolex) — Spell checking for text and code · [ferrocat](https://ferrocat.dev) — Translation catalog engine · [ferralk](https://github.com/sebastian-software/ferralk) — Glob matching and parallel filesystem walking · [ferrugo](https://github.com/sebastian-software/ferrugo) — PDF previews for untrusted files · [palamedes](https://palamedes.dev) — Internationalization for TypeScript applications · [dalo](https://dalo.sh) — Your team's agent setup, versioned like code.
 <!-- ferramenta-family:end -->

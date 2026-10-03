@@ -15,8 +15,8 @@
     "check:compat-manifest": "node ./scripts/check-shiki-compat-manifest.mjs",
     "build:compat": "pnpm run prepare:compat && pnpm --filter './compat/upstream/shiki/packages/*' --filter '!@shikijs/langs' --filter '!@shikijs/themes' run --if-present build",
     "test:ferriki-compat": "pnpm run test:ferriki-compat:core",
-    "test:ferriki-compat:textmate": "FERRIKI_HONEST_ALIAS=1 vitest run compat/upstream/shiki/packages/core/test/core.test.ts compat/upstream/shiki/packages/shiki/test/injections.test.ts compat/upstream/shiki/packages/shiki/test/general.test.ts -t '^(should|vue-injections|injections-side-effects)' --maxWorkers 1 --no-file-parallelism",
-    "test:ferriki-compat:core": "pnpm run build:compat && pnpm -C ferriki build:native && node ./scripts/run-core-compat.mjs",
+    "test:ferriki-compat:textmate": "FERRIKI_HONEST_ALIAS=1 vitest run compat/upstream/shiki/packages/core/test/core.test.ts compat/upstream/shiki/packages/shiki/test/injections.test.ts compat/upstream/shiki/packages/shiki/test/general.test.ts -t '^(?!.*should have correct offset)(should|vue-injections|injections-side-effects)' --maxWorkers 1 --no-file-parallelism",
+    "test:ferriki-compat:core": "pnpm run build:compat && pnpm -C ferriki build:native && node ./scripts/run-core-compat.mjs && pnpm run test:bench-comparison",
     "test:ferriki-compat:core:full": "pnpm run build:compat && pnpm -C ferriki build:native && FERRIKI_HONEST_ALIAS=1 vitest compat/upstream/shiki/packages/core/test compat/upstream/shiki/packages/shiki/test --run --maxWorkers 1 --no-file-parallelism",
     "test:ferriki-compat:adapters": "pnpm run build:compat && pnpm -C ferriki build:native && vitest compat/upstream/shiki/packages/transformers/test compat/upstream/shiki/packages/twoslash/test --exclude compat/upstream/shiki/packages/twoslash/test/markdown-it.test.ts --run --maxWorkers 1 --no-file-parallelism",
     "test:ferriki-compat:colorized-brackets": "pnpm run build:compat && pnpm -C ferriki build:native && node ./compat/harness/run-colorized-brackets-compat.mjs",
@@ -35,11 +35,15 @@
     "check:platform-matrix": "node ./scripts/check-ferriki-platform-matrix.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",
     "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
+    "test:vite": "vitest run vite/test/plugin.test.mjs",
+    "check:packed-vite": "node ./scripts/check-packed-vite-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks",
     "bench:tiobe": "node scripts/bench-tiobe.mjs",
     "check:bench-tiobe": "node scripts/check-bench-tiobe.mjs",
     "bench:curated": "node scripts/bench-tiobe.mjs --corpus curated",
-    "check:bench-curated": "node scripts/check-bench-curated.mjs"
+    "check:bench-curated": "node scripts/check-bench-curated.mjs",
+    "bench:comparison": "node scripts/bench-shiki-comparison.mjs",
+    "test:bench-comparison": "node --test scripts/test-phiki-html-agreement.mjs scripts/test-phiki-benchmark.mjs"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",

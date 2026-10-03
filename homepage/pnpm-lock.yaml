@@ -12,8 +12,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0(@react-router/dev@8.4.0(react-router@8.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@6.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))(@types/node@26.6.3)(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(lucide-react@1.48.0(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-router@8.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)(rollup@4.63.5)(typescript@6.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       ferramenta-family:
-        specifier: 1.2.0
-        version: 1.2.0(react@19.3.0)
+        specifier: ^2.0.0
+        version: 2.0.0(react@19.3.0)
       isbot:
         specifier: ^5.2.2
         version: 5.2.2
@@ -36,6 +36,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      axe-core:
+        specifier: 4.13.0
+        version: 4.13.0
       eslint:
         specifier: ^10.11.0
         version: 10.11.0(jiti@2.7.0)
@@ -51,6 +54,9 @@ importers:
       oxlint:
         specifier: ^1.85.0
         version: 1.86.0
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -2682,10 +2688,9 @@ packages:
       picomatch:
         optional: true
 
-  ferramenta-family@1.2.0:
-    resolution: {integrity: sha512-hlue4jj4pJqUuw1iU0SOq/iZPrZajEjqE9KgKiBcn8K09ZBldfpY7h8CCgXV6cJ5KbPv/QmLBw3Ep8/mKjw2Xw==}
+  ferramenta-family@2.0.0:
+    resolution: {integrity: sha512-Jsv6yKJ8SU/FuUPqf67aFJ8YTY6FOpyLPiFbN+1WeFTIwmeo+PeZO+A/kkKHl9IcgBZw7qlhejJIgkRO0n91LQ==}
     engines: {node: '>=20.11.0'}
-    hasBin: true
     peerDependencies:
       react: '>=19.0.0 <20.0.0'
 
@@ -3692,6 +3697,16 @@ packages:
 
   pkg-types@2.3.3:
     resolution: {integrity: sha512-j/lCFdcppV0JxWpCEITdbDltBxPP6cHT+yNJ6Go2OgoSA9518X847X9z0p6LtA4Nc16+eQzCZjRrWanTGvHJ5w==}
+
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
@@ -7176,7 +7191,7 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
-  ferramenta-family@1.2.0(react@19.3.0):
+  ferramenta-family@2.0.0(react@19.3.0):
     dependencies:
       react: 19.3.0
 
@@ -8501,6 +8516,12 @@ snapshots:
       confbox: 0.3.1
       exsolve: 1.1.1
       pathe: 2.0.3
+
+  playwright-core@1.63.0: {}
+
+  playwright@1.63.0:
+    dependencies:
+      playwright-core: 1.63.0
 
   pluralize@8.0.0: {}
 

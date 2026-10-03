@@ -47,9 +47,9 @@ export type RegistrationInput<T> =
 
 /**
  * Where standard grammars and themes come from. Payloads are downloaded from a
- * release-pinned CDN on first use, verified by SHA-256 and cached. Unset fields
- * fall back to `FERRIKI_ASSETS_REMOTE`, `FERRIKI_ASSETS_BASE_URL` and
- * `FERRIKI_CACHE_DIR`.
+ * release-pinned CDN with Node's built-in fetch on first use, verified by
+ * SHA-256 and cached. Unset fields fall back to `FERRIKI_ASSETS_REMOTE`,
+ * `FERRIKI_ASSETS_BASE_URL` and `FERRIKI_CACHE_DIR`.
  */
 export interface AssetOptions {
   /** Allows downloads; `false` loads only cached payloads. Default: `true`. */
@@ -64,6 +64,7 @@ export interface HighlighterOptions {
   langs?: readonly RegistrationInput<LanguageInput>[];
   themes?: readonly RegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
+  /** Default hooks. A call's `transformers` replaces these; `[]` disables them. */
   transformers?: readonly ShikiTransformer[];
   assets?: AssetOptions;
 }
@@ -72,6 +73,7 @@ export interface HighlighterSyncOptions {
   langs?: readonly SyncRegistrationInput<LanguageInput>[];
   themes?: readonly SyncRegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
+  /** Default hooks. A call's `transformers` replaces these; `[]` disables them. */
   transformers?: readonly ShikiTransformer[];
   /** A synchronous highlighter never downloads; it loads only cached payloads. */
   assets?: AssetOptions;
@@ -82,9 +84,10 @@ export interface HighlightOptions {
   /** Nested scope classes; inline styles remain the default. */
   styleMode?: "inline" | "classes";
   theme?: ThemeInput;
-  themes?: Readonly<Record<string, ThemeInput>>;
+  themes?: Readonly<Partial<Record<string, ThemeInput | undefined>>>;
   defaultColor?: string | false;
   cssVariablePrefix?: string;
+  /** Includes TextMate scopes or token types in HTML transformer callback tokens. */
   includeExplanation?: boolean | "scopeName" | "tokenType";
   grammarState?: GrammarState;
   mergeWhitespaces?: boolean;
@@ -94,7 +97,10 @@ export interface HighlightOptions {
   tokenizeMaxLineLength?: number;
   tokenizeTimeLimit?: number;
   structure?: "classic" | "inline";
-  meta?: Readonly<Record<string, unknown>>;
+  meta?: Readonly<{
+    __raw?: string;
+    [key: string]: unknown;
+  }>;
   data?: Readonly<Record<string, unknown>>;
   transformers?: readonly ShikiTransformer[];
   decorations?: readonly DecorationItem[];
@@ -107,7 +113,7 @@ export interface HtmlWithCss {
 }
 
 export interface ThemedToken {
-  /** Full grammar scope path in classes mode. */
+  /** Full grammar scope path in classes mode or when requested for callbacks. */
   scopeNames?: readonly string[];
   content: string;
   offset: number;
@@ -125,16 +131,6 @@ export interface ThemedToken {
       }
     >
   >;
-  explanation?: readonly ThemedTokenExplanation[];
-}
-
-export interface ThemedTokenScopeExplanation {
-  scopeName: string;
-}
-
-export interface ThemedTokenExplanation {
-  content: string;
-  scopes: readonly ThemedTokenScopeExplanation[];
 }
 
 export interface GrammarState {
@@ -147,15 +143,6 @@ export interface GrammarState {
   readonly source: string;
 }
 
-export interface TokensResult {
-  tokens: ThemedToken[][];
-  fg: string;
-  bg: string;
-  themeName: string;
-  rootStyle?: string;
-  grammarState?: GrammarState;
-}
-
 export interface HastText {
   type: "text";
   value: string;
@@ -166,6 +153,8 @@ export interface HastElement {
   tagName: string;
   properties: Record<string, unknown>;
   children: HastNode[];
+  /** Callback-only metadata from `HighlightOptions.data`; omitted from HTML. */
+  data?: Readonly<Record<string, unknown>>;
 }
 
 export interface HastRoot {
@@ -187,8 +176,6 @@ export interface DecorationItem {
 export interface ShikiTransformerContextCommon {
   meta: Record<string, unknown>;
   options: HighlightOptions;
-  codeToHast: (code: string, options: HighlightOptions) => HastRoot;
-  codeToTokens: (code: string, options: HighlightOptions) => TokensResult;
 }
 
 export interface ShikiTransformerContext extends ShikiTransformerContextCommon {
@@ -236,13 +223,8 @@ export interface ShikiTransformer {
 export interface Highlighter {
   codeToHtml: (code: string, options: HighlightOptions) => string;
   codeToHtmlWithCss: (code: string, options: HighlightOptions) => HtmlWithCss;
-  codeToHast: (code: string, options: HighlightOptions) => HastRoot;
-  codeToTokens: (code: string, options: HighlightOptions) => TokensResult;
-  codeToTokensBase: (code: string, options: HighlightOptions) => ThemedToken[][];
-  codeToTokensWithThemes: (code: string, options: HighlightOptions) => ThemedToken[][];
   getLastGrammarState: {
     (code: string, options: HighlightOptions): GrammarState;
-    (element: ThemedToken[][] | HastRoot): GrammarState | undefined;
   };
   getLoadedLanguages: () => string[];
   getLoadedThemes: () => string[];
@@ -302,43 +284,6 @@ export declare function codeToHtml(
   options: HighlightOptions,
 ): string;
 
-export declare function codeToHast(code: string, options: HighlightOptions): Promise<HastRoot>;
-export declare function codeToHast(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): HastRoot;
-
-export declare function codeToTokens(
-  code: string,
-  options: HighlightOptions,
-): Promise<TokensResult>;
-export declare function codeToTokens(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): TokensResult;
-
-export declare function codeToTokensBase(
-  code: string,
-  options: HighlightOptions,
-): Promise<ThemedToken[][]>;
-export declare function codeToTokensBase(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): ThemedToken[][];
-
-export declare function codeToTokensWithThemes(
-  code: string,
-  options: HighlightOptions,
-): Promise<ThemedToken[][]>;
-export declare function codeToTokensWithThemes(
-  highlighter: Highlighter,
-  code: string,
-  options: HighlightOptions,
-): ThemedToken[][];
-
 export declare function getLastGrammarState(
   code: string,
   options: HighlightOptions,
@@ -348,11 +293,6 @@ export declare function getLastGrammarState(
   code: string,
   options: HighlightOptions,
 ): GrammarState;
-export declare function getLastGrammarState(
-  highlighter: Highlighter,
-  element: ThemedToken[][] | HastRoot,
-): GrammarState | undefined;
-
 export interface CssVariablesThemeOptions {
   name?: string;
   type?: "dark" | "light" | string;
@@ -365,8 +305,6 @@ export interface CssVariablesThemeOptions {
 export declare function createCssVariablesTheme(
   options?: CssVariablesThemeOptions,
 ): ThemeRegistration;
-export declare function hastToHtml(tree: HastRoot | HastElement): string;
-
 export declare const bundledLanguages: Readonly<
   Record<string, () => Promise<LanguageRegistration[]>>
 >;

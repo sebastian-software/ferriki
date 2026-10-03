@@ -1,5 +1,10 @@
 # Bounded profiling after direct inline HTML: October 1, 2026
 
+This is an archived measurement from Ferriki 0.8.1, before removal of the
+public Node token APIs. Its HTML figures apply to the recorded revisions; token
+measurements and parity fields are historical and are not current Node API or
+performance claims. The raw reports are unchanged.
+
 Two independent experiments start from Ferriki 0.8.1 / Ferroni 1.8.0. The
 borrowed-escaping candidate is accepted; the single-buffer style candidate is
 rejected. The accepted candidate retains **20/20 wins against the faster Shiki

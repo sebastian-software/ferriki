@@ -18,6 +18,7 @@ lcov.info
 
 # Node
 node_modules
+node/benchmarks/phiki/vendor/
 coverage
 lib-cov
 cache

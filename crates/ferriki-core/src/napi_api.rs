@@ -2,41 +2,40 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ferriki::__private::RemoteAssetHost;
-use ferriki::RemoteAssets;
+use ferriki::__private::{NodeAssetHost, NodeAssetOptions};
 use napi::bindgen_prelude::AsyncTask;
-use napi::{Env, Error, JsUndefined, Result, Task};
+use napi::{Env, Error, Result, Task};
 use napi_derive::napi;
 use serde_json::Value;
 
-use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_hast, render_html};
+use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 
 #[napi]
 pub struct FerrikiHighlighter {
     core: RefCell<HighlighterCore>,
-    assets: Option<Arc<RemoteAssetHost>>,
+    assets: Option<Arc<NodeAssetHost>>,
 }
 
-/// Downloads payloads on the libuv thread pool, so the event loop keeps running.
-pub struct PrefetchTask {
-    assets: Option<Arc<RemoteAssetHost>>,
+/// Plans payloads on the libuv thread pool without doing network I/O.
+pub struct PlanAssetsTask {
+    assets: Option<Arc<NodeAssetHost>>,
     languages: Vec<String>,
     themes: Vec<String>,
 }
 
-impl Task for PrefetchTask {
-    type Output = ();
-    type JsValue = JsUndefined;
+impl Task for PlanAssetsTask {
+    type Output = String;
+    type JsValue = String;
 
     fn compute(&mut self) -> Result<Self::Output> {
         match &self.assets {
-            Some(assets) => native(assets.prefetch(&self.languages, &self.themes)),
-            None => Ok(()),
+            Some(assets) => native(assets.plan_json(&self.languages, &self.themes)),
+            None => Ok("[]".to_owned()),
         }
     }
 
-    fn resolve(&mut self, env: Env, _output: Self::Output) -> Result<Self::JsValue> {
-        env.get_undefined()
+    fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
+        Ok(output)
     }
 }
 
@@ -83,8 +82,8 @@ impl FerrikiHighlighter {
         self.core.borrow().loaded_languages()
     }
 
-    #[napi(js_name = "codeToTokens")]
-    pub fn code_to_tokens(&self, code: String, options_json: String) -> Result<String> {
+    #[napi(js_name = "getHtmlRenderData")]
+    pub fn get_html_render_data(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
         let tokens = native(self.core.borrow_mut().tokenize(
             &code,
@@ -96,8 +95,12 @@ impl FerrikiHighlighter {
             .map_err(|error| Error::from_reason(format!("Failed to serialize tokens: {error}")))
     }
 
-    #[napi(js_name = "codeToTokensWithThemes")]
-    pub fn code_to_tokens_with_themes(&self, code: String, options_json: String) -> Result<String> {
+    #[napi(js_name = "getHtmlRenderDataWithThemes")]
+    pub fn get_html_render_data_with_themes(
+        &self,
+        code: String,
+        options_json: String,
+    ) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
         let value: Value = serde_json::from_str(&options_json).map_err(|error| {
             Error::from_reason(format!("Failed to parse multi-theme options: {error}"))
@@ -130,19 +133,6 @@ impl FerrikiHighlighter {
         })
     }
 
-    #[napi(js_name = "codeToHast")]
-    pub fn code_to_hast(&self, code: String, options_json: String) -> Result<String> {
-        let options = HighlightOptions::parse(&options_json)?;
-        let tokens = native(self.core.borrow_mut().tokenize(
-            &code,
-            &options.language,
-            &options.theme,
-            &options.tokenize,
-        ))?;
-        serde_json::to_string(&render_hast(&tokens, &options.render))
-            .map_err(|error| Error::from_reason(format!("Failed to serialize HAST: {error}")))
-    }
-
     #[napi(js_name = "codeToHtml")]
     pub fn code_to_html(&self, code: String, options_json: String) -> Result<String> {
         let options = HighlightOptions::parse(&options_json)?;
@@ -155,19 +145,25 @@ impl FerrikiHighlighter {
         Ok(render_html(&tokens, &options.render))
     }
 
-    /// Makes the standard payloads of these languages, their embedded languages
-    /// and these themes available in the cache, downloading what is missing.
-    #[napi(js_name = "prefetchAssets", ts_return_type = "Promise<void>")]
-    pub fn prefetch_assets(
+    /// Plans missing standard payloads for Node to fetch and install.
+    #[napi(js_name = "planAssets", ts_return_type = "Promise<string>")]
+    pub fn plan_assets(
         &self,
         languages: Vec<String>,
         themes: Vec<String>,
-    ) -> AsyncTask<PrefetchTask> {
-        AsyncTask::new(PrefetchTask {
+    ) -> AsyncTask<PlanAssetsTask> {
+        AsyncTask::new(PlanAssetsTask {
             assets: self.assets.clone(),
             languages,
             themes,
         })
+    }
+
+    #[napi(js_name = "assetCacheDir")]
+    pub fn asset_cache_dir(&self) -> Option<String> {
+        self.assets
+            .as_ref()
+            .map(|assets| assets.cache_dir().to_string_lossy().into_owned())
     }
 
     #[napi]
@@ -191,9 +187,9 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
             assets: None,
         });
     };
-    let assets = Arc::new(native(RemoteAssetHost::from_root(
+    let assets = Arc::new(native(NodeAssetHost::from_root(
         root,
-        &remote_assets(options.get("assets")),
+        &node_asset_options(options.get("assets")),
     ))?);
     let core = native(HighlighterCore::with_assets(native(assets.catalogs())?))?;
     Ok(FerrikiHighlighter {
@@ -202,16 +198,16 @@ pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
     })
 }
 
-/// Reads `{ remote, baseUrl, cacheDir, commit }`; unset fields fall back to the
-/// `FERRIKI_*` environment variables in the Rust runtime.
-fn remote_assets(value: Option<&Value>) -> RemoteAssets {
+/// Reads the Node asset options; environment and platform defaults are applied
+/// by the network-free native asset host.
+fn node_asset_options(value: Option<&Value>) -> NodeAssetOptions {
     let field = |name: &str| value.and_then(|value| value.get(name));
     let string = |name: &str| field(name).and_then(Value::as_str).map(str::to_owned);
-    RemoteAssets::default()
-        .with_remote(field("remote").and_then(Value::as_bool))
-        .with_base_url(string("baseUrl"))
-        .with_cache_dir(string("cacheDir").map(PathBuf::from))
-        .with_commit(string("commit"))
+    NodeAssetOptions {
+        remote: field("remote").and_then(Value::as_bool),
+        base_url: string("baseUrl"),
+        cache_dir: string("cacheDir").map(PathBuf::from),
+    }
 }
 
 fn native<T>(result: ferriki::Result<T>) -> Result<T> {
@@ -337,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn napi_surface_returns_json_tokens_and_html() {
+    fn napi_surface_returns_private_html_render_data_and_html() {
         let highlighter = standard_highlighter();
         let options = json!({
             "lang": "javascript",
@@ -349,7 +345,7 @@ mod tests {
 
         let tokens: Value = serde_json::from_str(
             &highlighter
-                .code_to_tokens("const x = 1".to_owned(), options.clone())
+                .get_html_render_data("const x = 1".to_owned(), options.clone())
                 .expect("tokens"),
         )
         .expect("json");
@@ -397,7 +393,7 @@ mod tests {
         .to_string();
         let result: Value = serde_json::from_str(
             &highlighter
-                .code_to_tokens_with_themes("const x = 1".to_owned(), options)
+                .get_html_render_data_with_themes("const x = 1".to_owned(), options)
                 .expect("multi-theme tokens"),
         )
         .expect("JSON result");

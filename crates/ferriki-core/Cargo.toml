@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-core"
-version = "0.8.3"
+version = "0.10.0"
 description = "Native N-API core of the Ferriki Shiki-compatible highlighter"
 readme = "README.md"
 edition.workspace = true
@@ -20,8 +20,8 @@ crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
 [dependencies]
-# The N-API host loads standard payloads from the release-pinned CDN (ADR 0013).
-ferriki = { version = "0.8.3", path = "../..", features = [ "remote" ] }
+# Rust plans and verifies assets; the Node facade owns network transport (ADR 0013).
+ferriki = { version = "0.10.0", path = "../..", default-features = false }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }

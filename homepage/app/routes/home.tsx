@@ -1,10 +1,10 @@
 import {
   EvidenceFigures,
-  IronBand,
   Mark,
-  PipelineAssembly,
+  Principles,
   ProjectHero,
   RegistryFacts,
+  Relations,
   RunSample,
   Section,
 } from "ferramenta-family";
@@ -16,7 +16,10 @@ import {
   coldSpeedup,
   documents,
   formatFactor,
+  hasArchivedApiMeasurements,
   machine,
+  phikiAvailable,
+  phikiMatchingDocuments,
   report,
   speedup,
 } from "../data/benchmarks";
@@ -26,19 +29,15 @@ import { version } from "../version";
 function HeroSection() {
   return (
     <ProjectHero
-      mark="ferriki"
-      title={
-        <>
-          Code that looks like your editor. <em>Rendered natively.</em>
-        </>
-      }
-      lede={
-        <>
-          <strong>Ferriki is Shiki-compatible syntax highlighting with a Rust core.</strong> The
-          same TextMate grammars and themes VS Code uses, behind the API you already know from
-          Shiki, for Node.js and Rust.
-        </>
-      }
+      icon="ferriki"
+      title="Ferriki"
+      what="A native syntax highlighter for Node.js and Rust."
+      lede="It uses the TextMate grammars and themes VS Code uses, with Shiki's familiar HTML rendering calls."
+      facts={[
+        { label: "Succeeds", value: "Shiki" },
+        { label: "Checked against", value: "Pinned Shiki release" },
+        { label: "Release", value: `v${version}` },
+      ]}
       actions={
         <>
           <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
@@ -54,7 +53,6 @@ function HeroSection() {
           <code translate="no">npm install @ferriki/core</code>
           <span> · </span>
           <code translate="no">cargo add ferriki</code>
-          <span className="ferriki-release">{` · v${version}`}</span>
         </>
       }
     />
@@ -64,15 +62,15 @@ function HeroSection() {
 const pillars = [
   {
     heading: "The grammars editors trust",
-    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki ships Shiki's catalog: 260 grammars and 65 editor themes.",
+    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki ships catalog metadata for 260 grammars and 65 editor themes. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
   },
   {
     heading: "Context, not keyword lists",
     text: "A TextMate grammar follows a language's structure across lines: CSS and JavaScript inside HTML, code fences in Markdown, template literals, heredocs. Ferriki's tokenizer is a mechanical port of vscode-textmate, checked against its own tests.",
   },
   {
-    heading: "The API you know",
-    text: "codeToHtml, codeToHast, codeToTokens, reusable highlighters and the singleton keep Shiki's shape. Checked against a pinned Shiki release, not just claimed.",
+    heading: "The rendered API you need",
+    text: "codeToHtml, codeToHtmlWithCss, reusable highlighters and the singleton keep the Shiki workflow centered on ready-to-use HTML. Checked against a pinned Shiki release, not just claimed.",
   },
   {
     heading: "No WASM, no regex translation",
@@ -82,18 +80,8 @@ const pillars = [
 
 function PipelineSection() {
   return (
-    <Section
-      id="pipeline"
-      title="Where Ferriki sits"
-      intro={
-        <>
-          Ferroni runs the regular expressions of the TextMate grammars, Ferriki turns them into
-          highlighted code, and Ferromark renders the whole Markdown document around it. Each tool
-          also works on its own.
-        </>
-      }
-    >
-      <PipelineAssembly current="ferriki" />
+    <Section id="pipeline" title="Where Ferriki fits">
+      <Relations current="ferriki" />
     </Section>
   );
 }
@@ -121,27 +109,45 @@ function SampleSection() {
   );
 }
 
+function EvidenceIntro() {
+  return (
+    <>
+      The same {documents} documents, languages and theme. Strict HTML checks qualify the Node
+      full-corpus totals; Ferriki passed those checks on {agreeingDocuments} of {documents}. Each
+      factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
+    </>
+  );
+}
+
+function EvidenceNote() {
+  return (
+    <>
+      Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
+      Shiki {report.versions.shiki}.{" "}
+      {hasArchivedApiMeasurements
+        ? "This is a pre-removal HTML baseline; archived HAST and token measurements are not shown as current APIs or claims."
+        : "This report measures the current HTML API."}{" "}
+      {phikiAvailable
+        ? `optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
+            report.agreement.phiki?.of ?? documents
+          } documents; its shared cohort is separate from these Node totals.`
+        : report.phiki?.status === "skipped"
+          ? `optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
+          : "Phiki is not recorded in this benchmark report."}{" "}
+      The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, HTML timings and
+      the command to reproduce them.
+    </>
+  );
+}
+
 function EvidenceSection() {
   return (
     <Section
       id="evidence"
       layout="split"
       title="Measured against Shiki"
-      intro={
-        <>
-          The same {documents} documents, languages and theme, with output checked for equality
-          before any timing: Ferriki matched Shiki on {agreeingDocuments} of {documents}. Each
-          factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
-        </>
-      }
-      note={
-        <>
-          Measured on {report.measured} at commit <code>{report.revision}</code> on {machine},
-          against Shiki {report.versions.shiki}. The HAST and token APIs are not faster yet: the{" "}
-          <Link to="/evidence/benchmarks">benchmark page</Link> has every document, every API and
-          the command to reproduce it.
-        </>
-      }
+      intro={<EvidenceIntro />}
+      note={<EvidenceNote />}
     >
       <EvidenceFigures
         figures={[
@@ -174,12 +180,13 @@ export default function HomePage() {
     <RegistryFacts>
       <div className="fam-page ferriki-home">
         <HeroSection />
-        <IronBand
+        <Section
           id="why"
           title="Highlighting that understands the language."
           intro="Many highlighters describe each language with a short list of patterns of their own. Ferriki uses the grammars your editor uses, so code on the page reads the way it does where you wrote it."
-          rows={pillars}
-        />
+        >
+          <Principles items={pillars} />
+        </Section>
         <SampleSection />
         <EvidenceSection />
         <CodeSection />

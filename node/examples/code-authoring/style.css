@@ -1,0 +1,110 @@
+body {
+  margin: 0;
+  padding: 2rem;
+  font:
+    1rem/1.5 system-ui,
+    sans-serif;
+}
+
+.code-example {
+  --example-focus: #1d4ed8;
+  --example-highlight: rgb(250 204 21 / 22%);
+  --example-word: rgb(59 130 246 / 22%);
+  --example-add: #166534;
+  --example-add-background: rgb(34 197 94 / 5%);
+  --example-remove: #b91c1c;
+  --example-remove-background: rgb(239 68 68 / 5%);
+  max-width: 58rem;
+  margin: 0 auto;
+}
+
+.code-example[data-ferriki-theme="dark"] {
+  --example-focus: #93c5fd;
+  --example-highlight: rgb(250 204 21 / 17%);
+  --example-word: rgb(96 165 250 / 22%);
+  --example-add: #86efac;
+  --example-add-background: rgb(74 222 128 / 16%);
+  --example-remove: #fca5a5;
+  --example-remove-background: rgb(248 113 113 / 16%);
+}
+
+.code-example figcaption,
+.code-example .code-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.code-example .diff-legend {
+  color: currentColor;
+  font-size: 0.9em;
+}
+
+.code-example pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+}
+
+.code-example .line {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 100%;
+  padding-inline: 0.35rem;
+}
+
+.code-example .has-focused .line:not(.focused) {
+  border-inline-start: 0.2rem solid transparent;
+}
+
+.code-example .line.focused {
+  border-inline-start: 0.2rem solid var(--example-focus);
+  background: color-mix(in srgb, var(--example-focus) 6%, transparent);
+}
+
+.code-example .line.highlighted {
+  background: var(--example-highlight);
+  box-shadow: inset 0 0 0 1px var(--example-focus);
+}
+
+.code-example .line.diff.add {
+  border-inline-start: 0.25rem solid var(--example-add);
+  background: var(--example-add-background);
+}
+
+.code-example .line.diff.remove {
+  border-inline-start: 0.25rem dashed var(--example-remove);
+  background: var(--example-remove-background);
+}
+
+.code-example .highlighted-word {
+  border-radius: 0.2em;
+  background: var(--example-word);
+}
+
+.code-example summary,
+.code-example button,
+.code-example pre {
+  border-radius: 0.25rem;
+}
+
+.code-example summary:focus-visible,
+.code-example button:focus-visible,
+.code-example pre:focus-visible {
+  outline: 3px solid var(--example-focus);
+  outline-offset: 3px;
+}
+
+.code-example summary {
+  cursor: pointer;
+}
+
+.code-example button {
+  padding: 0.45rem 0.75rem;
+  color: inherit;
+  font: inherit;
+}
+
+.code-example #copy-status {
+  min-height: 1.5em;
+}

@@ -9,6 +9,16 @@
       "bump-minor-pre-major": true,
       "extra-files": [
         {
+          "type": "toml",
+          "path": "/fuzz/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='ferriki-asset-gen' && !@.source)].version"
+        },
+        {
+          "type": "toml",
+          "path": "/fuzz/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='ferriki-textmate' && !@.source)].version"
+        },
+        {
           "type": "json",
           "path": "/node/ferriki/package.json",
           "jsonpath": "$.version"
@@ -20,6 +30,16 @@
         },
         {
           "type": "json",
+          "path": "/node/vite/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "/node/vite/package.json",
+          "jsonpath": "$.dependencies['@ferriki/core']"
+        },
+        {
+          "type": "json",
           "path": "/node/platforms/*/package.json",
           "glob": true,
           "jsonpath": "$.version"
@@ -28,6 +48,11 @@
           "type": "yaml",
           "path": "/node/pnpm-lock.yaml",
           "jsonpath": "$.importers.ferriki.optionalDependencies[*].specifier"
+        },
+        {
+          "type": "yaml",
+          "path": "/node/pnpm-lock.yaml",
+          "jsonpath": "$.importers.vite.dependencies['@ferriki/core'].specifier"
         }
       ]
     }

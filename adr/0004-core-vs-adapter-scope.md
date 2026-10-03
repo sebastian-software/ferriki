@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-03
 
 ## Context
 
@@ -20,9 +20,12 @@ Ferriki distinguishes between:
 - core product scope: highlighting runtime and direct outputs
 - optional adapter lanes: framework and ecosystem integrations
 
-Core scope includes APIs such as `createHighlighter`, `codeToHtml`,
-`codeToTokens`, and related runtime behavior. Adapter lanes are validated
-separately and do not define the core release boundary by default.
+The Node core exposes APIs such as `createHighlighter`, `codeToHtml`, and
+`codeToHtmlWithCss`, along with the runtime behavior behind them. The Rust
+crates also expose token and rendering primitives for Rust consumers. Adapter
+lanes are validated separately and do not define the core release boundary by
+default. Ferriki owns the optional `@ferriki/vite` build adapter; that package
+does not add Vite or framework integration to the core runtime.
 
 ## Consequences
 
@@ -33,6 +36,9 @@ separately and do not define the core release boundary by default.
   architecture.
 - Specific adapter integrations that stay outside Ferriki are captured in
   [ADR 0007](0007-adapter-integrations-stay-outside-ferriki.md).
+- The Vite adapter has its own optional installable package and tests, and is
+  published in the shared Ferriki product release. Its presence does not make
+  other framework integrations part of Ferriki core.
 - The same boundary applies to Rust consumers: the published crates provide
   highlighting and rendering primitives, and Markdown integration such as the
   Ferromark adapter lives in the consumer
@@ -43,3 +49,5 @@ separately and do not define the core release boundary by default.
 - 2026-03-09: Accepted.
 - 2026-07-09: Linked the adapter decisions of ADR 0007.
 - 2026-09-30: Extends the boundary to Rust consumers.
+- 2026-10-02: Adds an optional Vite build adapter outside the core runtime.
+- 2026-10-03: Clarifies the Node HTML output boundary and keeps Rust token primitives in the Rust surface (#207).

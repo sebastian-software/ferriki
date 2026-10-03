@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-01
+Last updated: 2026-10-03
 
 ## Context
 
@@ -97,6 +97,11 @@ behavior set covers:
 - Vue external injections and explicitly loaded lazy SCSS embeddings
 - language aliases, dependencies, dynamic loading, HTML, HAST, and token output
 
+These names record the structural coverage of the #30 Shiki mirror suite at
+that date. They do not define the current public Node output surface: the
+pre-1.0 contract removes standalone HAST and token methods while retaining
+typed callback data (ADR 0011 and ADR 0017).
+
 The broader mirrored Shiki suite still contains facade requirements owned by
 issue #31, including multi-theme output, explanation objects, grammar-state
 continuation, ANSI parsing, and transformers. Those exclusions do not change
@@ -109,3 +114,4 @@ this decision.
 - 2026-09-26: Catalogs and rendering moved from `ferriki-core` to the `ferriki` crate (ADR 0012).
 - 2026-09-30: Records the curated public API of 0.6.0 and the handling of port code without callers.
 - 2026-10-01: Documents the combined scope/binary output extension; removes duplicate scans without changing upstream grammar traversal (#172).
+- 2026-10-03: Clarifies that the dated #30 Node HAST/token test coverage does not override the current HTML-only Node API contract (#207).

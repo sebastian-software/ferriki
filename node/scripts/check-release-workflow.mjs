@@ -16,7 +16,7 @@ function workflowJob(workflow, name) {
 // Dependency order: `ferriki` depends on the two library crates.
 const CRATE_PUBLISH_ORDER = ["ferriki-textmate", "ferriki-asset-gen", "ferriki"];
 
-export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
+export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, nodePackage }) {
   const releasePackage = releaseConfig.packages?.["."];
   const extraFiles = releasePackage?.["extra-files"] ?? [];
 
@@ -60,6 +60,20 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   );
   assert(
     extraFiles.some(
+      (file) => file.path === "/node/vite/package.json" && file.jsonpath === "$.version",
+    ),
+    "release config must update the Vite integration version with the product version",
+  );
+  assert(
+    extraFiles.some(
+      (file) =>
+        file.path === "/node/vite/package.json" &&
+        file.jsonpath === "$.dependencies['@ferriki/core']",
+    ),
+    "release config must keep the Vite integration's Ferriki dependency on the product version",
+  );
+  assert(
+    extraFiles.some(
       (file) =>
         file.path === "/node/platforms/*/package.json" &&
         file.glob === true &&
@@ -75,6 +89,32 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
         file.jsonpath === "$.importers.ferriki.optionalDependencies[*].specifier",
     ),
     "release config must update the pnpm lockfile dependency specifiers",
+  );
+  assert(
+    extraFiles.some(
+      (file) =>
+        file.path === "/node/pnpm-lock.yaml" &&
+        file.type === "yaml" &&
+        file.jsonpath === "$.importers.vite.dependencies['@ferriki/core'].specifier",
+    ),
+    "release config must update the Vite importer dependency in the pnpm lockfile",
+  );
+  // The pinned Release Please TOML parser wraps scalar names in `.value`.
+  // A registry copy of the same crate must keep its separately pinned version.
+  for (const crate of ["ferriki-textmate", "ferriki-asset-gen"])
+    assert(
+      extraFiles.some(
+        (file) =>
+          file.path === "/fuzz/Cargo.lock" &&
+          file.type === "toml" &&
+          file.jsonpath === `$.package[?(@.name.value=='${crate}' && !@.source)].version`,
+      ),
+      `release config must update ${crate} in the separate fuzz lockfile`,
+    );
+  assert.match(
+    nodePackage?.packageManager ?? "",
+    /^pnpm@10\./,
+    "the workspace must use pnpm 10 for catalog rewriting and npm 11 publishing",
   );
   assert.doesNotMatch(
     workflow,
@@ -96,6 +136,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
     "timeout-minutes:",
     "actions/download-artifact@",
     "npm publish --access public --provenance",
+    'pnpm --dir vite pack --pack-destination "$RUNNER_TEMP" --json',
+    'npm publish "$vite_tarball" --access public --provenance --tag "$NPM_DIST_TAG"',
     "NPM_PUBLISH_RESULT:",
     "write-release-summary.mjs",
     // The package ships no payloads; its release manifest must name the commit
@@ -132,15 +174,53 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
   );
 
   const publishWorkflow = workflowJob(workflow, "publish-npm");
-  const smokeMatch = publishWorkflow.match(
+  const coreSmokeMatch = publishWorkflow.match(
     /^[ \t]+run:[ \t]+node \.\/scripts\/check-packed-consumer\.mjs\s*$/m,
   );
-  assert(smokeMatch, "publish-npm must run an executable packed-consumer smoke command");
-  const firstPublicationMatch = publishWorkflow.match(/^[ \t]+(?:run:[ \t]+)?npm publish\b/m);
-  assert(firstPublicationMatch, "publish-npm must contain an npm publication step");
+  assert(coreSmokeMatch, "publish-npm must run an executable packed core-consumer smoke command");
+  const viteSmokeMatch = publishWorkflow.match(/^[ \t]+run:[ \t]+pnpm run check:packed-vite\s*$/m);
+  assert(viteSmokeMatch, "publish-npm must run the packed Vite consumer smoke command");
+  const publicationMatches = [
+    ...publishWorkflow.matchAll(/^[ \t]*run:[ \t]+npm publish\b/gm),
+    ...publishWorkflow.matchAll(/^[ \t]+npm publish\b/gm),
+    ...publishWorkflow.matchAll(/^[ \t]*run:[ \t]+pnpm --dir vite publish\b/gm),
+  ].sort((left, right) => left.index - right.index);
+  assert(publicationMatches.length > 0, "publish-npm must contain a registry publication step");
+  const firstPublicationIndex = publicationMatches[0].index;
   assert(
-    smokeMatch.index < firstPublicationMatch.index,
-    "packed-consumer smoke command must precede the first npm publication step",
+    coreSmokeMatch.index < firstPublicationIndex,
+    "packed core-consumer smoke command must precede the first registry publication step",
+  );
+  assert(
+    viteSmokeMatch.index < firstPublicationIndex,
+    "packed Vite consumer smoke command must precede the first registry publication step",
+  );
+
+  const corePublishIndex = publishWorkflow.indexOf(
+    "name: Publish main package with npm provenance",
+  );
+  const vitePublishIndex = publishWorkflow.indexOf(
+    "name: Pack and publish Vite integration with npm provenance",
+  );
+  assert(corePublishIndex >= 0 && vitePublishIndex >= 0);
+  assert(
+    corePublishIndex < vitePublishIndex,
+    "the Vite integration must publish after its @ferriki/core dependency",
+  );
+  assert.match(
+    publishWorkflow,
+    /^\s+id-token: write\s*$/m,
+    "publish-npm needs an OIDC token for npm Trusted Publishing",
+  );
+  assert(
+    publishWorkflow.indexOf("pnpm --dir vite pack --pack-destination") <
+      publishWorkflow.indexOf('npm publish "$vite_tarball"'),
+    "pnpm must pack the Vite integration before npm publishes its tarball",
+  );
+  assert.doesNotMatch(
+    publishWorkflow,
+    /pnpm --dir vite publish\b/,
+    "publish-npm must pass the packed Vite tarball directly to npm",
   );
 
   for (const required of [
@@ -151,6 +231,9 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig }) {
     "deprecate",
     "go/no-go",
     "Trusted Publishing",
+    "@ferriki/vite",
+    "0.0.0-bootstrap.0",
+    "bootstrap",
     `cargo publish --locked ${CRATE_PUBLISH_ORDER.map((name) => `-p ${name}`).join(" ")}`,
   ])
     assert(
@@ -167,6 +250,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const releaseConfig = JSON.parse(
     await readFile(join(repoRoot, ".release-please-config.json"), "utf8"),
   );
-  assertReleaseWorkflow({ workflow, checklist, releaseConfig });
+  const nodePackage = JSON.parse(await readFile(join(nodeRoot, "package.json"), "utf8"));
+  assertReleaseWorkflow({ workflow, checklist, releaseConfig, nodePackage });
   console.log("Ferriki release workflow and checklist verified");
 }

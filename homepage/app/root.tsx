@@ -2,17 +2,16 @@ import type { LinksFunction, MetaFunction } from "react-router";
 
 import {
   ArdoErrorBoundary,
-  ArdoGeneratedSidebar,
   ArdoRoot,
   ArdoRootLayout,
   ArdoSearch,
   ArdoSidebar,
+  ArdoSidebarLink,
   ArdoSidebarSection,
   ArdoThemeToggle,
 } from "ardo/ui";
-import { MarkDefs, SiteFooter, SiteHeader } from "ferramenta-family";
-import bigShouldersFont from "ferramenta-family/fonts/big-shoulders.woff2?url";
-import { useRef } from "react";
+import { MarkDefs, SiteFooter, SiteHeader, SiteMenu } from "ferramenta-family";
+import barlowCondensedFont from "ferramenta-family/fonts/barlow-condensed-700.woff2?url";
 import { NavLink, useLocation } from "react-router";
 import config from "virtual:ardo/config";
 
@@ -22,6 +21,7 @@ import "ardo/ui/styles.css";
 import "ferramenta-family/tokens.css";
 import "ferramenta-family/fonts.css";
 import "ferramenta-family/theme.css";
+import "ferramenta-family/docs.css";
 import "ferramenta-family/landing.css";
 
 import "./styles/site.css";
@@ -34,7 +34,7 @@ import "ferramenta-family/chrome.css";
 export const links: LinksFunction = () => [
   {
     rel: "preload",
-    href: bigShouldersFont,
+    href: barlowCondensedFont,
     as: "font",
     type: "font/woff2",
     crossOrigin: "anonymous",
@@ -48,13 +48,13 @@ export const meta: MetaFunction = ({ location }) => {
   const page = section?.pages.find(([, to]) => to === path);
   const title = page
     ? `${page[0]} · ${section?.label} · Ferriki`
-    : "Ferriki — Shiki-compatible highlighting, native speed";
+    : "Ferriki — Shiki-shaped HTML highlighting, native engine";
   return [
     { title },
     {
       name: "description",
       content:
-        "Ferriki highlights code with the TextMate grammars and themes VS Code uses, behind the API you know from Shiki, on a native Rust engine for Node.js and Rust.",
+        "Ferriki renders code with the TextMate grammars and themes VS Code uses, through Shiki-shaped HTML calls and a native Rust engine for Node.js and Rust.",
     },
   ];
 };
@@ -69,7 +69,8 @@ export const ErrorBoundary = ArdoErrorBoundary;
 /*
  * The family header and footer replace Ardo's chrome, so Ardo must not render
  * either: `chrome` is read from every route match and no route below this one
- * overrides it. The sidebar rail and its generated navigation stay Ardo's.
+ * overrides it. Ardo provides the sidebar rail and link primitives; the page
+ * list comes from Ferriki's shared documentationSections.
  */
 // oxlint-disable-next-line react/only-export-components -- Ardo reads this route handle.
 export const handle = { chrome: false };
@@ -78,7 +79,7 @@ export const handle = { chrome: false };
 function DocsNav() {
   const { pathname } = useLocation();
   return (
-    <nav className="ferriki-nav" aria-label="Documentation">
+    <nav className="site-links" aria-label="Documentation">
       {documentationSections.map((section) => (
         <NavLink
           key={section.id}
@@ -92,54 +93,30 @@ function DocsNav() {
   );
 }
 
-/*
- * Search, and -- below the width where the section links give up their room
- * and Ardo hides the sidebar rail -- a menu that is then the only way into
- * the documentation.
- */
 function DocsActions() {
-  const menuRef = useRef<HTMLDetailsElement>(null);
   const { pathname } = useLocation();
   const current = documentationSections.find((section) => pathname.startsWith(`/${section.id}/`));
-  const close = () => menuRef.current?.removeAttribute("open");
   return (
     <>
-      <div className="ferriki-search">
+      <div className="site-search">
         <ArdoSearch />
       </div>
-      <details
-        className="ferriki-menu"
-        ref={menuRef}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            close();
-            menuRef.current?.querySelector("summary")?.focus();
-          }
-        }}
-      >
-        {/* No aria-label: the visible word is the accessible name. */}
-        <summary>Docs</summary>
-        <nav className="ferriki-menu-flyout" aria-label="Documentation menu">
-          <NavLink to="/" onClick={close}>
-            Ferriki home
-          </NavLink>
-          {documentationSections.map((section) => (
-            <div key={section.id} className="ferriki-menu-group">
-              <p className="ferriki-menu-label">{section.label}</p>
-              {section.pages.map(([label, to]) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={close}
-                  data-active={current?.id === section.id && pathname.replace(/\/$/, "") === to}
-                >
-                  {label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+      <SiteMenu label="Docs">
+        <nav aria-label="Documentation menu">
+          <NavLink to="/">Ferriki home</NavLink>
+          {documentationSections.flatMap((section) =>
+            section.pages.map(([label, to]) => (
+              <NavLink
+                key={to}
+                to={to}
+                data-active={current?.id === section.id && pathname.replace(/\/$/, "") === to}
+              >
+                {label}
+              </NavLink>
+            )),
+          )}
         </nav>
-      </details>
+      </SiteMenu>
     </>
   );
 }
@@ -148,14 +125,14 @@ function DocsActions() {
 function FooterLegal() {
   return (
     <>
-      {`Ferriki v${version}`} · Released under the MIT or Apache-2.0 License · Copyright{" "}
-      {new Date().getFullYear()} Sebastian Software GmbH ·{" "}
+      {`Ferriki v${version}`} · Released under the MIT or Apache-2.0 License ·{" "}
       <a href="https://ardo-docs.dev">Built with Ardo</a>
     </>
   );
 }
 
 export default function Root() {
+  const { pathname } = useLocation();
   return (
     <>
       <MarkDefs />
@@ -164,14 +141,10 @@ export default function Root() {
         lockup="project"
         nav={<DocsNav />}
         actions={<DocsActions />}
-        themeToggle={<ArdoThemeToggle />}
+        themeToggle={pathname === "/" ? undefined : <ArdoThemeToggle />}
       />
 
-      {/* `ferriki-shell` is the hook site.css needs to turn Ardo's
-          fixed-viewport application shell into a document-scrolling page: the
-          family footer sits below the shell, so the page -- not the article --
-          has to be what scrolls. */}
-      <div className="ferriki-shell">
+      <div className="fam-docs-shell">
         <ArdoRoot config={config}>
           <ArdoSidebar>
             {documentationSections.map((section) => (
@@ -181,7 +154,11 @@ export default function Root() {
                 label={section.label}
                 to={section.to}
               >
-                <ArdoGeneratedSidebar section={section.id} />
+                {section.pages.map(([label, to]) => (
+                  <ArdoSidebarLink key={to} to={to}>
+                    {label}
+                  </ArdoSidebarLink>
+                ))}
               </ArdoSidebarSection>
             ))}
           </ArdoSidebar>

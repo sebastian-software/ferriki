@@ -1,0 +1,51 @@
+[package]
+name = "ferriki-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Keep fuzz dependencies in their own lockfile. The fuzz package is a separate
+# workspace so cargo does not rewrite the repository's release lockfile.
+[workspace]
+members = ["."]
+resolver = "2"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+ferriki-asset-gen = { path = "../crates/ferriki-asset-gen" }
+ferriki-textmate = { path = "../crates/ferriki-textmate" }
+libfuzzer-sys = "0.4"
+serde_json = "1"
+
+[[bin]]
+name = "parse_raw_grammar"
+path = "fuzz_targets/parse_raw_grammar.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decode_fkgram"
+path = "fuzz_targets/decode_fkgram.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "tokenize_line"
+path = "fuzz_targets/tokenize_line.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "theme_application"
+path = "fuzz_targets/theme_application.rs"
+test = false
+doc = false
+bench = false

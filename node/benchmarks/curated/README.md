@@ -18,13 +18,13 @@ ordinary native addon:
 pnpm run build:native
 pnpm run check:bench-curated
 pnpm run bench:curated --write /tmp/curated-report.json
-node scripts/profile-tiobe.mjs --corpus curated --language vue --boundary native --api html
+node scripts/profile-tiobe.mjs --corpus curated --language vue --boundary native
 ```
 
-The TIOBE method is reused: warmed public tokens and HTML measured separately,
-rotating engine order, one fresh worker per format, sequential formats, raw
-samples, ordinary addon receipts, and exact TextMate token/HTML parity before
-timing. HTML is the primary decision boundary; tokens are diagnostic.
+The TIOBE method is reused: warmed HTML measurements, rotating engine order,
+one fresh worker per format, sequential formats, raw samples, ordinary addon
+receipts, and exact TextMate HTML parity before timing. Current runs do not
+measure public Node token APIs.
 Prism's Astro/Svelte/Vue/MDX cells are explicitly unsupported.
 
 For a local Ferroni experiment, set `FERRIKI_FERRONI_PATH=/absolute/path/to/ferroni`
@@ -44,3 +44,7 @@ The [post-inline-HTML profiling round](results/post-inline-html/README.md)
 retains the final two independent trials on Ferriki 0.8.1 / Ferroni 1.8.0,
 including the accepted borrowed escaping path, rejected style buffer, verified
 CPU profiles and all eight complete comparison reports.
+
+Those archived experiment reports were collected before removal of the public
+Node token APIs. Their token figures describe the recorded historical source
+revisions and are not current API or performance claims.
