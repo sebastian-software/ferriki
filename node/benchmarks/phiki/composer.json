@@ -1,0 +1,14 @@
+{
+  "name": "ferriki/benchmark-phiki",
+  "description": "Optional, pinned Phiki dependency for Ferriki's comparison benchmark.",
+  "type": "project",
+  "require": {
+    "php": ">=8.3",
+    "ext-mbstring": "*",
+    "phiki/phiki": "2.2.1"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": false
+  }
+}
