@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ardo": "^5.0.0",
+    "ardo": "^4.2.0",
     "ferramenta-family": "^2.0.0",
     "isbot": "^5.2.2",
     "react": "^19.3.0",
