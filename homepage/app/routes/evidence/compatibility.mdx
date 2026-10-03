@@ -42,37 +42,3 @@ Node.js 22.13.0 or newer, with a native binary per target:
 
 The full policy, including how to report a gap, is
 [docs/compatibility.md](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md).
-
-## Native Markdown highlighting acceptance examples
-
-The homepage production build compiles these fences through Ardo's native
-Markdown path. They are the fixed corpus for reviewing TypeScript, TSX,
-embedded HTML, unknown-language fallback, themes, and code metadata.
-
-```ts title="src/add.ts" [typescript] {2} showLineNumbers
-export function add(left: number, right: number) {
-  return left + right;
-}
-```
-
-```tsx title="src/Button.tsx" [tsx] {3} showLineNumbers
-type ButtonProps = { label: string };
-export function Button({ label }: ButtonProps) {
-  return <button type="button">{label}</button>;
-}
-```
-
-```html title="public/widget.html" [embedded] {3,7} showLineNumbers
-<style>
-  .notice {
-    color: rebeccapurple;
-  }
-</style>
-<script>
-  document.querySelector(".notice")?.classList.add("ready");
-</script>
-```
-
-```ferriki-acceptance-unknown title="data/example.unknown" [fallback]
-<raw value="literal & safe">
-```

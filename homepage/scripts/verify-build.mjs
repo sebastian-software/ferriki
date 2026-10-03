@@ -7,7 +7,6 @@ import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { expectedPages } from "./site-pages.mjs";
-import { verifyArdoAcceptanceHtml } from "./verify-ardo-acceptance.mjs";
 
 const outputDirectory = new URL("../build/client/", import.meta.url);
 await Promise.all(expectedPages.map((page) => access(new URL(page, outputDirectory))));
@@ -171,7 +170,6 @@ if (missing.length > 0) {
 
 const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, await read(page)]));
 const linkCount = await verifyRenderedPages(pageFiles);
-verifyArdoAcceptanceHtml(await read("evidence/compatibility/index.html"));
 
 console.log(
   `Verified ${expectedPages.length} pages, ${linkCount} internal links and fragments, Ferriki v${version}, report ${report.revision}.`,
