@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/vite",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Build-time HTML and JSX highlighting with Ferriki",
   "keywords": [
     "ferriki",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@babel/parser": "catalog:integrations",
-    "@ferriki/core": "0.9.0",
+    "@ferriki/core": "0.10.0",
     "hast-util-from-html": "catalog:inlined",
     "hast-util-to-html": "catalog:inlined",
     "magic-string": "catalog:integrations"
