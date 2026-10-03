@@ -21,6 +21,8 @@ const DEFAULT_THEME = "github-dark-default";
 export function ferriki(options = {}) {
   if (options.theme && options.themes)
     throw new TypeError("Pass either `theme` or `themes`, not both");
+  if (options.transformers !== undefined && !Array.isArray(options.transformers))
+    throw new ShikiError("`transformers` option must be an array", "ERR_USAGE");
 
   const theme = options.theme ?? (options.themes ? undefined : DEFAULT_THEME);
   const themes = options.themes;
@@ -28,6 +30,7 @@ export function ferriki(options = {}) {
     throw new ShikiError("`themes` option must not be empty", "ERR_USAGE");
   const styleMode = options.styleMode ?? "inline";
   const lineNumbers = options.lineNumbers ?? false;
+  const transformers = [...(options.transformers ?? [])];
   const themeNames = themes ? [...new Set(Object.values(themes))] : [theme];
   let highlighterPromise;
   const languageLoads = new Map();
@@ -72,7 +75,7 @@ export function ferriki(options = {}) {
       lang: language,
       ...(themes ? { themes, defaultColor: Object.keys(themes)[0] } : { theme }),
       styleMode,
-      transformers: [transformer],
+      transformers: [...transformers, transformer],
     };
     try {
       if (styleMode === "classes") {

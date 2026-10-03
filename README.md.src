@@ -78,6 +78,7 @@ User-facing documentation lives in the [`docs/`](docs) directory:
 - [Shiki migration guide](docs/migrations/shiki-to-ferriki.md)
 - [Compatibility and support policy](docs/compatibility.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Code example authoring](docs/code-example-authoring.md)
 - [Ferromark + Ardo example](docs/examples/ferromark-ardo.mjs)
 
 The repository root is intentionally Rust-first. All Node, npm, and upstream

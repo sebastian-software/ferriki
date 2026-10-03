@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focused code example</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./copy.mjs"></script>
+  </head>
+  <body>
+    <main>
+      <figure class="code-example" data-ferriki-theme="light">
+        <figcaption>
+          <strong>Parse a response</strong>
+          <span class="diff-legend"
+            >Solid green marks an addition; dashed red marks a removal.</span
+          >
+        </figcaption>
+        <pre
+          id="response-code"
+          tabindex="0"
+          data-highlight="auto"
+          data-language="ts"
+          data-meta='title="Response parser" [TypeScript] {2,5-6}'
+        ><code>function parseResponse(raw: string) {
+  const parsed = JSON.parse(raw); // [!code highlight] [!code focus:4] [!code word:parsed]
+  if (typeof parsed.value !== "string") {
+    throw new TypeError("Expected a string"); // [!code --]
+    return String(parsed.value).trim(); // [!code ++]
+  }
+  const marker = "// [!code focus]";
+  const tag = "&lt;script>";
+  return `${parsed.value}: ${marker} ${tag}`;
+}</code></pre>
+        <div class="code-actions">
+          <button
+            type="button"
+            data-copy-code
+            aria-controls="response-code"
+            aria-describedby="copy-status"
+          >
+            Copy final code
+          </button>
+          <output id="copy-status" role="status" aria-live="polite"></output>
+        </div>
+        <details>
+          <summary>Show the response type</summary>
+          <pre
+            tabindex="0"
+            data-highlight="auto"
+            data-language="ts"
+            data-meta='title="Supporting type" [TypeScript]'
+          ><code>type ResponseData = {
+  value: unknown;
+};</code></pre>
+        </details>
+      </figure>
+    </main>
+  </body>
+</html>

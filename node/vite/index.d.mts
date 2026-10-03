@@ -1,4 +1,4 @@
-import type { AssetOptions } from "@ferriki/core";
+import type { AssetOptions, ShikiTransformer } from "@ferriki/core";
 import type { Plugin } from "vite";
 
 export type FerrikiViteOptions = {
@@ -12,6 +12,8 @@ export type FerrikiViteOptions = {
   styleMode?: "inline" | "classes";
   /** Add line-number data and the plugin's line-number stylesheet. */
   lineNumbers?: boolean;
+  /** JavaScript callbacks forwarded to Ferriki's existing per-block transformer pipeline. */
+  transformers?: readonly ShikiTransformer[];
   /** Include an additional compiler-emitted JSX module ID, such as an MDX intermediate. */
   include?: (id: string) => boolean;
 };

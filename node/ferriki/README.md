@@ -150,6 +150,7 @@ error behavior, see the repository documentation:
   baseline and supported CI targets
 - [Troubleshooting](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md) — native-loader and
   packed-install failures
+- [Code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md) — focus, highlights, diffs, copy policy, and accessible collapse
 
 ## Compatibility
 

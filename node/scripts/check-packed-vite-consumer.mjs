@@ -151,15 +151,15 @@ import { ferrikiVersion } from '@ferriki/core'
 
 const project = ${JSON.stringify(project)}
 assert(ferrikiVersion(), 'packed Ferriki native binding did not load')
-const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false } }
+const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
 const jsxConfig = { jsx: 'transform', jsxFactory: 'Object.createElement' }
 const plugin = ferriki(options)
 const server = await createServer({ configFile: false, root: project, plugins: [plugin], esbuild: jsxConfig, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, fs: { allow: [project] } }, appType: 'custom' })
 try {
   const html = await server.transformIndexHtml('/', await readFile(project + '/index.html', 'utf8'))
   const module = await server.transformRequest('/src/example.tsx')
-  assert(html.includes('htmlValue') && html.includes('data-ferriki-vite'), 'packed Vite HTML transform or stylesheet injection failed')
-  assert(module?.code.includes('jsxValue') && module.code.includes('virtual:ferriki-vite/'), 'packed Vite JSX transform or CSS import failed')
+  assert(html.includes('htmlValue') && html.includes('data-ferriki-vite') && html.includes('data-packed-transformer="yes"'), 'packed Vite HTML transform, callback, or stylesheet injection failed')
+  assert(module?.code.includes('jsxValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer'), 'packed Vite JSX transform, callback, or CSS import failed')
   assert(module.code.indexOf('"use client"') < module.code.indexOf('virtual:ferriki-vite/'), 'the JSX transform moved the directive prologue')
 } finally {
   await server.close()
@@ -180,12 +180,15 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
       typeProbe,
       [
         "import { ferriki } from '@ferriki/vite'",
+        "import type { ShikiTransformer } from '@ferriki/core'",
         "import type { Plugin } from 'vite'",
         "",
+        "const transformer: ShikiTransformer = { line(node) { return node } }",
         "const plugin: Plugin = ferriki({",
         "  themes: { light: 'github-light-default', dark: 'github-dark-default' },",
         "  styleMode: 'classes',",
         "  include: id => id.endsWith('.mdx'),",
+        "  transformers: [transformer],",
         "})",
         "void plugin",
         "",

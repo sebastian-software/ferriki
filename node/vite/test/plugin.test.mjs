@@ -2,11 +2,30 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "@babel/parser";
+import { fromHtml } from "hast-util-from-html";
 import { build, createServer } from "vite";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { finalCodeText, scrollCodeBlockFromKey } from "../../examples/code-authoring/copy.mjs";
 import { ferriki } from "../index.mjs";
 import "../../scripts/test-asset-env.mjs";
+
+const notationTransformerModules = await Promise.all(
+  [
+    "notation-diff.ts",
+    "notation-focus.ts",
+    "notation-highlight.ts",
+    "notation-highlight-word.ts",
+  ].map(
+    (filename) =>
+      import(
+        new URL(
+          `../../compat/upstream/shiki/packages/transformers/src/transformers/${filename}`,
+          import.meta.url,
+        ).href
+      ),
+  ),
+);
 
 const tempRoots = [];
 
@@ -42,11 +61,198 @@ function jsxText(node) {
   return node.children.map(jsxText).join("");
 }
 
+function findHast(node, predicate) {
+  if (!node || typeof node !== "object") return undefined;
+  if (predicate(node)) return node;
+  for (const child of node.children ?? []) {
+    const found = findHast(child, predicate);
+    if (found) return found;
+  }
+}
+
+function classes(node) {
+  const value = node?.properties?.className;
+  return Array.isArray(value) ? value : typeof value === "string" ? value.split(/\s+/) : [];
+}
+
+function hastText(node) {
+  if (node.type === "text") return node.value;
+  return (node.children ?? []).map(hastText).join("");
+}
+
+const notationTransformers = [
+  notationTransformerModules[0].transformerNotationDiff(),
+  notationTransformerModules[1].transformerNotationFocus(),
+  notationTransformerModules[2].transformerNotationHighlight(),
+  notationTransformerModules[3].transformerNotationWordHighlight(),
+];
+
 async function transformJsx(plugin, source, id = "/src/example.tsx", warnings = []) {
   return plugin.transform.call(context(warnings), source, id);
 }
 
 describe("@ferriki/vite", () => {
+  it("uses Shiki notation callbacks on the documented HTML and JSX authoring example", async () => {
+    const examplePath = new URL("../../examples/code-authoring/index.html", import.meta.url);
+    const source = await readFile(examplePath, "utf8");
+    const plugin = ferriki({
+      themes: { light: "github-light-default", dark: "github-dark-default" },
+      styleMode: "classes",
+      lineNumbers: true,
+      transformers: notationTransformers,
+    });
+    const result = await plugin.transformIndexHtml.handler.call(context(), source, {
+      filename: examplePath.pathname,
+    });
+
+    expect(result.html).toContain("<details>");
+    expect(result.html).toContain("<summary>Show the response type</summary>");
+    expect(result.html).toContain('data-ln="1"');
+    expect(result.html).toContain('data-ln="2"');
+    expect(result.html).toContain("<title>Focused code example</title>");
+    expect(result.html).toContain('<link rel="stylesheet" href="./style.css" />');
+
+    const tree = fromHtml(result.html, { fragment: true });
+    const scriptElements = [];
+    findHast(tree, (node) => {
+      if (node.type === "element" && node.tagName === "script") scriptElements.push(node);
+      return false;
+    });
+    expect(scriptElements).toHaveLength(1);
+    const copyButton = findHast(
+      tree,
+      (node) =>
+        node.type === "element" && node.tagName === "button" && "dataCopyCode" in node.properties,
+    );
+    const copyStatus = findHast(
+      tree,
+      (node) => node.type === "element" && node.properties.id === "copy-status",
+    );
+    expect(copyButton.properties.ariaControls).toEqual(["response-code"]);
+    expect(copyButton.properties.ariaDescribedBy).toEqual(["copy-status"]);
+    expect(copyStatus.properties).toMatchObject({ role: "status", ariaLive: "polite" });
+    const primaryPre = findHast(
+      tree,
+      (node) =>
+        node.type === "element" && node.tagName === "pre" && node.properties.id === "response-code",
+    );
+    const code = findHast(primaryPre, (node) => node.type === "element" && node.tagName === "code");
+    const lines = code.children.filter((node) => node.type === "element");
+    const lineClasses = lines.map(classes);
+    expect(lineClasses[1]).toEqual(expect.arrayContaining(["highlighted", "focused"]));
+    expect(lineClasses[1]).not.toContain("remove");
+    expect(lineClasses[3]).toEqual(expect.arrayContaining(["focused", "diff", "remove"]));
+    expect(lineClasses[4]).toEqual(
+      expect.arrayContaining(["highlighted", "focused", "diff", "add"]),
+    );
+    expect(lineClasses[1]).toContain("line");
+    expect(lines.map((line) => line.properties.dataLn)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+    ]);
+    expect(
+      findHast(
+        code,
+        (node) => node.type === "element" && classes(node).includes("highlighted-word"),
+      ),
+    ).toBeTruthy();
+    const renderedText = lines.map(hastText).join("\n");
+    expect(renderedText).toContain('throw new TypeError("Expected a string");');
+    expect(renderedText).toContain('const marker = "// [!code focus]";');
+    expect(renderedText).toContain('const tag = "<script>";');
+    expect(renderedText).not.toContain("[!code --]");
+    expect(renderedText).not.toContain("[!code ++]");
+
+    const style = await readFile(
+      new URL("../../examples/code-authoring/style.css", import.meta.url),
+      "utf8",
+    );
+    expect(style).toContain(".line.focused");
+    expect(style).toContain(".line.highlighted");
+    expect(style).toContain(".line.diff.add");
+    expect(style).toContain(".line.diff.remove");
+    expect(style).toContain(":focus-visible");
+    expect(style).toContain('[data-ferriki-theme="dark"]');
+
+    const sourceLines = [
+      { classList: { contains: (name) => name === "line" }, textContent: "  const kept = 1;" },
+      {
+        classList: { contains: (name) => name === "line" || name === "remove" },
+        textContent: "  const old = 1;",
+      },
+      { classList: { contains: (name) => name === "line" }, textContent: "  const next = 2;  " },
+    ];
+    expect(finalCodeText({ querySelector: () => ({ children: sourceLines }) })).toBe(
+      "  const kept = 1;\n  const next = 2;  ",
+    );
+
+    const scrollBlock = { clientWidth: 326, scrollLeft: 0, scrollWidth: 534 };
+    const rightArrow = { key: "ArrowRight", preventDefault: vi.fn() };
+    expect(scrollCodeBlockFromKey(scrollBlock, rightArrow)).toBe(true);
+    expect(scrollBlock.scrollLeft).toBe(48);
+    expect(rightArrow.preventDefault).toHaveBeenCalledOnce();
+    expect(scrollCodeBlockFromKey(scrollBlock, { key: "ArrowLeft", preventDefault: vi.fn() })).toBe(
+      true,
+    );
+    expect(scrollBlock.scrollLeft).toBe(0);
+    expect(scrollCodeBlockFromKey(scrollBlock, { key: "ArrowLeft", preventDefault: vi.fn() })).toBe(
+      false,
+    );
+    expect(
+      scrollCodeBlockFromKey(scrollBlock, {
+        key: "ArrowRight",
+        metaKey: true,
+        preventDefault: vi.fn(),
+      }),
+    ).toBe(false);
+  });
+
+  it("forwards notation callbacks through JSX while preserving unrelated source", async () => {
+    const source = [
+      'const heading = "leave this line";',
+      'export const view = <section><pre id="sample" data-highlight="auto" data-language="ts" data-meta="{2}"><code>{"  const answer = 42; // [!code focus]\\n  return answer; // [!code ++]\\n  throw Error(\\"old\\"); // [!code --]"}</code></pre><p>untouched</p></section>;',
+    ].join("\n");
+    const result = await transformJsx(
+      ferriki({ theme: "github-dark-default", transformers: notationTransformers }),
+      source,
+    );
+    const ast = parse(result.code, { sourceType: "module", plugins: ["jsx", "typescript"] });
+    const pre = findJsx(ast, "pre");
+    const code = findJsx(ast, "code");
+    const renderedLines = code.children.filter((node) => node.type === "JSXElement");
+    const jsxClasses = (node) => {
+      const attr = node.openingElement.attributes.find((item) => item.name?.name === "className");
+      const value = attr?.value?.expression?.value;
+      return value?.split(/\s+/) ?? [];
+    };
+
+    expect(result.code.startsWith('const heading = "leave this line";\n')).toBe(true);
+    expect(result.code).toContain("<p>untouched</p>");
+    expect(
+      pre.openingElement.attributes.some(
+        (item) => item.name?.name === "id" && item.value.value === "sample",
+      ),
+    ).toBe(true);
+    expect(renderedLines).toHaveLength(3);
+    expect(jsxClasses(renderedLines[0])).toEqual(expect.arrayContaining(["focused"]));
+    expect(jsxClasses(renderedLines[1])).toEqual(
+      expect.arrayContaining(["highlighted", "diff", "add"]),
+    );
+    expect(jsxClasses(renderedLines[2])).toEqual(expect.arrayContaining(["diff", "remove"]));
+    expect(jsxText(code)).toContain("const answer = 42;");
+    expect(jsxText(code)).toContain("  const answer = 42;");
+    expect(jsxText(code)).not.toContain("[!code ++]");
+    expect(jsxText(code)).not.toContain("[!code --]");
+  });
+
   it("transforms opted-in HTML, preserves surrounding markup, and applies metadata CSS", async () => {
     const plugin = ferriki({ theme: "github-dark-default", lineNumbers: true });
     const source = `<main><pre id="sample" data-highlight="auto" data-language="ts" data-meta='title="API" [Node] {2} showLineNumbers'><code>const first = 1;\nconst second = 2;</code></pre><button>copy</button></main>`;
@@ -186,6 +392,12 @@ describe("@ferriki/vite", () => {
 
   it("rejects an empty theme map as invalid usage", () => {
     expect(() => ferriki({ themes: {} })).toThrow(expect.objectContaining({ code: "ERR_USAGE" }));
+  });
+
+  it("rejects non-array transformer options as invalid usage", () => {
+    expect(() => ferriki({ transformers: {} })).toThrow(
+      expect.objectContaining({ code: "ERR_USAGE" }),
+    );
   });
 
   it("changes the CSS module ID when a transformed block changes for HMR", async () => {
