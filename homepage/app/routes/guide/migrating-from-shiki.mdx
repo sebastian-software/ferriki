@@ -49,13 +49,7 @@ usually an import:
 checked by machine against a pinned mirror of Shiki's own test suite (see
 [Compatibility](/evidence/compatibility)).
 
-In the tested migration sample, JSON-serialized HAST matches. Raw JavaScript
-objects can differ where Shiki includes a property such as `data: undefined`
-that Ferriki omits. Multi-theme token output also differs: Ferriki's `htmlStyle`
-is a CSS string and the result includes aligned `variants`; Shiki 4.4.3 uses an
-`htmlStyle` object and has no `variants` field. Normalize these shapes in a
-custom token renderer, or use `codeToHtml` and `codeToHtmlWithCss` for rendered
-HTML.
+In the [published `@ferriki/core@0.8.3` and Shiki 4.4.3 migration sample](https://github.com/sebastian-software/ferriki/issues/38#issuecomment-5968270993), JSON-serialized HAST matches. Raw JavaScript objects can differ where Shiki includes a property such as `data: undefined` that Ferriki omits. Multi-theme token output also differs: Ferriki's `htmlStyle` is a CSS string and the result includes aligned `variants`; Shiki 4.4.3 uses an `htmlStyle` object and has no `variants` field. Normalize these shapes in a custom token renderer, or use `codeToHtml` and `codeToHtmlWithCss` for rendered HTML.
 
 ## Before you switch
 

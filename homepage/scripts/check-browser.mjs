@@ -28,8 +28,11 @@ let browser;
 let previewServer;
 try {
   previewServer = await preview({
+    configFile: false,
     root: homepageRoot,
     logLevel: "silent",
+    base: "/",
+    build: { outDir: "build/client" },
     preview: {
       host: "127.0.0.1",
       port: requestedPort,
@@ -44,19 +47,13 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ colorScheme: "light" });
-  const axePages = new Set([
-    "index.html",
-    "guide/getting-started/index.html",
-    "guide/class-highlighting/index.html",
-  ]);
-
   for (const pageFile of expectedPages) {
     for (const viewport of [
       { name: "desktop", width: 1440, height: 900 },
       { name: "phone", width: 390, height: 844 },
       { name: "landscape", width: 844, height: 390 },
     ]) {
-      await verifyViewport({ page, pageFile, viewport, origin, axePages });
+      await verifyViewport({ page, pageFile, viewport, origin });
     }
   }
 
@@ -74,11 +71,43 @@ try {
   assert(reachedMenu, "Tab navigation does not reach the mobile Docs menu");
   const focusStyle = await summary.evaluate((element) => {
     const style = getComputedStyle(element);
-    const hasOutline = style.outlineStyle !== "none" && Number.parseFloat(style.outlineWidth) > 0;
-    const hasShadow = style.boxShadow !== "none";
-    return hasOutline || hasShadow;
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      outlineColor: style.outlineColor,
+      boxShadow: style.boxShadow,
+    };
   });
-  assert(focusStyle, "The mobile Docs menu has no visible keyboard focus indicator");
+  const hasOutline =
+    focusStyle.outlineStyle !== "none" &&
+    Number.parseFloat(focusStyle.outlineWidth) > 0 &&
+    hasVisibleCssColor(focusStyle.outlineColor);
+  const shadowColorStart = focusStyle.boxShadow.indexOf("(");
+  const shadowColorEnd = focusStyle.boxShadow.indexOf(")", shadowColorStart);
+  const shadowColor =
+    shadowColorStart !== -1 && shadowColorEnd > shadowColorStart
+      ? focusStyle.boxShadow.slice(
+          focusStyle.boxShadow.lastIndexOf(" ", shadowColorStart) + 1,
+          shadowColorEnd + 1,
+        )
+      : focusStyle.boxShadow.includes("transparent")
+        ? "transparent"
+        : "currentColor";
+  const hasShadow =
+    focusStyle.boxShadow !== "none" &&
+    hasVisibleCssColor(shadowColor) &&
+    focusStyle.boxShadow
+      .replaceAll(/(?:rgba?|hsla?)\([^)]*\)/g, "")
+      .split(/\s+/)
+      .some((value) => {
+        const metric = value.replaceAll(",", "");
+        return (
+          (metric.endsWith("px") || metric.endsWith("em") || metric.endsWith("rem")) &&
+          Number.parseFloat(metric) !== 0
+        );
+      });
+  const hasVisibleFocus = hasOutline || hasShadow;
+  assert(hasVisibleFocus, "The mobile Docs menu has no visible keyboard focus indicator");
 
   await page.keyboard.press("Enter");
   assert.equal(
@@ -175,7 +204,7 @@ try {
   await previewServer?.close();
 }
 
-async function verifyViewport({ page, pageFile, viewport, origin, axePages }) {
+async function verifyViewport({ page, pageFile, viewport, origin }) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
   await page.goto(new URL(pagePath(pageFile), origin).href, { waitUntil: "load" });
   const layout = await page.evaluate(() => ({
@@ -213,7 +242,7 @@ async function verifyViewport({ page, pageFile, viewport, origin, axePages }) {
     );
   }
   assert(searchVisible, `${pageFile} hides search at ${viewport.name} width`);
-  if (axePages.has(pageFile)) await verifyAccessibility(page, pageFile, viewport);
+  await verifyAccessibility(page, pageFile, viewport);
   console.log(`Verified ${pageFile} at ${viewport.name} (${viewport.width}px).`);
 }
 
@@ -234,4 +263,22 @@ async function verifyAccessibility(page, pageFile, viewport) {
     })
     .join("\n");
   throw new Error(`Accessibility violations on ${pageFile} at ${viewport.name} width:\n${details}`);
+}
+
+function hasVisibleCssColor(color) {
+  const normalized = color.toLowerCase();
+  if (normalized === "transparent") return false;
+  const functionStart = normalized.indexOf("(");
+  const functionEnd = normalized.lastIndexOf(")");
+  if (functionStart === -1 || functionEnd < functionStart) return true;
+  const functionName = normalized.slice(0, functionStart);
+  const channels = normalized.slice(functionStart + 1, functionEnd).split("/");
+  if (channels.length === 1) {
+    if (functionName !== "rgba" && functionName !== "hsla") return true;
+    const commaValues = channels[0].split(",");
+    if (commaValues.length !== 4) return true;
+    return Number.parseFloat(commaValues.at(-1).trim()) > 0;
+  }
+  const alpha = channels.at(-1).trim();
+  return Number.parseFloat(alpha) > 0;
 }

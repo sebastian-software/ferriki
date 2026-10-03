@@ -85,7 +85,6 @@ async function verifyRenderedPages(pages) {
   for (const [page, html] of pages) {
     const tags = htmlTags(html);
     assertPageStructure(page, tags);
-    assertNamedControls(page, html, tags);
     context.pageIds.set(page, collectIds(tags));
   }
 
@@ -102,40 +101,6 @@ function assertPageStructure(page, tags) {
   ).length;
   if (mainCount !== 1)
     throw new Error(`${page} must contain exactly one main landmark; found ${mainCount}.`);
-}
-
-function assertNamedControls(page, html, tags) {
-  for (const tag of tags) {
-    if (tag.name === "img") assertImageAlt(page, tag);
-    else if (["a", "button"].includes(tag.name)) assertElementName(page, html, tag);
-    else if (isNamedControl(tag)) assertControlName({ page, html, tags, tag });
-  }
-}
-
-function assertImageAlt(page, tag) {
-  if (attribute(tag.raw, "alt") === undefined)
-    throw new Error(`${page} has an image without an alt attribute.`);
-}
-
-function assertElementName(page, html, tag) {
-  if (!hasElementName(html, tag)) throw new Error(`${page} has an unnamed ${tag.name}.`);
-}
-
-function isNamedControl(tag) {
-  if (tag.name === "input" && attribute(tag.raw, "type")?.toLowerCase() === "hidden") return false;
-  return ["input", "select", "textarea"].includes(tag.name);
-}
-
-function assertControlName({ page, html, tags, tag }) {
-  if (!hasAccessibleName(html, tags, tag)) throw new Error(`${page} has an unnamed ${tag.name}.`);
-}
-
-function hasElementName(html, tag) {
-  const ariaName = attribute(tag.raw, "aria-label");
-  const labelledBy = attribute(tag.raw, "aria-labelledby");
-  const title = attribute(tag.raw, "title");
-  const innerText = elementText(html, tag, tag.name);
-  return [ariaName, labelledBy, title, innerText].some((name) => name?.trim());
 }
 
 async function verifyPageLinks(page, html, context) {
@@ -279,34 +244,4 @@ function decodeHtml(value) {
     .replaceAll(/&#x([\da-f]+);?/gi, (_, digits) =>
       String.fromCodePoint(Number.parseInt(digits, 16)),
     );
-}
-
-function elementText(html, tag, name) {
-  const start = tag.index + tag.raw.length;
-  const end = html.indexOf(`</${name}`, start);
-  if (end === -1) return "";
-  let text = "";
-  let insideTag = false;
-  for (const character of html.slice(start, end)) {
-    if (character === "<") insideTag = true;
-    else if (character === ">") insideTag = false;
-    else if (!insideTag) text += character;
-  }
-  return decodeHtml(text).trim();
-}
-
-function hasAccessibleName(html, tags, tag) {
-  const ariaName = attribute(tag.raw, "aria-label");
-  const labelledBy = attribute(tag.raw, "aria-labelledby");
-  const title = attribute(tag.raw, "title");
-  if ([ariaName, labelledBy, title].some((value) => value?.trim())) return true;
-
-  const id = attribute(tag.raw, "id");
-  if (
-    id &&
-    tags.some((candidate) => candidate.name === "label" && attribute(candidate.raw, "for") === id)
-  )
-    return true;
-  const prefix = html.slice(0, tag.index);
-  return prefix.lastIndexOf("<label") > prefix.lastIndexOf("</label");
 }

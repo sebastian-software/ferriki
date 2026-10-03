@@ -36,13 +36,7 @@ pre-1.0 package.
 
 The exact baseline and exclusions are machine-checked from the pinned Shiki
 mirror. “Shiki-compatible” means a tested subset, not that every Shiki package
-is a Ferriki feature. JSON-serialized HAST matches in the tested migration
-sample, while raw objects can differ where Shiki includes a property such as
-`data: undefined` that Ferriki omits. In multi-theme token output, Ferriki
-represents `htmlStyle` as a CSS string and exposes aligned `variants`; Shiki
-4.4.3 represents `htmlStyle` as an object and has no `variants` field. A custom
-token renderer should normalize those shapes, or use `codeToHtml` and
-`codeToHtmlWithCss` when it needs rendered HTML.
+is a Ferriki feature. In the [published `@ferriki/core@0.8.3` and Shiki 4.4.3 migration sample](https://github.com/sebastian-software/ferriki/issues/38#issuecomment-5968270993), JSON-serialized HAST matches, while raw objects can differ where Shiki includes a property such as `data: undefined` that Ferriki omits. In multi-theme token output, Ferriki represents `htmlStyle` as a CSS string and exposes aligned `variants`; Shiki 4.4.3 represents `htmlStyle` as an object and has no `variants` field. A custom token renderer should normalize those shapes, or use `codeToHtml` and `codeToHtmlWithCss` when it needs rendered HTML.
 
 The asynchronous factory and loading methods download standard grammar and
 theme payloads by default, then verify and cache them. Highlighting on a loaded
