@@ -13,6 +13,7 @@ export function verifyArdoAcceptanceHtml(output) {
     'data-ln="2"',
   ]);
   requireClass(typescript, "shiki", "TypeScript");
+  requireStyledText(typescript, "export", "TypeScript");
   requireHighlightedLine(typescript, 2, "TypeScript");
   requireText(typescript, "return left + right;");
 
@@ -25,6 +26,7 @@ export function verifyArdoAcceptanceHtml(output) {
     'data-ln="3"',
   ]);
   requireClass(tsx, "shiki", "TSX");
+  requireStyledText(tsx, "button", "TSX");
   requireHighlightedLine(tsx, 3, "TSX");
   requireText(tsx, 'return <button type="button">{label}</button>;');
 
@@ -106,7 +108,7 @@ function requireHighlightedLine(block, line, label) {
 }
 
 function requireStyledText(block, text, label) {
-  const spans = [...block.matchAll(/<span\b([^>]*)>(.*?)<\/span>/gs)];
+  const spans = [...block.matchAll(/<span\b([^>]*)>([^<]*)<\/span>/gs)];
   const highlighted = spans.some(
     ([, attributes, content]) =>
       /\bstyle=/.test(attributes) && decodeHtml(content.replace(/<[^>]*>/g, "")).includes(text),

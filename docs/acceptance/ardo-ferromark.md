@@ -52,7 +52,7 @@ escaped and metadata stays attached to the correct block. The acceptance
 assertions check structure and source preservation; they do not declare the two
 HTML outputs byte-identical.
 
-The homepage build covers a missing-language fallback. The separate adapter
+The homepage build covers an unknown-language fallback. The separate adapter
 tests must cover a forced highlighting error falling back to plain text, a
 throwing render callback, and a subsequent successful compile to prove the
 failure leaves no stale state. Keep those checks in the Ardo and Ferromark
