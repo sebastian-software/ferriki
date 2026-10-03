@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PassThrough } from "node:stream";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import * as shiki from "shiki";
 import {
+  JsonLineWorker,
   checkPhikiPrerequisites,
   createPhikiSetup,
   renderPhikiCold,
@@ -16,6 +20,156 @@ import { compareHighlightedHtml } from "./phiki-html-agreement.mjs";
 
 const nodeRoot = fileURLToPath(new URL("..", import.meta.url));
 const theme = "github-dark";
+
+function simulatedWorker(script) {
+  return new JsonLineWorker(
+    spawn(process.execPath, ["-e", script], { stdio: ["pipe", "pipe", "pipe"] }),
+  );
+}
+
+function epipeWorker() {
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.signalCode = null;
+  child.stdin = new EventEmitter();
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdin.end = () => {};
+  child.stdin.write = (_value, callback) => {
+    const error = Object.assign(new Error("write EPIPE"), { code: "EPIPE" });
+    queueMicrotask(() => {
+      child.stdin.emit("error", error);
+      callback?.(error);
+    });
+    return false;
+  };
+  child.kill = () => {
+    child.signalCode = "SIGTERM";
+    child.stderr.end("simulated early stdin close");
+    child.stdout.end();
+    queueMicrotask(() => child.emit("close", null, child.signalCode));
+    return true;
+  };
+
+  const worker = new JsonLineWorker(child);
+  child.stdout.write('{"ready":true,"runtime":{}}\n');
+  return worker;
+}
+
+function acknowledgedEpipeWorker(exitCode) {
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.signalCode = null;
+  child.stdin = new EventEmitter();
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdin.end = () => {
+    child.exitCode = exitCode;
+    child.stdout.end();
+    child.stderr.end();
+    queueMicrotask(() => child.emit("close", exitCode, null));
+  };
+  child.stdin.write = (value, callback) => {
+    if (JSON.parse(value).op === "shutdown") {
+      child.stdout.write('{"shutdown":true}\n');
+      queueMicrotask(() => {
+        const error = Object.assign(new Error("write EPIPE"), { code: "EPIPE" });
+        child.stdin.emit("error", error);
+        callback?.(error);
+      });
+    }
+    return true;
+  };
+  child.kill = () => {
+    child.signalCode = "SIGTERM";
+    child.stdout.end();
+    child.stderr.end();
+    queueMicrotask(() => child.emit("close", null, child.signalCode));
+    return true;
+  };
+
+  const worker = new JsonLineWorker(child);
+  child.stdout.write('{"ready":true,"runtime":{}}\n');
+  return worker;
+}
+
+test("PHP worker close is acknowledged and idempotent", async () => {
+  const worker = simulatedWorker(`
+    process.stdout.write('{"ready":true,"runtime":{}}\\n');
+    require('node:readline').createInterface({ input: process.stdin }).on('line', line => {
+      if (JSON.parse(line).op === 'shutdown') process.stdout.write('{"shutdown":true}\\n');
+    });
+  `);
+
+  assert.equal((await worker.receive()).ready, true);
+  const closing = worker.close();
+  assert.equal(worker.close(), closing);
+  await closing;
+});
+
+test("PHP worker shutdown EPIPE rejects with diagnostics instead of an uncaught error", async () => {
+  const worker = epipeWorker();
+  assert.equal((await worker.receive()).ready, true);
+  await assert.rejects(worker.close(), /PHP worker stdin failed \(EPIPE\)/);
+  await assert.rejects(worker.close(), /PHP worker stdin failed \(EPIPE\)/);
+});
+
+test("PHP worker accepts EPIPE only after acknowledged shutdown and zero-status exit", async () => {
+  const worker = acknowledgedEpipeWorker(0);
+  assert.equal((await worker.receive()).ready, true);
+  await worker.close();
+  assert.equal(worker.child.exitCode, 0);
+});
+
+test("PHP worker does not hide a nonzero exit after shutdown acknowledgement", async () => {
+  const worker = acknowledgedEpipeWorker(17);
+  assert.equal((await worker.receive()).ready, true);
+  await assert.rejects(worker.close(), /status 17/);
+});
+
+test("PHP worker malformed JSON is a terminal failure for pending and future requests", async () => {
+  const worker = simulatedWorker(`
+    process.stdout.write('{"ready":true,"runtime":{}}\\n');
+    require('node:readline').createInterface({ input: process.stdin }).once('line', () => {
+      process.stdout.write('not-json\\n');
+    });
+  `);
+
+  assert.equal((await worker.receive()).ready, true);
+  await assert.rejects(worker.request({ op: "render", code: "{}", lang: "json" }), /invalid JSON/);
+  await assert.rejects(worker.receive(), /invalid JSON/);
+  await worker.exit;
+});
+
+test("PHP worker rejects a shutdown response without an acknowledgement", async () => {
+  const worker = simulatedWorker(`
+    process.stdout.write('{"ready":true,"runtime":{}}\\n');
+    require('node:readline').createInterface({ input: process.stdin }).on('line', line => {
+      if (JSON.parse(line).op === 'shutdown') process.stdout.write('{"shutdown":false}\\n');
+    });
+  `);
+
+  assert.equal((await worker.receive()).ready, true);
+  await assert.rejects(worker.close(), /did not acknowledge shutdown/);
+});
+
+test("PHP worker premature exit rejects pending renders with exit status and stderr", async () => {
+  const worker = simulatedWorker(`
+    process.stdout.write('{"ready":true,"runtime":{}}\\n');
+    require('node:readline').createInterface({ input: process.stdin }).once('line', () => {
+      process.stderr.write('simulated render crash\\n');
+      process.exit(23);
+    });
+  `);
+
+  assert.equal((await worker.receive()).ready, true);
+  await assert.rejects(worker.request({ op: "render", code: "{}", lang: "json" }), (error) => {
+    assert.match(error.message, /status 23/);
+    assert.match(error.message, /simulated render crash/);
+    return true;
+  });
+  await worker.exit;
+});
 
 test("optional prerequisite probe reports an unavailable PHP executable", () => {
   const previousPhp = process.env.FERRIKI_BENCH_PHP;

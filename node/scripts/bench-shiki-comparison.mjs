@@ -128,55 +128,71 @@ let phikiStatus = { status: prerequisites.status, reason: prerequisites.reason }
 const phikiAgreement = new Map();
 
 if (prerequisites.status === "available") {
-  phikiPrepared = await createPhikiSetup({
-    nodeRoot,
-    repoRoot,
-    langs,
-    theme,
-    docs,
-    prerequisites,
-  });
-  const started = await startPhikiWorker(nodeRoot, phikiPrepared);
-  phikiWorker = started.worker;
-  phikiRuntime = started.runtime;
-  phikiStatus = { status: "available" };
-
-  for (const doc of docs) {
-    const result = await phikiWorker.request({
-      op: "render",
-      code: doc.code,
-      lang: doc.lang,
-      includeHtml: true,
+  try {
+    phikiPrepared = await createPhikiSetup({
+      nodeRoot,
+      repoRoot,
+      langs,
+      theme,
+      docs,
+      prerequisites,
     });
-    if (!result.ok) {
-      phikiAgreement.set(doc.path, {
-        path: doc.path,
-        lang: doc.lang,
-        status: "error",
-        reason: result.error,
-      });
-      continue;
-    }
+    const started = await startPhikiWorker(nodeRoot, phikiPrepared);
+    phikiWorker = started.worker;
+    phikiRuntime = started.runtime;
+    phikiStatus = { status: "available" };
 
-    try {
-      const comparison = compareHighlightedHtml(wasmHtml.get(doc.path), result.html, doc.code);
-      phikiAgreement.set(doc.path, {
-        path: doc.path,
+    for (const doc of docs) {
+      const result = await phikiWorker.request({
+        op: "render",
+        code: doc.code,
         lang: doc.lang,
-        status: comparison.agrees ? "match" : "different",
-        textAgrees: comparison.textAgrees,
-        stylesAgree: comparison.stylesAgree,
-        removedFinalNewlineSentinel: comparison.removedFinalNewlineSentinel,
-        difference: comparison.difference,
+        includeHtml: true,
       });
-    } catch (error) {
-      phikiAgreement.set(doc.path, {
-        path: doc.path,
-        lang: doc.lang,
-        status: "error",
-        reason: error instanceof Error ? error.message : String(error),
-      });
+      if (!result.ok) {
+        phikiAgreement.set(doc.path, {
+          path: doc.path,
+          lang: doc.lang,
+          status: "error",
+          reason: result.error,
+        });
+        continue;
+      }
+
+      try {
+        const comparison = compareHighlightedHtml(wasmHtml.get(doc.path), result.html, doc.code);
+        phikiAgreement.set(doc.path, {
+          path: doc.path,
+          lang: doc.lang,
+          status: comparison.agrees ? "match" : "different",
+          textAgrees: comparison.textAgrees,
+          stylesAgree: comparison.stylesAgree,
+          removedFinalNewlineSentinel: comparison.removedFinalNewlineSentinel,
+          difference: comparison.difference,
+        });
+      } catch (error) {
+        phikiAgreement.set(doc.path, {
+          path: doc.path,
+          lang: doc.lang,
+          status: "error",
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
+  } catch (error) {
+    const worker = phikiWorker;
+    phikiWorker = undefined;
+    if (worker) {
+      try {
+        await worker.close();
+      } catch (closeError) {
+        throw new AggregateError(
+          [error, closeError],
+          "Phiki output agreement failed during cleanup.",
+        );
+      }
+    }
+    throw error;
   }
 }
 
@@ -243,14 +259,39 @@ async function measure(api, doc, documentIndex) {
 }
 
 const warm = {};
-for (const api of allNodeApis) {
+warm.codeToHtml = [];
+let htmlMeasurementError;
+try {
+  for (const [documentIndex, doc] of docs.entries()) {
+    warm.codeToHtml.push(await measure("codeToHtml", doc, documentIndex));
+  }
+} catch (error) {
+  htmlMeasurementError = error;
+}
+
+const htmlWorker = phikiWorker;
+phikiWorker = undefined;
+if (htmlWorker) {
+  try {
+    await htmlWorker.close();
+  } catch (closeError) {
+    if (htmlMeasurementError) {
+      throw new AggregateError(
+        [htmlMeasurementError, closeError],
+        "Phiki HTML measurement and worker cleanup both failed.",
+      );
+    }
+    throw closeError;
+  }
+}
+if (htmlMeasurementError) throw htmlMeasurementError;
+
+for (const api of allNodeApis.slice(1)) {
   warm[api] = [];
   for (const [documentIndex, doc] of docs.entries()) {
     warm[api].push(await measure(api, doc, documentIndex));
   }
 }
-
-if (phikiWorker) await phikiWorker.close();
 
 function runNodeCold(id, selectedPaths) {
   const child = spawnSync(

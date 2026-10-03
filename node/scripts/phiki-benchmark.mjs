@@ -214,26 +214,43 @@ export async function createPhikiSetup({ nodeRoot, repoRoot, langs, theme, docs,
   };
 }
 
-class JsonLineWorker {
+export class JsonLineWorker {
   constructor(child) {
     this.child = child;
     this.responses = [];
     this.waiters = [];
     this.stderr = "";
+    this.failure = null;
     this.exitError = null;
+    this.shutdownRequested = false;
+    this.shutdownAcknowledged = false;
+    this.closePromise = null;
     this.exit = new Promise((resolve) => {
-      child.once("exit", (code, signal) => {
-        this.exitError = new Error(
-          `PHP worker exited ${signal ? `from ${signal}` : `with status ${code}`}${this.stderr ? `: ${this.stderr}` : ""}`,
-        );
-        for (const waiter of this.waiters.splice(0)) waiter.reject(this.exitError);
+      child.once("error", (error) => {
+        this.fail(new Error(`PHP worker process error: ${error.message}`));
+      });
+      child.once("close", (code, signal) => {
+        if (!this.shutdownAcknowledged || code !== 0) {
+          this.fail(
+            new Error(
+              `PHP worker exited ${signal ? `from ${signal}` : `with status ${code}`} before a successful shutdown acknowledgement`,
+            ),
+            { terminate: false },
+          );
+        }
+        this.finalizeFailure(code, signal);
         resolve(code);
       });
-      child.once("error", (error) => {
-        this.exitError = error;
-        for (const waiter of this.waiters.splice(0)) waiter.reject(error);
-        resolve(null);
-      });
+    });
+
+    child.stdin.on("error", (error) => {
+      this.handleStdinError(error);
+    });
+    child.stdout.on("error", (error) => {
+      this.fail(new Error(`PHP worker stdout failed: ${error.message}`));
+    });
+    child.stderr.on("error", (error) => {
+      this.fail(new Error(`PHP worker stderr failed: ${error.message}`));
     });
 
     const lines = createInterface({ input: child.stdout });
@@ -242,10 +259,10 @@ class JsonLineWorker {
       try {
         value = JSON.parse(line);
       } catch {
-        const error = new Error(`PHP worker returned invalid JSON: ${line.slice(0, 200)}`);
-        for (const waiter of this.waiters.splice(0)) waiter.reject(error);
+        this.fail(new Error(`PHP worker returned invalid JSON: ${line.slice(0, 200)}`));
         return;
       }
+      if (value.shutdown === true) this.shutdownAcknowledged = true;
       const waiter = this.waiters.shift();
       if (waiter) waiter.resolve(value);
       else this.responses.push(value);
@@ -255,21 +272,85 @@ class JsonLineWorker {
     });
   }
 
+  handleStdinError(error) {
+    if (this.shutdownRequested && this.shutdownAcknowledged && error.code === "EPIPE") return;
+    this.fail(
+      new Error(`PHP worker stdin failed (${error.code ?? "stream error"}): ${error.message}`),
+    );
+  }
+
+  fail(error, { terminate = true } = {}) {
+    if (this.failure) return;
+    this.failure = error;
+    this.responses.length = 0;
+    if (terminate && this.child.exitCode === null && this.child.signalCode === null) {
+      try {
+        this.child.kill();
+      } catch {
+        // The process may have exited between the status check and kill().
+      }
+    }
+    this.exit.then((code) => {
+      this.finalizeFailure(code);
+    });
+  }
+
+  finalizeFailure(code = this.child.exitCode, signal = this.child.signalCode) {
+    if (!this.failure || this.exitError) return;
+    const status = signal ? `signal ${signal}` : `status ${code ?? "unknown"}`;
+    this.exitError = new Error(
+      `${this.failure.message}; PHP worker ${status}${this.stderr ? `; stderr: ${this.stderr.trim()}` : ""}`,
+      { cause: this.failure },
+    );
+    for (const waiter of this.waiters.splice(0)) waiter.reject(this.exitError);
+  }
+
   receive() {
-    if (this.responses.length > 0) return Promise.resolve(this.responses.shift());
     if (this.exitError) return Promise.reject(this.exitError);
+    if (this.failure) {
+      return this.exit.then(() => Promise.reject(this.exitError));
+    }
+    if (this.responses.length > 0) return Promise.resolve(this.responses.shift());
     return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
   }
 
   async request(value) {
-    this.child.stdin.write(`${JSON.stringify(value)}\n`);
-    return this.receive();
+    if (this.failure || this.exitError) return this.receive();
+    if (value.op === "shutdown") this.shutdownRequested = true;
+    const response = this.receive();
+    try {
+      this.child.stdin.write(`${JSON.stringify(value)}\n`, (error) => {
+        if (error) this.handleStdinError(error);
+      });
+    } catch (error) {
+      this.handleStdinError(error);
+    }
+    return response;
   }
 
-  async close() {
-    if (this.exitError) return;
-    await this.request({ op: "shutdown" });
+  close() {
+    if (!this.closePromise) this.closePromise = this.closeOnce();
+    return this.closePromise;
+  }
+
+  async closeOnce() {
+    if (this.failure || this.exitError) {
+      await this.exit;
+      throw this.exitError;
+    }
+    const response = await this.request({ op: "shutdown" });
+    if (response.shutdown !== true) {
+      this.fail(new Error("PHP worker did not acknowledge shutdown."));
+      await this.exit;
+      throw this.exitError;
+    }
     this.child.stdin.end();
+    const code = await this.exit;
+    if (this.failure || code !== 0 || !this.shutdownAcknowledged) throw this.exitError;
+  }
+
+  async terminate() {
+    if (this.child.exitCode === null && this.child.signalCode === null) this.child.kill();
     await this.exit;
   }
 }
@@ -285,11 +366,19 @@ export async function startPhikiWorker(nodeRoot, prepared) {
     },
   );
   const worker = new JsonLineWorker(child);
-  const ready = await worker.receive();
-  if (!ready.ready || !ready.runtime) {
-    throw new Error(ready.error ?? "PHP worker did not report readiness.");
+  try {
+    const ready = await worker.receive();
+    if (!ready.ready || !ready.runtime) {
+      throw new Error(ready.error ?? "PHP worker did not report readiness.");
+    }
+    return { worker, runtime: ready.runtime };
+  } catch (error) {
+    await worker.terminate();
+    if (worker.exitError && worker.exitError !== error) {
+      throw new AggregateError([error, worker.exitError], "PHP worker failed during startup.");
+    }
+    throw error;
   }
-  return { worker, runtime: ready.runtime };
 }
 
 export function renderPhikiCold(nodeRoot, prepared, docs) {
