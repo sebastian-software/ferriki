@@ -171,6 +171,7 @@ if (missing.length > 0) {
 
 const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, await read(page)]));
 const linkCount = await verifyRenderedPages(pageFiles);
+verifyFocusableMarkdownCodeBlocks(await read("guide/getting-started/index.html"));
 verifyFocusableMarkdownTables(await read("guide/api/index.html"));
 verifyArdoAcceptanceHtml(await read("evidence/compatibility/index.html"));
 
@@ -204,6 +205,20 @@ function verifyFocusableMarkdownTables(html) {
   if (missingTabIndex.length > 0) {
     throw new Error(
       `The rendered API guide has ${missingTabIndex.length} Markdown table(s) without keyboard focus.`,
+    );
+  }
+}
+
+function verifyFocusableMarkdownCodeBlocks(html) {
+  const blocks = htmlTags(html).filter((tag) => tag.name === "pre");
+  if (blocks.length === 0) {
+    throw new Error("The rendered getting-started guide has no Markdown code blocks to verify.");
+  }
+
+  const missingTabIndex = blocks.filter((block) => attribute(block.raw, "tabindex") !== "0");
+  if (missingTabIndex.length > 0) {
+    throw new Error(
+      `The rendered getting-started guide has ${missingTabIndex.length} Markdown code block(s) without keyboard focus.`,
     );
   }
 }
