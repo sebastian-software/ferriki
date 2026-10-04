@@ -211,6 +211,24 @@ const prepared = ferrikiCode(code, { language: "ts" });`;
     await expect(
       transformJsx(ferriki({ theme: "github-dark-default" }), invalid, "/src/invalid.cts"),
     ).rejects.toThrow(/macro|static|ferrikiCode/i);
+
+    const dynamicWithOptions = 'void import(`@ferriki/core/macro`, { with: { type: "json" } });';
+    await expect(
+      transformJsx(
+        ferriki({ theme: "github-dark-default" }),
+        dynamicWithOptions,
+        "/src/dynamic-import.ts",
+      ),
+    ).rejects.toThrow(/dynamic imports/);
+
+    for (const dynamicRequire of [
+      "require(`@ferriki/core/macro`);",
+      "require('@ferriki/core/macro', 'extra');",
+    ]) {
+      await expect(
+        transformJsx(ferriki({ theme: "github-dark-default" }), dynamicRequire, "/src/require.ts"),
+      ).rejects.toThrow(/CommonJS `require\(\)`/);
+    }
   });
 
   it("does not load the native addon for macro-free escaped source", () => {
@@ -227,6 +245,25 @@ const prepared = ferrikiCode(code, { language: "ts" });`;
       encoding: "utf8",
     });
     expect(result).toBe('{"calls":[],"imports":[]}');
+  });
+
+  it("does not load the native addon when macro text appears only in comments and strings", () => {
+    const viteUrl = new URL("../index.mjs", import.meta.url).href;
+    const source = String.raw`// Documentation mentions @ferriki/core/macro.
+const example = "@ferriki/core/macro";
+const pattern = /\d+\\w+/;`;
+    const script = `
+      Object.defineProperty(process, "arch", { value: "unsupported" });
+      const { ferriki } = await import(${JSON.stringify(viteUrl)});
+      const result = await ferriki().transform.call({ warn() {} }, ${JSON.stringify(source)}, "/src/ordinary.ts");
+      if (result !== null) throw new Error("the ordinary module should remain unchanged");
+      process.stdout.write("null");
+    `;
+
+    const result = execFileSync(process.execPath, ["--input-type=module", "--eval", script], {
+      encoding: "utf8",
+    });
+    expect(result).toBe("null");
   });
 
   it("transforms macros in included compiler-emitted modules and skips macro-free scripts", async () => {

@@ -420,9 +420,10 @@ impl<'a> Visit<'a> for MacroReferenceVisitor<'_> {
                     .symbol_id()
                     .is_none()
             })
-            && expression.arguments.len() == 1
-            && expression.arguments[0]
-                .as_expression()
+            && expression
+                .arguments
+                .first()
+                .and_then(|argument| argument.as_expression())
                 .is_some_and(is_macro_module_expression)
         {
             self.unsupported_imports.push((
@@ -1033,8 +1034,23 @@ ferrikiCode('�', { language: 'text' });"#;
                 "dynamic imports",
             ),
             (
+                "void import('@ferriki/core/macro', { with: { type: 'json' } });",
+                "imports/dynamic-options.js",
+                "dynamic imports",
+            ),
+            (
                 "require('@ferriki/core/macro');",
                 "imports/require.js",
+                "CommonJS `require()`",
+            ),
+            (
+                "require('@ferriki/core/macro', 'extra');",
+                "imports/require-extra.js",
+                "CommonJS `require()`",
+            ),
+            (
+                "require(`@ferriki/core/macro`, 'extra');",
+                "imports/require-template-extra.js",
                 "CommonJS `require()`",
             ),
             (

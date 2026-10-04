@@ -8,6 +8,7 @@ import { toHtml } from "hast-util-to-html";
 import MagicString from "magic-string";
 
 const VIRTUAL_CSS_PREFIX = "virtual:ferriki-vite/";
+const MACRO_MODULE = "@ferriki/core/macro";
 const LINE_CSS = [
   ".ferriki-highlight-line[data-ln]::before{content:attr(data-ln);display:inline-block;min-width:2.5em;margin-right:1.5em;padding-right:.75em;text-align:right;opacity:.55}",
   ".ferriki-highlight-line.highlighted{background:color-mix(in srgb,currentColor 10%,transparent)}",
@@ -170,7 +171,9 @@ export function ferriki(options = {}) {
             )
           : { changed: false, magic: new MagicString(source), css: "", needsLineCss: false };
       const macroPlan =
-        isScript || included ? findInlineCodeMacros(source, path) : { calls: [], imports: [] };
+        (isScript || included) && hasMacroModuleReference(source)
+          ? findInlineCodeMacros(source, path)
+          : { calls: [], imports: [] };
       const macroCss = new Set();
       let macroChanged = false;
       if (macroPlan.calls.length) {
@@ -524,6 +527,86 @@ function visitAst(node, visit) {
     else if (value && typeof value === "object" && typeof value.type === "string")
       visitAst(value, visit);
   }
+}
+
+function hasMacroModuleReference(source) {
+  if (!source.includes(MACRO_MODULE) && !source.includes("\\")) return false;
+
+  let ast;
+  try {
+    ast = parseJs(source, { sourceType: "unambiguous", plugins: ["jsx", "typescript"] });
+  } catch {
+    // Let the native scanner report syntax diagnostics when source text could
+    // contain a macro module reference but Babel cannot build an AST.
+    return true;
+  }
+
+  let found = false;
+  visitAst(ast, (node) => {
+    if (found) return;
+    if (node.type === "ImportDeclaration") {
+      if (node.importKind === "type") return;
+      if (
+        node.specifiers?.length &&
+        node.specifiers.every((specifier) => specifier.importKind === "type")
+      )
+        return;
+      found = isMacroModuleSpecifier(node.source);
+      return;
+    }
+    if (node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") {
+      if (node.exportKind === "type") return;
+      if (
+        node.type === "ExportNamedDeclaration" &&
+        node.specifiers.length > 0 &&
+        node.specifiers.every((specifier) => specifier.exportKind === "type")
+      )
+        return;
+      found = isMacroModuleSpecifier(node.source);
+      return;
+    }
+    if (node.type === "ImportExpression" && isMacroModuleSpecifier(node.source)) {
+      found = true;
+      return;
+    }
+    if (
+      node.type === "CallExpression" &&
+      node.callee?.type === "Import" &&
+      node.arguments.length > 0 &&
+      isMacroModuleSpecifier(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    if (
+      node.type === "CallExpression" &&
+      node.callee?.type === "Identifier" &&
+      node.callee.name === "require" &&
+      node.arguments.length > 0 &&
+      isMacroModuleSpecifier(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    if (
+      node.type === "TSImportEqualsDeclaration" &&
+      node.importKind !== "type" &&
+      node.moduleReference?.type === "TSExternalModuleReference" &&
+      isMacroModuleSpecifier(node.moduleReference.expression)
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function isMacroModuleSpecifier(node) {
+  if (node?.type === "StringLiteral") return node.value === MACRO_MODULE;
+  return (
+    node?.type === "TemplateLiteral" &&
+    node.expressions.length === 0 &&
+    node.quasis[0]?.value.cooked === MACRO_MODULE
+  );
 }
 
 function jsxName(node) {
