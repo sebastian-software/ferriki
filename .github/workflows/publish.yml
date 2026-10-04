@@ -362,6 +362,17 @@ jobs:
         with:
           node-version: '22'
 
+      # Each native-<platform id> artifact lands in its own directory, so the
+      # summary can list every sidecar's addon size. Targets whose build failed
+      # have no artifact; that must not prevent the summary.
+      - name: Download native sidecars for size reporting
+        if: ${{ needs.build-native.result != 'skipped' }}
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: native-*
+          path: native-sidecars
+
       - name: Summarize release outcome
         env:
           RELEASES_CREATED: ${{ needs.release-please.outputs.releases_created }}
@@ -370,4 +381,5 @@ jobs:
           BUILD_RESULT: ${{ needs.build-native.result }}
           PUBLISH_RESULT: ${{ needs.publish-npm.result }}
           VERIFY_RESULT: ${{ needs.verify-npm-publish.result }}
+          NATIVE_SIDECARS_DIR: native-sidecars
         run: node ./node/scripts/write-release-summary.mjs
