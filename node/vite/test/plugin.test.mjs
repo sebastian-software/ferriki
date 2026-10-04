@@ -1052,10 +1052,13 @@ const prepared = code('const markup = "<script>";', { language: "not-a-real-lang
       'const block = <pre data-highlight="auto" data-language="ts" data-meta="{1}"><code>const jsxValue = 42;</code></pre>; console.log(block);',
     );
     const plugin = ferriki({ theme: "github-dark-default", styleMode: "classes" });
+    // Vite 8 lowers JSX with the automatic React runtime; this project has no React.
+    const oxc = { jsx: { runtime: "classic" } };
     const server = await createServer({
       configFile: false,
       root,
       plugins: [plugin],
+      oxc,
       optimizeDeps: { noDiscovery: true },
       server: { middlewareMode: true, fs: { allow: [root] } },
       appType: "custom",
@@ -1083,6 +1086,7 @@ const prepared = code('const markup = "<script>";', { language: "not-a-real-lang
       configFile: false,
       root,
       plugins: [buildPlugin],
+      oxc,
       build: { write: false, outDir: "dist", minify: false },
     });
     const outputs = Array.isArray(result) ? result.flatMap((item) => item.output) : result.output;
