@@ -70,7 +70,7 @@ runtime. See the [code example authoring guide](https://github.com/sebastian-sof
 for feature ownership, CSS, accessible collapse and copy behavior, and a
 runnable example.
 
-The plugin also prepares explicitly imported inline `ferrikiCode` calls from
+The plugin also prepares explicitly imported inline `code` calls from
 `@ferriki/core/macro`. Code and options must be direct literals; the prepared
 descriptor retains original source, HTML, CSS and metadata. The macro entry
 requires a release containing that new subpath. See the [inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md)

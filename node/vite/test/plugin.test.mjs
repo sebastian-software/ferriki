@@ -9,7 +9,7 @@ import { build, createServer } from "vite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { finalCodeText, scrollCodeBlockFromKey } from "../../examples/code-authoring/copy.mjs";
-import { ferrikiCode } from "../../ferriki/macro.mjs";
+import { code } from "../../ferriki/macro.mjs";
 import { ferriki } from "../index.mjs";
 import "../../scripts/test-asset-env.mjs";
 
@@ -101,7 +101,7 @@ function withoutVirtualStyles(code) {
 describe("@ferriki/vite", () => {
   it("replaces scoped macro aliases with prepared blocks and preserves source maps", async () => {
     const source = `const before = "🧪";
-import { ferrikiCode as renderSnippet, type PreparedCodeBlock } from "@ferriki/core/macro";
+import { code as renderSnippet, type PreparedCodeBlock } from "@ferriki/core/macro";
 const prepared: PreparedCodeBlock = renderSnippet('const tag = "</script>";\\r\\n// λ', { language: "ts", meta: 'title="Demo" [API] {1}', lineNumbers: false });
 const numbered = renderSnippet("const value = 1;", { language: "ts", meta: "showLineNumbers", lineNumbers: false });
 function shadow(renderSnippet) { return renderSnippet("leave me alone", { language: "ts" }); }`;
@@ -112,7 +112,7 @@ function shadow(renderSnippet) { return renderSnippet("leave me alone", { langua
     });
     const result = await transformJsx(plugin, source, "/src/example.mts");
 
-    expect(result.code).not.toContain("ferrikiCode as renderSnippet");
+    expect(result.code).not.toContain("code as renderSnippet");
     expect(result.code).toMatch(
       /import type \{[^}]*PreparedCodeBlock[^}]*\} from ["']@ferriki\/core\/macro["'];/,
     );
@@ -159,12 +159,12 @@ function shadow(renderSnippet) { return renderSnippet("leave me alone", { langua
     const plugin = ferriki({ theme: "github-dark-default", styleMode: "classes" });
     const before = await transformJsx(
       plugin,
-      `import { ferrikiCode } from "@ferriki/core/macro"; const value = ferrikiCode("const value = 42;", { language: "ts" });`,
+      `import { code } from "@ferriki/core/macro"; const value = code("const value = 42;", { language: "ts" });`,
       "/src/macro-hmr.ts",
     );
     const after = await transformJsx(
       plugin,
-      `import { ferrikiCode } from "@ferriki/core/macro"; const value = ferrikiCode("function value() { return 42; }", { language: "ts" });`,
+      `import { code } from "@ferriki/core/macro"; const value = code("function value() { return 42; }", { language: "ts" });`,
       "/src/macro-hmr.ts",
     );
     const beforeId = /import "(virtual:ferriki-vite\/[^"]+\.css)";/.exec(before.code)?.[1];
@@ -174,13 +174,13 @@ function shadow(renderSnippet) { return renderSnippet("leave me alone", { langua
   });
 
   it("recognizes escaped macro specifiers and reports dynamic macro uses", async () => {
-    const escaped = String.raw`import { ferrikiCode as prepare } from "@ferriki/core/\u006dacro";
+    const escaped = String.raw`import { code as prepare } from "@ferriki/core/\u006dacro";
 const prepared = prepare("const value = 1;", { language: "ts" });`;
     const result = await transformJsx(ferriki({ theme: "github-dark-default" }), escaped);
     expect(result.code).not.toContain("@ferriki/core/");
     expect(result.code).toContain('language":"ts"');
 
-    const escapedPrefix = String.raw`import { ferrikiCode as prepare } from "\u0040ferriki/core/macro";
+    const escapedPrefix = String.raw`import { code as prepare } from "\u0040ferriki/core/macro";
 const prepared = prepare("const value = 2;", { language: "ts" });`;
     const prefixResult = await transformJsx(
       ferriki({ theme: "github-dark-default" }),
@@ -195,22 +195,22 @@ const prepared = prepare("const value = 2;", { language: "ts" });`;
       `"@ferriki/core/ma\\${String.fromCharCode(10)}cro"`,
     ];
     for (const [index, specifier] of escapedVariants.entries()) {
-      const variant = `import { ferrikiCode } from ${specifier};\nconst prepared = ferrikiCode("const value = ${index + 3};", { language: "ts" });`;
+      const variant = `import { code } from ${specifier};\nconst prepared = code("const value = ${index + 3};", { language: "ts" });`;
       const variantResult = await transformJsx(
         ferriki({ theme: "github-dark-default" }),
         variant,
         `/src/escaped-${index}.ts`,
       );
-      expect(variantResult.code).not.toContain("ferrikiCode");
+      expect(variantResult.code).not.toContain("@ferriki/core/macro");
       expect(variantResult.code).toContain('language":"ts"');
     }
 
-    const invalid = `import { ferrikiCode } from "@ferriki/core/macro";
-const code = "const value = 1;";
-const prepared = ferrikiCode(code, { language: "ts" });`;
+    const invalid = `import { code } from "@ferriki/core/macro";
+const source = "const value = 1;";
+const prepared = code(source, { language: "ts" });`;
     await expect(
       transformJsx(ferriki({ theme: "github-dark-default" }), invalid, "/src/invalid.cts"),
-    ).rejects.toThrow(/macro|static|ferrikiCode/i);
+    ).rejects.toThrow(/macro|static|code/i);
 
     const dynamicWithOptions = 'void import(`@ferriki/core/macro`, { with: { type: "json" } });';
     await expect(
@@ -280,7 +280,7 @@ const pattern = /\d+\\w+/;`;
       theme: "github-dark-default",
       include: (id) => id.includes("virtual:markdown"),
     });
-    const source = `import { ferrikiCode as prepare } from "@ferriki/core/macro";
+    const source = `import { code as prepare } from "@ferriki/core/macro";
 const snippet = prepare("const mdx = 1;", { language: "ts" });`;
     const result = await transformJsx(includedPlugin, source, "\0virtual:markdown/page.mdx");
     expect(result).toBeTruthy();
@@ -290,8 +290,8 @@ const snippet = prepare("const mdx = 1;", { language: "ts" });`;
   });
 
   it("warns for unknown macro languages and emits explicitly escaped plain HTML", async () => {
-    const source = `import { ferrikiCode } from "@ferriki/core/macro";
-const prepared = ferrikiCode('const markup = "<script>";', { language: "not-a-real-language" });`;
+    const source = `import { code } from "@ferriki/core/macro";
+const prepared = code('const markup = "<script>";', { language: "not-a-real-language" });`;
     const warnings = [];
     const result = await transformJsx(
       ferriki({ theme: "github-dark-default" }),
@@ -308,7 +308,7 @@ const prepared = ferrikiCode('const markup = "<script>";', { language: "not-a-re
   });
 
   it("throws when the browser macro entry is executed without a build transform", () => {
-    expect(() => ferrikiCode("const value = 1;", { language: "ts" })).toThrow(
+    expect(() => code("const value = 1;", { language: "ts" })).toThrow(
       /compile-time macro.*@ferriki\/vite/,
     );
   });

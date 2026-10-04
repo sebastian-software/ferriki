@@ -3,7 +3,7 @@ import { loadFerrikiNativeBinding } from "./native.mjs";
 let nativeBinding;
 
 /**
- * Find direct, statically evaluable `ferrikiCode` calls and their imports.
+ * Find direct, statically evaluable `code` calls and their imports.
  * The native scanner owns JavaScript/TypeScript binding and shadow analysis;
  * this Node-only entry deliberately stays outside the browser macro entry.
  *

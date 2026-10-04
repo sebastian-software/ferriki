@@ -10,7 +10,7 @@ use serde_json::Value;
 
 use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 
-/// Semantically analyzes statically analyzable inline `ferrikiCode` calls.
+/// Semantically analyzes statically analyzable inline `code` calls.
 #[napi(js_name = "scanInlineCodeMacros")]
 pub fn scan_inline_code_macros(source: String, filename: String) -> Result<String> {
     let scan =
