@@ -361,6 +361,12 @@ jobs:
       - name: Verify packed Vite consumers
         run: pnpm run check:packed-vite
 
+      - name: Install Chromium for inline macro consumer checks
+        run: pnpm dlx playwright@1.63.0 install --with-deps chromium
+
+      - name: Verify inline macro hydration, navigation and HMR
+        run: pnpm run check:inline-macro
+
       - name: Verify TIOBE benchmark outputs and comparison contracts
         run: pnpm run check:bench-tiobe
 

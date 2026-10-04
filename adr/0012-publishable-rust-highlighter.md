@@ -55,6 +55,10 @@ still applies.
   and collapsible supporting blocks belong to the renderer or consuming page;
   they add no Rust highlighter API.
 
+The private `ferriki-macro` crate owns OXC-based inline macro analysis. It is
+used only by the N-API build-tool entry and is not a dependency or semver
+surface of the three published Rust crates ([ADR 0018](0018-inline-highlighting-macros.md)).
+
 ### Release
 
 Ferriki follows the organization's release blueprint (one product, one
@@ -117,3 +121,5 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-10-03: Clarifies Ferromark fence annotations, its published Ferriki 0.7.0 integration, and keeps Node comment transformers and page presentation outside the Rust API (#166).
 - 2026-10-03: Include the separate fuzz lockfile's local crate versions in generated release candidates; pack the Vite tarball with pnpm and publish it explicitly with npm.
 - 2026-10-04: Records Ferromark 3.1.0's published JSX and Node compiler with Ferriki 0.10.0; keeps the 3.0.0 Rust integration as historical context.
+
+- 2026-10-04: Records the inline macro build boundary and private native scanner (#211).

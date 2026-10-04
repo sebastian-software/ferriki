@@ -1,0 +1,25 @@
+:root {
+  color: #1b1b1b;
+  background: #fff;
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+
+.code-example {
+  font-family: "Ferriki Fixture Mono", ui-monospace, monospace;
+}
+
+.code-example pre {
+  font-family: inherit;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.code-example [data-ln]::before {
+  content: attr(data-ln);
+  display: inline-block;
+  min-width: 2rem;
+  margin-right: 1rem;
+  opacity: 0.55;
+}

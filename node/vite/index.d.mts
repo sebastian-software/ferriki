@@ -10,7 +10,7 @@ export type FerrikiViteOptions = {
   assets?: AssetOptions;
   /** Inline styles by default; `classes` emits a CSS virtual module. */
   styleMode?: "inline" | "classes";
-  /** Add line-number data and the plugin's line-number stylesheet. */
+  /** Default line numbers for marked blocks and macro calls; a macro call can override this. */
   lineNumbers?: boolean;
   /** JavaScript callbacks forwarded to Ferriki's existing per-block transformer pipeline. */
   transformers?: readonly ShikiTransformer[];

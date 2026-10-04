@@ -1,12 +1,15 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { parse } from "@babel/parser";
 import { fromHtml } from "hast-util-from-html";
 import { build, createServer } from "vite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { finalCodeText, scrollCodeBlockFromKey } from "../../examples/code-authoring/copy.mjs";
+import { ferrikiCode } from "../../ferriki/macro.mjs";
 import { ferriki } from "../index.mjs";
 import "../../scripts/test-asset-env.mjs";
 
@@ -91,7 +94,225 @@ async function transformJsx(plugin, source, id = "/src/example.tsx", warnings = 
   return plugin.transform.call(context(warnings), source, id);
 }
 
+function withoutVirtualStyles(code) {
+  return code.replace(/^import "virtual:ferriki-vite\/[^\n]+";\n/gm, "");
+}
+
 describe("@ferriki/vite", () => {
+  it("replaces scoped macro aliases with prepared blocks and preserves source maps", async () => {
+    const source = `const before = "🧪";
+import { ferrikiCode as renderSnippet, type PreparedCodeBlock } from "@ferriki/core/macro";
+const prepared: PreparedCodeBlock = renderSnippet('const tag = "</script>";\\r\\n// λ', { language: "ts", meta: 'title="Demo" [API] {1}', lineNumbers: false });
+const numbered = renderSnippet("const value = 1;", { language: "ts", meta: "showLineNumbers", lineNumbers: false });
+function shadow(renderSnippet) { return renderSnippet("leave me alone", { language: "ts" }); }`;
+    const plugin = ferriki({
+      theme: "github-dark-default",
+      styleMode: "classes",
+      lineNumbers: true,
+    });
+    const result = await transformJsx(plugin, source, "/src/example.mts");
+
+    expect(result.code).not.toContain("ferrikiCode as renderSnippet");
+    expect(result.code).toMatch(
+      /import type \{[^}]*PreparedCodeBlock[^}]*\} from ["']@ferriki\/core\/macro["'];/,
+    );
+    expect(() =>
+      parse(result.code, { sourceType: "module", plugins: ["jsx", "typescript"] }),
+    ).not.toThrow();
+    expect(result.code).toContain(
+      'function shadow(renderSnippet) { return renderSnippet("leave me alone"',
+    );
+    expect(result.code).not.toContain("</script>");
+    expect(result.map).toMatchObject({
+      version: 3,
+      sources: ["/src/example.mts"],
+      sourcesContent: [source],
+    });
+
+    const executable = withoutVirtualStyles(result.code)
+      .replace(/^import type .*;\s*$/gm, "")
+      .replace("const prepared: PreparedCodeBlock =", "const prepared =");
+    const { prepared, numbered } = runInNewContext(`${executable}\n({ prepared, numbered });`);
+    expect(prepared.code).toBe('const tag = "</script>";\r\n// λ');
+    expect(prepared.language).toBe("ts");
+    expect(prepared.html).toContain("<pre");
+    expect(prepared.html).toContain("<code");
+    expect(prepared.html).toContain('data-title="Demo"');
+    expect(prepared.html).toContain('data-label="API"');
+    expect(prepared.html).toContain("&#x3C;/script>");
+    expect(prepared.css).toContain(".ferriki-style-");
+    expect(prepared.css).toContain(".ferriki-highlight-line");
+    expect(prepared.metadata).toEqual({
+      title: "Demo",
+      label: "API",
+      lineNumbers: false,
+      highlightedLines: [1],
+    });
+    expect(numbered.metadata.lineNumbers).toBe(true);
+    const cssId = /import "(virtual:ferriki-vite\/[^"]+\.css)";/.exec(result.code)?.[1];
+    expect(cssId).toBeTruthy();
+    expect(plugin.resolveId(cssId)).toBe(`\0${cssId}`);
+    expect(plugin.load(`\0${cssId}`)).toContain(".ferriki-style-");
+  });
+
+  it("updates the content-addressed CSS module when macro output changes", async () => {
+    const plugin = ferriki({ theme: "github-dark-default", styleMode: "classes" });
+    const before = await transformJsx(
+      plugin,
+      `import { ferrikiCode } from "@ferriki/core/macro"; const value = ferrikiCode("const value = 42;", { language: "ts" });`,
+      "/src/macro-hmr.ts",
+    );
+    const after = await transformJsx(
+      plugin,
+      `import { ferrikiCode } from "@ferriki/core/macro"; const value = ferrikiCode("function value() { return 42; }", { language: "ts" });`,
+      "/src/macro-hmr.ts",
+    );
+    const beforeId = /import "(virtual:ferriki-vite\/[^"]+\.css)";/.exec(before.code)?.[1];
+    const afterId = /import "(virtual:ferriki-vite\/[^"]+\.css)";/.exec(after.code)?.[1];
+    expect(beforeId).not.toBe(afterId);
+    expect(plugin.load(`\0${beforeId}`)).not.toBe(plugin.load(`\0${afterId}`));
+  });
+
+  it("recognizes escaped macro specifiers and reports dynamic macro uses", async () => {
+    const escaped = String.raw`import { ferrikiCode as prepare } from "@ferriki/core/\u006dacro";
+const prepared = prepare("const value = 1;", { language: "ts" });`;
+    const result = await transformJsx(ferriki({ theme: "github-dark-default" }), escaped);
+    expect(result.code).not.toContain("@ferriki/core/");
+    expect(result.code).toContain('language":"ts"');
+
+    const escapedPrefix = String.raw`import { ferrikiCode as prepare } from "\u0040ferriki/core/macro";
+const prepared = prepare("const value = 2;", { language: "ts" });`;
+    const prefixResult = await transformJsx(
+      ferriki({ theme: "github-dark-default" }),
+      escapedPrefix,
+    );
+    expect(prefixResult.code).not.toContain("\\u0040ferriki");
+    expect(prefixResult.code).toContain('language":"ts"');
+
+    const escapedVariants = [
+      String.raw`"\x40ferriki\/core\/\macro"`,
+      String.raw`"\u{00000040}ferriki/core/macro"`,
+      `"@ferriki/core/ma\\${String.fromCharCode(10)}cro"`,
+    ];
+    for (const [index, specifier] of escapedVariants.entries()) {
+      const variant = `import { ferrikiCode } from ${specifier};\nconst prepared = ferrikiCode("const value = ${index + 3};", { language: "ts" });`;
+      const variantResult = await transformJsx(
+        ferriki({ theme: "github-dark-default" }),
+        variant,
+        `/src/escaped-${index}.ts`,
+      );
+      expect(variantResult.code).not.toContain("ferrikiCode");
+      expect(variantResult.code).toContain('language":"ts"');
+    }
+
+    const invalid = `import { ferrikiCode } from "@ferriki/core/macro";
+const code = "const value = 1;";
+const prepared = ferrikiCode(code, { language: "ts" });`;
+    await expect(
+      transformJsx(ferriki({ theme: "github-dark-default" }), invalid, "/src/invalid.cts"),
+    ).rejects.toThrow(/macro|static|ferrikiCode/i);
+
+    const dynamicWithOptions = 'void import(`@ferriki/core/macro`, { with: { type: "json" } });';
+    await expect(
+      transformJsx(
+        ferriki({ theme: "github-dark-default" }),
+        dynamicWithOptions,
+        "/src/dynamic-import.ts",
+      ),
+    ).rejects.toThrow(/dynamic imports/);
+
+    for (const dynamicRequire of [
+      "require(`@ferriki/core/macro`);",
+      "require('@ferriki/core/macro', 'extra');",
+      "require?.('@ferriki/core/macro');",
+    ]) {
+      await expect(
+        transformJsx(ferriki({ theme: "github-dark-default" }), dynamicRequire, "/src/require.ts"),
+      ).rejects.toThrow(/CommonJS `require\(\)`/);
+    }
+  });
+
+  it("does not load the native addon for macro-free escaped source", () => {
+    const bridgeUrl = new URL("../../ferriki/macro-transform.mjs", import.meta.url).href;
+    const source = String.raw`const pattern = /\d+/; const value = "line\n";`;
+    const script = `
+      Object.defineProperty(process, "arch", { value: "unsupported" });
+      const { findInlineCodeMacros } = await import(${JSON.stringify(bridgeUrl)});
+      const plan = findInlineCodeMacros(${JSON.stringify(source)});
+      process.stdout.write(JSON.stringify(plan));
+    `;
+
+    const result = execFileSync(process.execPath, ["--input-type=module", "--eval", script], {
+      encoding: "utf8",
+    });
+    expect(result).toBe('{"calls":[],"imports":[]}');
+  });
+
+  it("does not load the native addon when macro text appears only in comments and strings", () => {
+    const viteUrl = new URL("../index.mjs", import.meta.url).href;
+    const source = String.raw`// Documentation mentions @ferriki/core/macro.
+const example = "@ferriki/core/macro";
+const pattern = /\d+\\w+/;`;
+    const script = `
+      Object.defineProperty(process, "arch", { value: "unsupported" });
+      const { ferriki } = await import(${JSON.stringify(viteUrl)});
+      const result = await ferriki().transform.call({ warn() {} }, ${JSON.stringify(source)}, "/src/ordinary.ts");
+      if (result !== null) throw new Error("the ordinary module should remain unchanged");
+      process.stdout.write("null");
+    `;
+
+    const result = execFileSync(process.execPath, ["--input-type=module", "--eval", script], {
+      encoding: "utf8",
+    });
+    expect(result).toBe("null");
+  });
+
+  it("transforms macros in included compiler-emitted modules and skips macro-free scripts", async () => {
+    const macroFreePlugin = ferriki({
+      theme: "not-a-real-theme",
+      assets: { remote: false, cacheDir: join(tmpdir(), "ferriki-no-macro-assets") },
+    });
+    await expect(
+      transformJsx(macroFreePlugin, 'const untouched = "🧪";', "/src/no-macro.cts"),
+    ).resolves.toBeNull();
+
+    const includedPlugin = ferriki({
+      theme: "github-dark-default",
+      include: (id) => id.includes("virtual:markdown"),
+    });
+    const source = `import { ferrikiCode as prepare } from "@ferriki/core/macro";
+const snippet = prepare("const mdx = 1;", { language: "ts" });`;
+    const result = await transformJsx(includedPlugin, source, "\0virtual:markdown/page.mdx");
+    expect(result).toBeTruthy();
+    expect(result.code).not.toContain("@ferriki/core/macro");
+    expect(result.code).toContain("const mdx = 1;");
+    expect(result.map.sources).toEqual(["\0virtual:markdown/page.mdx"]);
+  });
+
+  it("warns for unknown macro languages and emits explicitly escaped plain HTML", async () => {
+    const source = `import { ferrikiCode } from "@ferriki/core/macro";
+const prepared = ferrikiCode('const markup = "<script>";', { language: "not-a-real-language" });`;
+    const warnings = [];
+    const result = await transformJsx(
+      ferriki({ theme: "github-dark-default" }),
+      source,
+      "/src/fallback.cts",
+      warnings,
+    );
+    const prepared = runInNewContext(`${withoutVirtualStyles(result.code)}\nprepared;`);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("not-a-real-language");
+    expect(prepared.code).toBe('const markup = "<script>";');
+    expect(prepared.language).toBe("not-a-real-language");
+    expect(prepared.html).toContain("&#x3C;script>");
+  });
+
+  it("throws when the browser macro entry is executed without a build transform", () => {
+    expect(() => ferrikiCode("const value = 1;", { language: "ts" })).toThrow(
+      /compile-time macro.*@ferriki\/vite/,
+    );
+  });
+
   it("uses Shiki notation callbacks on the documented HTML and JSX authoring example", async () => {
     const examplePath = new URL("../../examples/code-authoring/index.html", import.meta.url);
     const source = await readFile(examplePath, "utf8");

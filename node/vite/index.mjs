@@ -1,11 +1,14 @@
+import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { parse as parseJs } from "@babel/parser";
 import { createHighlighter, ShikiError } from "@ferriki/core";
+import { findInlineCodeMacros } from "@ferriki/core/macro-transform";
 import { fromHtml } from "hast-util-from-html";
 import { toHtml } from "hast-util-to-html";
 import MagicString from "magic-string";
 
 const VIRTUAL_CSS_PREFIX = "virtual:ferriki-vite/";
+const MACRO_MODULE = "@ferriki/core/macro";
 const LINE_CSS = [
   ".ferriki-highlight-line[data-ln]::before{content:attr(data-ln);display:inline-block;min-width:2.5em;margin-right:1.5em;padding-right:.75em;text-align:right;opacity:.55}",
   ".ferriki-highlight-line.highlighted{background:color-mix(in srgb,currentColor 10%,transparent)}",
@@ -51,8 +54,10 @@ export function ferriki(options = {}) {
     );
   }
 
-  async function highlight(context, id, code, language, rawMeta) {
+  async function highlight(context, id, code, language, rawMeta, settings = {}) {
     const highlighter = await getHighlighter();
+    const meta = parseMeta(rawMeta);
+    const effectiveLineNumbers = settings.lineNumbers ?? lineNumbers;
     let loading = languageLoads.get(language);
     if (!loading) {
       loading = Promise.resolve().then(() => highlighter.loadLanguage(language));
@@ -64,13 +69,18 @@ export function ferriki(options = {}) {
       languageLoads.delete(language);
       if (error?.code === "ERR_UNSUPPORTED") {
         warnOnce(context, id, language, error);
-        return undefined;
+        return settings.plainOnUnknown
+          ? {
+              root: plainCodeRoot(code, language, meta, effectiveLineNumbers),
+              css: "",
+              plain: true,
+            }
+          : undefined;
       }
       throw error;
     }
 
-    const meta = parseMeta(rawMeta);
-    const transformer = createMetaTransformer(meta, lineNumbers);
+    const transformer = createMetaTransformer(meta, effectiveLineNumbers);
     const highlightOptions = {
       lang: language,
       ...(themes ? { themes, defaultColor: Object.keys(themes)[0] } : { theme }),
@@ -89,7 +99,13 @@ export function ferriki(options = {}) {
     } catch (error) {
       if (error?.code === "ERR_UNSUPPORTED") {
         warnOnce(context, id, language, error);
-        return undefined;
+        return settings.plainOnUnknown
+          ? {
+              root: plainCodeRoot(code, language, meta, effectiveLineNumbers),
+              css: "",
+              plain: true,
+            }
+          : undefined;
       }
       throw error;
     }
@@ -144,14 +160,65 @@ export function ferriki(options = {}) {
     async transform(source, id) {
       const path = id.split("?", 1)[0];
       const isJsx = /\.(?:jsx|tsx)$/.test(path);
-      if (!(isJsx || options.include?.(id))) return null;
+      const isScript = /\.[cm]?[jt]sx?$/.test(path);
+      const included = Boolean(options.include?.(id));
+      if (!(isScript || included)) return null;
       const context = this;
-      const result = await transformJsx(source, id, async (code, lang, meta) =>
-        highlight(context, id, code, lang, meta),
-      );
-      if (!result.changed) return null;
+      const result =
+        isJsx || included
+          ? await transformJsx(source, id, async (code, lang, meta) =>
+              highlight(context, id, code, lang, meta),
+            )
+          : { changed: false, magic: new MagicString(source), css: "", needsLineCss: false };
+      const macroPlan =
+        (isScript || included) && hasMacroModuleReference(source)
+          ? findInlineCodeMacros(source, path)
+          : { calls: [], imports: [] };
+      const macroCss = new Set();
+      let macroChanged = false;
+      if (macroPlan.calls.length) {
+        const byteToIndex = makeByteOffsetMap(source);
+        for (const call of macroPlan.calls) {
+          const meta = parseMeta(call.meta ?? "");
+          // A call-level setting replaces the Vite default, while an explicit
+          // showLineNumbers annotation remains an opt-in in its own right.
+          const effectiveLineNumbers = meta.lineNumbers || (call.lineNumbers ?? lineNumbers);
+          const rendered = await highlight(context, id, call.code, call.language, call.meta ?? "", {
+            lineNumbers: effectiveLineNumbers,
+            plainOnUnknown: true,
+          });
+          const descriptorCss = [
+            rendered.css,
+            effectiveLineNumbers || meta.highlightedLines.size ? LINE_CSS : "",
+          ]
+            .filter(Boolean)
+            .join("\n");
+          const descriptor = createPreparedCodeBlock(
+            call.code,
+            call.language,
+            rendered.root,
+            descriptorCss,
+            meta,
+            effectiveLineNumbers,
+          );
+          result.magic.overwrite(
+            byteToIndex(call.start),
+            byteToIndex(call.end),
+            safeJsLiteral(descriptor),
+          );
+          if (descriptorCss) macroCss.add(descriptorCss);
+          macroChanged = true;
+        }
+        for (const item of macroPlan.imports) {
+          result.magic.overwrite(byteToIndex(item.start), byteToIndex(item.end), item.replacement);
+          macroChanged = true;
+        }
+      }
+      if (!result.changed && !macroChanged) return null;
 
-      const css = [result.css, result.needsLineCss ? LINE_CSS : ""].filter(Boolean).join("\n");
+      const css = [
+        ...new Set([result.css, ...macroCss, result.needsLineCss ? LINE_CSS : ""].filter(Boolean)),
+      ].join("\n");
       if (css) {
         const cssId = makeCssModule(css);
         result.magic.append(`\nimport ${JSON.stringify(cssId)};\n`);
@@ -210,6 +277,90 @@ function parseMeta(raw = "") {
     label,
     highlightedLines,
     lineNumbers: /(?:^|\s)showLineNumbers(?:\s|$)/.test(rest),
+  };
+}
+
+function plainCodeRoot(code, language, meta, lineNumbers) {
+  const preProperties = { className: ["shiki"] };
+  if (meta.title !== undefined) preProperties.dataTitle = meta.title;
+  if (meta.label !== undefined) preProperties.dataLabel = meta.label;
+  const codeProperties = { className: [`language-${language}`] };
+  const annotated = lineNumbers || meta.highlightedLines.size > 0;
+  const lines = code.split("\n");
+  const children = annotated
+    ? lines.flatMap((line, index) => {
+        const number = index + 1;
+        const classes = ["ferriki-highlight-line"];
+        if (meta.highlightedLines.has(number)) classes.push("highlighted");
+        const properties = { className: classes };
+        if (lineNumbers) properties.dataLn = String(number);
+        const nodes = [
+          {
+            type: "element",
+            tagName: "span",
+            properties,
+            children: [{ type: "text", value: line }],
+          },
+        ];
+        if (index < lines.length - 1) nodes.push({ type: "text", value: "\n" });
+        return nodes;
+      })
+    : [{ type: "text", value: code }];
+  return {
+    type: "root",
+    children: [
+      {
+        type: "element",
+        tagName: "pre",
+        properties: preProperties,
+        children: [
+          {
+            type: "element",
+            tagName: "code",
+            properties: codeProperties,
+            children,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function createPreparedCodeBlock(code, language, root, css, meta, lineNumbers) {
+  const highlightedLines = [...meta.highlightedLines];
+  const metadata = {
+    ...(meta.title !== undefined ? { title: meta.title } : {}),
+    ...(meta.label !== undefined ? { label: meta.label } : {}),
+    lineNumbers,
+    highlightedLines,
+  };
+  return { code, language, html: toHtml(root), css, metadata };
+}
+
+function safeJsLiteral(value) {
+  return JSON.stringify(value).replace(/[<\u2028\u2029]/g, (character) => {
+    if (character === "<") return "\\u003c";
+    return character === "\u2028" ? "\\u2028" : "\\u2029";
+  });
+}
+
+function makeByteOffsetMap(source) {
+  const offsets = new Map([[0, 0]]);
+  let byteOffset = 0;
+  let sourceOffset = 0;
+  while (sourceOffset < source.length) {
+    const codePoint = source.codePointAt(sourceOffset);
+    const character = String.fromCodePoint(codePoint);
+    byteOffset += Buffer.byteLength(character, "utf8");
+    sourceOffset += character.length;
+    offsets.set(byteOffset, sourceOffset);
+  }
+  return (offset) => {
+    const result = offsets.get(offset);
+    if (result === undefined) {
+      throw new RangeError(`Ferriki returned a non-boundary UTF-8 source offset: ${offset}`);
+    }
+    return result;
   };
 }
 
@@ -376,6 +527,86 @@ function visitAst(node, visit) {
     else if (value && typeof value === "object" && typeof value.type === "string")
       visitAst(value, visit);
   }
+}
+
+function hasMacroModuleReference(source) {
+  if (!source.includes(MACRO_MODULE) && !source.includes("\\")) return false;
+
+  let ast;
+  try {
+    ast = parseJs(source, { sourceType: "unambiguous", plugins: ["jsx", "typescript"] });
+  } catch {
+    // Let the native scanner report syntax diagnostics when source text could
+    // contain a macro module reference but Babel cannot build an AST.
+    return true;
+  }
+
+  let found = false;
+  visitAst(ast, (node) => {
+    if (found) return;
+    if (node.type === "ImportDeclaration") {
+      if (node.importKind === "type") return;
+      if (
+        node.specifiers?.length &&
+        node.specifiers.every((specifier) => specifier.importKind === "type")
+      )
+        return;
+      found = isMacroModuleSpecifier(node.source);
+      return;
+    }
+    if (node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") {
+      if (node.exportKind === "type") return;
+      if (
+        node.type === "ExportNamedDeclaration" &&
+        node.specifiers.length > 0 &&
+        node.specifiers.every((specifier) => specifier.exportKind === "type")
+      )
+        return;
+      found = isMacroModuleSpecifier(node.source);
+      return;
+    }
+    if (node.type === "ImportExpression" && isMacroModuleSpecifier(node.source)) {
+      found = true;
+      return;
+    }
+    if (
+      node.type === "CallExpression" &&
+      node.callee?.type === "Import" &&
+      node.arguments.length > 0 &&
+      isMacroModuleSpecifier(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    if (
+      (node.type === "CallExpression" || node.type === "OptionalCallExpression") &&
+      node.callee?.type === "Identifier" &&
+      node.callee.name === "require" &&
+      node.arguments.length > 0 &&
+      isMacroModuleSpecifier(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    if (
+      node.type === "TSImportEqualsDeclaration" &&
+      node.importKind !== "type" &&
+      node.moduleReference?.type === "TSExternalModuleReference" &&
+      isMacroModuleSpecifier(node.moduleReference.expression)
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+function isMacroModuleSpecifier(node) {
+  if (node?.type === "StringLiteral") return node.value === MACRO_MODULE;
+  return (
+    node?.type === "TemplateLiteral" &&
+    node.expressions.length === 0 &&
+    node.quasis[0]?.value.cooked === MACRO_MODULE
+  );
 }
 
 function jsxName(node) {

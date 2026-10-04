@@ -89,6 +89,8 @@ try {
         "hast-util-from-html@2.0.3",
         "hast-util-to-html@9.0.5",
         "magic-string@0.30.21",
+        "react@19.3.0",
+        "react-dom@19.3.0",
       ],
       { cwd: cacheWarm },
     );
@@ -106,6 +108,8 @@ try {
         coreTarball,
         sidecarTarball,
         viteTarballPath,
+        "react@19.3.0",
+        "react-dom@19.3.0",
       ],
       { cwd: consumer, stdio: "ignore" },
     );
@@ -138,6 +142,19 @@ try {
       join(project, "src", "example.tsx"),
       '"use client"; const block = <pre data-highlight="auto" data-language="ts" data-meta="{1}"><code>const jsxValue = 42;</code></pre>; console.log(block);',
     );
+    await writeFile(
+      join(project, "src", "macro-ssr.jsx"),
+      [
+        "import React from 'react'",
+        "import { ferrikiCode } from '@ferriki/core/macro'",
+        "",
+        `export const block = ferrikiCode("const exact = '& <SSR>';\\nconsole.log(exact);", { language: 'ts', meta: 'title=\"SSR Fixture\" [packed] {2}', lineNumbers: true })`,
+        "export function CodeExample() {",
+        "  return React.createElement('section', { 'data-original': block.code }, React.createElement('div', { dangerouslySetInnerHTML: { __html: block.html } }))",
+        "}",
+        "",
+      ].join("\n"),
+    );
 
     const probe = join(consumer, "probe.mjs");
     await writeFile(
@@ -145,6 +162,8 @@ try {
       `
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { build, createServer } from 'vite'
 import { ferriki } from '@ferriki/vite'
 import { ferrikiVersion } from '@ferriki/core'
@@ -161,6 +180,13 @@ try {
   assert(html.includes('htmlValue') && html.includes('data-ferriki-vite') && html.includes('data-packed-transformer="yes"'), 'packed Vite HTML transform, callback, or stylesheet injection failed')
   assert(module?.code.includes('jsxValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer'), 'packed Vite JSX transform, callback, or CSS import failed')
   assert(module.code.indexOf('"use client"') < module.code.indexOf('virtual:ferriki-vite/'), 'the JSX transform moved the directive prologue')
+  const ssrModule = await server.ssrLoadModule('/src/macro-ssr.jsx')
+  const ssrMarkup = renderToStaticMarkup(React.createElement(ssrModule.CodeExample))
+  assert.equal(ssrModule.block.code, "const exact = '& <SSR>';\\nconsole.log(exact);")
+  assert.equal(ssrModule.block.language, 'ts')
+  assert.deepEqual(ssrModule.block.metadata, { title: 'SSR Fixture', label: 'packed', lineNumbers: true, highlightedLines: [2] })
+  assert(ssrMarkup.includes(ssrModule.block.html), 'React SSR did not preserve the macro HTML through dangerouslySetInnerHTML')
+  assert.match(ssrModule.block.css, /ferriki-style-[a-f0-9]{64}/, 'the packed macro omitted its generated styles')
 } finally {
   await server.close()
 }
@@ -181,6 +207,10 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
       [
         "import { ferriki } from '@ferriki/vite'",
         "import type { ShikiTransformer } from '@ferriki/core'",
+        "import { ferrikiCode } from '@ferriki/core/macro'",
+        "import type { FerrikiCodeOptions, PreparedCodeBlock } from '@ferriki/core/macro'",
+        "import { findInlineCodeMacros } from '@ferriki/core/macro-transform'",
+        "import type { InlineCodeMacroPlan } from '@ferriki/core/macro-transform'",
         "import type { Plugin } from 'vite'",
         "",
         "const transformer: ShikiTransformer = { line(node) { return node } }",
@@ -190,6 +220,13 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "  include: id => id.endsWith('.mdx'),",
         "  transformers: [transformer],",
         "})",
+        "const macroOptions: FerrikiCodeOptions = { language: 'ts', meta: 'title=Packed', lineNumbers: true }",
+        "const prepared: PreparedCodeBlock = ferrikiCode('const packed = true', macroOptions)",
+        "const highlightedLines: readonly number[] = prepared.metadata.highlightedLines",
+        "const plan: InlineCodeMacroPlan = findInlineCodeMacros(\"import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('const packed = true', { language: 'ts' })\")",
+        "const firstCall: InlineCodeMacroPlan['calls'][number] | undefined = plan.calls[0]",
+        "void highlightedLines",
+        "void firstCall",
         "void plugin",
         "",
       ].join("\n"),
