@@ -341,7 +341,7 @@ returns `undefined` when no supported binary is installed.
 
 ## Build-time inline macros
 
-`@ferriki/core/macro` exposes the browser-safe `ferrikiCode` marker and
+`@ferriki/core/macro` exposes the browser-safe `code` marker and
 `PreparedCodeBlock` type. The native build-only `@ferriki/core/macro-transform`
 entry exposes `findInlineCodeMacros`; neither changes the root highlighter
 exports. See [Inline code macros](inline-code-macros.md) for the literal-only

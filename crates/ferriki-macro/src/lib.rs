@@ -19,7 +19,7 @@ use oxc_span::{GetSpan, SourceType, Span};
 use serde::Serialize;
 
 const MACRO_MODULE: &str = "@ferriki/core/macro";
-const MACRO_EXPORT: &str = "ferrikiCode";
+const MACRO_EXPORT: &str = "code";
 
 /// Result consumed by the private Node macro transform.
 #[derive(Debug, Clone, Serialize)]
@@ -49,7 +49,7 @@ pub struct InlineMacroImport {
 }
 
 /// Parse and analyze JavaScript, JSX, TypeScript, or TSX source for inline
-/// `ferrikiCode` calls. Errors include the supplied filename and a source
+/// `code` calls. Errors include the supplied filename and a source
 /// position so a build tool can surface them directly.
 pub fn scan_inline_code_macros(source: &str, filename: &str) -> Result<InlineMacroScan, String> {
     let source_type = SourceType::from_path(filename).unwrap_or_else(|_| {
@@ -121,7 +121,7 @@ pub fn scan_inline_code_macros(source: &str, filename: &str) -> Result<InlineMac
                 source,
                 filename,
                 reference.span.start as usize,
-                "the imported ferrikiCode binding must be used as a direct function call",
+                "the imported code binding must be used as a direct function call",
             ));
         }
     }
@@ -156,7 +156,7 @@ fn collect_imports(
                     source,
                     filename,
                     declaration.span.start as usize,
-                    "TypeScript `import = require(...)` from `@ferriki/core/macro` is unsupported; use the named ESM `ferrikiCode` import",
+                    "TypeScript `import = require(...)` from `@ferriki/core/macro` is unsupported; use the named ESM `code` import",
                 ));
             }
             continue;
@@ -207,7 +207,7 @@ fn collect_imports(
                             source,
                             filename,
                             specifier.local.span.start as usize,
-                            "could not resolve the ferrikiCode import binding",
+                            "could not resolve the code import binding",
                         )
                     })?;
                     macro_symbols.insert(symbol_id);
@@ -218,7 +218,7 @@ fn collect_imports(
                         source,
                         filename,
                         specifier.span.start as usize,
-                        "default imports from `@ferriki/core/macro` are unsupported; import the named `ferrikiCode` export",
+                        "default imports from `@ferriki/core/macro` are unsupported; import the named `code` export",
                     ));
                 }
                 ImportDeclarationSpecifier::ImportNamespaceSpecifier(specifier) => {
@@ -226,7 +226,7 @@ fn collect_imports(
                         source,
                         filename,
                         specifier.span.start as usize,
-                        "namespace imports from `@ferriki/core/macro` are unsupported; import the named `ferrikiCode` export",
+                        "namespace imports from `@ferriki/core/macro` are unsupported; import the named `code` export",
                     ));
                 }
             }
@@ -428,7 +428,7 @@ impl<'a> Visit<'a> for MacroReferenceVisitor<'_> {
         {
             self.unsupported_imports.push((
                 expression.span,
-                "CommonJS `require()` from `@ferriki/core/macro` is unsupported; use the named ESM `ferrikiCode` import",
+                "CommonJS `require()` from `@ferriki/core/macro` is unsupported; use the named ESM `code` import",
             ));
         }
         let reference_id = match &expression.callee {
@@ -457,7 +457,7 @@ impl<'a> Visit<'a> for MacroReferenceVisitor<'_> {
         if is_macro_module_expression(&expression.source) {
             self.unsupported_imports.push((
                 expression.span,
-                "dynamic imports from `@ferriki/core/macro` are unsupported; use the named ESM `ferrikiCode` import",
+                "dynamic imports from `@ferriki/core/macro` are unsupported; use the named ESM `code` import",
             ));
         }
         walk::walk_import_expression(self, expression);
@@ -557,7 +557,7 @@ fn validate_call(
             source,
             filename,
             call.span.start as usize,
-            "optional calls to `ferrikiCode` are unsupported",
+            "optional calls to `code` are unsupported",
         ));
     }
     if call.arguments.len() != 2 {
@@ -565,7 +565,7 @@ fn validate_call(
             source,
             filename,
             call.span.start as usize,
-            "`ferrikiCode` requires exactly two non-spread arguments: code and an options object",
+            "`code` requires exactly two non-spread arguments: code and an options object",
         ));
     }
     let code = match &call.arguments[0] {
@@ -574,7 +574,7 @@ fn validate_call(
                 source,
                 filename,
                 span.start as usize,
-                "spread arguments to `ferrikiCode` are unsupported",
+                "spread arguments to `code` are unsupported",
             ));
         }
         ArgumentSnapshot::Expression(ExpressionSnapshot::String {
@@ -601,7 +601,7 @@ fn validate_call(
                 source,
                 filename,
                 call.span.start as usize,
-                "template literals passed to `ferrikiCode` cannot contain interpolations",
+                "template literals passed to `code` cannot contain interpolations",
             ));
         }
         ArgumentSnapshot::Expression(ExpressionSnapshot::Template { cooked: None, .. }) => {
@@ -609,7 +609,7 @@ fn validate_call(
                 source,
                 filename,
                 call.span.start as usize,
-                "the code template passed to `ferrikiCode` has no cooked value",
+                "the code template passed to `code` has no cooked value",
             ));
         }
         ArgumentSnapshot::Expression(_) => {
@@ -617,7 +617,7 @@ fn validate_call(
                 source,
                 filename,
                 call.span.start as usize,
-                "the first `ferrikiCode` argument must be a string literal or an interpolation-free template literal",
+                "the first `code` argument must be a string literal or an interpolation-free template literal",
             ));
         }
     };
@@ -627,7 +627,7 @@ fn validate_call(
                 source,
                 filename,
                 span.start as usize,
-                "spread arguments to `ferrikiCode` are unsupported",
+                "spread arguments to `code` are unsupported",
             ));
         }
         ArgumentSnapshot::Expression(ExpressionSnapshot::Object(properties)) => properties,
@@ -636,7 +636,7 @@ fn validate_call(
                 source,
                 filename,
                 call.span.start as usize,
-                "the second `ferrikiCode` argument must be an object literal",
+                "the second `code` argument must be an object literal",
             ));
         }
     };
@@ -652,7 +652,7 @@ fn validate_call(
                     source,
                     filename,
                     span.start as usize,
-                    "spread properties in `ferrikiCode` options are unsupported",
+                    "spread properties in `code` options are unsupported",
                 ));
             }
             ObjectPropertySnapshot::Property {
@@ -676,7 +676,7 @@ fn validate_call(
                 source,
                 filename,
                 span.start as usize,
-                "computed keys, methods, getters, and setters in `ferrikiCode` options are unsupported",
+                "computed keys, methods, getters, and setters in `code` options are unsupported",
             ));
         }
         let key = key.expect("checked above");
@@ -685,7 +685,7 @@ fn validate_call(
                 source,
                 filename,
                 span.start as usize,
-                format!("duplicate `{key}` key in `ferrikiCode` options"),
+                format!("duplicate `{key}` key in `code` options"),
             ));
         }
         match key {
@@ -707,7 +707,7 @@ fn validate_call(
                             source,
                             filename,
                             span.start as usize,
-                            "`ferrikiCode` requires a nonempty string literal `language` option",
+                            "`code` requires a nonempty string literal `language` option",
                         ));
                     }
                     language = Some(value.clone());
@@ -717,7 +717,7 @@ fn validate_call(
                         source,
                         filename,
                         span.start as usize,
-                        "`ferrikiCode` requires a nonempty string literal `language` option",
+                        "`code` requires a nonempty string literal `language` option",
                     ));
                 }
             },
@@ -761,7 +761,7 @@ fn validate_call(
                     source,
                     filename,
                     span.start as usize,
-                    format!("unknown `{key}` option in `ferrikiCode` call"),
+                    format!("unknown `{key}` option in `code` call"),
                 ));
             }
         }
@@ -771,7 +771,7 @@ fn validate_call(
             source,
             filename,
             call.span.start as usize,
-            "`ferrikiCode` options require a nonempty string literal `language`",
+            "`code` options require a nonempty string literal `language`",
         )
     })?;
     Ok(InlineMacroCall {
@@ -859,7 +859,7 @@ mod tests {
     #[test]
     fn recognizes_aliases_and_ignores_shadowed_names() {
         let result = scan(
-            "import { ferrikiCode as code } from '@ferriki/core/macro';\nfunction f(code) { return code('x', { language: 'text' }); }\nwhile (ready) code(`a\\nb`, { language: 'ts', meta: 'demo', lineNumbers: false });",
+            "import { code as snippet } from '@ferriki/core/macro';\nfunction f(snippet) { return snippet('x', { language: 'text' }); }\nwhile (ready) snippet(`a\\nb`, { language: 'ts', meta: 'demo', lineNumbers: false });",
             "example.js",
         );
         assert_eq!(result.calls.len(), 1);
@@ -877,7 +877,7 @@ mod tests {
         use oxc_parser::Parser;
         use oxc_span::SourceType;
 
-        let source = "import { ferrikiCode as code, type CodeOptions as Options } from '@ferriki/core/macro';\ncode(`const x = \\u{1F680};`, { language: 'js' });";
+        let source = "import { code as snippet, type CodeOptions as Options } from '@ferriki/core/macro';\nsnippet(`const x = \\u{1F680};`, { language: 'js' });";
         let result = scan(source, "sample.ts");
         assert_eq!(result.calls[0].code, "const x = 🚀;");
         assert_eq!(
@@ -892,9 +892,9 @@ mod tests {
 
     #[test]
     fn supports_string_and_template_literals_with_optional_metadata() {
-        let source = r#"import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode('π\n', { 'language': 'text', meta: '' });
-ferrikiCode(`const rocket = '🚀';`, { language: 'js', lineNumbers: true });"#;
+        let source = r#"import { code } from '@ferriki/core/macro';
+code('π\n', { 'language': 'text', meta: '' });
+code(`const rocket = '🚀';`, { language: 'js', lineNumbers: true });"#;
         let result = scan(source, "literals.mjs");
         assert_eq!(result.calls.len(), 2);
         assert_eq!(result.calls[0].code, "π\n");
@@ -908,27 +908,27 @@ ferrikiCode(`const rocket = '🚀';`, { language: 'js', lineNumbers: true });"#;
     #[test]
     fn rejects_lone_surrogates_in_consumed_literals_and_preserves_valid_unicode() {
         let code = r#"const prefix = '🧪';
-import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode('\uD800', { language: 'text' });"#;
+import { code } from '@ferriki/core/macro';
+code('\uD800', { language: 'text' });"#;
         assert_lone_surrogate_error(code, "'\\uD800'", "surrogate.js");
 
-        let template = r#"import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode(`before \uD800 after`, { language: 'text' });"#;
+        let template = r#"import { code } from '@ferriki/core/macro';
+code(`before \uD800 after`, { language: 'text' });"#;
         assert_lone_surrogate_error(template, "`before \\uD800 after`", "surrogate.mjs");
 
-        let language = r#"import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode('code', { language: '\uD800' });"#;
+        let language = r#"import { code } from '@ferriki/core/macro';
+code('code', { language: '\uD800' });"#;
         assert_lone_surrogate_error(language, "'\\uD800'", "surrogate-language.ts");
 
-        let metadata = r#"import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode('code', { language: 'text', meta: '\uD800' });"#;
+        let metadata = r#"import { code } from '@ferriki/core/macro';
+code('code', { language: 'text', meta: '\uD800' });"#;
         assert_lone_surrogate_error(metadata, "'\\uD800'", "surrogate-meta.ts");
 
         let valid = r#"const ignored = '\uD800';
-import { ferrikiCode } from '@ferriki/core/macro';
-ferrikiCode('\uD83D\uDE80', { language: 'text' });
-ferrikiCode(`\uD83D\uDE80`, { language: 'text' });
-ferrikiCode('�', { language: 'text' });"#;
+import { code } from '@ferriki/core/macro';
+code('\uD83D\uDE80', { language: 'text' });
+code(`\uD83D\uDE80`, { language: 'text' });
+code('�', { language: 'text' });"#;
         let result = scan(valid, "valid-unicode.ts");
         assert_eq!(result.calls.len(), 3);
         assert_eq!(result.calls[0].code, "🚀");
@@ -938,7 +938,7 @@ ferrikiCode('�', { language: 'text' });"#;
 
     #[test]
     fn resolves_cooked_module_specifiers_and_utf8_positions() {
-        let source = "const café = 1;\nimport { ferrikiCode } from '@ferriki/core/\\u006dacro';\nconst result = ferrikiCode('x', { language: 'text', extra: true });";
+        let source = "const café = 1;\nimport { code } from '@ferriki/core/\\u006dacro';\nconst result = code('x', { language: 'text', extra: true });";
         let message = error(source, "unicode.tsx");
         let offset = source.find("extra").expect("extra option is present");
         let line_prefix = source[..offset]
@@ -951,13 +951,13 @@ ferrikiCode('�', { language: 'text' });"#;
         );
         assert!(message.contains("unknown `extra` option"), "{message}");
 
-        let byte_source = "const note = '🦀';\nimport { ferrikiCode } from '@ferriki/core/macro';\nferrikiCode('ok', { language: 'text' });";
+        let byte_source = "const note = '🦀';\nimport { code } from '@ferriki/core/macro';\ncode('ok', { language: 'text' });";
         let result = scan(byte_source, "offset.ts");
-        let call_source_start = byte_source.find("ferrikiCode('ok'").unwrap();
+        let call_source_start = byte_source.find("code('ok'").unwrap();
         assert_eq!(result.calls[0].start, call_source_start);
         assert_eq!(
             &byte_source[result.calls[0].start..result.calls[0].end],
-            "ferrikiCode('ok', { language: 'text' })"
+            "code('ok', { language: 'text' })"
         );
         assert_eq!(
             result.imports[0].start,
@@ -968,13 +968,13 @@ ferrikiCode('�', { language: 'text' });"#;
     #[test]
     fn rejects_escaped_macro_binding_and_unsupported_imports() {
         let escaped = error(
-            "import { ferrikiCode as code } from '@ferriki/core/macro';\nconst saved = code;",
+            "import { code as snippet } from '@ferriki/core/macro';\nconst saved = snippet;",
             "escape.ts",
         );
         assert!(escaped.contains("direct function call"), "{escaped}");
 
         let jsx_escape = error(
-            "import { ferrikiCode as Code } from '@ferriki/core/macro';\nexport const view = <Code />;",
+            "import { code as Code } from '@ferriki/core/macro';\nexport const view = <Code />;",
             "escape.tsx",
         );
         assert!(jsx_escape.contains("direct function call"), "{jsx_escape}");
@@ -990,7 +990,7 @@ ferrikiCode('�', { language: 'text' });"#;
             "other.js",
         );
         assert!(
-            other_value.contains("limited to the named `ferrikiCode`"),
+            other_value.contains("limited to the named `code`"),
             "{other_value}"
         );
     }
@@ -1024,7 +1024,7 @@ ferrikiCode('�', { language: 'text' });"#;
                 "re-exports",
             ),
             (
-                "export { ferrikiCode } from '@ferriki/core/macro';",
+                "export { code } from '@ferriki/core/macro';",
                 "imports/reexport-named.js",
                 "re-exports",
             ),
@@ -1083,28 +1083,28 @@ ferrikiCode('�', { language: 'text' });"#;
     #[test]
     fn rejects_dynamic_arguments_duplicates_and_spreads() {
         for source in [
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode(getCode(), { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode(`x ${name}`, { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', language: 'js' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { ...opts, language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode(...args, { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { [key]: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: '   ' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: language });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', meta: value });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', lineNumbers: 1 });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', title: 'demo' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', {});",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', get meta() { return 'demo'; } });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', set meta(value) {} });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', meta() { return 'demo'; } });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', options);",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x');",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts' }, {});",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode(...code, { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode?.('x', { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; (ferrikiCode as any)('x', { language: 'ts' });",
-            "import { ferrikiCode } from '@ferriki/core/macro'; ferrikiCode('x', { language: 'ts', meta: 2 });",
+            "import { code } from '@ferriki/core/macro'; code(getCode(), { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code(`x ${name}`, { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', language: 'js' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { ...opts, language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code(...args, { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { [key]: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: '   ' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: language });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', meta: value });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', lineNumbers: 1 });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', title: 'demo' });",
+            "import { code } from '@ferriki/core/macro'; code('x', {});",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', get meta() { return 'demo'; } });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', set meta(value) {} });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', meta() { return 'demo'; } });",
+            "import { code } from '@ferriki/core/macro'; code('x', options);",
+            "import { code } from '@ferriki/core/macro'; code('x');",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts' }, {});",
+            "import { code } from '@ferriki/core/macro'; code(...code, { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code?.('x', { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; (code as any)('x', { language: 'ts' });",
+            "import { code } from '@ferriki/core/macro'; code('x', { language: 'ts', meta: 2 });",
         ] {
             let message = error(source, "invalid.ts");
             assert!(message.starts_with("invalid.ts:"), "{message}");
@@ -1114,7 +1114,7 @@ ferrikiCode('�', { language: 'text' });"#;
     #[test]
     fn recognizes_tsx_but_ignores_unrelated_functions() {
         let result = scan(
-            "import { ferrikiCode } from '@ferriki/core/macro';\nconst ordinary = (ferrikiCode) => ferrikiCode('x', { language: 'js' });\nexport const view = <div>{ordinary}</div>;",
+            "import { code } from '@ferriki/core/macro';\nconst ordinary = (code) => code('x', { language: 'js' });\nexport const view = <div>{ordinary}</div>;",
             "example.tsx",
         );
         assert!(result.calls.is_empty());
@@ -1124,7 +1124,7 @@ ferrikiCode('�', { language: 'text' });"#;
     #[test]
     fn scopes_aliases_across_blocks_parameters_and_destructuring() {
         let result = scan(
-            "import { ferrikiCode as code } from '@ferriki/core/macro';\ncode('kept', { language: 'text' });\n{ const code = (source) => source; code(readFile(), { language: 'text' }); }\nfunction render({ code }) { return code(readFile(), { language: 'text' }); }\nconst local = (ferrikiCode) => ferrikiCode(readFile(), { language: 'text' });",
+            "import { code as snippet } from '@ferriki/core/macro';\nsnippet('kept', { language: 'text' });\n{ const snippet = (source) => source; snippet(readFile(), { language: 'text' }); }\nfunction render({ snippet }) { return snippet(readFile(), { language: 'text' }); }\nconst local = (code) => code(readFile(), { language: 'text' });",
             "scope.mjs",
         );
         assert_eq!(result.calls.len(), 1);
@@ -1134,13 +1134,13 @@ ferrikiCode('�', { language: 'text' });"#;
     #[test]
     fn supports_mdx_virtual_tsx_filenames_and_reports_syntax_errors() {
         let result = scan(
-            "import { ferrikiCode } from '@ferriki/core/macro';\nexport const view = <div>{ferrikiCode('x', { language: 'text' })}</div>;",
+            "import { code } from '@ferriki/core/macro';\nexport const view = <div>{code('x', { language: 'text' })}</div>;",
             "Component.mdx?virtual=1",
         );
         assert_eq!(result.calls.len(), 1);
         assert_eq!(result.calls[0].code, "x");
 
-        let syntax = error("import { ferrikiCode from './broken.js';", "broken.tsx");
+        let syntax = error("import { code from './broken.js';", "broken.tsx");
         assert!(syntax.starts_with("broken.tsx:1:"), "{syntax}");
         assert!(syntax.to_ascii_lowercase().contains("expected"), "{syntax}");
 

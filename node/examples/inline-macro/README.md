@@ -1,6 +1,6 @@
 # Inline macro consumer fixture
 
-This React fixture consumes prepared `ferrikiCode` descriptors through a custom
+This React fixture consumes prepared `code` descriptors through a custom
 code-block component. It renders the first page on the server, hydrates it,
 navigates to a lazily loaded second page and accepts updates to that page's
 inline code. The component copies `block.code` and renders `block.html`.

@@ -244,7 +244,7 @@ being mistaken for parity.
 
 ## Build-time macro subpaths
 
-The additive `@ferriki/core/macro` entry defines `ferrikiCode` and its prepared
+The additive `@ferriki/core/macro` entry defines `code` and its prepared
 HTML/CSS descriptor; executing an unprocessed marker throws. The separate
 `@ferriki/core/macro-transform` entry exposes native build-time analysis with
 owned call/import plans and UTF-8 spans. These entries add no runtime browser

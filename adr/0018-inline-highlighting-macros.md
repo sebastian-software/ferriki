@@ -20,7 +20,7 @@ application JavaScript during a transform.
 
 ## Decision
 
-- `@ferriki/core/macro` exports `ferrikiCode(code, options)`. The entry contains
+- `@ferriki/core/macro` exports `code(source, options)`. The entry contains
   only the marker and types; it imports no native binding, highlighter or asset
   transport. Executing an unprocessed marker throws an actionable error asking
   the author to configure the build integration.
@@ -80,5 +80,7 @@ application JavaScript during a transform.
   Ferriki output.
 
 ## History
+
+- 2026-10-04: Shortened the unreleased marker export to `code`; no compatibility alias is retained.
 
 - 2026-10-04: Accepted the inline-only macro and shared native analysis boundary (#211).

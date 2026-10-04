@@ -1,8 +1,8 @@
-import { ferrikiCode } from "@ferriki/core/macro";
+import { code } from "@ferriki/core/macro";
 import React from "react";
 import { CodeBlock } from "../CodeBlock.jsx";
 
-export const block = ferrikiCode("const route = 'first';\nconsole.log(route);", {
+export const block = code("const route = 'first';\nconsole.log(route);", {
   language: "ts",
   meta: 'title="First route" [SSR] {2}',
   lineNumbers: true,

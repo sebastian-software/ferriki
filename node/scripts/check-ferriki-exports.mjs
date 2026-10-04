@@ -29,9 +29,9 @@ assert.deepEqual(Object.keys(packageJson.exports).sort(), [
 ]);
 
 const macro = await import("../ferriki/macro.mjs");
-assert.deepEqual(Object.keys(macro), ["ferrikiCode"]);
+assert.deepEqual(Object.keys(macro), ["code"]);
 assert.throws(
-  () => macro.ferrikiCode("const answer = 42", { language: "js" }),
+  () => macro.code("const answer = 42", { language: "js" }),
   /@ferriki\/vite/,
   "an unprocessed macro must explain how to enable its build integration",
 );

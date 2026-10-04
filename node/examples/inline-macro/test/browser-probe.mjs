@@ -75,7 +75,7 @@ async function main() {
       }),
       `the source map omitted the second route: ${map.sources.join(", ")}`,
     );
-    assert(map.sourcesContent?.some((content) => content.includes("ferrikiCode")));
+    assert(map.sourcesContent?.some((content) => content.includes("@ferriki/core/macro")));
     assert(map.mappings.length > 0, "Vite returned an empty source map for the macro source");
     return map;
   }
@@ -101,7 +101,7 @@ async function main() {
     const before = await server.transformRequest("/src/routes/second.jsx");
     const beforeMap = sourceMap(before);
     assert.equal(
-      beforeMap.sourcesContent.find((content) => content.includes("ferrikiCode")),
+      beforeMap.sourcesContent.find((content) => content.includes("@ferriki/core/macro")),
       secondSourceBefore,
     );
     const cssIdBefore = cssImportId(before.code);
@@ -259,7 +259,7 @@ async function main() {
     const after = await server.transformRequest("/src/routes/second.jsx");
     const afterMap = sourceMap(after);
     assert.equal(
-      afterMap.sourcesContent.find((content) => content.includes("ferrikiCode")),
+      afterMap.sourcesContent.find((content) => content.includes("@ferriki/core/macro")),
       secondSourceAfter,
     );
     const cssIdAfter = cssImportId(after.code);
@@ -329,7 +329,7 @@ async function main() {
       !browserSource.includes("@ferriki/core"),
       "the browser bundle retained an unresolved macro import",
     );
-    assert(!browserSource.includes("ferrikiCode() is a compile-time macro"));
+    assert(!browserSource.includes("code() is a compile-time macro"));
     assert(
       browserSource.includes("updated route"),
       "browser build did not include the compiled macro output",

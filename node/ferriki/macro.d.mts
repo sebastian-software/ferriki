@@ -23,4 +23,4 @@ export interface PreparedCodeBlock {
  * Compile-time macro for preparing static source as Ferriki HTML and CSS.
  * Calls must be transformed by `@ferriki/vite` before browser execution.
  */
-export declare function ferrikiCode(code: string, options: FerrikiCodeOptions): PreparedCodeBlock;
+export declare function code(source: string, options: FerrikiCodeOptions): PreparedCodeBlock;

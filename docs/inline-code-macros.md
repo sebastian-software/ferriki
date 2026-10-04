@@ -1,6 +1,6 @@
 # Inline code macros
 
-Use `ferrikiCode` when a component accepts a prepared code example instead of
+Use `code` when a component accepts a prepared code example instead of
 authored `pre`/`code` markup. Ferriki prepares HTML and CSS during the build;
 your component owns the title, copy button, tabs and other presentation.
 
@@ -44,10 +44,10 @@ The following TSX uses a custom React component. The macro also works in plain
 JavaScript/TypeScript expressions; React is only this example's consumer.
 
 ```tsx
-import { ferrikiCode } from "@ferriki/core/macro";
+import { code } from "@ferriki/core/macro";
 import type { PreparedCodeBlock } from "@ferriki/core/macro";
 
-const example = ferrikiCode("export const answer = 42;\n", {
+const example = code("export const answer = 42;\n", {
   language: "ts",
   meta: 'title="Answer" [TypeScript] {1}',
 });
@@ -103,7 +103,7 @@ Options must be an object literal with these supported keys:
 Themes, style mode, assets and transformer callbacks are configured on the
 plugin. Dynamic options, spreads, computed keys, duplicate keys and unsupported
 keys produce a filename/position diagnostic. Calls inside loops are allowed
-when their inputs remain inline literals; `ferrikiCode(sample.content, ...)`
+when their inputs remain inline literals; `code(sample.content, ...)`
 is outside this contract.
 
 Named import aliases work. Lexically shadowed functions are ordinary functions
