@@ -24,7 +24,6 @@ const packageJson = JSON.parse(await readFile(join(scriptDir, "../ferriki/packag
 assert.deepEqual(Object.keys(packageJson.exports).sort(), [
   ".",
   "./macro",
-  "./macro-transform",
   "./package.json",
   "./react/macro",
 ]);

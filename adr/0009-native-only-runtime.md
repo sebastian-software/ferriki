@@ -111,11 +111,12 @@ the [cross-build reference](https://napi.rs/docs/cli/build), and the
 ### Build-time macro entries
 
 The browser-safe `@ferriki/core/macro` subpath contains only a marker that
-throws when it is not transformed. It imports no engine or native loader. The
-separate `@ferriki/core/macro-transform` entry is a native build-tool boundary;
-prepared HTML/CSS is delivered to the browser. Neither entry provides browser
-highlighting ([ADR 0018](0018-inline-highlighting-macros.md)). The native
-loader remains internal.
+throws when it is not transformed. It imports no engine or native loader.
+`@ferriki/vite` recognizes the marker at build time, and prepared HTML/CSS is
+delivered to the browser; the addon contains no macro scanner. The marker
+provides no browser highlighting
+([ADR 0018](0018-inline-highlighting-macros.md)). The native loader remains
+internal.
 
 ## Consequences
 
@@ -147,3 +148,4 @@ loader remains internal.
   contract without a demonstrated defect or maintenance gap.
 
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
+- 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).

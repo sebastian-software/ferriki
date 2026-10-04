@@ -71,7 +71,6 @@ members = [
   ".",
   "crates/ferriki-asset-gen",
   "crates/ferriki-core",
-  "crates/ferriki-macro",
   "crates/ferriki-textmate",
 ]
 resolver = "2"

@@ -346,7 +346,7 @@ returns `undefined` when no supported binary is installed.
 `Code` JSX marker with a literal `source` attribute, optional runtime `className`
 and an explicit `render` function receiving `CodeRenderProps`. Both are erased
 during the build; the React marker adds no React runtime import to the core package.
-The native build-only `@ferriki/core/macro-transform`
-entry exposes `findInlineCodeMacros`; these entries leave the root highlighter
-exports. See [Inline code macros](inline-code-macros.md) for the literal-only
-contract, Vite setup, prepared HTML/CSS and release availability.
+`@ferriki/vite` recognizes the markers; `@ferriki/core` ships no macro scanner,
+and these entries leave the root highlighter exports. See
+[Inline code macros](inline-code-macros.md) for the literal-only contract, Vite
+setup, prepared HTML/CSS and release availability.

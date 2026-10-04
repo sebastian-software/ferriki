@@ -28,7 +28,7 @@ catalogs:
     rollup-plugin-dts: ^6.3.0
     rollup-plugin-esbuild: ^6.2.1
     tsdown: ^0.20.3
-    vite: ^7.3.1
+    vite: ^8.3.2
     vite-tsconfig-paths: ^6.0.5
   cli:
     "@antfu/eslint-config": ^7.2.0
@@ -52,7 +52,6 @@ catalogs:
     tm-themes: 1.12.3
     vscode-oniguruma: 1.7.0
   integrations:
-    "@babel/parser": ^7.29.9
     lz-string: ^1.5.0
     magic-string: ^0.30.21
     markdown-it: ^14.1.0
@@ -76,7 +75,7 @@ catalogs:
     "@jridgewell/trace-mapping": ^0.3.31
     fast-glob: ^3.3.3
     fs-extra: ^11.3.3
-    vitest: ^3.2.4
+    vitest: ^4.1.11
   types:
     "@types/fs-extra": ^11.0.4
     "@types/hast": ^3.0.4

@@ -1,7 +1,7 @@
 {
   "name": "@ferriki/vite",
   "version": "0.11.0",
-  "description": "Build-time HTML and JSX highlighting with Ferriki",
+  "description": "Build-time preparation of Ferriki's inline highlighting macros for Vite",
   "keywords": [
     "ferriki",
     "shiki",
@@ -23,7 +23,8 @@
     "LICENSE-MIT",
     "README.md",
     "index.d.mts",
-    "index.mjs"
+    "index.mjs",
+    "macro-scan.mjs"
   ],
   "type": "module",
   "sideEffects": false,
@@ -38,14 +39,11 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@babel/parser": "catalog:integrations",
     "@ferriki/core": "0.11.0",
-    "hast-util-from-html": "catalog:inlined",
-    "hast-util-to-html": "catalog:inlined",
     "magic-string": "catalog:integrations"
   },
   "peerDependencies": {
-    "vite": "^7.3.1 || ^8.0.0"
+    "vite": "^8.0.0"
   },
   "engines": {
     "node": ">=22.13.0"

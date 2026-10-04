@@ -223,6 +223,15 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "publish-npm must pass the packed Vite tarball directly to npm",
   );
 
+  // Every release summary lists each sidecar's addon size (#216).
+  const summaryJob = workflowJob(workflow, "release-summary");
+  const sidecarDirectory = /^\s+pattern: native-\*\n\s+path: (\S+)$/m.exec(summaryJob)?.[1];
+  assert(sidecarDirectory, "release-summary must download every native sidecar artifact");
+  assert(
+    summaryJob.includes(`NATIVE_SIDECARS_DIR: ${sidecarDirectory}\n`),
+    "release-summary must report addon sizes from the downloaded sidecars",
+  );
+
   for (const required of [
     "npm provenance",
     "GitHub release",

@@ -11,8 +11,8 @@ const packageJson = JSON.parse(await readFile(join(packageRoot, "package.json"),
 
 assert.deepEqual(
   Object.keys(packageJson.exports).sort(),
-  [".", "./macro", "./macro-transform", "./package.json", "./react/macro"],
-  "Ferriki exposes the high-level API, explicit macro/build entries and package metadata; the native loader stays internal",
+  [".", "./macro", "./package.json", "./react/macro"],
+  "Ferriki exposes the high-level API, the build-time macro marker entries and package metadata; the native loader stays internal",
 );
 
 for (const field of ["dependencies", "optionalDependencies", "peerDependencies"]) {
@@ -79,5 +79,13 @@ assert(
   /^ureq v/m.test(rustRemoteDependencies) && /^rustls v/m.test(rustRemoteDependencies),
   "the Rust remote feature must retain its HTTP and TLS transport",
 );
+// Inline macro recognition belongs to the Vite adapter (ADR 0018); a JavaScript
+// parser in the addon cost 29.5% of its linux-x64 size (#216).
+for (const [name, tree] of [
+  ["the N-API addon", addonDependencies],
+  ["the published Rust crate", rustRemoteDependencies],
+]) {
+  assert(!/^oxc[_-]/m.test(tree), `${name} must not depend on the OXC JavaScript toolchain`);
+}
 
 console.log("Ferriki native-only package and asset transport boundaries verified");

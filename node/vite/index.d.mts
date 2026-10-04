@@ -10,13 +10,19 @@ export type FerrikiViteOptions = {
   assets?: AssetOptions;
   /** Inline styles by default; `classes` emits a CSS virtual module. */
   styleMode?: "inline" | "classes";
-  /** Default line numbers for marked blocks and macro calls; a macro call can override this. */
+  /** Default line numbers for macro calls and `Code` elements; each one can override this. */
   lineNumbers?: boolean;
   /** JavaScript callbacks forwarded to Ferriki's existing per-block transformer pipeline. */
   transformers?: readonly ShikiTransformer[];
-  /** Include an additional compiler-emitted JSX module ID, such as an MDX intermediate. */
+  /**
+   * Also transform a module ID that has no JavaScript or TypeScript extension, such as a
+   * compiler-emitted MDX intermediate. Only modules that import a macro specifier are parsed.
+   */
   include?: (id: string) => boolean;
 };
 
-/** Highlight opted-in HTML and static JSX code blocks during Vite transforms. */
+/**
+ * Prepare `code()` calls from `@ferriki/core/macro` and `<Code />` elements from
+ * `@ferriki/core/react/macro` as highlighted HTML and CSS during Vite transforms.
+ */
 export declare function ferriki(options?: FerrikiViteOptions): Plugin;

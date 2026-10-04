@@ -13,6 +13,8 @@ const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const coreRoot = join(nodeRoot, "ferriki");
 const viteRoot = join(nodeRoot, "vite");
 const fixtureRoot = join(nodeRoot, "examples", "inline-macro");
+// The current Vite 8 release; the packed consumer check also covers the 8.0.0 floor.
+const viteVersion = "8.3.2";
 const platformId = process.env.FERRIKI_PLATFORM_ID ?? resolveFerrikiPlatformTarget()?.id;
 assert(platformId, "FERRIKI_PLATFORM_ID is required on an unsupported native target");
 const target = FERRIKI_PLATFORM_TARGETS.find((entry) => entry.id === platformId);
@@ -87,10 +89,7 @@ try {
       "install",
       "--no-audit",
       "--no-fund",
-      "vite@8.0.0",
-      "@babel/parser@7.29.9",
-      "hast-util-from-html@2.0.3",
-      "hast-util-to-html@9.0.5",
+      `vite@${viteVersion}`,
       "magic-string@0.30.21",
       ...Object.entries(fixturePackage.devDependencies).map(
         ([name, version]) => `${name}@${version}`,
@@ -107,7 +106,7 @@ try {
       "--ignore-scripts",
       "--no-audit",
       "--no-fund",
-      "vite@8.0.0",
+      `vite@${viteVersion}`,
       ...Object.entries(fixturePackage.devDependencies).map(
         ([name, version]) => `${name}@${version}`,
       ),

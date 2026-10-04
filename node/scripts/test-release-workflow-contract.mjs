@@ -244,6 +244,31 @@ assert.throws(
   /dependency order/,
 );
 
+const sidecarDownload = "          pattern: native-*\n          path: native-sidecars\n";
+const sidecarSizeEnv = "          NATIVE_SIDECARS_DIR: native-sidecars\n";
+assert.equal(workflow.split(sidecarDownload).length - 1, 1);
+assert.equal(workflow.split(sidecarSizeEnv).length - 1, 1);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(sidecarDownload, "          name: native-linux-x64-gnu\n"),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /release-summary must download every native sidecar artifact/,
+);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(sidecarSizeEnv, ""),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /release-summary must report addon sizes/,
+);
+
 const fixtureRoot = await mkdtemp(join(tmpdir(), "ferriki-publish-contract-"));
 const fixturePackage = join(fixtureRoot, "fixture");
 const fixturePack = join(fixtureRoot, "packed");

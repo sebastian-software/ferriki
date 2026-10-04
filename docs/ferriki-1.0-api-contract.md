@@ -245,10 +245,11 @@ being mistaken for parity.
 ## Build-time macro subpaths
 
 The additive `@ferriki/core/macro` entry defines `code` and its prepared
-HTML/CSS descriptor; executing an unprocessed marker throws. The separate
-`@ferriki/core/macro-transform` entry exposes native build-time analysis with
-owned call/import plans and UTF-8 spans. These entries add no runtime browser
-highlighter or token/HAST output. The contract and supported inline syntax are
+HTML/CSS descriptor; executing an unprocessed marker throws. Macro recognition
+belongs to `@ferriki/vite`; the former build-only
+`@ferriki/core/macro-transform` entry (`findInlineCodeMacros`) is removed
+without an alias. These entries add no runtime browser highlighter or
+token/HAST output. The contract and supported inline syntax are
 in [ADR 0018](../adr/0018-inline-highlighting-macros.md) and the
 [macro guide](inline-code-macros.md). Root render outputs stay unchanged.
 

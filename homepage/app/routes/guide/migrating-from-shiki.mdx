@@ -64,8 +64,9 @@ The full guide, including asset loading, output-shape differences, and
 downstream adapter boundaries, is
 [docs/migrations/shiki-to-ferriki.md](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
 
-The repository also contains a separate optional Vite adapter. It transforms
-marked HTML and JSX during a build; it does not run in the browser and has not
-been published with the current `@ferriki/core` release. See the
+The repository also contains a separate optional Vite adapter. It prepares
+imported `code()` and React `<Code />` macros during Vite 8 transforms; it does
+not run in the browser and has not been published with the current
+`@ferriki/core` release. See the
 [@ferriki/vite source README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
 for its current contract and release status.
