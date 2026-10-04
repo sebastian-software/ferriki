@@ -14,9 +14,9 @@ cargo add ferriki
 
 ## Assets
 
-The crate does not embed the standard grammars and themes. Since 0.7.0 the
-`remote` feature loads them on demand from `assets.ferriki.dev`, pinned to
-the crate's release commit, verified by SHA-256 and cached locally:
+The crate does not embed the standard grammars and themes. The `remote`
+feature loads them on demand from `assets.ferriki.dev`, pinned to the crate's
+release commit, verified by SHA-256 and cached locally:
 
 ```sh
 cargo add ferriki --features remote
@@ -82,9 +82,16 @@ there. Custom grammars and themes register through `LanguageRegistration` and
 
 ## With Ferromark
 
-Ferromark's `HtmlRenderHooks::highlight_code_block` hands each fenced block's
-code and language to a hook. Ferriki highlights the lines; Ferromark keeps the
-wrapper, the fence metadata and the fallback for unknown languages.
+[Ferromark](https://crates.io/crates/ferromark), the Markdown parser of the
+same family, highlights fenced code with this crate natively: no Node.js
+process and no N-API boundary in between. Its optional `ferriki` feature
+provides `FerrikiHighlightHooks` for the HTML renderer and `FerrikiJsxHooks`
+for the JSX renderer.
+
+To write your own hook, implement `HtmlRenderHooks::highlight_code_block`: it
+receives each fenced block's code and language. Ferriki highlights the lines;
+Ferromark keeps the wrapper, the fence metadata and the fallback for unknown
+languages.
 
 ```rust
 use ferriki::{Highlighter, RenderOptions};
