@@ -128,6 +128,10 @@ part of release verification.
       package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from
       “published” and records failed or skipped target jobs.
+- [ ] Compare the "Native addon sizes" table in the release summary with the
+      previous release's table, or with the previous sidecars' unpacked size
+      on npm where that release has none. Explain in the release discussion
+      every sidecar whose `ferriki.node` grew by more than a few percent.
 - [ ] Confirm the GitHub release and npm metadata show the same version and
       dist-tag, and that crates.io lists the same version for all three crates.
 - [ ] Install the published tarball in a clean consumer and run the public

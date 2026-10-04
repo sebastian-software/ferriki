@@ -76,7 +76,7 @@ parse, not the text, decides whether it imports a macro. A module that imports
 nothing from the macro subpaths, or only types, is returned unchanged.
 
 Spell the import specifier literally. A specifier written with escape
-sequences, such as `"@ferriki/core/macro"`, does not pass the text check;
+sequences, such as `"@ferriki/core/\u006dacro"`, does not pass the text check;
 that module is not transformed and its `code()` call or `<Code />` element
 throws the marker's configuration error at runtime.
 

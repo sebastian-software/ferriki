@@ -43,7 +43,7 @@ lanes.
 
 The TextMate structural lane sets `FERRIKI_HONEST_ALIAS=1`, which routes the
 mirrored tests' remaining upstream imports through Ferriki as well. Its
-20 selected behavior tests cover core highlighting, loaders, aliases,
+19 selected behavior tests cover core highlighting, loaders, aliases,
 Markdown embeddings, lazy Vue/SCSS embeddings, and external injections. The
 supported core lane adds the core sync/singleton contracts and a resolver
 sentinel; its deferred file list is maintained in

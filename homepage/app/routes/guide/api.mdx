@@ -64,9 +64,9 @@ synchronous. Configure `assets: { remote: false }` or
 
 ## Vite
 
-The repository also contains an optional `@ferriki/vite` adapter. It highlights
-explicitly marked static HTML and JSX blocks during Vite builds; it does not
-add a browser runtime and is separate from `@ferriki/core`. The adapter has not
-been published to npm with the current Ferriki release. See its
+The repository also contains an optional `@ferriki/vite` adapter. It prepares
+imported `code()` and React `<Code />` macros during Vite 8 transforms; it does
+not add a browser runtime and is separate from `@ferriki/core`. The adapter
+has not been published to npm with the current Ferriki release. See its
 [package README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
 for the current source contract and release status.
