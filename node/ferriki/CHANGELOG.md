@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.0](https://github.com/sebastian-software/ferriki/compare/v0.11.0...v0.12.0) (2026-10-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* The build-only `@ferriki/core/macro-transform` entry (`findInlineCodeMacros`) is removed without a compatibility alias. `@ferriki/vite` requires Vite 8 (peer `vite: ^8.0.0`) and depends only on `@ferriki/core` and `magic-string`. The `data-highlight="auto"` HTML entry path and the static intrinsic JSX path are removed; `code()` and `<Code />` are the adapter's entry points. The imported macro name (`code`, `Code` or an alias) is reserved in its module, so any declaration with that name is a compile error; a module that imports `code()` cannot destructure `({ code })` and renames the binding or imports `code as prepareCode`. A macro specifier spelled with escape sequences is no longer recognized at build time.
+
+### Features
+
+* move inline macro recognition from the native addon to the Vite adapter ([#218](https://github.com/sebastian-software/ferriki/issues/218)) ([38747b6](https://github.com/sebastian-software/ferriki/commit/38747b6634c09e2bb28aa1063098826ecce106ca))
+
 ## [0.11.0](https://github.com/sebastian-software/ferriki/compare/v0.10.0...v0.11.0) (2026-10-04)
 
 

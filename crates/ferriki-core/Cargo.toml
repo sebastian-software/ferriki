@@ -1,6 +1,6 @@
 [package]
 name = "ferriki-core"
-version = "0.11.0"
+version = "0.12.0"
 description = "Native N-API core of the Ferriki Shiki-compatible highlighter"
 readme = "README.md"
 edition.workspace = true
@@ -21,7 +21,7 @@ path = "src/lib.rs"
 
 [dependencies]
 # Rust plans and verifies assets; the Node facade owns network transport (ADR 0013).
-ferriki = { version = "0.11.0", path = "../..", default-features = false }
+ferriki = { version = "0.12.0", path = "../..", default-features = false }
 napi = { workspace = true }
 napi-derive = { workspace = true }
 serde_json = { workspace = true }
