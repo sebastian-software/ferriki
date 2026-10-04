@@ -145,9 +145,9 @@ sidecar is published (see #52).
 - Concurrent async loads are deduplicated per handle. Rendering calls are
   safe to interleave without leaking languages, themes, or aliases between
   handles (#51).
-- Validation failures have stable `ShikiError` identity and machine-readable
-  categories once the error taxonomy lands (#50). Message text is documented
-  for user-facing migration errors; native stack details are not part of the
+- Validation failures have stable `ShikiError` identity and a
+  machine-readable `code` category (#50). Message text is documented for
+  user-facing migration errors; native stack details are not part of the
   contract.
 - Missing native bindings fail at import/use with an actionable platform
   error. There is no JS, WASM, or silent plaintext fallback runtime.
@@ -231,27 +231,15 @@ must be supported or added to the explicit boundary below.
 - The Shiki mirror version is pinned independently from this API contract and
   is updated only through the explicit sync procedure (#36, #40, #41).
 
-## Reconciliation of child work
-
-The contract is the decision point for API work: #10 generates the typed
-surface, #43–#51 cover the retained highlighting behavior, #44 supplies
-catalog enumeration, and #53/#54/#52 prove the packaged platform boundary.
-Issue #207 marks public Node HAST/token output methods for removal while
-retaining callback data and Rust token APIs. #55 tracks the Ardo/Ferromark
-handoff; it does not change the package's publication status. #39 is the
-mandatory compatibility gate that prevents unsupported or deferred rows from
-being mistaken for parity.
-
 ## Build-time macro subpaths
 
 The additive `@ferriki/core/macro` entry defines `code` and its prepared
 HTML/CSS descriptor; executing an unprocessed marker throws. Macro recognition
-belongs to `@ferriki/vite`; the former build-only
-`@ferriki/core/macro-transform` entry (`findInlineCodeMacros`) is removed
-without an alias. These entries add no runtime browser highlighter or
-token/HAST output. The contract and supported inline syntax are
-in [ADR 0018](../adr/0018-inline-highlighting-macros.md) and the
-[macro guide](inline-code-macros.md). Root render outputs stay unchanged.
+belongs to `@ferriki/vite`; `@ferriki/core` exports no build-time transform
+entry. These entries add no runtime browser highlighter or token/HAST output.
+The contract and supported inline syntax are in [ADR
+0018](../adr/0018-inline-highlighting-macros.md) and the [macro
+guide](inline-code-macros.md). Root render outputs stay unchanged.
 
 `@ferriki/core/react/macro` adds the optional `Code` JSX marker. Its required
 `source` and `language` and optional `meta` and `lineNumbers` attributes are
@@ -260,7 +248,7 @@ literal-only. Elements are self-closing and accept no children. An optional
 during application rendering, with explicit prop forwarding in ordinary JSX.
 `className` accepts a string or runtime expression and applies to the default
 `div`, or is passed to the renderer when supplied. An absent or `undefined`
-renderer uses the default prepared-HTML container; callback results are retained.
-The unreleased `component` prop is replaced without an alias. The marker and import
-are erased before React's JSX transform. React is only required by consumers
-of this entry's type declarations and generated JSX, not by the core runtime.
+renderer uses the default prepared-HTML container; callback results are
+retained. The marker and import are erased before React's JSX transform. React
+is only required by consumers of this entry's type declarations and generated
+JSX, not by the core runtime.

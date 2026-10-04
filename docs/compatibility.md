@@ -25,9 +25,9 @@ contract. Adapter suites for transformers, Twoslash,
 Markdown, and colorized brackets are separate because those packages are not
 Ferriki's core product boundary.
 
-The root README's “Product Scope” table is the authoritative feature boundary.
-Passing a mirrored adapter test does not promote that adapter to a Ferriki
-export.
+The [API contract](ferriki-1.0-api-contract.md) is the authoritative feature
+boundary. Passing a mirrored adapter test does not promote that adapter to a
+Ferriki export.
 
 ## Running the gates
 
@@ -48,9 +48,9 @@ pnpm run lint
 native addon, runs the catalog/export/native-boundary/docs/API checks, executes
 the supported native suite, and reports deferred contracts with their owning
 issue. `check:boundary` is also safe to run without a native build; it guards
-the package manifest and source tree against legacy runtime dependencies,
-fallback loaders, and forbidden runtime files. A clean working tree is
-required after compatibility preparation.
+the package manifest and source tree against Shiki, WebAssembly, and regex
+engine dependencies, fallback loaders, and forbidden runtime files. A clean
+working tree is required after compatibility preparation.
 
 The core gate also runs Shiki's `bundle-full` and `bundle-web` smoke tests. The
 current pinned baseline expects 364 and 96 loaded languages respectively. Those
@@ -60,27 +60,26 @@ grammars (`ls assets/shiki/languages/*.fkgram | wc -l`) and 65 themes
 reports every canonical ID plus each of its aliases — 364 keys for Shiki's
 full bundle, and 96 for the curated subset behind its `bundle/web` entry point.
 
-The audit behind that baseline found two grammar-shape gaps that had been
-hidden by the old exclusion: legacy capture arrays (for example, `jinja`) and
-repository entries represented as rule arrays (for example, `racket`). Ferriki
-normalizes both forms at the raw-grammar boundary, with focused Rust tests
-covering the conversion.
+The catalog contains two less common grammar shapes: captures written as
+arrays, a legacy TextMate form (for example, `jinja`), and repository entries
+represented as rule arrays (for example, `racket`). Ferriki normalizes both at
+the raw-grammar boundary, with focused Rust tests covering the conversion.
 
 ## Platform support
 
-The 1.0 floor is Node.js 22.13.0. The CI smoke matrix exercises every target
-in the current release map:
+Ferriki requires Node.js 22.13.0 or newer. The CI smoke matrix exercises every
+target in the release map:
 
 | Target | OS/architecture | libc/runtime | Status |
 | --- | --- | --- | --- |
 | `linux-x64-gnu` | Linux x64 | glibc | Supported |
 | `linux-arm64-gnu` | Linux arm64 | glibc | Supported |
-| `linux-x64-musl` | Linux x64 (Alpine and other musl systems) | musl | Supported since 0.4.0 |
-| `linux-arm64-musl` | Linux arm64 (Alpine and other musl systems) | musl | Supported since 0.4.0 |
+| `linux-x64-musl` | Linux x64 (Alpine and other musl systems) | musl | Supported |
+| `linux-arm64-musl` | Linux arm64 (Alpine and other musl systems) | musl | Supported |
 | `darwin-arm64` | macOS arm64 | system | Supported |
-| `darwin-x64` | macOS Intel | system | Unsupported since 0.4.0 (Apple Silicon only) |
+| `darwin-x64` | macOS Intel | system | Unsupported (Apple Silicon only) |
 | `win32-x64-msvc` | Windows x64 | MSVC | Supported |
-| `win32-arm64-msvc` | Windows arm64 | MSVC | Supported since 0.4.0 |
+| `win32-arm64-msvc` | Windows arm64 | MSVC | Supported |
 
 The target map is maintained in [`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs)
 and checked by `pnpm run check:platform-matrix`. A green CI run does not imply

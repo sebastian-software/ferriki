@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Context
 
@@ -36,6 +36,15 @@ hand-written declarations against mirrored Shiki types; the API contract
 documents the intentional native-state, structured-output, and
 transformer-context boundaries (#158, #207).
 
+The contract is the decision point for the API work tracked in issues: #10
+generates the typed surface, #43–#51 cover the retained highlighting behavior,
+#44 supplies catalog enumeration, and #53/#54/#52 prove the packaged platform
+boundary. #207 removes the public Node HAST/token output methods while
+retaining callback data and Rust token APIs. #55 tracks the Ardo/Ferromark
+handoff without changing the package's publication status. #39 is the
+mandatory compatibility gate that keeps unsupported or deferred rows from
+being mistaken for parity.
+
 ## Consequences
 
 - API implementation and declaration work now has an explicit acceptance target.
@@ -55,3 +64,4 @@ transformer-context boundaries (#158, #207).
 - 2026-10-01: Adds Shiki type drift checks with explicit native API boundaries (#158).
 - 2026-10-01: Classifies `colorReplacements` as deferred until runtime support is implemented (#190).
 - 2026-10-03: Removes public Node HAST and token output methods before 1.0 while retaining transformer callback data and Rust token APIs (#207).
+- 2026-10-04: Takes over the mapping of child issues to the contract, which now states only the contract itself.

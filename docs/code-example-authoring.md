@@ -6,29 +6,16 @@ In Vite, an example is prepared with the [inline code macros](inline-code-macros
 `code()` from `@ferriki/core/macro` returns a prepared descriptor, and React's
 `<Code />` from `@ferriki/core/react/macro` renders one. Both take literal code
 during the build and retain the original text; file imports and dynamic data
-are outside their initial scope.
+are outside their scope.
 
 ## Feature ownership
 
-| Consumer           | Verified behavior and remaining gaps                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node               | The published `@ferriki/core@0.9.0` JavaScript `ShikiTransformer` pipeline supports optional upstream notation callbacks for line focus, line and word highlights, and additions/removals. Ferriki supplies the callback pipeline; authors opt into the notation package and choose presentation CSS. There is no new Rust or Node annotation parser.                                                                                                                                                            |
-| Vite               | Current `@ferriki/vite` source prepares `code()` calls and React `<Code />` elements on Vite 8. Its `transformers` option forwards the same callbacks through that Node pipeline to every prepared block. The macros' `meta` option keeps the adapter's syntax for titles, labels, selected lines, and line numbers. The macro paths are covered by source and packed-consumer checks; the matching Vite package release is not yet available.                                                                  |
-| Rust and Ferromark | The published `ferriki@0.9.0` crate returns escaped, balanced per-line HTML fragments. Published `ferromark@3.0.0` exposes `FerrikiHighlightHooks` through its optional `ferriki` feature, pinned to Ferriki `0.7.0`; its renderer owns Markdown parsing and VitePress-style focus/highlight/diff annotations. A custom Ferromark hook can call Ferriki `0.9.0` as shown in the Rust API guide. Rust does not parse Shiki code-comment notation; word highlighting, copy, and collapse remain renderer concerns. |
-| HTML presentation  | The consuming component owns CSS, copy policy, and surrounding markup. Native `<details>` and `<summary>` provide a collapsed supporting example without JavaScript; a copy action decides whether it copies the authored source or the final code.                                                                                                                                                                                                                                                             |
-
-## Package availability
-
-Registry state checked on 2026-10-03: `@ferriki/core@0.9.0` and its seven
-platform sidecars are available from npm; `@ferriki/vite@0.9.0` is not. The
-`ferriki@0.9.0` and `ferromark@3.0.0` crates are available from crates.io.
-Ferromark 3.0.0 includes a Ferriki adapter, but it pins Ferriki 0.7.0. The
-separate, open [Ferromark PR #502](https://github.com/sebastian-software/ferromark/pull/502)
-adds framework-neutral JSX and native Ferriki highlighting plus Node
-`compileJsx`/`JsxCompiler` support, targeting Ferromark 3.1; it is not part of
-the published 3.0.0 crate. The macros run against this repository's source,
-and the packed consumer checks verify the source packages independently of npm
-publication.
+| Consumer           | Verified behavior and remaining gaps                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node               | The JavaScript `ShikiTransformer` pipeline of `@ferriki/core` supports the optional upstream notation callbacks for line focus, line and word highlights, and additions/removals. Ferriki supplies the callback pipeline; authors opt into the notation package and choose presentation CSS. There is no separate Rust or Node annotation parser.                                                                                                                                |
+| Vite               | `@ferriki/vite` prepares `code()` calls and React `<Code />` elements on Vite 8. Its `transformers` option forwards the same callbacks through that Node pipeline to every prepared block. The macros' `meta` option keeps the adapter's syntax for titles, labels, selected lines, and line numbers. Source and packed-consumer checks cover both macro paths.                                                                                                                  |
+| Rust and Ferromark | The `ferriki` crate returns escaped, balanced per-line HTML fragments. Ferromark's optional `ferriki` feature highlights fences with it in Ferromark's HTML and JSX/MDX renderers; Ferromark owns Markdown parsing and its VitePress-style focus/highlight/diff annotations. A custom Ferromark hook can call Ferriki directly, as shown in the Rust API guide. Rust does not parse Shiki code-comment notation; word highlighting, copy, and collapse remain renderer concerns. |
+| HTML presentation  | The consuming component owns CSS, copy policy, and surrounding markup. Native `<details>` and `<summary>` provide a collapsed supporting example without JavaScript; a copy action decides whether it copies the authored source or the final code.                                                                                                                                                                                                                              |
 
 The Rust boundary is described in [the Rust API guide](rust-api.md). For Vite, a compiler must expose the macro import and call before lowering its output. The `include(id)` option only adds module IDs; it cannot recover a call after a compiler has lowered it.
 
@@ -120,9 +107,9 @@ Ferriki does not install a copy handler. The descriptor's `code` is the exact au
 
 ## Verify the behavior
 
-`@ferriki/vite@0.9.0` was not available from npm on 2026-10-03, so the checks
-below run against this repository's source. The `build:compat` step generates
-the pinned workspace transformer package that the tests load:
+The repository checks below run against this repository's source packages.
+The `build:compat` step generates the pinned workspace transformer package that
+the tests load:
 
 ```sh
 cd node
@@ -141,4 +128,4 @@ TypeScript options.
 
 In a Vite/MDX pipeline, a macro is prepared only if its import and call are still visible to the plugin before the compiler lowers the module. Use a compiler mode that exposes that intermediate output, then configure `include(id)` only if the exposed module ID needs to be added.
 
-The callback boundary and renderer split are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md) and [ADR 0012](../adr/0012-publishable-rust-highlighter.md). See [Ferromark's current Markdown integration](rust-api.md#ferromark-adapter-contract) for the Rust path.
+The callback boundary and renderer split are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md) and [ADR 0012](../adr/0012-publishable-rust-highlighter.md). See [the Ferromark adapter contract](rust-api.md#ferromark-adapter-contract) for the Rust path.
