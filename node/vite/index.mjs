@@ -178,7 +178,25 @@ export function ferriki(options = {}) {
       let macroChanged = false;
       if (macroPlan.calls.length) {
         const byteToIndex = makeByteOffsetMap(source);
-        for (const call of macroPlan.calls) {
+        const needsRenderHelper = macroPlan.calls.some(
+          (call) =>
+            call.kind === "react" && call.presentation?.some((item) => item.name === "render"),
+        );
+        const renderHelperName = needsRenderHelper
+          ? uniqueIdentifierName(source, "FerrikiMacroRenderHelper")
+          : undefined;
+        const calls = macroPlan.calls
+          .map((call) => ({
+            call,
+            start: byteToIndex(call.start),
+            end: byteToIndex(call.end),
+          }))
+          .sort(
+            (left, right) =>
+              left.end - left.start - (right.end - right.start) || left.start - right.start,
+          );
+        for (const item of calls) {
+          const { call } = item;
           const meta = parseMeta(call.meta ?? "");
           // A call-level setting replaces the Vite default, while an explicit
           // showLineNumbers annotation remains an opt-in in its own right.
@@ -201,18 +219,16 @@ export function ferriki(options = {}) {
             meta,
             effectiveLineNumbers,
           );
-          result.magic.overwrite(
-            byteToIndex(call.start),
-            byteToIndex(call.end),
-            lowerMacroCall(call, descriptor),
-          );
+          lowerMacroCall(result.magic, call, descriptor, byteToIndex, renderHelperName);
           if (descriptorCss) macroCss.add(descriptorCss);
           macroChanged = true;
         }
+
         for (const item of macroPlan.imports) {
           result.magic.overwrite(byteToIndex(item.start), byteToIndex(item.end), item.replacement);
           macroChanged = true;
         }
+        if (needsRenderHelper) result.magic.append(`\n${renderHelperSource(renderHelperName)}\n`);
       }
       if (!result.changed && !macroChanged) return null;
 
@@ -614,11 +630,78 @@ function isMacroModuleSpecifier(node) {
   );
 }
 
-function lowerMacroCall(call, descriptor) {
-  if (call.kind !== "react") return safeJsLiteral(descriptor);
-  return typeof call.component === "string"
-    ? `<${call.component} code={${safeJsLiteral(descriptor)}} />`
-    : `<div dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`;
+function lowerMacroCall(magic, call, descriptor, byteToIndex, renderHelperName) {
+  const start = byteToIndex(call.start);
+  const end = byteToIndex(call.end);
+  if (call.kind !== "react") {
+    magic.overwrite(start, end, safeJsLiteral(descriptor));
+    return;
+  }
+
+  const presentation = (call.presentation ?? []).map((item) => ({
+    ...item,
+    start: byteToIndex(item.start),
+    end: byteToIndex(item.end),
+    isLiteral: item.name === "className" && item.literal !== undefined,
+  }));
+  if (presentation.length === 0) {
+    magic.overwrite(
+      start,
+      end,
+      `<div dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`,
+    );
+    return;
+  }
+
+  const hasRenderer = presentation.some((item) => item.name === "render");
+  const first = presentation[0];
+  const attributeStart = (item) => `${item.name}${item.isLiteral ? "=" : "={"}`;
+  if (hasRenderer) {
+    magic.overwrite(
+      start,
+      first.start,
+      `<${renderHelperName} code={${safeJsLiteral(descriptor)}} ${attributeStart(first)}`,
+    );
+  } else {
+    magic.overwrite(start, first.start, `<div ${attributeStart(first)}`);
+  }
+
+  for (let index = 1; index < presentation.length; index++) {
+    const previous = presentation[index - 1];
+    const current = presentation[index];
+    magic.overwrite(
+      previous.end,
+      current.start,
+      `${previous.isLiteral ? "" : "}"} ${attributeStart(current)}`,
+    );
+  }
+
+  const last = presentation.at(-1);
+  const suffix = hasRenderer
+    ? `${last.isLiteral ? "" : "}"} />`
+    : `${last.isLiteral ? "" : "}"} dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`;
+  magic.overwrite(last.end, end, suffix);
+}
+
+function uniqueIdentifierName(source, base) {
+  const ast = parseJs(source, { sourceType: "unambiguous", plugins: ["jsx", "typescript"] });
+  const used = new Set();
+  visitAst(ast, (node) => {
+    if (node.type === "Identifier" || node.type === "JSXIdentifier") used.add(node.name);
+  });
+  let candidate = base;
+  let suffix = 1;
+  while (used.has(candidate)) candidate = `${base}${suffix++}`;
+  return candidate;
+}
+
+function renderHelperSource(name) {
+  return `function ${name}(props) {
+  const { code, render, ...presentationProps } = props;
+  if (render === undefined)
+    return <div {...presentationProps} dangerouslySetInnerHTML={{ __html: code.html }} />;
+  return render({ code, ...presentationProps });
+}`;
 }
 
 function jsxName(node) {

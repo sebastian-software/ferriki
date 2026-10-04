@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",
+    "@jridgewell/trace-mapping": "catalog:testing",
     "@rollup/plugin-commonjs": "catalog:bundling",
     "@rollup/plugin-json": "catalog:bundling",
     "@rollup/plugin-node-resolve": "catalog:bundling",

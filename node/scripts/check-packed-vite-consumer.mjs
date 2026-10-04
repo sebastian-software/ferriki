@@ -153,18 +153,61 @@ try {
         "import { Code } from '@ferriki/core/react/macro'",
         "",
         `export const block = code("const exact = '& <SSR>';\\nconsole.log(exact);", { language: 'ts', meta: 'title=\"SSR Fixture\" [packed] {2}', lineNumbers: true })`,
+        "export let renderCalls = 0",
+        "const runtimeTitle = 'Runtime custom title'",
+        "const runtimeClassName = 'custom-packed-class'",
         "export function CodeExample() {",
         "  return React.createElement('section', { 'data-original': block.code }, React.createElement('div', { dangerouslySetInnerHTML: { __html: block.html } }))",
         "}",
-        "function CustomCodeBlock({ code }) {",
-        "  return React.createElement('section', { 'data-react-code': code.code, dangerouslySetInnerHTML: { __html: code.html } })",
+        "function CustomCodeBlock({ code, className, title }) {",
+        "  return <section data-react-code={code.code} data-render-class={className} data-runtime-title={title}><div className={className} dangerouslySetInnerHTML={{ __html: code.html }} /></section>",
         "}",
+        "function renderCustomCode({ code, className }) {",
+        "  renderCalls += 1",
+        "  return <CustomCodeBlock code={code} className={className} title={runtimeTitle} />",
+        "}",
+        "const customMacroElement = <Code language='ts' source={`const packedCustom = 'react';\\nconsole.log(packedCustom);`} meta='title=\"Custom macro\"' lineNumbers className={runtimeClassName} render={renderCustomCode} />",
         "export function DefaultCodeMacroExample() {",
-        "  return <Code language='ts' source={`const packedDefault = 'react';\\nconsole.log(packedDefault);`} meta='title=\"Default macro\"' lineNumbers />",
+        "  return <Code language='ts' source={`const packedDefault = 'react';\\nconsole.log(packedDefault);`} meta='title=\"Default macro\"' lineNumbers className='default-packed-class' />",
         "}",
         "export function CustomCodeMacroExample() {",
-        "  return <Code language='ts' source={`const packedCustom = 'react';\\nconsole.log(packedCustom);`} meta='title=\"Custom macro\"' lineNumbers component={CustomCodeBlock} />",
+        "  return <article data-packed-wrapper='custom'>{customMacroElement}</article>",
         "}",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      join(project, "src", "invalid-spread.jsx"),
+      [
+        "import { Code } from '@ferriki/core/react/macro'",
+        "const macroProps = { source: 'const invalid = true', language: 'ts' }",
+        "export const invalidSpread = <Code {...macroProps} />",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      join(project, "src", "invalid-dynamic-meta.jsx"),
+      [
+        "import { Code } from '@ferriki/core/react/macro'",
+        "const runtimeMeta = 'title=Dynamic'",
+        "export const invalidMeta = <Code source='const invalid = true' language='ts' meta={runtimeMeta} />",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      join(project, "src", "invalid-dynamic-highlighting.jsx"),
+      [
+        "import { Code } from '@ferriki/core/react/macro'",
+        "const runtimeLineNumbers = true",
+        "export const invalidHighlighting = <Code source='const invalid = true' language='ts' lineNumbers={runtimeLineNumbers} />",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      join(project, "src", "invalid-children.jsx"),
+      [
+        "import { Code } from '@ferriki/core/react/macro'",
+        "export const invalidChildren = <Code source='const invalid = true' language='ts'>child</Code>",
         "",
       ].join("\n"),
     );
@@ -191,6 +234,14 @@ const jsxConfig = { jsx: 'automatic', jsxDev: false }
 const plugin = ferriki(options)
 const server = await createServer({ configFile: false, root: project, plugins: [plugin], esbuild: jsxConfig, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, fs: { allow: [project] } }, appType: 'custom' })
 try {
+  for (const [file, reason] of [
+    ['/src/invalid-spread.jsx', 'the packed React macro accepted a JSX spread'],
+    ['/src/invalid-dynamic-meta.jsx', 'the packed React macro accepted dynamic meta'],
+    ['/src/invalid-dynamic-highlighting.jsx', 'the packed React macro accepted dynamic highlighting'],
+    ['/src/invalid-children.jsx', 'the packed React macro accepted JSX children'],
+  ]) {
+    await assert.rejects(server.transformRequest(file), undefined, reason)
+  }
   const html = await server.transformIndexHtml('/', await readFile(project + '/index.html', 'utf8'))
   const module = await server.transformRequest('/src/example.tsx')
   assert(html.includes('htmlValue') && html.includes('data-ferriki-vite') && html.includes('data-packed-transformer="yes"'), 'packed Vite HTML transform, callback, or stylesheet injection failed')
@@ -203,15 +254,21 @@ try {
   assert.deepEqual(ssrModule.block.metadata, { title: 'SSR Fixture', label: 'packed', lineNumbers: true, highlightedLines: [2] })
   assert(ssrMarkup.includes(ssrModule.block.html), 'React SSR did not preserve the macro HTML through dangerouslySetInnerHTML')
   assert.match(ssrModule.block.css, /ferriki-style-[a-f0-9]{64}/, 'the packed macro omitted its generated styles')
+  assert.equal(ssrModule.renderCalls, 0, 'the packed render callback ran during module transformation')
   const defaultCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.DefaultCodeMacroExample))
   const defaultCodeTree = fromHtml(defaultCodeMarkup, { fragment: true })
   assert(hastText(defaultCodeTree).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'the default React Code macro did not render source in SSR')
   assert(defaultCodeMarkup.includes('data-title="Default macro"'), 'the default React Code macro omitted metadata in SSR')
+  assert.match(defaultCodeMarkup, /<div\\b[^>]*class="default-packed-class"/, 'the default React Code macro did not forward className to its div in SSR')
   const customCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.CustomCodeMacroExample))
   const customCodeTree = fromHtml(customCodeMarkup, { fragment: true })
+  assert.match(customCodeMarkup, /<article data-packed-wrapper="custom"><section\\b/, 'the packed render callback did not return its React element inside a parent JSX child')
   assert.equal(hastProperty(customCodeTree, 'dataReactCode'), "const packedCustom = 'react';\\nconsole.log(packedCustom);")
   assert(hastText(customCodeTree).includes("const packedCustom = 'react';\\nconsole.log(packedCustom);"), 'the custom React Code macro did not render its prepared HTML in SSR')
   assert(customCodeMarkup.includes('data-title="Custom macro"'), 'the custom React Code macro omitted metadata in SSR')
+  assert.equal(hastProperty(customCodeTree, 'dataRenderClass'), 'custom-packed-class', 'the render callback did not receive and forward className in SSR')
+  assert.equal(hastProperty(customCodeTree, 'dataRuntimeTitle'), 'Runtime custom title', 'the render callback did not forward its closure value in SSR')
+  assert.equal(ssrModule.renderCalls, 1, 'the render callback did not run during React SSR')
 } finally {
   await server.close()
 }
@@ -234,7 +291,7 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "import type { ShikiTransformer } from '@ferriki/core'",
         "import { code } from '@ferriki/core/macro'",
         "import type { FerrikiCodeOptions, PreparedCodeBlock } from '@ferriki/core/macro'",
-        "import { Code } from '@ferriki/core/react/macro'",
+        "import { Code, type CodeRenderProps } from '@ferriki/core/react/macro'",
         "import { findInlineCodeMacros } from '@ferriki/core/macro-transform'",
         "import type { InlineCodeMacroPlan } from '@ferriki/core/macro-transform'",
         "import type { Plugin } from 'vite'",
@@ -248,28 +305,47 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "})",
         "const macroOptions: FerrikiCodeOptions = { language: 'ts', meta: 'title=Packed', lineNumbers: true }",
         "const prepared: PreparedCodeBlock = code('const packed = true', macroOptions)",
-        "const CustomCodeBlock = ({ code }: { code: PreparedCodeBlock }) => null",
-        "const defaultCodeElement = <Code language='ts' source={`const packedDefault = true`} meta='title=Default' lineNumbers />",
-        "const customCodeElement = <Code language='ts' source={`const packedCustom = true`} component={CustomCodeBlock} />",
+        "const runtimeTitle: string = 'typed closure title'",
+        "const runtimeClassName: string = 'typed-runtime-class'",
+        "const invalidClassName: number = 42",
+        "const CustomCodeBlock = ({ code, className, title }: { code: PreparedCodeBlock; className?: string | undefined; title: string }) => null",
+        "const exportedRenderer = ({ code, className }: CodeRenderProps) => <CustomCodeBlock code={code} className={className} title={runtimeTitle} />",
+        "const defaultCodeElement = <Code language='ts' source={`const packedDefault = true`} meta='title=Default' lineNumbers className='default-typed-class' />",
+        "const customCodeElement = <Code language='ts' source={`const packedCustom = true`} className={runtimeClassName} render={({ code, className }) => { const inferredCode: PreparedCodeBlock = code; const inferredClassName: string | undefined = className; return <CustomCodeBlock code={inferredCode} className={inferredClassName} title={runtimeTitle} /> }} />",
+        "const exportedRenderTypeElement = <Code language='ts' source={`const exported = true`} className={undefined} render={exportedRenderer} />",
         "// @ts-expect-error React Code requires a source string.",
         "const missingSource = <Code language='ts' />",
         "// @ts-expect-error React Code does not accept children.",
         "const withChildren = <Code language='ts' source='const child = true'>child</Code>",
         "// @ts-expect-error unknown JSX properties are rejected.",
         "const unknownProperty = <Code language='ts' source='const property = true' unsupported />",
-        "const RequiresExtraProp = ({ code, required }: { code: PreparedCodeBlock; required: true }) => null",
-        "// @ts-expect-error custom components may only require the prepared code prop.",
-        "const componentWithRequiredProp = <Code language='ts' source='const component = true' component={RequiresExtraProp} />",
+        "// @ts-expect-error the unreleased component prop is not part of the render-function API.",
+        "const legacyComponent = <Code language='ts' source='const component = true' component={CustomCodeBlock} />",
+        "// @ts-expect-error render must be a function, not a JSX element.",
+        "const renderElement = <Code language='ts' source='const render = true' render={<span />} />",
+        "const undefinedClassName = <Code language='ts' source='const className = true' className={undefined} />",
+        "// @ts-expect-error className must be a string.",
+        "const invalidClassNameElement = <Code language='ts' source='const className = true' className={invalidClassName} />",
+        "const undefinedRenderer = <Code language='ts' source='const render = true' render={undefined} />",
+        "const RequiresTitle = ({ code, title }: { code: PreparedCodeBlock; title: string }) => null",
+        "// @ts-expect-error renderer-owned required props must be passed explicitly.",
+        "const missingRendererProp = <Code language='ts' source='const renderer = true' render={({ code }) => <RequiresTitle code={code} />} />",
         "const highlightedLines: readonly number[] = prepared.metadata.highlightedLines",
         "const plan: InlineCodeMacroPlan = findInlineCodeMacros(\"import { code } from '@ferriki/core/macro'; code('const packed = true', { language: 'ts' })\")",
         "const firstCall: InlineCodeMacroPlan['calls'][number] | undefined = plan.calls[0]",
         "void highlightedLines",
         "void defaultCodeElement",
         "void customCodeElement",
+        "void exportedRenderTypeElement",
         "void missingSource",
         "void withChildren",
         "void unknownProperty",
-        "void componentWithRequiredProp",
+        "void legacyComponent",
+        "void renderElement",
+        "void undefinedClassName",
+        "void invalidClassNameElement",
+        "void undefinedRenderer",
+        "void missingRendererProp",
         "void firstCall",
         "void plugin",
         "",
@@ -281,6 +357,7 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         tsc,
         "--noEmit",
         "--strict",
+        "--exactOptionalPropertyTypes",
         "--module",
         "NodeNext",
         "--moduleResolution",

@@ -343,8 +343,9 @@ returns `undefined` when no supported binary is installed.
 
 `@ferriki/core/macro` exposes the browser-safe `code` marker and
 `PreparedCodeBlock` type. `@ferriki/core/react/macro` exposes the optional React
-`Code` JSX marker with a literal `source` attribute. Both are erased during
-the build; the React marker adds no React runtime import to the core package.
+`Code` JSX marker with a literal `source` attribute, optional runtime `className`
+and an explicit `render` function receiving `CodeRenderProps`. Both are erased
+during the build; the React marker adds no React runtime import to the core package.
 The native build-only `@ferriki/core/macro-transform`
 entry exposes `findInlineCodeMacros`; these entries leave the root highlighter
 exports. See [Inline code macros](inline-code-macros.md) for the literal-only

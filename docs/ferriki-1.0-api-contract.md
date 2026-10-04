@@ -255,7 +255,11 @@ in [ADR 0018](../adr/0018-inline-highlighting-macros.md) and the
 `@ferriki/core/react/macro` adds the optional `Code` JSX marker. Its required
 `source` and `language` and optional `meta` and `lineNumbers` attributes are
 literal-only. Elements are self-closing and accept no children. An optional
-`component` reference receives the same prepared descriptor as its `code` prop;
-the default renders a container with the prepared HTML. The marker and import
+`render` function receives `{ code: PreparedCodeBlock, className?: string }`
+during application rendering, with explicit prop forwarding in ordinary JSX.
+`className` accepts a string or runtime expression and applies to the default
+`div`, or is passed to the renderer when supplied. An absent or `undefined`
+renderer uses the default prepared-HTML container; callback results are retained.
+The unreleased `component` prop is replaced without an alias. The marker and import
 are erased before React's JSX transform. React is only required by consumers
 of this entry's type declarations and generated JSX, not by the core runtime.

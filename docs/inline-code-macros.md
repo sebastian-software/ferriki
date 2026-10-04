@@ -98,6 +98,7 @@ export function Example() {
   return (
     <Code
       language="tsx"
+      className="example-code"
       lineNumbers
       source={`function Hello() {
   return <h1>Hello</h1>;
@@ -121,16 +122,29 @@ literal entity spelling. Templates preserve the authored formatting and use
 normal JavaScript escape semantics.
 
 By default, the transform emits a `div` containing the complete prepared
-`pre`/`code` HTML and delivers its CSS. For a custom copy button, title or tabs,
-provide a component reference:
+`pre`/`code` HTML and delivers its CSS. Optional `className` applies to this
+outer `div`, leaving the generated highlighting classes inside it intact.
+Unlike highlighting inputs, `className` accepts ordinary runtime expressions:
+
+```tsx
+<Code
+  className={compact ? "example compact" : "example"}
+  language="ts"
+  source={`const answer = 42;`}
+/>;
+```
+
+For a custom copy button, title or tabs, provide a `render` function. It receives
+`{ code: PreparedCodeBlock, className?: string }`. You explicitly decide which
+props to pass to your components:
 
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
-import type { PreparedCodeBlock } from "@ferriki/core/macro";
+import type { CodeRenderProps } from "@ferriki/core/react/macro";
 
-function MyCodeBlock({ code }: { code: PreparedCodeBlock }) {
+function MyCodeBlock({ code, className }: CodeRenderProps) {
   return (
-    <figure>
+    <figure className={className}>
       <figcaption>{code.metadata.title}</figcaption>
       <button type="button" onClick={() => navigator.clipboard.writeText(code.code)}>
         Copy code
@@ -143,21 +157,32 @@ function MyCodeBlock({ code }: { code: PreparedCodeBlock }) {
 export function Example() {
   return (
     <Code
-      component={MyCodeBlock}
+      className="example-code"
       language="ts"
       meta='title="Answer" {1}'
       source={`export const answer = 42;`}
+      render={(props) => <MyCodeBlock {...props} />}
     />
   );
 }
 ```
 
-This becomes `MyCodeBlock` receiving a prepared descriptor in its `code` prop.
-`component` accepts a JSX component identifier or member reference such as
-`UI.CodeBlock`; component lookup remains normal React runtime behavior.
-The first version forwards only `code` to that component. Import aliases with
-JSX component names such as `Code as HighlightedCode` work, and unrelated
-locally shadowed components are left alone. Using the imported
+Destructuring is equally valid:
+`render={({ code, className }) => <MyCodeBlock code={code} className={className} />}`.
+The renderer can pass its own props, capture local values, return a fragment
+or `null`, or be a named function. It runs during normal application rendering;
+Ferriki never evaluates it at build time. A stable module-local React component
+invokes it when React renders the element, including JSX stored at module scope.
+Render ordinary React components through JSX inside the callback. There is no
+implicit prop insertion or extra container around its result. `className` is included in the renderer's props
+only when supplied on `Code`; the callback controls where to apply it.
+An omitted renderer, or one that evaluates to `undefined`, uses the default
+`div`. A renderer returning `null` or `undefined` keeps that result.
+`render` accepts functions, not JSX elements. The unreleased `component` prop
+has been replaced by this explicit contract and has no compatibility alias.
+
+Import aliases with JSX component names such as `Code as HighlightedCode` work,
+and unrelated locally shadowed components are left alone. Using the imported
 marker as a function, passing it elsewhere or re-exporting it is rejected.
 An unprocessed marker throws an actionable integration error.
 
@@ -218,8 +243,12 @@ The native scanner is shared through the Node-only
 `@ferriki/core/macro-transform` entry. `findInlineCodeMacros(source, filename)`
 validates inline calls and React `Code` elements and returns call/import edits
 with UTF-8 byte spans. React records have `kind: "react"` and an optional
-canonical JSX `component` name. A host lowers those records to a prepared-HTML
-container or the named component with a prepared descriptor in its `code` prop.
+`presentation` array in authored attribute order. Each entry names `render`
+or `className` and identifies its expression with UTF-8 byte spans. Quoted JSX
+`className` entries also contain the decoded `literal` value. A host preserves
+those runtime expressions, invokes the renderer with the prepared descriptor
+and optional class, or emits the default HTML container. Nested macro edits
+must survive when the host lowers an enclosing renderer.
 Custom adapters must prepare HTML through the supported highlighter, translate
 byte spans to their editor's offsets, preserve source maps and deliver the same
 prepared data and CSS on server and client. The scanner does not render HTML,
