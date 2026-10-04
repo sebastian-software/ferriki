@@ -3,10 +3,17 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 import { ferriki } from "@ferriki/vite";
+import { fromHtml } from "hast-util-from-html";
 import { chromium } from "playwright";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { build, createServer } from "vite";
+
+function hastText(node) {
+  return node.type === "text"
+    ? node.value
+    : (node.children ?? []).map((child) => hastText(child)).join("");
+}
 
 async function main() {
   const project = process.env.FERRIKI_CONSUMER_PROJECT;
@@ -47,8 +54,11 @@ async function main() {
     configFile: false,
     root: project,
     plugins: [ferriki(options), ssrPlugin],
-    esbuild: { jsx: "transform", jsxFactory: "React.createElement" },
-    optimizeDeps: { include: ["react", "react-dom/client"], noDiscovery: true },
+    esbuild: { jsx: "automatic" },
+    optimizeDeps: {
+      include: ["react", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      noDiscovery: true,
+    },
     appType: "custom",
     logLevel: "silent",
     server: {
@@ -93,9 +103,21 @@ async function main() {
       highlightedLines: [2],
     });
     assert(initialMarkup.includes(firstModule.block.html));
+    assert.match(initialMarkup, /data-title="First React macro"/);
+    assert(
+      hastText(fromHtml(initialMarkup, { fragment: true })).includes("const macroRoute = 'first';"),
+    );
     assert.match(firstModule.block.css, /ferriki-style-[a-f0-9]{64}/);
     assert.match(firstModule.block.html, /<pre\b/);
     assert.match(firstModule.block.html, /<code\b/);
+
+    const secondModule = await server.ssrLoadModule("/src/routes/second.jsx");
+    const secondMarkup = renderToString(React.createElement(secondModule.default));
+    assert.match(secondMarkup, /data-code-route="second-react-macro"/);
+    assert.match(secondMarkup, /<h2>Second React macro<\/h2>/);
+    assert(
+      hastText(fromHtml(secondMarkup, { fragment: true })).includes("const macroRoute = 'second';"),
+    );
 
     const secondSourceBefore = await readFile(secondRoutePath, "utf8");
     const before = await server.transformRequest("/src/routes/second.jsx");
@@ -167,6 +189,10 @@ async function main() {
     assert(initialCode.includes("console.log(route);"));
     assert.equal(await firstBlock.locator("pre[class*='ferriki-themes-']").count(), 1);
     assert(await firstBlock.locator(".token").count());
+    const defaultMacroBlock = page.locator('pre[data-title="First React macro"]');
+    assert.equal(await defaultMacroBlock.count(), 1);
+    assert(((await defaultMacroBlock.textContent()) ?? "").includes("const macroRoute = 'first';"));
+    assert(await defaultMacroBlock.locator(".token").count());
 
     const annotations = await firstBlock.evaluate((section) => {
       const lines = [...section.querySelectorAll(".ferriki-highlight-line[data-ln]")];
@@ -237,21 +263,38 @@ async function main() {
         "const route = 'second';",
       ),
     );
+    const customMacroBlock = page.locator('[data-code-route="second-react-macro"]');
+    assert.equal(await customMacroBlock.locator("h2").textContent(), "Second React macro");
+    const customMacroSource =
+      (await customMacroBlock.locator(".rendered-code").textContent()) ?? "";
+    assert(customMacroSource.includes("const macroRoute = 'second';"));
+    assert.equal(await customMacroBlock.locator("pre[class*='ferriki-themes-']").count(), 1);
     const stylesBeforeHmr = (await page.locator("style").allTextContents()).join("\n");
 
     const oldLiteral = "\"const route = 'second';\\nconsole.log(route);\"";
     const newLiteral =
       "\"throw new TypeError('updated route'); // HMR adds a comment\\nconsole.log(503);\"";
+    const oldReactSource = "source={`const macroRoute = 'second';\\nconsole.log(macroRoute);`}";
+    const newReactSource =
+      "source={`throw new TypeError('updated macro route'); // HMR adds a comment\\nconsole.log(504);`}";
     assert(
       secondSourceBefore.includes(oldLiteral),
       "the fixture source no longer has its expected HMR input",
     );
-    const secondSourceAfter = secondSourceBefore.replace(oldLiteral, newLiteral);
+    assert(
+      secondSourceBefore.includes(oldReactSource),
+      "the React Code macro source changed unexpectedly",
+    );
+    const secondSourceAfter = secondSourceBefore
+      .replace(oldLiteral, newLiteral)
+      .replace(oldReactSource, newReactSource);
     assert.notEqual(secondSourceAfter, secondSourceBefore);
     await writeFile(secondRoutePath, secondSourceAfter);
     await page.waitForFunction(
       () =>
-        document.querySelector('[data-code-route="second"]')?.textContent.includes("updated route"),
+        document
+          .querySelector('[data-code-route="second-react-macro"]')
+          ?.textContent.includes("updated macro route"),
       undefined,
       { timeout: 15_000 },
     );
@@ -291,13 +334,18 @@ async function main() {
       await page.evaluate(() => window.__copiedCode),
       "throw new TypeError('updated route'); // HMR adds a comment\nconsole.log(503);",
     );
+    await customMacroBlock.locator("[data-copy-code]").click();
+    assert.equal(
+      await page.evaluate(() => window.__copiedCode),
+      "throw new TypeError('updated macro route'); // HMR adds a comment\nconsole.log(504);",
+    );
     assert.deepEqual(clientWarnings, [], "navigation or HMR emitted a browser warning or error");
 
     const output = await build({
       configFile: false,
       root: project,
       plugins: [ferriki(options)],
-      esbuild: { jsx: "transform", jsxFactory: "React.createElement" },
+      esbuild: { jsx: "automatic" },
       logLevel: "silent",
       build: { write: false, minify: false },
     });

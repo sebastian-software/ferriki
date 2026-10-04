@@ -3,7 +3,7 @@ import { loadFerrikiNativeBinding } from "./native.mjs";
 let nativeBinding;
 
 /**
- * Find direct, statically evaluable `code` calls and their imports.
+ * Find static `code` calls, React `Code` elements and their imports.
  * The native scanner owns JavaScript/TypeScript binding and shadow analysis;
  * this Node-only entry deliberately stays outside the browser macro entry.
  *
@@ -47,7 +47,10 @@ export function findInlineCodeMacros(source, filename = "<source>") {
       typeof call.code !== "string" ||
       typeof call.language !== "string" ||
       (call.meta != null && typeof call.meta !== "string") ||
-      (call.lineNumbers != null && typeof call.lineNumbers !== "boolean")
+      (call.lineNumbers != null && typeof call.lineNumbers !== "boolean") ||
+      (call.kind != null && call.kind !== "react") ||
+      (call.component != null &&
+        (call.kind !== "react" || typeof call.component !== "string" || !call.component))
     ) {
       throw new Error("Ferriki's native inline macro scanner returned an invalid call record");
     }
@@ -67,9 +70,11 @@ export function findInlineCodeMacros(source, filename = "<source>") {
 }
 
 function hasMacroModuleCandidate(source) {
-  const moduleName = "@ferriki/core/macro";
-  if (source.includes(moduleName)) return true;
-  return source.includes("\\") && normalizeSourceEscapes(source).includes(moduleName);
+  const moduleNames = ["@ferriki/core/macro", "@ferriki/core/react/macro"];
+  if (moduleNames.some((moduleName) => source.includes(moduleName))) return true;
+  if (!source.includes("\\")) return false;
+  const normalized = normalizeSourceEscapes(source);
+  return moduleNames.some((moduleName) => normalized.includes(moduleName));
 }
 
 function normalizeSourceEscapes(source) {

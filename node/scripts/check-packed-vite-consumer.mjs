@@ -89,6 +89,7 @@ try {
         "hast-util-from-html@2.0.3",
         "hast-util-to-html@9.0.5",
         "magic-string@0.30.21",
+        "@types/react@19.3.0",
         "react@19.3.0",
         "react-dom@19.3.0",
       ],
@@ -108,6 +109,8 @@ try {
         coreTarball,
         sidecarTarball,
         viteTarballPath,
+        "hast-util-from-html@2.0.3",
+        "@types/react@19.3.0",
         "react@19.3.0",
         "react-dom@19.3.0",
       ],
@@ -147,10 +150,20 @@ try {
       [
         "import React from 'react'",
         "import { code } from '@ferriki/core/macro'",
+        "import { Code } from '@ferriki/core/react/macro'",
         "",
         `export const block = code("const exact = '& <SSR>';\\nconsole.log(exact);", { language: 'ts', meta: 'title=\"SSR Fixture\" [packed] {2}', lineNumbers: true })`,
         "export function CodeExample() {",
         "  return React.createElement('section', { 'data-original': block.code }, React.createElement('div', { dangerouslySetInnerHTML: { __html: block.html } }))",
+        "}",
+        "function CustomCodeBlock({ code }) {",
+        "  return React.createElement('section', { 'data-react-code': code.code, dangerouslySetInnerHTML: { __html: code.html } })",
+        "}",
+        "export function DefaultCodeMacroExample() {",
+        "  return <Code language='ts' source={`const packedDefault = 'react';\\nconsole.log(packedDefault);`} meta='title=\"Default macro\"' lineNumbers />",
+        "}",
+        "export function CustomCodeMacroExample() {",
+        "  return <Code language='ts' source={`const packedCustom = 'react';\\nconsole.log(packedCustom);`} meta='title=\"Custom macro\"' lineNumbers component={CustomCodeBlock} />",
         "}",
         "",
       ].join("\n"),
@@ -165,13 +178,16 @@ import { readFile } from 'node:fs/promises'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { build, createServer } from 'vite'
+import { fromHtml } from 'hast-util-from-html'
 import { ferriki } from '@ferriki/vite'
 import { ferrikiVersion } from '@ferriki/core'
 
 const project = ${JSON.stringify(project)}
 assert(ferrikiVersion(), 'packed Ferriki native binding did not load')
 const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
-const jsxConfig = { jsx: 'transform', jsxFactory: 'Object.createElement' }
+function hastText(node) { return node.type === 'text' ? node.value : (node.children ?? []).map(hastText).join('') }
+function hastProperty(node, name) { if (node.type === 'element' && node.properties?.[name] !== undefined) return node.properties[name]; for (const child of node.children ?? []) { const value = hastProperty(child, name); if (value !== undefined) return value } }
+const jsxConfig = { jsx: 'automatic', jsxDev: false }
 const plugin = ferriki(options)
 const server = await createServer({ configFile: false, root: project, plugins: [plugin], esbuild: jsxConfig, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, fs: { allow: [project] } }, appType: 'custom' })
 try {
@@ -187,6 +203,15 @@ try {
   assert.deepEqual(ssrModule.block.metadata, { title: 'SSR Fixture', label: 'packed', lineNumbers: true, highlightedLines: [2] })
   assert(ssrMarkup.includes(ssrModule.block.html), 'React SSR did not preserve the macro HTML through dangerouslySetInnerHTML')
   assert.match(ssrModule.block.css, /ferriki-style-[a-f0-9]{64}/, 'the packed macro omitted its generated styles')
+  const defaultCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.DefaultCodeMacroExample))
+  const defaultCodeTree = fromHtml(defaultCodeMarkup, { fragment: true })
+  assert(hastText(defaultCodeTree).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'the default React Code macro did not render source in SSR')
+  assert(defaultCodeMarkup.includes('data-title="Default macro"'), 'the default React Code macro omitted metadata in SSR')
+  const customCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.CustomCodeMacroExample))
+  const customCodeTree = fromHtml(customCodeMarkup, { fragment: true })
+  assert.equal(hastProperty(customCodeTree, 'dataReactCode'), "const packedCustom = 'react';\\nconsole.log(packedCustom);")
+  assert(hastText(customCodeTree).includes("const packedCustom = 'react';\\nconsole.log(packedCustom);"), 'the custom React Code macro did not render its prepared HTML in SSR')
+  assert(customCodeMarkup.includes('data-title="Custom macro"'), 'the custom React Code macro omitted metadata in SSR')
 } finally {
   await server.close()
 }
@@ -201,7 +226,7 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
       stdio: "pipe",
       env: { FERRIKI_PLATFORM_ID: platformId },
     });
-    const typeProbe = join(consumer, "packed-vite-types.mts");
+    const typeProbe = join(consumer, "packed-vite-types.tsx");
     await writeFile(
       typeProbe,
       [
@@ -209,6 +234,7 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "import type { ShikiTransformer } from '@ferriki/core'",
         "import { code } from '@ferriki/core/macro'",
         "import type { FerrikiCodeOptions, PreparedCodeBlock } from '@ferriki/core/macro'",
+        "import { Code } from '@ferriki/core/react/macro'",
         "import { findInlineCodeMacros } from '@ferriki/core/macro-transform'",
         "import type { InlineCodeMacroPlan } from '@ferriki/core/macro-transform'",
         "import type { Plugin } from 'vite'",
@@ -222,10 +248,28 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "})",
         "const macroOptions: FerrikiCodeOptions = { language: 'ts', meta: 'title=Packed', lineNumbers: true }",
         "const prepared: PreparedCodeBlock = code('const packed = true', macroOptions)",
+        "const CustomCodeBlock = ({ code }: { code: PreparedCodeBlock }) => null",
+        "const defaultCodeElement = <Code language='ts' source={`const packedDefault = true`} meta='title=Default' lineNumbers />",
+        "const customCodeElement = <Code language='ts' source={`const packedCustom = true`} component={CustomCodeBlock} />",
+        "// @ts-expect-error React Code requires a source string.",
+        "const missingSource = <Code language='ts' />",
+        "// @ts-expect-error React Code does not accept children.",
+        "const withChildren = <Code language='ts' source='const child = true'>child</Code>",
+        "// @ts-expect-error unknown JSX properties are rejected.",
+        "const unknownProperty = <Code language='ts' source='const property = true' unsupported />",
+        "const RequiresExtraProp = ({ code, required }: { code: PreparedCodeBlock; required: true }) => null",
+        "// @ts-expect-error custom components may only require the prepared code prop.",
+        "const componentWithRequiredProp = <Code language='ts' source='const component = true' component={RequiresExtraProp} />",
         "const highlightedLines: readonly number[] = prepared.metadata.highlightedLines",
         "const plan: InlineCodeMacroPlan = findInlineCodeMacros(\"import { code } from '@ferriki/core/macro'; code('const packed = true', { language: 'ts' })\")",
         "const firstCall: InlineCodeMacroPlan['calls'][number] | undefined = plan.calls[0]",
         "void highlightedLines",
+        "void defaultCodeElement",
+        "void customCodeElement",
+        "void missingSource",
+        "void withChildren",
+        "void unknownProperty",
+        "void componentWithRequiredProp",
         "void firstCall",
         "void plugin",
         "",
@@ -241,6 +285,8 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "NodeNext",
         "--moduleResolution",
         "NodeNext",
+        "--jsx",
+        "react-jsx",
         "--target",
         "ES2022",
         "--skipLibCheck",

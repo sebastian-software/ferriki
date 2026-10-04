@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "hast-util-from-html": "2.0.3",
     "playwright": "1.63.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

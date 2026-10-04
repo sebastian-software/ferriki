@@ -8,7 +8,7 @@ import { toHtml } from "hast-util-to-html";
 import MagicString from "magic-string";
 
 const VIRTUAL_CSS_PREFIX = "virtual:ferriki-vite/";
-const MACRO_MODULE = "@ferriki/core/macro";
+const MACRO_MODULES = new Set(["@ferriki/core/macro", "@ferriki/core/react/macro"]);
 const LINE_CSS = [
   ".ferriki-highlight-line[data-ln]::before{content:attr(data-ln);display:inline-block;min-width:2.5em;margin-right:1.5em;padding-right:.75em;text-align:right;opacity:.55}",
   ".ferriki-highlight-line.highlighted{background:color-mix(in srgb,currentColor 10%,transparent)}",
@@ -204,7 +204,7 @@ export function ferriki(options = {}) {
           result.magic.overwrite(
             byteToIndex(call.start),
             byteToIndex(call.end),
-            safeJsLiteral(descriptor),
+            lowerMacroCall(call, descriptor),
           );
           if (descriptorCss) macroCss.add(descriptorCss);
           macroChanged = true;
@@ -530,7 +530,12 @@ function visitAst(node, visit) {
 }
 
 function hasMacroModuleReference(source) {
-  if (!source.includes(MACRO_MODULE) && !source.includes("\\")) return false;
+  if (
+    !source.includes("@ferriki/core/macro") &&
+    !source.includes("@ferriki/core/react/macro") &&
+    !source.includes("\\")
+  )
+    return false;
 
   let ast;
   try {
@@ -601,12 +606,19 @@ function hasMacroModuleReference(source) {
 }
 
 function isMacroModuleSpecifier(node) {
-  if (node?.type === "StringLiteral") return node.value === MACRO_MODULE;
+  if (node?.type === "StringLiteral") return MACRO_MODULES.has(node.value);
   return (
     node?.type === "TemplateLiteral" &&
     node.expressions.length === 0 &&
-    node.quasis[0]?.value.cooked === MACRO_MODULE
+    MACRO_MODULES.has(node.quasis[0]?.value.cooked)
   );
+}
+
+function lowerMacroCall(call, descriptor) {
+  if (call.kind !== "react") return safeJsLiteral(descriptor);
+  return typeof call.component === "string"
+    ? `<${call.component} code={${safeJsLiteral(descriptor)}} />`
+    : `<div dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`;
 }
 
 function jsxName(node) {

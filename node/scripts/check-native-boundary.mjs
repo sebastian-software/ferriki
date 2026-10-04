@@ -11,7 +11,7 @@ const packageJson = JSON.parse(await readFile(join(packageRoot, "package.json"),
 
 assert.deepEqual(
   Object.keys(packageJson.exports).sort(),
-  [".", "./macro", "./macro-transform", "./package.json"],
+  [".", "./macro", "./macro-transform", "./package.json", "./react/macro"],
   "Ferriki exposes the high-level API, explicit macro/build entries and package metadata; the native loader stays internal",
 );
 

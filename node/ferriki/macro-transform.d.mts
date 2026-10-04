@@ -7,6 +7,10 @@ export interface InlineCodeMacroCall {
   readonly language: string;
   readonly meta?: string | null;
   readonly lineNumbers?: boolean | null;
+  /** Present only for the React `Code` macro. */
+  readonly kind?: "react";
+  /** Canonical JSX component name, when explicitly provided. */
+  readonly component?: string;
 }
 
 export interface InlineCodeMacroImport {

@@ -251,3 +251,11 @@ owned call/import plans and UTF-8 spans. These entries add no runtime browser
 highlighter or token/HAST output. The contract and supported inline syntax are
 in [ADR 0018](../adr/0018-inline-highlighting-macros.md) and the
 [macro guide](inline-code-macros.md). Root render outputs stay unchanged.
+
+`@ferriki/core/react/macro` adds the optional `Code` JSX marker. Its required
+`source` and `language` and optional `meta` and `lineNumbers` attributes are
+literal-only. Elements are self-closing and accept no children. An optional
+`component` reference receives the same prepared descriptor as its `code` prop;
+the default renders a container with the prepared HTML. The marker and import
+are erased before React's JSX transform. React is only required by consumers
+of this entry's type declarations and generated JSX, not by the core runtime.

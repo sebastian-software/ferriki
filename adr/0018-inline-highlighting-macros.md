@@ -24,6 +24,18 @@ application JavaScript during a transform.
   only the marker and types; it imports no native binding, highlighter or asset
   transport. Executing an unprocessed marker throws an actionable error asking
   the author to configure the build integration.
+- `@ferriki/core/react/macro` exports the optional React JSX marker `Code`.
+  Its required `source` attribute accepts the same direct string or cooked
+  template literal as `code()`. It requires static `language` and accepts
+  static `meta` and `lineNumbers`. It accepts only self-closing JSX elements;
+  children, spreads, duplicate attributes and unsupported attributes fail
+  compilation. The entry contains no React runtime import or native loader;
+  only its declarations refer to React types. No separate npm package is needed.
+- OXC resolves `Code` imports by symbol identity before JSX lowering. Vite
+  replaces each element with a `div` containing the prepared HTML, or with
+  the JSX component reference supplied as `component`, receiving the existing
+  descriptor in its `code` prop. Component references are identifiers or
+  JSX member expressions. They are not evaluated during compilation.
 - Code is a directly supplied string literal or cooked template literal with
   no interpolations. Options are an object literal with required `language`
   and optional `meta` and `lineNumbers` literals. Dynamic values, identifier or
@@ -80,6 +92,8 @@ application JavaScript during a transform.
   Ferriki output.
 
 ## History
+
+- 2026-10-04: Added the native React `Code` macro with a literal `source` attribute and optional presentation component.
 
 - 2026-10-04: Shortened the unreleased marker export to `code`; no compatibility alias is retained.
 
