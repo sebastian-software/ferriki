@@ -10,8 +10,6 @@ const required = [
   join(pkgDir, "native.mjs"),
   join(pkgDir, "macro.mjs"),
   join(pkgDir, "macro.d.mts"),
-  join(pkgDir, "macro-transform.mjs"),
-  join(pkgDir, "macro-transform.d.mts"),
   join(pkgDir, "react-macro.mjs"),
   join(pkgDir, "react-macro.d.mts"),
   join(pkgDir, "src", "api.mts"),

@@ -58,9 +58,9 @@ other adapters remain out of scope unless accepted in a future product
 decision.
 
 The optional Vite adapter also processes explicitly imported inline code macros
-under [ADR 0018](0018-inline-highlighting-macros.md). Macro recognition uses
-shared native analysis; Vite owns source edits, CSS delivery and HMR. This
-does not add file/data evaluation or dynamic runtime highlighting.
+under [ADR 0018](0018-inline-highlighting-macros.md). Vite owns macro
+recognition, source edits, CSS delivery and HMR. This does not add file/data
+evaluation or dynamic runtime highlighting.
 
 ## Consequences
 
@@ -89,3 +89,4 @@ does not add file/data evaluation or dynamic runtime highlighting.
 - 2026-10-03: Updates adapter boundaries for the HTML-only public Node output contract (#207).
 
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
+- 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).

@@ -188,7 +188,7 @@ An unprocessed marker throws an actionable integration error.
 
 Server rendering, hydration, navigation and HMR use the same prepared HTML/CSS
 path as `code()`. The macro import is removed from transformed application
-modules, so the browser does not load it or the native build-time scanner.
+modules, so the browser does not load it or any build-time macro code.
 
 ## Supported function inputs
 
@@ -239,22 +239,11 @@ on their existing Ferromark compiler path.
 
 ## Other build hosts
 
-The native scanner is shared through the Node-only
-`@ferriki/core/macro-transform` entry. `findInlineCodeMacros(source, filename)`
-validates inline calls and React `Code` elements and returns call/import edits
-with UTF-8 byte spans. React records have `kind: "react"` and an optional
-`presentation` array in authored attribute order. Each entry names `render`
-or `className` and identifies its expression with UTF-8 byte spans. Quoted JSX
-`className` entries also contain the decoded `literal` value. A host preserves
-those runtime expressions, invokes the renderer with the prepared descriptor
-and optional class, or emits the default HTML container. Nested macro edits
-must survive when the host lowers an enclosing renderer.
-Custom adapters must prepare HTML through the supported highlighter, translate
-byte spans to their editor's offsets, preserve source maps and deliver the same
-prepared data and CSS on server and client. The scanner does not render HTML,
-resolve imported source values or execute application code.
-
-The macro runtime entry and this build-only entry are deliberately separate.
+Macro recognition is part of `@ferriki/vite`. `@ferriki/core` ships no macro
+scanner; the former build-only `@ferriki/core/macro-transform` entry and its
+`findInlineCodeMacros` function were removed without a compatibility alias.
+Custom adapters must prepare HTML through the supported highlighter, preserve
+source maps and deliver the same prepared data and CSS on server and client.
 See [ADR 0018](../adr/0018-inline-highlighting-macros.md) for ownership and the
 inline-only boundary.
 

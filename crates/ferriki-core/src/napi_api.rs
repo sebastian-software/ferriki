@@ -10,15 +10,6 @@ use serde_json::Value;
 
 use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 
-/// Semantically analyzes static inline `code` calls and React `Code` elements.
-#[napi(js_name = "scanInlineCodeMacros")]
-pub fn scan_inline_code_macros(source: String, filename: String) -> Result<String> {
-    let scan =
-        ferriki_macro::scan_inline_code_macros(&source, &filename).map_err(Error::from_reason)?;
-    serde_json::to_string(&scan)
-        .map_err(|error| Error::from_reason(format!("Failed to serialize macro scan: {error}")))
-}
-
 #[napi]
 pub struct FerrikiHighlighter {
     core: RefCell<HighlighterCore>,

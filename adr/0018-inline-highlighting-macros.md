@@ -31,7 +31,7 @@ application JavaScript during a transform.
   children, spreads, duplicate attributes and unsupported attributes fail
   compilation. The entry contains no React runtime import or native loader;
   only its declarations refer to React types. No separate npm package is needed.
-- OXC resolves `Code` imports by symbol identity before JSX lowering. Vite
+- `Code` imports are resolved by symbol identity before JSX lowering. Vite
   replaces each element with a `div` containing the prepared HTML. Optional
   `className` applies to that outer container and accepts a string or runtime
   expression. An optional runtime `render` function instead receives
@@ -50,17 +50,14 @@ application JavaScript during a transform.
   fail compilation. A call inside a loop is valid when its inputs are inline.
   Cooked values containing unpaired UTF-16 surrogates fail with diagnostics;
   the native UTF-8 contract must not silently alter original source.
-- The private `ferriki-macro` Rust crate uses OXC parsing and semantic binding
-  resolution. Named marker imports, aliases and lexical shadowing are checked
-  by identity. Unrelated functions are left alone. Escaping the real marker
-  binding or unsupported import/call forms produces diagnostics.
-- The N-API host exposes that analysis through the build-only
-  `@ferriki/core/macro-transform` entry. `findInlineCodeMacros` returns validated
-  calls and import edits with UTF-8 byte spans. This is a source-transform
-  contract, not a token/HAST rendering result. React presentation entries
-  preserve runtime expression byte spans and quoted class-name values; hosts
-  retain nested edits while lowering enclosing callbacks. OXC types remain
-  internal.
+- `@ferriki/vite` recognizes macros by walking the ESTree that the host's
+  parser produces. Named marker imports, aliases and lexical shadowing are
+  checked by identity. Unrelated functions are left alone. Escaping the real
+  marker binding or unsupported import/call forms produces diagnostics.
+- `@ferriki/core` exposes no macro analysis. The native scanner and its
+  build-only `@ferriki/core/macro-transform` entry (`findInlineCodeMacros`)
+  were removed without a compatibility alias (#216): the scanner made up 29.5%
+  of the linux-x64 addon, which every highlighting consumer installs.
 - Vite applies the edits with source maps and prepares each validated call
   using its existing reusable Ferriki highlighter, asset cache, themes, style
   mode and JavaScript transformer pipeline. Host-specific module IDs, virtual
@@ -90,8 +87,9 @@ application JavaScript during a transform.
 - The core macro subpath is safe to import in a browser but is not a browser
   highlighting runtime. Missing integration fails clearly instead of changing
   output between server and client.
-- The shared scanner is built into the private N-API host. The published Rust
-  highlighter does not acquire OXC dependencies or a macro API.
+- Macro recognition is not built into the N-API host. Neither the addon nor
+  the published Rust highlighter acquires JavaScript parser dependencies or a
+  macro API.
 - CSS delivery, exact source copying, source maps, import identity, hydration,
   navigation and HMR are checked at their respective compiler/consumer
   boundaries. Package tests exercise the real packed core, sidecar and Vite
@@ -102,6 +100,8 @@ application JavaScript during a transform.
   Ferriki output.
 
 ## History
+
+- 2026-10-04: Removed the native OXC scanner and the `@ferriki/core/macro-transform` entry; `@ferriki/vite` recognizes macros over the host parser's ESTree (#216).
 
 - 2026-10-04: Replaced the unreleased React `component` prop with an explicit runtime `render` function and added `className` for the default container or renderer.
 

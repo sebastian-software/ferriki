@@ -55,9 +55,10 @@ still applies.
   and collapsible supporting blocks belong to the renderer or consuming page;
   they add no Rust highlighter API.
 
-The private `ferriki-macro` crate owns OXC-based inline macro analysis. It is
-used only by the N-API build-tool entry and is not a dependency or semver
-surface of the three published Rust crates ([ADR 0018](0018-inline-highlighting-macros.md)).
+Inline macro recognition is not part of the Rust workspace: `@ferriki/vite`
+performs it, so neither the N-API host nor the three published Rust crates
+depend on a JavaScript parser or expose a macro API
+([ADR 0018](0018-inline-highlighting-macros.md)).
 
 ### Release
 
@@ -123,3 +124,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-10-04: Records Ferromark 3.1.0's published JSX and Node compiler with Ferriki 0.10.0; keeps the 3.0.0 Rust integration as historical context.
 
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
+- 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).

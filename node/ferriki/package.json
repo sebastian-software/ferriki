@@ -29,8 +29,6 @@
     "classes.mjs",
     "index.d.mts",
     "index.mjs",
-    "macro-transform.d.mts",
-    "macro-transform.mjs",
     "macro.d.mts",
     "macro.mjs",
     "native.mjs",
@@ -55,10 +53,6 @@
     "./macro": {
       "types": "./macro.d.mts",
       "default": "./macro.mjs"
-    },
-    "./macro-transform": {
-      "types": "./macro-transform.d.mts",
-      "default": "./macro-transform.mjs"
     },
     "./react/macro": {
       "types": "./react-macro.d.mts",
