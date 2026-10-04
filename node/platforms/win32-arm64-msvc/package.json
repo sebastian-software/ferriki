@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/win32-arm64-msvc",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Ferriki native addon for Windows arm64 with MSVC",
   "license": "MIT OR Apache-2.0",
   "repository": {

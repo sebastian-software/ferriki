@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.0](https://github.com/sebastian-software/ferriki/compare/v0.10.0...v0.11.0) (2026-10-04)
+
+
+### Features
+
+* add static-source React Code macro ([#214](https://github.com/sebastian-software/ferriki/issues/214)) ([eecbda2](https://github.com/sebastian-software/ferriki/commit/eecbda28dd7f1bd7a960fcc173f4fa6e6cd59611))
+* prepare inline highlighting macros at build time ([#212](https://github.com/sebastian-software/ferriki/issues/212)) ([a6f09a4](https://github.com/sebastian-software/ferriki/commit/a6f09a47b37a8bdcbba2a8baa19bb192dab9eff6))
+* support React macro render functions and className ([#215](https://github.com/sebastian-software/ferriki/issues/215)) ([778f2ee](https://github.com/sebastian-software/ferriki/commit/778f2eefdd79e254cfdefb9f2dbd7b7ac418d3cd))
+
+
+### Bug Fixes
+
+* **ci:** keep fuzz releases pinned and publish Vite tarballs ([#209](https://github.com/sebastian-software/ferriki/issues/209)) ([e0e05c8](https://github.com/sebastian-software/ferriki/commit/e0e05c8f378e5afffa95159a6125c11044aae163))
+
 ## [0.10.0](https://github.com/sebastian-software/ferriki/compare/v0.9.0...v0.10.0) (2026-10-03)
 
 
