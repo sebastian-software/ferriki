@@ -224,6 +224,7 @@ const prepared = ferrikiCode(code, { language: "ts" });`;
     for (const dynamicRequire of [
       "require(`@ferriki/core/macro`);",
       "require('@ferriki/core/macro', 'extra');",
+      "require?.('@ferriki/core/macro');",
     ]) {
       await expect(
         transformJsx(ferriki({ theme: "github-dark-default" }), dynamicRequire, "/src/require.ts"),

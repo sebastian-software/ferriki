@@ -579,7 +579,7 @@ function hasMacroModuleReference(source) {
       return;
     }
     if (
-      node.type === "CallExpression" &&
+      (node.type === "CallExpression" || node.type === "OptionalCallExpression") &&
       node.callee?.type === "Identifier" &&
       node.callee.name === "require" &&
       node.arguments.length > 0 &&
