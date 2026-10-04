@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Context
 
@@ -45,11 +45,10 @@ still applies.
 - Ferriki emits escaped, balanced line fragments for composable Markdown
   rendering. Ferromark owns code block structure, metadata, and fallback.
   The adapter belongs in Ferromark or a separate adapter crate, not Ferriki.
-- Published Ferromark 3.0.0 exposes its optional Ferriki adapter, pinned to
-  `ferriki` 0.7.0. Consumers can implement the generic Ferromark hook with a
-  current Ferriki API without changing Ferriki's Rust API. Open Ferromark
-  PR #502 separately adds framework-neutral JSX and Node compile support for
-  a planned Ferromark 3.1 release.
+- Published Ferromark 3.1.0 adds framework-neutral JSX output and Node compile
+  support for Markdown fences. Its optional Rust adapter uses `ferriki` 0.10.0,
+  and its Node integration uses `@ferriki/core` 0.10.0. Ferromark 3.0.0 remains
+  the earlier Rust adapter release against `ferriki` 0.7.0.
 - Ferromark remains the owner of Markdown fence annotations, including its
   VitePress-style focus, highlight, and diff line behavior. Node code-comment
   transformers do not run on the Rust path. Word-level styles, copy controls,
@@ -117,3 +116,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-10-02: Add `@ferriki/vite` to the shared version and release, with a one-time npm Trusted Publishing bootstrap.
 - 2026-10-03: Clarifies Ferromark fence annotations, its published Ferriki 0.7.0 integration, and keeps Node comment transformers and page presentation outside the Rust API (#166).
 - 2026-10-03: Include the separate fuzz lockfile's local crate versions in generated release candidates; pack the Vite tarball with pnpm and publish it explicitly with npm.
+- 2026-10-04: Records Ferromark 3.1.0's published JSX and Node compiler with Ferriki 0.10.0; keeps the 3.0.0 Rust integration as historical context.

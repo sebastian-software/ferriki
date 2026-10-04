@@ -17,6 +17,15 @@
   :root:not(.dark) {
     --ardo-color-codeBg: #fff;
   }
+
+  :root:not(.dark) .ardo-shiki .line.highlighted {
+    background: color-mix(in oklch, var(--ardo-color-brand) 3%, transparent);
+  }
+}
+
+/* Keep native token colors legible while the line border marks highlights. */
+.light .ardo-shiki .line.highlighted {
+  background: color-mix(in oklch, var(--ardo-color-brand) 3%, transparent);
 }
 
 .class-demo {
