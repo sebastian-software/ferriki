@@ -49,8 +49,8 @@ export function findInlineCodeMacros(source, filename = "<source>") {
       (call.meta != null && typeof call.meta !== "string") ||
       (call.lineNumbers != null && typeof call.lineNumbers !== "boolean") ||
       (call.kind != null && call.kind !== "react") ||
-      (call.component != null &&
-        (call.kind !== "react" || typeof call.component !== "string" || !call.component))
+      (call.presentation != null &&
+        (call.kind !== "react" || !validPresentationProps(call.presentation, call)))
     ) {
       throw new Error("Ferriki's native inline macro scanner returned an invalid call record");
     }
@@ -67,6 +67,28 @@ export function findInlineCodeMacros(source, filename = "<source>") {
     }
   }
   return plan;
+}
+
+function validPresentationProps(props, call) {
+  if (!Array.isArray(props)) return false;
+  const seen = new Set();
+  let previousEnd = call.start;
+  for (const prop of props) {
+    if (
+      !["render", "className"].includes(prop?.name) ||
+      seen.has(prop.name) ||
+      !Number.isInteger(prop.start) ||
+      !Number.isInteger(prop.end) ||
+      prop.start < previousEnd ||
+      prop.end <= prop.start ||
+      prop.end > call.end ||
+      (prop.literal != null && (prop.name !== "className" || typeof prop.literal !== "string"))
+    )
+      return false;
+    seen.add(prop.name);
+    previousEnd = prop.end;
+  }
+  return true;
 }
 
 function hasMacroModuleCandidate(source) {

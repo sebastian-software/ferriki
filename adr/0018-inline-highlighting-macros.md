@@ -32,10 +32,17 @@ application JavaScript during a transform.
   compilation. The entry contains no React runtime import or native loader;
   only its declarations refer to React types. No separate npm package is needed.
 - OXC resolves `Code` imports by symbol identity before JSX lowering. Vite
-  replaces each element with a `div` containing the prepared HTML, or with
-  the JSX component reference supplied as `component`, receiving the existing
-  descriptor in its `code` prop. Component references are identifiers or
-  JSX member expressions. They are not evaluated during compilation.
+  replaces each element with a `div` containing the prepared HTML. Optional
+  `className` applies to that outer container and accepts a string or runtime
+  expression. An optional runtime `render` function instead receives
+  `{ code: PreparedCodeBlock, className?: string }`; consumers explicitly
+  forward props in ordinary JSX. It accepts no JSX-element shorthand. An absent
+  or `undefined` renderer retains the default output, while a callback
+  returning `null` or `undefined` retains its result. Presentation expressions
+  are evaluated once in authored attribute order when the JSX element is created,
+  never during compilation. A stable generated module-local React component
+  defers callback invocation until React renders that element. The unreleased
+  `component` prop is replaced without an alias.
 - Code is a directly supplied string literal or cooked template literal with
   no interpolations. Options are an object literal with required `language`
   and optional `meta` and `lineNumbers` literals. Dynamic values, identifier or
@@ -50,7 +57,10 @@ application JavaScript during a transform.
 - The N-API host exposes that analysis through the build-only
   `@ferriki/core/macro-transform` entry. `findInlineCodeMacros` returns validated
   calls and import edits with UTF-8 byte spans. This is a source-transform
-  contract, not a token/HAST rendering result. OXC types remain internal.
+  contract, not a token/HAST rendering result. React presentation entries
+  preserve runtime expression byte spans and quoted class-name values; hosts
+  retain nested edits while lowering enclosing callbacks. OXC types remain
+  internal.
 - Vite applies the edits with source maps and prepares each validated call
   using its existing reusable Ferriki highlighter, asset cache, themes, style
   mode and JavaScript transformer pipeline. Host-specific module IDs, virtual
@@ -92,6 +102,8 @@ application JavaScript during a transform.
   Ferriki output.
 
 ## History
+
+- 2026-10-04: Replaced the unreleased React `component` prop with an explicit runtime `render` function and added `className` for the default container or renderer.
 
 - 2026-10-04: Added the native React `Code` macro with a literal `source` attribute and optional presentation component.
 

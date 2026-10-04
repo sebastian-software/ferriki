@@ -82,14 +82,19 @@ React consumers can instead import `Code` from `@ferriki/core/react/macro`:
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
 
-<Code language="ts" source={`const answer = 42;`} />;
+<Code className="example-code" language="ts" source={`const answer = 42;`} />;
 ```
 
 Place Ferriki before the React plugin. The self-closing marker requires literal
 `source` and `language`; optional `meta` and `lineNumbers` are also static.
-For a custom presentation, `component={MyCodeBlock}` receives the same prepared
-descriptor in its `code` prop. Children, spreads and other attributes are
-unsupported. The macro import and element are replaced before React lowers JSX.
+Optional `className` accepts a string or runtime expression and styles the
+default outer `div`. For custom presentation, use
+`render={(props) => <MyCodeBlock {...props} />}`. The callback receives the
+prepared descriptor as `code` and, when supplied, `className`; prop forwarding
+is explicit. It runs during application rendering, not compilation. An absent
+or `undefined` renderer keeps the default output. Children, spreads on `Code`,
+and other attributes are unsupported. The macro import and element are
+replaced before React lowers JSX.
 
 The package requires Node.js 22.13 or newer and Vite 7 or 8. It shares Ferriki's
 release version and native asset settings. See the [Vite integration decision](https://github.com/sebastian-software/ferriki/blob/main/adr/0007-adapter-integrations-stay-outside-ferriki.md)

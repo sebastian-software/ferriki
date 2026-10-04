@@ -104,6 +104,7 @@ async function main() {
     });
     assert(initialMarkup.includes(firstModule.block.html));
     assert.match(initialMarkup, /data-title="First React macro"/);
+    assert.match(initialMarkup, /class="first-react-macro-class"/);
     assert(
       hastText(fromHtml(initialMarkup, { fragment: true })).includes("const macroRoute = 'first';"),
     );
@@ -112,8 +113,21 @@ async function main() {
     assert.match(firstModule.block.html, /<code\b/);
 
     const secondModule = await server.ssrLoadModule("/src/routes/second.jsx");
+    assert.equal(
+      secondModule.getRenderCalls(),
+      0,
+      "the render callback ran during module transformation",
+    );
     const secondMarkup = renderToString(React.createElement(secondModule.default));
+    assert.equal(
+      secondModule.getRenderCalls(),
+      1,
+      "the render callback did not run during React SSR",
+    );
     assert.match(secondMarkup, /data-code-route="second-react-macro"/);
+    assert.match(secondMarkup, /data-render-class="second-react-macro-class"/);
+    assert.match(secondMarkup, /data-render-title="Second React macro"/);
+    assert.match(secondMarkup, /class="second-react-macro-class"/);
     assert.match(secondMarkup, /<h2>Second React macro<\/h2>/);
     assert(
       hastText(fromHtml(secondMarkup, { fragment: true })).includes("const macroRoute = 'second';"),
@@ -191,6 +205,10 @@ async function main() {
     assert(await firstBlock.locator(".token").count());
     const defaultMacroBlock = page.locator('pre[data-title="First React macro"]');
     assert.equal(await defaultMacroBlock.count(), 1);
+    assert.equal(
+      await page.locator('.first-react-macro-class pre[data-title="First React macro"]').count(),
+      1,
+    );
     assert(((await defaultMacroBlock.textContent()) ?? "").includes("const macroRoute = 'first';"));
     assert(await defaultMacroBlock.locator(".token").count());
 
@@ -265,6 +283,32 @@ async function main() {
     );
     const customMacroBlock = page.locator('[data-code-route="second-react-macro"]');
     assert.equal(await customMacroBlock.locator("h2").textContent(), "Second React macro");
+    assert.equal(await customMacroBlock.getAttribute("class"), "second-react-macro-class");
+    assert.equal(
+      await customMacroBlock.getAttribute("data-render-class"),
+      "second-react-macro-class",
+    );
+    assert.equal(await customMacroBlock.getAttribute("data-render-title"), "Second React macro");
+    const rendererCounter = customMacroBlock.locator("[data-render-counter]");
+    assert.equal(await rendererCounter.textContent(), "0");
+    await rendererCounter.click();
+    assert.equal(await rendererCounter.textContent(), "1");
+    await page.locator("[data-render-class-toggle]").click();
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('[data-code-route="second-react-macro"]')
+          ?.getAttribute("data-render-class") === "second-react-macro-class-alternate",
+    );
+    assert.equal(
+      await customMacroBlock.getAttribute("class"),
+      "second-react-macro-class-alternate",
+    );
+    assert.equal(
+      await rendererCounter.textContent(),
+      "1",
+      "the renderer child remounted on parent rerender",
+    );
     const customMacroSource =
       (await customMacroBlock.locator(".rendered-code").textContent()) ?? "";
     assert(customMacroSource.includes("const macroRoute = 'second';"));
@@ -297,6 +341,11 @@ async function main() {
           ?.textContent.includes("updated macro route"),
       undefined,
       { timeout: 15_000 },
+    );
+    assert.equal(await customMacroBlock.getAttribute("class"), "second-react-macro-class");
+    assert.equal(
+      await customMacroBlock.getAttribute("data-render-class"),
+      "second-react-macro-class",
     );
 
     const after = await server.transformRequest("/src/routes/second.jsx");

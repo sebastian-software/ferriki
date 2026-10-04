@@ -73,6 +73,7 @@ catalogs:
     "@shikijs/vscode-textmate": ^10.0.2
     oniguruma-to-es: ^4.3.4
   testing:
+    "@jridgewell/trace-mapping": ^0.3.31
     fast-glob: ^3.3.3
     fs-extra: ^11.3.3
     vitest: ^3.2.4

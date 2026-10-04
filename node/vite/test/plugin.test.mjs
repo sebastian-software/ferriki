@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { parse } from "@babel/parser";
+import { originalPositionFor, TraceMap } from "@jridgewell/trace-mapping";
 import { fromHtml } from "hast-util-from-html";
-import { build, createServer } from "vite";
+import { build, createServer, transformWithEsbuild } from "vite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { finalCodeText, scrollCodeBlockFromKey } from "../../examples/code-authoring/copy.mjs";
@@ -56,6 +57,16 @@ function findJsx(node, name) {
   }
 }
 
+function findJsxNodes(node, name, found = []) {
+  if (!node || typeof node !== "object") return found;
+  if (node.type === "JSXElement" && jsxTagName(node.openingElement.name) === name) found.push(node);
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) value.forEach((child) => findJsxNodes(child, name, found));
+    else if (value && typeof value === "object") findJsxNodes(value, name, found);
+  }
+  return found;
+}
+
 function jsxTagName(node) {
   if (node?.type === "JSXIdentifier") return node.name;
   if (node?.type === "JSXMemberExpression")
@@ -74,6 +85,33 @@ function objectProperty(node, name) {
     (property) =>
       property.type === "ObjectProperty" && (property.key.name ?? property.key.value) === name,
   );
+}
+
+function findPreparedComponents(node, found = []) {
+  if (!node || typeof node !== "object") return found;
+  if (node.type === "JSXElement") {
+    const value = jsxProp(node, "code")?.value;
+    const code = value?.type === "JSXExpressionContainer" ? value.expression : undefined;
+    if (code?.type === "ObjectExpression" && objectProperty(code, "html")) found.push(node);
+  }
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) {
+      for (const child of value) findPreparedComponents(child, found);
+    } else if (value && typeof value === "object") {
+      findPreparedComponents(value, found);
+    }
+  }
+  return found;
+}
+
+function findPreparedBlocks(node) {
+  return findPreparedComponents(node).map(
+    (component) => jsxProp(component, "code").value.expression,
+  );
+}
+
+function findPreparedBlock(node) {
+  return findPreparedBlocks(node)[0];
 }
 
 function jsxText(node) {
@@ -198,11 +236,13 @@ function shadow(renderSnippet) { return renderSnippet("leave me alone", { langua
     expect(plugin.load(`\0${beforeId}`)).not.toBe(plugin.load(`\0${afterId}`));
   });
 
-  it("lowers React Code macros to default HTML and custom component JSX", async () => {
+  it("lowers React Code macros to HTML or named and inline render callbacks", async () => {
     const source = `const before = "🧪";
 import { Code as PrepareCode } from "@ferriki/core/react/macro";
 export const defaultBlock = <PrepareCode source={'const tag = "</script>";\\r\\n// λ'} language="ts" meta='title="Demo" [API] {1}' lineNumbers={false} />;
-export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} language="js" meta="showLineNumbers" lineNumbers={false} component={UI /* comment */ . CodeBlock} />;
+function renderNamed({ code, className }) { return <section className={className} dangerouslySetInnerHTML={{ __html: code.html }} />; }
+export const namedBlock = <PrepareCode source={\`console.log("named");\\n\`} language="js" render={renderNamed} />;
+export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} language="js" meta="showLineNumbers" lineNumbers={false} className={currentClassName()} render={({ code, ...props }) => <section {...props} data-language={code.language} dangerouslySetInnerHTML={{ __html: code.html }} />} />;
 export function shadow(PrepareCode) { return <PrepareCode source={getSource()} language="ts" />; }`;
     const plugin = ferriki({
       theme: "github-dark-default",
@@ -218,6 +258,9 @@ export function shadow(PrepareCode) { return <PrepareCode source={getSource()} l
     );
     const ast = parse(result.code, { sourceType: "module", plugins: ["jsx", "typescript"] });
     const fallback = findJsx(ast, "div");
+    expect(fallback.openingElement.attributes.map((attribute) => attribute.name.name)).toEqual([
+      "dangerouslySetInnerHTML",
+    ]);
     const fallbackHtml = jsxProp(fallback, "dangerouslySetInnerHTML").value.expression.properties[0]
       .value.value;
     const fallbackTree = fromHtml(fallbackHtml, { fragment: true });
@@ -241,12 +284,38 @@ export function shadow(PrepareCode) { return <PrepareCode source={getSource()} l
     ).toBeUndefined();
     expect(result.code).not.toContain("</script>");
 
-    const custom = findJsx(ast, "UI.CodeBlock");
-    const customDescriptor = jsxProp(custom, "code").value.expression;
+    const preparedComponents = findPreparedComponents(ast);
+    const preparedDescriptors = preparedComponents.map(
+      (component) => jsxProp(component, "code").value.expression,
+    );
+    expect(preparedDescriptors).toHaveLength(2);
+    const [namedDescriptor, customDescriptor] = preparedDescriptors;
+    expect(objectProperty(namedDescriptor, "code").value.value).toBe('console.log("named");\n');
     expect(objectProperty(customDescriptor, "code").value.value).toBe('console.log("custom");\n');
+    expect(objectProperty(customDescriptor, "language").value.value).toBe("js");
+    expect(
+      preparedComponents[0].openingElement.attributes.map((attribute) => attribute.name.name),
+    ).toEqual(["code", "render"]);
+    expect(
+      preparedComponents[1].openingElement.attributes.map((attribute) => attribute.name.name),
+    ).toEqual(["code", "className", "render"]);
+    const sections = findJsxNodes(ast, "section");
+    expect(sections).toHaveLength(2);
+    expect(
+      sections[1].openingElement.attributes.some(
+        (attribute) => attribute.type === "JSXSpreadAttribute",
+      ),
+    ).toBe(true);
+    expect(
+      sections[1].openingElement.attributes.some(
+        (attribute) => attribute.name?.name === "data-language",
+      ),
+    ).toBe(true);
+
     const customMetadata = objectProperty(customDescriptor, "metadata").value;
     expect(objectProperty(customMetadata, "lineNumbers").value.value).toBe(true);
     expect(objectProperty(customDescriptor, "css").value.value).toContain(".ferriki-style-");
+    expect(result.code).toContain("currentClassName()");
     const cssId = /import "(virtual:ferriki-vite\/[^"]+\.css)";/.exec(result.code)?.[1];
     expect(cssId).toBeTruthy();
     expect(plugin.resolveId(cssId)).toBe(`\0${cssId}`);
@@ -270,6 +339,10 @@ export function shadow(PrepareCode) { return <PrepareCode source={getSource()} l
         '<PrepareCode source="const value = 1;" language="ts">children</PrepareCode>',
         /self-closing|children/i,
       ],
+      [
+        '<PrepareCode source="const value = 1;" language="ts" render={<span />} />',
+        /render.*function|render.*JSX|JSX.*render/i,
+      ],
     ];
 
     for (const [element, diagnostic] of cases) {
@@ -280,35 +353,34 @@ export function shadow(PrepareCode) { return <PrepareCode source={getSource()} l
     }
   });
 
-  it("matches JSX source-attribute entity and whitespace decoding", async () => {
+  it("preserves React callback descriptors and JSX literal className entity decoding", async () => {
+    const classNameLiteral = 'className="syntax &amp; &#x1F680;"';
     const elements = [
       {
-        element: '<MacroCode source="x &amp; &#x1F680;" language="text" component={CodeBlock} />',
+        element: '<MacroCode source="x &amp; &#x1F680;" language="text" render={CodeBlock} />',
         expected: "x & 🚀",
       },
       {
-        element:
-          "<MacroCode source={'x &amp; &#x1F680;'} language=\"text\" component={CodeBlock} />",
+        element: "<MacroCode source={'x &amp; &#x1F680;'} language=\"text\" render={CodeBlock} />",
         expected: "x &amp; &#x1F680;",
       },
       {
-        element: '<MacroCode source="&amp;lt;" language="text" component={CodeBlock} />',
+        element: '<MacroCode source="&amp;lt;" language="text" render={CodeBlock} />',
         expected: "&lt;",
       },
       {
-        element: '<MacroCode source="x &unknownEntity; y" language="text" component={CodeBlock} />',
+        element: '<MacroCode source="x &unknownEntity; y" language="text" render={CodeBlock} />',
         expected: "x &unknownEntity; y",
       },
       {
         element:
-          '<MacroCode source="  leading  and trailing  " language="text" component={CodeBlock} />',
+          '<MacroCode source="  leading  and trailing  " language="text" render={CodeBlock} />',
       },
       {
-        element:
-          '<MacroCode source="first\n  middle\nlast " language="text" component={CodeBlock} />',
+        element: '<MacroCode source="first\n  middle\nlast " language="text" render={CodeBlock} />',
       },
       {
-        element: '<MacroCode source="first\r\n  second " language="text" component={CodeBlock} />',
+        element: '<MacroCode source="first\r\n  second " language="text" render={CodeBlock} />',
       },
     ];
     const plugin = ferriki({ theme: "github-dark-default" });
@@ -320,13 +392,163 @@ export function shadow(PrepareCode) { return <PrepareCode source={getSource()} l
         inputProp.type === "StringLiteral" ? inputProp.value : inputProp.expression.value;
       expect(parsedValue).toBe(expected ?? parsedValue);
 
-      const source = `import { Code as MacroCode } from "@ferriki/core/react/macro";\n${element}`;
+      const source = `import { Code as MacroCode } from "@ferriki/core/react/macro";\nfunction CodeBlock(props) { return props.code; }\n${element}`;
       const result = await transformJsx(plugin, source, `/src/entities-${index}.tsx`);
       const ast = parse(result.code, { sourceType: "module", plugins: ["jsx", "typescript"] });
-      const component = findJsx(ast, "CodeBlock");
-      const descriptor = jsxProp(component, "code").value.expression;
+      const descriptor = findPreparedBlock(ast);
       expect(objectProperty(descriptor, "code").value.value).toBe(parsedValue);
     }
+
+    const staticClass = `<MacroCode source="x" language="text" ${classNameLiteral} />`;
+    const staticResult = await transformJsx(
+      plugin,
+      `import { Code as MacroCode } from "@ferriki/core/react/macro";\n${staticClass}`,
+      "/src/class-entity.tsx",
+    );
+    const staticAst = parse(staticResult.code, {
+      sourceType: "module",
+      plugins: ["jsx", "typescript"],
+    });
+    const wrapper = findJsx(staticAst, "div");
+    expect(jsxProp(wrapper, "className").value.value).toBe("syntax & 🚀");
+  });
+
+  it("evaluates render and className once in JSX attribute order and keeps lexical captures", async () => {
+    const source = `const before = "🧪";
+import { Code as PrepareCode } from "@ferriki/core/react/macro";
+const FerrikiMacroRenderHelper = "user binding";
+const Object = null;
+function inspectNoClassName(props) { return { hasClassName: "className" in props }; }
+const owner = {
+  marker: "λ",
+  events: [],
+  className() { this.events.push("className"); return "syntax"; },
+  renderer() { this.events.push("render"); const marker = this.marker; return (props) => { this.events.push("invoke"); return { marker, language: props.code.language, className: props.className, hasClassName: "className" in props }; }; },
+  make() { return <PrepareCode source="const value = 1;" language="text" className={this.className()} render={this.renderer()} />; },
+};
+const result = owner.make();
+const withoutClassName = <PrepareCode source="const noClass = true;" language="text" render={inspectNoClassName} />;
+({ result, withoutClassName, events: owner.events });`;
+    const result = await transformJsx(
+      ferriki({ theme: "github-dark-default" }),
+      source,
+      "/src/order.tsx",
+    );
+    const executable = await transformWithEsbuild(
+      withoutVirtualStyles(result.code),
+      "/src/order.tsx",
+      {
+        loader: "tsx",
+        jsx: "transform",
+        jsxFactory: "jsx",
+      },
+    );
+    const evaluated = runInNewContext(executable.code, {
+      jsx: (type, props) => ({ type, props }),
+    });
+
+    expect(evaluated.events).toEqual(["className", "render"]);
+    expect(evaluated.result.type.name).toBe("FerrikiMacroRenderHelper1");
+    expect(evaluated.result.props.className).toBe("syntax");
+    expect(evaluated.result.props.render).toBeTypeOf("function");
+    expect(result.code.match(/this\.className\(\)/g)).toHaveLength(1);
+    expect(result.code.match(/this\.renderer\(\)/g)).toHaveLength(1);
+
+    const rendered = evaluated.result.type(evaluated.result.props);
+    expect(evaluated.events).toEqual(["className", "render", "invoke"]);
+    expect(rendered).toEqual({
+      marker: "λ",
+      language: "text",
+      className: "syntax",
+      hasClassName: true,
+    });
+    expect(evaluated.withoutClassName.type(evaluated.withoutClassName.props).hasClassName).toBe(
+      false,
+    );
+  });
+
+  it("maps renderer expressions back to their original source locations", async () => {
+    const source = `import { Code as PrepareCode } from "@ferriki/core/react/macro";
+const marker = "🧪";
+const block = <PrepareCode source="x" language="text" render={({ code }) => {
+  return marker + code.language;
+}} />;`;
+    const id = "/src/render-map.tsx";
+    const result = await transformJsx(ferriki({ theme: "github-dark-default" }), source, id);
+    const generatedStart = result.code.indexOf("return marker + code.language;");
+    const originalStart = source.indexOf("return marker + code.language;");
+    const position = (text, index) => {
+      const before = text.slice(0, index).split("\n");
+      return { line: before.length, column: before.at(-1).length };
+    };
+
+    expect(generatedStart).toBeGreaterThanOrEqual(0);
+    expect(
+      originalPositionFor(new TraceMap(result.map), position(result.code, generatedStart)),
+    ).toMatchObject({
+      source: id,
+      ...position(source, originalStart),
+    });
+  });
+
+  it("retains nested macro and static JSX edits inside a renderer expression", async () => {
+    const source = `import { Code as PrepareCode } from "@ferriki/core/react/macro";
+const block = <PrepareCode source="outer" language="text" render={({ code }) => <section>
+  <pre data-highlight="auto" data-language="ts"><code>const staticλ = 1;</code></pre>
+  <PrepareCode source="inner" language="text" render={({ code: inner }) => inner.code} />
+  {code.code}
+</section>} />;`;
+    const result = await transformJsx(
+      ferriki({ theme: "github-dark-default" }),
+      source,
+      "/src/nested.tsx",
+    );
+
+    expect(() =>
+      parse(result.code, { sourceType: "module", plugins: ["jsx", "typescript"] }),
+    ).not.toThrow();
+    expect(result.code).not.toContain("<PrepareCode");
+    expect(result.code).toContain('className={"shiki github-dark-default"}');
+    expect(result.code).toContain('className={"line"}');
+    expect(result.code).toContain("staticλ");
+    expect(result.code).toContain('"language":"text"');
+    expect(result.map.sourcesContent).toEqual([source]);
+  });
+
+  it("uses the default wrapper when a runtime renderer value is undefined", async () => {
+    const source = `import { Code as PrepareCode } from "@ferriki/core/react/macro";
+const value = <PrepareCode source="fallback" language="text" className={chooseClassName()} render={undefined} />;
+value;`;
+    const result = await transformJsx(
+      ferriki({ theme: "github-dark-default" }),
+      source,
+      "/src/undefined-render.tsx",
+    );
+    const executable = await transformWithEsbuild(
+      withoutVirtualStyles(result.code),
+      "/src/undefined-render.tsx",
+      {
+        loader: "tsx",
+        jsx: "transform",
+        jsxFactory: "jsx",
+      },
+    );
+    let classNameReads = 0;
+    const evaluated = runInNewContext(executable.code, {
+      chooseClassName: () => {
+        classNameReads++;
+        return "syntax";
+      },
+      jsx: (type, props) => ({ type, props }),
+    });
+
+    expect(classNameReads).toBe(1);
+    expect(evaluated.type.name).toBe("FerrikiMacroRenderHelper");
+    const fallback = evaluated.type(evaluated.props);
+    expect(fallback.type).toBe("div");
+    expect(fallback.props.className).toBe("syntax");
+    expect(fallback.props.dangerouslySetInnerHTML.__html).toContain("fallback");
+    expect(result.code.match(/"html":/g)).toHaveLength(1);
   });
 
   it("recognizes escaped macro specifiers and reports dynamic macro uses", async () => {

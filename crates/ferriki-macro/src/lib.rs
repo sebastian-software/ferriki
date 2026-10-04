@@ -45,9 +45,22 @@ pub struct InlineMacroCall {
     /// Present only for the React `Code` macro.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<InlineMacroCallKind>,
-    /// Canonical JSX component name, when explicitly provided.
+    /// Original-source presentation expressions, in JSX attribute order.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<String>,
+    pub presentation: Option<Vec<InlineMacroPresentationProp>>,
+}
+
+/// A React presentation prop that remains application code for the adapter.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InlineMacroPresentationProp {
+    pub name: String,
+    /// UTF-8 byte offsets in the original source; braces are excluded for expressions.
+    pub start: usize,
+    pub end: usize,
+    /// Decoded value only when `className` was supplied as a quoted JSX string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub literal: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -868,7 +881,7 @@ fn validate_call(
         meta,
         line_numbers,
         kind: None,
-        component: None,
+        presentation: None,
     })
 }
 
@@ -891,7 +904,7 @@ fn validate_react_element(
     let mut language = None;
     let mut meta = None;
     let mut line_numbers = None;
-    let mut component = None;
+    let mut presentation = Vec::new();
     for item in &element.opening_element.attributes {
         let attribute = match item {
             JSXAttributeItem::SpreadAttribute(spread) => {
@@ -941,9 +954,9 @@ fn validate_react_element(
             "lineNumbers" => {
                 let value = match &attribute.value {
                     None => true,
-                    Some(JSXAttributeValue::ExpressionContainer(container)) => {
-                        match container.expression.to_expression() {
-                            Expression::BooleanLiteral(literal) => literal.value,
+                    Some(JSXAttributeValue::ExpressionContainer(_)) => {
+                        match attribute.value.as_ref().and_then(jsx_attribute_expression) {
+                            Some(Expression::BooleanLiteral(literal)) => literal.value,
                             _ => {
                                 return Err(format_diagnostic(
                                     source,
@@ -965,36 +978,22 @@ fn validate_react_element(
                 };
                 line_numbers = Some(value);
             }
-            "component" => {
-                let expression = attribute
-                    .value
-                    .as_ref()
-                    .and_then(jsx_attribute_expression)
-                    .ok_or_else(|| {
-                        format_diagnostic(
-                            source,
-                            filename,
-                            attribute.span.start as usize,
-                            "React `Code` `component` must be a JSX-safe identifier or member expression",
-                        )
-                    })?;
-                let Some(name) = canonical_component_name(expression) else {
-                    return Err(format_diagnostic(
-                        source,
-                        filename,
-                        expression.span().start as usize,
-                        "React `Code` `component` must be a JSX-safe component identifier or member expression",
-                    ));
-                };
-                component = Some(name);
-            }
+            "render" => presentation.push(jsx_presentation_prop(
+                attribute, "render", source, filename,
+            )?),
+            "className" => presentation.push(jsx_presentation_prop(
+                attribute,
+                "className",
+                source,
+                filename,
+            )?),
             _ => {
                 return Err(format_diagnostic(
                     source,
                     filename,
                     attribute.span.start as usize,
                     format!(
-                        "unknown React `Code` prop `{name}`; supported props are `source`, `language`, `meta`, `lineNumbers`, and `component`; `key`, `ref`, and `children` are unsupported"
+                        "unknown React `Code` prop `{name}`; supported props are `source`, `language`, `meta`, `lineNumbers`, `render`, and `className`; `key`, `ref`, and `children` are unsupported"
                     ),
                 ));
             }
@@ -1025,8 +1024,114 @@ fn validate_react_element(
         meta,
         line_numbers,
         kind: Some(InlineMacroCallKind::React),
-        component,
+        presentation: (!presentation.is_empty()).then_some(presentation),
     })
+}
+
+fn jsx_presentation_prop(
+    attribute: &oxc_ast::ast::JSXAttribute<'_>,
+    name: &str,
+    source: &str,
+    filename: &str,
+) -> Result<InlineMacroPresentationProp, String> {
+    let value = attribute.value.as_ref().ok_or_else(|| {
+        format_diagnostic(
+            source,
+            filename,
+            attribute.span.start as usize,
+            format!("React `Code` `{name}` must have a nonempty value"),
+        )
+    })?;
+
+    if name == "className"
+        && let JSXAttributeValue::StringLiteral(literal) = value
+    {
+        reject_lone_surrogates(
+            source,
+            filename,
+            literal.span,
+            literal.lone_surrogates,
+            "React `Code` `className`",
+        )?;
+        let (decoded, lone_surrogates) =
+            decode_jsx_entities(literal.value.as_str()).map_err(|()| {
+                format_diagnostic(
+                    source,
+                    filename,
+                    literal.span.start as usize,
+                    "React `Code` `className` contains an invalid numeric JSX character reference",
+                )
+            })?;
+        reject_lone_surrogates(
+            source,
+            filename,
+            literal.span,
+            lone_surrogates,
+            "React `Code` `className`",
+        )?;
+        return Ok(InlineMacroPresentationProp {
+            name: name.to_owned(),
+            start: literal.span.start as usize,
+            end: literal.span.end as usize,
+            literal: Some(decoded),
+        });
+    }
+
+    let expression = jsx_attribute_expression(value).ok_or_else(|| {
+        format_diagnostic(
+            source,
+            filename,
+            attribute.span.start as usize,
+            format!("React `Code` `{name}` must be a nonempty JSX expression"),
+        )
+    })?;
+    if name == "render" && is_obviously_non_function_render(expression) {
+        return Err(format_diagnostic(
+            source,
+            filename,
+            expression.span().start as usize,
+            "React `Code` `render` must be a callback expression, not a statically obvious nonfunction value",
+        ));
+    }
+    let span = expression.span();
+    Ok(InlineMacroPresentationProp {
+        name: name.to_owned(),
+        start: span.start as usize,
+        end: span.end as usize,
+        literal: None,
+    })
+}
+
+fn is_obviously_non_function_render(expression: &Expression<'_>) -> bool {
+    match expression {
+        Expression::BooleanLiteral(_)
+        | Expression::NullLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::BigIntLiteral(_)
+        | Expression::RegExpLiteral(_)
+        | Expression::StringLiteral(_)
+        | Expression::TemplateLiteral(_)
+        | Expression::ArrayExpression(_)
+        | Expression::ObjectExpression(_)
+        | Expression::JSXElement(_)
+        | Expression::JSXFragment(_) => true,
+        Expression::ParenthesizedExpression(parenthesized) => {
+            is_obviously_non_function_render(&parenthesized.expression)
+        }
+        Expression::TSAsExpression(assertion) => {
+            is_obviously_non_function_render(&assertion.expression)
+        }
+        Expression::TSSatisfiesExpression(assertion) => {
+            is_obviously_non_function_render(&assertion.expression)
+        }
+        Expression::TSNonNullExpression(assertion) => {
+            is_obviously_non_function_render(&assertion.expression)
+        }
+        Expression::TSInstantiationExpression(instantiation) => {
+            is_obviously_non_function_render(&instantiation.expression)
+        }
+        _ => false,
+    }
 }
 
 fn jsx_attribute_expression<'b, 'a>(
@@ -1193,34 +1298,6 @@ fn decode_numeric_jsx_entity(entity: &str) -> Result<Option<u32>, ()> {
         return Err(());
     }
     Ok(Some(code_point))
-}
-
-fn canonical_component_name(expression: &Expression<'_>) -> Option<String> {
-    match expression {
-        Expression::Identifier(identifier) => {
-            let name = identifier.name.as_str();
-            name.chars()
-                .next()
-                .filter(|character| !character.is_ascii_lowercase())
-                .map(|_| name.to_owned())
-        }
-        Expression::StaticMemberExpression(member) if !member.optional => {
-            let object = canonical_member_object(&member.object)?;
-            Some(format!("{object}.{}", member.property.name.as_str()))
-        }
-        _ => None,
-    }
-}
-
-fn canonical_member_object(expression: &Expression<'_>) -> Option<String> {
-    match expression {
-        Expression::Identifier(identifier) => Some(identifier.name.as_str().to_owned()),
-        Expression::StaticMemberExpression(member) if !member.optional => {
-            let object = canonical_member_object(&member.object)?;
-            Some(format!("{object}.{}", member.property.name.as_str()))
-        }
-        _ => None,
-    }
 }
 
 fn reject_lone_surrogates(
@@ -1601,7 +1678,7 @@ const block = <PrepareBlock
   language={'tsx'}
   meta={`title="React"`}
   lineNumbers={false}
-  component={ui /* keep the bound member */ . CodeBlock}
+  render={ui /* keep the bound member */ . CodeBlock}
 />;
 function render(PrepareBlock) {
   return <PrepareBlock>shadowed component is ordinary JSX</PrepareBlock>;
@@ -1617,10 +1694,17 @@ const plain = inline('plain', { language: 'text' });"#;
             result.calls[0].kind,
             Some(super::InlineMacroCallKind::React)
         ));
-        assert_eq!(result.calls[0].component.as_deref(), Some("ui.CodeBlock"));
+        let presentation = result.calls[0].presentation.as_ref().unwrap();
+        assert_eq!(presentation.len(), 1);
+        assert_eq!(presentation[0].name, "render");
+        assert_eq!(
+            &source[presentation[0].start..presentation[0].end],
+            "ui /* keep the bound member */ . CodeBlock"
+        );
+        assert!(presentation[0].literal.is_none());
         assert_eq!(result.calls[1].code, "plain");
         assert!(result.calls[1].kind.is_none());
-        assert!(result.calls[1].component.is_none());
+        assert!(result.calls[1].presentation.is_none());
         assert_eq!(result.imports.len(), 2);
         assert_eq!(
             result.imports[1].replacement,
@@ -1629,28 +1713,112 @@ const plain = inline('plain', { language: 'text' });"#;
     }
 
     #[test]
-    fn recognizes_react_jsx_string_semantics_and_renderable_components() {
+    fn recognizes_react_jsx_string_semantics_and_runtime_presentation() {
         let source = r#"import { Code } from '@ferriki/core/react/macro';
-const first = <Code source="x &amp; y" language="text" component={_Block} />;
-const second = <Code source={'const π = 1;'} language={`ts`} component={$Block} />;
-const third = <Code source={`default`} language="js" lineNumbers />;
-const fourth = <Code source="escaped" language="js" component={\u0057idget.Block} />;"#;
+const first = <Code source="x &amp; y" language="text" className="syntax &amp; color" />;
+const second = <Code source={'const π = 1;'} language={`ts`} render={$Block} />;
+const third = <Code source={`default`} language="js" lineNumbers render={(source) => <pre>{source}</pre>} />;
+const fourth = <Code source="escaped" language="js" render={function Renderer() { return null; }} />;"#;
         let result = scan(source, "react-attributes.jsx");
         assert_eq!(result.calls.len(), 4);
         assert_eq!(result.calls[0].code, "x & y");
-        assert_eq!(result.calls[0].component.as_deref(), Some("_Block"));
+        let class_name = &result.calls[0].presentation.as_ref().unwrap()[0];
+        assert_eq!(class_name.name, "className");
+        assert_eq!(
+            &source[class_name.start..class_name.end],
+            "\"syntax &amp; color\""
+        );
+        assert_eq!(class_name.literal.as_deref(), Some("syntax & color"));
         assert_eq!(result.calls[1].code, "const π = 1;");
-        assert_eq!(result.calls[1].component.as_deref(), Some("$Block"));
+        let render = &result.calls[1].presentation.as_ref().unwrap()[0];
+        assert_eq!(render.name, "render");
+        assert_eq!(&source[render.start..render.end], "$Block");
+        assert!(render.literal.is_none());
         assert_eq!(result.calls[2].code, "default");
         assert_eq!(result.calls[2].line_numbers, Some(true));
-        assert_eq!(result.calls[3].component.as_deref(), Some("Widget.Block"));
+        assert_eq!(
+            &source[result.calls[2].presentation.as_ref().unwrap()[0].start
+                ..result.calls[2].presentation.as_ref().unwrap()[0].end],
+            "(source) => <pre>{source}</pre>"
+        );
+        assert_eq!(
+            &source[result.calls[3].presentation.as_ref().unwrap()[0].start
+                ..result.calls[3].presentation.as_ref().unwrap()[0].end],
+            "function Renderer() { return null; }"
+        );
         assert!(
             result
                 .calls
                 .iter()
                 .all(|call| matches!(call.kind, Some(super::InlineMacroCallKind::React)))
         );
-        assert!(result.calls[2].component.is_none());
+        assert!(result.calls[2].presentation.is_some());
+    }
+
+    #[test]
+    fn omits_empty_react_presentation() {
+        let result = scan(
+            "import { Code } from '@ferriki/core/react/macro'; const block = <Code source=\"x\" language=\"text\" />;",
+            "empty-presentation.tsx",
+        );
+        assert!(matches!(
+            result.calls[0].kind,
+            Some(super::InlineMacroCallKind::React)
+        ));
+        assert!(result.calls[0].presentation.is_none());
+    }
+
+    #[test]
+    fn keeps_presentation_order_and_utf8_source_spans() {
+        let source = "const π = 1; import { Code } from '@ferriki/core/react/macro';\nconst block = <Code render={renderExample} source=\"x\" language=\"text\" className=\"例 &amp; code\" />;";
+        let result = scan(source, "presentation-spans.tsx");
+        let presentation = result.calls[0].presentation.as_ref().unwrap();
+        assert_eq!(presentation.len(), 2);
+        assert_eq!(presentation[0].name, "render");
+        assert_eq!(
+            &source[presentation[0].start..presentation[0].end],
+            "renderExample"
+        );
+        assert_eq!(presentation[0].literal, None);
+        assert_eq!(presentation[1].name, "className");
+        assert_eq!(
+            &source[presentation[1].start..presentation[1].end],
+            "\"例 &amp; code\""
+        );
+        assert_eq!(presentation[1].literal.as_deref(), Some("例 & code"));
+        assert!(presentation[0].start > source.find("π").unwrap());
+    }
+
+    #[test]
+    fn scans_nested_macros_inside_render_callbacks_and_checks_marker_escapes() {
+        let source = r#"import { Code } from '@ferriki/core/react/macro';
+const outer = <Code source="outer" language="text" render={(text) => <Code source="inner" language="ts" className={classFor(text)} />} />;"#;
+        let result = scan(source, "nested-render.tsx");
+        assert_eq!(result.calls.len(), 2);
+        assert_eq!(result.calls[0].code, "outer");
+        assert_eq!(result.calls[1].code, "inner");
+        let render = &result.calls[0].presentation.as_ref().unwrap()[0];
+        assert!(&source[render.start..render.end].contains("<Code source=\"inner\""));
+        let class_name = &result.calls[1].presentation.as_ref().unwrap()[0];
+        assert_eq!(&source[class_name.start..class_name.end], "classFor(text)");
+
+        let react_escape = error(
+            "import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" render={Code} />",
+            "presentation-escape.tsx",
+        );
+        assert!(
+            react_escape.contains("React Code binding"),
+            "{react_escape}"
+        );
+
+        let function_escape = error(
+            "import { code } from '@ferriki/core/macro'; import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" className={code} />",
+            "presentation-escape.tsx",
+        );
+        assert!(
+            function_escape.contains("code binding must be used as a direct function call"),
+            "{function_escape}"
+        );
     }
 
     #[test]
@@ -1722,6 +1890,10 @@ const fourth = <Code source="escaped" language="js" component={\u0057idget.Block
                 "`lineNumbers` to be a static boolean",
             ),
             (
+                "<Code source=\"x\" language=\"ts\" lineNumbers={} />",
+                "JSX attributes must only be assigned a non-empty 'expression'",
+            ),
+            (
                 "<Code language=\"ts\" />",
                 "requires a static string `source`",
             ),
@@ -1754,20 +1926,40 @@ const fourth = <Code source="escaped" language="js" component={\u0057idget.Block
                 "must be self-closing and cannot have children",
             ),
             (
+                "<Code source=\"x\" language=\"ts\" render />",
+                "`render` must have a nonempty value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={<pre />} />",
+                "statically obvious nonfunction value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={<>content</>} />",
+                "statically obvious nonfunction value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={42} />",
+                "statically obvious nonfunction value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render=\"callback\" />",
+                "`render` must be a nonempty JSX expression",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={null} />",
+                "statically obvious nonfunction value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={{}} />",
+                "statically obvious nonfunction value",
+            ),
+            (
+                "<Code source=\"x\" language=\"ts\" render={[]} />",
+                "statically obvious nonfunction value",
+            ),
+            (
                 "<Code source=\"x\" language=\"ts\" component={widget} />",
-                "JSX-safe component identifier",
-            ),
-            (
-                "<Code source=\"x\" language=\"ts\" component={ui['CodeBlock']} />",
-                "JSX-safe component identifier",
-            ),
-            (
-                "<Code source=\"x\" language=\"ts\" component={ui?.CodeBlock} />",
-                "JSX-safe component identifier",
-            ),
-            (
-                "<Code source=\"x\" language=\"ts\" component={createBlock()} />",
-                "JSX-safe component identifier",
+                "unknown React `Code` prop `component`",
             ),
         ];
         for (jsx, expected) in cases {
@@ -1778,7 +1970,7 @@ const fourth = <Code source="escaped" language="js" component={\u0057idget.Block
         }
 
         let same_binding = error(
-            "import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" component={Code} />",
+            "import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" render={Code} />",
             "react-binding.tsx",
         );
         assert!(
@@ -1787,7 +1979,7 @@ const fourth = <Code source="escaped" language="js" component={\u0057idget.Block
         );
 
         let other_macro_binding = error(
-            "import { code as InlineCode } from '@ferriki/core/macro'; import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" component={InlineCode} />",
+            "import { code as InlineCode } from '@ferriki/core/macro'; import { Code } from '@ferriki/core/react/macro'; <Code source=\"x\" language=\"ts\" className={InlineCode} />",
             "react-other-binding.tsx",
         );
         assert!(

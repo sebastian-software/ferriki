@@ -9,8 +9,19 @@ export interface InlineCodeMacroCall {
   readonly lineNumbers?: boolean | null;
   /** Present only for the React `Code` macro. */
   readonly kind?: "react";
-  /** Canonical JSX component name, when explicitly provided. */
-  readonly component?: string;
+  /** Original-source presentation expressions, in JSX attribute order. */
+  readonly presentation?: readonly InlineCodeMacroPresentationProp[];
+}
+
+export interface InlineCodeMacroPresentationProp {
+  /** `render` or `className`. */
+  readonly name: "render" | "className";
+  /** UTF-8 byte offsets in the original source; expression braces are excluded. */
+  readonly start: number;
+  /** UTF-8 byte offsets in the original source; expression braces are excluded. */
+  readonly end: number;
+  /** Decoded value only when `className` was supplied as a quoted JSX string. */
+  readonly literal?: string;
 }
 
 export interface InlineCodeMacroImport {

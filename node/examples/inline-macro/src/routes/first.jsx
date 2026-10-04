@@ -20,6 +20,7 @@ export default function FirstRoute() {
       source={`const macroRoute = 'first';\nconsole.log(macroRoute);`}
       meta='title="First React macro" [default] {2}'
       lineNumbers
+      className="first-react-macro-class"
     />,
   );
 }
