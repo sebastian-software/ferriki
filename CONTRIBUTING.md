@@ -30,6 +30,28 @@ the addon into `node/ferriki/` and the host's platform package under
 `node/platforms/` — rerun it after any Rust change before running the Node
 lanes.
 
+Installs skip package lifecycle scripts on purpose: the mirrored compatibility
+workspace contains upstream `prepare` scripts that rewrite generated files.
+`prepare:compat` runs those generators in a temporary checkout and keeps the
+tracked mirror immutable.
+
+## Repository layout
+
+The repository root is the Rust-first `ferriki` crate; all Node, npm, and
+upstream compatibility machinery lives under `node/`.
+
+- `src`: the `ferriki` crate, with the highlighter, renderer, and asset catalogs
+- `crates/ferriki-textmate`: the vscode-textmate port; `crates/ferriki-asset-gen`:
+  the binary asset catalog codec
+- `crates/ferriki-core`: the private N-API host over the same Rust runtime
+- `node/ferriki`: the `@ferriki/core` package; `node/platforms`: its native
+  sidecars; `node/vite`: the `@ferriki/vite` adapter
+- `node/compat/harness`: Ferriki-specific compatibility glue
+- `node/compat/upstream/shiki` and `node/compat/upstream/vscode-textmate`: the
+  strict upstream mirrors (see below)
+- `docs`: user documentation; `homepage`: the ferriki.dev site; `adr`:
+  architecture decision records
+
 ## Test lanes
 
 | Lane | Command | Purpose |
