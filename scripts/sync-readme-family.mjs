@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 // The registry pin for the npm package README. The root README has its own
 // Ferramenta ref in mdtheme.yaml. Bump this pin to adopt registry changes,
 // then rerun the script without `--check` and commit the regenerated block.
-const REGISTRY_PIN = "a15da378c7898af2bbcac9a2233601bfe057aa0d";
+const REGISTRY_PIN = "ac62a60b4cbc335c7475d525ee12fc8614c35a1e";
 const FRAME_PATH = "packages/family/markdown/ferriki/footer.md";
 const FRAME_URL = `https://raw.githubusercontent.com/sebastian-software/ferramenta/${REGISTRY_PIN}/${FRAME_PATH}`;
 const TOOL = "ferriki";
