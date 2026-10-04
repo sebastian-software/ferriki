@@ -1,0 +1,264 @@
+---
+title: Build-time macros
+order: 2
+---
+
+# Build-time macros
+
+`code()` and `<Code />` are build-time macros for code examples that live in
+your components. You write the example as a literal; during a Vite 8 build,
+`@ferriki/vite` replaces it with highlighted HTML and the CSS it needs. The
+browser receives that markup and loads no grammar, no theme and no highlighter.
+
+Shiki's official integrations, as of v4.4.3 (the release Ferriki is checked
+against), plug into Markdown pipelines such as rehype, markdown-it and
+VitePress. Shiki has no build-time macro for code inside components.
+
+## Install
+
+```sh
+npm install @ferriki/core @ferriki/vite
+```
+
+`@ferriki/vite` requires Vite 8 and Node.js 22.13.0 or newer. It shares
+Ferriki's version: keep `@ferriki/core`, its platform package and
+`@ferriki/vite` on the same release. The macro markers ship in `@ferriki/core`;
+the adapter adds only `magic-string`.
+
+## Configure Vite
+
+Place Ferriki before the framework plugin that lowers JSX:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { ferriki } from "@ferriki/vite";
+
+export default defineConfig({
+  plugins: [
+    ferriki({
+      themes: { light: "github-light-default", dark: "github-dark-default" },
+      styleMode: "classes",
+      lineNumbers: true,
+    }),
+    // Add your framework plugin, such as React, after Ferriki.
+  ],
+});
+```
+
+| Option         | Default                 | Meaning                                                                                            |
+| -------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `theme`        | `"github-dark-default"` | One theme for every block                                                                          |
+| `themes`       | none                    | A named theme map instead of `theme`; the first key supplies the default colors                    |
+| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and imports a generated stylesheet                                 |
+| `lineNumbers`  | `false`                 | The default for every macro; each macro can override it                                            |
+| `transformers` | none                    | Transformer callbacks applied to every prepared block                                              |
+| `assets`       | none                    | Asset source and cache settings, as for `createHighlighter`                                        |
+| `include`      | none                    | `(id) => boolean` for compiler output without a JavaScript or TypeScript extension (see MDX below) |
+
+## Prepare code with `code()`
+
+`code()` works in any JavaScript or TypeScript module:
+
+```ts
+import { code } from "@ferriki/core/macro";
+
+export const example = code("export const answer = 42;\n", {
+  language: "ts",
+  meta: 'title="Answer" [TypeScript] {1}',
+});
+```
+
+During the build, the call becomes a plain object, a `PreparedCodeBlock`:
+
+| Field      | Content                                                                         |
+| ---------- | ------------------------------------------------------------------------------- |
+| `code`     | The exact source, including its final newline                                   |
+| `language` | The language as written                                                         |
+| `html`     | The complete highlighted `pre`/`code` block                                     |
+| `css`      | The block's theme CSS and line-number and highlight rules, when it has any      |
+| `metadata` | `title`, `label`, `lineNumbers` and `highlightedLines`, parsed from the options |
+
+Render `html` inside a container, not inside another `pre`. Vite already
+delivers the CSS: in class mode, the transformed module imports a generated
+stylesheet. `css` is there for code that moves the descriptor outside that
+module; do not inject it a second time.
+
+The call takes these options:
+
+| Option        | Meaning                                                                                                               |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `language`    | Required, a nonempty string literal such as `"ts"`                                                                    |
+| `meta`        | Optional string literal: `title="..."`, the first `[label]`, line selections such as `{2,4-5}`, and `showLineNumbers` |
+| `lineNumbers` | Optional boolean literal that overrides the plugin default                                                            |
+
+The source is a string literal, or a template literal without `${...}`
+interpolations; template escapes have their normal JavaScript meaning.
+Variables, imported files and computed strings are not evaluated, and the
+options must be an object literal. Anything dynamic fails the build with the
+file and position.
+
+## Prepare code with `<Code />` in React
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+
+export function Example() {
+  return (
+    <Code
+      language="tsx"
+      className="example-code"
+      lineNumbers
+      source={`function Hello() {
+  return <h1>Hello</h1>;
+}`}
+    />
+  );
+}
+```
+
+The element is self-closing. `source` is a string literal or a template
+literal without interpolations; JSX children are not supported. `language` is
+required, and it, `meta` and `lineNumbers` are static, with the same meaning as
+for `code()`. `className` accepts any runtime expression. By default, the
+element becomes a `div` that holds the prepared HTML, with `className` on that
+`div`. Spreads, duplicate attributes and other attributes fail the build.
+
+For a title, a copy button or tabs, pass a `render` function. It receives
+`{ code, className }`, where `code` is the `PreparedCodeBlock`, and runs during
+normal rendering, never at build time:
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+import type { CodeRenderProps } from "@ferriki/core/react/macro";
+
+function CodeBlock({ code, className }: CodeRenderProps) {
+  return (
+    <figure className={className}>
+      <figcaption>{code.metadata.title}</figcaption>
+      <button type="button" onClick={() => navigator.clipboard.writeText(code.code)}>
+        Copy code
+      </button>
+      <div dangerouslySetInnerHTML={{ __html: code.html }} />
+    </figure>
+  );
+}
+
+export function Example() {
+  return (
+    <Code
+      language="ts"
+      meta='title="Answer" {1}'
+      source={`export const answer = 42;`}
+      render={(props) => <CodeBlock {...props} />}
+    />
+  );
+}
+```
+
+The macro import is removed from the transformed module, so neither the
+marker nor a parser reaches the browser. Server rendering, hydration and
+client navigation all use the same prepared HTML and CSS.
+
+## Annotate lines with Shiki's notation
+
+The `transformers` option applies transformer callbacks to every prepared
+block, including the notation helpers from `@shikijs/transformers` (verified
+with v4.4.3, Ferriki's Shiki baseline):
+
+```js
+// vite.config.js
+import { ferriki } from "@ferriki/vite";
+import {
+  transformerNotationDiff,
+  transformerNotationFocus,
+  transformerNotationHighlight,
+  transformerNotationWordHighlight,
+} from "@shikijs/transformers";
+
+export default {
+  plugins: [
+    ferriki({
+      transformers: [
+        transformerNotationHighlight(),
+        transformerNotationFocus(),
+        transformerNotationDiff(),
+        transformerNotationWordHighlight(),
+      ],
+    }),
+  ],
+};
+```
+
+Write `// [!code highlight]`, `// [!code focus]`, `// [!code ++]`,
+`// [!code --]` or `// [!code word:answer]` inside the macro's source. The
+comments are removed from the highlighted HTML; the descriptor's `code` keeps
+the source as written. In a TypeScript config, the helpers may need a type
+assertion at this boundary: Ferriki's transformer context is not promised to
+be type-interchangeable with Shiki's.
+
+## Which modules are transformed
+
+The adapter is import-driven. Vite and Rolldown call its transform only for
+JavaScript and TypeScript modules, and for IDs accepted by `include`, whose
+source contains the text `@ferriki/core/macro` or `@ferriki/core/react/macro`.
+Every other module is never parsed or changed. A module that passes is parsed
+once with Vite's own parser, and the parse decides: a mention in a comment or a
+string, or a type-only import, leaves the module unchanged.
+
+Write the import specifier literally. A specifier spelled with escape
+sequences, such as `"@ferriki/core/\u006dacro"`, does not pass the text check:
+that module is not transformed, and the marker throws its configuration error
+when it runs.
+
+## The imported name is reserved
+
+The local name a macro import binds, `code`, `Code` or an alias, is reserved in
+its module. A declaration with that name fails the build: a variable,
+function, class, parameter, destructured binding, catch binding, import, or a
+TypeScript type alias, interface, enum or namespace, at the top level or in a
+nested scope. Assigning the marker, passing it elsewhere or re-exporting it
+fails as well, so every runtime use of the name refers to the macro.
+
+A module that imports both macros and destructures `({ code })` in a renderer
+therefore imports the function macro under another name:
+
+```tsx
+import { code as prepareCode } from "@ferriki/core/macro";
+import { Code } from "@ferriki/core/react/macro";
+```
+
+## Errors
+
+A macro error fails the build as a `FerrikiMacroError` with the code
+`FERRIKI_MACRO` (Rolldown builds report it as `pluginCode`), the module ID, the
+line and column, and a code frame that the dev server overlay and the build
+output show. A syntax error in a module that imports a macro is reported at the
+parser's position.
+
+An unknown language warns once per module and produces escaped plain code.
+Missing assets and native failures fail the build. A marker that runs without
+the transform throws a configuration error that names the missing Vite setup.
+
+## Themes and CSS
+
+With `styleMode: "classes"`, set `data-ferriki-theme="dark"` on a prepared
+block or one of its ancestors to switch to another configured theme; the
+switch is a CSS change. Each transformed module imports a
+content-addressed stylesheet, so editing an example replaces its CSS during
+hot module replacement. The surrounding presentation, such as titles and copy
+buttons, stays yours. See [Class-based output](/guide/class-highlighting) for
+the class contract.
+
+## MDX and other compilers
+
+The adapter has to see a compiler's output while that output still contains
+the macro's import declaration and call. Use the compiler's JSX-output mode, run it earlier in Vite's
+`pre` plugin tier than Ferriki, and pass `include(id)` for its module IDs
+without a JavaScript or TypeScript extension. Such a module is parsed as TSX;
+when the adapter emits JSX into it, the result declares the `tsx` module type,
+so Rolldown lowers that JSX. A compiler that turns Markdown into JavaScript
+within a single hook hides the macro from every other plugin.
+
+Fenced code blocks in Markdown are not macros; your Markdown pipeline
+highlights them.

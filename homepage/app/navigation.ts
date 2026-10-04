@@ -10,6 +10,7 @@ export const documentationSections = [
     to: "/guide/getting-started",
     pages: [
       ["Getting started", "/guide/getting-started"],
+      ["Build-time macros", "/guide/build-time-macros"],
       ["Migrating from Shiki", "/guide/migrating-from-shiki"],
       ["Languages and themes", "/guide/languages-and-themes"],
       ["Class-based output", "/guide/class-highlighting"],
@@ -30,6 +31,7 @@ export const documentationSections = [
     pages: [
       ["Benchmarks", "/evidence/benchmarks"],
       ["Compatibility", "/evidence/compatibility"],
+      ["Footprint", "/evidence/footprint"],
     ],
   },
 ] as const;

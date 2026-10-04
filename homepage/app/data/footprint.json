@@ -1,0 +1,15 @@
+{
+  "measured": "2026-10-04",
+  "revision": "38747b66",
+  "addon": {
+    "platform": "linux-x64-gnu",
+    "bytes": 2775072,
+    "toolchain": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "core": {
+    "name": "@ferriki/core",
+    "packedBytes": 70815,
+    "unpackedBytes": 298033,
+    "files": 22
+  }
+}

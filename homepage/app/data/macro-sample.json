@@ -1,0 +1,6 @@
+{
+  "version": "0.11.0",
+  "id": "/src/Answer.tsx",
+  "input": "import { Code } from \"@ferriki/core/react/macro\";\n\nexport function Answer() {\n  return (\n    <Code\n      language=\"ts\"\n      source={`export const answer = 42;`}\n    />\n  );\n}\n",
+  "output": "\n\nexport function Answer() {\n  return (\n    <div dangerouslySetInnerHTML={{ __html: \"\\u003cpre class=\\\"shiki github-dark-default\\\" style=\\\"background-color:#0d1117;color:#e6edf3\\\" tabindex=\\\"0\\\">\\u003ccode>\\u003cspan class=\\\"line\\\">\\u003cspan style=\\\"color:#FF7B72\\\">export\\u003c/span>\\u003cspan style=\\\"color:#FF7B72\\\"> const\\u003c/span>\\u003cspan style=\\\"color:#79C0FF\\\"> answer\\u003c/span>\\u003cspan style=\\\"color:#FF7B72\\\"> =\\u003c/span>\\u003cspan style=\\\"color:#79C0FF\\\"> 42\\u003c/span>\\u003cspan style=\\\"color:#E6EDF3\\\">;\\u003c/span>\\u003c/span>\\u003c/code>\\u003c/pre>\" }} />\n  );\n}\n"
+}

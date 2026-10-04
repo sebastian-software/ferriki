@@ -140,10 +140,10 @@ try {
   await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => document.activeElement.textContent.trim()),
-    "Migrating from Shiki",
+    "Build-time macros",
   );
   await page.keyboard.press("Enter");
-  await page.waitForURL((url) => url.pathname.startsWith("/guide/migrating-from-shiki"));
+  await page.waitForURL((url) => url.pathname.startsWith("/guide/build-time-macros"));
   assert.equal(
     await page.locator(selectors.menu).getAttribute("open"),
     null,
