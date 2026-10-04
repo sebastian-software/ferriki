@@ -11,7 +11,8 @@ Core, the native platform sidecar and `@ferriki/vite` must have matching version
 
 ## Configure Vite
 
-Install the matching core and Vite packages when that release is available:
+`@ferriki/vite` requires Vite 8. Install the matching core and Vite packages
+when that release is available:
 
 ```sh
 npm install @ferriki/core @ferriki/vite
@@ -35,8 +36,9 @@ export default defineConfig({
 });
 ```
 
-The plugin also continues to process [marked HTML and static JSX](code-example-authoring.md).
-No React dependency or browser highlighter is added by Ferriki.
+The plugin transforms only modules that import a macro: see
+[which modules are transformed](#which-modules-are-transformed). No React
+dependency or browser highlighter is added by Ferriki.
 
 ## Prepare an inline example
 
@@ -52,31 +54,33 @@ const example = code("export const answer = 42;\n", {
   meta: 'title="Answer" [TypeScript] {1}',
 });
 
-function CodeBlock({ code }: { code: PreparedCodeBlock }) {
+function CodeBlock({ block }: { block: PreparedCodeBlock }) {
   return (
     <figure>
-      <figcaption>{code.metadata.title}</figcaption>
-      <button type="button" onClick={() => navigator.clipboard.writeText(code.code)}>
+      <figcaption>{block.metadata.title}</figcaption>
+      <button type="button" onClick={() => navigator.clipboard.writeText(block.code)}>
         Copy code
       </button>
-      <div dangerouslySetInnerHTML={{ __html: code.html }} />
+      <div dangerouslySetInnerHTML={{ __html: block.html }} />
     </figure>
   );
 }
 
 export function Example() {
-  return <CodeBlock code={example} />;
+  return <CodeBlock block={example} />;
 }
 ```
 
-The original string, including its final newline, is retained in `code.code`.
+The component's prop is named `block` because `code` is the imported macro in
+this module, and that name is [reserved](#which-modules-are-transformed).
+The original string, including its final newline, is retained in `block.code`.
 The HTML contains the complete highlighted `pre`/`code` block. Render that HTML
 inside a container rather than nesting it in another `pre`. Ferriki escapes
 original source text. Custom transformer output is trusted caller code, as in
 the normal HTML API; do not treat arbitrary HTML as a prepared Ferriki result.
 
 The Vite plugin imports the generated stylesheet for the transformed module.
-`code.css` also carries generated theme CSS and adapter line presentation rules,
+The descriptor's `css` also carries generated theme CSS and adapter line presentation rules,
 for consumers that transfer the prepared descriptor outside that module's
 normal CSS delivery. Do not inject a second copy when Vite already delivers it.
 Select a configured class-output theme with `data-ferriki-theme="dark"` on the
@@ -181,14 +185,15 @@ An omitted renderer, or one that evaluates to `undefined`, uses the default
 `render` accepts functions, not JSX elements. The unreleased `component` prop
 has been replaced by this explicit contract and has no compatibility alias.
 
-Import aliases with JSX component names such as `Code as HighlightedCode` work,
-and unrelated locally shadowed components are left alone. Using the imported
-marker as a function, passing it elsewhere or re-exporting it is rejected.
-An unprocessed marker throws an actionable integration error.
+Import aliases with JSX component names such as `Code as HighlightedCode` work.
+The imported name is reserved in its module, so a component, parameter or other
+declaration with that name fails compilation. Using the imported marker as a
+function, passing it elsewhere or re-exporting it is rejected. An unprocessed
+marker throws an actionable integration error.
 
 Server rendering, hydration, navigation and HMR use the same prepared HTML/CSS
 path as `code()`. The macro import is removed from transformed application
-modules, so the browser does not load it or any build-time macro code.
+modules, so the browser does not load it or any build-time parser.
 
 ## Supported function inputs
 
@@ -213,16 +218,50 @@ keys produce a filename/position diagnostic. Calls inside loops are allowed
 when their inputs remain inline literals; `code(sample.content, ...)`
 is outside this contract.
 
-Named import aliases work. Lexically shadowed functions are ordinary functions
-and are not transformed. The macro must be called directly: assigning it to
+Named import aliases work. The macro must be called directly: assigning it to
 another variable, re-exporting it or using unsupported import/call forms is
 rejected instead of leaving an accidental runtime macro invocation.
 Type-only imports and re-exports remain valid; they carry no runtime marker.
+
+## Which modules are transformed
+
+The plugin's transform declares a host filter. Vite and Rolldown call it only
+for JavaScript and TypeScript modules, plus IDs accepted by `include(id)`,
+whose source contains the exact text `@ferriki/core/macro` or
+`@ferriki/core/react/macro`. A module without that text is never parsed. A
+module with it is parsed once by Vite's own parser, and the parse decides: a
+mention in a comment or string, or a type-only import, leaves the module
+unchanged.
+
+Write the module specifier literally. A specifier spelled with escape
+sequences, such as `"@ferriki/core/\u006dacro"`, does not pass the text check,
+so that module is not transformed and the marker throws its configuration
+error at runtime.
+
+The local name that a macro import binds, `code`, `Code` or an alias, is
+reserved in its module. Any declaration with that name fails compilation: a
+variable, function, class, parameter, destructured binding, catch binding,
+import, or TypeScript type alias, interface, enum or namespace, at the top
+level or in a nested scope. TypeScript only reports a conflict in the same
+scope, so the plugin checks this itself; with the name reserved, every runtime
+use of it refers to the macro. Type annotations are erased before runtime and
+are not checked, so a type parameter or a parameter name inside a function type
+may still use the name. A React module that imports
+both macros and destructures `({ code })` in a renderer imports the function
+macro under another name, such as `import { code as prepareCode }`.
 
 ## Errors and application delivery
 
 Calling the marker without a transform throws a clear configuration error.
 Enable the Ferriki integration and ensure that the module reaches its transform.
+
+Compile errors are reported through Vite's plugin error channel as a
+`FerrikiMacroError` with the code `FERRIKI_MACRO` (Rolldown builds report that
+code as `pluginCode`), the module `id`, a `loc` with line and column, and a
+code frame that the dev server overlay and the build output show. Syntax
+errors in a module that imports a macro are reported with the parser's own
+position.
+
 Unknown languages emit a warning and produce escaped plain-code output. Missing
 assets and native failures propagate; they are not successful highlighting.
 
@@ -234,8 +273,11 @@ included in application assets; use this path for examples intended to be shown.
 
 For MDX, expose the imported marker and call to the plugin before the compiler
 hides or lowers that module. `include(id)` can add an exposed module ID; it
-cannot reveal a compiler's internal rendering. Ordinary Markdown fences stay
-on their existing Ferromark compiler path.
+cannot reveal a compiler's internal rendering. An included ID without a
+JavaScript or TypeScript extension is parsed as TSX; when the plugin emits JSX
+into it, the transform result declares the `tsx` module type so that Rolldown
+lowers that JSX in builds. Ordinary Markdown fences stay on their existing
+Ferromark compiler path.
 
 ## Other build hosts
 
@@ -261,4 +303,5 @@ pnpm run check:inline-macro
 The focused browser check uses the real packed core, sidecar and Vite packages.
 It covers server rendering and hydration, navigation, exact source copying,
 theme/CSS delivery, HMR and the browser module boundary. The portable packed
-consumer check also retains the existing marked HTML/JSX Vite 7/8 coverage.
+consumer check runs both macros, their diagnostics and a production build
+against Vite 8.0.0 and the current Vite 8 release.

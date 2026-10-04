@@ -69,7 +69,8 @@ try {
   const tsc = join(nodeRoot, "node_modules", "typescript", "bin", "tsc");
   await stat(tsc);
 
-  for (const viteVersion of ["7.3.1", "8.0.0"]) {
+  // The peer range floor and the current Vite 8 release.
+  for (const viteVersion of ["8.0.0", "8.3.2"]) {
     const consumer = join(tempRoot, `consumer-vite-${viteVersion}`);
     const projectPath = join(consumer, "app");
     await mkdir(projectPath, { recursive: true });
@@ -85,9 +86,7 @@ try {
         "--no-fund",
         `vite@${viteVersion}`,
         "@types/node@25.3.3",
-        "@babel/parser@7.29.9",
         "hast-util-from-html@2.0.3",
-        "hast-util-to-html@9.0.5",
         "magic-string@0.30.21",
         "@types/react@19.3.0",
         "react@19.3.0",
@@ -128,8 +127,15 @@ try {
       "LICENSE-APACHE",
       "index.mjs",
       "index.d.mts",
+      "macro-scan.mjs",
     ])
       await stat(join(consumer, "node_modules", "@ferriki", "vite", required));
+    // Vite's own parser is the only JavaScript parser; no HTML tree library is shipped.
+    assert.deepEqual(Object.keys(installedManifest.dependencies).sort(), [
+      "@ferriki/core",
+      "magic-string",
+    ]);
+    assert.deepEqual(installedManifest.peerDependencies, { vite: "^8.0.0" });
     for (const [name, version] of Object.entries(installedManifest.dependencies))
       assert(
         !version.startsWith("catalog:"),
@@ -138,21 +144,29 @@ try {
 
     await writeFile(
       join(project, "index.html"),
-      '<!doctype html><html><head></head><body><pre data-highlight="auto" data-language="ts"><code>const htmlValue = 42;</code></pre><script type="module" src="/src/example.tsx"></script></body></html>',
+      '<!doctype html><html><head></head><body><script type="module" src="/src/example.tsx"></script></body></html>',
     );
     await mkdir(join(project, "src"), { recursive: true });
     await writeFile(
       join(project, "src", "example.tsx"),
-      '"use client"; const block = <pre data-highlight="auto" data-language="ts" data-meta="{1}"><code>const jsxValue = 42;</code></pre>; console.log(block);',
+      [
+        '"use client";',
+        "import { code } from '@ferriki/core/macro'",
+        "import { plain } from './plain.ts'",
+        "export const block = code('const packedValue = 42;', { language: 'ts', meta: '{1}' })",
+        "console.log(block, plain)",
+        "",
+      ].join("\n"),
     );
+    await writeFile(join(project, "src", "plain.ts"), "export const plain = 'no macro import';\n");
     await writeFile(
       join(project, "src", "macro-ssr.jsx"),
       [
         "import React from 'react'",
-        "import { code } from '@ferriki/core/macro'",
+        "import { code as prepareCode } from '@ferriki/core/macro'",
         "import { Code } from '@ferriki/core/react/macro'",
         "",
-        `export const block = code("const exact = '& <SSR>';\\nconsole.log(exact);", { language: 'ts', meta: 'title=\"SSR Fixture\" [packed] {2}', lineNumbers: true })`,
+        `export const block = prepareCode("const exact = '& <SSR>';\\nconsole.log(exact);", { language: 'ts', meta: 'title=\"SSR Fixture\" [packed] {2}', lineNumbers: true })`,
         "export let renderCalls = 0",
         "const runtimeTitle = 'Runtime custom title'",
         "const runtimeClassName = 'custom-packed-class'",
@@ -211,13 +225,20 @@ try {
         "",
       ].join("\n"),
     );
+    await writeFile(
+      join(project, "src", "invalid-reserved.jsx"),
+      [
+        "import { code } from '@ferriki/core/macro'",
+        "export const render = ({ code }) => code.html",
+        "",
+      ].join("\n"),
+    );
 
     const probe = join(consumer, "probe.mjs");
     await writeFile(
       probe,
       `
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { build, createServer } from 'vite'
@@ -230,23 +251,25 @@ assert(ferrikiVersion(), 'packed Ferriki native binding did not load')
 const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
 function hastText(node) { return node.type === 'text' ? node.value : (node.children ?? []).map(hastText).join('') }
 function hastProperty(node, name) { if (node.type === 'element' && node.properties?.[name] !== undefined) return node.properties[name]; for (const child of node.children ?? []) { const value = hastProperty(child, name); if (value !== undefined) return value } }
-const jsxConfig = { jsx: 'automatic', jsxDev: false }
+const oxcConfig = { jsx: { runtime: 'automatic', development: false } }
 const plugin = ferriki(options)
-const server = await createServer({ configFile: false, root: project, plugins: [plugin], esbuild: jsxConfig, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, fs: { allow: [project] } }, appType: 'custom' })
+const server = await createServer({ configFile: false, root: project, plugins: [plugin], oxc: oxcConfig, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, fs: { allow: [project] } }, appType: 'custom' })
 try {
   for (const [file, reason] of [
     ['/src/invalid-spread.jsx', 'the packed React macro accepted a JSX spread'],
     ['/src/invalid-dynamic-meta.jsx', 'the packed React macro accepted dynamic meta'],
     ['/src/invalid-dynamic-highlighting.jsx', 'the packed React macro accepted dynamic highlighting'],
     ['/src/invalid-children.jsx', 'the packed React macro accepted JSX children'],
+    ['/src/invalid-reserved.jsx', 'the packed macro accepted a declaration that reuses its name'],
   ]) {
-    await assert.rejects(server.transformRequest(file), undefined, reason)
+    await assert.rejects(server.transformRequest(file), (error) => error.code === 'FERRIKI_MACRO' && error.loc?.line > 0 && typeof error.frame === 'string', reason)
   }
-  const html = await server.transformIndexHtml('/', await readFile(project + '/index.html', 'utf8'))
   const module = await server.transformRequest('/src/example.tsx')
-  assert(html.includes('htmlValue') && html.includes('data-ferriki-vite') && html.includes('data-packed-transformer="yes"'), 'packed Vite HTML transform, callback, or stylesheet injection failed')
-  assert(module?.code.includes('jsxValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer'), 'packed Vite JSX transform, callback, or CSS import failed')
-  assert(module.code.indexOf('"use client"') < module.code.indexOf('virtual:ferriki-vite/'), 'the JSX transform moved the directive prologue')
+  const plain = await server.transformRequest('/src/plain.ts')
+  assert(module?.code.includes('packedValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer'), 'packed Vite macro transform, callback, or CSS import failed')
+  assert(!module.code.includes('@ferriki/core/macro'), 'the packed macro import was not removed')
+  assert(module.code.indexOf('"use client"') < module.code.indexOf('virtual:ferriki-vite/'), 'the macro transform moved the directive prologue')
+  assert(plain?.code.includes('no macro import') && !plain.code.includes('virtual:ferriki-vite/'), 'a module without a macro import was changed')
   const ssrModule = await server.ssrLoadModule('/src/macro-ssr.jsx')
   const ssrMarkup = renderToStaticMarkup(React.createElement(ssrModule.CodeExample))
   assert.equal(ssrModule.block.code, "const exact = '& <SSR>';\\nconsole.log(exact);")
@@ -272,10 +295,10 @@ try {
 } finally {
   await server.close()
 }
-const output = await build({ configFile: false, root: project, plugins: [ferriki(options)], esbuild: jsxConfig, build: { write: false, minify: false } })
+const output = await build({ configFile: false, root: project, plugins: [ferriki(options)], oxc: oxcConfig, build: { write: false, minify: false } })
 const outputs = Array.isArray(output) ? output.flatMap((item) => item.output) : output.output
 const text = outputs.map((item) => ('source' in item ? String(item.source) : item.code)).join('\\n')
-assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'packed Vite production build omitted highlighted JSX or CSS')
+assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') && text.includes('no macro import'), 'packed Vite production build omitted the prepared macro or its CSS')
 `,
     );
     run(process.execPath, [probe], {
@@ -292,8 +315,6 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "import { code } from '@ferriki/core/macro'",
         "import type { FerrikiCodeOptions, PreparedCodeBlock } from '@ferriki/core/macro'",
         "import { Code, type CodeRenderProps } from '@ferriki/core/react/macro'",
-        "import { findInlineCodeMacros } from '@ferriki/core/macro-transform'",
-        "import type { InlineCodeMacroPlan } from '@ferriki/core/macro-transform'",
         "import type { Plugin } from 'vite'",
         "",
         "const transformer: ShikiTransformer = { line(node) { return node } }",
@@ -331,8 +352,6 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "// @ts-expect-error renderer-owned required props must be passed explicitly.",
         "const missingRendererProp = <Code language='ts' source='const renderer = true' render={({ code }) => <RequiresTitle code={code} />} />",
         "const highlightedLines: readonly number[] = prepared.metadata.highlightedLines",
-        "const plan: InlineCodeMacroPlan = findInlineCodeMacros(\"import { code } from '@ferriki/core/macro'; code('const packed = true', { language: 'ts' })\")",
-        "const firstCall: InlineCodeMacroPlan['calls'][number] | undefined = plan.calls[0]",
         "void highlightedLines",
         "void defaultCodeElement",
         "void customCodeElement",
@@ -346,7 +365,6 @@ assert(text.includes('jsxValue') && text.includes('ferriki-highlight-line'), 'pa
         "void invalidClassNameElement",
         "void undefinedRenderer",
         "void missingRendererProp",
-        "void firstCall",
         "void plugin",
         "",
       ].join("\n"),

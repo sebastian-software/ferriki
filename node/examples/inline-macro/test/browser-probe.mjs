@@ -54,7 +54,7 @@ async function main() {
     configFile: false,
     root: project,
     plugins: [ferriki(options), ssrPlugin],
-    esbuild: { jsx: "automatic" },
+    oxc: { jsx: { runtime: "automatic" } },
     optimizeDeps: {
       include: ["react", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
       noDiscovery: true,
@@ -394,7 +394,7 @@ async function main() {
       configFile: false,
       root: project,
       plugins: [ferriki(options)],
-      esbuild: { jsx: "automatic" },
+      oxc: { jsx: { runtime: "automatic" } },
       logLevel: "silent",
       build: { write: false, minify: false },
     });

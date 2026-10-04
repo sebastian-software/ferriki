@@ -1,13 +1,15 @@
 # @ferriki/vite
 
-`@ferriki/vite` highlights opted-in code blocks during Vite transforms with
-Ferriki's native highlighter. It emits HTML and CSS at build time; it does not
-add a browser highlighter, a React runtime, or custom elements.
+`@ferriki/vite` prepares Ferriki's inline highlighting macros during Vite
+transforms with Ferriki's native highlighter. It replaces `code()` calls from
+`@ferriki/core/macro` and `<Code />` elements from `@ferriki/core/react/macro`
+with highlighted HTML and CSS at build time; it does not add a browser
+highlighter, a React runtime, or custom elements.
 
-The current adapter source is in this repository at [`node/vite`](https://github.com/sebastian-software/ferriki/tree/main/node/vite). As of 2026-10-03, `@ferriki/vite@0.9.0` is not available from npm; check the registry before adding it to an application. To run the source example or exercise a local packed consumer, follow [code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md). After a matching package release exists, install it with:
+The current adapter source is in this repository at [`node/vite`](https://github.com/sebastian-software/ferriki/tree/main/node/vite). As of 2026-10-03, `@ferriki/vite@0.9.0` is not available from npm; check the registry before adding it to an application. To exercise a local packed consumer, follow the [inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md#repository-checks). After a matching package release exists, install it with:
 
 ```sh
-npm install @ferriki/vite
+npm install @ferriki/core @ferriki/vite
 ```
 
 ```js
@@ -21,63 +23,29 @@ export default {
       styleMode: "classes",
       lineNumbers: true,
     }),
+    // Add your framework plugin after Ferriki.
   ],
 };
 ```
 
-Mark ordinary HTML with `data-highlight="auto"` and a static language. `auto`
-means that the block opts into highlighting; Ferriki does not detect its
-language.
+## Prepare code with `code()`
 
-```html
-<pre
-  data-highlight="auto"
-  data-language="ts"
-  data-meta='title="Example" [API] {2} showLineNumbers'
-><code>const answer = 42;
-console.log(answer);</code></pre>
+```ts
+import { code } from "@ferriki/core/macro";
+
+export const example = code("export const answer = 42;\n", {
+  language: "ts",
+  meta: 'title="Answer" [TypeScript] {1}',
+});
 ```
 
-The same marker works on intrinsic `<pre><code>` blocks in `.jsx` and `.tsx`
-modules. The plugin accepts static text and string literal children. Dynamic
-children, computed protocol attributes, dynamic `class` or `style` props, and
-spread attributes leave that block unchanged. Other attributes and surrounding
-UI remain in place. Unknown languages produce one warning per file and keep
-the original code as plain text.
+The call becomes a prepared descriptor with the exact original `code`, its
+`language`, the highlighted `html`, the applicable `css` and parsed
+`metadata`. Code and options must be literals written in the call; the
+[inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md)
+lists the supported forms.
 
-For a Markdown/MDX compiler, the plugin must run while the compiler's output is
-still JSX. A transform that compiles Markdown and lowers JSX inside a single
-hook does not expose that intermediate source to Vite plugins. Use the
-compiler's JSX-output mode or pass an `include(id)` predicate for an exposed
-virtual JSX module ID. Place a compiler that exposes that module earlier in
-Vite's `pre` plugin tier than Ferriki. The predicate only expands which IDs are
-parsed and does not make lowered output transformable.
-
-`data-meta` supports `title="..."`, the first `[label]`, line selections such
-as `{2,4-5}`, and `showLineNumbers`. Line numbers are off by default and can be
-enabled globally with `lineNumbers: true`. For class output, Ferriki injects
-the generated stylesheet into HTML and imports a content-addressed CSS virtual
-module from transformed JSX. Editing a block produces a new stylesheet ID so
-Vite's module graph replaces the prior CSS during HMR.
-
-Pass optional Ferriki `transformers` callbacks to apply Shiki notation
-transformers to each marked block. For example, install a compatible
-`@shikijs/transformers` version and pass `transformerNotationFocus()`,
-`transformerNotationHighlight()`, `transformerNotationDiff()`, or
-`transformerNotationWordHighlight()` in that array. These are JavaScript
-callbacks; the Vite package does not add another annotation syntax or a browser
-runtime. See the [code example authoring guide](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
-for feature ownership, CSS, accessible collapse and copy behavior, and a
-runnable example.
-
-The plugin also prepares explicitly imported inline `code` calls from
-`@ferriki/core/macro`. Code and options must be direct literals; the prepared
-descriptor retains original source, HTML, CSS and metadata. The macro entry
-requires a release containing that new subpath. See the [inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md)
-for a custom component, diagnostics, server/client delivery and the inline-only
-boundary. This feature adds no browser highlighter.
-
-React consumers can instead import `Code` from `@ferriki/core/react/macro`:
+## Prepare code with `<Code />` in React
 
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
@@ -96,10 +64,64 @@ or `undefined` renderer keeps the default output. Children, spreads on `Code`,
 and other attributes are unsupported. The macro import and element are
 replaced before React lowers JSX.
 
-The package requires Node.js 22.13 or newer and Vite 7 or 8. It shares Ferriki's
+## Which modules are transformed
+
+The adapter is import-driven. Its transform hook declares a host filter, so
+Vite and Rolldown only call it for JavaScript and TypeScript modules
+(`.js`, `.jsx`, `.ts`, `.tsx` and their `.mjs`/`.cjs`/`.mts`/`.cts` forms) whose
+source contains the text `@ferriki/core/macro` or `@ferriki/core/react/macro`.
+Every other module is never parsed or changed. A module that passes this text
+check is parsed once with Vite's own parser (Rolldown's OXC `parseAst`); the
+parse, not the text, decides whether it imports a macro. A module that imports
+nothing from the macro subpaths, or only types, is returned unchanged.
+
+Spell the import specifier literally. A specifier written with escape
+sequences, such as `"@ferriki/core/macro"`, does not pass the text check;
+that module is not transformed and its `code()` call or `<Code />` element
+throws the marker's configuration error at runtime.
+
+The imported local name of `code` or `Code`, including an alias, is reserved in
+its module. Declaring that name anywhere in the module, also as a parameter or
+in a nested scope, is a compile error. A React module that imports both macros
+and destructures `({ code })` in a renderer therefore imports the function
+macro under another name, for example `import { code as prepareCode }`.
+
+Macro errors are reported through Vite with the module ID, a line and column,
+and a code frame. Unknown languages warn once per module and produce escaped
+plain code.
+
+## Options
+
+`meta` supports `title="..."`, the first `[label]`, line selections such as
+`{2,4-5}`, and `showLineNumbers`. Line numbers are off by default and can be
+enabled globally with `lineNumbers: true`; a call's `lineNumbers` overrides that
+default. With `styleMode: "classes"`, each transformed module imports a
+content-addressed CSS virtual module, so editing an example produces a new
+stylesheet ID that Vite's module graph replaces during HMR.
+
+Pass optional Ferriki `transformers` callbacks to apply Shiki notation
+transformers to every prepared block. For example, install a compatible
+`@shikijs/transformers` version and pass `transformerNotationFocus()`,
+`transformerNotationHighlight()`, `transformerNotationDiff()`, or
+`transformerNotationWordHighlight()` in that array. These are JavaScript
+callbacks; the Vite package does not add another annotation syntax or a browser
+runtime. See the [code example authoring guide](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
+for feature ownership, CSS and copy behavior.
+
+For a Markdown/MDX compiler, the plugin must run while the compiler's output
+still contains the macro import and call. A transform that compiles Markdown
+and lowers JSX inside a single hook does not expose that intermediate source to
+Vite plugins. Use the compiler's JSX-output mode or pass an `include(id)`
+predicate for an exposed module ID without a JavaScript or TypeScript
+extension, and place that compiler earlier in Vite's `pre` plugin tier than
+Ferriki. Such a module is parsed as TSX; when the adapter emits JSX into it,
+the transform result declares the `tsx` module type so Rolldown lowers that JSX
+in builds.
+
+The package requires Node.js 22.13 or newer and Vite 8. It shares Ferriki's
 release version and native asset settings. See the [Vite integration decision](https://github.com/sebastian-software/ferriki/blob/main/adr/0007-adapter-integrations-stay-outside-ferriki.md)
 for its product boundary.
 
 For multiple themes, the first key in <code>themes</code> supplies the default colors.
-With class output, set <code>data-ferriki-theme="dark"</code> on a marked
+With class output, set <code>data-ferriki-theme="dark"</code> on a prepared
 <code>&lt;pre&gt;</code> or one of its ancestors to select another configured theme.

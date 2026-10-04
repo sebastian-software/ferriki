@@ -139,7 +139,8 @@ part of release verification.
       (ADR 0013).
 - [ ] Confirm the public `@ferriki/vite` version and provenance, then import it
       with its Vite peer in a clean consumer. Before any registry publish, the
-      workflow also tests the packed plugin against Vite 7 and Vite 8.
+      workflow also tests the packed plugin against Vite 8.0.0 and the current
+      Vite 8 release.
 - [ ] Verify npm provenance on the main package, Vite integration, and all
       platform packages.
 

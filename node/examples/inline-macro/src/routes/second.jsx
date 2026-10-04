@@ -1,10 +1,10 @@
-import { code } from "@ferriki/core/macro";
+import { code as prepareCode } from "@ferriki/core/macro";
 // eslint-disable-next-line no-unused-vars, unused-imports/no-unused-imports -- Vite consumes this JSX marker import at build time.
 import { Code } from "@ferriki/core/react/macro";
 import React from "react";
 import { CodeBlock } from "../CodeBlock.jsx";
 
-export const block = code("const route = 'second';\nconsole.log(route);", {
+export const block = prepareCode("const route = 'second';\nconsole.log(route);", {
   language: "ts",
   meta: 'title="Second route" [navigation] {2}',
   lineNumbers: true,
