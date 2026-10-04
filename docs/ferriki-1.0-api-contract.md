@@ -241,3 +241,13 @@ retaining callback data and Rust token APIs. #55 tracks the Ardo/Ferromark
 handoff; it does not change the package's publication status. #39 is the
 mandatory compatibility gate that prevents unsupported or deferred rows from
 being mistaken for parity.
+
+## Build-time macro subpaths
+
+The additive `@ferriki/core/macro` entry defines `ferrikiCode` and its prepared
+HTML/CSS descriptor; executing an unprocessed marker throws. The separate
+`@ferriki/core/macro-transform` entry exposes native build-time analysis with
+owned call/import plans and UTF-8 spans. These entries add no runtime browser
+highlighter or token/HAST output. The contract and supported inline syntax are
+in [ADR 0018](../adr/0018-inline-highlighting-macros.md) and the
+[macro guide](inline-code-macros.md). Root render outputs stay unchanged.

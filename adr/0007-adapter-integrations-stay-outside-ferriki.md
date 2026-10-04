@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Context
 
@@ -57,6 +57,11 @@ unchanged. A Markdown compiler must expose intermediate JSX before lowering;
 other adapters remain out of scope unless accepted in a future product
 decision.
 
+The optional Vite adapter also processes explicitly imported inline code macros
+under [ADR 0018](0018-inline-highlighting-macros.md). Macro recognition uses
+shared native analysis; Vite owns source edits, CSS delivery and HMR. This
+does not add file/data evaluation or dynamic runtime highlighting.
+
 ## Consequences
 
 - Ferriki CI and planning should not treat these integrations as required
@@ -82,3 +87,5 @@ decision.
 - 2026-09-30: Notes the Ardo and Ferromark integrations that follow this boundary.
 - 2026-10-02: Accepts a narrow, optional Vite build adapter for static HTML and JSX.
 - 2026-10-03: Updates adapter boundaries for the HTML-only public Node output contract (#207).
+
+- 2026-10-04: Records the inline macro build boundary and private native scanner (#211).

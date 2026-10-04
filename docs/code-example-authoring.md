@@ -2,6 +2,10 @@
 
 Ferriki can render focused, highlighted, and diff-style code while the consuming renderer keeps control of the surrounding page. The existing Shiki notation transformers supply the comment syntax; Ferriki does not add another annotation language.
 
+For a component-independent inline example, use the [inline code macro](inline-code-macros.md).
+It prepares literal code during the build and retains the original text for
+copying; file imports and dynamic data are outside its initial scope.
+
 ## Feature ownership
 
 | Consumer           | Verified behavior and remaining gaps                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |

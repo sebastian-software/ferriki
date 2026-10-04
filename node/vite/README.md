@@ -70,6 +70,13 @@ runtime. See the [code example authoring guide](https://github.com/sebastian-sof
 for feature ownership, CSS, accessible collapse and copy behavior, and a
 runnable example.
 
+The plugin also prepares explicitly imported inline `ferrikiCode` calls from
+`@ferriki/core/macro`. Code and options must be direct literals; the prepared
+descriptor retains original source, HTML, CSS and metadata. The macro entry
+requires a release containing that new subpath. See the [inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md)
+for a custom component, diagnostics, server/client delivery and the inline-only
+boundary. This feature adds no browser highlighter.
+
 The package requires Node.js 22.13 or newer and Vite 7 or 8. It shares Ferriki's
 release version and native asset settings. See the [Vite integration decision](https://github.com/sebastian-software/ferriki/blob/main/adr/0007-adapter-integrations-stay-outside-ferriki.md)
 for its product boundary.

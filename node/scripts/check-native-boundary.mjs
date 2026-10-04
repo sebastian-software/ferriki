@@ -11,8 +11,8 @@ const packageJson = JSON.parse(await readFile(join(packageRoot, "package.json"),
 
 assert.deepEqual(
   Object.keys(packageJson.exports).sort(),
-  [".", "./package.json"],
-  "Ferriki must expose only the high-level API and package metadata; the native loader stays internal",
+  [".", "./macro", "./macro-transform", "./package.json"],
+  "Ferriki exposes the high-level API, explicit macro/build entries and package metadata; the native loader stays internal",
 );
 
 for (const field of ["dependencies", "optionalDependencies", "peerDependencies"]) {

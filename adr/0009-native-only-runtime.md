@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Context
 
@@ -53,11 +53,13 @@ exclusively in the Rust core.
   consumer checks read. glibc and musl Linux are separate targets, because a
   musl host cannot load a glibc addon. Targets without a hosted CI runner, such
   as macOS on Intel, are not shipped.
-- A platform without a binary fails at import with an actionable error naming
+- The root highlighter entry on a platform without a binary fails at import
+  with an actionable error naming
   the platform, architecture and libc. The intended answer for environments
   the prebuild matrix cannot reach, including browsers, is a future `wasm32`
   build of the Rust core, not a JS reimplementation.
-- The binding loader is internal. Consumers import `@ferriki/core` only.
+- The binding loader is internal. Consumers use the documented high-level
+  runtime or build-tool entries; none exposes the loader directly.
 - `ferriki-core` currently uses NAPI-RS v2 crates and enables Node-API 8 in
   `Cargo.toml`. These version numbers describe different things: the NAPI-RS
   crate major does not select the Node-API level.
@@ -106,6 +108,15 @@ See the official
 the [cross-build reference](https://napi.rs/docs/cli/build), and the
 [release command reference](https://napi.rs/docs/cli/pre-publish).
 
+### Build-time macro entries
+
+The browser-safe `@ferriki/core/macro` subpath contains only a marker that
+throws when it is not transformed. It imports no engine or native loader. The
+separate `@ferriki/core/macro-transform` entry is a native build-tool boundary;
+prepared HTML/CSS is delivered to the browser. Neither entry provides browser
+highlighting ([ADR 0018](0018-inline-highlighting-macros.md)). The native
+loader remains internal.
+
 ## Consequences
 
 - Any operation the Rust core cannot serve is a gap to close in the Rust
@@ -134,3 +145,5 @@ the [cross-build reference](https://napi.rs/docs/cli/build), and the
 - 2026-10-03: Deferred NAPI-RS v3 and `@napi-rs/cli` adoption because the
   current seven-target build, loader and release checks meet the 1.0 support
   contract without a demonstrated defect or maintenance gap.
+
+- 2026-10-04: Records the inline macro build boundary and private native scanner (#211).

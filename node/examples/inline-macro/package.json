@@ -1,0 +1,10 @@
+{
+  "name": "ferriki-inline-macro-consumer-fixture",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

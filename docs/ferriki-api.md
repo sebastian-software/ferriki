@@ -338,3 +338,11 @@ The raw N-API binding and its loader are internal. `@ferriki/core` exports no
 native subpath, so runtime validation and the public error contract always
 apply. Use `ferrikiVersion()` to check whether the platform binding loaded; it
 returns `undefined` when no supported binary is installed.
+
+## Build-time inline macros
+
+`@ferriki/core/macro` exposes the browser-safe `ferrikiCode` marker and
+`PreparedCodeBlock` type. The native build-only `@ferriki/core/macro-transform`
+entry exposes `findInlineCodeMacros`; neither changes the root highlighter
+exports. See [Inline code macros](inline-code-macros.md) for the literal-only
+contract, Vite setup, prepared HTML/CSS and release availability.

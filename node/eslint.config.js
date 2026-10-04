@@ -33,4 +33,12 @@ export default antfu(
       "pnpm/json-enforce-catalog": ["error", { ignores: ["@ferriki/core"] }],
     },
   },
+  {
+    files: ["examples/inline-macro/package.json"],
+    rules: {
+      // This fixture is installed outside the workspace to verify packed
+      // consumers; its reproducible dependency pins cannot use our catalog.
+      "pnpm/json-enforce-catalog": "off",
+    },
+  },
 );
