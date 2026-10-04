@@ -36,7 +36,7 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="A native syntax highlighter for Node.js and Rust."
-      lede="Shiki's HTML API and the VS Code grammars on a Rust engine. Highlight at build time with Vite macros, or from Rust without Node.js."
+      lede="Shiki's HTML API and the TextMate grammars your editor uses, on a Rust engine. Highlight at build time with Vite macros, or from Rust without Node.js."
       facts={[
         { label: "Succeeds", value: "Shiki" },
         { label: "Grammars", value: "260" },

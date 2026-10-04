@@ -54,7 +54,7 @@ export const meta: MetaFunction = ({ location }) => {
     {
       name: "description",
       content:
-        "Ferriki is a native syntax highlighter for Node.js and Rust: Shiki's HTML API and the VS Code grammars on a Rust engine, with build-time macros for Vite 8.",
+        "Ferriki is a native syntax highlighter for Node.js and Rust: Shiki's HTML API and the TextMate grammars your editor uses, on a Rust engine, with build-time macros for Vite 8.",
     },
   ];
 };
