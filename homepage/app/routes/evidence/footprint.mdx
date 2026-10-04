@@ -1,0 +1,53 @@
+---
+title: Footprint
+order: 3
+---
+
+import { FootprintMeasured, FootprintTable } from "../../components/footprint-tables";
+
+# Footprint
+
+Installing Ferriki adds a small JavaScript package and one native addon for
+your platform. Grammars and themes arrive when your code first loads them.
+
+<FootprintTable />
+
+<FootprintMeasured />
+
+## What npm installs
+
+`@ferriki/core` holds the JavaScript API, its type declarations, the macro
+markers and the catalogs that name every language and theme. It contains no
+native code. The addon comes from one platform package, `@ferriki/<platform>`,
+which npm installs as an optional dependency, so a machine downloads only the
+addon for its own platform. Seven targets are published: Linux x64 and arm64
+(glibc and musl), macOS on Apple Silicon, and Windows x64 and arm64.
+
+The publish workflow lists the unpacked addon size of every target in the run
+summary of each release.
+
+## Grammars and themes on demand
+
+Neither the npm package nor the Rust crate bundles grammar or theme payloads.
+The first time a language or theme is loaded, the Node.js package, or the Rust
+crate with its `remote` feature, downloads the payload from
+`assets.ferriki.dev` under the commit of its own release, checks it against the
+SHA-256 digest and size in the release manifest, and caches it. In Node.js the
+cache is `node_modules/.cache/ferriki`. A payload that fails the
+check is not cached. `FERRIKI_ASSETS_BASE_URL` points at a mirror, and
+`FERRIKI_ASSETS_REMOTE=0` loads from a populated cache only.
+
+The native addon carries no HTTP or TLS stack: in Node.js, downloads use Node's
+own `fetch`. The Rust crate includes an HTTP client only with its opt-in
+`remote` feature.
+
+## No JavaScript toolchain inside
+
+Neither the `ferriki` crate nor the addon depends on a JavaScript parser. The
+Rust lockfile names no crate of the OXC, SWC or Boa toolchains, which this
+site's footprint check verifies, and the repository's boundary check rejects
+OXC in the dependency tree of either. `@ferriki/vite` recognizes the build-time macros
+with the parser Vite already ships.
+
+No WebAssembly module ships either. Regular expressions run in Ferroni,
+Oniguruma continued in Rust, compiled into the addon and the crate.

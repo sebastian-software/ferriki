@@ -4,15 +4,13 @@ Use `code` when a component accepts a prepared code example instead of
 authored `pre`/`code` markup. Ferriki prepares HTML and CSS during the build;
 your component owns the title, copy button, tabs and other presentation.
 
-This feature is new repository source for issue #211. Use the local packed
-consumer checks until a release containing the macro subpaths is published;
-installing an earlier `@ferriki/core` release does not provide these exports.
-Core, the native platform sidecar and `@ferriki/vite` must have matching versions.
+The macro markers ship in `@ferriki/core`; `@ferriki/vite` prepares them
+during the build. Core, the native platform sidecar and `@ferriki/vite` must
+have matching versions.
 
 ## Configure Vite
 
-`@ferriki/vite` requires Vite 8. Install the matching core and Vite packages
-when that release is available:
+`@ferriki/vite` requires Vite 8. Install the core and Vite packages:
 
 ```sh
 npm install @ferriki/core @ferriki/vite
@@ -182,8 +180,7 @@ implicit prop insertion or extra container around its result. `className` is inc
 only when supplied on `Code`; the callback controls where to apply it.
 An omitted renderer, or one that evaluates to `undefined`, uses the default
 `div`. A renderer returning `null` or `undefined` keeps that result.
-`render` accepts functions, not JSX elements. The unreleased `component` prop
-has been replaced by this explicit contract and has no compatibility alias.
+`render` accepts functions, not JSX elements.
 
 Import aliases with JSX component names such as `Code as HighlightedCode` work.
 The imported name is reserved in its module, so a component, parameter or other
@@ -281,12 +278,11 @@ Ferromark compiler path.
 
 ## Other build hosts
 
-Macro recognition is part of `@ferriki/vite`. `@ferriki/core` ships no macro
-scanner; the former build-only `@ferriki/core/macro-transform` entry and its
-`findInlineCodeMacros` function were removed without a compatibility alias.
-Custom adapters must prepare HTML through the supported highlighter, preserve
-source maps and deliver the same prepared data and CSS on server and client.
-See [ADR 0018](../adr/0018-inline-highlighting-macros.md) for ownership and the
+Macro recognition is part of `@ferriki/vite`; `@ferriki/core` ships the markers
+and no macro scanner or build-time transform entry. Custom adapters must prepare
+HTML through the supported highlighter, preserve source maps and deliver the
+same prepared data and CSS on server and client. See [ADR
+0018](../adr/0018-inline-highlighting-macros.md) for ownership and the
 inline-only boundary.
 
 ## Repository checks

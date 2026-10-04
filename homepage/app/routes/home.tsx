@@ -10,13 +10,17 @@ import {
 } from "ferramenta-family";
 import { Link } from "react-router";
 
-import { ClosingSection, CodeSection, CoverageSection } from "../components/home-sections";
+import {
+  ClosingSection,
+  CodeSection,
+  CoverageSection,
+  MacroSection,
+} from "../components/home-sections";
 import {
   agreeingDocuments,
   coldSpeedup,
   documents,
   formatFactor,
-  hasArchivedApiMeasurements,
   machine,
   phikiAvailable,
   phikiMatchingDocuments,
@@ -32,10 +36,10 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="A native syntax highlighter for Node.js and Rust."
-      lede="It uses the TextMate grammars and themes VS Code uses, with Shiki's familiar HTML rendering calls."
+      lede="Shiki's HTML API and the TextMate grammars your editor uses, on a Rust engine. Highlight at build time with Vite macros, or from Rust without Node.js."
       facts={[
         { label: "Succeeds", value: "Shiki" },
-        { label: "Checked against", value: "Pinned Shiki release" },
+        { label: "Grammars", value: "260" },
         { label: "Release", value: `v${version}` },
       ]}
       actions={
@@ -43,8 +47,8 @@ function HeroSection() {
           <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
             Get started <Mark name="arrow" className="icon" size={18} />
           </Link>
-          <Link to="/guide/migrating-from-shiki" className="fam-btn fam-btn-ghost">
-            Migrate from Shiki
+          <Link to="/guide/build-time-macros" className="fam-btn fam-btn-ghost">
+            Highlight at build time
           </Link>
         </>
       }
@@ -62,19 +66,19 @@ function HeroSection() {
 const pillars = [
   {
     heading: "The grammars editors trust",
-    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki ships catalog metadata for 260 grammars and 65 editor themes. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
+    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki covers Shiki's catalog of 260 grammars and 65 themes, fetched on first use from the release-pinned asset service, verified and cached.",
   },
   {
     heading: "Context, not keyword lists",
     text: "A TextMate grammar follows a language's structure across lines: CSS and JavaScript inside HTML, code fences in Markdown, template literals, heredocs. Ferriki's tokenizer is a mechanical port of vscode-textmate, checked against its own tests.",
   },
   {
-    heading: "The rendered API you need",
-    text: "codeToHtml, codeToHtmlWithCss, reusable highlighters and the singleton keep the Shiki workflow centered on ready-to-use HTML. Checked against a pinned Shiki release, not just claimed.",
+    heading: "One engine for Node and Rust",
+    text: "The ferriki crate on crates.io is the engine itself; the Node.js package runs the same code through a native addon. Ferromark, the family's Markdown parser, highlights Markdown and MDX code fences with it natively. Shiki is a JavaScript library and has no Rust API.",
   },
   {
     heading: "No WASM, no regex translation",
-    text: "Matching runs in Ferroni, Oniguruma continued in Rust: the regex dialect the grammars were written for, compiled into the addon. No WebAssembly module to initialize, no patterns to translate.",
+    text: "Matching runs in Ferroni, Oniguruma continued in Rust: the regex dialect the grammars were written for, compiled into the addon and the crate. No WebAssembly module to initialize, no patterns to translate.",
   },
 ];
 
@@ -103,7 +107,7 @@ function SampleSection() {
         inputCaption="index.html"
         inputKind="HTML source"
         output={sample.output}
-        outputCaption={`Ferriki ${sample.version} · ${sample.theme}`}
+        outputCaption={`Ferriki v${version} · ${sample.theme}`}
       />
     </Section>
   );
@@ -124,15 +128,12 @@ function EvidenceNote() {
     <>
       Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
       Shiki {report.versions.shiki}.{" "}
-      {hasArchivedApiMeasurements
-        ? "This is a pre-removal HTML baseline; archived HAST and token measurements are not shown as current APIs or claims."
-        : "This report measures the current HTML API."}{" "}
       {phikiAvailable
-        ? `optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
+        ? `The optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
             report.agreement.phiki?.of ?? documents
           } documents; its shared cohort is separate from these Node totals.`
         : report.phiki?.status === "skipped"
-          ? `optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
+          ? `The optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
           : "Phiki is not recorded in this benchmark report."}{" "}
       The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, HTML timings and
       the command to reproduce them.
@@ -188,6 +189,7 @@ export default function HomePage() {
           <Principles items={pillars} />
         </Section>
         <SampleSection />
+        <MacroSection />
         <EvidenceSection />
         <CodeSection />
         <PipelineSection />

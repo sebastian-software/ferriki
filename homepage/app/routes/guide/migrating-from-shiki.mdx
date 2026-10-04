@@ -1,6 +1,6 @@
 ---
 title: Migrating from Shiki
-order: 2
+order: 3
 ---
 
 # Migrating from Shiki
@@ -37,11 +37,11 @@ moving over is usually an import:
 
 | Shiki surface                                                    | In Ferriki           | What to do                                                                                                                           |
 | ---------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `engine`, `createOnigurumaEngine`, `createJavaScriptRegexEngine` | Removed              | Delete the engine option; Ferriki has one native engine                                                                              |
-| `loadWasm`, `wasmBinary`                                         | Removed              | Install the platform package instead                                                                                                 |
-| `codeToHast`, `hastToHtml`, `codeToTokens*`                      | Removed from Node    | Use the supported HTML output; the Rust API retains token-oriented access for Rust consumers.                                        |
+| `engine`, `createOnigurumaEngine`, `createJavaScriptRegexEngine` | Not in Ferriki       | Delete the engine option; Ferriki has one native engine                                                                              |
+| `loadWasm`, `wasmBinary`                                         | Not in Ferriki       | Install the platform package instead                                                                                                 |
+| `codeToHast`, `hastToHtml`, `codeToTokens*`                      | Not in Ferriki       | Use the HTML output; Rust callers get tokens from the `ferriki` crate                                                                |
 | Standard grammar and theme payloads                              | Downloaded on demand | Async factory, load and one-shot calls fetch and verify missing release assets; configure the asset cache or mirror for offline use. |
-| Browser runtime                                                  | Not supported        | Highlight in Node.js at build or render time                                                                                         |
+| Browser runtime                                                  | Not supported        | Highlight in Node.js at build or render time, or with the Vite build-time macros                                                     |
 | `lang: "ansi"` with escape sequences                             | Rejected             | Strip or parse terminal output first                                                                                                 |
 | `rehype`, `markdown-it` and other adapters                       | Not part of Ferriki  | Keep the adapter in your Markdown layer and use an HTML integration                                                                  |
 
@@ -49,9 +49,9 @@ moving over is usually an import:
 checked by machine against a pinned mirror of Shiki's own test suite (see
 [Compatibility](/evidence/compatibility)).
 
-The Node contract centers on rendered HTML and CSS. If your integration
-requires structured HAST or token values, plan a separate migration; the former
-Node exports are no longer part of `@ferriki/core`.
+The Node API returns rendered HTML and CSS. If your integration consumes HAST
+or token arrays, that part needs another path: keep it on Shiki, or read tokens
+from the `ferriki` crate in Rust.
 
 ## Before you switch
 
@@ -64,9 +64,6 @@ The full guide, including asset loading, output-shape differences, and
 downstream adapter boundaries, is
 [docs/migrations/shiki-to-ferriki.md](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
 
-The repository also contains a separate optional Vite adapter. It prepares
-imported `code()` and React `<Code />` macros during Vite 8 transforms; it does
-not run in the browser and has not been published with the current
-`@ferriki/core` release. See the
-[@ferriki/vite source README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
-for its current contract and release status.
+Code examples inside components can move to build time: `@ferriki/vite`
+prepares `code()` and `<Code />` macros during a Vite 8 build. See
+[Build-time macros](/guide/build-time-macros).

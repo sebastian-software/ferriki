@@ -8,7 +8,6 @@ import {
   engineLabels,
   formatFactor,
   formatMs,
-  hasArchivedApiMeasurements,
   htmlEngines,
   nodeEngines,
   phikiAvailable,
@@ -97,21 +96,6 @@ export function BenchmarkDocuments() {
       verdictLabel="Shiki WASM / Ferriki"
       align="end"
     />
-  );
-}
-
-/** Explain why the committed report may contain measurements for retired Node APIs. */
-export function HistoricalApiNote() {
-  if (!hasArchivedApiMeasurements) return null;
-  return (
-    <p>
-      This is a pre-removal HTML baseline measured {report.measured} at Ferriki source revision{" "}
-      <a href={`https://github.com/sebastian-software/ferriki/commit/${report.source.revision}`}>
-        {report.revision}
-      </a>
-      . This page presents its HTML results only. The HAST and token timings in the committed JSON
-      are archival measurements from the former Node API, not current API or performance claims.
-    </p>
   );
 }
 

@@ -10,155 +10,125 @@
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 <!-- mdtheme:badges:end -->
 
-Ferriki provides Shiki-shaped HTML syntax highlighting through a lean Rust
-core and Node bindings.
-
-It keeps familiar highlighter factories and HTML calls, while removing the
-old JS/WASM multi-engine direction from the runtime. The goal is simple: keep
-the developer experience familiar, move the heavy lifting into Rust, and end
-up with a smaller, cleaner architecture that is easier to reason about and
-easier to ship.
+Ferriki is a native syntax highlighter for Node.js and Rust. Shiki brought
+editor-grade highlighting to the web; Ferriki keeps its HTML API, grammars and
+themes and runs them on a Rust port of VS Code's TextMate tokenizer, so Rust
+programs, Node.js and Vite builds share one engine. Ferriki is in beta: until
+1.0, a minor release can change the API, and the
+[changelog](node/ferriki/CHANGELOG.md) lists each change.
 
 ## Why Ferriki
 
-- Shiki-shaped HTML API: reusable highlighters and familiar highlight options support common migrations.
-- Rust-first by design: grammar handling, theme application, state management, and rendering belong in the native core.
-- Standard language and theme assets load lazily from a release-pinned CDN, so their payloads stay out of the packages.
-- Leaner runtime shape: no product dependency on the historical JS/WASM engine stack.
-- Verifiable compatibility: the Node layer is checked against a strict mirrored Shiki release-tag suite, while the tokenizer is checked against a pinned vscode-textmate oracle.
+1. **One engine, two languages.** The [`ferriki`](https://crates.io/crates/ferriki)
+   crate is the highlighter, `@ferriki/core` runs it through a native addon,
+   and [Ferromark](https://ferromark.dev) uses it to highlight Markdown and MDX
+   fences natively. Shiki runs on JavaScript, with Oniguruma in WebAssembly or
+   a JavaScript regex engine, and has no Rust form.
+2. **Build-time macros in Vite 8.** With [`@ferriki/vite`](node/vite/README.md),
+   `code()` and `<Code />` become highlighted HTML and CSS during the build; the
+   browser receives no grammar and no engine. Only modules that import a macro
+   are touched. Shiki's official content integrations work on Markdown; it has
+   no build-time macro for components.
+3. **Class-based output with nested scopes.** `styleMode: "classes"` renders
+   grammar scopes as nested spans for stylesheet themes. `codeToHtmlWithCss`
+   derives the CSS from unchanged TextMate themes, and a theme map switches
+   through `data-ferriki-theme` without highlighting again. Inspired by
+   GitHub's PrettyLights and [starry-night](https://github.com/wooorm/starry-night).
+4. **No WebAssembly, no regex translation, small installs.**
+   [Ferroni](https://ferroni.dev), Oniguruma in Rust, runs grammar patterns as
+   written. Each platform's addon is its own optional package, and grammars and
+   themes download on first use from a release-pinned CDN, verified by SHA-256
+   and cached.
+5. **Continuity.** Shiki's `codeToHtml`, highlighters, singleton, `themes` map
+   and custom grammars keep their call shapes, and the `@shikijs/transformers`
+   notation plugs in as is. A pinned, unmodified mirror of Shiki v4.4.3's tests
+   and the vscode-textmate v9.3.2 oracle check this in CI.
 
-Ferriki is for teams that like Shiki's familiar highlighter and HTML flow and
-want a cleaner native foundation underneath.
+On the [benchmark corpus](https://ferriki.dev/evidence/benchmarks), Ferriki
+renders the same HTML as Shiki and finishes ahead of both Shiki engines, with a
+warm highlighter and from a cold start. The report is committed, and
+`pnpm run bench:comparison` in `node/` runs it again.
 
-## Product Scope
-
-Ferriki is intentionally narrow right now.
-
-| Area | Status | Notes |
-| --- | --- | --- |
-| Core highlighting runtime | Integrated | Native Rust core, Node bindings, Shiki-shaped HTML rendering API |
-| HTML output | Primary Node path | `codeToHtml` renders HTML; `styleMode: "classes"` adds nested scope classes; `codeToHtmlWithCss` also returns resolved theme CSS |
-| HAST and token output | Removed before 1.0 | Standalone Node methods are removed; typed token/HAST data remain available to HTML transformer callbacks, and Rust token APIs remain public |
-| Transformers | Integrated | User-supplied JavaScript hooks receive internal token/HAST data while rendering HTML (ADR 0008) |
-| Optional Vite adapter | Available | [`@ferriki/vite`](node/vite/README.md) prepares imported `code()` and React `<Code />` macros during Vite 8 transforms, outside the core runtime |
-| `colorized-brackets`, `markdown-it`, `rehype`, and VitePress integrations | Out of scope | These remain optional adapter projects, not Ferriki core exports |
-
-Removing public Node HAST and token methods before 1.0 is an intentional
-breaking divergence from Shiki, with no deprecated aliases or compatibility
-package. See [ADR 0017](adr/0017-node-html-output-priority.md) and the
-[migration guide](docs/migrations/shiki-to-ferriki.md) for the supported path.
-
-The mirrored Shiki workspace under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) exists to verify compatibility claims. It is not a statement that every mirrored package is a Ferriki feature.
-
-## Products
-
-This repository has a Rust library and a Node package:
-
-- [`ferriki`](src) (repository root package): reusable Rust highlighter and renderer
-- [`node/ferriki`](node/ferriki): the Node-facing package surface
-
-The private [`ferriki-core`](crates/ferriki-core) crate hosts the N-API binding
-over the same Rust runtime.
-
-## Repository Layout
-
-- [`src`](src): the `ferriki` crate, native highlighter and asset catalogs
-- [`crates/ferriki-core`](crates/ferriki-core): N-API host
-- [`node/ferriki`](node/ferriki): Node package
-- [`node/compat/harness`](node/compat/harness): Ferriki-specific compatibility glue
-- [`node/compat/upstream/shiki`](node/compat/upstream/shiki): strict upstream Shiki mirror
-- [`node/compat/upstream/vscode-textmate`](node/compat/upstream/vscode-textmate): strict tokenizer source and test oracle
-- [`adr`](adr): architecture decision records ([index](adr/README.md))
-
-Contributor workflow, test lanes, and the mirror rules are documented in
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-User-facing documentation lives in the [`docs/`](docs) directory:
-
-- [Ferriki API reference](docs/ferriki-api.md)
-- [Rust API and Ferromark integration](docs/rust-api.md)
-- [Shiki migration guide](docs/migrations/shiki-to-ferriki.md)
-- [Compatibility and support policy](docs/compatibility.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Code example authoring](docs/code-example-authoring.md)
-- [Ferromark + Ardo example](docs/examples/ferromark-ardo.mjs)
-
-The repository root is intentionally Rust-first. All Node, npm, and upstream
-compatibility machinery lives under [`node`](node).
-
-## Quick Start
-
-Prerequisites: a stable Rust toolchain (`cargo`), Node.js >= 22.13.0, and pnpm
-(the pinned version in `node/package.json` is picked up via corepack).
-
-Rust:
+## Install and highlight
 
 ```sh
-cargo check -p ferriki-core
+npm install @ferriki/core                  # Node.js
+npm install @ferriki/core @ferriki/vite    # Vite 8, one shared version
+cargo add ferriki --features remote        # Rust
 ```
 
-Node (`build:native` compiles the Rust core and copies the addon into the
-package):
+```js
+import { codeToHtml } from "@ferriki/core";
 
-```sh
-cd node
-pnpm install --ignore-scripts
-pnpm run prepare:compat
-pnpm run build:native
-pnpm run test:ferriki-compat:textmate
+const html = await codeToHtml("const answer = 42;", { lang: "typescript", theme: "github-dark" });
 ```
 
-The compatibility workspace contains upstream `prepare` scripts that rewrite
-generated files. Installs intentionally skip package lifecycle scripts; the
-explicit `prepare:compat` command runs those generators in a temporary
-checkout and keeps the tracked mirror immutable.
+```rust
+use ferriki::{Highlighter, RemoteAssets, RenderOptions, StandardAssetCatalogs, render_html};
 
-The TextMate compatibility lane runs selected, unchanged Shiki tests with
-honest aliases so every highlighted result passes through the native addon.
-The broader `test:ferriki-compat:core` lane also runs the Ferriki-owned API,
-error, catalog, registration, multi-theme, transformer, token-state, packaging,
-and Ferromark/Ardo contract checks. Upstream cases outside that accepted
-boundary remain explicitly classified in the compatibility manifest.
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut highlighter = Highlighter::builder()
+        .with_assets(StandardAssetCatalogs::remote(RemoteAssets::default())?)
+        .load_languages(["rust"])
+        .load_themes(["github-dark"])
+        .build()?;
+    let tokens = highlighter.highlight("fn main() {}", "rust", "github-dark")?;
+    println!("{}", render_html(&tokens, &RenderOptions::default()));
+    Ok(())
+}
+```
 
-## Class-based output (next release)
+```tsx
+// vite.config.ts
+import react from "@vitejs/plugin-react";
+import { ferriki } from "@ferriki/vite";
 
-Inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
-and [wooorm's starry-night](https://github.com/wooorm/starry-night).
+export default { plugins: [ferriki({ theme: "github-dark" }), react()] };
 
-Use `styleMode: "classes"` for nested scope classes and custom CSS.
-`codeToHtmlWithCss` returns `{ html, css }` using unchanged TextMate themes,
-including theme maps that switch via `data-ferriki-theme` without retokenizing.
-See the [class-based highlighting guide](docs/class-highlighting.md) for examples and integration details.
+// Example.tsx: the build replaces <Code /> with highlighted HTML and its CSS.
+import { Code } from "@ferriki/core/react/macro";
+
+export const Example = () => <Code language="ts" source={`const answer = 42;`} />;
+```
+
+The first use of a language or theme downloads it, verifies it and caches it;
+[asset loading](docs/asset-loading.md) covers mirrors and offline builds.
+
+## What you get
+
+| Feature | Details |
+| --- | --- |
+| HTML output | `codeToHtml` with Shiki's markup, inline styles and escaped source |
+| Class-based CSS output | `styleMode: "classes"`, or `codeToHtmlWithCss` for `{ html, css }` |
+| Single and multi-theme | `theme`, or a `themes` map switched by CSS variables or `data-ferriki-theme` |
+| Transformers | Shiki's hooks and decorations, including the `@shikijs/transformers` notation |
+| 260 grammars, 65 themes | Loaded on demand and cached; a mirror or warm cache serves offline builds |
+| Custom grammars and themes | TextMate JSON with aliases and injections, validated before use |
+| Rust crate and Ferromark | [`ferriki`](https://docs.rs/ferriki): tokens, line HTML, class HTML; Ferromark's `ferriki` feature |
+| Vite build-time macros | [`@ferriki/vite`](node/vite/README.md): `code()` and `<Code />` on Vite 8 |
+| Platforms | Node.js 22.13.0 or newer, ESM-only; Linux x64/arm64 (glibc, musl), macOS arm64, Windows x64/arm64 |
 
 ## Compatibility
 
-Ferriki tracks one approved Shiki release tag at a time — currently
-**Shiki v4.4.3** (machine-readable source of truth:
-[`node/compat/upstream/shiki/.source.json`](node/compat/upstream/shiki/.source.json)).
+Ferriki pins one release of each upstream, currently Shiki v4.4.3 and
+vscode-textmate v9.3.2. Both are mirrored unmodified and checked in CI, and
+every Shiki test is classified as supported, deferred or out of scope. HTML is
+the Node output: transformer callbacks receive token and HAST data, and the
+Rust crate returns tokens. Ferriki runs in Node.js and Rust; browsers get its
+build-time output. See the [compatibility policy](docs/compatibility.md) and
+the [migration guide](docs/migrations/shiki-to-ferriki.md).
 
-- Upstream-derived files under [`node/compat/upstream/shiki`](node/compat/upstream/shiki) are mirrored, not hand-edited.
-- vscode-textmate source and tests under [`node/compat/upstream/vscode-textmate`](node/compat/upstream/vscode-textmate) are likewise pinned and never hand-edited.
-- Ferriki-specific behavior lives outside that mirror, mainly in [`node/compat/harness`](node/compat/harness) and the Ferriki product paths.
-- “Shiki-compatible” in this repository means compatibility is intended to be checked, not just claimed.
-- Compatibility coverage is broader than product scope. Ferriki may still test selected optional upstream adapters separately, but that does not make them first-class Ferriki features.
+## Documentation
 
-## Status
+- [ferriki.dev](https://ferriki.dev): guides and [benchmarks](https://ferriki.dev/evidence/benchmarks)
+- [API reference](docs/ferriki-api.md), [class-based highlighting](docs/class-highlighting.md), [asset loading](docs/asset-loading.md)
+- [Inline code macros](docs/inline-code-macros.md), [code example authoring](docs/code-example-authoring.md)
+- [Rust API and Ferromark](docs/rust-api.md), [troubleshooting](docs/troubleshooting.md)
 
-The native TextMate runtime from issue #30 is implemented. It is a mechanical
-port of pinned vscode-textmate v9.3.2 onto the Scanner API of
-[Ferroni](https://github.com/sebastian-software/ferroni), integrated with
-Ferriki's asset catalogs, native renderer, N-API host, and focused Node
-surface. Its inner vscode-textmate oracle and honest Shiki v4.4.3 structural
-gate are green.
+## Contributing
 
-The accepted API contract and its focused checks own token/state, lifecycle,
-transformer, and registration behavior. Upstream adapter fixtures that do not
-describe Ferriki's native boundary remain classified as explicit non-goals.
-The current core direction is:
-
-- Rust owns runtime behavior
-- Node is the thin facade and compatibility layer
-- optional ecosystem adapters do not define the core product boundary or release gate
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, the test lanes and the
+repository layout, and [`adr/`](adr/README.md) for the decisions.
 
 ## License
 

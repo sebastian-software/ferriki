@@ -1,21 +1,19 @@
 # Class-based highlighting
 
-HTML is Ferriki's primary Node output. `codeToHtml` keeps inline styles as its
-default; use `styleMode: "classes"` or `codeToHtmlWithCss` when the page should
-style nested grammar scopes with CSS. The Node renderer uses token and HAST
-data internally, and transformer callbacks can inspect those typed payloads.
-Standalone HAST and token results are removed before 1.0. Class-based output is
-available in the current `@ferriki/core` release.
+HTML is Ferriki's Node output. `codeToHtml` uses inline styles by default; use
+`styleMode: "classes"` or `codeToHtmlWithCss` when the page should style nested
+grammar scopes with CSS. Token and HAST values reach transformer callbacks
+during rendering, and the Rust crate exposes tokens.
 
 ## Inspiration
 
-This mode was inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
+This mode is inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
 and [wooorm's starry-night](https://github.com/wooorm/starry-night), which recreates
-PrettyLights-style class-based highlighting. Starry-night was the starting point
-for exploring CSS classes and stylesheet-driven themes in Ferriki.
+PrettyLights-style class-based highlighting with CSS classes and
+stylesheet-driven themes.
 
-Ferriki implements the idea on its existing native TextMate runtime, preserving
-full nested scope paths and extracting CSS from resolved theme styles.
+Ferriki implements the idea on its native TextMate runtime, preserving full
+nested scope paths and extracting CSS from resolved theme styles.
 
 ## Use your own CSS
 
@@ -152,13 +150,14 @@ no TextMate theme registration is required. Use `theme: "none"` for that route.
 
 ## Integration contract
 
-- Classes mode uses `.ferriki` instead of `.shiki` on its root so existing
-  Shiki-specific site rules do not select the new structure.
-- `styleMode: "inline"` and omitted `styleMode` retain the existing output.
+- Classes mode uses `.ferriki` instead of `.shiki` on its root so
+  Shiki-specific site rules do not select the nested structure.
+- `styleMode: "inline"` and an omitted `styleMode` produce the default
+  inline-style output.
 - Classes mode preserves grammar boundaries and scope paths. Whitespace and
   equal-style merging are skipped even if the merge options are enabled.
-- Token transformer callbacks receive `scopeNames` in classes mode. The Node
-  package does not expose a standalone token result method.
+- Token transformer callbacks receive `scopeNames` in classes mode; tokens are
+  callback data, and the Node output is HTML.
 - Token/span transformers still run on individual source tokens. Scope nesting
   and style extraction run after HAST hooks and decorations. Transformers that
   depend on the default flat DOM must be adapted; transformer-created tokens
@@ -194,5 +193,5 @@ For token-level use, enable
 The Node API additionally supports theme maps and JavaScript transformers.
 
 The [experiment report](experiments/class-highlighting.md) describes the corpus,
-original comparison, and its limits. Those results measure the tested examples,
+the comparison, and its limits. Those results measure the tested examples,
 not a population-level claim that 95% of user requests are covered.

@@ -1,11 +1,47 @@
 import { ClosingAction, CodePanel, Ledger, Mark, Section } from "ferramenta-family";
 import { Link } from "react-router";
 
+import macroSample from "../data/macro-sample.json";
+
 /*
- * The lower half of the landing page: the two APIs side by side, the coverage
- * ledger and the closing call to action. Split from routes/home.tsx to keep
- * each file readable; the measured sections stay with the page.
+ * The landing page sections that state no measurement: the build-time macro
+ * sample, the Node and Rust APIs side by side, the coverage ledger and the
+ * closing call to action. Split from routes/home.tsx to keep each file
+ * readable; the measured sections stay with the page.
  */
+
+export function MacroSection() {
+  return (
+    <Section
+      id="build-time"
+      title="Highlight at build time"
+      intro={
+        <>
+          Write a code example where it is shown: <code>&lt;Code /&gt;</code> from{" "}
+          <code>@ferriki/core/react/macro</code> in React, or <code>code()</code> from{" "}
+          <code>@ferriki/core/macro</code> in any module. During the Vite 8 build,{" "}
+          <code>@ferriki/vite</code> replaces each one with highlighted HTML and its CSS, so the
+          browser loads no grammar and no engine. Only modules that import a macro are touched, each
+          parsed once with Vite&rsquo;s own parser.
+        </>
+      }
+      note={
+        <>
+          <a href="https://github.com/sebastian-software/ferriki/blob/main/homepage/scripts/render-macro-sample.mjs">
+            Transformed by scripts/render-macro-sample.mjs
+          </a>{" "}
+          with <code>@ferriki/vite</code>&rsquo;s default options; the{" "}
+          <Link to="/guide/build-time-macros">macro guide</Link> covers setup and the rules.
+        </>
+      }
+    >
+      <div className="fam-code-grid ferriki-macro-sample">
+        <CodePanel caption="Answer.tsx">{macroSample.input}</CodePanel>
+        <CodePanel caption="Answer.tsx as @ferriki/vite emits it">{macroSample.output}</CodePanel>
+      </div>
+    </Section>
+  );
+}
 
 function MigrationExample() {
   return (
@@ -66,17 +102,20 @@ export function CodeSection() {
   return (
     <Section
       id="code"
-      title="Keep the same HTML. Change one import."
+      title="One engine, called from Node.js or from Rust."
       intro={
         <>
-          For Node.js, Ferriki keeps Shiki&rsquo;s rendered HTML calls and options. From Rust, the
-          same engine is a crate with no Node.js in sight.
+          In Node.js, Ferriki keeps Shiki&rsquo;s <code>codeToHtml</code>, reusable highlighters,
+          the singleton and their options; coming from Shiki is usually one changed import. In Rust,
+          the <code>ferriki</code> crate is the same engine as a library, with no Node.js in the
+          process.
         </>
       }
       note={
         <>
           What changes and what stays is listed in the{" "}
-          <Link to="/guide/migrating-from-shiki">migration guide</Link>.
+          <Link to="/guide/migrating-from-shiki">migration guide</Link>; the{" "}
+          <Link to="/rust/getting-started">Rust guide</Link> covers assets and Ferromark.
         </>
       }
     >
@@ -90,23 +129,45 @@ export function CodeSection() {
 
 const coverage = [
   {
-    name: "Shiki's rendered HTML API",
+    name: "Shiki's HTML API",
     status: "Covered",
     settled: true,
-    detail: "codeToHtml, reusable highlighters, the singleton and language aliases.",
+    detail:
+      "codeToHtml, reusable highlighters, the singleton, the themes map, language aliases, transformers and decorations.",
   },
   {
     name: "Standard grammars and themes",
     status: "260 · 65",
     settled: true,
     detail:
-      "Ferriki ships catalog metadata. In Node, requested compact payloads download from the release-pinned asset service on first use and are cached locally.",
+      "Shiki's catalog. Payloads download on first use from the release-pinned asset service, verified by SHA-256 and cached.",
   },
   {
     name: "Custom TextMate grammars and themes",
     status: "Covered",
     settled: true,
     detail: "Register your own JSON grammars and themes, with embedded languages and injections.",
+  },
+  {
+    name: "Class-based output",
+    status: "Covered",
+    settled: true,
+    detail:
+      'Nested scope classes and themes as a stylesheet, through styleMode: "classes" or codeToHtmlWithCss. Switch themes with data-ferriki-theme, without highlighting again.',
+  },
+  {
+    name: "Build-time macros",
+    status: "Vite 8",
+    settled: false,
+    detail:
+      "code() and <Code /> become HTML and CSS during the build through @ferriki/vite. Other build tools have no adapter.",
+  },
+  {
+    name: "Rust crate and Ferromark",
+    status: "Native",
+    settled: true,
+    detail:
+      "cargo add ferriki gives Rust the same engine, with no Node.js in the process. Ferromark highlights Markdown and MDX code fences with it natively.",
   },
   {
     name: "Linux, macOS, Windows",
@@ -122,10 +183,11 @@ const coverage = [
     detail: "Adapters stay in the Markdown layer; Ferromark integrates Ferriki from Rust.",
   },
   {
-    name: "Browsers",
-    status: "Not a target",
-    settled: false,
-    detail: "Ferriki runs in Node.js and Rust. Highlight at build or render time on the server.",
+    name: "Server and build time",
+    status: "By design",
+    settled: true,
+    detail:
+      "Ferriki runs in Node.js and Rust, at build or render time. Pages receive HTML and CSS; the browser loads no grammar and no engine.",
   },
 ];
 
@@ -134,7 +196,7 @@ export function CoverageSection() {
     <Section
       id="coverage"
       title="What it covers"
-      intro="Ferriki is deliberately narrow: native highlighting with rendered HTML and CSS output on every supported Node platform."
+      intro="Ferriki is deliberately narrow: highlighting to HTML and CSS, in Node.js, in Rust and in the Vite build."
       note={<Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>}
     >
       <Ledger entries={coverage} />
@@ -168,8 +230,9 @@ export function ClosingSection() {
       }
     >
       <p className="fam-intro">
-        Shiki&rsquo;s contract, the grammars of your editor and a native engine. Install one
-        package; there is no WebAssembly to load and no engine to choose.
+        Three ways in, one native engine: <code>@ferriki/core</code> from npm, the{" "}
+        <code>ferriki</code> crate from crates.io, and the build-time macros through{" "}
+        <code>@ferriki/vite</code>. There is no WebAssembly to load and no engine to choose.
       </p>
     </ClosingAction>
   );

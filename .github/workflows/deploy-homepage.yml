@@ -80,10 +80,12 @@ jobs:
       - name: Install homepage dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check source samples and packed-package guide examples
+      - name: Check source samples, the footprint record and packed-package guide examples
         run: |
           pnpm sample:check
           pnpm class-sample:check
+          pnpm macro-sample:check
+          pnpm footprint:check
           node scripts/check-guide-examples.mjs
 
       - name: Check the optional packed Vite adapter

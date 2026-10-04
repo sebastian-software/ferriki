@@ -4,9 +4,10 @@
  * Load order (ferramenta-family README): tokens.css, fonts.css, theme.css,
  * docs.css, landing.css, this file, then chrome.css last. The family package
  * owns the documentation shell, header controls, tables and code grid. This
- * file keeps the class-highlighting demo, an accessible code-block ground and
- * two narrow navigation details: the docs flyout scrolls on short screens, and
- * nested pages mark their section.
+ * file keeps the class-highlighting demo, an accessible code-block ground, the
+ * wrapping of the landing page's macro sample and two narrow navigation
+ * details: the docs flyout scrolls on short screens, and nested pages mark
+ * their section.
  */
 
 :root.light {
@@ -55,6 +56,16 @@
 }
 .class-demo-custom .tok-string {
   color: #d14a70;
+}
+
+/*
+ * The macro sample shows the module @ferriki/vite emits, whose prepared HTML
+ * is one long string literal. Wrapping it keeps the whole output readable
+ * without scrolling the panel sideways.
+ */
+.ferriki-macro-sample .fam-code pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Keep long documentation menus reachable on short landscape screens. */

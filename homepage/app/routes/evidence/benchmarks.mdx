@@ -7,7 +7,6 @@ import {
   BenchmarkContext,
   BenchmarkDocuments,
   BenchmarkSummary,
-  HistoricalApiNote,
   PhikiSharedHtmlBenchmark,
 } from "../../components/benchmark-tables";
 
@@ -18,14 +17,11 @@ Shiki runs twice: with its default Oniguruma engine compiled to WebAssembly,
 and with its JavaScript regex engine. When PHP and Composer are available, the
 benchmark also runs pinned Phiki as a fourth HTML renderer. Its output check
 and any equivalent-work totals are reported separately from the full-corpus
-Node HTML totals. HTML is the current public Node output; the report runner no
-longer measures the removed HAST and token APIs.
+Node HTML totals.
 
-Every number on this site comes from one committed report,
+Every speed figure on this site comes from one committed report,
 [docs/benchmarks/shiki-comparison.json](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/shiki-comparison.json).
 The landing page and this page read it at build time.
-
-<HistoricalApiNote />
 
 ## Summary
 

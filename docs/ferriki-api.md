@@ -19,13 +19,12 @@ The retained declaration symbols are `LanguageRegistration`,
 `bundledLanguages`, `bundledThemes`, `bundledLanguagesAlias`,
 `BundledLanguage`, `BundledTheme`, `FerrikiErrorCode`, and `FerrikiError`.
 
-The Node package exposes HTML as its only public render output. Before 1.0,
-`codeToHast`, `codeToTokens`, `codeToTokensBase`,
-`codeToTokensWithThemes`, and `hastToHtml` are removed from both the top-level
-exports and reusable highlighters. Ferriki makes this breaking divergence from
-Shiki without deprecated aliases or a compatibility package. Transformer
-callbacks still receive typed token payloads and Ferriki HAST nodes as part of
-HTML rendering; those types do not add standalone result methods.
+HTML is the Node output: `codeToHtml` and `codeToHtmlWithCss` render it, as
+top-level functions and as highlighter methods. Transformer callbacks receive
+typed token payloads and Ferriki HAST nodes during rendering. Shiki's
+`codeToHast`, `codeToTokens`, `codeToTokensBase`, `codeToTokensWithThemes`,
+and `hastToHtml` are not part of this API; Rust consumers get tokens from the
+`ferriki` crate.
 
 ## Runtime requirements
 
@@ -324,11 +323,11 @@ remain actionable and start with the documented `[ferriki]` prefix.
 Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
 Transformer callbacks and decoration processing stay in JavaScript; callback
 objects do not cross the native boundary. Public Node rendering returns HTML
-only, as an intentional pre-1.0 divergence from Shiki. Ferriki does not export
-Shiki's JavaScript/Oniguruma engine factories or WASM loading. Markdown adapters such as
-`rehype` and `markdown-it`, and the optional Vite integration, are separate
-packages rather than `@ferriki/core` exports. See the
-[migration guide](./migrations/shiki-to-ferriki.md) for the supported boundary.
+only. Ferriki does not export Shiki's JavaScript/Oniguruma engine factories or
+WASM loading. Markdown adapters such as `rehype` and `markdown-it`, and the
+optional Vite integration, are separate packages rather than `@ferriki/core`
+exports. See the [migration guide](./migrations/shiki-to-ferriki.md) for the
+supported boundary.
 For focus, highlights, diffs, and collapsible examples across Node, Vite, and
 Ferromark, see [code example authoring](./code-example-authoring.md).
 
@@ -347,6 +346,6 @@ returns `undefined` when no supported binary is installed.
 and an explicit `render` function receiving `CodeRenderProps`. Both are erased
 during the build; the React marker adds no React runtime import to the core package.
 `@ferriki/vite` recognizes the markers; `@ferriki/core` ships no macro scanner,
-and these entries leave the root highlighter exports. See
+and these entries are separate from the root highlighter exports. See
 [Inline code macros](inline-code-macros.md) for the literal-only contract, Vite
-setup, prepared HTML/CSS and release availability.
+setup and prepared HTML/CSS.

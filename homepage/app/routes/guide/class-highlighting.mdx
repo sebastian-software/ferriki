@@ -1,6 +1,6 @@
 ---
 title: Class-based output
-order: 4
+order: 5
 ---
 
 import { ClassHighlightingDemo } from "../../components/class-highlighting-demo";
@@ -9,14 +9,14 @@ import { ClassHighlightingDemo } from "../../components/class-highlighting-demo"
 
 Nested scope classes make simple styling a few lines of CSS while keeping
 ancestor context, scope order, and repeated scopes available for precise rules.
-Class-based output is available in the current `@ferriki/core` release. Inline
-styles remain the default for `codeToHtml`.
+Inline styles stay the default for `codeToHtml`; class output is one option
+away.
 
 The idea was inspired by [GitHub's PrettyLights](https://github.com/wooorm/starry-night#what-is-prettylights)
 and [wooorm's starry-night](https://github.com/wooorm/starry-night), which recreates
 PrettyLights-style class-based highlighting. Ferriki implements this direction on
-its existing native TextMate runtime, retaining full scope paths and extracting
-CSS from resolved theme styles.
+its native TextMate runtime, retaining full scope paths and extracting CSS from
+resolved theme styles.
 
 <ClassHighlightingDemo />
 
@@ -112,5 +112,5 @@ flat HTML may need adaptation.
 See the [complete class guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md)
 for the class contract, CSS collection, custom variable prefixes, grammar-state
 continuation, and the Rust API. The
-[experiment report](https://github.com/sebastian-software/ferriki/blob/main/docs/experiments/class-highlighting.md)
-records the tested corpus and limits of the coverage evidence.
+[evaluation report](https://github.com/sebastian-software/ferriki/blob/main/docs/experiments/class-highlighting.md)
+records the tested corpus and the limits of that evidence.

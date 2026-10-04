@@ -9,8 +9,6 @@ export type EngineId = "ferriki" | "phiki" | "shiki-js" | "shiki-wasm";
 export type NodeEngineId = Exclude<EngineId, "phiki">;
 export type Api = "codeToHtml";
 
-type ArchivedApi = "codeToHast" | "codeToTokensBase";
-
 type BenchmarkRow = {
   lang: string;
   path: string;
@@ -61,7 +59,7 @@ type ExtendedReport = {
     ferriki: EngineAgreement;
     "shiki-wasm": EngineAgreement;
     "shiki-js": EngineAgreement;
-    phiki?: { status: string; documents: number; of: number; unavailableOperations?: string[] };
+    phiki?: { status: string; documents: number; of: number };
   };
   outputAgreement?: { criteria: string; documents: OutputAgreementRow[] };
   phiki?: { status: string; reason?: string };
@@ -108,13 +106,9 @@ type ExtendedReport = {
     reason?: string;
   };
   theme: string;
-  // The current runner emits HTML only. Optional fields accept the immutable
-  // dated report written before the Node HAST and token APIs were removed.
-  warm: { codeToHtml: BenchmarkRow[] } & Partial<Record<ArchivedApi, BenchmarkRow[]>>;
+  warm: Record<Api, BenchmarkRow[]>;
   cold: Record<NodeEngineId, { medianMs: number; runs: number }>;
-  warmTotalMs: { codeToHtml: Partial<Record<NodeEngineId, number>> } & Partial<
-    Record<ArchivedApi, Partial<Record<NodeEngineId, number>>>
-  >;
+  warmTotalMs: Record<Api, Partial<Record<NodeEngineId, number>>>;
 };
 
 export const report: ExtendedReport = sourceReport;
@@ -131,8 +125,6 @@ export const nodeEngines: NodeEngineId[] = ["ferriki", "shiki-wasm", "shiki-js"]
 export const htmlEngines: EngineId[] = [...nodeEngines, "phiki"];
 
 export const apis: Api[] = ["codeToHtml"];
-export const hasArchivedApiMeasurements =
-  report.method?.apis?.some((api) => api !== "codeToHtml") ?? false;
 
 /** How many times faster Ferriki is than `other`: their time over Ferriki's. */
 export function speedup(api: Api, other: NodeEngineId): number {

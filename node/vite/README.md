@@ -6,7 +6,8 @@ transforms with Ferriki's native highlighter. It replaces `code()` calls from
 with highlighted HTML and CSS at build time; it does not add a browser
 highlighter, a React runtime, or custom elements.
 
-The current adapter source is in this repository at [`node/vite`](https://github.com/sebastian-software/ferriki/tree/main/node/vite). As of 2026-10-03, `@ferriki/vite@0.9.0` is not available from npm; check the registry before adding it to an application. To exercise a local packed consumer, follow the [inline macro guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md#repository-checks). After a matching package release exists, install it with:
+Install it with the core package; `@ferriki/core`, its platform sidecar and
+`@ferriki/vite` must have the same version:
 
 ```sh
 npm install @ferriki/core @ferriki/vite
@@ -118,7 +119,7 @@ Ferriki. Such a module is parsed as TSX; when the adapter emits JSX into it,
 the transform result declares the `tsx` module type so Rolldown lowers that JSX
 in builds.
 
-The package requires Node.js 22.13 or newer and Vite 8. It shares Ferriki's
+The package requires Node.js 22.13.0 or newer and Vite 8. It shares Ferriki's
 release version and native asset settings. See the [Vite integration decision](https://github.com/sebastian-software/ferriki/blob/main/adr/0007-adapter-integrations-stay-outside-ferriki.md)
 for its product boundary.
 

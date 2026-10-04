@@ -1,29 +1,29 @@
 {
-  "measured": "2026-10-03",
-  "revision": "39ca9e13",
+  "measured": "2026-10-04",
+  "revision": "38747b66",
   "source": {
-    "revision": "39ca9e13818839be50db74ec8c212e6016d11bc4",
-    "tree": "28cb31f672343eab22002fb23216428c85ea0123",
+    "revision": "38747b6634c09e2bb28aa1063098826ecce106ca",
+    "tree": "b2a7e7917514028ca378b1a553ab04ab01959b22",
     "workingTreeClean": true,
     "distribution": "Ferriki version is read from the workspace source package; this report does not certify a registry artifact."
   },
   "machine": {
-    "cpu": "Apple M1 Ultra",
-    "cores": 20,
-    "memoryGiB": 64,
-    "platform": "darwin-arm64",
-    "os": "Darwin 27.0.0",
-    "node": "v24.21.0"
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cores": 4,
+    "memoryGiB": 16,
+    "platform": "linux-x64",
+    "os": "Linux 6.18.44-fc-v64",
+    "node": "v22.22.0"
   },
   "versions": {
-    "ferriki": "0.9.0",
+    "ferriki": "0.11.0",
     "shiki": "4.4.3",
     "tmGrammars": "1.32.3",
     "tmThemes": "1.12.3",
     "phiki": "v2.2.1",
     "psrSimpleCache": "3.0.0",
-    "php": "8.5.10",
-    "composer": "2.10.3"
+    "php": "8.3.6",
+    "composer": "2.8.12"
   },
   "assets": {
     "tmGrammars": "1.32.3",
@@ -578,14 +578,14 @@
     }
   },
   "runtime": {
-    "node": "v24.21.0",
+    "node": "v22.22.0",
     "phiki": {
-      "php": "8.5.10",
+      "php": "8.3.6",
       "sapi": "cli",
-      "os": "Darwin",
-      "architecture": "arm64",
+      "os": "Linux",
+      "architecture": "x86_64",
       "mbstring": true,
-      "oniguruma": "6.9.10",
+      "oniguruma": "6.9.9",
       "xdebug": false,
       "opcache": {
         "extensionLoaded": true,
@@ -605,17 +605,11 @@
   "theme": "github-dark",
   "method": {
     "apis": [
-      "codeToHtml",
-      "codeToHast",
-      "codeToTokensBase"
+      "codeToHtml"
     ],
     "warmup": 5,
     "minSamples": 30,
-    "minMilliseconds": {
-      "codeToHtml": 1500,
-      "codeToHast": 500,
-      "codeToTokensBase": 500
-    },
+    "minMilliseconds": 1500,
     "coldRuns": 10,
     "statistic": "median",
     "phiki": {
@@ -627,10 +621,6 @@
       "coldTimingOrder": "full corpus: ten consecutive fresh processes per Node engine in ferriki -> shiki-wasm -> shiki-js order; shared cohort: ten rounds in ferriki -> shiki-wasm -> shiki-js order, then ten consecutive Phiki processes",
       "agreement": "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
       "eolNormalization": "CRLF and CR normalize to LF; one final artificial LF is removed only when rendered text is exactly source plus one LF",
-      "unavailableOperations": [
-        "codeToHast",
-        "codeToTokensBase"
-      ],
       "differingOutputTimings": "per-document warm timings are shown with their output status but excluded from every aggregate total; cold Phiki timing requires a matching shared cohort",
       "grammarRegistration": "recursive embedded grammars are registered by scope through a narrowly scoped ReflectionProperty bridge for the pinned Phiki 2.2.1 repository; external injectionSelector/injectTo assets are inventoried but not activated"
     }
@@ -651,11 +641,7 @@
     "phiki": {
       "status": "available",
       "documents": 0,
-      "of": 14,
-      "unavailableOperations": [
-        "codeToHast",
-        "codeToTokensBase"
-      ]
+      "of": 14
     }
   },
   "outputAgreement": {
@@ -1016,17 +1002,15 @@
   "phiki": {
     "status": "available",
     "operations": {
-      "codeToHtml": "available",
-      "codeToHast": "unavailable",
-      "codeToTokensBase": "unavailable"
+      "codeToHtml": "available"
     },
     "runtime": {
-      "php": "8.5.10",
+      "php": "8.3.6",
       "sapi": "cli",
-      "os": "Darwin",
-      "architecture": "arm64",
+      "os": "Linux",
+      "architecture": "x86_64",
       "mbstring": true,
-      "oniguruma": "6.9.10",
+      "oniguruma": "6.9.9",
       "xdebug": false,
       "opcache": {
         "extensionLoaded": true,
@@ -1046,10 +1030,10 @@
         "lines": 1374,
         "bytes": 50030,
         "medianMs": {
-          "ferriki": 12.525458000000071,
-          "shiki-wasm": 61.06895850000001,
-          "shiki-js": 45.044646000000284,
-          "phiki": 803.088146
+          "ferriki": 31.062668999999005,
+          "shiki-wasm": 143.02500300000247,
+          "shiki-js": 145.81066449999344,
+          "phiki": 1632.9682905
         },
         "samples": 30,
         "phikiAgreement": "different"
@@ -1057,13 +1041,13 @@
       {
         "lang": "typescript",
         "path": "node/ferriki/src/api.mts",
-        "lines": 382,
-        "bytes": 12377,
+        "lines": 315,
+        "bytes": 10521,
         "medianMs": {
-          "ferriki": 6.728500000001077,
-          "shiki-wasm": 16.70214599999599,
-          "shiki-js": 21.431541999998444,
-          "phiki": 324.084271
+          "ferriki": 15.855731500007096,
+          "shiki-wasm": 37.4098154999956,
+          "shiki-js": 56.74674600000435,
+          "phiki": 547.9737494999999
         },
         "samples": 30,
         "phikiAgreement": "different"
@@ -1071,13 +1055,13 @@
       {
         "lang": "javascript",
         "path": "node/ferriki/src/index.mjs",
-        "lines": 1692,
-        "bytes": 59698,
+        "lines": 1587,
+        "bytes": 54968,
         "medianMs": {
-          "ferriki": 45.96012449999398,
-          "shiki-wasm": 121.09181250000256,
-          "shiki-js": 158.50008350000644,
-          "phiki": 749.9595835
+          "ferriki": 127.99936099999468,
+          "shiki-wasm": 307.1764450000046,
+          "shiki-js": 474.58906100000604,
+          "phiki": 1341.0039585
         },
         "samples": 30,
         "phikiAgreement": "different"
@@ -1085,29 +1069,29 @@
       {
         "lang": "markdown",
         "path": "docs/ferriki-api.md",
-        "lines": 339,
-        "bytes": 21518,
+        "lines": 353,
+        "bytes": 24094,
         "medianMs": {
-          "ferriki": 3.5672499999927823,
-          "shiki-wasm": 9.812625000005937,
-          "shiki-js": 9.418999999994412,
-          "phiki": 172.322333
+          "ferriki": 9.406621000001905,
+          "shiki-wasm": 24.019041499996092,
+          "shiki-js": 24.38746800000081,
+          "phiki": 324.4450255
         },
-        "samples": 31,
+        "samples": 30,
         "phikiAgreement": "different"
       },
       {
         "lang": "yaml",
         "path": ".github/workflows/ci.yml",
-        "lines": 502,
-        "bytes": 16534,
+        "lines": 508,
+        "bytes": 16774,
         "medianMs": {
-          "ferriki": 4.6734789999973145,
-          "shiki-wasm": 9.806520999998611,
-          "shiki-js": 13.167771000000357,
-          "phiki": 140.7735
+          "ferriki": 12.172485999995843,
+          "shiki-wasm": 25.564038500000606,
+          "shiki-js": 34.64473500000895,
+          "phiki": 287.155328
         },
-        "samples": 36,
+        "samples": 30,
         "phikiAgreement": "different"
       },
       {
@@ -1116,40 +1100,40 @@
         "lines": 289,
         "bytes": 8014,
         "medianMs": {
-          "ferriki": 2.0069169999915175,
-          "shiki-wasm": 8.101167000000714,
-          "shiki-js": 3.2050000000017462,
-          "phiki": 104.876417
+          "ferriki": 5.064058500007377,
+          "shiki-wasm": 21.723597000003792,
+          "shiki-js": 11.333715500004473,
+          "phiki": 222.58788049999998
         },
-        "samples": 51,
+        "samples": 30,
         "phikiAgreement": "different"
       },
       {
         "lang": "json",
         "path": "node/package.json",
-        "lines": 98,
-        "bytes": 5703,
+        "lines": 100,
+        "bytes": 5905,
         "medianMs": {
-          "ferriki": 0.6607914999985951,
-          "shiki-wasm": 1.381499499999336,
-          "shiki-js": 1.0393540000077337,
-          "phiki": 54.468271
+          "ferriki": 1.6812219999992521,
+          "shiki-wasm": 3.7327595000097062,
+          "shiki-js": 3.093254999999772,
+          "phiki": 112.851348
         },
-        "samples": 104,
+        "samples": 46,
         "phikiAgreement": "different"
       },
       {
         "lang": "toml",
         "path": "Cargo.toml",
         "lines": 116,
-        "bytes": 4285,
+        "bytes": 4288,
         "medianMs": {
-          "ferriki": 0.6709170000031008,
-          "shiki-wasm": 1.3941459999914514,
-          "shiki-js": 0.8947909999988042,
-          "phiki": 32.4661665
+          "ferriki": 1.7766180000035092,
+          "shiki-wasm": 4.1185589999950025,
+          "shiki-js": 2.9593279999971855,
+          "phiki": 69.085942
         },
-        "samples": 166,
+        "samples": 71,
         "phikiAgreement": "different"
       },
       {
@@ -1158,12 +1142,12 @@
         "lines": 98,
         "bytes": 2119,
         "medianMs": {
-          "ferriki": 1.4927089999982854,
-          "shiki-wasm": 4.416791999989073,
-          "shiki-js": 2.2735830000019632,
-          "phiki": 50.776916
+          "ferriki": 6.505170999997063,
+          "shiki-wasm": 13.510784999991301,
+          "shiki-js": 7.417238499998348,
+          "phiki": 118.9469875
         },
-        "samples": 101,
+        "samples": 38,
         "phikiAgreement": "different"
       },
       {
@@ -1172,12 +1156,12 @@
         "lines": 42,
         "bytes": 1200,
         "medianMs": {
-          "ferriki": 0.6981254999991506,
-          "shiki-wasm": 1.4745829999883426,
-          "shiki-js": 1.3115835000062361,
-          "phiki": 24.448208
+          "ferriki": 2.3823689999990165,
+          "shiki-wasm": 4.7337530000077095,
+          "shiki-js": 4.741597000014735,
+          "phiki": 55.520941
         },
-        "samples": 212,
+        "samples": 77,
         "phikiAgreement": "different"
       },
       {
@@ -1186,12 +1170,12 @@
         "lines": 24,
         "bytes": 572,
         "medianMs": {
-          "ferriki": 0.29739549999067094,
-          "shiki-wasm": 0.821938000008231,
-          "shiki-js": 0.5423755000083474,
-          "phiki": 9.893833
+          "ferriki": 1.1099359999934677,
+          "shiki-wasm": 2.255424999995739,
+          "shiki-js": 1.6277959999861196,
+          "phiki": 20.8405495
         },
-        "samples": 512,
+        "samples": 198,
         "phikiAgreement": "different"
       },
       {
@@ -1200,12 +1184,12 @@
         "lines": 46,
         "bytes": 802,
         "medianMs": {
-          "ferriki": 1.0324579999723937,
-          "shiki-wasm": 2.4792080000042915,
-          "shiki-js": 1.4868750000023283,
-          "phiki": 34.020708
+          "ferriki": 2.8416765000438318,
+          "shiki-wasm": 6.812118499990902,
+          "shiki-js": 5.2494135000160895,
+          "phiki": 66.8131775
         },
-        "samples": 153,
+        "samples": 66,
         "phikiAgreement": "different"
       },
       {
@@ -1214,12 +1198,12 @@
         "lines": 31,
         "bytes": 634,
         "medianMs": {
-          "ferriki": 0.5028129999991506,
-          "shiki-wasm": 1.2224794999929145,
-          "shiki-js": 0.8975415000022622,
-          "phiki": 13.750375
+          "ferriki": 1.9383439999946859,
+          "shiki-wasm": 3.8769240000110585,
+          "shiki-js": 3.0358805000432767,
+          "phiki": 33.595277499999995
         },
-        "samples": 362,
+        "samples": 122,
         "phikiAgreement": "different"
       },
       {
@@ -1228,367 +1212,27 @@
         "lines": 6,
         "bytes": 123,
         "medianMs": {
-          "ferriki": 0.07829200000560377,
-          "shiki-wasm": 0.42049999999289867,
-          "shiki-js": 0.11579150000761729,
-          "phiki": 2.698396
+          "ferriki": 0.5065775000257418,
+          "shiki-wasm": 1.254490999999689,
+          "shiki-js": 0.7337775000196416,
+          "phiki": 5.898666
         },
-        "samples": 1740,
+        "samples": 578,
         "phikiAgreement": "different"
-      }
-    ],
-    "codeToHast": [
-      {
-        "lang": "rust",
-        "path": "src/highlighter.rs",
-        "lines": 1374,
-        "bytes": 50030,
-        "medianMs": {
-          "ferriki": 64.80439599999227,
-          "shiki-wasm": 53.65620850000414,
-          "shiki-js": 37.31004149999353
-        },
-        "samples": 30
-      },
-      {
-        "lang": "typescript",
-        "path": "node/ferriki/src/api.mts",
-        "lines": 382,
-        "bytes": 12377,
-        "medianMs": {
-          "ferriki": 24.774645999990753,
-          "shiki-wasm": 14.628916999994544,
-          "shiki-js": 19.300354500010144
-        },
-        "samples": 30
-      },
-      {
-        "lang": "javascript",
-        "path": "node/ferriki/src/index.mjs",
-        "lines": 1692,
-        "bytes": 59698,
-        "medianMs": {
-          "ferriki": 144.3221460000059,
-          "shiki-wasm": 118.03016650000063,
-          "shiki-js": 157.30179100000532
-        },
-        "samples": 30
-      },
-      {
-        "lang": "markdown",
-        "path": "docs/ferriki-api.md",
-        "lines": 339,
-        "bytes": 21518,
-        "medianMs": {
-          "ferriki": 14.033041999995476,
-          "shiki-wasm": 8.937250500006485,
-          "shiki-js": 8.526792000004207
-        },
-        "samples": 48
-      },
-      {
-        "lang": "yaml",
-        "path": ".github/workflows/ci.yml",
-        "lines": 502,
-        "bytes": 16534,
-        "medianMs": {
-          "ferriki": 23.293917000002693,
-          "shiki-wasm": 8.347500000003492,
-          "shiki-js": 11.75
-        },
-        "samples": 35
-      },
-      {
-        "lang": "css",
-        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
-        "lines": 289,
-        "bytes": 8014,
-        "medianMs": {
-          "ferriki": 9.425999999977648,
-          "shiki-wasm": 7.21608300000662,
-          "shiki-js": 2.1247499999881256
-        },
-        "samples": 79
-      },
-      {
-        "lang": "json",
-        "path": "node/package.json",
-        "lines": 98,
-        "bytes": 5703,
-        "medianMs": {
-          "ferriki": 3.830333000019891,
-          "shiki-wasm": 0.9423330000136048,
-          "shiki-js": 0.6122920000052545
-        },
-        "samples": 269
-      },
-      {
-        "lang": "toml",
-        "path": "Cargo.toml",
-        "lines": 116,
-        "bytes": 4285,
-        "medianMs": {
-          "ferriki": 3.739624999987427,
-          "shiki-wasm": 1.0042079999984708,
-          "shiki-js": 0.5258329999924172
-        },
-        "samples": 279
-      },
-      {
-        "lang": "python",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
-        "lines": 98,
-        "bytes": 2119,
-        "medianMs": {
-          "ferriki": 4.86018749998766,
-          "shiki-wasm": 4.04389600000286,
-          "shiki-js": 1.90193750000617
-        },
-        "samples": 138
-      },
-      {
-        "lang": "html",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
-        "lines": 42,
-        "bytes": 1200,
-        "medianMs": {
-          "ferriki": 1.9845625000161817,
-          "shiki-wasm": 1.1869374999951106,
-          "shiki-js": 1.03627100000449
-        },
-        "samples": 350
-      },
-      {
-        "lang": "go",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
-        "lines": 24,
-        "bytes": 572,
-        "medianMs": {
-          "ferriki": 0.8159790000063367,
-          "shiki-wasm": 0.6933750000025611,
-          "shiki-js": 0.41820800000277814
-        },
-        "samples": 756
-      },
-      {
-        "lang": "php",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
-        "lines": 46,
-        "bytes": 802,
-        "medianMs": {
-          "ferriki": 2.3937080000177957,
-          "shiki-wasm": 2.1908340000081807,
-          "shiki-js": 1.2148329999763519
-        },
-        "samples": 255
-      },
-      {
-        "lang": "shellscript",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
-        "lines": 31,
-        "bytes": 634,
-        "medianMs": {
-          "ferriki": 1.8183750000025611,
-          "shiki-wasm": 1.0673744999949122,
-          "shiki-js": 0.7491664999979548
-        },
-        "samples": 404
-      },
-      {
-        "lang": "sql",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
-        "lines": 6,
-        "bytes": 123,
-        "medianMs": {
-          "ferriki": 0.2612500000104774,
-          "shiki-wasm": 0.37320800000452437,
-          "shiki-js": 0.0735829999903217
-        },
-        "samples": 2031
-      }
-    ],
-    "codeToTokensBase": [
-      {
-        "lang": "rust",
-        "path": "src/highlighter.rs",
-        "lines": 1374,
-        "bytes": 50030,
-        "medianMs": {
-          "ferriki": 31.057791500003077,
-          "shiki-wasm": 52.052666500007035,
-          "shiki-js": 35.539603999990504
-        },
-        "samples": 30
-      },
-      {
-        "lang": "typescript",
-        "path": "node/ferriki/src/api.mts",
-        "lines": 382,
-        "bytes": 12377,
-        "medianMs": {
-          "ferriki": 11.977479000008316,
-          "shiki-wasm": 14.052436999991187,
-          "shiki-js": 18.649937499998487
-        },
-        "samples": 34
-      },
-      {
-        "lang": "javascript",
-        "path": "node/ferriki/src/index.mjs",
-        "lines": 1692,
-        "bytes": 59698,
-        "medianMs": {
-          "ferriki": 67.17889599999762,
-          "shiki-wasm": 110.76410400000168,
-          "shiki-js": 147.1931665000011
-        },
-        "samples": 30
-      },
-      {
-        "lang": "markdown",
-        "path": "docs/ferriki-api.md",
-        "lines": 339,
-        "bytes": 21518,
-        "medianMs": {
-          "ferriki": 6.776041999983136,
-          "shiki-wasm": 8.473603999998886,
-          "shiki-js": 7.970666499997606
-        },
-        "samples": 64
-      },
-      {
-        "lang": "yaml",
-        "path": ".github/workflows/ci.yml",
-        "lines": 502,
-        "bytes": 16534,
-        "medianMs": {
-          "ferriki": 13.797395500005223,
-          "shiki-wasm": 7.741125000000466,
-          "shiki-js": 11.102791999990586
-        },
-        "samples": 46
-      },
-      {
-        "lang": "css",
-        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
-        "lines": 289,
-        "bytes": 8014,
-        "medianMs": {
-          "ferriki": 3.6351249999715947,
-          "shiki-wasm": 6.648750000022119,
-          "shiki-js": 1.8190419999882579
-        },
-        "samples": 123
-      },
-      {
-        "lang": "json",
-        "path": "node/package.json",
-        "lines": 98,
-        "bytes": 5703,
-        "medianMs": {
-          "ferriki": 1.998978999996325,
-          "shiki-wasm": 0.8110000000015134,
-          "shiki-js": 0.5293539999984205
-        },
-        "samples": 440
-      },
-      {
-        "lang": "toml",
-        "path": "Cargo.toml",
-        "lines": 116,
-        "bytes": 4285,
-        "medianMs": {
-          "ferriki": 2.102104000005056,
-          "shiki-wasm": 0.8880835000163643,
-          "shiki-js": 0.4374790000001667
-        },
-        "samples": 430
-      },
-      {
-        "lang": "python",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
-        "lines": 98,
-        "bytes": 2119,
-        "medianMs": {
-          "ferriki": 2.390333500006818,
-          "shiki-wasm": 3.775000000008731,
-          "shiki-js": 1.76264600000286
-        },
-        "samples": 188
-      },
-      {
-        "lang": "html",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
-        "lines": 42,
-        "bytes": 1200,
-        "medianMs": {
-          "ferriki": 0.9634169999917503,
-          "shiki-wasm": 1.0882085000048392,
-          "shiki-js": 0.9525419999990845
-        },
-        "samples": 484
-      },
-      {
-        "lang": "go",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
-        "lines": 24,
-        "bytes": 572,
-        "medianMs": {
-          "ferriki": 0.371791999990819,
-          "shiki-wasm": 0.6525829999882262,
-          "shiki-js": 0.39537499999278225
-        },
-        "samples": 1037
-      },
-      {
-        "lang": "php",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
-        "lines": 46,
-        "bytes": 802,
-        "medianMs": {
-          "ferriki": 1.1614164999919012,
-          "shiki-wasm": 2.0632915000023786,
-          "shiki-js": 1.1728750000038417
-        },
-        "samples": 334
-      },
-      {
-        "lang": "shellscript",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
-        "lines": 31,
-        "bytes": 634,
-        "medianMs": {
-          "ferriki": 0.8864999999932479,
-          "shiki-wasm": 0.9446250000037253,
-          "shiki-js": 0.6670835000113584
-        },
-        "samples": 588
-      },
-      {
-        "lang": "sql",
-        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
-        "lines": 6,
-        "bytes": 123,
-        "medianMs": {
-          "ferriki": 0.10062499999185093,
-          "shiki-wasm": 0.3493329999910202,
-          "shiki-js": 0.060999999986961484
-        },
-        "samples": 2865
       }
     ]
   },
   "cold": {
     "ferriki": {
-      "medianMs": 575.323854,
+      "medianMs": 1599.7441895000002,
       "runs": 10
     },
     "shiki-wasm": {
-      "medianMs": 1041.9221455000002,
+      "medianMs": 2550.3895350000003,
       "runs": 10
     },
     "shiki-js": {
-      "medianMs": 1325.5226874999998,
+      "medianMs": 3633.328302,
       "runs": 10
     }
   },
@@ -1600,19 +1244,9 @@
   },
   "warmTotalMs": {
     "codeToHtml": {
-      "ferriki": 80.8952299999437,
-      "shiki-wasm": 240.19437599997036,
-      "shiki-js": 259.329937500037
-    },
-    "codeToHast": {
-      "ferriki": 300.35816700001305,
-      "shiki-wasm": 222.31829150003614,
-      "shiki-js": 242.84585299997707
-    },
-    "codeToTokensBase": {
-      "ferriki": 144.39789599993674,
-      "shiki-wasm": 210.30481100003817,
-      "shiki-js": 228.253562999962
+      "ferriki": 220.30284100006247,
+      "shiki-wasm": 599.2127555000043,
+      "shiki-js": 776.3706760000932
     }
   }
 }

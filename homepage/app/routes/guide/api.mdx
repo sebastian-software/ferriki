@@ -1,6 +1,6 @@
 ---
 title: API overview
-order: 5
+order: 6
 ---
 
 # API overview
@@ -62,11 +62,9 @@ synchronous. Configure `assets: { remote: false }` or
 `FERRIKI_ASSETS_REMOTE=0` to use a populated cache without network access;
 `assets.baseUrl` and `FERRIKI_ASSETS_BASE_URL` select a mirror.
 
-## Vite
+## Build-time macros
 
-The repository also contains an optional `@ferriki/vite` adapter. It prepares
-imported `code()` and React `<Code />` macros during Vite 8 transforms; it does
-not add a browser runtime and is separate from `@ferriki/core`. The adapter
-has not been published to npm with the current Ferriki release. See its
-[package README](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
-for the current source contract and release status.
+`code()` from `@ferriki/core/macro` and `<Code />` from
+`@ferriki/core/react/macro` are markers that `@ferriki/vite` replaces with
+highlighted HTML and CSS during a Vite 8 build. [Build-time macros](/guide/build-time-macros)
+covers the setup, the macro forms and their rules.

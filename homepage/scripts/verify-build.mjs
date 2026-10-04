@@ -1,7 +1,8 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
 // Checks the prerendered site after `react-router build`: every documentation
-// page exists, the landing page carries the published version and HTML
-// measurements, and the strict Node / optional Phiki cohorts match the report.
+// page exists, the landing page carries the published version, the HTML
+// measurements and the macro sample, the footprint page carries its committed
+// record, and the strict Node / optional Phiki cohorts match the report.
 import { access, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +20,7 @@ const { version } = await readJson(new URL("../../node/ferriki/package.json", im
 const report = await readJson(
   new URL("../../docs/benchmarks/shiki-comparison.json", import.meta.url),
 );
+const footprint = await readJson(new URL("../app/data/footprint.json", import.meta.url));
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
@@ -30,6 +32,10 @@ const cohortErrors = [];
 
 if (!report.method?.apis?.includes("codeToHtml")) {
   cohortErrors.push("the report does not identify its HTML measurement");
+}
+const otherApis = (report.method?.apis ?? []).filter((api) => !apiNames.includes(api));
+if (otherApis.length > 0) {
+  cohortErrors.push(`the report measures APIs the site does not present: ${otherApis.join(", ")}`);
 }
 
 if (
@@ -110,8 +116,10 @@ if (cohortErrors.length > 0) {
 }
 
 const oneDecimal = (value) => `${value.toFixed(1)}×`;
+const grouped = (value) => value.toLocaleString("en-US");
 const homepage = await read("index.html");
 const benchmarks = await read("evidence/benchmarks/index.html");
+const footprintPage = await read("evidence/footprint/index.html");
 
 const required = [
   [homepage, `v${version}`],
@@ -119,19 +127,20 @@ const required = [
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
   [homepage, oneDecimal(cold)],
   [homepage, report.revision],
-  [homepage, "codeToHtmlWithCss, reusable highlighters"],
+  [homepage, "@ferriki/core/react/macro"],
+  [homepage, 'href="/guide/build-time-macros"'],
   [homepage, 'class="site-header"'],
   [homepage, 'class="site-footer"'],
   [benchmarks, report.revision],
   [benchmarks, report.machine.cpu],
   [benchmarks, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
+  [footprintPage, grouped(footprint.addon.bytes)],
+  [footprintPage, grouped(footprint.core.packedBytes)],
+  [footprintPage, grouped(footprint.core.unpackedBytes)],
+  [footprintPage, footprint.revision],
 ];
 for (const engine of ["shiki-wasm", "shiki-js"]) {
   required.push([benchmarks, oneDecimal(factor("codeToHtml", engine))]);
-}
-if (report.method?.apis?.some((api) => api !== "codeToHtml")) {
-  required.push([benchmarks, "pre-removal HTML baseline"]);
-  required.push([benchmarks, "archival measurements from the former Node API"]);
 }
 
 if (report.phiki?.status === "available") {
