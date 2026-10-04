@@ -1,9 +1,11 @@
 # Inline macro consumer fixture
 
-This React fixture consumes prepared `code` descriptors through a custom
-code-block component. It renders the first page on the server, hydrates it,
-navigates to a lazily loaded second page and accepts updates to that page's
-inline code. The component copies `block.code` and renders `block.html`.
+This React fixture covers both the `code()` descriptor API and the `Code` JSX
+macro. The first route uses the macro's default `div` output; the lazy second
+route supplies a custom component that receives the prepared descriptor. Both
+routes render on the server, hydrate in the browser and exercise navigation,
+copying original source and HMR for inline code. The custom component owns its
+copy control and renders the descriptor's `html`.
 
 The fixture is exercised against real packed core, native sidecar and Vite
 tarballs by `node/scripts/check-inline-macro-browser.mjs`. Its dependencies are

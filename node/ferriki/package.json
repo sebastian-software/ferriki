@@ -35,6 +35,8 @@
     "macro.mjs",
     "native.mjs",
     "platforms.mjs",
+    "react-macro.d.mts",
+    "react-macro.mjs",
     "src/api.d.mts",
     "src/asset-download.mjs",
     "src/index.mjs",
@@ -57,6 +59,10 @@
     "./macro-transform": {
       "types": "./macro-transform.d.mts",
       "default": "./macro-transform.mjs"
+    },
+    "./react/macro": {
+      "types": "./react-macro.d.mts",
+      "default": "./react-macro.mjs"
     },
     "./package.json": "./package.json"
   },

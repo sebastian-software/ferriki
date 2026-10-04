@@ -83,7 +83,89 @@ Select a configured class-output theme with `data-ferriki-theme="dark"` on the
 code block or an ancestor. Surrounding UI and custom transformer presentation
 styles remain your responsibility.
 
-## Supported inputs
+## React JSX macro
+
+In React, use the optional `Code` marker to keep an example in JSX. The import
+is `@ferriki/core/react/macro`, shipped in the same core package. Configure
+`ferriki()` before the React plugin as shown above. Your React project supplies
+React and its normal TypeScript declarations; Ferriki's marker imports no
+React runtime or native highlighter.
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+
+export function Example() {
+  return (
+    <Code
+      language="tsx"
+      lineNumbers
+      source={`function Hello() {
+  return <h1>Hello</h1>;
+}`}
+    />
+  );
+}
+```
+
+The element must be self-closing. `source` is a direct string literal or cooked
+template literal without interpolations. JSX text and `children` are not
+supported. `language` is required; it and `meta` accept JSX string attributes
+or direct string/template expressions without interpolation. Metadata and
+line-number defaults match `code()`. `lineNumbers` accepts a boolean literal;
+without a value it means `true`. Spreads, duplicate and unsupported attributes
+fail compilation.
+Dynamic source and highlighting options fail with a filename/position error.
+Quoted JSX attributes use JSX character-reference decoding: `source="x &amp; y"`
+means `x & y`. Expression literals such as `source={"x &amp; y"}` retain the
+literal entity spelling. Templates preserve the authored formatting and use
+normal JavaScript escape semantics.
+
+By default, the transform emits a `div` containing the complete prepared
+`pre`/`code` HTML and delivers its CSS. For a custom copy button, title or tabs,
+provide a component reference:
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+import type { PreparedCodeBlock } from "@ferriki/core/macro";
+
+function MyCodeBlock({ code }: { code: PreparedCodeBlock }) {
+  return (
+    <figure>
+      <figcaption>{code.metadata.title}</figcaption>
+      <button type="button" onClick={() => navigator.clipboard.writeText(code.code)}>
+        Copy code
+      </button>
+      <div dangerouslySetInnerHTML={{ __html: code.html }} />
+    </figure>
+  );
+}
+
+export function Example() {
+  return (
+    <Code
+      component={MyCodeBlock}
+      language="ts"
+      meta='title="Answer" {1}'
+      source={`export const answer = 42;`}
+    />
+  );
+}
+```
+
+This becomes `MyCodeBlock` receiving a prepared descriptor in its `code` prop.
+`component` accepts a JSX component identifier or member reference such as
+`UI.CodeBlock`; component lookup remains normal React runtime behavior.
+The first version forwards only `code` to that component. Import aliases with
+JSX component names such as `Code as HighlightedCode` work, and unrelated
+locally shadowed components are left alone. Using the imported
+marker as a function, passing it elsewhere or re-exporting it is rejected.
+An unprocessed marker throws an actionable integration error.
+
+Server rendering, hydration, navigation and HMR use the same prepared HTML/CSS
+path as `code()`. The macro import is removed from transformed application
+modules, so the browser does not load it or the native build-time scanner.
+
+## Supported function inputs
 
 Code must appear directly in the call as a string literal or a template literal
 without `${...}` interpolations. Template content uses JavaScript's cooked
@@ -134,7 +216,10 @@ on their existing Ferromark compiler path.
 
 The native scanner is shared through the Node-only
 `@ferriki/core/macro-transform` entry. `findInlineCodeMacros(source, filename)`
-validates inline calls and returns call/import edits with UTF-8 byte spans.
+validates inline calls and React `Code` elements and returns call/import edits
+with UTF-8 byte spans. React records have `kind: "react"` and an optional
+canonical JSX `component` name. A host lowers those records to a prepared-HTML
+container or the named component with a prepared descriptor in its `code` prop.
 Custom adapters must prepare HTML through the supported highlighter, translate
 byte spans to their editor's offsets, preserve source maps and deliver the same
 prepared data and CSS on server and client. The scanner does not render HTML,
