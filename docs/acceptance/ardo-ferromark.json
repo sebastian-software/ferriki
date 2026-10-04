@@ -1,0 +1,2758 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-04T00:36:23.451350+00:00",
+  "scope": "Published production acceptance and descriptive whole-build measurements; no renderer-only or causal speed claim.",
+  "measuredSource": {
+    "commit": "676b8e953e6597a337fc644e712a4a30e5b8bea5",
+    "tree": "126e110671d3e6fe1fbc2a41d8c7ec44498bb358",
+    "corpusSha256": "be71440bb815f448cacd039ff2909139f6b2099b7036d82fc321105122a00d04",
+    "baselineStatus": " M homepage/package.json",
+    "candidateStatus": " M homepage/pnpm-lock.yaml"
+  },
+  "publishedRuntimeAndLock": {
+    "commit": "1224a2dc3997e3666d69f66d3e0184de1da2c72a",
+    "tree": "4e735ae0b94674b1e7af158763671054a0282fb2",
+    "versions": {
+      "ardo": "5.0.0",
+      "ferromark": "3.1.0",
+      "@ferriki/core": "0.10.0"
+    }
+  },
+  "environment": {
+    "cpu": "Apple M1 Ultra",
+    "logical_cpu_count": 20,
+    "machine": "arm64",
+    "macos_version": "27.0",
+    "node": "v24.21.0",
+    "os": "macOS-27.0-arm64-arm-64bit",
+    "pnpm": "10.34.5",
+    "python": "3.9.6",
+    "nodeOptions": "--max-old-space-size=16384 --no-deprecation",
+    "nodeOptionsSha256": "955a86cd323c8f4be9d31cf54231dedd5cb971f547db0b840c5ac860f9a15ed1",
+    "sharedInstalledPnpmStore": true
+  },
+  "method": {
+    "timedCommand": [
+      "/usr/bin/time",
+      "-l",
+      "-o",
+      "<sample>/time.txt",
+      "pnpm",
+      "exec",
+      "react-router",
+      "build"
+    ],
+    "warmupsPerLane": 1,
+    "warmPairs": 5,
+    "serialAlternatingOrder": [
+      "baseline",
+      "candidate",
+      "baseline",
+      "candidate",
+      "baseline",
+      "candidate",
+      "baseline",
+      "candidate",
+      "baseline",
+      "candidate"
+    ],
+    "coldCandidateRuns": 5,
+    "coldMeaning": "A separate new empty local asset cache before every native build; not a cold CDN, host, network, dependency install or baseline comparison.",
+    "betweenBuilds": "Remove only homepage/build; retain dependency installation and the shared pnpm store.",
+    "maximumRssMeaning": "Reported maximum resident set size from macOS time -l in bytes, not aggregate simultaneous memory of all child processes or isolated native allocations.",
+    "warmEnvironment": {
+      "FERRIKI_ASSETS_REMOTE": "0",
+      "FERRIKI_ASSETS_BASE_URL": "https://assets.ferriki.dev",
+      "FERRIKI_CACHE_DIR": "separate manifest-verified lane cache"
+    },
+    "coldEnvironment": {
+      "FERRIKI_ASSETS_REMOTE": "1",
+      "FERRIKI_ASSETS_BASE_URL": "https://assets.ferriki.dev",
+      "FERRIKI_CACHE_DIR": "unique empty sample-owned cache"
+    }
+  },
+  "dependencyComparison": {
+    "direct_versions_match_except_ardo": true,
+    "transitive_version_differences": {
+      "@emnapi/core": {
+        "baseline": [
+          "1.10.0"
+        ],
+        "candidate": [
+          "1.10.0",
+          "1.9.2"
+        ]
+      },
+      "@emnapi/runtime": {
+        "baseline": [
+          "1.10.0"
+        ],
+        "candidate": [
+          "1.10.0",
+          "1.9.2"
+        ]
+      },
+      "@ferriki/core": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/darwin-arm64": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/linux-arm64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/linux-arm64-musl": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/linux-x64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/linux-x64-musl": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/win32-arm64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@ferriki/win32-x64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "0.10.0"
+        ]
+      },
+      "@mdx-js/mdx": {
+        "baseline": [
+          "3.1.1"
+        ],
+        "candidate": []
+      },
+      "@mdx-js/rollup": {
+        "baseline": [
+          "3.1.1"
+        ],
+        "candidate": []
+      },
+      "@napi-rs/lzma-linux-x64-gnu": {
+        "baseline": [
+          "1.5.1"
+        ],
+        "candidate": []
+      },
+      "@oxc-parser/binding-android-arm-eabi": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-android-arm64": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-darwin-arm64": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-darwin-x64": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-freebsd-x64": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-arm-gnueabihf": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-arm-musleabihf": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-arm64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-arm64-musl": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-ppc64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-riscv64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-riscv64-musl": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-s390x-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-x64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-linux-x64-musl": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-openharmony-arm64": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-wasm32-wasi": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-win32-arm64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-win32-ia32-msvc": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-parser/binding-win32-x64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "@oxc-project/types": {
+        "baseline": [
+          "0.151.0"
+        ],
+        "candidate": [
+          "0.127.0",
+          "0.151.0"
+        ]
+      },
+      "@rollup/pluginutils": {
+        "baseline": [
+          "5.4.0"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-android-arm-eabi": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-android-arm64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-darwin-arm64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-darwin-x64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-freebsd-arm64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-freebsd-x64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-arm-gnueabihf": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-arm-musleabihf": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-arm64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-arm64-musl": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-loong64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-loong64-musl": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-ppc64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-ppc64-musl": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-riscv64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-riscv64-musl": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-s390x-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-x64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-linux-x64-musl": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-openbsd-x64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-openharmony-arm64": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-win32-arm64-msvc": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-win32-ia32-msvc": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-win32-x64-gnu": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@rollup/rollup-win32-x64-msvc": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "@shikijs/core": {
+        "baseline": [
+          "4.4.3"
+        ],
+        "candidate": []
+      },
+      "@shikijs/engine-javascript": {
+        "baseline": [
+          "4.4.3"
+        ],
+        "candidate": []
+      },
+      "@shikijs/engine-oniguruma": {
+        "baseline": [
+          "3.23.0",
+          "4.4.3"
+        ],
+        "candidate": [
+          "3.23.0"
+        ]
+      },
+      "@shikijs/langs": {
+        "baseline": [
+          "3.23.0",
+          "4.4.3"
+        ],
+        "candidate": [
+          "3.23.0"
+        ]
+      },
+      "@shikijs/primitive": {
+        "baseline": [
+          "4.4.3"
+        ],
+        "candidate": []
+      },
+      "@shikijs/rehype": {
+        "baseline": [
+          "4.4.3"
+        ],
+        "candidate": []
+      },
+      "@shikijs/themes": {
+        "baseline": [
+          "3.23.0",
+          "4.4.3"
+        ],
+        "candidate": [
+          "3.23.0"
+        ]
+      },
+      "@shikijs/types": {
+        "baseline": [
+          "3.23.0",
+          "4.4.3"
+        ],
+        "candidate": [
+          "3.23.0"
+        ]
+      },
+      "@types/mdx": {
+        "baseline": [
+          "2.0.14"
+        ],
+        "candidate": []
+      },
+      "@ungap/structured-clone": {
+        "baseline": [
+          "1.4.0"
+        ],
+        "candidate": []
+      },
+      "ardo": {
+        "baseline": [
+          "4.2.0"
+        ],
+        "candidate": [
+          "5.0.0"
+        ]
+      },
+      "argparse": {
+        "baseline": [
+          "1.0.10",
+          "2.0.1"
+        ],
+        "candidate": [
+          "2.0.1"
+        ]
+      },
+      "astring": {
+        "baseline": [
+          "1.9.0"
+        ],
+        "candidate": []
+      },
+      "collapse-white-space": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "comma-separated-tokens": {
+        "baseline": [
+          "2.0.3"
+        ],
+        "candidate": []
+      },
+      "esast-util-from-estree": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "esast-util-from-js": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "escape-string-regexp": {
+        "baseline": [
+          "4.0.0",
+          "5.0.0"
+        ],
+        "candidate": [
+          "4.0.0"
+        ]
+      },
+      "estree-util-attach-comments": {
+        "baseline": [
+          "3.0.0"
+        ],
+        "candidate": []
+      },
+      "estree-util-build-jsx": {
+        "baseline": [
+          "3.0.1"
+        ],
+        "candidate": []
+      },
+      "estree-util-scope": {
+        "baseline": [
+          "1.0.1"
+        ],
+        "candidate": []
+      },
+      "estree-util-to-js": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "estree-util-value-to-estree": {
+        "baseline": [
+          "3.5.0"
+        ],
+        "candidate": []
+      },
+      "estree-walker": {
+        "baseline": [
+          "2.0.2",
+          "3.0.3"
+        ],
+        "candidate": []
+      },
+      "extend-shallow": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "fault": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "ferromark": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-darwin-arm64": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-linux-arm64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-linux-arm64-musl": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-linux-x64-gnu": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-linux-x64-musl": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-win32-arm64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "ferromark-win32-x64-msvc": {
+        "baseline": [],
+        "candidate": [
+          "3.1.0"
+        ]
+      },
+      "format": {
+        "baseline": [
+          "0.2.2"
+        ],
+        "candidate": []
+      },
+      "gray-matter": {
+        "baseline": [
+          "4.0.3"
+        ],
+        "candidate": []
+      },
+      "hast-util-to-estree": {
+        "baseline": [
+          "3.1.3"
+        ],
+        "candidate": []
+      },
+      "hast-util-to-html": {
+        "baseline": [
+          "9.0.5"
+        ],
+        "candidate": []
+      },
+      "hast-util-to-jsx-runtime": {
+        "baseline": [
+          "2.3.6"
+        ],
+        "candidate": []
+      },
+      "hast-util-to-string": {
+        "baseline": [
+          "3.0.1"
+        ],
+        "candidate": []
+      },
+      "hast-util-whitespace": {
+        "baseline": [
+          "3.0.0"
+        ],
+        "candidate": []
+      },
+      "html-void-elements": {
+        "baseline": [
+          "3.0.0"
+        ],
+        "candidate": []
+      },
+      "inline-style-parser": {
+        "baseline": [
+          "0.2.7"
+        ],
+        "candidate": []
+      },
+      "is-extendable": {
+        "baseline": [
+          "0.1.1"
+        ],
+        "candidate": []
+      },
+      "js-yaml": {
+        "baseline": [
+          "3.15.2",
+          "5.4.2"
+        ],
+        "candidate": [
+          "5.4.2"
+        ]
+      },
+      "kind-of": {
+        "baseline": [
+          "6.0.3"
+        ],
+        "candidate": []
+      },
+      "magic-string": {
+        "baseline": [],
+        "candidate": [
+          "0.30.21"
+        ]
+      },
+      "markdown-extensions": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "markdown-table": {
+        "baseline": [
+          "3.0.4"
+        ],
+        "candidate": []
+      },
+      "mdast-util-find-and-replace": {
+        "baseline": [
+          "3.0.2"
+        ],
+        "candidate": []
+      },
+      "mdast-util-frontmatter": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm": {
+        "baseline": [
+          "3.1.0"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm-autolink-literal": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm-footnote": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm-strikethrough": {
+        "baseline": [
+          "2.0.1"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm-table": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "mdast-util-gfm-task-list-item": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "mdast-util-to-hast": {
+        "baseline": [
+          "13.2.1"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-frontmatter": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm": {
+        "baseline": [
+          "3.0.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-autolink-literal": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-footnote": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-strikethrough": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-table": {
+        "baseline": [
+          "2.1.2"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-tagfilter": {
+        "baseline": [
+          "2.0.0"
+        ],
+        "candidate": []
+      },
+      "micromark-extension-gfm-task-list-item": {
+        "baseline": [
+          "2.1.0"
+        ],
+        "candidate": []
+      },
+      "oniguruma-parser": {
+        "baseline": [
+          "0.12.2"
+        ],
+        "candidate": []
+      },
+      "oniguruma-to-es": {
+        "baseline": [
+          "4.3.6"
+        ],
+        "candidate": []
+      },
+      "oxc-parser": {
+        "baseline": [],
+        "candidate": [
+          "0.127.0"
+        ]
+      },
+      "property-information": {
+        "baseline": [
+          "7.2.0"
+        ],
+        "candidate": []
+      },
+      "recma-build-jsx": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "recma-jsx": {
+        "baseline": [
+          "1.0.1"
+        ],
+        "candidate": []
+      },
+      "recma-parse": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "recma-stringify": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "regex": {
+        "baseline": [
+          "6.1.0"
+        ],
+        "candidate": []
+      },
+      "regex-recursion": {
+        "baseline": [
+          "6.0.2"
+        ],
+        "candidate": []
+      },
+      "regex-utilities": {
+        "baseline": [
+          "2.3.0"
+        ],
+        "candidate": []
+      },
+      "rehype-recma": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "rehype-stringify": {
+        "baseline": [
+          "10.0.1"
+        ],
+        "candidate": []
+      },
+      "remark-frontmatter": {
+        "baseline": [
+          "5.0.0"
+        ],
+        "candidate": []
+      },
+      "remark-gfm": {
+        "baseline": [
+          "4.0.1"
+        ],
+        "candidate": []
+      },
+      "remark-mdx-frontmatter": {
+        "baseline": [
+          "5.2.0"
+        ],
+        "candidate": []
+      },
+      "remark-rehype": {
+        "baseline": [
+          "11.1.2"
+        ],
+        "candidate": []
+      },
+      "rollup": {
+        "baseline": [
+          "4.63.5"
+        ],
+        "candidate": []
+      },
+      "section-matter": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "shiki": {
+        "baseline": [
+          "4.4.3"
+        ],
+        "candidate": []
+      },
+      "source-map": {
+        "baseline": [
+          "0.7.6"
+        ],
+        "candidate": []
+      },
+      "space-separated-tokens": {
+        "baseline": [
+          "2.0.2"
+        ],
+        "candidate": []
+      },
+      "sprintf-js": {
+        "baseline": [
+          "1.0.3"
+        ],
+        "candidate": []
+      },
+      "strip-bom-string": {
+        "baseline": [
+          "1.0.0"
+        ],
+        "candidate": []
+      },
+      "style-to-js": {
+        "baseline": [
+          "1.1.21"
+        ],
+        "candidate": []
+      },
+      "style-to-object": {
+        "baseline": [
+          "1.0.14"
+        ],
+        "candidate": []
+      },
+      "toml": {
+        "baseline": [
+          "3.0.0"
+        ],
+        "candidate": []
+      },
+      "trim-lines": {
+        "baseline": [
+          "3.0.1"
+        ],
+        "candidate": []
+      },
+      "unist-util-mdx-define": {
+        "baseline": [
+          "1.1.2"
+        ],
+        "candidate": []
+      },
+      "unist-util-position": {
+        "baseline": [
+          "5.0.0"
+        ],
+        "candidate": []
+      }
+    }
+  },
+  "acceptance": {
+    "correctnessReceipts": {
+      "baseline": {
+        "command_log_sha256": {
+          "browser": "436d121dcde3cc95308631e33dcaab9e012c92abcdb38a84e876a09dfa399dbb",
+          "build": "2481586b9fd05742dffe9f6a02c37c9a93e769ca255ef0ac51e25f648d6ce312",
+          "class-sample-check": "186ac09abaafba7c4971e4df029ae650e53d5e641eb884356b10f71573923f7b",
+          "existing-and-table-gates": "362ed992f69b8440c8bceda9268febd786d820ff8c617ab8f63ac2fb376cc9e4",
+          "format-check": "7b7ea444f04385e1dcd0da967ce5f8d7f271a869c9878368e0e7c5e1fbec8cd6",
+          "frozen-install": "e6fdaac7d46559182df16f7a0da0db3358cb26cba14ee40e36af988439983601",
+          "guide-samples-check": "57cda96ae91dfb10aad9e09db62f013569a5d25f7f9167ddeed3d77f69ff3239",
+          "lint": "7eb489ccc3ad134d865f478d11ecd1e3451c4c9acabfa9b3ccda2d7e5cd61476",
+          "native-assertion-expected-failure": "478aa5cc5bf01c8259199e83a049e5940abc96f9de7f63691c4a8be6f2d8163c",
+          "sample-check": "90dcfc59e5eff8f873c75a6bd0070e537cae59f018f88e545273bf01d559926a",
+          "typecheck": "8105ed89bbeed000ecb72c9a4a524fa272a448282788e9e289b128176a49d6a0"
+        },
+        "compatibility_html_sha256": "be4809946521697dab9767a1f0fb8a21bd127de665d33768f6b862e32d3e350f",
+        "lock_sha256": "1e00152c77342c2f6a41b77fc58f5d9a779bb63d79b91d6bb1f3d31b7a393a96",
+        "sha256": "db847470f5c840bdc63488ce8bddd1eb5589ac715f90270a01c18318b4666465",
+        "source_commit": "676b8e953e6597a337fc644e712a4a30e5b8bea5",
+        "source_tree": "126e110671d3e6fe1fbc2a41d8c7ec44498bb358"
+      },
+      "candidate": {
+        "command_log_sha256": {
+          "final-frozen-install": "d3f9bb1c631caa8fbbbf85ad99b8ebffde60867e97f5db655173274f641c7900",
+          "final-verify": "480206bd5d9b1ed13a13a3c14a3d807b8823925f88757b1d62965423c9a95d3f"
+        },
+        "compatibility_html_sha256": "7de865a677938e3e1eeb36bd60725f3936e1d1c4d524fa5703d4c0f360d06926",
+        "css_sha256": {
+          "assets/DocPage-DwM3ZlXr-DBiY-uQY.css": "e877af752dd71d70b9ca14944fcfc78fceca9bf1e446df4654341333e4d89f94",
+          "assets/root-DEMra5om.css": "ffcb249299a9dca49d240cc3d0ee2ecff6bae69038c80e18fbb9b5a9a48fb81e"
+        },
+        "lock_sha256": "669fd6b58290df50bc4c75b484f552cf994f35fd69976f91ff0ab24a47053c11",
+        "sha256": "748988e314c3e732da45572c9f9519ad11ee89007bf35089b57f08b9e45abedc",
+        "source_commit": "676b8e953e6597a337fc644e712a4a30e5b8bea5",
+        "source_tree": "126e110671d3e6fe1fbc2a41d8c7ec44498bb358",
+        "versions": {
+          "@ferriki/core": "0.10.0",
+          "ardo": "5.0.0",
+          "ferromark": "3.1.0"
+        }
+      }
+    },
+    "productionReceiptSha256": "748988e314c3e732da45572c9f9519ad11ee89007bf35089b57f08b9e45abedc",
+    "baselineReceiptSha256": "db847470f5c840bdc63488ce8bddd1eb5589ac715f90270a01c18318b4666465",
+    "pages": 10,
+    "internalLinksAndFragments": 275,
+    "axeViewportsPx": [
+      1440,
+      390,
+      844
+    ],
+    "themeReceiptSha256": "ce1ed98d016f8b4dbadfc631f776207a38d429b7d6dcb829c1e86b01378875ab",
+    "themeResults": [
+      {
+        "theme": "light",
+        "expected": "rgb(207, 34, 46)",
+        "actual": "rgb(207, 34, 46)",
+        "variable": "#CF222E",
+        "number": "1",
+        "numberContent": "\"1\"",
+        "numberDisplay": "inline-block",
+        "numberVisibility": "visible",
+        "numberOpacity": "1",
+        "numberColor": "oklch(0.47 0.006 55)",
+        "numberWidth": "32px",
+        "numberFontSize": "12.25px",
+        "ancestorOpacity": 1,
+        "highlightedBackground": "oklch(0.42 0.095 40 / 0.03)",
+        "ordinaryBackground": "rgba(0, 0, 0, 0)",
+        "highlightedBorderWidth": "3px",
+        "highlightedBorderStyle": "solid",
+        "highlightedBorderColor": "oklch(0.42 0.095 40)",
+        "ordinaryBorderColor": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "theme": "dark",
+        "expected": "rgb(255, 123, 114)",
+        "actual": "rgb(255, 123, 114)",
+        "variable": "#FF7B72",
+        "number": "1",
+        "numberContent": "\"1\"",
+        "numberDisplay": "inline-block",
+        "numberVisibility": "visible",
+        "numberOpacity": "1",
+        "numberColor": "rgb(71, 85, 105)",
+        "numberWidth": "32px",
+        "numberFontSize": "12.25px",
+        "ancestorOpacity": 1,
+        "highlightedBackground": "oklch(0.75 0.095 58 / 0.11)",
+        "ordinaryBackground": "rgba(0, 0, 0, 0)",
+        "highlightedBorderWidth": "3px",
+        "highlightedBorderStyle": "solid",
+        "highlightedBorderColor": "oklch(0.75 0.095 58)",
+        "ordinaryBorderColor": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "screenshotSha256": {
+      "compatibility-light.png": "59cce3369601c69944d8af92b2e9e3f4f7739113b7671c774aa9cff089d6c06b",
+      "compatibility-dark.png": "bf167849e2759bc61fd2e8789198a45f5c7ca5091e75b96451273f712743e6ff"
+    },
+    "htmlComparisonReportSha256": "8af93b1f7cfa911bee051638f1c228663bba12fe8c621da0010f925c632c5e1e",
+    "htmlComparison": {
+      "baseline": {
+        "sha256": "be4809946521697dab9767a1f0fb8a21bd127de665d33768f6b862e32d3e350f",
+        "bytes": 32674
+      },
+      "candidate": {
+        "sha256": "7de865a677938e3e1eeb36bd60725f3936e1d1c4d524fa5703d4c0f360d06926",
+        "bytes": 36449
+      },
+      "sourceMatchesBothLanes": true,
+      "intentionalDifferences": [
+        "Native supported-language output preserves the terminal LF and adds final empty numbered lines 4/5/9.",
+        "Token span boundaries/counts and native metadata/class markup differ; unknown fallback gains a visible title."
+      ]
+    },
+    "measuredOutputReceiptSha256": "83912c5486b7737b7e717a8429d7e8610df154ecda1273b4de7c00fdae51ff6f",
+    "measuredOutputChecks": [
+      {
+        "sample": "warmup-candidate",
+        "measured": false,
+        "exitCode": 0,
+        "htmlSha256": "05fb7c887a2f3033eaea63e62c2b11b68d3afdb213a7089028251bf0805b719f",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "warm-02-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "548eabb32bc8c6e3167cf1139205beeebf076951c4f83311fd2ad83c1e440e7b",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "warm-04-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "1e578fd8853021a40b995741e21de9389521bce76d3e14d0bfe4b2284184a3e5",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "warm-06-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "82cc37fbc6e2555cca86486107c82b99151d2423dc978827be04239270bc4a78",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "warm-08-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "6de3b10d2557cc137a9328298e1eb7e8aed1feab47d4cbfcc25b2ac738c605d4",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "warm-10-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "3f85fb59ecea558efd2359f028f928eccc0fc570d9f01656e81a17e13cd9d44f",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "cold-01-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "6c5e3c5137f91a799ec74a6b4a83e6f6b3dc6e1892d79b162677c7df0eeb0182",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "cold-02-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "9c05964f0b7f2a26c720790a898a212e457341fc5ffb014e1398db76803d912f",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "cold-03-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "e7bda53935610cd295e775d225b3a3b7f0c7822b19224728f60ce61fcc972cd7",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "cold-04-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "61f0d27c9c1fbc5a8ce62f8cbed2881b8f7aa413f4bebb4641d23c2f3a27e8ae",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      },
+      {
+        "sample": "cold-05-candidate",
+        "measured": true,
+        "exitCode": 0,
+        "htmlSha256": "b8b0b610db4312f28df20f914c92e194fe5d494dd0f24989509ae63e248eef77",
+        "output": "Verified native Markdown highlighting fixtures in the production HTML.\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "rollback": {
+    "receiptSha256": "b078a3381b75346befb758fb272d993b5751eff3c265e577abcc6800d209331f",
+    "testedSourceLockCommit": "1224a2dc3997e3666d69f66d3e0184de1da2c72a",
+    "restoredCommit": "e0e05c8f378e5afffa95159a6125c11044aae163",
+    "restoredTree": "9c3be58e1ed76fd62f35494faa1a6f8eece2506e",
+    "restoredLockSha256": "1e00152c77342c2f6a41b77fc58f5d9a779bb63d79b91d6bb1f3d31b7a393a96",
+    "reversedPaths": [
+      "adr/0012-publishable-rust-highlighter.md",
+      "docs/acceptance/ardo-ferromark.md",
+      "homepage/app/focusable-pre.tsx",
+      "homepage/app/focusable-table.tsx",
+      "homepage/app/mdx-provider.tsx",
+      "homepage/app/rehype-focusable-tables.ts",
+      "homepage/app/routes/evidence/compatibility.mdx",
+      "homepage/app/styles/site.css",
+      "homepage/package.json",
+      "homepage/pnpm-lock.yaml",
+      "homepage/scripts/verify-ardo-acceptance.mjs",
+      "homepage/scripts/verify-build.mjs",
+      "homepage/vite.config.ts"
+    ],
+    "frozenInstallExitCode": 0,
+    "nativeBuildExitCode": 0,
+    "productionBuildExitCode": 0,
+    "pages": 10,
+    "internalLinksAndFragments": 274,
+    "buildLogSha256": "6fed9fb8bb62902f7d9c5d09e982b9682eb6fb19bb6336113e92743d18ea2f90",
+    "scope": "The complete runtime/registry-lock migration at 1224a2dc. Final evidence-document additions are removed by the complete migration revert; their later final-commit inverse is checked separately."
+  },
+  "series": {
+    "warm": {
+      "recordedRunId": "20261004T002718Z-warm-7ce7f9c4",
+      "summary": {
+        "interpretation": "descriptive only; no speed threshold or causal claim",
+        "lanes": {
+          "baseline": {
+            "elapsed_seconds": {
+              "max": 8.01,
+              "median": 7.87,
+              "median_absolute_deviation": 0.13999999999999968,
+              "min": 7.65
+            },
+            "interpretation": "descriptive samples only; no speed threshold or causal claim",
+            "max_rss_bytes": {
+              "max": 1717125120,
+              "median": 1688780800,
+              "median_absolute_deviation": 28344320,
+              "min": 1497759744
+            },
+            "n": 5
+          },
+          "candidate": {
+            "elapsed_seconds": {
+              "max": 9.94,
+              "median": 9.9,
+              "median_absolute_deviation": 0.019999999999999574,
+              "min": 9.82
+            },
+            "interpretation": "descriptive samples only; no speed threshold or causal claim",
+            "max_rss_bytes": {
+              "max": 1382940672,
+              "median": 1337327616,
+              "median_absolute_deviation": 9666560,
+              "min": 1327661056
+            },
+            "n": 5
+          }
+        },
+        "mode": "warm",
+        "schema_version": 1
+      },
+      "provenanceSha256": "69970d00e05a470e3dd7e5729a21f6182652332eb835b1e2eb511b9be16744a9",
+      "rawRunsSha256": "027d0846a9b6f5cb51ea157474ed7d8da2d5baa45c97e1630fb18324d8e9a8e0",
+      "samples": [
+        {
+          "sample": "warmup-baseline",
+          "lane": "baseline",
+          "measured": false,
+          "exitCode": 0,
+          "elapsedSeconds": 8.36,
+          "maximumRssBytes": 1690812416,
+          "rawTime": "        8.36 real        10.00 user         2.61 sys\n          1690812416  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              152837  page reclaims\n                1358  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                5047  voluntary context switches\n              159282  involuntary context switches\n          2393755040  instructions retired\n           800641612  cycles elapsed\n            87547056  peak memory footprint\n",
+          "rawTimeSha256": "24d1623729d69d8517a1b1e3eb436fda48312322e8b75e2c335ad3be1dd1b267",
+          "buildLogSha256": "44bc918fb376c89de65a429570dbcc3740d2039cfd163b98501f249aeba9b56c",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "bbc13a9d75b2428bf0612026cef1f31995079c8e8530ac7efaed73eeb79aa415"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "d304659e51584c7dc8c100b842cefad4507983baa06516b1e652532579371aef"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "676d3589a8948e84cab885e618bd3fb6029098ec9cca1087088cdc871a4b64b2"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "d0a24843d056d12115e8226ee339269ebd4a6f893f48070fd6a7ab5c5a5f8c47"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "cd70918c38885e43cae54e13201ef26d392ffa1755e1579a1c0e505656c129fe"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "d39127b268600a84d1bfe8ab478f6cd48c2604256d9883481264dfcd45a60fa7"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "2ed83a0d0e8105d233b06d998df9add058ef8bb4772f45f56d9d6b45afd104f7"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "89234578ab0046811186015e5cc9c679e167257c5813ef660f65365086f09309"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "cd1dfe5bf263789029f8a0566775d70190953b47b384666bf65cb9d0c1552d46"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "1678b0d5d850765b1b7b5fdd128929efd2bf74d4cf169fd8e85fc3fa887f24a0"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "bc55782ca32eab1eea43893bbf5eb3363a3bf036e5936ef641d9d4663a757247"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warmup-candidate",
+          "lane": "candidate",
+          "measured": false,
+          "exitCode": 0,
+          "elapsedSeconds": 10.16,
+          "maximumRssBytes": 1330102272,
+          "rawTime": "       10.16 real        11.24 user         2.41 sys\n          1330102272  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               97565  page reclaims\n                1421  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                3381  voluntary context switches\n              167278  involuntary context switches\n          2398177045  instructions retired\n           788484531  cycles elapsed\n            86695160  peak memory footprint\n",
+          "rawTimeSha256": "92ba3e1fb9af0347f2c4a4934a0fe7771545aa63c7de877e7f5cb3acf3fd5276",
+          "buildLogSha256": "8047904dc65a413f3bfeabf52df9f73dc26ecc1f275c5754d520de40294ce60f",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "436a5b0c6004d78249961542a229fbbe14f9ba7b4991120c586cadc06a490a38"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "15edb63fd1e51ba2a51cd04c000842a749ed25d3a3a69afca663302edd4074c9"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "05fb7c887a2f3033eaea63e62c2b11b68d3afdb213a7089028251bf0805b719f"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "1e8060965992b4265aaac85de9af14214f72ec5e2cc7df43a977651888c5cd04"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "e1638c1dd227a8f9f9dc3552ad36ba04dfa365149059b3446bb049cc59d7dc8d"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "930ba89091e8265a9313227ef6408142501e3f4c8fc0612234c3a80b3b8d90e4"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "b54b3603dff8c53f655908da6a3f46a105e7cb933ec225d7f074904487dfcde0"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "295d20398753e86b2c056e1ed4e12d467a8cafe186b1b46c93a385c9ad0b0527"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "6cad8f17f8cc1311213c480475f78f6c3ba68fc617a099a489ab63bfe1e09477"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "a4ded2587981bd0051bbd9fac0e3031b8a540bb9ac4dbe33657a73b668c34fd4"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "508f178345e268ffaeda14ca652bf101ecd533f51828554bfcacce7050ffd127"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-01-baseline",
+          "lane": "baseline",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 7.87,
+          "maximumRssBytes": 1717125120,
+          "rawTime": "        7.87 real        10.02 user         2.27 sys\n          1717125120  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              154367  page reclaims\n                 213  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  31  voluntary context switches\n              146105  involuntary context switches\n          2402162364  instructions retired\n           786327767  cycles elapsed\n            86465496  peak memory footprint\n",
+          "rawTimeSha256": "6e7d9045d168ec09caba87f634bae2dc95b2fd934bf4e086cc1ec96f3ee57457",
+          "buildLogSha256": "0fb3a8792acef2cc886ca3c4e42f17ba032527fee271636b6379cbb79a886ba4",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "1b50cbaa036173463cd36cdf2b8c7b0f84e851bef0eef70dac415c69438fdac1"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "f1adcb0ca71fb12c86b9cccedb9eda019886ec490778665d90a103b929a0ad70"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "5c1408259708425e56db62286407c7cfe0dd671a870394df743919522b6960f2"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "3ef32269c48a62dbd32cd282810c05cb19f84de6f4dd3bbf00a5be18f23d1a88"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "ccfb5e36c03da4bfe81bd2c3e6bed213d66353da15f2d5d4b308ee66591a1238"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "6094815b423b371a413442c68bf185032d984d53b025cc1dfc4b3fec5efc0f4f"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "6ba47ab6162f8f26eb2fc1016a05697e0488fa67e8102edbd624c35ee4db7a34"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "4a21213b9b8571f1ab8aa6b36c7be5c206153d198926af7a9bca0ac170bfe952"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "cddd7bd5740e009350c48a535b3256fd2476042e373d8ef6841da7111aafb039"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "d88efa38ba0fe8919aa22a37b2d808feaeefad1dba5384de2ef539c8cecff67d"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "eefa32f884dbc82b63c2101a9f4d1c6a15285e6085db98485f9a4e4db75a485a"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-02-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 9.82,
+          "maximumRssBytes": 1337327616,
+          "rawTime": "        9.82 real        11.07 user         2.03 sys\n          1337327616  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               98370  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  29  voluntary context switches\n              143555  involuntary context switches\n          2397011050  instructions retired\n           787796919  cycles elapsed\n            87186560  peak memory footprint\n",
+          "rawTimeSha256": "4d3bf589cd27773e7c69c12919acfe381d6b41eb8f2819a4c4bb053af1f199ab",
+          "buildLogSha256": "35fef44f542742545bdde6addd4846d06300ff51f52f954fdebff097c23a6e6c",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "73dd6cdd0ab2257902b3e73f0374e4293425682b075cb3d4759c790015033472"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "1fe78e2f326b42de870866b69581e52f46b610c9e09000ba09ab5bec90c774f1"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "548eabb32bc8c6e3167cf1139205beeebf076951c4f83311fd2ad83c1e440e7b"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "586bc53ef94ad1d9e16bd1f440304ac15caaf6933c3fa74eb0daa82aa981e11e"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "83672b1809138a4fc64d8b7e15a7c93fdd543307e094a6cce8a981acc8835170"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "3f9405af5e61a84de2c1b812d5dc2282101b3d089a10edf45d5368256f1ea18a"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "0c462117599bf3598e811e949ad8172b911ff4994a07df024a93b13fcbc49896"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "ad7815944f027e0d0ac09191b24af485d1085a68cd184c504a02023bf0f99d86"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "9bb6b60a81ef0a4e924a3486fd343a69bb51b9e3d4635292f6f6dafddddc97d7"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "38fa3e5c9052b83886b8b8afc106564b3e88030121320b6d2a1ce4293f40b806"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "0b09089e47a4f4615492e7749f62c3e9f54554c9ea316b129bdfb667241fc609"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-03-baseline",
+          "lane": "baseline",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 8.01,
+          "maximumRssBytes": 1690468352,
+          "rawTime": "        8.01 real        10.23 user         2.27 sys\n          1690468352  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              154183  page reclaims\n                 213  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  29  voluntary context switches\n              151331  involuntary context switches\n          2398558941  instructions retired\n           784517205  cycles elapsed\n            87088256  peak memory footprint\n",
+          "rawTimeSha256": "bba0fc8fca893d5b5c7136d12104e0d8fee8738a7c3e38a7aeeb036550959862",
+          "buildLogSha256": "87b8d0d8ff6490122a5a8cb9433f34324d6797b6f881efa86b01d7d57b274f28",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "d6c7e725412cbb4ac07a1e24d69fad0dcb434979d4d077207d21a0d46c0fab9b"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "789571a341517152453ce484b4b48adb9e91a7e04302a15ba528029ffb7f7756"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "7997942ddd0c3ae7b6ccefbafb935e7a04230264140ed6c3f268fa77727b7836"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "283ea76d8b4c3fa1318775a241bc584e89c11e03f805cf55cd27c1a68d2219b1"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "dad19a966826b05002279c452f33887bb5f96349fd9fa0158614317fd74a00c9"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "ec4c10eed95eb8b8d85b24a2f0d0b82e3c1ae62814b9468dd33842501aded305"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "4f38ff7244734d42448f15d3995b51ad0f7eec134bea3789e648ec1dabaa715c"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "21d681519d2e97da21c98d4d29a7ddae812d5bfd4dd5987bd9809cb04f09d34f"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "57dc1825bbf57dfa51b98eb39ceabdd7e69a3fa68137cc8a72f4a16e0d6ed3dc"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "92b669577e80c5276ed9846662861be6d631b829c57d1529f6450b7d45ea06cd"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "354bc323501c10928839654b3faa4b48c7193c194803886ec48089e85231493c"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-04-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 9.89,
+          "maximumRssBytes": 1328971776,
+          "rawTime": "        9.89 real        11.21 user         2.06 sys\n          1328971776  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               98296  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  31  voluntary context switches\n              150400  involuntary context switches\n          2397465061  instructions retired\n           784520589  cycles elapsed\n            87071944  peak memory footprint\n",
+          "rawTimeSha256": "fc4ccffaf37d8eb18dbb8db3d71936c84e5bea098d9a9bd83a5d3ff0913a93cc",
+          "buildLogSha256": "bd8d6f46b75a807804071622565186866f4ec2a6c2b4cde7556a98bcc3cb9e5b",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "535b309a11baf210bdaf5d9c8a02f0e25d446453c7d6ac0bb9b0bdcdc568593e"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "d70985a87ddbd81e50129f08f5d80cebf1e263eb58a167f51b00401d93c68eec"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "1e578fd8853021a40b995741e21de9389521bce76d3e14d0bfe4b2284184a3e5"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "2e51dfe3e5592828b858a935447e36a0b4c38a2217add91f89a457da5a12cf9e"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "c0c7c2d707c9518370e705b4fac4569c893138de33ce065f99cd77ccb9844036"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "57b7fc364d6296e854865e220304058a3110dc06ba7205d45b0e9254313ed29b"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "9d92082fe57ea44fb42145d363f50020be7f64ffdc2c282bef69f6c93af681f2"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "1ec9205fb85878604915539fab35f332c7c8b9870061907dd4ce2e3766cc93f4"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "1cecbcdf494045e88a39561dd028a40ec713baeda349b33f98671562041d56ff"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "13ab7f7274fe0fb752c1f8f0f1d1c14b87d089a5aa99652c76ed493e93e2e0bc"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "bca453c36d2bd3bfd4202835cd5daa8867ff0ac817b38d1f9f41f5bad1100ba4"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-05-baseline",
+          "lane": "baseline",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 7.72,
+          "maximumRssBytes": 1497759744,
+          "rawTime": "        7.72 real         9.81 user         2.25 sys\n          1497759744  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              142717  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  32  voluntary context switches\n              146576  involuntary context switches\n          2390832817  instructions retired\n           827134676  cycles elapsed\n            87006384  peak memory footprint\n",
+          "rawTimeSha256": "728650e3905fc2eb3183001a5b8e47342ef9509442f14bea976390be5a8f0834",
+          "buildLogSha256": "7e764fb43bfaa305deab1ffd9affd420ef6891208daa6d88e05346735fb016fc",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "249c4303d1d5eff8b3d8c575d688cab36bd10c6244e10b8bd59ea662a54ad117"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "cb134a0e688bf6712d72baedb1e0d4549dfeddfe8061decc60a076f7bb78806a"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "ad4e80099b799b8695db80fa93e1a60222a93042e23ca6093c31cc2521da8471"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "fee4e7f4a162e89175d952465f1e15be50f4de79d5549b71aadfa4971ec589b7"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "471b2c7a82ef6e0fe887b80abd9f3d8d02a2b95b494c0c471e947b374bfe9f7b"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "e1e7d90e84485ae3178867e19c70ec30c1b30f0525b2e18cea993b3fb77b14ce"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "84fbe098cf14d981d7b88733b70e6e25db097eecd3297779d2f83ea7fab2f5ef"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "3515e2318b6c03501926fba2c92a73027035892b4d2a75cf682d08547ca8bd95"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "088cbe46efc40022f52d35d62c6f333dc2c4fb3d7ef866224b1809610b49f83e"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "91c88ec643d8987347fb7ca84cbdc54f53df047be247196cda2c0ee767c04916"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "87dd55338f8a6a1e299a5e6ff4902add77fa20385e03eb0b32c5e1f323ea31bc"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-06-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 9.94,
+          "maximumRssBytes": 1327661056,
+          "rawTime": "        9.94 real        11.28 user         2.03 sys\n          1327661056  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               98714  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  50  voluntary context switches\n              140662  involuntary context switches\n          2401844501  instructions retired\n           821759873  cycles elapsed\n            87481376  peak memory footprint\n",
+          "rawTimeSha256": "7f3ce155966e8497a489e1130bdd38f601bd234492d3c84e075df26c1f151522",
+          "buildLogSha256": "74cc759ffdb292b64f42e56d5a3baf9f70a2bcecf8c7ec428116da8ad984c2a3",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "3e80a5aea4a5005f50dd51ceee50ad1684480dc328cc897cfaa5007b28fd7116"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "69996261ef3c9bfecb07627d81acba0725a30c4cd6f02a77c12261e01915d002"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "82cc37fbc6e2555cca86486107c82b99151d2423dc978827be04239270bc4a78"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "b5632305796bfe224082f0839ba3afe3be4e2d4b39fd52a222bc55be746d4d53"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "2de5cb00310cb02716c238f66b11b5f1c8369d4e87fd1b8ed589e84e55730349"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "ef65396a2125e53c8e666dc52ce05f3c711c2d9f4c0e3488b42239d0fea86b54"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "79fb2715f148628010aa793a044d7eb2fc620cfa927a823d5b1d3e25bcca6716"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "244efa906b353c20932f4c2b81f02998d25f6d13e74446866e79cc490f9f1aa2"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "b3f825d3f700be312c52b1a4b88612bad19b9b9fefac71439e8814512de3458d"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "d14e1df9cac5927d5f319e7978f7b3820796c6395777ab0d8fc7565faa80c111"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "1c3dc9596e53ebd76098bd8bcd4faa5164b75bcbbc0fd66a80af3c88fd6428da"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-07-baseline",
+          "lane": "baseline",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 7.98,
+          "maximumRssBytes": 1688780800,
+          "rawTime": "        7.98 real        10.05 user         2.24 sys\n          1688780800  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              153754  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  37  voluntary context switches\n              140844  involuntary context switches\n          2403978114  instructions retired\n           801088712  cycles elapsed\n            86629672  peak memory footprint\n",
+          "rawTimeSha256": "da8bcc61ed8123db8a87b671afe027278b8931e398c7340df6dc4e40e7538a7d",
+          "buildLogSha256": "4ccaf8cc5630b3e37793a8fee2f808af75beec36785ccfa23f02e6e3261ac35d",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "684b27570b08149e3ad7d2b4c1d71021bc93e3858b6328d2a5a07d44113d130e"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "36edd5456b51852964476dfa081d4c581f609c7d670bc08034d48eb012d72c7c"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "93200231fc72fafa271a1893bceeddfc3786e4c1fa21f11aadc0058c6c765876"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "9b1d01ee9cb3942e4167d3b30f8294133b0b8d8b107b64bb8c86ad90d317268b"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "0975203580cf66c6003cabd56e560d49f47872083b8d5a55cd4078e831147edb"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "3237cd23f790efc4e220cd519775a8262e4098cf8281952a88cd1e4933af9956"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "d284a1c1682ee85df32059f03050d3bc4287e4273f151b07dc20b5d68a6c2290"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "5d241b550865fda423413197f8bf804f84d833e475f172be64567a9e9477965c"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "51feddd556bb7870ace437b6821b9f742d9e0250b0ab346302c10642bb076e65"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "20feb36de5f0f2e362160a40182202f18928424ccbe7153e5cda4c7e3c80ea40"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "9b3ad848aa553e10fc60162cdddf298482c1aa187bf43f4756b7cdf5c149d513"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-08-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 9.9,
+          "maximumRssBytes": 1382940672,
+          "rawTime": "        9.90 real        11.23 user         2.05 sys\n          1382940672  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              101425  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  29  voluntary context switches\n              138734  involuntary context switches\n          2407364205  instructions retired\n           803483458  cycles elapsed\n            87579752  peak memory footprint\n",
+          "rawTimeSha256": "d95a7677ba5b0e279ecd8d0d759cac8d3e1bb1d9601eaef162f7af13997291f1",
+          "buildLogSha256": "a7c12ddab479a83ef8f2e149d353644fd0547213dc0a6e31aaf8555452efb0e9",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "ab7b061cf01676cda70054853583967abd4550d8667675f575aabc00e46f5de6"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "a074f9162aac86e54b715b2c028d0103cec7574eb63237a56bbfb02c5cc6a801"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "6de3b10d2557cc137a9328298e1eb7e8aed1feab47d4cbfcc25b2ac738c605d4"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "bd6f7a0c7808c3fd157f639aa8ae5cd83005ab8b7b0d4616a5474695a56b81e2"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "63fffea90c45e3a13cf6f3cd6dbfc2031d8097f8a33c2cb9b84c485353826aae"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "31b9ab1780326109c8d9ecbcb6b987e1ffdef95f97a91b50dec21d9d30c3b062"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "445bd496b49a88dbcea4111e1a92c8e16cdceef2988a7bec6a36ab9f99831a69"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "27495ba5e70af5e187ff4f18332295319956b5da2e444400655c601fd8edd94d"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "a33ba0ffcc257f462467c68a8aaf0fe569034b468a7a8ef477bdeb0f36c560ec"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "6246ad57dc454bf9ffa988595c7efd75f3011ec41052fe49820873865f4c65f4"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "55061bcce2b8c8f8f5fd6f862dd6c2b3e8bfc2dd63accbf84eb894560f369ad8"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-09-baseline",
+          "lane": "baseline",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 7.65,
+          "maximumRssBytes": 1526005760,
+          "rawTime": "        7.65 real         9.73 user         2.24 sys\n          1526005760  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              143695  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 105  messages received\n                   0  signals received\n                  32  voluntary context switches\n              141385  involuntary context switches\n          2396923190  instructions retired\n           799502366  cycles elapsed\n            86367312  peak memory footprint\n",
+          "rawTimeSha256": "01a3ef1caaabb0857cf702e0e288a25d495a8cea62ff6c7fb82d65602a4b8aa8",
+          "buildLogSha256": "d247e99ea69f5262b0f61982f86e0677a7f4946c415007fefb9e293facb9b7f6",
+          "html": {
+            "bytes": 335489,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "46d87cef4afb8ae03974edb03a0c6bf8fc57683ffa2d44e8415d092c1afb26c0"
+              },
+              {
+                "bytes": 36520,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "bb7136913a0cad3f1c3d89b119ad643db45b318a9402f50c9495a9956f8858b9"
+              },
+              {
+                "bytes": 32674,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "ce093f38be6dad1ffffb913fd6a23ebcd9cd76e936555a09f5c39f6571c2a43b"
+              },
+              {
+                "bytes": 22597,
+                "path": "guide/api/index.html",
+                "sha256": "2befe396c54d6dec5eb2b540fb6954e010f1ee7bdd383df09a16a453565cd95e"
+              },
+              {
+                "bytes": 58403,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "d57a40c03175749b23778dfe0ac7d7f392a343b6e98e9c92698b8f1cf3ed5571"
+              },
+              {
+                "bytes": 29415,
+                "path": "guide/getting-started/index.html",
+                "sha256": "532446bcce2517760c8ebde04ed8860ff373206e4174ca5a670a27a0e42ce07b"
+              },
+              {
+                "bytes": 30924,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "cf1010558369f013afa37aff2f509e153088c4852e48dc7529e67ba7dc4b3b35"
+              },
+              {
+                "bytes": 24262,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "18aa4795700823a8e7d332e331d2677624125d6e4cdaeed03b6fe88918815730"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "65edd7e4fbbac1d963887cac2346d23c572de5f4289e09549b02359bc297da1e"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "9668309aa3c7ff89a837eec5eb3c4b7ab6caba73d721e0ba1b94dd68d41e6735"
+              },
+              {
+                "bytes": 43870,
+                "path": "rust/getting-started/index.html",
+                "sha256": "651a8e509f4ac524c31c9c1d9eae6d55b616605b26475a672343be67c90629f2"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        },
+        {
+          "sample": "warm-10-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 9.92,
+          "maximumRssBytes": 1376583680,
+          "rawTime": "        9.92 real        11.21 user         2.10 sys\n          1376583680  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              101646  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 105  messages sent\n                 106  messages received\n                   0  signals received\n                  29  voluntary context switches\n              143839  involuntary context switches\n          2397325934  instructions retired\n           805249326  cycles elapsed\n            86252600  peak memory footprint\n",
+          "rawTimeSha256": "c5b33a9f05f84b7fa5fa4072f93344887c717adcbbd79d97e36c4c1451b98433",
+          "buildLogSha256": "9412d22f732e2abc9b9431f35f7957753047a9ebcacad370917602e430aaed71",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "334c92b409273d0c99bb300ddf051221a5dac36b71da75035702799fff29efa5"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "41f74408adc06d980c23c831c0aab25c1e4d8246bf5371b562658092d720a4f1"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "3f85fb59ecea558efd2359f028f928eccc0fc570d9f01656e81a17e13cd9d44f"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "850e7efe6736ec7b828a850450f278797a7cb3143fe6d6de91afc81f3a99ad46"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "86cea3250ac8842adeb92edb0153afaa59339a990338ab358fe24346700baf46"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "74666cae847d3d5a9a51085c8c5a9ad46a011ed406aed7ee9460fd43f7ec1480"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "72014b78cc4850e4dbf9087749e97dfff1a6dd22d3537fc637d6615c9f35e171"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "2eb90d659ad7e5e268601271f9ed6383508040476420b28f25a11f4d9df91c3c"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "ad7e3803658dbfdc5e977c2f45201af745eb5825878c71e939d3e2153866212d"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "bb97b67823e868d66f310372d34b6212692e828f703623a32fd3854e7d96b359"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "c927a35c1f8d4ff888efefacf99d503049a1abff50bc8ff7d8409a86429d5262"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 9006563,
+            "digest_set_sha256": "0d68c1e89ece83df87ce22efd38d9a9d72c75929e28df39b41fc2e79739597a0",
+            "files": 325,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "warm-local-complete"
+          },
+          "cacheAfter": {}
+        }
+      ]
+    },
+    "cold-candidate": {
+      "recordedRunId": "20261004T003003Z-cold-candidate-5fa53fc2",
+      "summary": {
+        "interpretation": "descriptive only; no speed threshold or causal claim",
+        "lanes": {
+          "candidate": {
+            "elapsed_seconds": {
+              "max": 11.7,
+              "median": 10.24,
+              "median_absolute_deviation": 0.049999999999998934,
+              "min": 10.18
+            },
+            "interpretation": "descriptive samples only; no speed threshold or causal claim",
+            "max_rss_bytes": {
+              "max": 1406681088,
+              "median": 1358135296,
+              "median_absolute_deviation": 19578880,
+              "min": 1338556416
+            },
+            "n": 5
+          }
+        },
+        "mode": "cold-candidate",
+        "schema_version": 1
+      },
+      "provenanceSha256": "0b4067798f6a47fd212613830b5e4fcb44c2fe8da5920752c97bc2029892750e",
+      "rawRunsSha256": "14179fa9b6c0833f392b20385268b95c84087bd76b82611678e02781bad3410f",
+      "samples": [
+        {
+          "sample": "cold-01-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 11.7,
+          "maximumRssBytes": 1348681728,
+          "rawTime": "       11.70 real        11.30 user         2.07 sys\n          1348681728  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               99966  page reclaims\n                 259  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 178  messages sent\n                 376  messages received\n                   0  signals received\n                 233  voluntary context switches\n              140921  involuntary context switches\n          2398680266  instructions retired\n           778656161  cycles elapsed\n            87776408  peak memory footprint\n",
+          "rawTimeSha256": "57da7af0eeed573fa95d86c1ca06490e039d7527f5d59f7d67d348cc4c869394",
+          "buildLogSha256": "5c647f008241f8f1c636322c8c7811ff2c439183701982424be21827b403b11c",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "4ecb625a0c08d593944fa8084e1453069f01f2060488c929d5589a904c865924"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "62cfd0e6d67d7d02ea222b3cabd5dc5708d75b69c2ebd89cc5f59fcf8aba690c"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "6c5e3c5137f91a799ec74a6b4a83e6f6b3dc6e1892d79b162677c7df0eeb0182"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "317dce28a84b562238ec25dbb015ea53df222d79878364bb70065c0501668974"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "ee0fe7d76b78b4ea0ba68c651095eeace8ff8c4909d4b7acb0a46792809bf410"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "1f543c87e3239e7526f64f1ca076f9221ecf9da00e3b6a3d68105d3e4805ddc7"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "92a859d9a71a6de9b7acfa943912e609588e57acd4dd2f510750046d47f784af"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "33d19a0e98b39ec3b52a5ce0131ea05bdf25462239fbd6d202b650490e46482d"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "f08fc1b595e2a8cdced8a1c87666182757f47b1af73a0557ce25efd571c3571d"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "1d128d75b51cdf4d790c62045a5143ec89710c2fda542465d68026ff6be8fc19"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "e882d15f488393476f805c3667f5d64608d7ffbda5fc2476bf20a0a80509335e"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 0,
+            "digest_set_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "files": 0,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "unique-empty-before-run"
+          },
+          "cacheAfter": {
+            "bytes": 673795,
+            "digest_set_sha256": "f57716ad841d4bf5ab62d5eaf76b526c902b9d26b9f980de9a41e1400809dd20",
+            "files": 10,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "remote-first-use-local-cache"
+          }
+        },
+        {
+          "sample": "cold-02-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 10.29,
+          "maximumRssBytes": 1386397696,
+          "rawTime": "       10.29 real        11.30 user         2.08 sys\n          1386397696  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              101859  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 178  messages sent\n                 382  messages received\n                   0  signals received\n                 241  voluntary context switches\n              142258  involuntary context switches\n          2408533655  instructions retired\n           799845701  cycles elapsed\n            87301248  peak memory footprint\n",
+          "rawTimeSha256": "d9cf1ff802ac0952d3a1fc7b2ad37db51428f419f7b658ce29eb63cd5ee40431",
+          "buildLogSha256": "a12e19fb995063d0b804fb83cd56f0b78d09f734599eec8eec7e6ac587db9ef7",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "dd981e793e526db7071ee7275bce62ca63e632481243fb24f4b284a7c10ba544"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "9dc04aaea6d02b2c0d1de05e69338178324232f2a8b2bc7641246d7360f58525"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "9c05964f0b7f2a26c720790a898a212e457341fc5ffb014e1398db76803d912f"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "a141587b9c38c0fa6f90d2927ea5431e4892d5d7c9e38c97640f9e91067f40e2"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "a6d144effe4ce2ce14f7e477ea581b09970ff66155356ccc1cd5365596782bfb"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "2666e82d106dbb375e0b2f33aeb40a26224c6ee33ef3e9eb4e8757fd9d5661bb"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "6b1cf4b2bb7b658a78d41ca5458e1a833b24963cb8d8a5bcc72b338f4c48f99c"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "2520367919423d94fbbc9ba45ff02d26f60c55ca2801c7d67516f78295f2e40e"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "84719d167fa6225e11fcc53632a534ae19a8ec6e5413e5427c892758433d7253"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "ee2376de86d29f00206baf905e41ac5ccc5ec5b940b754c850b607dcef22cda9"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "a2a88ac845c97c3d8bd9bc46d558e4b023ff8f9dec2b0a1173c5df8ae29d5576"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 0,
+            "digest_set_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "files": 0,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "unique-empty-before-run"
+          },
+          "cacheAfter": {
+            "bytes": 673795,
+            "digest_set_sha256": "f57716ad841d4bf5ab62d5eaf76b526c902b9d26b9f980de9a41e1400809dd20",
+            "files": 10,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "remote-first-use-local-cache"
+          }
+        },
+        {
+          "sample": "cold-03-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 10.24,
+          "maximumRssBytes": 1338556416,
+          "rawTime": "       10.24 real        11.22 user         2.04 sys\n          1338556416  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               99346  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 178  messages sent\n                 375  messages received\n                   0  signals received\n                 249  voluntary context switches\n              140836  involuntary context switches\n          2393398443  instructions retired\n           794650545  cycles elapsed\n            86760504  peak memory footprint\n",
+          "rawTimeSha256": "324a985ab924f1f54517f7b4914f1987b1b17364bf88a6fb838063e228630695",
+          "buildLogSha256": "2f28b8f84759bc86914e7a3bc8758a709731c63569bd45f1bc8ff2ab90ef7335",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "4d040a9e4b36089895c48dd83f1b33a126bbe2bd0578e667d3ae586a2013620f"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "4b3ac8bf7e0ed9158e1e0f7f440825113cc2101afb882c2f976372b6c87295d4"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "e7bda53935610cd295e775d225b3a3b7f0c7822b19224728f60ce61fcc972cd7"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "a9d1fab2ad04a38b483d96d8a6e117ed7fe7cea4829598c697dd8606d441aa0e"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "d7db4de41f21513618be4110628b0664fe9cfaca43d8a338d393f6e1235073ec"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "8c84458e8b428b8001536cbabe9deb92bdcde514649761be5331aa091c0372dd"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "d1e792c98b214d8ebff1d38d8bea6579d7a2a033984ac273b854d277981a5c42"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "e9b15859fc887e57b0f3609069bfc76a7af6181d36de4457c407b615566df519"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "4e108bbc3c9ef59caa9e4aad833fe4c103e26430a95fef20fdf4a6912f2f9ae3"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "707a72b955e07b1a30141c1978c2c135f2345b041bb80c1b20d6f04fb64929a8"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "7a0d6e1810b13d3d224dd9e2ebfc788492496d99b74bfa2c958bda31f832ceb5"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 0,
+            "digest_set_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "files": 0,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "unique-empty-before-run"
+          },
+          "cacheAfter": {
+            "bytes": 673795,
+            "digest_set_sha256": "f57716ad841d4bf5ab62d5eaf76b526c902b9d26b9f980de9a41e1400809dd20",
+            "files": 10,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "remote-first-use-local-cache"
+          }
+        },
+        {
+          "sample": "cold-04-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 10.18,
+          "maximumRssBytes": 1406681088,
+          "rawTime": "       10.18 real        11.16 user         2.06 sys\n          1406681088  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              103337  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 178  messages sent\n                 370  messages received\n                   0  signals received\n                 236  voluntary context switches\n              142344  involuntary context switches\n          2404925717  instructions retired\n           794716109  cycles elapsed\n            87170200  peak memory footprint\n",
+          "rawTimeSha256": "d4df136e83883cde6d644b29c747a96e4ebe9a6481feaa7262355945710e2da1",
+          "buildLogSha256": "89ec6e780a5d4035e2638bfbaca3ca6d60331618e9687c5636931b0b7645ed4e",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "7057d637629fc390d8e15ed14901c9c729aabedb86041082c95f74cbd56b8874"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "cee54cd85bfe01d740140a6f10ca21012581af095824a1d9c3602f199fb82b5a"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "61f0d27c9c1fbc5a8ce62f8cbed2881b8f7aa413f4bebb4641d23c2f3a27e8ae"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "864a03145d8160d6609bd9d00b29e8cf662a48c62149cb80c6570144f0fdcef4"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "e2168777fd2363d2e3d5ca8164ed37ce0335deaa73dbca20d3e40782b3173be3"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "30e22eeb2f7da295331023b5720afeaad49a1a902b35da7f890cff62329a0b6e"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "21af32b797c936e317a74087c0d9db3a2d1c9c5a5cfb4abce86d1901fd9eec54"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "13598d92c831aed992fa2c2cf46f8c30606401f682e4a40c078a634693f986c3"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "2c6fe4f23311ac71c6cf1f44117e5b25e750ffc8e75b08ebf66b3a392f8dbe43"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "50bab0ecf8da77b9edf3d0b0f8003c5102f01b51083cd2890b7acc666f0bbe89"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "80d5cbd232909e980c409257d257f2147b1a874b90b0699cf2faf9dda3ef84e2"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 0,
+            "digest_set_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "files": 0,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "unique-empty-before-run"
+          },
+          "cacheAfter": {
+            "bytes": 673795,
+            "digest_set_sha256": "f57716ad841d4bf5ab62d5eaf76b526c902b9d26b9f980de9a41e1400809dd20",
+            "files": 10,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "remote-first-use-local-cache"
+          }
+        },
+        {
+          "sample": "cold-05-candidate",
+          "lane": "candidate",
+          "measured": true,
+          "exitCode": 0,
+          "elapsedSeconds": 10.24,
+          "maximumRssBytes": 1358135296,
+          "rawTime": "       10.24 real        11.24 user         2.05 sys\n          1358135296  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n              100130  page reclaims\n                 212  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                 178  messages sent\n                 384  messages received\n                   0  signals received\n                 244  voluntary context switches\n              140396  involuntary context switches\n          2407070540  instructions retired\n           789725244  cycles elapsed\n            86825968  peak memory footprint\n",
+          "rawTimeSha256": "45d037959a90b927202b6dbaae933f77009836568c2ecf8b9830da10f5c51714",
+          "buildLogSha256": "baa9bb7b55c52478fd8d4cbca8b5bf22b851ffb72e5de268442a29d573cf02a6",
+          "html": {
+            "bytes": 359546,
+            "count": 11,
+            "files": [
+              {
+                "bytes": 3058,
+                "path": "__spa-fallback.html",
+                "sha256": "9a47830fe593e93b8d0b64e1d9f3c018f424ce599b84238285c2b794377ae5e1"
+              },
+              {
+                "bytes": 38335,
+                "path": "evidence/benchmarks/index.html",
+                "sha256": "ec0658241719226659fc919ba9cceecb95db3619f1b45f09211686de5f77efc1"
+              },
+              {
+                "bytes": 36449,
+                "path": "evidence/compatibility/index.html",
+                "sha256": "b8b0b610db4312f28df20f914c92e194fe5d494dd0f24989509ae63e248eef77"
+              },
+              {
+                "bytes": 22590,
+                "path": "guide/api/index.html",
+                "sha256": "dee4e7d936a511028413bd33e2cb99c484e9a9cad0ba42f1e43208f43b0e4dc0"
+              },
+              {
+                "bytes": 62174,
+                "path": "guide/class-highlighting/index.html",
+                "sha256": "30ef76c14884cefdded4930baeff1e33b1224499cd97838339a4d5aaba4f0e48"
+              },
+              {
+                "bytes": 32084,
+                "path": "guide/getting-started/index.html",
+                "sha256": "cf7790a64f393d465f3cfd30ddb2c9a27badb01bcbf1ebf3bb4acd129bb08555"
+              },
+              {
+                "bytes": 34120,
+                "path": "guide/languages-and-themes/index.html",
+                "sha256": "d14d41c9f3f9b897f2162b0e3db5f84c0f8b4f66f1b1e1cc257f1c72c7606e05"
+              },
+              {
+                "bytes": 24548,
+                "path": "guide/migrating-from-shiki/index.html",
+                "sha256": "cce64e5328519908182098279cbf0d0b2783e1a1f685245f6ef7adf4a04daf9f"
+              },
+              {
+                "bytes": 20431,
+                "path": "guide/troubleshooting/index.html",
+                "sha256": "9c306d45e9d13fece4fca4ec0b621c0341b8810478cef45dfa39abfb888aeabe"
+              },
+              {
+                "bytes": 33335,
+                "path": "index.html",
+                "sha256": "add93da9a9d45eb2a9b158742a60935a92f734e80bbff734392b1a15c9fb915a"
+              },
+              {
+                "bytes": 52422,
+                "path": "rust/getting-started/index.html",
+                "sha256": "8881c7d71257a5304346db13ef2a24913db38442ce163e64cdbdd747af6243a3"
+              }
+            ]
+          },
+          "cacheBefore": {
+            "bytes": 0,
+            "digest_set_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "files": 0,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "unique-empty-before-run"
+          },
+          "cacheAfter": {
+            "bytes": 673795,
+            "digest_set_sha256": "f57716ad841d4bf5ab62d5eaf76b526c902b9d26b9f980de9a41e1400809dd20",
+            "files": 10,
+            "manifest_sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+            "mode": "remote-first-use-local-cache"
+          }
+        }
+      ]
+    }
+  },
+  "followups": {
+    "documentationSnapshots": "https://github.com/sebastian-software/ardo/issues/323",
+    "wholeBuildOverhead": "https://github.com/sebastian-software/ardo/issues/324"
+  }
+}

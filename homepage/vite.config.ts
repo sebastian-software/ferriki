@@ -1,11 +1,13 @@
 import { ardo } from "ardo/vite";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, normalizePath, type Plugin } from "vite";
 
-const ferrikiMdxProvider = fileURLToPath(new URL("app/mdx-provider.tsx", import.meta.url));
+const ferrikiMdxProvider = normalizePath(
+  fileURLToPath(new URL("app/mdx-provider.tsx", import.meta.url)),
+);
 const ferrikiMdxProviderImporters = new Set([
   ferrikiMdxProvider,
-  fileURLToPath(new URL("app/focusable-pre.tsx", import.meta.url)),
+  normalizePath(fileURLToPath(new URL("app/focusable-pre.tsx", import.meta.url))),
 ]);
 
 const focusableMdxProvider: Plugin = {
@@ -14,7 +16,7 @@ const focusableMdxProvider: Plugin = {
   resolveId(source, importer) {
     if (
       source === "ardo/mdx-provider" &&
-      !ferrikiMdxProviderImporters.has(importer?.split("?")[0] ?? "")
+      !ferrikiMdxProviderImporters.has(normalizePath(importer?.split("?")[0] ?? ""))
     ) {
       return ferrikiMdxProvider;
     }
