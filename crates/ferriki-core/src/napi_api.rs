@@ -261,7 +261,7 @@ impl From<NativeHighlightOptions> for HighlightOptions {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use serde_json::Value;
 
@@ -288,7 +288,7 @@ mod tests {
             .clone()
     }
 
-    fn standard_highlighter() -> FerrikiHighlighter {
+    pub(crate) fn standard_highlighter() -> FerrikiHighlighter {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
         let cache = test_cache(&root);
         create_highlighter(NativeHighlighterOptions {
@@ -403,6 +403,73 @@ mod tests {
             assert!(options.render.merge_same_style_tokens);
             assert_eq!(options.render.tabindex.as_deref(), Some("0"));
         }
+    }
+
+    #[test]
+    fn loads_standard_and_custom_assets_through_the_binding_methods() {
+        let highlighter = standard_highlighter();
+        assert!(
+            highlighter
+                .load_standard_theme("nord".into())
+                .expect("theme")
+        );
+        assert_eq!(
+            highlighter
+                .load_standard_grammar("js".into())
+                .expect("grammar")
+                .as_deref(),
+            Some("source.js")
+        );
+        assert_eq!(
+            highlighter
+                .resolve_grammar_scope("javascript".into())
+                .expect("scope")
+                .as_deref(),
+            Some("source.js")
+        );
+        assert!(
+            highlighter
+                .get_loaded_grammar_scopes()
+                .contains(&"source.js".to_owned())
+        );
+        assert!(
+            highlighter
+                .get_loaded_languages()
+                .contains(&"javascript".to_owned())
+        );
+        assert!(highlighter.asset_cache_dir().is_some());
+
+        let grammar = r#"{"name":"mini","scopeName":"source.mini","patterns":[{"match":"x","name":"keyword.x"}]}"#;
+        let theme = r##"{"name":"mini-theme","type":"dark","fg":"#ffffff","bg":"#000000","settings":[{"scope":"keyword","settings":{"foreground":"#ff0000"}}]}"##;
+        assert!(
+            highlighter
+                .load_custom_grammar(grammar.into())
+                .expect("custom grammar")
+                .is_some()
+        );
+        assert!(
+            highlighter
+                .load_custom_theme(theme.into())
+                .expect("custom theme")
+        );
+        let tokens = highlighter
+            .get_html_render_data(
+                "x y".into(),
+                NativeTokenOptions {
+                    lang: "mini".into(),
+                    theme: "mini-theme".into(),
+                    ..Default::default()
+                },
+            )
+            .expect("custom tokens");
+        assert_eq!(tokens.tokens[0][0].content, "x");
+        assert_ne!(tokens.tokens[0][0].color, tokens.tokens[0][1].color);
+        assert!(highlighter.load_custom_grammar("[]".into()).is_err());
+
+        highlighter.dispose();
+        assert!(highlighter.get_loaded_languages().is_empty());
+        let bare = create_highlighter(NativeHighlighterOptions::default()).expect("bare");
+        assert!(bare.asset_cache_dir().is_none());
     }
 
     #[test]
