@@ -254,10 +254,10 @@ impl Highlighter {
     /// that no risky pattern has been found in the scanners built so far. The
     /// list does not cover rules that tokenized input has not reached. Returns
     /// `None` when the language is not registered. Registering a grammar or
-    /// injection, or activating a different theme, can invalidate the compiled
-    /// grammar cache and reset this snapshot; tokenizing the language again
-    /// rediscovers warnings as its scanners compile. This is not a complete
-    /// grammar lint.
+    /// injection can invalidate the compiled grammar cache and reset this
+    /// snapshot; tokenizing the language again rediscovers warnings as its
+    /// scanners compile. Activating a different theme keeps the compiled
+    /// grammar and its warnings. This is not a complete grammar lint.
     pub fn backtracking_warnings(
         &mut self,
         language: &str,
