@@ -19,6 +19,11 @@ name = "ferriki_core"
 crate-type = [ "cdylib", "rlib" ]
 path = "src/lib.rs"
 
+[features]
+# Adds `profileTokenBoundary` and a counting allocator for
+# node/scripts/profile-native-boundary.mjs. Release addons never enable it.
+profiling = []
+
 [dependencies]
 # Rust plans and verifies assets; the Node facade owns network transport (ADR 0013).
 ferriki = { version = "0.12.0", path = "../..", default-features = false }
