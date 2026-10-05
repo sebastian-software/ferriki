@@ -58,16 +58,6 @@
   color: #d14a70;
 }
 
-/*
- * The macro sample shows the module @ferriki/vite emits, whose prepared HTML
- * is one long string literal. Wrapping it keeps the whole output readable
- * without scrolling the panel sideways.
- */
-.ferriki-macro-sample .fam-code pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 /* Keep long documentation menus reachable on short landscape screens. */
 .site-menu-flyout {
   max-height: calc(100dvh - var(--ardo-layout-headerHeight, 4rem) - 2rem);
@@ -78,4 +68,160 @@
 /* Nested guide pages keep their section link highlighted in the top nav. */
 .site-links a[data-active="true"] {
   color: var(--ember);
+}
+
+/* Inline API names read as code without competing with links or buttons. */
+.ferriki-home :not(pre) > code {
+  padding: 0.12em 0.35em;
+  border: 1px solid color-mix(in oklch, currentColor 16%, transparent);
+  border-radius: 0.25em;
+  background: color-mix(in oklch, currentColor 6%, transparent);
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.ferriki-highlighted-panel {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #39424e;
+  border-radius: 0.5rem;
+  background: #24292e;
+  color: #e1e4e8;
+}
+.ferriki-highlighted-panel figcaption {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #39424e;
+  font-size: 0.85rem;
+}
+.ferriki-highlighted-panel pre {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ferriki-flows {
+  display: grid;
+  gap: 2rem;
+  margin-block: 1.5rem;
+}
+.ferriki-flow {
+  min-width: 0;
+  margin: 0;
+}
+.ferriki-flow figcaption {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+.ferriki-flow ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.75rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.ferriki-flow li {
+  position: relative;
+  padding: 1rem;
+  border: 1px solid color-mix(in oklch, currentColor 22%, transparent);
+  border-top: 3px solid var(--ember, #ba4c1c);
+  border-radius: 0.25rem;
+}
+.ferriki-flow li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  inset-inline-start: calc(100% + 0.45rem);
+  top: 1rem;
+}
+.ferriki-flow strong,
+.ferriki-flow span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.ferriki-flow span {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+@media (max-width: 700px) {
+  .ferriki-flow ol {
+    grid-template-columns: 1fr;
+  }
+  .ferriki-flow li:not(:last-child)::after {
+    content: "↓";
+    inset-inline-start: 1rem;
+    top: calc(100% + 0.2rem);
+  }
+}
+
+.ferriki-benchmark-chart {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in oklch, currentColor 20%, transparent);
+  border-radius: 0.5rem;
+}
+.ferriki-benchmark-chart figcaption strong,
+.ferriki-benchmark-chart figcaption > span {
+  display: block;
+}
+.ferriki-benchmark-chart figcaption > span,
+.ferriki-benchmark-chart p {
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+}
+.ferriki-chart-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.ferriki-chart-control select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.4rem;
+  font: inherit;
+  color: inherit;
+  background: var(--ardo-color-codeBg);
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+}
+.ferriki-benchmark-chart dl {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.25rem;
+}
+.ferriki-chart-row dt {
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+.ferriki-chart-row dd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+}
+.ferriki-chart-track {
+  display: block;
+  height: 1rem;
+  background: color-mix(in oklch, currentColor 7%, transparent);
+}
+.ferriki-chart-track > span {
+  display: block;
+  height: 100%;
+  background: color-mix(in oklch, currentColor 50%, transparent);
+}
+.ferriki-chart-row[data-own="true"] .ferriki-chart-track > span {
+  background: var(--ember, #ba4c1c);
+}
+.ferriki-chart-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
 }

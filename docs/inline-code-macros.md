@@ -301,3 +301,23 @@ It covers server rendering and hydration, navigation, exact source copying,
 theme/CSS delivery, HMR and the browser module boundary. The portable packed
 consumer check runs both macros, their diagnostics and a production build
 against Vite 8.0.0 and the current Vite 8 release.
+
+## Rendering HTML in React
+
+`codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
+that string in its `html` field. React escapes a string in `{html}`, so it
+displays the tags as text. Use `dangerouslySetInnerHTML` to
+insert the prepared markup, or use `<Code />` to let the macro supply that
+container for you.
+
+Literal HTML cannot simply be pasted into JSX: attributes such as `class`
+and `style` have different representations, and escaped source text must be
+preserved. The current adapter keeps Ferriki's HTML intact instead of converting each
+highlighted span into a React element. The resulting page still contains
+ordinary `pre`, `code` and `span` elements.
+
+Ferriki escapes the original source. Custom transformers control their own
+markup; only insert HTML from your highlighting pipeline.
+
+Direct React-JSX rendering is proposed in
+[issue #221](https://github.com/sebastian-software/ferriki/issues/221).

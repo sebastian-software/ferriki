@@ -3,6 +3,8 @@ title: Build-time macros
 order: 2
 ---
 
+import { HighlightingFlows } from "../../components/highlighting-flows";
+
 # Build-time macros
 
 `code()` and `<Code />` are build-time macros for code examples that live in
@@ -13,6 +15,8 @@ browser receives that markup and loads no grammar, no theme and no highlighter.
 Shiki's official integrations, as of v4.4.3 (the release Ferriki is checked
 against), plug into Markdown pipelines such as rehype, markdown-it and
 VitePress. Shiki has no build-time macro for code inside components.
+
+<HighlightingFlows />
 
 ## Install
 
@@ -262,3 +266,23 @@ within a single hook hides the macro from every other plugin.
 
 Fenced code blocks in Markdown are not macros; your Markdown pipeline
 highlights them.
+
+## Rendering HTML in React
+
+`codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
+that string in its `html` field. React escapes a string in `{html}`, so it
+displays the tags as text. Use `dangerouslySetInnerHTML` to
+insert the prepared markup, or use `<Code />` to let the macro supply that
+container for you.
+
+Literal HTML cannot simply be pasted into JSX: attributes such as `class`
+and `style` have different representations, and escaped source text must be
+preserved. The current adapter keeps Ferriki's HTML intact instead of converting each
+highlighted span into a React element. The resulting page still contains
+ordinary `pre`, `code` and `span` elements.
+
+Ferriki escapes the original source. Custom transformers control their own
+markup; only insert HTML from your highlighting pipeline.
+
+Direct React-JSX rendering is proposed in
+[issue #221](https://github.com/sebastian-software/ferriki/issues/221).

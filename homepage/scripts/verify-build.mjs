@@ -24,7 +24,6 @@ const footprint = await readJson(new URL("../app/data/footprint.json", import.me
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
-const cold = report.cold["shiki-wasm"].medianMs / report.cold.ferriki.medianMs;
 const apiNames = ["codeToHtml"];
 const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
 const corpusSize = report.warm.codeToHtml.length;
@@ -125,7 +124,6 @@ const required = [
   [homepage, `v${version}`],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
-  [homepage, oneDecimal(cold)],
   [homepage, report.revision],
   [homepage, "@ferriki/core/react/macro"],
   [homepage, 'href="/guide/build-time-macros"'],

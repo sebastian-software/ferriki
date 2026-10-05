@@ -10,15 +10,16 @@ import {
 } from "ferramenta-family";
 import { Link } from "react-router";
 
+import { BenchmarkChart } from "../components/benchmark-chart";
 import {
   ClosingSection,
   CodeSection,
   CoverageSection,
+  FlowSection,
   MacroSection,
 } from "../components/home-sections";
 import {
   agreeingDocuments,
-  coldSpeedup,
   documents,
   formatFactor,
   machine,
@@ -77,8 +78,8 @@ const pillars = [
     text: "The ferriki crate on crates.io is the engine itself; the Node.js package runs the same code through a native addon. Ferromark, the family's Markdown parser, highlights Markdown and MDX code fences with it natively. Shiki is a JavaScript library and has no Rust API.",
   },
   {
-    heading: "No WASM, no regex translation",
-    text: "Matching runs in Ferroni, Oniguruma continued in Rust: the regex dialect the grammars were written for, compiled into the addon and the crate. No WebAssembly module to initialize, no patterns to translate.",
+    heading: "Native highlighting, small installs",
+    text: "Ferriki runs directly on your server or build machine, with no WebAssembly to initialize. Ferroni, its Rust pattern engine, understands the original TextMate grammars. Only your platform’s addon is installed; languages and themes download as needed and stay cached.",
   },
 ];
 
@@ -129,9 +130,9 @@ function EvidenceNote() {
       Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
       Shiki {report.versions.shiki}.{" "}
       {phikiAvailable
-        ? `The optional Phiki HTML comparison matched on ${phikiMatchingDocuments} of ${
+        ? `Phiki (PHP) is also measured per document; its HTML matched on ${phikiMatchingDocuments} of ${
             report.agreement.phiki?.of ?? documents
-          } documents; its shared cohort is separate from these Node totals.`
+          } documents. Its timings remain visible on the benchmark page, with the output differences noted.`
         : report.phiki?.status === "skipped"
           ? `The optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
           : "Phiki is not recorded in this benchmark report."}{" "}
@@ -150,28 +151,25 @@ function EvidenceSection() {
       intro={<EvidenceIntro />}
       note={<EvidenceNote />}
     >
-      <EvidenceFigures
-        figures={[
-          {
-            label: "HTML vs Shiki with WASM",
-            value: formatFactor(speedup("codeToHtml", "shiki-wasm")),
-            detail: "codeToHtml on a reused highlighter",
-            measure: "Oniguruma compiled to WebAssembly",
-          },
-          {
-            label: "HTML vs Shiki with the JS engine",
-            value: formatFactor(speedup("codeToHtml", "shiki-js")),
-            detail: "codeToHtml on a reused highlighter",
-            measure: "Oniguruma patterns translated to JavaScript",
-          },
-          {
-            label: "Cold start vs Shiki with WASM",
-            value: formatFactor(coldSpeedup("shiki-wasm")),
-            detail: "import, create a highlighter, render every document once",
-            measure: `median of ${report.cold.ferriki.runs} fresh processes`,
-          },
-        ]}
-      />
+      <div>
+        <EvidenceFigures
+          figures={[
+            {
+              label: "Faster than Shiki with WASM",
+              value: formatFactor(speedup("codeToHtml", "shiki-wasm")),
+              detail: "codeToHtml on a reused highlighter",
+              measure: "Oniguruma compiled to WebAssembly",
+            },
+            {
+              label: "Faster than Shiki with the JS engine",
+              value: formatFactor(speedup("codeToHtml", "shiki-js")),
+              detail: "codeToHtml on a reused highlighter",
+              measure: "Oniguruma patterns translated to JavaScript",
+            },
+          ]}
+        />
+        <BenchmarkChart />
+      </div>
     </Section>
   );
 }
@@ -190,6 +188,7 @@ export default function HomePage() {
         </Section>
         <SampleSection />
         <MacroSection />
+        <FlowSection />
         <EvidenceSection />
         <CodeSection />
         <PipelineSection />

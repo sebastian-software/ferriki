@@ -8,6 +8,7 @@
 //   node scripts/render-macro-sample.mjs --check  # fail when the committed file drifted
 import { readFileSync, writeFileSync } from "node:fs";
 
+import { createHighlighter } from "../../node/ferriki/index.mjs";
 import { TEST_ASSET_CACHE_DIR } from "../../node/scripts/test-asset-env.mjs";
 import { ferriki } from "../../node/vite/index.mjs";
 
@@ -45,10 +46,19 @@ const result = await plugin.transform.handler.call(context, input, id);
 if (!result) throw new Error("@ferriki/vite left the macro sample unchanged.");
 if (warnings.length > 0) throw new Error(`@ferriki/vite warned:\n${warnings.join("\n")}`);
 const output = result.code;
+const highlighter = await createHighlighter({ langs: ["tsx"], themes: ["github-dark"] });
+const inputHtml = highlighter.codeToHtml(input, { lang: "tsx", theme: "github-dark" });
+const outputHtml = highlighter.codeToHtml(output, { lang: "tsx", theme: "github-dark" });
+highlighter.dispose();
 
 if (process.argv.includes("--check")) {
   const committed = JSON.parse(readFileSync(artifact, "utf8"));
-  if (committed.input !== input || committed.output !== output) {
+  if (
+    committed.input !== input ||
+    committed.output !== output ||
+    committed.inputHtml !== inputHtml ||
+    committed.outputHtml !== outputHtml
+  ) {
     throw new Error(
       "The landing page macro sample changed. Run pnpm macro-sample:write and commit the result.",
     );
@@ -58,6 +68,9 @@ if (process.argv.includes("--check")) {
   const { version } = JSON.parse(
     readFileSync(new URL("../../node/vite/package.json", import.meta.url), "utf8"),
   );
-  writeFileSync(artifact, `${JSON.stringify({ version, id, input, output }, null, 2)}\n`);
+  writeFileSync(
+    artifact,
+    `${JSON.stringify({ version, id, input, output, inputHtml, outputHtml }, null, 2)}\n`,
+  );
   console.log("Wrote app/data/macro-sample.json from @ferriki/vite's transform.");
 }
