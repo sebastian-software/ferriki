@@ -3,6 +3,8 @@
 mod js_objects;
 mod napi_api;
 pub mod native_types;
+#[cfg(feature = "profiling")]
+mod profiling;
 
 use napi_derive::napi;
 
