@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
+import { gunzipSync } from "node:zlib";
 
 const { values } = parseArgs({
   options: {
@@ -34,6 +35,25 @@ const addons = values.addon.map((spec) => {
   return { name, path: resolve(rest.join("=")) };
 });
 
+/**
+ * Reads one file from a gzipped ustar archive such as an npm tarball. An
+ * external `tar` is not portable: the Git Bash `tar` on Windows reads `D:` paths as remote hosts.
+ */
+function tarEntry(archive, wanted) {
+  const tar = gunzipSync(readFileSync(archive));
+  const text = (start, length) => tar.toString("utf8", start, start + length).replace(/\0.*$/s, "");
+  for (let offset = 0; offset + 512 <= tar.length;) {
+    const name = text(offset, 100);
+    if (!name) break;
+    const prefix = text(offset + 345, 155);
+    const size = Number.parseInt(text(offset + 124, 12).trim() || "0", 8);
+    const body = offset + 512;
+    if ((prefix ? `${prefix}/${name}` : name) === wanted) return tar.subarray(body, body + size);
+    offset = body + Math.ceil(size / 512) * 512;
+  }
+  throw new Error(`${wanted} is missing from ${archive}`);
+}
+
 let scratch;
 if (values.published) {
   // The published sidecar is the release baseline for the same target.
@@ -45,9 +65,9 @@ if (values.published) {
   });
   if (pack.status === 0) {
     const [{ filename, version }] = JSON.parse(pack.stdout);
-    const tar = spawnSync("tar", ["-xzf", join(scratch, filename), "-C", scratch]);
-    assert.equal(tar.status, 0, `Could not extract ${filename}`);
-    addons.push({ name: `published ${version}`, path: join(scratch, "package", "ferriki.node") });
+    const addon = join(scratch, "ferriki.node");
+    writeFileSync(addon, tarEntry(join(scratch, filename), "package/ferriki.node"));
+    addons.push({ name: `published ${version}`, path: addon });
   } else {
     console.error(`[load] ${spec} is unavailable; measuring the local addons only.`);
   }
