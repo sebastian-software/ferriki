@@ -4,6 +4,8 @@ Measured October 5, 2026 on an Apple M1 Pro, darwin-arm64, Node 24.15.0. The bas
 
 **The original performance gate is not met:** single-theme token results still regress, and the raw addon grows by 2.23%. On October 5, 2026, the maintainer accepted these measured trade-offs for merging #224 and deferred profiling, optimization and all-platform size/load measurements to #225. All seven native smoke builds passed CI; the other six sidecar sizes and load times remain unmeasured.
 
+**Follow-up (#225):** paired profiling attributed the regression to the N-API conversion. The optimized writer is faster than the napi-rs 2 baseline on single- and multi-theme tokens and shrinks the addon again; CI now reports size and cold load for all seven sidecars. See [`../typed-conversion/`](../typed-conversion/README.md).
+
 ## Token boundary
 
 Each corpus includes every language with an available fixture (19 TIOBE, 20 curated), at example and large sizes, with single and two-theme results: 156 cases. Each case uses five warmups and ten measured calls; the existing 500 ms tokenization limit is retained. Baseline option encoding is outside the timer, while result parsing is inside it. Both result allocation and typed conversion are timed. Large inputs use the corpus harness's 16-copy fixture.

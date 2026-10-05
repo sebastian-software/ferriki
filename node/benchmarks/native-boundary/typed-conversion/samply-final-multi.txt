@@ -1,0 +1,57 @@
+93447 samples
+
+== self ==
+  6.44%  libsystem_platform.dylib!_platform_memmove
+  3.50%  final-prof.node!<alloc::raw_vec::RawVecInner>::finish_grow
+  3.42%  libsystem_malloc.dylib!0x33a78
+  3.05%  final-prof.node!ferroni::regcomp::optimize_nodes
+  2.57%  final-prof.node!<ferroni::backtrack_lint::Lint>::first
+  2.24%  final-prof.node!ferroni::regcomp::compile_length_tree
+  1.80%  final-prof.node!core::ptr::drop_glue::<alloc::vec::Vec<alloc::collections::btree::map::BTreeMap<alloc::string::String, alloc::sync::Arc<ferriki_textmate::raw_g
+  1.70%  final-prof.node!ferroni::regparse::fetch_token
+  1.64%  libsystem_malloc.dylib!0x3c168
+  1.58%  libsystem_malloc.dylib!0x3f4fc
+  1.28%  final-prof.node!ferroni::regcomp::guard_backtrack_pushes
+  1.26%  libsystem_malloc.dylib!0x3a864
+
+== inclusive ==
+100.00%  dyld!start
+100.00%  node!node::Start(int, char**)
+ 99.99%  node!node::NodeMainInstance::Run()
+ 99.99%  node!Builtins_CallApiCallbackGeneric
+ 99.99%  node!Builtins_InterpreterEntryTrampoline
+ 99.99%  node!Builtins_JSEntryTrampoline
+ 99.99%  node!Builtins_JSEntry
+ 99.99%  node!v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.99%  node!v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.99%  node!Builtins_AsyncFunctionAwaitResolveClosure
+ 99.99%  node!Builtins_PromiseFulfillReactionJob
+ 99.99%  node!Builtins_RunMicrotasks
+
+134 samples (0.14%) under /HtmlRenderData(WithThemes)? as napi/
+
+== leaf symbols in subtree ==
+  8.96%  node!v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::M
+  6.72%  node!napi_define_properties
+  5.97%  node!v8::internal::TransitionArray::BinarySearchName(v8::internal::Tagged<v8::internal::Name>, int*)
+  5.22%  node!v8::internal::JSObject::WriteToField(v8::internal::InternalIndex, v8::internal::PropertyDetails, v8::internal::Tagged<v8::internal::Object>)
+  5.22%  node!v8::internal::JSObject::FastPropertyAtPut(v8::internal::FieldIndex, v8::internal::Tagged<v8::internal::Object>, v8::internal::WriteBarrierMode)
+  5.22%  node!v8::Object::CreateDataProperty(v8::Local<v8::Context>, v8::Local<v8::Name>, v8::Local<v8::Value>)
+  3.73%  node!v8::internal::Factory::NewJSObject(v8::internal::DirectHandle<v8::internal::JSFunction>, v8::internal::AllocationType, v8::internal::NewJSObjectType)
+  3.73%  final-prof.node!<ferriki_core::js_objects::Writer>::shared
+  2.99%  node!v8::internal::(anonymous namespace)::UpdateDescriptorForValue(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Map>, v8::internal::Internal
+  2.99%  node!v8::internal::PropertyKey::PropertyKey<v8::internal::DirectHandle>(v8::internal::DirectHandle<v8::internal::Name>)
+  2.24%  node!v8::internal::(anonymous namespace)::TryFastAddDataProperty(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::Direc
+  2.24%  final-prof.node!<ferriki_core::native_types::HtmlRenderDataWithThemes as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+
+== direct children ==
+ 36.57%  final-prof.node!<ferriki_core::js_objects::Writer>::object::<2>
+ 29.10%  node!napi_define_properties
+  6.72%  final-prof.node!core::ptr::drop_glue::<[alloc::vec::Vec<ferriki_core::native_types::HtmlThemeToken>]>
+  5.97%  node!napi_create_object
+  5.97%  final-prof.node!<ferriki_core::js_objects::Writer>::shared
+  4.48%  final-prof.node!<ferriki_core::js_objects::Writer>::new
+  3.73%  node!napi_set_element
+  2.99%  node!napi_create_array_with_length
+  2.24%  (self)
+  2.24%  final-prof.node!<ferriki_core::js_objects::Writer>::string

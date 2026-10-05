@@ -1,0 +1,59 @@
+82279 samples
+
+== self ==
+ 22.08%  final-prof.node!ferroni::regexec::match_at_impl::<false>
+ 16.43%  final-prof.node!ferroni::regexec::match_at_impl::<true>
+  6.66%  final-prof.node!ferroni::regset::regset_search_body_position_lead
+  5.39%  final-prof.node!ferroni::regexec::stack_pop
+  2.54%  final-prof.node!ferroni::regset::search_fallback_entry
+  1.80%  final-prof.node!ferroni::regexec::forward_search
+  1.70%  final-prof.node!ferroni::regexec::match_literal_trie
+  1.29%  final-prof.node!ferroni::regexec::is_word_boundary
+  1.24%  libsystem_platform.dylib!_platform_memmove
+  1.13%  final-prof.node!fun_1782d8
+  1.09%  libsystem_platform.dylib!_platform_memset
+  1.03%  final-prof.node!ferriki_textmate::tokenize_string::tokenize_string::<ferriki_textmate::grammar::Grammar>
+
+== inclusive ==
+100.00%  dyld!start
+100.00%  node!node::Start(int, char**)
+ 99.99%  node!node::NodeMainInstance::Run()
+ 99.98%  node!Builtins_InterpreterEntryTrampoline
+ 99.98%  node!Builtins_JSEntryTrampoline
+ 99.98%  node!Builtins_JSEntry
+ 99.98%  node!v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.98%  node!v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::internal::Object>, v
+ 99.98%  node!v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*)
+ 99.98%  node!node::InternalCallbackScope::Close()
+ 99.98%  node!node::InternalCallbackScope::~InternalCallbackScope()
+ 99.98%  node!node::StartExecution(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value>(node::StartExecutionCallbackInfoWithModule const&)>)
+
+7389 samples (8.98%) under /HtmlRenderData(WithThemes)? as napi/
+
+== leaf symbols in subtree ==
+  8.47%  node!v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::M
+  7.43%  node!napi_define_properties
+  4.56%  libdyld.dylib!0x7e4c
+  4.44%  node!v8::internal::(anonymous namespace)::TryFastAddDataProperty(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::Direc
+  4.43%  node!v8::Object::CreateDataProperty(v8::Local<v8::Context>, v8::Local<v8::Name>, v8::Local<v8::Value>)
+  3.65%  final-prof.node!<ferriki_core::native_types::HtmlRenderData as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+  3.53%  node!v8::internal::(anonymous namespace)::UpdateDescriptorForValue(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Map>, v8::internal::Internal
+  3.46%  node!v8::internal::JSObject::WriteToField(v8::internal::InternalIndex, v8::internal::PropertyDetails, v8::internal::Tagged<v8::internal::Object>)
+  2.90%  node!v8::internal::JSObject::FastPropertyAtPut(v8::internal::FieldIndex, v8::internal::Tagged<v8::internal::Object>, v8::internal::WriteBarrierMode)
+  2.90%  node!v8::internal::LookupIterator::LookupInRegularHolder<true>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)
+  2.37%  node!v8::internal::TransitionsAccessor::SearchTransition(v8::internal::Tagged<v8::internal::Name>, v8::internal::PropertyKind, v8::internal::PropertyAttributes)
+  2.35%  final-prof.node!<ferriki_core::js_objects::Writer>::string
+
+== direct children ==
+ 51.20%  node!napi_define_properties
+ 16.78%  node!napi_set_element
+  6.74%  node!napi_create_object
+  6.56%  final-prof.node!<ferriki_core::js_objects::Writer>::string
+  6.04%  final-prof.node!core::ptr::drop_glue::<ferriki_core::native_types::HtmlRenderData>
+  3.65%  (self)
+  3.10%  final-prof.node!<ferriki_core::js_objects::Writer>::shared
+  1.79%  node!napi_create_array_with_length
+  1.39%  final-prof.node!<i32 as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+  1.30%  final-prof.node!<f64 as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+  0.70%  final-prof.node!<ferriki_core::native_types::HtmlRenderData as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+  0.34%  final-prof.node!<ferriki_core::js_objects::Writer>::new
