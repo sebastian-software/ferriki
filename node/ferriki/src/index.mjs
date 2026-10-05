@@ -60,12 +60,10 @@ export function createHighlighterCoreSync(options = {}) {
   const assets = resolveAssetOptions(options.assets);
   let native;
   try {
-    native = loadFerrikiNativeBinding().createHighlighter(
-      JSON.stringify({
-        standardAssetRoot,
-        assets,
-      }),
-    );
+    native = loadFerrikiNativeBinding().createHighlighter({
+      standardAssetRoot,
+      assets,
+    });
   } catch (cause) {
     if (cause instanceof FerrikiError) throw cause;
     const detail = cause instanceof Error ? cause.message : String(cause);
@@ -246,13 +244,16 @@ export function createHighlighterCoreSync(options = {}) {
     delete prepared.meta;
     delete prepared.data;
     delete prepared.grammarState;
+    // The typed native boundary receives normalized tabindex controls.
+    if (prepared.tabindex === null) prepared.tabindex = false;
+    else if (typeof prepared.tabindex === "number") prepared.tabindex = String(prepared.tabindex);
     return prepared;
   }
 
   function getHtmlRenderData(code, options = {}) {
     assertAnsiInput(code, options);
     const result = callNativeOperation("Ferriki tokenization failed", () =>
-      JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepareOptions(options)))),
+      native.getHtmlRenderData(code, prepareOptions(options)),
     );
     if (registrationName(options.theme) === "none") return normalizeNoneThemeResult(result);
     return result;
@@ -270,7 +271,7 @@ export function createHighlighterCoreSync(options = {}) {
       prepared.themeEntries = themes;
       return combineNativeThemeResult(
         callNativeOperation("Ferriki multi-theme tokenization failed", () =>
-          JSON.parse(native.getHtmlRenderDataWithThemes(code, JSON.stringify(prepared))),
+          native.getHtmlRenderDataWithThemes(code, prepared),
         ),
         options,
       );
@@ -289,7 +290,7 @@ export function createHighlighterCoreSync(options = {}) {
     assertAnsiInput(code, options);
     const prepared = prepareOptions({ ...options, theme, themes: undefined });
     return callNativeOperation("Ferriki tokenization failed", () =>
-      JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepared))),
+      native.getHtmlRenderData(code, prepared),
     );
   }
 
@@ -298,7 +299,7 @@ export function createHighlighterCoreSync(options = {}) {
     return registrationName(options?.theme) === "none"
       ? getHtmlRenderData(code, options)
       : callNativeOperation("Ferriki tokenization failed", () =>
-          JSON.parse(native.getHtmlRenderData(code, JSON.stringify(prepareOptions(options)))),
+          native.getHtmlRenderData(code, prepareOptions(options)),
         );
   }
 
@@ -516,7 +517,7 @@ export function createHighlighterCoreSync(options = {}) {
       if (registrationName(options?.theme) === "none")
         return hastToHtml(renderTokenResultHast(getHtmlRenderData(code, options), options));
       return callNativeOperation("Ferriki HTML rendering failed", () =>
-        native.codeToHtml(code, JSON.stringify(prepareOptions(options))),
+        native.codeToHtml(code, prepareOptions(options)),
       );
     },
     getLoadedLanguages() {

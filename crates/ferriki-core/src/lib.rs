@@ -1,6 +1,8 @@
 //! N-API host for the pure Rust `ferriki` runtime.
 
+mod js_objects;
 mod napi_api;
+pub mod native_types;
 
 use napi_derive::napi;
 

@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ferriki::__private::{NodeAssetHost, NodeAssetOptions};
-use napi::bindgen_prelude::AsyncTask;
+use napi::bindgen_prelude::{AsyncTask, Either};
 use napi::{Env, Error, Result, Task};
 use napi_derive::napi;
-use serde_json::Value;
 
+use crate::native_types::*;
 use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 
 #[napi]
@@ -24,13 +24,16 @@ pub struct PlanAssetsTask {
 }
 
 impl Task for PlanAssetsTask {
-    type Output = String;
-    type JsValue = String;
+    type Output = Vec<AssetPlanEntry>;
+    type JsValue = Vec<AssetPlanEntry>;
 
     fn compute(&mut self) -> Result<Self::Output> {
         match &self.assets {
-            Some(assets) => native(assets.plan_json(&self.languages, &self.themes)),
-            None => Ok("[]".to_owned()),
+            Some(assets) => Ok(native(assets.plan(&self.languages, &self.themes))?
+                .into_iter()
+                .map(AssetPlanEntry::from)
+                .collect()),
+            None => Ok(Vec::new()),
         }
     }
 
@@ -83,59 +86,47 @@ impl FerrikiHighlighter {
     }
 
     #[napi(js_name = "getHtmlRenderData")]
-    pub fn get_html_render_data(&self, code: String, options_json: String) -> Result<String> {
-        let options = HighlightOptions::parse(&options_json)?;
+    pub fn get_html_render_data(
+        &self,
+        code: String,
+        options: NativeTokenOptions,
+    ) -> Result<HtmlRenderData> {
+        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
         let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
             &options.theme,
             &options.tokenize,
         ))?;
-        serde_json::to_string(&tokens)
-            .map_err(|error| Error::from_reason(format!("Failed to serialize tokens: {error}")))
+        Ok(tokens.into())
     }
 
     #[napi(js_name = "getHtmlRenderDataWithThemes")]
     pub fn get_html_render_data_with_themes(
         &self,
         code: String,
-        options_json: String,
-    ) -> Result<String> {
-        let options = HighlightOptions::parse(&options_json)?;
-        let value: Value = serde_json::from_str(&options_json).map_err(|error| {
-            Error::from_reason(format!("Failed to parse multi-theme options: {error}"))
-        })?;
-        let themes = value
-            .get("themeEntries")
-            .and_then(Value::as_array)
+        options: NativeTokenOptions,
+    ) -> Result<HtmlRenderDataWithThemes> {
+        let themes = options
+            .theme_entries
+            .as_ref()
             .ok_or_else(|| Error::from_reason("Multi-theme options require `themeEntries`."))?
             .iter()
-            .map(|entry| {
-                let color = entry
-                    .get("color")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| Error::from_reason("Theme entries require `color`."))?;
-                let name = entry
-                    .get("name")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| Error::from_reason("Theme entries require `name`."))?;
-                Ok((color.to_owned(), name.to_owned()))
-            })
-            .collect::<Result<Vec<_>>>()?;
+            .map(|entry| (entry.color.clone(), entry.name.clone()))
+            .collect::<Vec<_>>();
+        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
         let tokens = native(self.core.borrow_mut().tokenize_with_themes(
             &code,
             &options.language,
             &themes,
             &options.tokenize,
         ))?;
-        serde_json::to_string(&tokens).map_err(|error| {
-            Error::from_reason(format!("Failed to serialize themed tokens: {error}"))
-        })
+        Ok(tokens.into())
     }
 
     #[napi(js_name = "codeToHtml")]
-    pub fn code_to_html(&self, code: String, options_json: String) -> Result<String> {
-        let options = HighlightOptions::parse(&options_json)?;
+    pub fn code_to_html(&self, code: String, options: NativeHighlightOptions) -> Result<String> {
+        let options = HighlightOptions::from(options);
         let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
@@ -146,7 +137,10 @@ impl FerrikiHighlighter {
     }
 
     /// Plans missing standard payloads for Node to fetch and install.
-    #[napi(js_name = "planAssets", ts_return_type = "Promise<string>")]
+    #[napi(
+        js_name = "planAssets",
+        ts_return_type = "Promise<Array<AssetPlanEntry>>"
+    )]
     pub fn plan_assets(
         &self,
         languages: Vec<String>,
@@ -173,41 +167,27 @@ impl FerrikiHighlighter {
 }
 
 #[napi(js_name = "createHighlighter")]
-pub fn create_highlighter(options_json: String) -> Result<FerrikiHighlighter> {
-    let options: Value = serde_json::from_str(&options_json).map_err(|error| {
-        Error::from_reason(format!("Failed to parse highlighter options: {error}"))
-    })?;
-    let standard_asset_root = options
-        .get("standardAssetRoot")
-        .and_then(Value::as_str)
-        .map(Path::new);
-    let Some(root) = standard_asset_root else {
+pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHighlighter> {
+    let Some(root) = options.standard_asset_root else {
         return Ok(FerrikiHighlighter {
             core: RefCell::new(native(HighlighterCore::new())?),
             assets: None,
         });
     };
+    let options = options.assets.unwrap_or_default();
     let assets = Arc::new(native(NodeAssetHost::from_root(
-        root,
-        &node_asset_options(options.get("assets")),
+        Path::new(&root),
+        &NodeAssetOptions {
+            remote: options.remote,
+            base_url: options.base_url,
+            cache_dir: options.cache_dir.map(PathBuf::from),
+        },
     ))?);
     let core = native(HighlighterCore::with_assets(native(assets.catalogs())?))?;
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
         assets: Some(assets),
     })
-}
-
-/// Reads the Node asset options; environment and platform defaults are applied
-/// by the network-free native asset host.
-fn node_asset_options(value: Option<&Value>) -> NodeAssetOptions {
-    let field = |name: &str| value.and_then(|value| value.get(name));
-    let string = |name: &str| field(name).and_then(Value::as_str).map(str::to_owned);
-    NodeAssetOptions {
-        remote: field("remote").and_then(Value::as_bool),
-        base_url: string("baseUrl"),
-        cache_dir: string("cacheDir").map(PathBuf::from),
-    }
 }
 
 fn native<T>(result: ferriki::Result<T>) -> Result<T> {
@@ -221,80 +201,53 @@ struct HighlightOptions {
     render: RenderOptions,
 }
 
-impl HighlightOptions {
-    fn parse(source: &str) -> Result<Self> {
-        let value: Value = serde_json::from_str(source).map_err(|error| {
-            Error::from_reason(format!("Failed to parse highlight options: {error}"))
-        })?;
-        let language = required_string(&value, "lang")?;
-        let theme = required_string(&value, "theme")?;
+impl From<NativeHighlightOptions> for HighlightOptions {
+    fn from(options: NativeHighlightOptions) -> Self {
         let include_token_type =
-            value.get("includeExplanation").and_then(Value::as_str) == Some("tokenType");
-        let include_scopes = value.get("includeExplanation").is_some_and(|value| {
-            value.as_bool() == Some(true) || value.as_str() == Some("scopeName")
-        });
-        let time_limit_millis = value
-            .get("tokenizeTimeLimit")
-            .and_then(Value::as_u64)
-            .unwrap_or(500);
-        let max_line_length = value
-            .get("tokenizeMaxLineLength")
-            .and_then(Value::as_u64)
-            .and_then(|value| usize::try_from(value).ok())
-            .unwrap_or(0);
-        let merge_whitespaces = value
-            .get("mergeWhitespaces")
-            .and_then(Value::as_bool)
-            .unwrap_or(true);
-        let merge_same_style_tokens = value
-            .get("mergeSameStyleTokens")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let root_style = value
-            .get("rootStyle")
-            .and_then(Value::as_str)
-            .map(str::to_owned);
-        let include_root_style = value.get("rootStyle").and_then(Value::as_bool) != Some(false);
-        let tabindex = match value.get("tabindex") {
-            Some(Value::Bool(false)) | Some(Value::Null) => None,
-            Some(Value::String(value)) => Some(value.clone()),
-            Some(Value::Number(value)) => Some(value.to_string()),
+            matches!(&options.include_explanation, Some(Either::A(value)) if value == "tokenType");
+        let include_scopes = matches!(&options.include_explanation, Some(Either::B(true)))
+            || matches!(&options.include_explanation, Some(Either::A(value)) if value == "scopeName");
+        let root_style = match &options.root_style {
+            Some(Either::A(value)) => Some(value.clone()),
+            _ => None,
+        };
+        let include_root_style = !matches!(options.root_style, Some(Either::B(false)));
+        let tabindex = match options.tabindex {
+            Some(Either::A(value)) => Some(value),
+            Some(Either::B(false)) => None,
             _ => Some("0".to_owned()),
         };
-
-        Ok(Self {
-            language,
-            theme,
+        // The facade validates numbers; fractional limits historically use defaults.
+        let limit = |value: Option<f64>, default: u64| {
+            value
+                .filter(|v| v.is_finite() && *v >= 0.0 && v.fract() == 0.0 && *v < u64::MAX as f64)
+                .map_or(default, |v| v as u64)
+        };
+        Self {
+            language: options.lang,
+            theme: options.theme,
             tokenize: TokenizeOptions::default()
-                .with_time_limit_millis(time_limit_millis)
-                .with_max_line_length(max_line_length)
+                .with_time_limit_millis(limit(options.tokenize_time_limit, 500))
+                .with_max_line_length(
+                    usize::try_from(limit(options.tokenize_max_line_length, 0)).unwrap_or(0),
+                )
                 .with_include_token_type(include_token_type)
                 .with_include_scopes(include_scopes)
-                .with_preserve_scope_boundaries(
-                    value.get("styleMode").and_then(Value::as_str) == Some("classes"),
-                ),
+                .with_preserve_scope_boundaries(options.style_mode.as_deref() == Some("classes")),
             render: RenderOptions::default()
-                .with_merge_whitespaces(merge_whitespaces)
-                .with_merge_same_style_tokens(merge_same_style_tokens)
+                .with_merge_whitespaces(options.merge_whitespaces.unwrap_or(true))
+                .with_merge_same_style_tokens(options.merge_same_style_tokens.unwrap_or(false))
                 .with_root_style(root_style)
                 .with_include_root_style(include_root_style)
                 .with_tabindex(tabindex),
-        })
+        }
     }
-}
-
-fn required_string(value: &Value, key: &str) -> Result<String> {
-    value
-        .get(key)
-        .and_then(Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| Error::from_reason(format!("Highlight options require `{key}`.")))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
+    use serde_json::Value;
 
     /// Seeds a digest-addressed cache from the repository payloads once, so the
     /// tests never download and never touch the user's cache.
@@ -322,56 +275,49 @@ mod tests {
     fn standard_highlighter() -> FerrikiHighlighter {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
         let cache = test_cache(&root);
-        create_highlighter(
-            json!({
-                "standardAssetRoot": root.display().to_string(),
-                "assets": { "remote": false, "cacheDir": cache.display().to_string() },
-            })
-            .to_string(),
-        )
+        create_highlighter(NativeHighlighterOptions {
+            standard_asset_root: Some(root.display().to_string()),
+            assets: Some(NativeAssetOptions {
+                remote: Some(false),
+                cache_dir: Some(cache.display().to_string()),
+                ..Default::default()
+            }),
+        })
         .expect("highlighter")
     }
 
     #[test]
     fn napi_surface_returns_private_html_render_data_and_html() {
         let highlighter = standard_highlighter();
-        let options = json!({
-            "lang": "javascript",
-            "theme": "nord",
-            "includeExplanation": "tokenType",
-            "tokenizeTimeLimit": 0,
-        })
-        .to_string();
-
-        let tokens: Value = serde_json::from_str(
-            &highlighter
-                .get_html_render_data("const x = 1".to_owned(), options.clone())
-                .expect("tokens"),
-        )
-        .expect("json");
+        let options = NativeHighlightOptions {
+            lang: "javascript".into(),
+            theme: "nord".into(),
+            include_explanation: Some(Either::A("tokenType".into())),
+            tokenize_time_limit: Some(0.0),
+            ..Default::default()
+        };
+        let tokens = highlighter
+            .get_html_render_data("const x = 1".into(), options.clone().into())
+            .expect("tokens");
         let html = highlighter
-            .code_to_html("const x = 1".to_owned(), options)
+            .code_to_html("const x = 1".into(), options)
             .expect("html");
-
-        assert_eq!(tokens["themeName"], "nord");
-        assert!(tokens["tokens"][0][0].get("type").is_some());
+        assert_eq!(tokens.theme_name, "nord");
+        assert!(tokens.tokens[0][0].token_type.is_some());
         assert!(html.starts_with("<pre class=\"shiki nord\""));
     }
 
     #[test]
     fn parses_render_controls_from_shiki_options() {
-        let options = HighlightOptions::parse(
-            r#"{
-                "lang": "js",
-                "theme": "nord",
-                "rootStyle": false,
-                "tabindex": -1,
-                "mergeWhitespaces": false,
-                "tokenizeTimeLimit": 42
-            }"#,
-        )
-        .expect("options");
-
+        let options = HighlightOptions::from(NativeHighlightOptions {
+            lang: "js".into(),
+            theme: "nord".into(),
+            root_style: Some(Either::B(false)),
+            tabindex: Some(Either::A("-1".into())),
+            merge_whitespaces: Some(false),
+            tokenize_time_limit: Some(42.0),
+            ..Default::default()
+        });
         assert!(!options.render.include_root_style);
         assert_eq!(options.render.tabindex.as_deref(), Some("-1"));
         assert!(!options.render.merge_whitespaces);
@@ -381,26 +327,112 @@ mod tests {
     #[test]
     fn emits_aligned_multi_theme_tokens_from_one_grammar_pass() {
         let highlighter = standard_highlighter();
-        let options = json!({
-            "lang": "javascript",
-            "theme": "vitesse-light",
-            "themeEntries": [
-                { "color": "light", "name": "vitesse-light" },
-                { "color": "dark", "name": "nord" }
-            ],
-            "tokenizeTimeLimit": 0,
-        })
-        .to_string();
-        let result: Value = serde_json::from_str(
-            &highlighter
-                .get_html_render_data_with_themes("const x = 1".to_owned(), options)
-                .expect("multi-theme tokens"),
-        )
-        .expect("JSON result");
+        let options = NativeHighlightOptions {
+            lang: "javascript".into(),
+            theme: "vitesse-light".into(),
+            theme_entries: Some(vec![
+                ThemeEntry {
+                    color: "light".into(),
+                    name: "vitesse-light".into(),
+                },
+                ThemeEntry {
+                    color: "dark".into(),
+                    name: "nord".into(),
+                },
+            ]),
+            tokenize_time_limit: Some(0.0),
+            ..Default::default()
+        };
+        let result = highlighter
+            .get_html_render_data_with_themes("const x = 1".into(), options.into())
+            .expect("tokens");
+        assert_eq!(result.themes.len(), 2);
+        assert_eq!(result.tokens[0][0].content, "const");
+        assert!(result.tokens[0][0].variants.0["light"].color.is_some());
+        assert!(result.tokens[0][0].variants.0["dark"].color.is_some());
+    }
+    #[test]
+    fn typed_options_preserve_explanations_styles_and_numeric_fallbacks() {
+        for (explanation, token_type, scopes) in [
+            (Either::A("tokenType".into()), true, false),
+            (Either::A("scopeName".into()), false, true),
+            (Either::B(true), false, true),
+            (Either::B(false), false, false),
+        ] {
+            let options = HighlightOptions::from(NativeHighlightOptions {
+                lang: "text".into(),
+                theme: "test".into(),
+                include_explanation: Some(explanation),
+                root_style: Some(Either::A("color:red".into())),
+                style_mode: Some("classes".into()),
+                tokenize_time_limit: Some(1.5),
+                tokenize_max_line_length: Some(-1.0),
+                merge_same_style_tokens: Some(true),
+                ..Default::default()
+            });
+            assert_eq!(options.tokenize.include_token_type, token_type);
+            assert_eq!(options.tokenize.include_scopes, scopes);
+            assert!(options.tokenize.preserve_scope_boundaries);
+            assert_eq!(options.tokenize.time_limit_millis, 500);
+            assert_eq!(options.tokenize.max_line_length, 0);
+            assert_eq!(options.render.root_style.as_deref(), Some("color:red"));
+            assert!(options.render.include_root_style);
+            assert!(options.render.merge_same_style_tokens);
+            assert_eq!(options.render.tabindex.as_deref(), Some("0"));
+        }
+    }
 
-        assert_eq!(result["themes"].as_array().expect("themes").len(), 2);
-        assert_eq!(result["tokens"][0][0]["content"], "const");
-        assert!(result["tokens"][0][0]["variants"]["light"]["color"].is_string());
-        assert!(result["tokens"][0][0]["variants"]["dark"]["color"].is_string());
+    #[test]
+    fn async_asset_task_returns_typed_missing_payloads_and_empty_local_plans() {
+        let mut local = PlanAssetsTask {
+            assets: None,
+            languages: vec!["js".into()],
+            themes: vec![],
+        };
+        assert!(local.compute().expect("local plan").is_empty());
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let cache = std::env::temp_dir().join(format!("ferriki-typed-plan-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&cache);
+        let planned_root = cache.join("catalogs");
+        for relative in ["languages/manifest.fkindex", "themes/manifest.fkindex"] {
+            let destination = planned_root.join(relative);
+            std::fs::create_dir_all(destination.parent().expect("parent")).expect("catalog dir");
+            std::fs::copy(root.join(relative), destination).expect("catalog");
+        }
+        let mut release: Value = serde_json::from_slice(
+            &std::fs::read(root.join("release-manifest.json")).expect("release"),
+        )
+        .expect("manifest");
+        release["commit"] = Value::String("0123456789abcdef0123456789abcdef01234567".into());
+        std::fs::write(
+            planned_root.join("release-manifest.json"),
+            serde_json::to_vec(&release).expect("manifest bytes"),
+        )
+        .expect("write manifest");
+        let assets = Arc::new(
+            NodeAssetHost::from_root(
+                &planned_root,
+                &NodeAssetOptions {
+                    remote: Some(true),
+                    cache_dir: Some(cache.clone()),
+                    base_url: Some("https://example.test/assets".into()),
+                },
+            )
+            .expect("host"),
+        );
+        let mut task = PlanAssetsTask {
+            assets: Some(assets),
+            languages: vec!["javascript".into()],
+            themes: vec!["nord".into()],
+        };
+        let plan = task.compute().expect("typed plan");
+        assert!(!plan.is_empty());
+        for asset in plan {
+            assert!(!asset.path.is_empty());
+            assert_eq!(asset.digest.len(), 64);
+            assert!(asset.size > 0.0);
+            assert!(asset.url.starts_with("https://example.test/assets/"));
+        }
+        let _ = std::fs::remove_dir_all(cache);
     }
 }

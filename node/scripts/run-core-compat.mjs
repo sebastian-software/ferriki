@@ -55,6 +55,13 @@ const nativeBoundaryCheck = spawnSync(process.execPath, ["./scripts/check-native
 });
 if (nativeBoundaryCheck.status !== 0) process.exit(nativeBoundaryCheck.status || 1);
 
+const nativeResultsCheck = spawnSync(process.execPath, ["./scripts/check-native-results.mjs"], {
+  cwd: nodeRoot,
+  env: process.env,
+  stdio: "inherit",
+});
+if (nativeResultsCheck.status !== 0) process.exit(nativeResultsCheck.status || 1);
+
 const releaseCheck = spawnSync(process.execPath, ["./scripts/check-release-workflow.mjs"], {
   cwd: nodeRoot,
   env: {

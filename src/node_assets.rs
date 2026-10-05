@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
-use serde::Serialize;
 
 use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_asset_settings};
 use crate::{
@@ -23,13 +22,12 @@ pub struct NodeAssetOptions {
     pub cache_dir: Option<PathBuf>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct PlannedAsset {
-    path: String,
-    digest: String,
-    size: u64,
-    url: String,
+#[derive(Debug)]
+pub struct PlannedAsset {
+    pub path: String,
+    pub digest: String,
+    pub size: u64,
+    pub url: String,
 }
 
 /// Manifest-backed Node asset host. It only plans downloads and reads the
@@ -137,23 +135,12 @@ impl NodeAssetHost {
         )
     }
 
-    /// Returns JSON descriptors for cache misses. This runs in the N-API
-    /// worker pool; no network access or payload decoding happens here.
-    pub fn plan_json(&self, languages: &[String], themes: &[String]) -> Result<String> {
-        serde_json::to_string(&self.plan(languages, themes)?).map_err(|source| {
-            Error::new(
-                ErrorKind::Internal,
-                "Failed to serialize asset download plan.",
-            )
-            .with_source(source)
-        })
-    }
-
     pub fn cache_dir(&self) -> &Path {
         &self.settings.cache_dir
     }
 
-    fn plan(&self, languages: &[String], themes: &[String]) -> Result<Vec<PlannedAsset>> {
+    /// Plans cache misses without network access or payload decoding.
+    pub fn plan(&self, languages: &[String], themes: &[String]) -> Result<Vec<PlannedAsset>> {
         let mut paths = BTreeSet::new();
         let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
         let mut visited = BTreeSet::new();

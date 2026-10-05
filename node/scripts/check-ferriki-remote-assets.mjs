@@ -68,7 +68,7 @@ const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const binding = loadFerrikiNativeBinding();
 
 function createNative(assets) {
-  return binding.createHighlighter(JSON.stringify({ standardAssetRoot: assetRoot, assets }));
+  return binding.createHighlighter({ standardAssetRoot: assetRoot, assets });
 }
 
 try {
@@ -98,10 +98,10 @@ try {
 
   assert(native.loadStandardGrammar("vue"), "the cached language loads synchronously");
   assert(native.loadStandardTheme("nord"));
-  const html = native.codeToHtml(
-    "<script setup lang='ts'>const a = 1</script>",
-    JSON.stringify({ lang: "vue", theme: "nord" }),
-  );
+  const html = native.codeToHtml("<script setup lang='ts'>const a = 1</script>", {
+    lang: "vue",
+    theme: "nord",
+  });
   assert.match(html, /<span/);
 
   const downloads = requests.length;
@@ -146,7 +146,7 @@ try {
 
   const settleCache = join(tempRoot, "settle-cache");
   const settling = createNative({ remote: true, baseUrl, cacheDir: settleCache });
-  const settlePlan = JSON.parse(await settling.planAssets(["vue"], ["dracula"]));
+  const settlePlan = await settling.planAssets(["vue"], ["dracula"]);
   const slowPath = settlePlan[0].path;
   const invalidPath = settlePlan.at(-1).path;
   delayed.add(slowPath);

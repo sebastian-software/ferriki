@@ -61,13 +61,13 @@ if (values.boundary === "facade") {
   run = () => highlighter.html(code);
   dispose = () => highlighter.dispose();
 } else {
-  const highlighter = loadFerrikiNativeBinding().createHighlighter(
-    JSON.stringify({ standardAssetRoot: join(repoRoot, "node/ferriki/assets/shiki") }),
-  );
+  const highlighter = loadFerrikiNativeBinding().createHighlighter({
+    standardAssetRoot: join(repoRoot, "node/ferriki/assets/shiki"),
+  });
   for (const lang of [language.textmate, ...(language.embedded ?? [])])
     highlighter.loadStandardGrammar(lang);
   highlighter.loadStandardTheme(theme);
-  const options = JSON.stringify({ lang: language.textmate, theme });
+  const options = { lang: language.textmate, theme };
   const html = highlighter.codeToHtml(code, options);
   validation = validateOutput("ferriki", code, html, reference);
   assert.deepEqual(validation.referenceParity, { html: true });

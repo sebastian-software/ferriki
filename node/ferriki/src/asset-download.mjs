@@ -13,8 +13,7 @@ const inFlight = new Map();
 /** Plans native manifest assets, then downloads cache misses with Node fetch. */
 export function createAssetDownloader(native) {
   return async (languages, themes) => {
-    const encodedPlan = await native.planAssets(languages, themes);
-    const plan = JSON.parse(encodedPlan);
+    const plan = await native.planAssets(languages, themes);
     if (!Array.isArray(plan)) throw new Error("Native asset planner returned an invalid plan.");
     if (plan.length === 0) return;
 

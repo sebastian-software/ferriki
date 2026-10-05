@@ -49,6 +49,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "catalog:cli",
     "@jridgewell/trace-mapping": "catalog:testing",
+    "@napi-rs/cli": "catalog:cli",
     "@rollup/plugin-commonjs": "catalog:bundling",
     "@rollup/plugin-json": "catalog:bundling",
     "@rollup/plugin-node-resolve": "catalog:bundling",

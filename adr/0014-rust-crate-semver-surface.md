@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-05
 
 ## Context
 
@@ -56,8 +56,8 @@ Each crate publishes a deliberate, curated surface.
   public, documented and non-exhaustive, because the version requirement
   between the crates is a caret range.
 - **Serialized shapes are part of the contract.** Typed Rust fields serialize
-  to the documented JSON shape that the N-API boundary and the Node facade
-  rely on (for example `fontStyle` as integer bits), and tests pin it.
+  to the documented JSON shape that Rust consumers rely on (for example
+  `fontStyle` as integer bits), and tests pin it.
 - **Public multi-theme results.** `HighlightTokensWithThemesResult`,
   `HighlightThemeToken`, `HighlightThemeTokenStyle`, and `HighlightThemeMetadata`
   are documented, owned, non-exhaustive results produced by `Highlighter`.
@@ -80,8 +80,9 @@ Each crate publishes a deliberate, curated surface.
 - An upstream sync, a Ferroni major or a codec change no longer forces a
   Ferriki major by itself.
 - Callers cannot use struct literals or exhaustive matches on our types, and
-  must use constructors, setters and wildcard arms. The N-API host is
-  unaffected, because it exchanges JSON.
+  must use constructors, setters and wildcard arms. The N-API host converts
+  these results to private typed binding objects without changing the
+  published Rust types.
 - Port code that only the old public surface reached now has no caller; it
   stays for upstream parity with an explicit `dead_code` allowance
   ([ADR 0010](0010-mechanical-vscode-textmate-port.md)).
@@ -104,3 +105,5 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-01: Includes the documented combined scope/binary result used by the highlighter (#172).
 - 2026-10-01: Named multi-theme result types join the public contract with UTF-8 offsets (#183).
 - 2026-10-03: Adds owned lazy backtracking diagnostics to the documented `ferriki-textmate` and `ferriki` surfaces (#153).
+
+- 2026-10-05: Records the private typed N-API conversion instead of JSON transport (#217); the published Rust serialized shapes stay unchanged.
