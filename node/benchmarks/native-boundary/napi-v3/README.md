@@ -2,7 +2,7 @@
 
 Measured October 5, 2026 on an Apple M1 Pro, darwin-arm64, Node 24.15.0. The baseline is the napi-rs 2 release build from `99c8cb7`; the final build contains this PR's typed boundary. Both use the existing workspace release profile and the same standard assets.
 
-**The performance gate is not met. Keep this PR in draft:** single-theme token results still regress, and the raw addon grows by 2.23%. The other six sidecar binaries require CI verification and measurement.
+**The original performance gate is not met:** single-theme token results still regress, and the raw addon grows by 2.23%. On October 5, 2026, the maintainer accepted these measured trade-offs for merging #224 and deferred profiling, optimization and all-platform size/load measurements to #225. All seven native smoke builds passed CI; the other six sidecar sizes and load times remain unmeasured.
 
 ## Token boundary
 

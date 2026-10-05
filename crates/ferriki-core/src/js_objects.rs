@@ -222,3 +222,74 @@ impl ToNapiValue for ThemeVariants {
         unsafe { object(env, &properties) }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn palette_visits_token_colors_and_theme_keys_including_unstyled_tokens() {
+        let single = HtmlRenderData {
+            tokens: vec![vec![
+                HtmlToken {
+                    content: "styled".into(),
+                    offset: 0.0,
+                    color: Some("#123456".into()),
+                    font_style: None,
+                    token_type: None,
+                    scope_names: None,
+                },
+                HtmlToken {
+                    content: "plain".into(),
+                    offset: 6.0,
+                    color: None,
+                    font_style: None,
+                    token_type: None,
+                    scope_names: None,
+                },
+            ]],
+            fg: "#ffffff".into(),
+            bg: "#000000".into(),
+            theme_name: "test".into(),
+        };
+        let mut colors = Vec::new();
+        single.visit_colors(|color| colors.push(color.to_owned()));
+        assert_eq!(colors, ["#123456"]);
+        let multi = HtmlRenderDataWithThemes {
+            tokens: vec![vec![HtmlThemeToken {
+                content: "styled".into(),
+                offset: 0.0,
+                variants: ThemeVariants(BTreeMap::from([
+                    (
+                        "dark".into(),
+                        ThemeTokenStyle {
+                            color: Some("#123456".into()),
+                            font_style: None,
+                        },
+                    ),
+                    (
+                        "light".into(),
+                        ThemeTokenStyle {
+                            color: None,
+                            font_style: None,
+                        },
+                    ),
+                ])),
+                token_type: None,
+                scope_names: None,
+            }]],
+            themes: vec![ThemeMetadata {
+                color: "dark".into(),
+                name: "test".into(),
+                foreground: "#ffffff".into(),
+                background: "#000000".into(),
+            }],
+        };
+        colors.clear();
+        multi.visit_colors(|color| colors.push(color.to_owned()));
+        // Dynamic variant keys also use the color property converter. Their
+        // handles must be allocated in the root scope before array conversion.
+        assert_eq!(colors, ["#123456", "dark"]);
+    }
+}

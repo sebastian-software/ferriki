@@ -351,4 +351,88 @@ mod tests {
         assert!(result.tokens[0][0].variants.0["light"].color.is_some());
         assert!(result.tokens[0][0].variants.0["dark"].color.is_some());
     }
+    #[test]
+    fn typed_options_preserve_explanations_styles_and_numeric_fallbacks() {
+        for (explanation, token_type, scopes) in [
+            (Either::A("tokenType".into()), true, false),
+            (Either::A("scopeName".into()), false, true),
+            (Either::B(true), false, true),
+            (Either::B(false), false, false),
+        ] {
+            let options = HighlightOptions::from(NativeHighlightOptions {
+                lang: "text".into(),
+                theme: "test".into(),
+                include_explanation: Some(explanation),
+                root_style: Some(Either::A("color:red".into())),
+                style_mode: Some("classes".into()),
+                tokenize_time_limit: Some(1.5),
+                tokenize_max_line_length: Some(-1.0),
+                merge_same_style_tokens: Some(true),
+                ..Default::default()
+            });
+            assert_eq!(options.tokenize.include_token_type, token_type);
+            assert_eq!(options.tokenize.include_scopes, scopes);
+            assert!(options.tokenize.preserve_scope_boundaries);
+            assert_eq!(options.tokenize.time_limit_millis, 500);
+            assert_eq!(options.tokenize.max_line_length, 0);
+            assert_eq!(options.render.root_style.as_deref(), Some("color:red"));
+            assert!(options.render.include_root_style);
+            assert!(options.render.merge_same_style_tokens);
+            assert_eq!(options.render.tabindex.as_deref(), Some("0"));
+        }
+    }
+
+    #[test]
+    fn async_asset_task_returns_typed_missing_payloads_and_empty_local_plans() {
+        let mut local = PlanAssetsTask {
+            assets: None,
+            languages: vec!["js".into()],
+            themes: vec![],
+        };
+        assert!(local.compute().expect("local plan").is_empty());
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let cache = std::env::temp_dir().join(format!("ferriki-typed-plan-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&cache);
+        let planned_root = cache.join("catalogs");
+        for relative in ["languages/manifest.fkindex", "themes/manifest.fkindex"] {
+            let destination = planned_root.join(relative);
+            std::fs::create_dir_all(destination.parent().expect("parent")).expect("catalog dir");
+            std::fs::copy(root.join(relative), destination).expect("catalog");
+        }
+        let mut release: Value = serde_json::from_slice(
+            &std::fs::read(root.join("release-manifest.json")).expect("release"),
+        )
+        .expect("manifest");
+        release["commit"] = Value::String("0123456789abcdef0123456789abcdef01234567".into());
+        std::fs::write(
+            planned_root.join("release-manifest.json"),
+            serde_json::to_vec(&release).expect("manifest bytes"),
+        )
+        .expect("write manifest");
+        let assets = Arc::new(
+            NodeAssetHost::from_root(
+                &planned_root,
+                &NodeAssetOptions {
+                    remote: Some(true),
+                    cache_dir: Some(cache.clone()),
+                    base_url: Some("https://example.test/assets".into()),
+                },
+            )
+            .expect("host"),
+        );
+        let mut task = PlanAssetsTask {
+            assets: Some(assets),
+            languages: vec!["javascript".into()],
+            themes: vec!["nord".into()],
+        };
+        let plan = task.compute().expect("typed plan");
+        assert!(!plan.is_empty());
+        for asset in plan {
+            assert!(!asset.path.is_empty());
+            assert_eq!(asset.digest.len(), 64);
+            assert!(asset.size > 0.0);
+            assert!(asset.url.starts_with("https://example.test/assets/"));
+        }
+        let _ = std::fs::remove_dir_all(cache);
+    }
 }
