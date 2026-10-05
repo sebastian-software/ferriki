@@ -91,14 +91,7 @@ impl FerrikiHighlighter {
         code: String,
         options: NativeTokenOptions,
     ) -> Result<HtmlRenderData> {
-        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
-        let tokens = native(self.core.borrow_mut().tokenize(
-            &code,
-            &options.language,
-            &options.theme,
-            &options.tokenize,
-        ))?;
-        Ok(tokens.into())
+        Ok(self.tokenize(&code, options)?.into())
     }
 
     #[napi(js_name = "getHtmlRenderDataWithThemes")]
@@ -107,21 +100,7 @@ impl FerrikiHighlighter {
         code: String,
         options: NativeTokenOptions,
     ) -> Result<HtmlRenderDataWithThemes> {
-        let themes = options
-            .theme_entries
-            .as_ref()
-            .ok_or_else(|| Error::from_reason("Multi-theme options require `themeEntries`."))?
-            .iter()
-            .map(|entry| (entry.color.clone(), entry.name.clone()))
-            .collect::<Vec<_>>();
-        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
-        let tokens = native(self.core.borrow_mut().tokenize_with_themes(
-            &code,
-            &options.language,
-            &themes,
-            &options.tokenize,
-        ))?;
-        Ok(tokens.into())
+        Ok(self.tokenize_with_themes(&code, options)?.into())
     }
 
     #[napi(js_name = "codeToHtml")]
@@ -163,6 +142,43 @@ impl FerrikiHighlighter {
     #[napi]
     pub fn dispose(&self) {
         self.core.borrow_mut().dispose();
+    }
+}
+
+impl FerrikiHighlighter {
+    pub(crate) fn tokenize(
+        &self,
+        code: &str,
+        options: NativeTokenOptions,
+    ) -> Result<ferriki::HighlightTokensResult> {
+        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
+        native(self.core.borrow_mut().tokenize(
+            code,
+            &options.language,
+            &options.theme,
+            &options.tokenize,
+        ))
+    }
+
+    pub(crate) fn tokenize_with_themes(
+        &self,
+        code: &str,
+        options: NativeTokenOptions,
+    ) -> Result<ferriki::HighlightTokensWithThemesResult> {
+        let themes = options
+            .theme_entries
+            .as_ref()
+            .ok_or_else(|| Error::from_reason("Multi-theme options require `themeEntries`."))?
+            .iter()
+            .map(|entry| (entry.color.clone(), entry.name.clone()))
+            .collect::<Vec<_>>();
+        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
+        native(self.core.borrow_mut().tokenize_with_themes(
+            code,
+            &options.language,
+            &themes,
+            &options.tokenize,
+        ))
     }
 }
 
@@ -348,8 +364,15 @@ mod tests {
             .expect("tokens");
         assert_eq!(result.themes.len(), 2);
         assert_eq!(result.tokens[0][0].content, "const");
-        assert!(result.tokens[0][0].variants.0["light"].color.is_some());
-        assert!(result.tokens[0][0].variants.0["dark"].color.is_some());
+        let variants = &result.tokens[0][0].variants.0;
+        assert_eq!(
+            variants
+                .iter()
+                .map(|(name, _)| name.as_str())
+                .collect::<Vec<_>>(),
+            ["dark", "light"]
+        );
+        assert!(variants.iter().all(|(_, style)| style.color.is_some()));
     }
     #[test]
     fn typed_options_preserve_explanations_styles_and_numeric_fallbacks() {

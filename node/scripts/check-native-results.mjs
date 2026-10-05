@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
+import { Worker } from "node:worker_threads";
 import { loadFerrikiNativeBinding } from "../ferriki/native.mjs";
 import { TEST_ASSET_CACHE_DIR } from "./test-asset-env.mjs";
 
@@ -22,6 +23,20 @@ try {
   assert.equal(typeof single.tokens[0][0].fontStyle, "number");
   assert(!Object.hasOwn(single.tokens[0][0], "scopeNames"));
   assert.deepEqual(single.tokens.at(-1), []);
+  // Keys keep the former JSON order; the writer reuses internalized names.
+  assert.deepEqual(Object.keys(single.tokens[1][0]), [
+    "content",
+    "offset",
+    "color",
+    "fontStyle",
+    "type",
+  ]);
+  assert.deepEqual(Object.keys(single), ["tokens", "fg", "bg", "themeName"]);
+  // ASCII takes the Latin-1 fast path; any other text must still decode as UTF-8.
+  const text = highlighter.getHtmlRenderData("const café = 'ü€😀'", options);
+  assert.equal(text.tokens[0].map((token) => token.content).join(""), "const café = 'ü€😀'");
+  const colors = text.tokens[0].map((token) => token.color);
+  assert(colors.every((color) => typeof color === "string" && color.startsWith("#")));
   const plain = highlighter.getHtmlRenderData("😀", {
     ...options,
     lang: "text",
@@ -51,7 +66,7 @@ try {
   assert.equal(typeof multi.tokens[0][0].variants.dark.fontStyle, "number");
   assert.equal(multi.tokens[0][0].type, 1);
   assert(!Object.hasOwn(multi.tokens[0][0], "scopeNames"));
-  const unusualKeys = ["__proto__", "constructor", "toString", "nul\0key"];
+  const unusualKeys = ["__proto__", "constructor", "toString", "nul\0key", "dünkel"];
   const unusual = highlighter.getHtmlRenderDataWithThemes("let x = 1", {
     ...options,
     themeEntries: unusualKeys.map((color) => ({ color, name: "nord" })),
@@ -83,5 +98,41 @@ try {
   assert.deepEqual(await bare.planAssets([], []), []);
 } finally {
   bare.dispose();
+}
+// Each environment caches its own property keys and releases them on exit.
+const workerSource = `
+  const { workerData, parentPort } = require("node:worker_threads");
+  import(workerData.loader).then(({ loadFerrikiNativeBinding }) => {
+    const h = loadFerrikiNativeBinding().createHighlighter(workerData.options);
+    h.loadStandardGrammar("javascript");
+    h.loadStandardTheme("nord");
+    const result = h.getHtmlRenderData("const x = 1", { lang: "javascript", theme: "nord" });
+    parentPort.postMessage(Object.keys(result.tokens[0][0]));
+  });
+`;
+const loader = new URL("../ferriki/native.mjs", import.meta.url).href;
+for (let round = 0; round < 3; round++) {
+  const keys = await Promise.all(
+    [0, 1].map(
+      () =>
+        new Promise((resolve, reject) => {
+          const worker = new Worker(workerSource, {
+            eval: true,
+            workerData: {
+              loader,
+              options: {
+                standardAssetRoot: fileURLToPath(
+                  new URL("../ferriki/assets/shiki", import.meta.url),
+                ),
+                assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
+              },
+            },
+          });
+          worker.once("message", (message) => worker.terminate().then(() => resolve(message)));
+          worker.once("error", reject);
+        }),
+    ),
+  );
+  for (const names of keys) assert.deepEqual(names, ["content", "offset", "color", "fontStyle"]);
 }
 console.log("Typed native options, results, optional fields and UTF-16 offsets verified");

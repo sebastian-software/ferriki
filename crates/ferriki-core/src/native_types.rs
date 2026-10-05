@@ -1,6 +1,4 @@
 //! Private Node boundary types, independent of the published Rust API.
-use std::collections::BTreeMap;
-
 use napi::bindgen_prelude::Either;
 use napi_derive::napi;
 
@@ -186,8 +184,7 @@ impl From<ferriki::HighlightTokensWithThemesResult> for HtmlRenderDataWithThemes
                                         },
                                     )
                                 })
-                                .collect::<BTreeMap<_, _>>()
-                                .into(),
+                                .collect(),
                             token_type: token.token_type.map(|kind| kind as u32),
                             scope_names: token.scope_names,
                         })
@@ -228,10 +225,12 @@ impl From<ferriki::__private::PlannedAsset> for AssetPlanEntry {
 }
 
 /// Defines theme keys as own data properties, including `__proto__` and NUL.
-pub struct ThemeVariants(pub BTreeMap<String, ThemeTokenStyle>);
+/// Entries keep the core's sorted, unique `BTreeMap` order without rebuilding
+/// a map per token.
+pub struct ThemeVariants(pub Vec<(String, ThemeTokenStyle)>);
 
-impl From<BTreeMap<String, ThemeTokenStyle>> for ThemeVariants {
-    fn from(value: BTreeMap<String, ThemeTokenStyle>) -> Self {
-        Self(value)
+impl FromIterator<(String, ThemeTokenStyle)> for ThemeVariants {
+    fn from_iter<I: IntoIterator<Item = (String, ThemeTokenStyle)>>(entries: I) -> Self {
+        Self(entries.into_iter().collect())
     }
 }
