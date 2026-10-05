@@ -65,6 +65,12 @@ exclusively in the Rust core.
   single- and multi-theme render data and asynchronous asset plans cross the
   boundary as typed objects. Custom grammar and theme registrations retain
   their JSON input because their open-ended schemas belong to the Rust core.
+  Token results are converted by Ferriki's own writer, which defines each
+  object's properties in one call with internalized keys and shares one string
+  per distinct color; it measured faster than the former JSON transport
+  ([`node/benchmarks/native-boundary/typed-conversion`](../node/benchmarks/native-boundary/typed-conversion/README.md)).
+  The development-only `profiling` feature adds a phase profiler and a
+  counting allocator; release addons never enable it.
 - Native TypeScript declarations are generated from the Rust binding types
   by the NAPI-RS v3 type generator. The Ferriki-owned build, loader, platform
   registry, sidecar names and release workflow remain the source of truth;
@@ -77,7 +83,9 @@ The existing seven-target matrix in
 The crate major and the Node-API level describe different things.
 
 The current matrix covers Linux x64 and arm64 on glibc and musl, macOS arm64,
-and Windows x64 and arm64. CI builds and exercises all seven targets. Linux
+and Windows x64 and arm64. CI builds and exercises all seven targets, and
+reports each addon's size and cold `require()` time beside the latest published
+sidecar without gating on them. Linux
 musl builds use `cargo-zigbuild` and run their packed-consumer and native-import
 checks on Alpine. Ferriki's ESM loader selects by OS, architecture and Linux
 libc; for an unsupported host it prints the supported matrix, and for a
@@ -153,3 +161,4 @@ internal.
 - 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).
 
 - 2026-10-05: Adopts NAPI-RS v3 and generated binding declarations with typed options, token results and asset plans (#217); retains the Ferriki build and loader.
+- 2026-10-05: Records the optimized token-result writer, the `profiling` feature and per-target size and cold-load reporting in CI (#225).

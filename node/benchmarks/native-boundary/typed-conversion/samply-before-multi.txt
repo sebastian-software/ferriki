@@ -1,0 +1,54 @@
+92939 samples
+
+== self ==
+  6.27%  libsystem_platform.dylib!_platform_memmove
+  3.50%  typed-main-prof.node!<alloc::raw_vec::RawVecInner>::finish_grow
+  3.42%  libsystem_malloc.dylib!0x33a78
+  3.15%  typed-main-prof.node!ferroni::regcomp::optimize_nodes
+  2.49%  typed-main-prof.node!<ferroni::backtrack_lint::Lint>::first
+  2.15%  typed-main-prof.node!ferroni::regcomp::compile_length_tree
+  1.78%  typed-main-prof.node!core::ptr::drop_glue::<alloc::vec::Vec<alloc::collections::btree::map::BTreeMap<alloc::string::String, alloc::sync::Arc<ferriki_textmate::r
+  1.74%  typed-main-prof.node!ferroni::regparse::fetch_token
+  1.70%  libsystem_malloc.dylib!0x3c168
+  1.51%  libsystem_malloc.dylib!0x3f4fc
+  1.26%  typed-main-prof.node!ferroni::regcomp::guard_backtrack_pushes
+  1.23%  typed-main-prof.node!ferroni::regcomp::reduce_string_list
+
+== inclusive ==
+100.00%  dyld!start
+100.00%  node!node::Start(int, char**)
+ 99.99%  node!Builtins_InterpreterEntryTrampoline
+ 99.99%  node!Builtins_JSEntryTrampoline
+ 99.99%  node!Builtins_JSEntry
+ 99.99%  node!v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.99%  node!v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::internal::Object>, v
+ 99.99%  node!v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*)
+ 99.99%  node!node::InternalCallbackScope::Close()
+ 99.99%  node!node::InternalCallbackScope::~InternalCallbackScope()
+ 99.99%  node!node::StartExecution(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value>(node::StartExecutionCallbackInfoWithModule const&)>)
+ 99.99%  node!node::LoadEnvironment(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value>(node::StartExecutionCallbackInfoWithModule const&)>, std::__1::funct
+
+196 samples (0.21%) under /HtmlRenderData(WithThemes)? as napi/
+
+== leaf symbols in subtree ==
+  7.65%  node!v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::M
+  5.61%  node!v8::internal::(anonymous namespace)::TryFastAddDataProperty(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::Direc
+  4.59%  libdyld.dylib!0x7e4c
+  4.08%  node!v8::internal::Utf8DecoderBase<v8::internal::Utf8Decoder>::Utf8DecoderBase(v8::base::Vector<unsigned char const>)
+  3.57%  node!v8::internal::TransitionArray::BinarySearchName(v8::internal::Tagged<v8::internal::Name>, int*)
+  3.57%  node!v8::internal::StringHasher::HashSequentialString<unsigned char>(unsigned char const*, unsigned int, v8::internal::HashSeed)
+  3.57%  node!v8::Object::CreateDataProperty(v8::Local<v8::Context>, v8::Local<v8::Name>, v8::Local<v8::Value>)
+  2.55%  node!v8::internal::JSObject::FastPropertyAtPut(v8::internal::FieldIndex, v8::internal::Tagged<v8::internal::Object>, v8::internal::WriteBarrierMode)
+  2.55%  typed-main-prof.node!ferriki_core::js_objects::color_value
+  2.04%  node!v8::internal::Factory::InitializeJSObjectFromMap(v8::internal::Tagged<v8::internal::JSObject>, v8::internal::Tagged<v8::internal::Object>, v8::internal::Ta
+  2.04%  node!v8::internal::StringTable::LookupKey<v8::internal::SequentialStringKey<unsigned char>, v8::internal::Isolate>(v8::internal::Isolate*, v8::internal::Sequent
+  2.04%  node!napi_define_properties
+
+== direct children ==
+ 82.65%  typed-main-prof.node!<ferriki_core::native_types::HtmlThemeToken as napi::bindgen_runtime::js_values::ToNapiValue>::to_napi_value
+  8.16%  node!napi_set_element
+  4.59%  typed-main-prof.node!ferriki_core::js_objects::color_value
+  2.04%  typed-main-prof.node!<napi::bindgen_runtime::js_values::array::Array>::new
+  1.53%  node!napi_define_properties
+  0.51%  (self)
+  0.51%  typed-main-prof.node!<ferriki_core::js_objects::ColorScope as core::ops::drop::Drop>::drop

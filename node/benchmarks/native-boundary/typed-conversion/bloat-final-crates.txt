@@ -1,0 +1,19 @@
+ File  .text     Size Crate
+16.0%  30.5% 433.4KiB std
+11.1%  21.0% 299.3KiB ferroni
+ 7.3%  13.8% 196.9KiB ferriki_textmate
+ 4.3%   8.1% 115.9KiB ferriki
+ 3.2%   6.1%  86.3KiB aho_corasick
+ 2.2%   4.2%  59.9KiB serde_json
+ 2.0%   3.8%  54.8KiB [Unknown]
+ 2.0%   3.8%  54.2KiB napi
+ 1.4%   2.7%  37.7KiB ferriki_core
+ 0.7%   1.4%  19.6KiB serde_core
+ 0.3%   0.7%   9.4KiB napi_derive_backend
+ 0.3%   0.5%   7.5KiB sha2
+ 0.3%   0.5%   7.3KiB memchr
+ 0.2%   0.4%   5.6KiB convert_case
+ 0.8%   1.6%  22.1KiB And 15 more crates. Use -n N to show more.
+52.6% 100.0%   1.4MiB .text section size, the file size is 2.6MiB
+
+Note: numbers above are a result of guesswork. They are not 100% correct and never will be.
