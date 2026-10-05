@@ -3,7 +3,6 @@ import { type ComparisonRow, ComparisonTable, type Contender, Measured } from "f
 import {
   type Api,
   apis,
-  coldSpeedup,
   type EngineId,
   engineLabels,
   formatFactor,
@@ -49,17 +48,6 @@ export function BenchmarkSummary() {
     verdict: speedupPair(api),
     behind: speedup(api, "shiki-wasm") < 1 || speedup(api, "shiki-js") < 1,
   }));
-
-  rows.push({
-    label: "Cold start",
-    detail: "Import, highlighter creation and corpus rendering in a fresh process.",
-    values: measuredValues(
-      Object.fromEntries(nodeEngines.map((id) => [id, report.cold[id].medianMs])),
-      nodeEngines,
-    ),
-    verdict: `${formatFactor(coldSpeedup("shiki-wasm"))} · ${formatFactor(coldSpeedup("shiki-js"))}`,
-    behind: coldSpeedup("shiki-wasm") < 1 || coldSpeedup("shiki-js") < 1,
-  });
 
   return (
     <ComparisonTable

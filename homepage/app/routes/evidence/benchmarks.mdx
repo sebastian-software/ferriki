@@ -3,6 +3,8 @@ title: Benchmarks
 order: 1
 ---
 
+import { BenchmarkChart } from "../../components/benchmark-chart";
+
 import {
   BenchmarkContext,
   BenchmarkDocuments,
@@ -28,6 +30,8 @@ The landing page and this page read it at build time.
 Corpus totals: the sum of each document's median time on a reused
 highlighter. Each factor is Shiki's time divided by Ferriki's; higher is
 faster, and a factor below 1× means Ferriki is slower.
+
+<BenchmarkChart perDocument />
 
 <BenchmarkSummary />
 

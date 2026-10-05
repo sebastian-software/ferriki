@@ -36,7 +36,7 @@ programs, Node.js and Vite builds share one engine. Ferriki is in beta: until
    derives the CSS from unchanged TextMate themes, and a theme map switches
    through `data-ferriki-theme` without highlighting again. Inspired by
    GitHub's PrettyLights and [starry-night](https://github.com/wooorm/starry-night).
-4. **No WebAssembly, no regex translation, small installs.**
+4. **Native highlighting, small installs.**
    [Ferroni](https://ferroni.dev), Oniguruma in Rust, runs grammar patterns as
    written. Each platform's addon is its own optional package, and grammars and
    themes download on first use from a release-pinned CDN, verified by SHA-256
@@ -47,9 +47,10 @@ programs, Node.js and Vite builds share one engine. Ferriki is in beta: until
    and the vscode-textmate v9.3.2 oracle check this in CI.
 
 On the [benchmark corpus](https://ferriki.dev/evidence/benchmarks), Ferriki
-renders the same HTML as Shiki and finishes ahead of both Shiki engines, with a
-warm highlighter and from a cold start. The report is committed, and
-`pnpm run bench:comparison` in `node/` runs it again.
+renders the same HTML as Shiki. With a reused highlighter, it is about 2.7×
+faster than Shiki with WebAssembly and 3.5× faster than its JavaScript engine.
+Phiki (PHP) timings are also shown per document, with output differences noted.
+The report is committed, and `pnpm run bench:comparison` in `node/` runs it again.
 
 ## Install and highlight
 

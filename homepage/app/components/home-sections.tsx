@@ -1,7 +1,11 @@
+/* cspell:words textnodes */
+/* oxlint-disable react/jsx-no-comment-textnodes -- The code sample includes a literal source comment. */
+/* oxlint-disable react/no-danger -- HTML is generated from fixed repository samples by Ferriki. */
 import { ClosingAction, CodePanel, Ledger, Mark, Section } from "ferramenta-family";
 import { Link } from "react-router";
 
 import macroSample from "../data/macro-sample.json";
+import { HighlightingFlows } from "./highlighting-flows";
 
 /*
  * The landing page sections that state no measurement: the build-time macro
@@ -21,8 +25,7 @@ export function MacroSection() {
           <code>@ferriki/core/react/macro</code> in React, or <code>code()</code> from{" "}
           <code>@ferriki/core/macro</code> in any module. During the Vite 8 build,{" "}
           <code>@ferriki/vite</code> replaces each one with highlighted HTML and its CSS, so the
-          browser loads no grammar and no engine. Only modules that import a macro are touched, each
-          parsed once with Vite&rsquo;s own parser.
+          browser loads no grammar and no engine.
         </>
       }
       note={
@@ -36,8 +39,14 @@ export function MacroSection() {
       }
     >
       <div className="fam-code-grid ferriki-macro-sample">
-        <CodePanel caption="Answer.tsx">{macroSample.input}</CodePanel>
-        <CodePanel caption="Answer.tsx as @ferriki/vite emits it">{macroSample.output}</CodePanel>
+        <figure className="ferriki-highlighted-panel">
+          <figcaption>Answer.tsx</figcaption>
+          <div dangerouslySetInnerHTML={{ __html: macroSample.inputHtml }} />
+        </figure>
+        <figure className="ferriki-highlighted-panel">
+          <figcaption>Answer.tsx as @ferriki/vite emits it</figcaption>
+          <div dangerouslySetInnerHTML={{ __html: macroSample.outputHtml }} />
+        </figure>
       </div>
     </Section>
   );
@@ -177,12 +186,6 @@ const coverage = [
       "Linux x64 and arm64 (glibc and musl), macOS on Apple Silicon, Windows x64 and arm64, on Node.js 22.13 or newer.",
   },
   {
-    name: "Markdown adapters (rehype, markdown-it)",
-    status: "Outside",
-    settled: false,
-    detail: "Adapters stay in the Markdown layer; Ferromark integrates Ferriki from Rust.",
-  },
-  {
     name: "Server and build time",
     status: "By design",
     settled: true,
@@ -235,5 +238,17 @@ export function ClosingSection() {
         <code>@ferriki/vite</code>. There is no WebAssembly to load and no engine to choose.
       </p>
     </ClosingAction>
+  );
+}
+
+export function FlowSection() {
+  return (
+    <Section
+      id="flows"
+      title="From source to highlighted HTML"
+      intro="Call the highlighter in a build script or on the server, or let Vite prepare literal examples in your components. Both paths deliver ready-to-display markup."
+    >
+      <HighlightingFlows />
+    </Section>
   );
 }
