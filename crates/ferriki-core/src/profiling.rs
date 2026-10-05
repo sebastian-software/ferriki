@@ -98,6 +98,54 @@ fn convert<T: ToNapiValue>(env: &Env, value: T) -> Result<BoundaryPhase> {
     Ok(result?.1)
 }
 
+enum Converted {
+    Single(HtmlRenderData),
+    Multi(HtmlRenderDataWithThemes),
+}
+
+/// The Rust-side phases of one call, before any JavaScript value exists.
+struct RustPhases {
+    data: Converted,
+    tokenize: BoundaryPhase,
+    dto: BoundaryPhase,
+    lines: u32,
+    tokens: u32,
+}
+
+fn counts<T>(lines: &[Vec<T>]) -> (u32, u32) {
+    (
+        lines.len() as u32,
+        lines.iter().map(Vec::len).sum::<usize>() as u32,
+    )
+}
+
+impl FerrikiHighlighter {
+    fn rust_phases(&self, code: &str, options: NativeTokenOptions) -> Result<RustPhases> {
+        if options.theme_entries.is_some() {
+            let (result, tokenize) = phase(|| self.tokenize_with_themes(code, options))?;
+            let (data, dto) = phase(|| Ok(HtmlRenderDataWithThemes::from(result)))?;
+            let (lines, tokens) = counts(&data.tokens);
+            return Ok(RustPhases {
+                data: Converted::Multi(data),
+                tokenize,
+                dto,
+                lines,
+                tokens,
+            });
+        }
+        let (result, tokenize) = phase(|| self.tokenize(code, options))?;
+        let (data, dto) = phase(|| Ok(HtmlRenderData::from(result)))?;
+        let (lines, tokens) = counts(&data.tokens);
+        Ok(RustPhases {
+            data: Converted::Single(data),
+            tokenize,
+            dto,
+            lines,
+            tokens,
+        })
+    }
+}
+
 #[napi]
 impl FerrikiHighlighter {
     /// Runs one `getHtmlRenderData` call, or `getHtmlRenderDataWithThemes`
@@ -109,31 +157,17 @@ impl FerrikiHighlighter {
         code: String,
         options: NativeTokenOptions,
     ) -> Result<BoundaryProfile> {
-        if options.theme_entries.is_some() {
-            let (result, tokenize) = phase(|| self.tokenize_with_themes(&code, options))?;
-            let (data, dto) = phase(|| Ok(HtmlRenderDataWithThemes::from(result)))?;
-            let lines = data.tokens.len() as u32;
-            let tokens = data.tokens.iter().map(Vec::len).sum::<usize>() as u32;
-            let convert = convert(&env, data)?;
-            return Ok(BoundaryProfile {
-                tokenize,
-                dto,
-                convert,
-                lines,
-                tokens,
-            });
-        }
-        let (result, tokenize) = phase(|| self.tokenize(&code, options))?;
-        let (data, dto) = phase(|| Ok(HtmlRenderData::from(result)))?;
-        let lines = data.tokens.len() as u32;
-        let tokens = data.tokens.iter().map(Vec::len).sum::<usize>() as u32;
-        let convert = convert(&env, data)?;
+        let phases = self.rust_phases(&code, options)?;
+        let convert = match phases.data {
+            Converted::Single(data) => convert(&env, data)?,
+            Converted::Multi(data) => convert(&env, data)?,
+        };
         Ok(BoundaryProfile {
-            tokenize,
-            dto,
+            tokenize: phases.tokenize,
+            dto: phases.dto,
             convert,
-            lines,
-            tokens,
+            lines: phases.lines,
+            tokens: phases.tokens,
         })
     }
 }
@@ -149,5 +183,39 @@ mod tests {
         assert!(measured.allocations >= 1.0);
         assert!(measured.bytes >= 64.0);
         assert!(measured.ms >= 0.0);
+    }
+
+    #[test]
+    fn rust_phases_cover_single_and_multi_theme_calls() {
+        let highlighter = crate::napi_api::tests::standard_highlighter();
+        let mut options = NativeTokenOptions {
+            lang: "javascript".into(),
+            theme: "nord".into(),
+            tokenize_time_limit: Some(0.0),
+            ..Default::default()
+        };
+        let single = highlighter
+            .rust_phases("const x = 1\nlet y", options.clone())
+            .expect("single");
+        assert!(matches!(single.data, Converted::Single(_)));
+        assert_eq!(single.lines, 2);
+        assert!(single.tokens >= 4);
+        assert!(single.tokenize.allocations > 0.0);
+        options.theme_entries = Some(vec![
+            ThemeEntry {
+                color: "dark".into(),
+                name: "nord".into(),
+            },
+            ThemeEntry {
+                color: "light".into(),
+                name: "github-light".into(),
+            },
+        ]);
+        let multi = highlighter
+            .rust_phases("const x = 1", options)
+            .expect("multi");
+        assert!(matches!(multi.data, Converted::Multi(_)));
+        assert_eq!(multi.lines, 1);
+        assert!(multi.dto.allocations > 0.0);
     }
 }
