@@ -9,6 +9,7 @@ const result = spawnSync(
     "ferriki/index.mjs",
     "ferriki/index.d.mts",
     "ferriki/src/api.d.mts",
+    "ferriki/native-binding.d.ts",
   ],
   {
     cwd: new URL("..", import.meta.url),

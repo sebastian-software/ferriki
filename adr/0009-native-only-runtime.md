@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ## Context
 
@@ -60,19 +60,21 @@ exclusively in the Rust core.
   build of the Rust core, not a JS reimplementation.
 - The binding loader is internal. Consumers use the documented high-level
   runtime or build-tool entries; none exposes the loader directly.
-- `ferriki-core` currently uses NAPI-RS v2 crates and enables Node-API 8 in
-  `Cargo.toml`. These version numbers describe different things: the NAPI-RS
-  crate major does not select the Node-API level.
+- `ferriki-core` uses NAPI-RS v3 with Node-API 8. Rust tests enable dynamic
+  symbol lookup so their standalone harness can run outside Node. Highlight options,
+  single- and multi-theme render data and asynchronous asset plans cross the
+  boundary as typed objects. Custom grammar and theme registrations retain
+  their JSON input because their open-ended schemas belong to the Rust core.
+- Native TypeScript declarations are generated from the Rust binding types
+  by the NAPI-RS v3 type generator. The Ferriki-owned build, loader, platform
+  registry, sidecar names and release workflow remain the source of truth;
+  adopting the type generator does not adopt its package or loader conventions.
 
-Before the 1.0 freeze, adopting NAPI-RS v3 and `@napi-rs/cli` v3 is deferred;
-it is not a 1.0 migration requirement. The current Ferriki-owned build,
-platform registry, loader, sidecar names and release workflow remain the
-source of truth. They cover the seven targets in
-[`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs), keep the
-published `@ferriki/core` and `@ferriki/<platform>` names, and report
-unsupported targets or missing sidecars with Ferriki-specific errors. The
-package runtime floor remains the `>=22.13.0` value in
-[`node/ferriki/package.json`](../node/ferriki/package.json).
+The existing seven-target matrix in
+[`node/ferriki/platforms.mjs`](../node/ferriki/platforms.mjs) and the
+`>=22.13.0` runtime floor in
+[`node/ferriki/package.json`](../node/ferriki/package.json) are unchanged.
+The crate major and the Node-API level describe different things.
 
 The current matrix covers Linux x64 and arm64 on glibc and musl, macOS arm64,
 and Windows x64 and arm64. CI builds and exercises all seven targets. Linux
@@ -122,12 +124,12 @@ internal.
 
 - Any operation the Rust core cannot serve is a gap to close in the Rust
   crates, not a reason to run JavaScript.
-- Deferring the NAPI-RS v3 toolchain does not change package names, the Node
-  runtime floor, supported targets or release behavior. Keep the existing
-  native smoke, packed-consumer, sidecar and publication-verification gates
-  required for 1.0. Reconsider the migration only when a concrete loader,
-  build or release-maintenance problem outweighs the work to preserve these
-  contracts and gates.
+- Typed boundary results remove token and asset-plan JSON serialization and
+  parsing. The private binding types preserve camelCase names, optional-field
+  omission, numeric font-style bits and UTF-16 token offsets; the public Node
+  and Rust contracts remain unchanged.
+- Keep the existing native smoke, packed-consumer, sidecar and
+  publication-verification gates required for 1.0.
 - Adding a target means a sidecar package, a release matrix entry and a row in
   `platforms.mjs`; removing one is a breaking change.
 - Environments outside the matrix, and browsers, have no supported runtime
@@ -149,3 +151,5 @@ internal.
 
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
 - 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).
+
+- 2026-10-05: Adopts NAPI-RS v3 and generated binding declarations with typed options, token results and asset plans (#217); retains the Ferriki build and loader.

@@ -32,6 +32,7 @@
     "macro.d.mts",
     "macro.mjs",
     "native.mjs",
+    "native-binding.d.ts",
     "platforms.mjs",
     "react-macro.d.mts",
     "react-macro.mjs",

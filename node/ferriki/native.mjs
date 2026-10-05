@@ -22,6 +22,7 @@ function nativeCandidates(target, here) {
   ];
 }
 
+/** @returns {typeof import("./native-binding.js")} The private Rust binding. */
 export function loadFerrikiNativeBinding() {
   const require = createRequire(import.meta.url);
   const here = dirname(fileURLToPath(import.meta.url));

@@ -1,9 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, readFile, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+
+import { generateTypeDef } from "@napi-rs/cli";
 
 import { resolveFerrikiPlatformTarget } from "../platforms.mjs";
 
@@ -72,7 +74,16 @@ cargoArgs.push(...cargoConfig);
 
 if (rustTarget) cargoArgs.push("--target", rustTarget);
 
-const cargoEnv = { ...process.env };
+// Stable per-target metadata keeps incremental builds usable. If it was
+// deleted, force the host crate to emit it again, as napi-rs CLI does.
+const typeDefDir = join(repoRoot, "target", "napi-types", rustTarget ?? "host");
+await mkdir(typeDefDir, { recursive: true });
+const cargoEnv = { ...process.env, NAPI_TYPE_DEF_TMP_FOLDER: typeDefDir };
+try {
+  await stat(join(typeDefDir, "ferriki-core"));
+} catch {
+  cargoEnv.NAPI_FORCE_BUILD_FERRIKI_CORE = String(Date.now());
+}
 if (isMusl) {
   const rustflagsVar = `CARGO_TARGET_${rustTarget.toUpperCase().replaceAll("-", "_")}_RUSTFLAGS`;
   cargoEnv[rustflagsVar] = [cargoEnv[rustflagsVar], "-C target-feature=-crt-static"]
@@ -97,6 +108,23 @@ const cargo = spawnSync("cargo", cargoArgs, {
 });
 
 if (cargo.status !== 0) process.exit(cargo.status ?? 1);
+
+const { dts } = await generateTypeDef({
+  typeDefDir,
+  cwd: repoRoot,
+  dtsHeader: "// Generated from ferriki-core Rust bindings. Do not edit.\n",
+});
+await writeFile(join(pkgDir, "native-binding.d.ts"), dts);
+const formatTypes = spawnSync(
+  "pnpm",
+  ["exec", "oxfmt", "--write", join(pkgDir, "native-binding.d.ts")],
+  {
+    cwd: join(repoRoot, "node"),
+    shell: process.platform === "win32",
+    stdio: "inherit",
+  },
+);
+if (formatTypes.status !== 0) process.exit(formatTypes.status ?? 1);
 
 function command(program, args, cwd = repoRoot) {
   const result = spawnSync(program, args, { cwd, env: cargoEnv, encoding: "utf8" });

@@ -33,6 +33,9 @@ import "./test-asset-env.mjs";
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const repoRoot = join(nodeRoot, "..");
 const scriptPath = fileURLToPath(import.meta.url);
+// Freeze source inputs across a boundary migration without changing the
+// implementation loaded by each engine. Cold children inherit this setting.
+const corpusRoot = process.env.FERRIKI_BENCH_CORPUS_ROOT || repoRoot;
 const corpus = comparisonCorpus;
 const theme = "github-dark";
 const langs = [...new Set(corpus.map(([lang]) => lang))];
@@ -57,7 +60,7 @@ function loadCorpus(selectedPaths) {
   return corpus
     .filter(([, path]) => !allowed || allowed.has(path))
     .map(([lang, path]) => {
-      const code = readFileSync(join(repoRoot, path), "utf8");
+      const code = readFileSync(join(corpusRoot, path), "utf8");
       return {
         lang,
         path,
