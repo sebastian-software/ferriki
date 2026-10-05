@@ -491,6 +491,15 @@ jobs:
         if: ${{ !matrix.musl }}
         run: node --input-type=module -e "const m = await import('./ferriki/index.mjs'); const v = m.ferrikiVersion(); if (!v) throw new Error('native binding did not load'); console.log('ferriki native core', v)"
 
+      # Size and cold-load evidence for every sidecar target (#225), compared
+      # with the latest published sidecar. It reports and never gates.
+      - name: Measure native addon size and cold require
+        if: ${{ !matrix.musl }}
+        shell: bash
+        run: node ./scripts/measure-native-load.mjs --addon build=ferriki/ferriki.node --published "$FERRIKI_PLATFORM_ID" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
       # The glibc runner cannot load a musl addon, so the same three runtime
       # checks run in an Alpine container on the runner's architecture.
       - name: Verify packed consumer, sidecar and import on Alpine musl
@@ -503,5 +512,14 @@ jobs:
               node ./scripts/check-packed-sidecar.mjs
               node --input-type=module -e "const m = await import(\"./ferriki/index.mjs\"); const v = m.ferrikiVersion(); if (!v) throw new Error(\"native binding did not load\"); console.log(\"ferriki native core\", v)"
             '
+        env:
+          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+
+      - name: Measure native addon size and cold require on Alpine musl
+        if: ${{ matrix.musl }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node node:22-alpine \
+            node ./scripts/measure-native-load.mjs --addon build=ferriki/ferriki.node \
+            --published "$FERRIKI_PLATFORM_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
