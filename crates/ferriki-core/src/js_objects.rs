@@ -1,10 +1,15 @@
 //! Batch own-property definitions instead of calling a setter for every field.
 //! This preserves JSON's data-property semantics for arbitrary variant names.
+//!
+//! One `Writer` converts a whole token result. It creates each property key
+//! once, so V8 internalizes it once instead of once per object, and it shares
+//! one string handle per distinct color and variant key (#225).
 #![allow(unsafe_code)]
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::CStr;
+use std::hash::{BuildHasherDefault, Hasher};
 use std::mem::MaybeUninit;
 use std::ptr;
 
@@ -13,116 +18,334 @@ use napi::{Result, check_status, sys};
 
 use crate::native_types::*;
 
-type ColorCache = Option<(usize, HashMap<String, sys::napi_value>)>;
+/// FNV-1a: colors and theme keys are a handful of short strings per result,
+/// where SipHash's setup cost dominates the lookup.
+struct Fnv(u64);
+
+impl Default for Fnv {
+    fn default() -> Self {
+        Self(0xcbf2_9ce4_8422_2325)
+    }
+}
+
+impl Hasher for Fnv {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        for byte in bytes {
+            self.0 = (self.0 ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3);
+        }
+    }
+}
+
+macro_rules! keys {
+    ($($field:ident => $name:literal),* $(,)?) => {
+        #[derive(Clone, Copy)]
+        struct Keys {
+            $($field: sys::napi_value,)*
+        }
+
+        impl Keys {
+            unsafe fn new(env: sys::napi_env) -> Result<Self> {
+                let names = unsafe {
+                    key_names(env, &[$(concat!($name, "\0").as_ptr().cast()),*])?
+                };
+                let mut index = 0;
+                let mut next = || -> Result<sys::napi_value> {
+                    let mut name = ptr::null_mut();
+                    check_status!(unsafe { sys::napi_get_element(env, names, index, &mut name) })?;
+                    index += 1;
+                    Ok(name)
+                };
+                Ok(Self {
+                    $($field: next()?,)*
+                })
+            }
+        }
+    };
+}
 
 thread_local! {
-    static COLORS: RefCell<ColorCache> = const { RefCell::new(None) };
+    /// One referenced key array per live Node environment on this thread.
+    static KEY_NAMES: RefCell<Vec<(usize, sys::napi_ref)>> = const { RefCell::new(Vec::new()) };
 }
 
-struct ColorScope(ColorCache);
-
-impl Drop for ColorScope {
-    fn drop(&mut self) {
-        COLORS.with(|cache| {
-            cache.replace(self.0.take());
-        });
-    }
-}
-
-// Handles are shared only within one root result's active Node handle scope.
-// Restoring the previous cache also supports nested calls without retaining
-// any environment or handle after the conversion has finished.
-trait Palette {
-    fn visit_colors(&self, visit: impl FnMut(&str));
-}
-
-impl Palette for HtmlRenderData {
-    fn visit_colors(&self, mut visit: impl FnMut(&str)) {
-        for token in self.tokens.iter().flatten() {
-            if let Some(color) = &token.color {
-                visit(color);
-            }
-        }
-    }
-}
-
-impl Palette for HtmlRenderDataWithThemes {
-    fn visit_colors(&self, mut visit: impl FnMut(&str)) {
-        for token in self.tokens.iter().flatten() {
-            for style in token.variants.0.values() {
-                if let Some(color) = &style.color {
-                    visit(color);
-                }
-            }
-        }
-        for theme in &self.themes {
-            visit(&theme.color);
-        }
-    }
-}
-
-unsafe fn color_scope(env: sys::napi_env, value: &impl Palette) -> Result<ColorScope> {
-    let scope =
-        ColorScope(COLORS.with(|cache| cache.replace(Some((env as usize, HashMap::new())))));
-    // Allocate every shared handle in the root scope before Vec's converters
-    // run, so reuse never depends on the library's nested-scope behavior.
-    let mut result = Ok(());
-    value.visit_colors(|color| {
-        if result.is_ok() {
-            result = unsafe { color_value(env, color) }.map(|_| ());
-        }
-    });
-    result?;
-    Ok(scope)
-}
-
-unsafe fn color_value(env: sys::napi_env, value: &str) -> Result<sys::napi_value> {
-    let cached = COLORS.with(|cache| {
+/// Returns an array of the internalized property keys, in `names` order. V8
+/// stores property names internalized, so reading them back from a template
+/// object lets later definitions skip the string table; a plain string handle
+/// would be looked up again for every object. The array is created once per
+/// environment and released by its cleanup hook, before the environment and
+/// its references are torn down. Node-API 8 references only objects, so the
+/// array, not each string, is referenced.
+unsafe fn key_names(
+    env: sys::napi_env,
+    names: &[*const std::ffi::c_char],
+) -> Result<sys::napi_value> {
+    let cached = KEY_NAMES.with(|cache| {
         cache
             .borrow()
-            .as_ref()
-            .filter(|(owner, _)| *owner == env as usize)
-            .and_then(|(_, colors)| colors.get(value).copied())
+            .iter()
+            .find(|(owner, _)| *owner == env as usize)
+            .map(|(_, reference)| *reference)
     });
-    if let Some(cached) = cached {
-        return Ok(cached);
+    let mut array = ptr::null_mut();
+    if let Some(reference) = cached {
+        check_status!(unsafe { sys::napi_get_reference_value(env, reference, &mut array) })?;
+        return Ok(array);
     }
-    let active = COLORS.with(|cache| {
-        cache
-            .borrow()
-            .as_ref()
-            .is_some_and(|(owner, _)| *owner == env as usize)
+    let mut undefined = ptr::null_mut();
+    check_status!(unsafe { sys::napi_get_undefined(env, &mut undefined) })?;
+    let properties = names
+        .iter()
+        .map(|name| descriptor(*name, undefined))
+        .collect::<Vec<_>>();
+    let template = unsafe { object(env, &properties)? };
+    check_status!(unsafe {
+        sys::napi_get_all_property_names(
+            env,
+            template,
+            sys::KeyCollectionMode::own_only,
+            sys::KeyFilter::enumerable | sys::KeyFilter::skip_symbols,
+            sys::KeyConversion::keep_numbers,
+            &mut array,
+        )
+    })?;
+    let mut reference = ptr::null_mut();
+    check_status!(unsafe { sys::napi_create_reference(env, array, 1, &mut reference) })?;
+    check_status!(unsafe {
+        sys::napi_add_env_cleanup_hook(env, Some(release_key_names), env.cast())
+    })?;
+    KEY_NAMES.with(|cache| cache.borrow_mut().push((env as usize, reference)));
+    Ok(array)
+}
+
+unsafe extern "C" fn release_key_names(env: *mut std::ffi::c_void) {
+    let env = env as sys::napi_env;
+    let removed = KEY_NAMES.with(|cache| {
+        let mut cache = cache.borrow_mut();
+        let index = cache.iter().position(|(owner, _)| *owner == env as usize)?;
+        Some(cache.swap_remove(index).1)
     });
-    // No RefCell borrow spans a Node call, which could trigger a nested call.
+    if let Some(reference) = removed {
+        unsafe { sys::napi_delete_reference(env, reference) };
+    }
+}
+
+keys! {
+    content => "content",
+    offset => "offset",
+    color => "color",
+    font_style => "fontStyle",
+    token_type => "type",
+    scope_names => "scopeNames",
+    tokens => "tokens",
+    fg => "fg",
+    bg => "bg",
+    theme_name => "themeName",
+    variants => "variants",
+    themes => "themes",
+    name => "name",
+    foreground => "foreground",
+    background => "background",
+}
+
+/// Converts one borrowed result inside the caller's active handle scope. Every
+/// handle it hands out stays live until the N-API callback returns.
+struct Writer<'a> {
+    env: sys::napi_env,
+    keys: Keys,
+    shared: HashMap<&'a str, sys::napi_value, BuildHasherDefault<Fnv>>,
+    variants: Vec<sys::napi_property_descriptor>,
+}
+
+impl<'a> Writer<'a> {
+    unsafe fn new(env: sys::napi_env) -> Result<Self> {
+        Ok(Self {
+            env,
+            keys: unsafe { Keys::new(env)? },
+            shared: HashMap::default(),
+            variants: Vec::new(),
+        })
+    }
+
+    unsafe fn string(&self, value: &str) -> Result<sys::napi_value> {
+        // ASCII is valid Latin-1, which V8 copies without UTF-8 decoding.
+        if value.is_ascii() {
+            return unsafe { latin1(self.env, value) };
+        }
+        let mut result = ptr::null_mut();
+        check_status!(unsafe {
+            sys::napi_create_string_utf8(
+                self.env,
+                value.as_ptr().cast(),
+                value.len() as isize,
+                &mut result,
+            )
+        })?;
+        Ok(result)
+    }
+
+    /// Reuses one handle for repeated colors and theme keys.
+    unsafe fn shared(&mut self, value: &'a str) -> Result<sys::napi_value> {
+        if let Some(handle) = self.shared.get(value) {
+            return Ok(*handle);
+        }
+        let handle = unsafe { self.string(value)? };
+        self.shared.insert(value, handle);
+        Ok(handle)
+    }
+
+    unsafe fn number(&self, value: f64) -> Result<sys::napi_value> {
+        unsafe { f64::to_napi_value(self.env, value) }
+    }
+
+    unsafe fn int(&self, value: i32) -> Result<sys::napi_value> {
+        unsafe { i32::to_napi_value(self.env, value) }
+    }
+
+    unsafe fn uint(&self, value: u32) -> Result<sys::napi_value> {
+        unsafe { u32::to_napi_value(self.env, value) }
+    }
+
+    unsafe fn array<T>(
+        &mut self,
+        items: &'a [T],
+        mut item: impl FnMut(&mut Self, &'a T) -> Result<sys::napi_value>,
+    ) -> Result<sys::napi_value> {
+        let mut array = ptr::null_mut();
+        check_status!(unsafe {
+            sys::napi_create_array_with_length(self.env, items.len(), &mut array)
+        })?;
+        for (index, value) in items.iter().enumerate() {
+            let value = item(self, value)?;
+            check_status!(unsafe { sys::napi_set_element(self.env, array, index as u32, value) })?;
+        }
+        Ok(array)
+    }
+
+    /// Defines the present entries, in order, with one N-API call.
+    unsafe fn object<const N: usize>(
+        &self,
+        entries: [Option<(sys::napi_value, sys::napi_value)>; N],
+    ) -> Result<sys::napi_value> {
+        let mut properties = [MaybeUninit::<sys::napi_property_descriptor>::uninit(); N];
+        let mut count = 0;
+        for (name, value) in entries.into_iter().flatten() {
+            let mut entry = descriptor(ptr::null(), value);
+            entry.name = name;
+            properties[count].write(entry);
+            count += 1;
+        }
+        // SAFETY: The prefix through `count` is initialized above.
+        let properties = unsafe { std::slice::from_raw_parts(properties.as_ptr().cast(), count) };
+        unsafe { object(self.env, properties) }
+    }
+
+    unsafe fn scope_names(&mut self, names: &'a [String]) -> Result<sys::napi_value> {
+        unsafe { self.array(names, |writer, name| writer.string(name)) }
+    }
+
+    unsafe fn token(&mut self, token: &'a HtmlToken) -> Result<sys::napi_value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.content, unsafe { self.string(&token.content)? })),
+            Some((keys.offset, unsafe { self.number(token.offset)? })),
+            match &token.color {
+                Some(color) => Some((keys.color, unsafe { self.shared(color)? })),
+                None => None,
+            },
+            match token.font_style {
+                Some(style) => Some((keys.font_style, unsafe { self.int(style)? })),
+                None => None,
+            },
+            match token.token_type {
+                Some(kind) => Some((keys.token_type, unsafe { self.uint(kind)? })),
+                None => None,
+            },
+            match &token.scope_names {
+                Some(names) => Some((keys.scope_names, unsafe { self.scope_names(names)? })),
+                None => None,
+            },
+        ];
+        unsafe { self.object(entries) }
+    }
+
+    unsafe fn style(&mut self, style: &'a ThemeTokenStyle) -> Result<sys::napi_value> {
+        let keys = self.keys;
+        let entries = [
+            match &style.color {
+                Some(color) => Some((keys.color, unsafe { self.shared(color)? })),
+                None => None,
+            },
+            match style.font_style {
+                Some(value) => Some((keys.font_style, unsafe { self.int(value)? })),
+                None => None,
+            },
+        ];
+        unsafe { self.object(entries) }
+    }
+
+    unsafe fn variants(&mut self, variants: &'a ThemeVariants) -> Result<sys::napi_value> {
+        // Reuse one descriptor buffer instead of allocating one per token.
+        let mut properties = std::mem::take(&mut self.variants);
+        properties.clear();
+        for (name, style) in &variants.0 {
+            // JS string handles support embedded NUL, unlike C string keys.
+            let name = unsafe { self.shared(name)? };
+            let style = unsafe { self.style(style)? };
+            let mut entry = descriptor(ptr::null(), style);
+            entry.name = name;
+            properties.push(entry);
+        }
+        // SAFETY: Every name and value handle belongs to this active scope.
+        let value = unsafe { object(self.env, &properties) };
+        self.variants = properties;
+        value
+    }
+
+    unsafe fn theme_token(&mut self, token: &'a HtmlThemeToken) -> Result<sys::napi_value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.content, unsafe { self.string(&token.content)? })),
+            Some((keys.offset, unsafe { self.number(token.offset)? })),
+            Some((keys.variants, unsafe { self.variants(&token.variants)? })),
+            match token.token_type {
+                Some(kind) => Some((keys.token_type, unsafe { self.uint(kind)? })),
+                None => None,
+            },
+            match &token.scope_names {
+                Some(names) => Some((keys.scope_names, unsafe { self.scope_names(names)? })),
+                None => None,
+            },
+        ];
+        unsafe { self.object(entries) }
+    }
+
+    unsafe fn theme(&mut self, theme: &'a ThemeMetadata) -> Result<sys::napi_value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.color, unsafe { self.shared(&theme.color)? })),
+            Some((keys.name, unsafe { self.string(&theme.name)? })),
+            Some((keys.foreground, unsafe { self.string(&theme.foreground)? })),
+            Some((keys.background, unsafe { self.string(&theme.background)? })),
+        ];
+        unsafe { self.object(entries) }
+    }
+}
+
+unsafe fn latin1(env: sys::napi_env, value: &str) -> Result<sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(unsafe {
-        sys::napi_create_string_utf8(
+        sys::napi_create_string_latin1(
             env,
             value.as_ptr().cast(),
             value.len() as isize,
             &mut result,
         )
     })?;
-    if active {
-        COLORS.with(|cache| {
-            if let Some((owner, colors)) = cache.borrow_mut().as_mut()
-                && *owner == env as usize
-            {
-                colors.insert(value.to_owned(), result);
-            }
-        });
-    }
     Ok(result)
-}
-
-unsafe fn color_property(
-    env: sys::napi_env,
-    name: &'static CStr,
-    value: String,
-) -> Result<sys::napi_property_descriptor> {
-    Ok(descriptor(name.as_ptr(), unsafe {
-        color_value(env, &value)?
-    }))
 }
 
 fn descriptor(
@@ -143,20 +366,8 @@ fn descriptor(
     }
 }
 
-/// The caller owns a live Node environment and keeps every value handle in
-/// its current handle scope. Static C strings outlive the definition call.
-unsafe fn property<T: ToNapiValue>(
-    env: sys::napi_env,
-    name: &'static CStr,
-    value: T,
-) -> Result<sys::napi_property_descriptor> {
-    Ok(descriptor(name.as_ptr(), unsafe {
-        T::to_napi_value(env, value)?
-    }))
-}
-
 /// All descriptors contain live handles or static names from the caller's
-/// scope. Node copies the descriptors; it does not retain the Rust vector.
+/// scope. Node copies the descriptors; it does not retain the Rust slice.
 unsafe fn object(
     env: sys::napi_env,
     properties: &[sys::napi_property_descriptor],
@@ -170,55 +381,65 @@ unsafe fn object(
 }
 
 // The napi(object) structs still own the generated TypeScript shape. These
-// adapters only customize allocation: a single property definition per object,
-// with missing optional fields omitted exactly as in the former JSON results.
-macro_rules! js_object {
-    (@property $env:expr, color, $name:expr, $value:expr) => {
-        unsafe { color_property($env, $name, $value) }
-    };
-    (@property $env:expr, $field:ident, $name:expr, $value:expr) => {
-        unsafe { property($env, $name, $value) }
-    };
-    ($type:ty, [$($field:ident => $name:expr),*], [$($optional:ident => $optional_name:expr),*] $(, $scope:ident)?) => {
-        impl ToNapiValue for $type {
-            unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
-                $(let _scope = unsafe { $scope(env, &value)? };)?
-                const CAPACITY: usize = (&[$($name,)* $($optional_name,)*] as &[&CStr]).len();
-                let mut properties: [MaybeUninit<sys::napi_property_descriptor>; CAPACITY] = [MaybeUninit::uninit(); CAPACITY];
-                let mut count = 0;
-                $(properties[count].write(js_object!(@property env, $field, $name, value.$field)?); count += 1;)*
-                $(if let Some(field) = value.$optional {
-                    properties[count].write(js_object!(@property env, $optional, $optional_name, field)?); count += 1;
-                })*
-                // SAFETY: The prefix through `count` is initialized above.
-                // All handles are live; Node copies the descriptors synchronously.
-                let properties = unsafe { std::slice::from_raw_parts(properties.as_ptr().cast(), count) };
-                unsafe { object(env, properties) }
-            }
-        }
-    };
+// adapters only customize allocation, with missing optional fields omitted
+// exactly as in the former JSON results.
+impl ToNapiValue for HtmlRenderData {
+    unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
+        let mut writer = unsafe { Writer::new(env)? };
+        let tokens = unsafe {
+            writer.array(&value.tokens, |writer, line| {
+                writer.array(line, |writer, token| writer.token(token))
+            })?
+        };
+        let keys = writer.keys;
+        let entries = [
+            Some((keys.tokens, tokens)),
+            Some((keys.fg, unsafe { writer.string(&value.fg)? })),
+            Some((keys.bg, unsafe { writer.string(&value.bg)? })),
+            Some((keys.theme_name, unsafe {
+                writer.string(&value.theme_name)?
+            })),
+        ];
+        unsafe { writer.object(entries) }
+    }
 }
 
-js_object!(HtmlToken, [content => c"content", offset => c"offset"], [color => c"color", font_style => c"fontStyle", token_type => c"type", scope_names => c"scopeNames"]);
-js_object!(HtmlRenderData, [tokens => c"tokens", fg => c"fg", bg => c"bg", theme_name => c"themeName"], [], color_scope);
-js_object!(ThemeTokenStyle, [], [color => c"color", font_style => c"fontStyle"]);
-js_object!(HtmlThemeToken, [content => c"content", offset => c"offset", variants => c"variants"], [token_type => c"type", scope_names => c"scopeNames"]);
-js_object!(ThemeMetadata, [color => c"color", name => c"name", foreground => c"foreground", background => c"background"], []);
-js_object!(HtmlRenderDataWithThemes, [tokens => c"tokens", themes => c"themes"], [], color_scope);
-js_object!(AssetPlanEntry, [path => c"path", digest => c"digest", size => c"size", url => c"url"], []);
-
-impl ToNapiValue for ThemeVariants {
+impl ToNapiValue for HtmlRenderDataWithThemes {
     unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
-        let mut properties = Vec::with_capacity(value.0.len());
-        for (name, style) in value.0 {
-            // JS string handles support embedded NUL, unlike C string keys.
-            let name = unsafe { String::to_napi_value(env, name)? };
-            let style = unsafe { ThemeTokenStyle::to_napi_value(env, style)? };
-            let mut entry = descriptor(ptr::null(), style);
-            entry.name = name;
-            properties.push(entry);
+        let mut writer = unsafe { Writer::new(env)? };
+        let tokens = unsafe {
+            writer.array(&value.tokens, |writer, line| {
+                writer.array(line, |writer, token| writer.theme_token(token))
+            })?
+        };
+        let themes = unsafe { writer.array(&value.themes, |writer, theme| writer.theme(theme))? };
+        let entries = [
+            Some((writer.keys.tokens, tokens)),
+            Some((writer.keys.themes, themes)),
+        ];
+        unsafe { writer.object(entries) }
+    }
+}
+
+impl ToNapiValue for AssetPlanEntry {
+    unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
+        unsafe fn property<T: ToNapiValue>(
+            env: sys::napi_env,
+            name: &'static CStr,
+            value: T,
+        ) -> Result<sys::napi_property_descriptor> {
+            Ok(descriptor(name.as_ptr(), unsafe {
+                T::to_napi_value(env, value)?
+            }))
         }
-        // SAFETY: Every name and value handle belongs to this active scope.
+        let properties = unsafe {
+            [
+                property(env, c"path", value.path)?,
+                property(env, c"digest", value.digest)?,
+                property(env, c"size", value.size)?,
+                property(env, c"url", value.url)?,
+            ]
+        };
         unsafe { object(env, &properties) }
     }
 }
@@ -226,70 +447,23 @@ impl ToNapiValue for ThemeVariants {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::BTreeMap;
+    use std::hash::BuildHasher;
 
     #[test]
-    fn palette_visits_token_colors_and_theme_keys_including_unstyled_tokens() {
-        let single = HtmlRenderData {
-            tokens: vec![vec![
-                HtmlToken {
-                    content: "styled".into(),
-                    offset: 0.0,
-                    color: Some("#123456".into()),
-                    font_style: None,
-                    token_type: None,
-                    scope_names: None,
-                },
-                HtmlToken {
-                    content: "plain".into(),
-                    offset: 6.0,
-                    color: None,
-                    font_style: None,
-                    token_type: None,
-                    scope_names: None,
-                },
-            ]],
-            fg: "#ffffff".into(),
-            bg: "#000000".into(),
-            theme_name: "test".into(),
-        };
-        let mut colors = Vec::new();
-        single.visit_colors(|color| colors.push(color.to_owned()));
-        assert_eq!(colors, ["#123456"]);
-        let multi = HtmlRenderDataWithThemes {
-            tokens: vec![vec![HtmlThemeToken {
-                content: "styled".into(),
-                offset: 0.0,
-                variants: ThemeVariants(BTreeMap::from([
-                    (
-                        "dark".into(),
-                        ThemeTokenStyle {
-                            color: Some("#123456".into()),
-                            font_style: None,
-                        },
-                    ),
-                    (
-                        "light".into(),
-                        ThemeTokenStyle {
-                            color: None,
-                            font_style: None,
-                        },
-                    ),
-                ])),
-                token_type: None,
-                scope_names: None,
-            }]],
-            themes: vec![ThemeMetadata {
-                color: "dark".into(),
-                name: "test".into(),
-                foreground: "#ffffff".into(),
-                background: "#000000".into(),
-            }],
-        };
-        colors.clear();
-        multi.visit_colors(|color| colors.push(color.to_owned()));
-        // Dynamic variant keys also use the color property converter. Their
-        // handles must be allocated in the root scope before array conversion.
-        assert_eq!(colors, ["#123456", "dark"]);
+    fn fnv_hashes_distinct_short_keys_apart() {
+        let build = BuildHasherDefault::<Fnv>::default();
+        let hashes = [
+            "#E1E4E8",
+            "#F97583",
+            "dark",
+            "light",
+            "__proto__",
+            "a\0b",
+            "",
+        ]
+        .map(|value| build.hash_one(value));
+        for (index, hash) in hashes.iter().enumerate() {
+            assert!(!hashes[index + 1..].contains(hash));
+        }
     }
 }
