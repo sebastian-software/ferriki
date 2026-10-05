@@ -185,7 +185,7 @@ fn highlighter_exposes_lazy_advisory_backtracking_warnings() {
 }
 
 #[test]
-fn warning_snapshots_reset_after_grammar_and_theme_cache_invalidation() {
+fn warning_snapshots_reset_after_grammar_invalidation_but_survive_theme_changes() {
     let mut highlighter = Highlighter::builder().build().expect("highlighter");
     let grammar = parse_raw_grammar(
         r#"{"scopeName":"source.lifecycle","patterns":[{"begin":"BEGIN","end":"(a+)+$","name":"meta.risky"},{"match":"[a-z]+","name":"word.clean"}]}"#,
@@ -247,14 +247,7 @@ fn warning_snapshots_reset_after_grammar_and_theme_cache_invalidation() {
 
     highlighter
         .highlight("ordinary", "lifecycle", "dark")
-        .expect("clean highlight after theme activation");
-    assert_eq!(
-        highlighter.backtracking_warnings("lifecycle").unwrap(),
-        Some(vec![])
-    );
-    highlighter
-        .highlight("BEGIN", "lifecycle", "dark")
-        .expect("rediscover after theme activation");
+        .expect("highlight after theme activation");
     assert_eq!(
         highlighter
             .backtracking_warnings("lifecycle")

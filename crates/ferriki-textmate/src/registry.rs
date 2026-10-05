@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::grammar::{Grammar, GrammarConfiguration};
+use crate::grammar::{Grammar, GrammarConfiguration, ThemeProvider};
 use crate::raw_grammar::RawGrammar;
 use crate::rule_factory::{GrammarProvider, GrammarStore};
 use crate::theme::{RawTheme, Theme, ThemeError};
@@ -16,8 +16,7 @@ use crate::theme::{RawTheme, Theme, ThemeError};
 pub struct SyncRegistry {
     grammars: BTreeMap<String, Rc<Grammar>>,
     raw_grammars: GrammarStore,
-    raw_theme: Option<RawTheme>,
-    frozen_color_map: Option<Vec<String>>,
+    theme: ThemeProvider,
     color_map: Vec<String>,
 }
 
@@ -26,34 +25,38 @@ impl SyncRegistry {
         theme: Option<RawTheme>,
         color_map: Option<Vec<String>>,
     ) -> Result<Self, ThemeError> {
-        let resolved_theme = Theme::create_from_raw_theme(theme.as_ref(), color_map.clone())?;
+        let resolved_theme = Theme::create_from_raw_theme(theme.as_ref(), color_map)?;
         Ok(Self {
             grammars: BTreeMap::new(),
             raw_grammars: GrammarStore::new(),
-            raw_theme: theme,
-            frozen_color_map: color_map,
             color_map: resolved_theme.get_color_map(),
+            theme: ThemeProvider::new(resolved_theme),
         })
     }
 
     pub fn dispose(&mut self) {
         self.grammars.clear();
         self.raw_grammars.clear();
-        self.raw_theme = None;
-        self.frozen_color_map = None;
+        self.theme.set_theme(
+            Theme::create_from_raw_theme(None, None)
+                .expect("the default theme has no frozen color map"),
+        );
         self.color_map.clear();
     }
 
+    /// Replaces the theme of this registry and of every grammar it compiled.
+    ///
+    /// As upstream, compiled grammars stay cached and read the theme at
+    /// tokenize time. State stacks returned before the change still carry
+    /// metadata encoded with the previous theme.
     pub fn set_theme(
         &mut self,
         theme: Option<RawTheme>,
         color_map: Option<Vec<String>>,
     ) -> Result<(), ThemeError> {
-        let resolved_theme = Theme::create_from_raw_theme(theme.as_ref(), color_map.clone())?;
-        self.raw_theme = theme;
-        self.frozen_color_map = color_map;
+        let resolved_theme = Theme::create_from_raw_theme(theme.as_ref(), color_map)?;
         self.color_map = resolved_theme.get_color_map();
-        self.grammars.clear();
+        self.theme.set_theme(resolved_theme);
         Ok(())
     }
 
@@ -103,12 +106,10 @@ impl SyncRegistry {
         let Some(raw_grammar) = self.raw_grammars.lookup(scope_name) else {
             return Ok(None);
         };
-        let theme =
-            Theme::create_from_raw_theme(self.raw_theme.as_ref(), self.frozen_color_map.clone())?;
-        let grammar = Rc::new(Grammar::new(
+        let grammar = Rc::new(Grammar::with_theme_provider(
             &raw_grammar,
             &self.raw_grammars,
-            theme,
+            self.theme.clone(),
             configuration,
         ));
         self.grammars
@@ -133,7 +134,8 @@ mod tests {
 
     use super::SyncRegistry;
     use crate::{
-        GrammarConfiguration, RawGrammar, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle,
+        EncodedTokenAttributes, GrammarConfiguration, RawGrammar, RawTheme, RawThemeScope,
+        RawThemeSetting, RawThemeStyle,
     };
 
     fn grammar(source: &str) -> RawGrammar {
@@ -225,6 +227,67 @@ mod tests {
             .unwrap();
 
         assert!(registry.get_color_map().contains(&"#112233".into()));
+    }
+
+    #[test]
+    fn keeps_compiled_grammars_across_theme_changes() {
+        fn theme(color: &str) -> RawTheme {
+            RawTheme {
+                settings: vec![RawThemeSetting {
+                    scope: Some(RawThemeScope::String("keyword.test".into())),
+                    settings: Some(RawThemeStyle {
+                        foreground: Some(color.into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                }],
+                ..RawTheme::default()
+            }
+        }
+        fn keyword_color(registry: &mut SyncRegistry) -> String {
+            let grammar = registry
+                .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+                .unwrap()
+                .unwrap();
+            let tokens = grammar.tokenize_line2("x", None, 0).unwrap().tokens;
+            let foreground = EncodedTokenAttributes::new(tokens[1]).foreground();
+            registry.get_color_map()[foreground as usize].clone()
+        }
+        let source = r#"{
+            "scopeName": "source.test",
+            "patterns": [{ "match": "x", "name": "keyword.test" }]
+        }"#;
+
+        let mut registry = SyncRegistry::new(Some(theme("#112233")), None).unwrap();
+        registry.add_grammar(grammar(source), Vec::new());
+        let compiled = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert_eq!(keyword_color(&mut registry), "#112233");
+
+        registry.set_theme(Some(theme("#445566")), None).unwrap();
+        let cached = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert!(Rc::ptr_eq(&compiled, &cached));
+        assert_eq!(keyword_color(&mut registry), "#445566");
+        assert_eq!(compiled.color_map(), registry.get_color_map());
+
+        let mut fresh = SyncRegistry::new(Some(theme("#445566")), None).unwrap();
+        fresh.add_grammar(grammar(source), Vec::new());
+        let fresh_grammar = fresh
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            cached.tokenize_line2("x", None, 0).unwrap().tokens,
+            fresh_grammar.tokenize_line2("x", None, 0).unwrap().tokens
+        );
+
+        registry.set_theme(Some(theme("#112233")), None).unwrap();
+        assert_eq!(keyword_color(&mut registry), "#112233");
     }
 
     #[test]

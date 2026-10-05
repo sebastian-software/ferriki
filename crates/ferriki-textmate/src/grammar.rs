@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-use std::sync::Arc;
+use std::sync::{Arc, PoisonError, RwLock};
 
 use crate::BacktrackingWarning;
 use crate::RegexError;
@@ -139,7 +139,35 @@ pub struct Grammar {
     basic_scope_attributes: BasicScopeAttributesProvider,
     token_type_matchers: Vec<TokenTypeMatcher>,
     balanced_bracket_selectors: Option<BalancedBracketSelectors>,
-    theme: Theme,
+    theme_provider: ThemeProvider,
+}
+
+/// Port of upstream `IThemeProvider`: grammars read the theme at tokenize
+/// time instead of owning it. [`crate::SyncRegistry`] shares one provider
+/// with every grammar it compiles, so replacing the theme keeps the compiled
+/// rules and their regexes (upstream `SyncRegistry.setTheme`).
+#[derive(Clone)]
+pub(crate) struct ThemeProvider(Arc<RwLock<Arc<Theme>>>);
+
+impl ThemeProvider {
+    pub(crate) fn new(theme: Theme) -> Self {
+        Self(Arc::new(RwLock::new(Arc::new(theme))))
+    }
+
+    pub(crate) fn set_theme(&self, theme: Theme) {
+        *self.0.write().unwrap_or_else(PoisonError::into_inner) = Arc::new(theme);
+    }
+
+    pub(crate) fn theme(&self) -> Arc<Theme> {
+        Arc::clone(&self.0.read().unwrap_or_else(PoisonError::into_inner))
+    }
+
+    fn theme_match(&self, scope_path: &ScopeStack) -> Option<StyleAttributes> {
+        self.0
+            .read()
+            .unwrap_or_else(PoisonError::into_inner)
+            .match_scope(Some(scope_path))
+    }
 }
 
 impl Grammar {
@@ -151,6 +179,20 @@ impl Grammar {
         raw_grammar: &RawGrammar,
         grammar_provider: &dyn GrammarProvider,
         theme: Theme,
+        configuration: GrammarConfiguration,
+    ) -> Self {
+        Self::with_theme_provider(
+            raw_grammar,
+            grammar_provider,
+            ThemeProvider::new(theme),
+            configuration,
+        )
+    }
+
+    pub(crate) fn with_theme_provider(
+        raw_grammar: &RawGrammar,
+        grammar_provider: &dyn GrammarProvider,
+        theme_provider: ThemeProvider,
         configuration: GrammarConfiguration,
     ) -> Self {
         let mut factory = RuleFactory::new(raw_grammar, grammar_provider);
@@ -205,7 +247,7 @@ impl Grammar {
             ),
             token_type_matchers,
             balanced_bracket_selectors,
-            theme,
+            theme_provider,
         }
     }
 
@@ -237,7 +279,7 @@ impl Grammar {
 
     #[must_use]
     pub fn color_map(&self) -> Vec<String> {
-        self.theme.get_color_map()
+        self.theme_provider.theme().get_color_map()
     }
 
     pub fn tokenize_line(
@@ -362,7 +404,8 @@ impl Grammar {
 
     fn initial_state(&self) -> Arc<StateStack> {
         let raw_default_metadata = self.basic_scope_attributes.default_attributes();
-        let default_style = self.theme.get_defaults();
+        let theme = self.theme_provider.theme();
+        let default_style = theme.get_defaults();
         let default_metadata = EncodedTokenAttributes::default().set(
             raw_default_metadata.language_id,
             raw_default_metadata.token_type,
@@ -407,7 +450,7 @@ impl ScopeAttributesProvider for Grammar {
     }
 
     fn theme_match(&self, scope_path: &ScopeStack) -> Option<StyleAttributes> {
-        self.theme.match_scope(Some(scope_path))
+        self.theme_provider.theme_match(scope_path)
     }
 }
 
