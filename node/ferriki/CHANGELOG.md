@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/sebastian-software/ferriki/compare/v0.14.0...v1.0.0) (2026-10-10)
+
+
+### Miscellaneous Chores
+
+* record 1.0 release acceptance ([#258](https://github.com/sebastian-software/ferriki/issues/258)) ([3459022](https://github.com/sebastian-software/ferriki/commit/34590220120cb56a1a473208fc0e1505ba5439ea))
+
 ## [0.14.0](https://github.com/sebastian-software/ferriki/compare/v0.13.0...v0.14.0) (2026-10-10)
 
 
