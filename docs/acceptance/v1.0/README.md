@@ -112,7 +112,9 @@ normal development checkouts.
    `@ferriki/darwin-arm64` to `0.14.0`; set `ferromark` and
    `ferromark-darwin-arm64` to the absolute `file:` paths of the two rebuilt
    tarballs. Run `corepack pnpm install` there and retain the resulting lock.
-4. From the temporary homepage, run `corepack pnpm exec react-router build`,
+4. If Chromium is not already installed, run
+   `corepack pnpm exec playwright install chromium` from the temporary homepage.
+   Then run `corepack pnpm exec react-router build`,
    `node scripts/verify-build.mjs`, `node scripts/verify-ardo-acceptance.mjs`,
    and `corepack pnpm run browser:check`. Copy the four retained Ardo probes
    into that same directory and run `node verify-resolution.mjs <addon-sha256>`,
