@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { types } from "node:util";
 
 import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
@@ -1509,10 +1510,20 @@ function renderTokenResultHast(result, options = {}) {
 // Project plain declarative data only. Accessors, custom prototypes, callbacks,
 // and opaque values keep their existing JS evaluation and identity semantics.
 function nativeDecorationInputs(code, options) {
-  if (!options || !Object.hasOwn(options, "decorations")) return undefined;
+  if (!options || types.isProxy(options) || !Object.hasOwn(options, "decorations"))
+    return undefined;
+  const transformers = Object.getOwnPropertyDescriptor(options, "transformers");
+  if (
+    transformers &&
+    (!Object.hasOwn(transformers, "value") ||
+      types.isProxy(transformers.value) ||
+      (Array.isArray(transformers.value) && transformers.value.length > 0))
+  )
+    return undefined;
   const record = (value) => {
     if (
       !value ||
+      types.isProxy(value) ||
       typeof value !== "object" ||
       ![Object.prototype, null].includes(Object.getPrototypeOf(value))
     )
@@ -1543,6 +1554,7 @@ function nativeDecorationInputs(code, options) {
     return undefined;
   if (
     !Array.isArray(options.decorations) ||
+    types.isProxy(options.decorations) ||
     Object.getPrototypeOf(options.decorations) !== Array.prototype ||
     Object.values(Object.getOwnPropertyDescriptors(options.decorations)).some(
       (descriptor) => !Object.hasOwn(descriptor, "value"),

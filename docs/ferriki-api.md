@@ -316,7 +316,7 @@ const html = highlighter.codeToHtml(source, {
   decorations: [{
     start: { line: 3, character: 0 },
     end: { line: 9, character: lines[9].replace(/\r$/, "").length },
-    properties: { class: "highlighted" },
+    properties: { class: "line highlighted" },
   }],
 });
 ```
@@ -328,7 +328,7 @@ classes, and string attributes. No new option is required: Ferriki chooses the
 path automatically and returns the same HTML.
 
 Callbacks, class-based theme CSS, multi-theme output, inline structure, grammar
-state, block metadata, accessors/custom prototypes, and non-string properties
+state, block metadata, accessors/custom prototypes, proxies, and non-string properties
 use the existing host pipeline. String slices inside UTF-16 surrogate pairs and
 lone surrogate strings also keep that path. The stable public Rust API is
 unchanged; this renderer belongs to the private Node consumer bridge.

@@ -218,6 +218,28 @@ try {
       }),
     (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
   );
+  let proxyReads = 0;
+  const proxyProperties = new Proxy(
+    { class: "mark" },
+    {
+      get(target, key, receiver) {
+        proxyReads++;
+        return Reflect.get(target, key, receiver);
+      },
+    },
+  );
+  const proxyOptions = {
+    lang: "text",
+    theme: "nord",
+    decorations: [{ start: 0, end: 5, properties: proxyProperties }],
+  };
+  const proxyBaseline = highlighter.codeToHtml("alpha", { ...proxyOptions, transformers: [{}] });
+  const expectedProxyReads = proxyReads;
+  proxyReads = 0;
+  calls = [];
+  assert.equal(highlighter.codeToHtml("alpha", proxyOptions), proxyBaseline);
+  assert.equal(proxyReads, expectedProxyReads);
+  assert(!calls.some((call) => call.name === "codeToHtmlWithDecorations"));
   calls = [];
   assert.throws(
     () =>

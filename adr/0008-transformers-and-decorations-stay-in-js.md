@@ -41,7 +41,7 @@ CSS-class styling cover current presentation needs.
   tokens, splits boundaries, plans decorations using the same policy, applies
   ordered attributes, and serializes the result without JS token/tree transport.
   Constructor transformer defaults participate in eligibility. Callbacks,
-  accessor/custom-prototype records, non-string attributes, CSS-class theme
+  accessor/custom-prototype records, proxies, non-string attributes, CSS-class theme
   output, multi-theme output, inline structure, metadata, and grammar state
   retain the existing host pipeline. Lone surrogate strings and token slices
   inside surrogate pairs retain exact JS behavior through that pipeline.
