@@ -135,11 +135,16 @@ part of release verification.
 - [ ] Run the normal publish workflow first. For an intentional retry or
       backfill of a release created with this gate, dispatch the workflow on
       its exact tag and pass the same tag as `release-tag`, for example
-      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=next`.
+      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=latest`.
       The tag, workflow event SHA, manifest, packages, and successful `main`
       CI run must all identify the same commit. A dispatch on a later `main`
-      commit is rejected even when it checks out an older tag. Use the `next`
-      dist-tag for a release candidate and record the manual go/no-go decision.
+      commit is rejected even when it checks out an older tag. Record the
+      version and dist-tag policy before publication. The normal workflow uses
+      `latest`; a stable pre-1.0 stabilization version can exercise that path.
+      Choose `next` only when deliberately using a non-default npm tag. A
+      dist-tag does not turn a stable npm or Rust version into a SemVer
+      prerelease, and 1.0.0 must never be consumed as a rehearsal. Record the
+      manual go/no-go decision before the deliberate 1.0 version change.
 - [ ] Confirm the `Verify exact release source` job reports the release tag,
       commit SHA, and successful CI run before either registry publisher starts.
 - [ ] Confirm every documented target build completes and every platform
@@ -179,10 +184,11 @@ artifacts. For a release tagged `v<version>`, run:
 
 ```sh
 gh workflow run publish.yml --ref v<version> \
-  -f force-publish=true -f release-tag=v<version> -f dist-tag=next
+  -f force-publish=true -f release-tag=v<version> -f dist-tag=latest
 ```
 
-Use `-f dist-tag=latest` for a stable release or deliberate promotion. The
+The example preserves `latest` for a stable release. Use `-f dist-tag=next`
+only when that was the original tag or when deliberately selecting it. The
 release-source gate checks that the workflow run, tag, manifest version and
 successful main CI belong to the same immutable commit. Recovery checks each
 public npm name/version, tarball digest and SLSA provenance source/workflow
