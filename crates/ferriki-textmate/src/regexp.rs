@@ -12,7 +12,61 @@ use crate::RegexError;
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub(crate) use ferroni::scanner::{OnigString, ScannerFindOptions};
-use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
+use ferroni::scanner::{
+    Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache, ScannerSyntax,
+};
+
+/// Shared compiled patterns for the grammars owned by one registry.
+///
+/// Dynamic backreference patterns intentionally bypass this cache: Ferroni
+/// keeps strong references until `clear`, while vscode-textmate rebuilds and
+/// drops those scanners when captured end or while patterns change.
+#[derive(Clone)]
+pub(crate) struct ScannerPatternCache(Arc<Mutex<FerroniScannerPatternCache>>);
+
+impl Default for ScannerPatternCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ScannerPatternCache {
+    pub(crate) fn new() -> Self {
+        Self(Arc::new(Mutex::new(FerroniScannerPatternCache::new())))
+    }
+
+    pub(crate) fn clear(&self) {
+        self.0
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .clear();
+    }
+
+    fn compile(
+        &self,
+        patterns: &[&str],
+        config: &ScannerConfig,
+        share_patterns: bool,
+    ) -> Result<Scanner, ferroni::error::RegexError> {
+        if share_patterns {
+            Scanner::with_pattern_cache(
+                patterns,
+                config,
+                &mut self.0.lock().expect("scanner pattern cache lock poisoned"),
+            )
+        } else {
+            Scanner::with_config(patterns, config)
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn len(&self) -> usize {
+        self.0
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .len()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CaptureIndex {
@@ -408,6 +462,7 @@ pub(crate) struct RegExpSourceList<T> {
     cached: Option<Arc<CompiledRule<T>>>,
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
     regex_prefilter: bool,
+    scanner_pattern_cache: ScannerPatternCache,
 }
 
 impl<T> Default for RegExpSourceList<T> {
@@ -423,12 +478,20 @@ impl<T> RegExpSourceList<T> {
     }
 
     pub(crate) fn with_regex_prefilter(regex_prefilter: bool) -> Self {
+        Self::with_pattern_cache(regex_prefilter, ScannerPatternCache::new())
+    }
+
+    pub(crate) fn with_pattern_cache(
+        regex_prefilter: bool,
+        scanner_pattern_cache: ScannerPatternCache,
+    ) -> Self {
         Self {
             items: Vec::new(),
             has_anchors: false,
             cached: None,
             anchor_cache: array::from_fn(|_| None),
             regex_prefilter,
+            scanner_pattern_cache,
         }
     }
 
@@ -491,6 +554,8 @@ impl<T: Copy> RegExpSourceList<T> {
                 .collect::<Vec<_>>(),
             self.items.iter().map(|item| item.rule_id).collect(),
             self.regex_prefilter,
+            &self.scanner_pattern_cache,
+            self.items.iter().all(|item| !item.has_back_references),
         )?);
         self.cached = Some(Arc::clone(&compiled));
         Ok(compiled)
@@ -520,6 +585,8 @@ impl<T: Copy> RegExpSourceList<T> {
                 .collect(),
             self.items.iter().map(|item| item.rule_id).collect(),
             self.regex_prefilter,
+            &self.scanner_pattern_cache,
+            self.items.iter().all(|item| !item.has_back_references),
         )?);
         self.anchor_cache[cache_index] = Some(Arc::clone(&compiled));
         Ok(compiled)
@@ -546,6 +613,8 @@ impl<T: Copy> CompiledRule<T> {
         original_patterns: Vec<&str>,
         rules: Vec<T>,
         regex_prefilter: bool,
+        pattern_cache: &ScannerPatternCache,
+        share_patterns: bool,
     ) -> Result<Self, RegexError> {
         let compiled_reg_exps: Vec<_> = reg_exps
             .iter()
@@ -559,7 +628,9 @@ impl<T: Copy> CompiledRule<T> {
             .options(ONIG_OPTION_CAPTURE_GROUP)
             .syntax(ScannerSyntax::Oniguruma)
             .prefilter(regex_prefilter);
-        let scanner = Scanner::with_config(&scanner_reg_exps, &config).map_err(RegexError::new)?;
+        let scanner = pattern_cache
+            .compile(&scanner_reg_exps, &config, share_patterns)
+            .map_err(RegexError::new)?;
         let mut backtracking_warnings = Vec::new();
         for (index, warnings) in scanner.warnings().iter().enumerate() {
             for warning in warnings {
@@ -734,8 +805,8 @@ mod tests {
     use std::sync::Arc;
 
     use super::{
-        CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions, has_captures,
-        normalize_ferroni_pattern, replace_captures,
+        CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions,
+        ScannerPatternCache, has_captures, normalize_ferroni_pattern, replace_captures,
     };
 
     #[test]
@@ -763,6 +834,20 @@ mod tests {
 
         let unicode_escape = RegExpSource::new("\\é\\A", 2_u32);
         assert_eq!(unicode_escape.resolve_anchors(true, false), "\\é\\A");
+    }
+
+    #[test]
+    fn shared_pattern_cache_keeps_anchor_variants_distinct_and_reuses_them() {
+        let cache = ScannerPatternCache::new();
+        for _ in 0..2 {
+            for (allow_a, allow_g) in [(false, false), (false, true), (true, false), (true, true)] {
+                let mut sources = RegExpSourceList::with_pattern_cache(true, cache.clone());
+                sources.push(RegExpSource::new(r"\Afoo\Gbar", 1_u32));
+                sources.compile_ag(allow_a, allow_g).unwrap();
+            }
+        }
+
+        assert_eq!(cache.len(), 4);
     }
 
     #[test]

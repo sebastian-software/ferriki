@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::include_reference::{IncludeReference, parse_include};
 use crate::raw_grammar::{RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
+use crate::regexp::ScannerPatternCache;
 use crate::rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
     CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry,
@@ -129,12 +130,32 @@ pub(crate) struct RuleFactory<'a> {
 impl<'a> RuleFactory<'a> {
     #[must_use]
     pub(crate) fn new(grammar: &RawGrammar, grammar_provider: &'a dyn GrammarProvider) -> Self {
+        Self::with_registry(grammar, grammar_provider, RuleRegistry::new())
+    }
+
+    pub(crate) fn with_pattern_cache(
+        grammar: &RawGrammar,
+        grammar_provider: &'a dyn GrammarProvider,
+        scanner_pattern_cache: ScannerPatternCache,
+    ) -> Self {
+        Self::with_registry(
+            grammar,
+            grammar_provider,
+            RuleRegistry::with_pattern_cache(scanner_pattern_cache),
+        )
+    }
+
+    fn with_registry(
+        grammar: &RawGrammar,
+        grammar_provider: &'a dyn GrammarProvider,
+        registry: RuleRegistry,
+    ) -> Self {
         Self {
             grammar_provider,
             root_grammar: Arc::new(initialize_grammar(grammar, None)),
             included_grammars: BTreeMap::new(),
             compiled_rule_ids: HashMap::new(),
-            registry: RuleRegistry::new(),
+            registry,
         }
     }
 

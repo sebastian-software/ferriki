@@ -37,6 +37,14 @@ named `ferriki-textmate`.
 - `GrammarConfiguration::with_regex_prefilter` selects automatic prefiltering
   (default) or disables it before a grammar's scanners compile. This tuning
   extension preserves matching, capture, and TextMate traversal behavior.
+- Each `SyncRegistry` shares one Ferroni `ScannerPatternCache` across its
+  grammar and injection scanners. The cache is cleared when the registry
+  invalidates compiled grammars or is disposed; directly constructed grammars
+  use an isolated cache. Pattern lists containing TextMate backreferences
+  bypass the shared cache because Ferroni retains entries until `clear`, while
+  TextMate rebuilds those scanners when captured end or while patterns change.
+  The rule-local cache still retains at most one compiled scanner for each
+  anchor variant and clears those entries when a source changes.
 - `ferriki-textmate` owns raw grammar models, selector matching, themes, rules,
   grammar compilation, tokenization, and state stacks. The `ferriki` crate
   owns asset catalogs, runtime orchestration and rendering, and
@@ -119,3 +127,4 @@ this decision.
 - 2026-10-01: Documents the combined scope/binary output extension; removes duplicate scans without changing upstream grammar traversal (#172).
 - 2026-10-03: Clarifies that the dated #30 Node HAST/token test coverage does not override the current HTML-only Node API contract (#207).
 - 2026-10-10: Documents the prefilter configuration extension for one-shot highlighting with Ferroni 2.1.0.
+- 2026-10-10: Shares Ferroni's scanner pattern cache across each `SyncRegistry`, while keeping resolved backreference patterns out of its retaining cache (#230).
