@@ -200,6 +200,7 @@ try {
 
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto(new URL("/guide/getting-started/", origin).href, { waitUntil: "load" });
+  await page.evaluate(() => globalThis.document.fonts.ready);
   const landscapeSummary = page.locator(selectors.summary);
   const flyout = page.locator(selectors.flyout);
   const compatibility = flyout.getByRole("link", { name: "Compatibility", exact: true });
@@ -232,7 +233,7 @@ try {
       compatibilityBounds.y + compatibilityBounds.height <= flyoutBounds.y + flyoutBounds.height &&
       compatibilityBounds.y >= 0 &&
       compatibilityBounds.y + compatibilityBounds.height <= 390,
-    "Keyboard focus did not bring Compatibility fully into the visible landscape menu",
+    `Keyboard focus did not bring Compatibility fully into the visible landscape menu: ${JSON.stringify({ flyoutBounds, compatibilityBounds })}`,
   );
   await page.keyboard.press("Enter");
   await page.waitForURL((url) => url.pathname.startsWith("/evidence/compatibility"));
