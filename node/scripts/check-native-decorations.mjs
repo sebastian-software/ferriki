@@ -340,7 +340,13 @@ if (!capture) {
   assert.deepEqual(cyclic.mutations, []);
   const invalidHighlighter = createHighlighterCoreSync({});
   try {
-    for (const start of [Number.NaN, Number.POSITIVE_INFINITY, 0.5])
+    for (const start of [
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      0.5,
+      { line: 0, character: "x" },
+      { line: "x", character: 0 },
+    ])
       assert.throws(
         () =>
           invalidHighlighter.codeToHtml("a", {

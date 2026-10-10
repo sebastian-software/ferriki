@@ -232,7 +232,7 @@ function decorationNative(call) {
   try {
     return call((decorationBinding ??= loadFerrikiNativeBinding()));
   } catch (error) {
-    if (["ERR_USAGE", "InvalidArg"].includes(error?.code))
+    if (["ERR_USAGE", "InvalidArg", "NumberExpected"].includes(error?.code))
       throw new ShikiError(error.message, "ERR_USAGE", { cause: error });
     throw error;
   }
