@@ -1,0 +1,15 @@
+---
+interface Props { title: string; items: readonly { name: string; count: number }[] }
+const { title, items } = Astro.props;
+const summary = `Items: ${items.map(({ name, count }) => `${name} (${count})`).join(", ")}`;
+---
+<section aria-label={title}>
+  <h1>{title}</h1>
+  <p>{summary}</p>
+</section>
+<style>
+  section { display: grid; gap: 1rem; }
+</style>
+<script>
+  document.querySelector("section")?.classList.add("ready");
+</script>

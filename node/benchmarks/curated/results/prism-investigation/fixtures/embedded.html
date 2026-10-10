@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <style>
+    .notice { color: #2563eb; }
+    @media (width < 40rem) { .notice { color: #dc2626; } }
+  </style>
+  <body>
+    <p class="notice" data-count="2">München &amp; café</p>
+    <script type="module">
+      const rows = [{ name: "café", count: 2 }];
+      const label = `Orders: ${rows.map(({ name, count }) => `${name} (${count})`).join(", ")}`;
+      document.querySelector(".notice").textContent = label;
+      console.log(/Orders:\s/.test(label));
+    </script>
+  </body>
+</html>
