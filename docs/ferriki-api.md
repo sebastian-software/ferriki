@@ -272,7 +272,7 @@ number; `span` receives a zero-based token column, not a character offset.
 | `preprocess` | `options` and a mutable `meta` object. The source argument is the current text after earlier preprocess hooks. |
 | `tokens` | The same `options` and `meta`, plus `source` containing the preprocessed text. Tokens have not yet been split at decoration boundaries. |
 | `span`, `line` | The render context adds `root`, split `tokens`, `lines`, `structure`, and `addClassToHast`. `lines` contains only completed lines; `pre` and `code` are still `undefined`. The root is still being assembled. |
-| `code`, `pre`, `root` | `code` is available. `pre` is available only for classic structure; inline output skips the `pre` hook. The getters follow replacement code/pre nodes. `root` receives the decorated tree before final scope nesting and CSS extraction. |
+| `code`, `pre`, `root` | `code` is available. `pre` is available only for classic structure; inline output skips the `pre` hook. The getters follow replacement code/pre nodes. For inline structure, the code wrapper is detached: its properties and replacement do not enter the output, although mutations to shared line children do. `root` receives the decorated tree before final scope nesting and CSS extraction. |
 | `postprocess` | `options` and a new `meta` object shared among postprocess hooks for that call. It does not share the earlier rendering stages' `meta` or expose the render tree. |
 
 Token and HAST hooks may mutate their argument and return `undefined`, or
