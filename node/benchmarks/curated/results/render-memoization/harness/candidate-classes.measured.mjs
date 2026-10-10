@@ -17,7 +17,6 @@ function scopePrefixes(scope, prefix) {
 
 // One cache per render: grammar scopes repeat across tokens and lines. Cache
 // only derived classes; paths retain their original order and repeated scopes.
-// Measurements and exact-output checks: benchmarks/curated/results/render-memoization.
 export function createScopeClassCache() {
   const cache = new Map();
   return (scope) => {

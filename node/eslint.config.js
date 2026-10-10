@@ -20,6 +20,7 @@ export default antfu(
       // Measurement-time source snapshots must remain byte-identical to the
       // scripts that produced their retained output.
       "benchmarks/curated/results/prism-investigation/**/harness/*.measured.mjs",
+      "benchmarks/curated/results/render-memoization/harness/*.measured.mjs",
     ],
   },
   {

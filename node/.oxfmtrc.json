@@ -13,6 +13,8 @@
     "benchmarks/curated/results/prism-investigation/profiles/**/*.json",
     "benchmarks/curated/results/prism-investigation/profiles/**/*.txt",
     "benchmarks/curated/results/prism-investigation/profiles/**/*.measured.mjs",
-    "benchmarks/curated/results/prism-investigation/harness/**/*.measured.mjs"
+    "benchmarks/curated/results/prism-investigation/harness/**/*.measured.mjs",
+    "benchmarks/curated/results/render-memoization/**/*.json",
+    "benchmarks/curated/results/render-memoization/harness/*.measured.mjs"
   ]
 }

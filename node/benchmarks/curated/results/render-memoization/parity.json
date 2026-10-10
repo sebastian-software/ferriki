@@ -1,0 +1,5 @@
+{
+  "scenarios": 17,
+  "exactHtmlAndCss": true,
+  "coverage": "scope order/repetition/Unicode escaping, preexisting class arrays/strings, style property order, different root styles across calls, all theme defaults, classic/inline structure, decorations, nested renders, empty/plain/CRLF source"
+}

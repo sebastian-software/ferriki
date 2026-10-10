@@ -15,30 +15,11 @@ function scopePrefixes(scope, prefix) {
   return parts.map((_, index) => `${prefix}-${scopeClass(parts.slice(0, index + 1).join("."))}`);
 }
 
-// One cache per render: grammar scopes repeat across tokens and lines. Cache
-// only derived classes; paths retain their original order and repeated scopes.
-// Measurements and exact-output checks: benchmarks/curated/results/render-memoization.
-export function createScopeClassCache() {
-  const cache = new Map();
-  return (scope) => {
-    let classes = cache.get(scope);
-    if (!classes) {
-      classes = {
-        token: scopePrefixes(scope, "tok"),
-        leaf: scopePrefixes(scope, "leaf"),
-        wrapper: [...scopePrefixes(scope, "scope"), `exact-${scopeClass(scope)}`].join(" "),
-      };
-      cache.set(scope, classes);
-    }
-    return classes;
-  };
-}
-
-export function addScopeClasses(span, scopes, scopeClasses) {
+export function addScopeClasses(span, scopes) {
   const classes = [
     "token",
-    ...scopes.flatMap((scope) => scopeClasses(scope).token),
-    ...(scopes.length ? scopeClasses(scopes.at(-1)).leaf : []),
+    ...scopes.flatMap((scope) => scopePrefixes(scope, "tok")),
+    ...(scopes.length ? scopePrefixes(scopes.at(-1), "leaf") : []),
   ];
   const current = span.properties.class;
   span.properties.class = [
@@ -55,7 +36,7 @@ export function addScopeClasses(span, scopes, scopeClasses) {
 
 // Decorators may introduce containers between tokens. Nest within those containers
 // so their exact text ranges remain intact; resolved style classes do not depend on ancestry.
-export function nestScopes(node, paths, scopeClasses) {
+export function nestScopes(node, paths) {
   if (!node.children) return;
   const children = [];
   const parents = [children];
@@ -65,7 +46,7 @@ export function nestScopes(node, paths, scopeClasses) {
     if (!scopes) {
       open = [];
       parents.length = 1;
-      nestScopes(child, paths, scopeClasses);
+      nestScopes(child, paths);
       children.push(child);
       continue;
     }
@@ -77,7 +58,7 @@ export function nestScopes(node, paths, scopeClasses) {
         type: "element",
         tagName: "span",
         properties: {
-          class: scopeClasses(scope).wrapper,
+          class: [...scopePrefixes(scope, "scope"), `exact-${scopeClass(scope)}`].join(" "),
         },
         children: [],
       };
@@ -102,21 +83,16 @@ function styleText(style) {
 // scope selectors can override an existing theme without !important.
 export function extractClassStyles(tree) {
   const rules = new Map();
-  const names = new Map();
   function visit(node) {
     if (node.type === "element" && node.properties?.style) {
       const style = styleText(node.properties.style);
-      let name = names.get(style);
-      if (!name) {
-        name = `ferriki-style-${createHash("sha256").update(style).digest("hex")}`;
-        names.set(style, name);
-        rules.set(name, `:where(.${name}){${style}}`);
-      }
+      const name = `ferriki-style-${createHash("sha256").update(style).digest("hex")}`;
       const current = node.properties.class;
       node.properties.class = [Array.isArray(current) ? current.join(" ") : current, name]
         .filter(Boolean)
         .join(" ");
       delete node.properties.style;
+      rules.set(name, `:where(.${name}){${style}}`);
     }
     for (const child of node.children || []) visit(child);
   }
