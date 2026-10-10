@@ -19,7 +19,12 @@ crate versions in the separate `fuzz/Cargo.lock`; registry dependencies and
 the private fuzz package version stay pinned. Merging the release pull request
 tags `v<version>` and `publish.yml` publishes the npm packages and the crates
 `ferriki-textmate`, `ferriki-asset-gen` and `ferriki` from that release. Product releases use
-Trusted Publishing in both registries.
+Trusted Publishing in both registries. Before either publisher starts, the
+workflow resolves the tag to one commit, checks that the manifest and package
+versions agree, and requires a successful `CI` push run on `main` for that
+exact SHA. Its core compatibility, Rust, Node, and native smoke jobs must be
+present and successful. Failed, canceled, missing, or timed-out CI blocks
+publication. A normal push without a release skips the gate and builds.
 
 Before 1.0, `bump-minor-pre-major` keeps a breaking change on a minor bump
 (`0.4.0` → `0.5.0`) instead of cutting `1.0.0` implicitly. The 1.0 release is a
@@ -99,7 +104,9 @@ part of release verification.
 
 ## Before dispatch
 
-- [ ] The release PR is merged to `main` and the normal CI matrix is green.
+- [ ] The release PR is merged to `main` and the normal CI matrix is green for
+      the merge commit that will become the release tag. PR checks on a
+      different SHA do not qualify.
 - [ ] The package version, changelog, release-please manifest, and intended npm
       dist-tag agree.
 - [ ] The generated release PR updates the main package, every platform
@@ -121,9 +128,16 @@ part of release verification.
 
 ## Release-candidate run
 
-- [ ] Run the normal publish workflow first; use `force-publish` only for an
-      intentional backfill of the manifest version. Use the `next` dist-tag for
-      a release candidate and record the manual go/no-go decision.
+- [ ] Run the normal publish workflow first. For an intentional retry or
+      backfill of a release created with this gate, dispatch the workflow on
+      its exact tag and pass the same tag as `release-tag`, for example
+      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=next`.
+      The tag, workflow event SHA, manifest, packages, and successful `main`
+      CI run must all identify the same commit. A dispatch on a later `main`
+      commit is rejected even when it checks out an older tag. Use the `next`
+      dist-tag for a release candidate and record the manual go/no-go decision.
+- [ ] Confirm the `Verify exact release source` job reports the release tag,
+      commit SHA, and successful CI run before either registry publisher starts.
 - [ ] Confirm every documented target build completes and every platform
       package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from

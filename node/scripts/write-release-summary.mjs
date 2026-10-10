@@ -44,6 +44,7 @@ export function formatReleaseSummary(env, addonSizes = []) {
   const intended = releasesCreated || forcePublish;
   const releaseResult = env.RELEASE_RESULT ?? "unknown";
   const buildResult = env.BUILD_RESULT ?? "unknown";
+  const sourceResult = env.SOURCE_RESULT ?? "unknown";
   const publishResult = env.PUBLISH_RESULT ?? "unknown";
   const verifyResult = env.VERIFY_RESULT ?? "unknown";
   const releaseFailed = releaseResult !== "success";
@@ -51,6 +52,7 @@ export function formatReleaseSummary(env, addonSizes = []) {
     !intended && !releaseFailed
       ? "NO_RELEASE"
       : releaseResult === "success" &&
+          sourceResult === "success" &&
           buildResult === "success" &&
           publishResult === "success" &&
           verifyResult === "success"
@@ -62,6 +64,7 @@ export function formatReleaseSummary(env, addonSizes = []) {
     "",
     `- npm dist-tag: \`${env.NPM_DIST_TAG ?? "latest"}\``,
     `- release-please: \`${releaseResult}\` (releases created: \`${releasesCreated}\`)`,
+    `- exact release source and CI gate: \`${sourceResult}\``,
     `- native build matrix: \`${buildResult}\``,
     `- npm publication: \`${publishResult}\``,
     `- public registry/install verification: \`${verifyResult}\``,
