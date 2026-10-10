@@ -4,6 +4,7 @@ export const expectedPages = [
   "guide/build-time-macros/index.html",
   "guide/migrating-from-shiki/index.html",
   "guide/ferriki-and-syntect/index.html",
+  "guide/ferriki-vs-prism/index.html",
   "guide/languages-and-themes/index.html",
   "guide/class-highlighting/index.html",
   "guide/api/index.html",

@@ -14,7 +14,8 @@ use crate::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{
-    CaptureIndex, CompiledRule, RegExpSource, RegExpSourceList, has_captures, replace_captures,
+    CaptureIndex, CompiledRule, RegExpSource, RegExpSourceList, ScannerPatternCache, has_captures,
+    replace_captures,
 };
 
 /// The scanner identity for a compiled grammar pattern.
@@ -403,7 +404,10 @@ impl BeginWhileRule {
             .lock()
             .expect("compiled while-pattern cache lock poisoned");
         let sources = cached.get_or_insert_with(|| {
-            let mut sources = RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
+            let mut sources = RegExpSourceList::with_pattern_cache(
+                registry.regex_prefilter,
+                registry.scanner_pattern_cache.clone(),
+            );
             sources.push(self.while_source.clone());
             sources
         });
@@ -548,8 +552,10 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 let sources = cached.get_or_insert_with(|| {
-                    let mut sources =
-                        RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
+                    let mut sources = RegExpSourceList::with_pattern_cache(
+                        registry.regex_prefilter,
+                        registry.scanner_pattern_cache.clone(),
+                    );
                     sources.push(rule.match_source.clone());
                     sources
                 });
@@ -568,8 +574,10 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 let sources = cached.get_or_insert_with(|| {
-                    let mut sources =
-                        RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
+                    let mut sources = RegExpSourceList::with_pattern_cache(
+                        registry.regex_prefilter,
+                        registry.scanner_pattern_cache.clone(),
+                    );
                     collect_pattern_ids(registry, &rule.patterns, &mut sources);
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
@@ -671,6 +679,7 @@ pub(crate) struct RuleRegistry {
     rules: Vec<Option<Rule>>,
     backtracking_warnings: Mutex<BTreeMap<BacktrackingWarningKey, BacktrackingWarning>>,
     pub(crate) regex_prefilter: bool,
+    pub(crate) scanner_pattern_cache: ScannerPatternCache,
 }
 
 impl Default for RuleRegistry {
@@ -679,6 +688,7 @@ impl Default for RuleRegistry {
             rules: Vec::new(),
             backtracking_warnings: Mutex::default(),
             regex_prefilter: true,
+            scanner_pattern_cache: ScannerPatternCache::new(),
         }
     }
 }
@@ -695,6 +705,13 @@ impl RuleRegistry {
     #[must_use]
     pub(crate) fn new() -> Self {
         Self::default()
+    }
+
+    pub(crate) fn with_pattern_cache(scanner_pattern_cache: ScannerPatternCache) -> Self {
+        Self {
+            scanner_pattern_cache,
+            ..Self::default()
+        }
     }
 
     #[allow(
@@ -840,7 +857,10 @@ fn compile_patterns(
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
     let mut cached = cache.lock().expect("compiled pattern cache lock poisoned");
     let sources = cached.get_or_insert_with(|| {
-        let mut sources = RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
+        let mut sources = RegExpSourceList::with_pattern_cache(
+            registry.regex_prefilter,
+            registry.scanner_pattern_cache.clone(),
+        );
         if let Some(patterns) = patterns {
             collect_pattern_ids(registry, patterns, &mut sources);
         }

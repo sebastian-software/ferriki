@@ -202,7 +202,12 @@ export function CoverageSection() {
       id="coverage"
       title="What it covers"
       intro="Ferriki is deliberately narrow: highlighting to HTML and CSS, in Node.js, in Rust and in the Vite build."
-      note={<Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>}
+      note={
+        <>
+          <Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>{" "}
+          <Link to="/guide/ferriki-vs-prism">See Ferriki and Prism on the same code.</Link>
+        </>
+      }
     >
       <Ledger entries={coverage} />
     </Section>

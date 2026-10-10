@@ -57,6 +57,51 @@ try {
     }
   }
 
+  const prismSamples = JSON.parse(
+    await readFile(new URL("../app/data/prism-comparison.json", import.meta.url), "utf8"),
+  );
+  await page.goto(new URL("/guide/ferriki-vs-prism/", origin).href, { waitUntil: "load" });
+  for (const entry of prismSamples.samples) {
+    await page.getByLabel("Choose an example").selectOption(entry.id);
+    const outputs = page.locator(".prism-comparison-grid pre");
+    assert.equal(await outputs.count(), 2, `${entry.id}: missing comparison panel`);
+    assert.equal(
+      await outputs.nth(0).textContent(),
+      entry.source,
+      `${entry.id}: Ferriki source changed`,
+    );
+    assert.equal(
+      await outputs.nth(1).textContent(),
+      entry.source,
+      `${entry.id}: Prism source changed`,
+    );
+    if (entry.id === "go-handler") {
+      assert.match(
+        await page.locator(".prism-classifications").textContent(),
+        /entity\.name\.type\.go/,
+      );
+    }
+    await verifyAccessibility(page, "guide/ferriki-vs-prism/index.html", { name: entry.id });
+    if (entry.prismHtml === null) {
+      assert.match(
+        await page.locator(".prism-rendered figcaption").textContent(),
+        /grammar unavailable/,
+      );
+    }
+  }
+  await page.getByLabel("Choose an example").selectOption("typescript-parameters");
+  assert.match(
+    await page.locator(".prism-classifications").textContent(),
+    /variable\.parameter\.ts/,
+  );
+  assert.match(
+    await page.locator(".prism-classifications").textContent(),
+    /no token classification/,
+  );
+  console.log(
+    `Verified all ${prismSamples.samples.length} comparison choices, unchanged source, scope evidence, and explicit unsupported state.`,
+  );
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(new URL("/guide/getting-started/", origin).href, { waitUntil: "load" });
   const summary = page.locator(selectors.summary);

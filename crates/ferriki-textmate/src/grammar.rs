@@ -17,7 +17,7 @@ use crate::line_output::{
 };
 use crate::matcher::MatcherPriority;
 use crate::raw_grammar::{RawGrammar, RuleId};
-use crate::regexp::OnigString;
+use crate::regexp::{OnigString, ScannerPatternCache};
 use crate::rule::RuleRegistry;
 use crate::rule_factory::{GrammarProvider, RuleFactory};
 use crate::state_stack::StateStack;
@@ -204,11 +204,11 @@ impl Grammar {
         theme: Theme,
         configuration: GrammarConfiguration,
     ) -> Self {
-        Self::with_theme_provider(
-            raw_grammar,
+        Self::with_factory(
             grammar_provider,
             ThemeProvider::new(theme),
             configuration,
+            RuleFactory::new(raw_grammar, grammar_provider),
         )
     }
 
@@ -217,8 +217,22 @@ impl Grammar {
         grammar_provider: &dyn GrammarProvider,
         theme_provider: ThemeProvider,
         configuration: GrammarConfiguration,
+        scanner_pattern_cache: ScannerPatternCache,
     ) -> Self {
-        let mut factory = RuleFactory::new(raw_grammar, grammar_provider);
+        Self::with_factory(
+            grammar_provider,
+            theme_provider,
+            configuration,
+            RuleFactory::with_pattern_cache(raw_grammar, grammar_provider, scanner_pattern_cache),
+        )
+    }
+
+    fn with_factory(
+        grammar_provider: &dyn GrammarProvider,
+        theme_provider: ThemeProvider,
+        configuration: GrammarConfiguration,
+        mut factory: RuleFactory<'_>,
+    ) -> Self {
         let root_id = factory.compile_root();
         let root_grammar = Arc::clone(factory.root_grammar());
         let mut injections = Vec::new();

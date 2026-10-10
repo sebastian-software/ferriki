@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "theme": "github-dark",
+  "cases": [
+    {
+      "id": "typescript-parameters",
+      "file": "fixtures/parameters.ts",
+      "language": "typescript",
+      "embedded": [],
+      "prism": "typescript",
+      "syntaxCheck": "typescript",
+      "question": "Are the function parameter binding, its read, and the parameter and return type annotations visibly distinct?"
+    },
+    {
+      "id": "typescript-templates",
+      "file": "fixtures/templates.ts",
+      "language": "typescript",
+      "embedded": [],
+      "prism": "typescript",
+      "syntaxCheck": "typescript",
+      "question": "Does interpolation preserve expression boundaries across nested templates, and does the multiline comment remain a comment?"
+    },
+    {
+      "id": "tsx-nested-expressions",
+      "file": "fixtures/nested.tsx",
+      "language": "tsx",
+      "embedded": [],
+      "prism": "tsx",
+      "syntaxCheck": "tsx",
+      "question": "Are TypeScript annotations, JSX tags, attributes, and nested JavaScript expressions separated?"
+    },
+    {
+      "id": "html-embedded-languages",
+      "file": "fixtures/embedded.html",
+      "language": "html",
+      "embedded": ["javascript", "css"],
+      "prism": "markup",
+      "prismDependencies": ["javascript", "css"],
+      "question": "Are HTML, CSS, and JavaScript regions recognized inside one source file, including nested templates and a regular expression?"
+    },
+    {
+      "id": "astro-component",
+      "file": "fixtures/component.astro",
+      "language": "astro",
+      "embedded": ["typescript", "css", "javascript"],
+      "prism": null,
+      "prismUnsupported": "Prism 1.30.0 has no Astro component; no markup, JavaScript, or Markdown substitution is used.",
+      "question": "Does the TextMate grammar distinguish frontmatter TypeScript, template expressions, CSS, and browser JavaScript?"
+    },
+    {
+      "id": "vue-language-injection",
+      "file": "fixtures/injection.vue",
+      "language": "vue",
+      "embedded": ["typescript", "scss", "javascript", "html"],
+      "prism": null,
+      "prismUnsupported": "Prism 1.30.0 has no Vue single-file-component component; no markup or TypeScript substitution is used.",
+      "question": "Do the Vue grammar and injections route script, template, and SCSS regions to their embedded grammars?"
+    }
+  ]
+}

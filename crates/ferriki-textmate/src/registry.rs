@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use crate::grammar::{Grammar, GrammarConfiguration, ThemeProvider};
 use crate::raw_grammar::RawGrammar;
+use crate::regexp::ScannerPatternCache;
 use crate::rule_factory::{GrammarProvider, GrammarStore};
 use crate::theme::{RawTheme, Theme, ThemeError};
 
@@ -18,6 +19,7 @@ pub struct SyncRegistry {
     raw_grammars: GrammarStore,
     theme: ThemeProvider,
     color_map: Vec<String>,
+    scanner_pattern_cache: ScannerPatternCache,
 }
 
 impl SyncRegistry {
@@ -31,11 +33,13 @@ impl SyncRegistry {
             raw_grammars: GrammarStore::new(),
             color_map: resolved_theme.get_color_map(),
             theme: ThemeProvider::new(resolved_theme),
+            scanner_pattern_cache: ScannerPatternCache::new(),
         })
     }
 
     pub fn dispose(&mut self) {
         self.grammars.clear();
+        self.scanner_pattern_cache.clear();
         self.raw_grammars.clear();
         self.theme.set_theme(
             Theme::create_from_raw_theme(None, None)
@@ -83,6 +87,7 @@ impl SyncRegistry {
         // the equivalent safe behavior when Rust callers replace a grammar or
         // update a target's external injection list later.
         self.grammars.clear();
+        self.scanner_pattern_cache.clear();
     }
 
     #[must_use]
@@ -111,6 +116,7 @@ impl SyncRegistry {
             &self.raw_grammars,
             self.theme.clone(),
             configuration,
+            self.scanner_pattern_cache.clone(),
         ));
         self.grammars
             .insert(scope_name.to_owned(), Rc::clone(&grammar));
@@ -332,8 +338,14 @@ mod tests {
             before.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
             ["source.test", "normal.test"]
         );
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
 
         registry.set_injections("source.test", vec!["source.inject".into()]);
+        assert_eq!(registry.scanner_pattern_cache.len(), 0);
+        assert_eq!(
+            before.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
+            ["source.test", "normal.test"]
+        );
 
         let after = registry
             .grammar_for_scope_name("source.test", GrammarConfiguration::default())
@@ -344,6 +356,188 @@ mod tests {
             after.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
             ["source.test", "injected.test"]
         );
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
+    }
+
+    #[test]
+    fn shares_static_patterns_across_grammars_and_keeps_prefilter_settings_separate() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        for scope_name in ["source.first", "source.second", "source.unfiltered"] {
+            registry.add_grammar(
+                grammar(&format!(
+                    r#"{{
+                        "scopeName": "{scope_name}",
+                        "patterns": [{{ "match": "x", "name": "keyword.test" }}]
+                    }}"#
+                )),
+                Vec::new(),
+            );
+        }
+
+        let first = registry
+            .grammar_for_scope_name("source.first", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        let first_tokens = first.tokenize_line("x", None, 0).unwrap().tokens;
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
+
+        let second = registry
+            .grammar_for_scope_name("source.second", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        let second_tokens = second.tokenize_line("x", None, 0).unwrap().tokens;
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
+
+        let unfiltered = registry
+            .grammar_for_scope_name(
+                "source.unfiltered",
+                GrammarConfiguration::default().with_regex_prefilter(false),
+            )
+            .unwrap()
+            .unwrap();
+        let unfiltered_tokens = unfiltered.tokenize_line("x", None, 0).unwrap().tokens;
+        assert_eq!(registry.scanner_pattern_cache.len(), 2);
+
+        assert_eq!(first_tokens[0].start_index, second_tokens[0].start_index);
+        assert_eq!(first_tokens[0].end_index, second_tokens[0].end_index);
+        assert_eq!(
+            first_tokens[0].scopes.last(),
+            second_tokens[0].scopes.last()
+        );
+        assert_eq!(
+            first_tokens[0].start_index,
+            unfiltered_tokens[0].start_index
+        );
+        assert_eq!(first_tokens[0].end_index, unfiltered_tokens[0].end_index);
+        assert_eq!(
+            first_tokens[0].scopes.last(),
+            unfiltered_tokens[0].scopes.last()
+        );
+    }
+
+    #[test]
+    fn shared_patterns_keep_backtracking_warnings_on_each_grammar() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        for scope_name in ["source.first", "source.second"] {
+            registry.add_grammar(
+                grammar(&format!(
+                    r#"{{
+                        "scopeName": "{scope_name}",
+                        "patterns": [{{
+                            "match": "([0-9]+(_?))+(\\.)([0-9]+)",
+                            "name": "number.risky"
+                        }}]
+                    }}"#
+                )),
+                Vec::new(),
+            );
+        }
+
+        let first = registry
+            .grammar_for_scope_name("source.first", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        first.tokenize_line("123.45", None, 0).unwrap();
+        let first_warnings = first.backtracking_warnings();
+
+        let second = registry
+            .grammar_for_scope_name("source.second", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        second.tokenize_line("123.45", None, 0).unwrap();
+        let second_warnings = second.backtracking_warnings();
+
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
+        assert_eq!(first_warnings.len(), 1);
+        assert_eq!(second_warnings.len(), 1);
+        assert_eq!(first_warnings[0].pattern, second_warnings[0].pattern);
+        assert_eq!(first_warnings[0].risk, second_warnings[0].risk);
+        assert_eq!(first_warnings[0].message, second_warnings[0].message);
+    }
+
+    #[test]
+    fn dynamic_end_patterns_do_not_accumulate_in_registry_cache() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.dynamic",
+                    "patterns": [{
+                        "begin": "(<[A-Z0-9]+>)",
+                        "end": "\\1",
+                        "name": "string.dynamic"
+                    }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+        let grammar = registry
+            .grammar_for_scope_name("source.dynamic", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        for index in 0..64 {
+            let tag = format!("DOC{index}");
+            let line = format!("<{tag}>body<{tag}>");
+            let result = grammar.tokenize_line(&line, None, 0).unwrap();
+            assert_eq!(
+                result.rule_stack.depth, 1,
+                "dynamic end did not close {tag}"
+            );
+            assert_eq!(
+                result.tokens.last().unwrap().scopes,
+                ["source.dynamic", "string.dynamic"],
+                "dynamic end output changed for {tag}"
+            );
+            assert_eq!(registry.scanner_pattern_cache.len(), 1);
+        }
+    }
+
+    #[test]
+    fn dynamic_while_patterns_do_not_accumulate_in_registry_cache() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.dynamic-while",
+                    "patterns": [{
+                        "begin": "(<[A-Z0-9]+>)",
+                        "while": "\\1",
+                        "name": "string.dynamic"
+                    }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+        let grammar = registry
+            .grammar_for_scope_name("source.dynamic-while", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        for index in 0..64 {
+            let tag = format!("DOC{index}");
+            let opening = format!("<{tag}>body");
+            let first = grammar.tokenize_line(&opening, None, 0).unwrap();
+            assert_eq!(first.rule_stack.depth, 2);
+
+            let continued = format!("<{tag}>continued");
+            let second = grammar
+                .tokenize_line(&continued, Some(first.rule_stack), 0)
+                .unwrap();
+            assert_eq!(
+                second.rule_stack.depth, 2,
+                "dynamic while did not match the captured tag {tag}"
+            );
+
+            let mismatch = grammar
+                .tokenize_line("plain close", Some(second.rule_stack), 0)
+                .unwrap();
+            assert_eq!(
+                mismatch.rule_stack.depth, 1,
+                "dynamic while retained the stack for a different tag {tag}"
+            );
+            assert_eq!(registry.scanner_pattern_cache.len(), 1);
+        }
     }
 
     #[test]
@@ -358,9 +552,12 @@ mod tests {
             ),
             vec!["source.inject".into()],
         );
-        let _ = registry
+        let grammar = registry
             .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
             .unwrap();
+        grammar.tokenize_line("x", None, 0).unwrap();
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
         assert!(registry.lookup("source.test").is_some());
         assert_eq!(registry.injections("source.test"), ["source.inject"]);
 
@@ -368,6 +565,11 @@ mod tests {
 
         assert!(registry.lookup("source.test").is_none());
         assert!(registry.injections("source.test").is_empty());
+        assert_eq!(registry.scanner_pattern_cache.len(), 0);
+        assert_eq!(
+            grammar.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
+            ["source.test", "normal.test"]
+        );
         assert!(
             registry
                 .grammar_for_scope_name("source.test", GrammarConfiguration::default())

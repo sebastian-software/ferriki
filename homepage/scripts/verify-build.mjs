@@ -126,7 +126,13 @@ const footprintPage = await read("evidence/footprint/index.html");
 const syntectGuide = await read("guide/ferriki-and-syntect/index.html");
 const rustGuide = await read("rust/getting-started/index.html");
 
+const prismComparison = await read("guide/ferriki-vs-prism/index.html");
 const required = [
+  [prismComparison, "Give your code examples the detail of your editor"],
+  [prismComparison, "prism-example"],
+  [prismComparison, "variable.parameter.ts"],
+  [prismComparison, "Plain text"],
+  [prismComparison, "prism-comparison-grid"],
   [homepage, `v${version}`],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],

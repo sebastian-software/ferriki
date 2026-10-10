@@ -1,0 +1,799 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-10-10T12:05:40.238Z",
+  "revision": {
+    "commit": "3fefa7217026bcc63ffaadf7a778ffe06ba8713b",
+    "timingRuntimeCommit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+    "profileRuntimeCommit": "3fefa7217026bcc63ffaadf7a778ffe06ba8713b",
+    "status": "profile build and captures were made after the ordinary timing reports"
+  },
+  "machine": {
+    "platform": "darwin-arm64",
+    "node": "v24.21.0",
+    "cpu": "Apple M1 Ultra",
+    "os": "Darwin 27.0.0"
+  },
+  "timingBinary": "3f10a1942a185db64423013dc034165deba6bea02776c332117e5c987d7c96ae",
+  "profileBinary": "52a9f7b044af400bd27c67e41011b7038471470db1cdbace1532e78ff82bf190",
+  "profileAddonPath": "/WORKTREE/ferriki/node/platforms/darwin-arm64/ferriki.node",
+  "profileBuild": {
+    "builtAt": "2026-10-10T11:59:29.011Z",
+    "binarySha256": "52a9f7b044af400bd27c67e41011b7038471470db1cdbace1532e78ff82bf190",
+    "ferriki": {
+      "commit": "3fefa7217026bcc63ffaadf7a778ffe06ba8713b",
+      "status": "M node/package.json\n M node/scripts/bench-prism-output-modes.mjs\n M node/scripts/capture-prism-quality.mjs\n M node/scripts/profile-tiobe.mjs\n?? node/benchmarks/curated/results/prism-investigation/quality.json\n?? node/benchmarks/curated/results/prism-investigation/timings/\n?? node/scripts/capture-prism-profiles.mjs"
+    },
+    "rustSourceSha256": "71bfa7cef9d09f00d76ce8fee9d845da3b6320d21cbc923bf5c3622bc75d683f",
+    "ferroni": {
+      "version": "2.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "$CARGO_HOME/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter"
+      ]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/WORKTREE/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {
+      "CARGO_PROFILE_RELEASE_STRIP": "none",
+      "CARGO_PROFILE_RELEASE_DEBUG": "line-tables-only"
+    },
+    "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33"
+  },
+  "profileHarness": {
+    "captureScriptSha256": "e88f27d904f05436ba4983e8be9b08d81c397717092a04a250c1ff967e682d1d",
+    "workerSha256": "9fb0a132667b324999bb89ef735a065020c79c041297d2c150689c9a7af4217d",
+    "measuredOutputModeHarnessSha256": "b8a3115a92ef6efe3bce758f5bf12e359d57c87306648efb872cf5343020ed47",
+    "formattedOutputModeHarnessSha256": "e31a65c007bbee5fa664cc5c94621948fb855ad69677de1ca7a735ac55154bd6",
+    "formattedOutputModeHarnessChange": "The working harness was Oxfmt-formatted after timing; the archived pre-format source matches the recorded measured hash.",
+    "corpusManifestSha256": "4c0c2f8bfa535d7f6fc3397a0585e3e6d66c1509d5341d7022ced20303cd175e"
+  },
+  "identityGuard": {
+    "checks": "Before and after each profile worker, and across the full capture set, hash the loaded addon, build receipt, release assets, harnesses, dependency manifests, source fixtures, and timing receipts.",
+    "inputs": [
+      {
+        "path": "ode/benchmarks/curated/fixtures/Orders.astro",
+        "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62"
+      },
+      {
+        "path": "ode/benchmarks/curated/fixtures/Orders.tsx",
+        "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5"
+      },
+      {
+        "path": "ode/benchmarks/curated/fixtures/orders.cpp",
+        "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f"
+      },
+      {
+        "path": "ode/benchmarks/curated/fixtures/orders.html",
+        "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653"
+      },
+      {
+        "path": "ode/benchmarks/curated/fixtures/orders.json",
+        "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c"
+      },
+      {
+        "path": "ode/benchmarks/curated/fixtures/orders.ts",
+        "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9"
+      },
+      {
+        "path": "ode/benchmarks/curated/manifest.json",
+        "sha256": "4c0c2f8bfa535d7f6fc3397a0585e3e6d66c1509d5341d7022ced20303cd175e"
+      },
+      {
+        "path": "ode/benchmarks/curated/results/prism-investigation/timings/curated-run-01.json",
+        "sha256": "04795d89e193e4363393c744a8457225b92853e32eabedd2df3607288ce6db23"
+      },
+      {
+        "path": "ode/benchmarks/curated/results/prism-investigation/timings/curated-run-02.json",
+        "sha256": "a7179a7bd03fc72cded58697e10c542739b57a019bd8b079fec7dba6a3959cc6"
+      },
+      {
+        "path": "ode/benchmarks/curated/results/prism-investigation/timings/harness/bench-prism-output-modes.measured.mjs",
+        "sha256": "b8a3115a92ef6efe3bce758f5bf12e359d57c87306648efb872cf5343020ed47"
+      },
+      {
+        "path": "ode/benchmarks/curated/results/prism-investigation/timings/ordinary-build-receipt.json",
+        "sha256": "11fdb7bff86a45241e3661c8ec03e870fca1fdc594adceb8c41f49a04790c275"
+      },
+      {
+        "path": "ode/benchmarks/curated/results/prism-investigation/timings/output-modes.json",
+        "sha256": "2bda07e164539c95dac1148f3d06d47846c49a5eb23c7a29e7a3c707b5dbe040"
+      },
+      {
+        "path": "ode/ferriki/.benchmark-build.json",
+        "sha256": "c6c6ea3a182345d3fd6c5357d913f5c288c447dc0fe830e6df440e8323c1449e"
+      },
+      {
+        "path": "ode/ferriki/assets/shiki/release-manifest.json",
+        "sha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf"
+      },
+      {
+        "path": "ode/node_modules/prismjs/package.json",
+        "sha256": "3bfbf1cab7998881968bde6992e438372717a466470747cfde6500afb7eac56a"
+      },
+      {
+        "path": "ode/node_modules/shiki/package.json",
+        "sha256": "d11c7176c74ee3141a08427c83a648dc0e6d8c02d0dcc364c20396371845b23b"
+      },
+      {
+        "path": "ode/package.json",
+        "sha256": "3ae52a0ed11f67e10c1d843b71ea289a232f367a8c7f58d33ab1ad7e508afbf8"
+      },
+      {
+        "path": "ode/platforms/darwin-arm64/ferriki.node",
+        "sha256": "52a9f7b044af400bd27c67e41011b7038471470db1cdbace1532e78ff82bf190"
+      },
+      {
+        "path": "ode/pnpm-lock.yaml",
+        "sha256": "4aa865f22e944aee13d48919deea583ff7436bb016daed865d7f8b221a84cb86"
+      },
+      {
+        "path": "ode/scripts/bench-prism-output-modes.mjs",
+        "sha256": "e31a65c007bbee5fa664cc5c94621948fb855ad69677de1ca7a735ac55154bd6"
+      },
+      {
+        "path": "ode/scripts/bench-tiobe.mjs",
+        "sha256": "37a752f980224ee85149ea6def6297612be8b36d74392d4c43d5795a9a786668"
+      },
+      {
+        "path": "ode/scripts/capture-prism-profiles.mjs",
+        "sha256": "e88f27d904f05436ba4983e8be9b08d81c397717092a04a250c1ff967e682d1d"
+      },
+      {
+        "path": "ode/scripts/profile-tiobe.mjs",
+        "sha256": "9fb0a132667b324999bb89ef735a065020c79c041297d2c150689c9a7af4217d"
+      },
+      {
+        "path": "ode/scripts/tiobe-benchmark.mjs",
+        "sha256": "0910fe7afe3029cca7dcf1728ab3b80dabc691f4cbc62a008e16f74ea700d9d0"
+      }
+    ]
+  },
+  "method": {
+    "workload": "Curated corpus large input (16 repeated fixture copies), warmed HTML call, validation and setup complete before capture.",
+    "js": "Node Inspector CPU profiling starts after warmup immediately before the 8s render loop; setup and output validation are excluded. These are diagnostic profiles, not performance timings.",
+    "native": "macOS sample attaches to the ready Ferriki native-boundary worker for 6s; profile binary uses line tables and is never used for timing claims."
+  },
+  "captures": [
+    {
+      "id": "js-prism-typescript",
+      "kind": "js",
+      "engine": "prism",
+      "language": "typescript",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 19248,
+        "lines": 529,
+        "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": null,
+        "htmlSha256": "5122f5eaed3f352c1d3ff79fa6a206060b1c7f31387a17039b2f7ebb5e802f1a"
+      },
+      "iterations": 2196,
+      "artifacts": [
+        {
+          "path": "js-prism-typescript/cpu-profile.json",
+          "bytes": 60047,
+          "sha256": "30439ce61c9acbed9df7b23fae1d3e1151aed08fcd7e31acd5457e24d839cb28"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-typescript",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "typescript",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 19248,
+        "lines": 529,
+        "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "3f52c354a4dac47e510b84f4e45fae3e7bb7c9a23f7829e4b15d24348a8b21a5"
+      },
+      "iterations": 1020,
+      "artifacts": [
+        {
+          "path": "js-ferriki-typescript/cpu-profile.json",
+          "bytes": 46675,
+          "sha256": "06a418c651ce02a5be49a560b61843e67f9fd3ea7f24bff3afb9924317682464"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-typescript",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "typescript",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 31877,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 19248,
+        "lines": 529,
+        "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "3f52c354a4dac47e510b84f4e45fae3e7bb7c9a23f7829e4b15d24348a8b21a5"
+      },
+      "iterations": 498,
+      "artifacts": [
+        {
+          "path": "native-ferriki-typescript/native.sample.txt",
+          "bytes": 674376,
+          "sha256": "0da280cbc8ef3c9321873126dd9a0e4867916e5b14d64eecdffa47ea0c50c422"
+        }
+      ]
+    },
+    {
+      "id": "js-prism-tsx",
+      "kind": "js",
+      "engine": "prism",
+      "language": "tsx",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 25088,
+        "lines": 817,
+        "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": null,
+        "htmlSha256": "75b5d8387de8e4ad8c24ea2ab5fc6a249027592c7ebc58ca2ba77a3058dea2af"
+      },
+      "iterations": 920,
+      "artifacts": [
+        {
+          "path": "js-prism-tsx/cpu-profile.json",
+          "bytes": 59557,
+          "sha256": "a578a2bb56bf64d36366322ebaa92db81d00818a19de086326983cd59fa6f7bd"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-tsx",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "tsx",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 25088,
+        "lines": 817,
+        "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "1713220beb75b51f1ca410ebd24ddae6c391483e9c7702d31cf024fc094fa1b2"
+      },
+      "iterations": 695,
+      "artifacts": [
+        {
+          "path": "js-ferriki-tsx/cpu-profile.json",
+          "bytes": 45747,
+          "sha256": "817708ec270b13a5fed3df8e2e28541e01d0cfb3e5fe141e6258b6ced0683ed3"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-tsx",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "tsx",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 32427,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 25088,
+        "lines": 817,
+        "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "1713220beb75b51f1ca410ebd24ddae6c391483e9c7702d31cf024fc094fa1b2"
+      },
+      "iterations": 709,
+      "artifacts": [
+        {
+          "path": "native-ferriki-tsx/native.sample.txt",
+          "bytes": 607761,
+          "sha256": "b74a87bb9b3f819b0eafe9716ba6493a4592120eeea29ee413d405321f5130f5"
+        }
+      ]
+    },
+    {
+      "id": "js-prism-html",
+      "kind": "js",
+      "engine": "prism",
+      "language": "html",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 22352,
+        "lines": 721,
+        "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": null,
+        "htmlSha256": "33dd7571cadc7214ebb2177d80ea09e0d59ac04559fedd7207335e118a1bdd6a"
+      },
+      "iterations": 1601,
+      "artifacts": [
+        {
+          "path": "js-prism-html/cpu-profile.json",
+          "bytes": 62606,
+          "sha256": "e8ce370730f51faa61fefd960d903384b50fd173e827b9ca934e9c891054eedc"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-html",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "html",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 22352,
+        "lines": 721,
+        "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "79b0b86347b81d9912adb5f5fcc9744ab627f62d7d5790f8f2e5d4840edfffef"
+      },
+      "iterations": 680,
+      "artifacts": [
+        {
+          "path": "js-ferriki-html/cpu-profile.json",
+          "bytes": 47247,
+          "sha256": "84c7fcc3f901bf041f8daa742d0495427d496121ef22b53743aa176b345ea47f"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-html",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "html",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 32764,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 22352,
+        "lines": 721,
+        "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "79b0b86347b81d9912adb5f5fcc9744ab627f62d7d5790f8f2e5d4840edfffef"
+      },
+      "iterations": 480,
+      "artifacts": [
+        {
+          "path": "native-ferriki-html/native.sample.txt",
+          "bytes": 607281,
+          "sha256": "5fdae9fb8df04d87344d4341ced7b7ed4af73dad598558f57f972813bd1fcb86"
+        }
+      ]
+    },
+    {
+      "id": "js-prism-cpp",
+      "kind": "js",
+      "engine": "prism",
+      "language": "cpp",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 14992,
+        "lines": 561,
+        "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": null,
+        "htmlSha256": "ee15d087d04bfb847c7f2235e4eb5de5bb7f2c1ac6248846cb3aa556179ecd16"
+      },
+      "iterations": 4670,
+      "artifacts": [
+        {
+          "path": "js-prism-cpp/cpu-profile.json",
+          "bytes": 57262,
+          "sha256": "bfd687a1e14ba32a6f23ddf63e7a7289f5cb1b4c6402e47a41b554dc5c4632b3"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-cpp",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "cpp",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 14992,
+        "lines": 561,
+        "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "4c36be3c9da62fdf11ecd0b1c584de5dc91c6f25a82d63d4da95330ad2febebe"
+      },
+      "iterations": 1007,
+      "artifacts": [
+        {
+          "path": "js-ferriki-cpp/cpu-profile.json",
+          "bytes": 47765,
+          "sha256": "8fa97e7aee33eb0682443bce7e59452c147cebd036b469db7b14e6549485a834"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-cpp",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "cpp",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 32938,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 14992,
+        "lines": 561,
+        "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "4c36be3c9da62fdf11ecd0b1c584de5dc91c6f25a82d63d4da95330ad2febebe"
+      },
+      "iterations": 893,
+      "artifacts": [
+        {
+          "path": "native-ferriki-cpp/native.sample.txt",
+          "bytes": 833211,
+          "sha256": "53747904fe8c1c0304387869733e355e9f06ce5c94b79d4ab67519886ae44635"
+        }
+      ]
+    },
+    {
+      "id": "js-prism-json",
+      "kind": "js",
+      "engine": "prism",
+      "language": "json",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 12176,
+        "lines": 433,
+        "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": null,
+        "htmlSha256": "5f0b5c908e8c143e59c44c5f72864019a70efed802e2caf7975c2ed238586f2c"
+      },
+      "iterations": 6808,
+      "artifacts": [
+        {
+          "path": "js-prism-json/cpu-profile.json",
+          "bytes": 53161,
+          "sha256": "100a44088cd5900c4d5ed38f528824124850cb40f603a9b7f96d7bbf2dd669f8"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-json",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "json",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 12176,
+        "lines": 433,
+        "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "265c1e7be4d61d11aceab08d85ca099840c0819e1454622927023d847e3d086b"
+      },
+      "iterations": 2285,
+      "artifacts": [
+        {
+          "path": "js-ferriki-json/cpu-profile.json",
+          "bytes": 47187,
+          "sha256": "74886f38b810b9ec9c6bc3333e41ad3423d9627a0a3a476a27074155cc90009e"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-json",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "json",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 33240,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 12176,
+        "lines": 433,
+        "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "265c1e7be4d61d11aceab08d85ca099840c0819e1454622927023d847e3d086b"
+      },
+      "iterations": 1932,
+      "artifacts": [
+        {
+          "path": "native-ferriki-json/native.sample.txt",
+          "bytes": 540247,
+          "sha256": "7e63de35b5bbe00f653aaaaf25fcd2c984da8ce89c694794243998d781b83a75"
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-astro",
+      "kind": "js",
+      "engine": "ferriki",
+      "language": "astro",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": null,
+      "readyPid": null,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 17296,
+        "lines": 497,
+        "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "a92a4cf9690f6319daa0fae33b3441897644956c2234ff10308f89e6ca341288"
+      },
+      "iterations": 515,
+      "artifacts": [
+        {
+          "path": "js-ferriki-astro/cpu-profile.json",
+          "bytes": 47768,
+          "sha256": "7db8955aca383fc0a1066e743f33084de5c373b3c052fe3103dcdd4039364c2f"
+        }
+      ]
+    },
+    {
+      "id": "native-ferriki-astro",
+      "kind": "native",
+      "engine": "ferriki",
+      "language": "astro",
+      "status": "captured",
+      "worker": {
+        "code": 0,
+        "signal": null
+      },
+      "sampler": {
+        "code": 0,
+        "signal": null
+      },
+      "readyPid": 33451,
+      "workload": {
+        "size": "large",
+        "copies": 16,
+        "bytes": 17296,
+        "lines": 497,
+        "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2"
+      },
+      "validation": {
+        "sourcePreserved": true,
+        "highlighted": true,
+        "referenceParity": {
+          "html": true
+        },
+        "htmlSha256": "a92a4cf9690f6319daa0fae33b3441897644956c2234ff10308f89e6ca341288"
+      },
+      "iterations": 404,
+      "artifacts": [
+        {
+          "path": "native-ferriki-astro/native.sample.txt",
+          "bytes": 1068442,
+          "sha256": "71cb09e3c56d32727f063bbdb37608a12a82ee267a29b1a7a517d7384d089a4a"
+        }
+      ]
+    }
+  ],
+  "unsupported": [
+    {
+      "id": "js-prism-astro",
+      "engine": "prism",
+      "language": "astro",
+      "status": "unsupported",
+      "reason": "Pinned Prism 1.30.0 has no astro component."
+    }
+  ]
+}

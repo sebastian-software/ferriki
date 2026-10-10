@@ -1,0 +1,196 @@
+[
+  {
+    "id": "typescript-parameters",
+    "label": "TypeScript: parameters and reads",
+    "lang": "typescript",
+    "prism": "typescript",
+    "embedded": [],
+    "source": "function greet(name: string): string {\n  return name;\n}\n\nexport function labelOrder(order: { customer: string; total: number }): string {\n  return `${order.customer}: €${order.total.toFixed(2)}`;\n}\n",
+    "focus": [
+      {
+        "text": "name",
+        "occurrence": 1,
+        "label": "Parameter binding"
+      },
+      {
+        "text": "name",
+        "occurrence": 2,
+        "label": "Parameter read"
+      },
+      {
+        "text": "customer",
+        "occurrence": 1,
+        "label": "Property in a type"
+      }
+    ]
+  },
+  {
+    "id": "typescript-templates",
+    "label": "TypeScript: nested templates",
+    "lang": "typescript",
+    "prism": "typescript",
+    "embedded": [],
+    "source": "interface Customer {\n  name: string;\n  tags: readonly string[];\n}\n\nexport function describe<T extends Customer>(customer: T, prefix = \"Order\") {\n  // A multiline comment checks comment state across a line break.\n  const summary = `\\n${prefix}: ${customer.name.toUpperCase()}\\n`;\n  return `${summary}${customer.tags.map((tag) => `#${tag}`).join(\" \")}`;\n}\n",
+    "focus": [
+      {
+        "text": "customer",
+        "occurrence": 1,
+        "label": "Parameter binding"
+      }
+    ]
+  },
+  {
+    "id": "tsx-component",
+    "label": "TSX: a generic JSX component",
+    "lang": "tsx",
+    "prism": "tsx",
+    "embedded": ["typescript", "javascript"],
+    "source": "type Entry = { id: string; label: string; active: boolean };\ntype Props<T extends Entry> = {\n  items: readonly T[];\n  onSelect: (item: T) => void;\n};\n\nexport function ResultList<T extends Entry>({ items, onSelect }: Props<T>) {\n  return (\n    <ul aria-label=\"Results\">\n      {items.map((item) => (\n        <li key={item.id} className={`result ${item.active ? \"active\" : \"\"}`}>\n          <button type=\"button\" onClick={() => onSelect(item)}>\n            {`${item.label} (${item.id})`}\n          </button>\n        </li>\n      ))}\n    </ul>\n  );\n}\n",
+    "focus": [
+      {
+        "text": "ResultList",
+        "occurrence": 1,
+        "label": "Generic function declaration"
+      },
+      {
+        "text": "onClick",
+        "occurrence": 1,
+        "label": "JSX event attribute"
+      },
+      {
+        "text": "item",
+        "occurrence": 5,
+        "label": "Callback parameter"
+      }
+    ]
+  },
+  {
+    "id": "cpp-templates",
+    "label": "C++: templates, lambdas, and raw strings",
+    "lang": "cpp",
+    "prism": "cpp",
+    "embedded": [],
+    "source": "#include <algorithm>\n#include <iostream>\n#include <regex>\n#include <string>\n#include <vector>\n\n#define RESULT_PREFIX \"Matched: \"\n\ntemplate <typename T>\nauto count_matching(const std::vector<T>& values, const std::regex& pattern) {\n  return std::count_if(values.begin(), values.end(), [&](const T& value) {\n    return std::regex_match(value, pattern);\n  });\n}\n\nint main() {\n  const std::vector<std::string> labels{\"[tag] \\\"Ada\\\"\", \"skip\"};\n  const std::regex pattern{R\"rule(\\[\\w+\\]\\s+\"[^\"]+\")rule\"};\n  std::cout << RESULT_PREFIX << count_matching(labels, pattern) << '\\n';\n}\n",
+    "focus": [
+      {
+        "text": "count_matching",
+        "occurrence": 1,
+        "label": "Template function declaration"
+      },
+      {
+        "text": "RESULT_PREFIX",
+        "occurrence": 1,
+        "label": "Macro definition"
+      },
+      {
+        "text": "rule",
+        "occurrence": 1,
+        "label": "Raw-string delimiter"
+      }
+    ]
+  },
+  {
+    "id": "css-components",
+    "label": "CSS: component styles",
+    "lang": "css",
+    "prism": "css",
+    "embedded": [],
+    "source": ":root {\n  --accent: #2563eb;\n  --spacing: 16px;\n}\n\n.card[data-state=\"active\"] {\n  display: grid;\n  gap: calc(var(--spacing) / 2);\n  border: 1px solid var(--accent);\n  transition: transform 150ms ease;\n}\n\n.card:hover {\n  transform: translateY(-2px);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .card { transition: none; }\n}\n",
+    "focus": [
+      {
+        "text": "--accent",
+        "occurrence": 1,
+        "label": "Custom property declaration"
+      },
+      {
+        "text": "display",
+        "occurrence": 1,
+        "label": "Property name"
+      },
+      {
+        "text": "grid",
+        "occurrence": 1,
+        "label": "Property value"
+      }
+    ]
+  },
+  {
+    "id": "go-handler",
+    "label": "Go: an HTTP handler",
+    "lang": "go",
+    "prism": "go",
+    "embedded": [],
+    "source": "package main\n\nimport (\n    \"encoding/json\"\n    \"net/http\"\n)\n\ntype Reply struct {\n    Message string `json:\"message\"`\n    Count   int    `json:\"count\"`\n}\n\nfunc serve(w http.ResponseWriter, r *http.Request) {\n    reply := Reply{Message: r.URL.Query().Get(\"name\"), Count: 1}\n    w.Header().Set(\"Content-Type\", \"application/json\")\n    if err := json.NewEncoder(w).Encode(reply); err != nil {\n        http.Error(w, err.Error(), http.StatusInternalServerError)\n    }\n}\n",
+    "focus": [
+      {
+        "text": "Reply",
+        "occurrence": 1,
+        "label": "Type declaration"
+      },
+      {
+        "text": "serve",
+        "occurrence": 1,
+        "label": "Function declaration"
+      },
+      {
+        "text": "Message",
+        "occurrence": 1,
+        "label": "Struct field"
+      }
+    ]
+  },
+  {
+    "id": "rust-result",
+    "label": "Rust: a typed parsing function",
+    "lang": "rust",
+    "prism": "rust",
+    "embedded": [],
+    "source": "use std::num::ParseIntError;\n\n#[derive(Debug)]\nstruct Order {\n    customer: String,\n    total: u32,\n}\n\nfn parse_order(customer: &str, total: &str) -> Result<Order, ParseIntError> {\n    let order = Order {\n        customer: customer.to_owned(),\n        total: total.parse::<u32>()?,\n    };\n    Ok(order)\n}\n\nfn main() {\n    match parse_order(\"Ada\", \"42\") {\n        Ok(order) => println!(\"{}: {}\", order.customer, order.total),\n        Err(error) => eprintln!(\"Invalid total: {error}\"),\n    }\n}\n",
+    "focus": [
+      {
+        "text": "Order",
+        "occurrence": 1,
+        "label": "Struct declaration"
+      },
+      {
+        "text": "parse_order",
+        "occurrence": 1,
+        "label": "Function declaration"
+      },
+      {
+        "text": "Result",
+        "occurrence": 1,
+        "label": "Return type"
+      }
+    ]
+  },
+  {
+    "id": "html-embedded",
+    "label": "HTML: embedded CSS and JavaScript",
+    "lang": "html",
+    "prism": "markup",
+    "embedded": ["css", "javascript"],
+    "source": "<!doctype html>\n<html lang=\"en\">\n  <style>\n    .notice { color: #2563eb; }\n    @media (width < 40rem) { .notice { color: #dc2626; } }\n  </style>\n  <body>\n    <p class=\"notice\" data-count=\"2\">München &amp; café</p>\n    <script type=\"module\">\n      const rows = [{ name: \"café\", count: 2 }];\n      const label = `Orders: ${rows.map(({ name, count }) => `${name} (${count})`).join(\", \")}`;\n      document.querySelector(\".notice\").textContent = label;\n      console.log(/Orders:\\s/.test(label));\n    </script>\n  </body>\n</html>\n",
+    "focus": [
+      {
+        "text": "style",
+        "occurrence": 1,
+        "label": "Style element"
+      },
+      {
+        "text": "script",
+        "occurrence": 1,
+        "label": "Script element"
+      }
+    ]
+  },
+  {
+    "id": "astro-component",
+    "label": "Astro: a complete component",
+    "lang": "astro",
+    "prism": null,
+    "embedded": ["typescript", "css", "javascript"],
+    "source": "---\ninterface Props { title: string; items: readonly { name: string; count: number }[] }\nconst { title, items } = Astro.props;\nconst summary = `Items: ${items.map(({ name, count }) => `${name} (${count})`).join(\", \")}`;\n---\n<section aria-label={title}>\n  <h1>{title}</h1>\n  <p>{summary}</p>\n</section>\n<style>\n  section { display: grid; gap: 1rem; }\n</style>\n<script>\n  document.querySelector(\"section\")?.classList.add(\"ready\");\n</script>\n",
+    "focus": []
+  }
+]

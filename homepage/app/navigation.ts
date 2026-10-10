@@ -13,6 +13,7 @@ export const documentationSections = [
       ["Build-time macros", "/guide/build-time-macros"],
       ["Migrating from Shiki", "/guide/migrating-from-shiki"],
       ["Ferriki and syntect", "/guide/ferriki-and-syntect"],
+      ["Ferriki vs Prism", "/guide/ferriki-vs-prism"],
       ["Languages and themes", "/guide/languages-and-themes"],
       ["Class-based output", "/guide/class-highlighting"],
       ["API overview", "/guide/api"],
