@@ -66,6 +66,7 @@ export interface NativeAssetOptions {
 export interface NativeHighlighterOptions {
   standardAssetRoot?: string;
   assets?: NativeAssetOptions;
+  regexPrefilter?: boolean;
 }
 
 export interface NativeHighlightOptions {

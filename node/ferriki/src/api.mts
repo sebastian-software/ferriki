@@ -61,6 +61,8 @@ export interface AssetOptions {
 }
 
 export interface HighlighterOptions {
+  /** Automatic regex prefiltering (default: true). Disable to avoid construction for one-shot use. */
+  regexPrefilter?: boolean;
   langs?: readonly RegistrationInput<LanguageInput>[];
   themes?: readonly RegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
@@ -70,6 +72,8 @@ export interface HighlighterOptions {
 }
 
 export interface HighlighterSyncOptions {
+  /** Automatic regex prefiltering (default: true). Disable to avoid construction for one-shot use. */
+  regexPrefilter?: boolean;
   langs?: readonly SyncRegistrationInput<LanguageInput>[];
   themes?: readonly SyncRegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;

@@ -24,7 +24,7 @@ use crate::state_stack::StateStack;
 use crate::theme::{ScopeStack, StyleAttributes, Theme};
 use crate::tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct GrammarConfiguration {
     pub initial_language_id: u32,
@@ -32,9 +32,32 @@ pub struct GrammarConfiguration {
     pub token_types: Vec<(String, StandardTokenType)>,
     pub balanced_bracket_selectors: Option<Vec<String>>,
     pub unbalanced_bracket_selectors: Vec<String>,
+    /// Enables the regex scanner's automatic prefilter. Defaults to `true`.
+    /// Disable it to avoid prefilter construction for one-shot highlighting.
+    pub regex_prefilter: bool,
+}
+
+impl Default for GrammarConfiguration {
+    fn default() -> Self {
+        Self {
+            initial_language_id: 0,
+            embedded_languages: EmbeddedLanguages::default(),
+            token_types: Vec::new(),
+            balanced_bracket_selectors: None,
+            unbalanced_bracket_selectors: Vec::new(),
+            regex_prefilter: true,
+        }
+    }
 }
 
 impl GrammarConfiguration {
+    /// Controls prefiltering for all scanners in this grammar, including injections.
+    #[must_use]
+    pub fn with_regex_prefilter(mut self, enabled: bool) -> Self {
+        self.regex_prefilter = enabled;
+        self
+    }
+
     /// Sets the language id encoded into tokens of the root grammar.
     #[must_use]
     pub fn with_initial_language_id(mut self, value: u32) -> Self {
@@ -217,7 +240,8 @@ impl Grammar {
         }
         injections.sort_by_key(|injection| priority_order(injection.priority));
 
-        let (_, registry) = factory.into_parts();
+        let (_, mut registry) = factory.into_parts();
+        registry.regex_prefilter = configuration.regex_prefilter;
         let token_type_matchers = configuration
             .token_types
             .iter()

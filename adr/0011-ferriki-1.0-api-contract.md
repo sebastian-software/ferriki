@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-04
+Last updated: 2026-10-10
 
 ## Context
 
@@ -20,6 +20,11 @@ Adopt [`docs/ferriki-1.0-api-contract.md`](../docs/ferriki-1.0-api-contract.md)
 as the normative 1.0 Node API matrix. It classifies every public export,
 factory input, highlight option, output shape, lifecycle rule, and error policy
 as Stable, Shim, Remove, Deferred, or Non-goal.
+
+The factory-only `regexPrefilter` boolean defaults to `true`, allowing the
+native scanner's automatic warm-up policy. `false` disables prefilter
+construction for all grammars in that highlighter. It changes performance
+policy without exposing Ferroni types or changing highlighting semantics.
 
 The contract prioritizes the synchronous reusable HTML-rendering path, keeps
 transformers/decorations in the JavaScript layer, and keeps ecosystem adapters
@@ -65,3 +70,4 @@ being mistaken for parity.
 - 2026-10-01: Classifies `colorReplacements` as deferred until runtime support is implemented (#190).
 - 2026-10-03: Removes public Node HAST and token output methods before 1.0 while retaining transformer callback data and Rust token APIs (#207).
 - 2026-10-04: Takes over the mapping of child issues to the contract, which now states only the contract itself.
+- 2026-10-10: Adds the factory-only regex prefilter switch for one-shot workloads.

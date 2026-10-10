@@ -1,0 +1,32 @@
+{
+  "builtAt": "2026-10-10T09:01:39.466Z",
+  "binarySha256": "99ea79d5ec1c0b167021264ba827e81a49840a6c6130740d2c1e278afa1ebcc9",
+  "ferriki": {
+    "commit": "75bef63cb5186396ec1103ed9a2f8af2790fcea4",
+    "status": "M Cargo.lock\n M Cargo.toml\n M adr/0010-mechanical-vscode-textmate-port.md\n M adr/0011-ferriki-1.0-api-contract.md\n M crates/ferriki-core/src/napi_api.rs\n M crates/ferriki-core/src/native_types.rs\n M crates/ferriki-textmate/src/grammar.rs\n M crates/ferriki-textmate/src/regexp.rs\n M crates/ferriki-textmate/src/rule.rs\n M docs/ferriki-1.0-api-contract.md\n M docs/ferriki-api.md\n M docs/rust-api.md\n M fuzz/Cargo.lock\n M node/ferriki/native-binding.d.ts\n M node/ferriki/src/api.d.mts\n M node/ferriki/src/index.mjs\n M node/scripts/bench-native-boundary-paired.mjs\n M node/scripts/check-ferriki-api-contract.mjs\n M src/highlighter.rs\n?? node/benchmarks/curated/results/ferroni-2/"
+  },
+  "rustSourceSha256": "656f472317d6dab6a8f90121c074a05ee01deb4312268ecd28539db999d59da9",
+  "ferroni": {
+    "version": "2.1.0",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+    "revision": null,
+    "sourceSha256": null,
+    "features": [
+      "default",
+      "dfa-prefilter"
+    ]
+  },
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "cargoArgs": [
+    "build",
+    "--release",
+    "--manifest-path",
+    "/Users/sebastian/Workspace/ferriki/crates/ferriki-core/Cargo.toml"
+  ],
+  "rustflags": null,
+  "encodedRustflags": null,
+  "targetRustflags": {},
+  "cargoProfileEnv": {},
+  "cargoLockSha256": "ab01d39156adefc0619061a0e4b9c5a31717c3cf0ad57a1be5ae1d7b516d2e1f"
+}

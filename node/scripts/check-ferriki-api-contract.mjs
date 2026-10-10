@@ -21,6 +21,7 @@ for (const row of [
   "| `bundledLanguages` / `bundledThemes` | Stable |",
   "| `themes` | Stable |",
   "| `styleMode` | Stable |",
+  "| `regexPrefilter` | Stable |",
   "| `defaultColor` | Stable |",
   "| `transformers` | Stable |",
   "| `decorations` | Stable |",
@@ -78,5 +79,28 @@ assert.throws(
   () => highlighter.loadThemeSync("nord"),
   (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
 );
+
+for (const regexPrefilter of [true, false]) {
+  const configured = await createHighlighter({
+    regexPrefilter,
+    langs: ["typescript"],
+    themes: ["nord"],
+  });
+  try {
+    const html = configured.codeToHtml("const answer = 42", { lang: "typescript", theme: "nord" });
+    assert.equal(
+      html,
+      await codeToHtml("const answer = 42", { lang: "typescript", theme: "nord" }),
+    );
+  } finally {
+    configured.dispose();
+  }
+}
+for (const regexPrefilter of [null, 0, "false", {}]) {
+  await assert.rejects(
+    createHighlighter({ regexPrefilter }),
+    (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+  );
+}
 
 console.log("Ferriki 1.0 API contract verified");

@@ -63,6 +63,7 @@ export function createHighlighterCoreSync(options = {}) {
     native = loadFerrikiNativeBinding().createHighlighter({
       standardAssetRoot,
       assets,
+      regexPrefilter: options.regexPrefilter,
     });
   } catch (cause) {
     if (cause instanceof FerrikiError) throw cause;
@@ -784,6 +785,8 @@ function validateHighlighterOptions(options) {
   if (options == null) return {};
   if (typeof options !== "object" || Array.isArray(options))
     throw new ShikiError("Highlighter options must be an object", "ERR_USAGE");
+  if (options.regexPrefilter !== undefined && typeof options.regexPrefilter !== "boolean")
+    throw new ShikiError("Highlighter option `regexPrefilter` must be a boolean", "ERR_USAGE");
   for (const field of ["langs", "themes", "transformers"]) {
     if (options[field] !== undefined && !Array.isArray(options[field]))
       throw new ShikiError(`Highlighter option \`${field}\` must be an array`, "ERR_USAGE");

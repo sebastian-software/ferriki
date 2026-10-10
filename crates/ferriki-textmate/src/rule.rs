@@ -385,13 +385,15 @@ impl BeginWhileRule {
     )]
     pub(crate) fn compile_while(
         &self,
+        registry: &RuleRegistry,
         end_regex_source: Option<&str>,
     ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
-        self.compile_while_ag(end_regex_source, true, true)
+        self.compile_while_ag(registry, end_regex_source, true, true)
     }
 
     pub(crate) fn compile_while_ag(
         &self,
+        registry: &RuleRegistry,
         end_regex_source: Option<&str>,
         allow_a: bool,
         allow_g: bool,
@@ -401,7 +403,7 @@ impl BeginWhileRule {
             .lock()
             .expect("compiled while-pattern cache lock poisoned");
         let sources = cached.get_or_insert_with(|| {
-            let mut sources = RegExpSourceList::new();
+            let mut sources = RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
             sources.push(self.while_source.clone());
             sources
         });
@@ -418,7 +420,7 @@ impl BeginWhileRule {
         allow_a: bool,
         allow_g: bool,
     ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
-        let compiled = self.compile_while_ag(end_regex_source, allow_a, allow_g)?;
+        let compiled = self.compile_while_ag(registry, end_regex_source, allow_a, allow_g)?;
         registry.record_backtracking_warnings(self.data.id, &compiled);
         Ok(compiled)
     }
@@ -546,7 +548,8 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 let sources = cached.get_or_insert_with(|| {
-                    let mut sources = RegExpSourceList::new();
+                    let mut sources =
+                        RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
                     sources.push(rule.match_source.clone());
                     sources
                 });
@@ -565,7 +568,8 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 let sources = cached.get_or_insert_with(|| {
-                    let mut sources = RegExpSourceList::new();
+                    let mut sources =
+                        RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
                     collect_pattern_ids(registry, &rule.patterns, &mut sources);
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
@@ -663,10 +667,20 @@ impl Rule {
     }
 }
 
-#[derive(Default)]
 pub(crate) struct RuleRegistry {
     rules: Vec<Option<Rule>>,
     backtracking_warnings: Mutex<BTreeMap<BacktrackingWarningKey, BacktrackingWarning>>,
+    pub(crate) regex_prefilter: bool,
+}
+
+impl Default for RuleRegistry {
+    fn default() -> Self {
+        Self {
+            rules: Vec::new(),
+            backtracking_warnings: Mutex::default(),
+            regex_prefilter: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -826,7 +840,7 @@ fn compile_patterns(
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
     let mut cached = cache.lock().expect("compiled pattern cache lock poisoned");
     let sources = cached.get_or_insert_with(|| {
-        let mut sources = RegExpSourceList::new();
+        let mut sources = RegExpSourceList::with_regex_prefilter(registry.regex_prefilter);
         if let Some(patterns) = patterns {
             collect_pattern_ids(registry, patterns, &mut sources);
         }
@@ -845,7 +859,8 @@ fn clear_cache(cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>) {
 
 #[cfg(test)]
 mod tests {
-    use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
+    use crate::regexp::CaptureIndex;
+    use ferroni::scanner::{OnigString, ScannerFindOptions};
 
     use super::{
         BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions,
@@ -991,7 +1006,7 @@ mod tests {
             length: 3,
         };
         let resolved = rule.get_while_with_resolved_back_references("tag", &[capture]);
-        let compiled = rule.compile_while(Some(&resolved)).unwrap();
+        let compiled = rule.compile_while(&registry, Some(&resolved)).unwrap();
 
         assert_eq!(
             compiled
