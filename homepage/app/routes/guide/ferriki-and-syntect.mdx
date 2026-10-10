@@ -1,0 +1,145 @@
+---
+title: Ferriki and syntect
+order: 4
+---
+
+# Ferriki and syntect
+
+Both Ferriki and [syntect](https://github.com/trishume/syntect) are Rust
+syntax-highlighting libraries with roots in the TextMate/Sublime grammar
+ecosystem, but their native grammar inputs differ. Their best fit depends on
+where highlighted output goes, which grammar and theme assets you use, and how
+your application identifies a language.
+
+Ferriki is aimed at projects that produce HTML. It uses the same native engine
+from Rust and Node.js, and its standard catalog follows the TextMate grammars
+used by Shiki and editor extensions. Syntect is a good choice when your Rust
+application needs its HTML or terminal-oriented output, or already relies on
+Sublime Text syntax and theme assets. This page compares the libraries' current
+interfaces; it does not promise a drop-in API or matching colors.
+
+## At a glance
+
+| Concern             | Ferriki                                                                                                        | syntect                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Main Rust interface | Reusable `Highlighter`; return themed tokens or rendered HTML                                                  | Reusable syntax and theme sets; produce highlighted HTML, styled segments, or terminal output                       |
+| Grammar inputs      | Shiki-derived TextMate grammars in generated Ferriki assets; caller can register TextMate-shaped JSON          | Precompiled default syntax set; add `.sublime-syntax` files or build a syntax set from folders                      |
+| Themes              | Shiki-compatible JSON theme subset in generated assets; custom Rust themes register through typed or JSON APIs | Sublime `.tmTheme` files and built-in themes                                                                        |
+| Regex configuration | Ferroni's pure-Rust Oniguruma-compatible scanner, backed by `regex-automata` and requiring no C toolchain      | `regex-onig` (C Oniguruma, default) or optional `regex-fancy` (Rust `fancy-regex`) feature                          |
+| Output              | HTML, class-based HTML, or Rust token records                                                                  | HTML and styled ranges; a built-in helper formats styled ranges as ANSI escapes                                     |
+| Language choice     | Caller supplies a language ID to the highlighter                                                               | Syntax sets can look up by name, extension, or a grammar's first-line pattern                                       |
+| Standard assets     | Release-matched catalogs can be loaded from disk, embedded, or fetched with the optional `remote` feature      | Default syntax and theme dumps ship through Cargo features; applications can load additional syntax and theme files |
+
+The Rust highlighter timings for a pinned document set are in
+[the benchmark evidence](/evidence/benchmarks#rust-syntect-comparison). They
+time each library's HTML-producing path with its own default assets and a
+representative dark theme. Grammars, themes, HTML markup, and language
+semantics differ, so these timings are descriptive observations—not equal-work
+parity, a speedup factor, or a prediction for another corpus.
+
+## Grammars and conversion
+
+Syntect documents `.sublime-syntax` as its native syntax-definition format.
+Sublime syntax definitions use named YAML contexts and support variables and
+branch/fail matching. TextMate grammars instead use repositories,
+`begin`/`end` rules, scopes, and optional injections or end backreferences.
+The formats overlap in purpose but expose different features and scope
+conventions. Neither library's core API is a general-purpose converter between
+the two formats. [Sublime's syntax format guide](https://www.sublimetext.com/docs/syntax.html)
+and [VS Code's TextMate guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide)
+describe their respective models.
+
+Syntect's default syntax set follows the syntax-definition package set
+shipped with Sublime Text, and applications can add `.sublime-syntax` files
+from other folders. `bat` ships separately reviewed extra definitions and
+documents conversions for some `.tmLanguage` grammars; those additions belong
+to bat's bundle, not every syntect default set. The Sublime package set is
+focused on syntax definitions, and syntect remains maintained. There are also
+separate conversion paths: [bat's asset guide](https://github.com/sharkdp/bat/blob/master/doc/assets.md)
+documents using Sublime Text to create a `.sublime-syntax` file from a
+`.tmLanguage` grammar, and the ecosystem has adapters such as
+[`syntect_tmlanguage`](https://docs.rs/syntect-tmlanguage). These are distinct
+tools, not an automatic promise that every grammar behaves identically after
+conversion. For a grammar you depend on, test its embedded-language rules,
+regex features, scope names, and representative source files in the destination
+engine.
+
+Ferriki ships 260 generated canonical grammar assets from the TextMate
+grammar ecosystem used by Shiki. Its full Node bundle exposes 364 language
+keys: 260 canonical IDs and 104 aliases, with multiple keys resolving to one
+grammar asset. Syntect's default syntax set and additional
+`.sublime-syntax` folders have their own coverage. These are different catalog
+boundaries; compare the actual grammars your application needs, including
+injections and embedded languages, rather than inferring coverage from a
+headline count.
+
+## Themes and assets
+
+Syntect loads built-in themes and can parse Sublime `.tmTheme` files. Ferriki's
+standard themes are generated from Shiki's JSON theme catalog; custom Rust
+themes register through Ferriki's JSON or typed theme APIs. Theme names may
+overlap, but their scope selectors and colors are not a shared contract. A
+migration should inspect the scopes produced by the selected grammar and verify
+the visible result using the theme actually shipped by the application.
+
+Syntect's `default-syntaxes` and `default-themes` Cargo features include its
+prebuilt defaults. It can also build syntax sets from application-provided
+folders. Ferriki's Rust crate reads release-matched asset catalogs from a
+directory or borrowed embedded files; the optional `remote` feature can load
+assets from the Ferriki CDN and verify them against the release manifest. In
+either library, pin the assets with the library version and plan where your
+application will store or distribute custom assets.
+
+## Output and language detection
+
+Syntect's direct API provides HTML helpers, styled ranges, and
+`as_24_bit_terminal_escaped`, which formats styled ranges as ANSI escapes (the
+function's documentation describes it as a debugging/testing helper). Separate
+applications such as `syncat` and `bat` build terminal workflows on syntect.
+Ferriki's Rust crate returns themed tokens and HTML, including class-based
+HTML. **Ferriki does not currently provide an ANSI renderer.** A terminal
+application that depends on syntect's ANSI output does not have a direct
+Ferriki replacement today.
+
+Syntect's `SyntaxSet` offers lookup by file extension, grammar name, and
+first-line patterns where a grammar defines one. Ferriki takes a language ID
+from its caller. An application can keep its own extension, shebang, or
+frontmatter detection and pass the resulting ID to Ferriki. Markdown pipelines
+can delegate fences to [Ferromark's Ferriki adapter](https://github.com/sebastian-software/ferromark),
+which keeps the Markdown wrapper and fallback behavior in the parser.
+
+The HTML APIs also have different output contracts: wrappers, markup, scope
+styles, and escaping can vary. The benchmark checks that both engines preserve
+the fixture's source text and emit highlighted markup. It does not compare
+serialized HTML or claim equivalent highlighting.
+
+## Which one fits?
+
+Choose Ferriki when a Rust or Node.js application emits HTML, wants a shared
+native highlighter across those runtimes, and can use its TextMate-based
+catalog or maintain a tested conversion for its custom grammar and theme.
+Rust static-site generators, documentation renderers, and Markdown HTML
+pipelines are representative use cases.
+
+Keep syntect when your application needs ANSI terminal output, depends on a
+particular `.sublime-syntax` or `.tmTheme` definition, or needs syntect's
+language-detection APIs directly. For an existing syntect HTML application,
+first compare the specific grammar, theme, output wrappers, detection rules,
+and asset deployment it uses. The timing results can inform that evaluation;
+they cannot replace it.
+
+For Rust setup and HTML rendering, see [Start with Rust](/rust/getting-started)
+and the [Rust API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md).
+
+## Sources
+
+- [syntect documentation](https://docs.rs/syntect/5.3.0/syntect/) and its
+  [maintainer's project status](https://github.com/trishume/syntect#syntect), including [HTML helpers](https://docs.rs/syntect/5.3.0/syntect/html/index.html), [syntax-set builder](https://docs.rs/syntect/5.3.0/syntect/parsing/struct.SyntaxSetBuilder.html), and [theme set](https://docs.rs/syntect/5.3.0/syntect/highlighting/struct.ThemeSet.html).
+- [syntect ANSI helper](https://docs.rs/syntect/5.3.0/syntect/util/fn.as_24_bit_terminal_escaped.html) (documented for debugging/testing), plus the [`syncat` example](https://github.com/trishume/syntect/tree/v5.3.0/examples).
+- [syntect 5.3.0 feature definitions](https://github.com/trishume/syntect/blob/v5.3.0/Cargo.toml).
+- [Ferroni 2.1.0](https://docs.rs/ferroni/2.1.0/ferroni/) documents its pure-Rust Oniguruma-compatible scanner; the [Ferroni lockfile entry](https://github.com/sebastian-software/ferriki/blob/main/Cargo.lock) records its `regex-automata` dependency. Compare the [Onig binding](https://docs.rs/onig/6.5.1/onig/) and [fancy-regex crate](https://docs.rs/fancy-regex/0.16.2/fancy_regex/).
+- [Sublime syntax definitions](https://www.sublimetext.com/docs/syntax.html), the
+  [Sublime package set](https://github.com/sublimehq/Packages), and [TextMate
+  grammar integration in VS Code](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide).
+- [bat asset workflow](https://github.com/sharkdp/bat/blob/master/doc/assets.md) and [`syntect_tmlanguage`](https://docs.rs/syntect-tmlanguage).
+- [Ferriki Rust API](https://docs.rs/ferriki) and [language catalog notes](/evidence/compatibility).

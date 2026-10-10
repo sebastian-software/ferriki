@@ -4,6 +4,12 @@ The `ferriki` crate is the synchronous, reusable highlighter. It contains no
 Node.js or N-API dependency. `ferriki-core` is the private N-API host and uses
 the same grammar, theme, tokenizer, and renderer implementation.
 
+If you are choosing between Rust highlighters, the [Ferriki and syntect
+comparison](https://ferriki.dev/guide/ferriki-and-syntect) covers grammar and
+theme formats, assets, detection, output, and the limits of the current timing
+evidence. Ferriki produces HTML and tokens; it does not currently have an ANSI
+renderer.
+
 ## Assets and lifecycle
 
 Ferriki does not embed all standard grammars into the library. An application
