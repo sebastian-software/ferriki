@@ -1,12 +1,11 @@
-import { Buffer } from "node:buffer";
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, writeSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
-import { join, resolve } from "node:path";
-import { performance } from "node:perf_hooks";
+import { spawnSync } from "node:child_process";
+import { resolve, join } from "node:path";
 import process from "node:process";
+import { performance } from "node:perf_hooks";
 
 const languages = ["cpp", "typescript", "tsx", "json", "astro"];
 const variants = ["base", "candidate"];
@@ -161,7 +160,7 @@ if (process.argv[2] === "worker") {
   };
   highlighter.dispose();
   result.memory.afterDispose = memory();
-  writeSync(1, `${JSON.stringify(result)}\n`);
+  await new Promise((done) => process.stdout.write(`${JSON.stringify(result)}\n`, done));
   process.exit(0);
 }
 
@@ -171,6 +170,7 @@ if (process.argv[2] === "memory-worker") {
   const expectedGuard = JSON.parse(expectedGuardJson);
   const inputs = captureInputs(root);
   assertInputGuardMatches(inputs.guard, expectedGuard, languages, "memory worker");
+  const manifest = inputs.manifest;
   const memory = () => {
     if (globalThis.gc) globalThis.gc();
     const usage = process.memoryUsage();
@@ -189,6 +189,7 @@ if (process.argv[2] === "memory-worker") {
   const checkpoints = [{ loadedLanguages: [], memory: memory() }];
   const html = {};
   for (const language of languages) {
+    const entry = manifest.languages.find((item) => item.textmate === language);
     const code = inputs.fixtureFiles[language].code;
     highlighter.loadStandardGrammar(language);
     html[language] = digest(
@@ -201,15 +202,17 @@ if (process.argv[2] === "memory-worker") {
     checkpoints.push({ loadedLanguages: languages.slice(0, checkpoints.length), memory: memory() });
   }
   highlighter.dispose();
-  writeSync(
-    1,
-    `${JSON.stringify({
-      languages,
-      inputGuard: inputs.guard,
-      htmlSha256: html,
-      checkpoints,
-      afterDispose: memory(),
-    })}\n`,
+  await new Promise((done) =>
+    process.stdout.write(
+      `${JSON.stringify({
+        languages,
+        inputGuard: inputs.guard,
+        htmlSha256: html,
+        checkpoints,
+        afterDispose: memory(),
+      })}\n`,
+      done,
+    ),
   );
   process.exit(0);
 }
