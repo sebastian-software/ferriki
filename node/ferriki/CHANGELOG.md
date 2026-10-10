@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.13.0](https://github.com/sebastian-software/ferriki/compare/v0.12.0...v0.13.0) (2026-10-10)
+
+
+### Features
+
+* upgrade Ferroni to 2.1 and expose prefilter control ([#231](https://github.com/sebastian-software/ferriki/issues/231)) ([36a2f73](https://github.com/sebastian-software/ferriki/commit/36a2f735e58c28426cc1a9cbb93fe751153c1947))
+
+
+### Bug Fixes
+
+* **ci:** read the published sidecar without an external tar ([75bef63](https://github.com/sebastian-software/ferriki/commit/75bef63cb5186396ec1103ed9a2f8af2790fcea4))
+* stop Blacksmith measurements after a process timeout ([#233](https://github.com/sebastian-software/ferriki/issues/233)) ([2914f90](https://github.com/sebastian-software/ferriki/commit/2914f90375979d4ec6e05f4b92e07ac2514619b2))
+
+
+### Performance Improvements
+
+* **core:** convert typed token results with cached keys and shared strings ([fa293c5](https://github.com/sebastian-software/ferriki/commit/fa293c5ebf4c9b6ffead0b216a5917c7a8f0f569))
+* **textmate:** keep compiled grammars when the theme changes ([3996b85](https://github.com/sebastian-software/ferriki/commit/3996b85e146bf29678afd799571f1187e63acbc7))
+
 ## [0.12.0](https://github.com/sebastian-software/ferriki/compare/v0.11.0...v0.12.0) (2026-10-04)
 
 
