@@ -35,7 +35,15 @@ assert.deepEqual(formatReleaseSummary(published), {
   state: "PUBLISHED",
   summary: `${outcome.join("\n")}\n`,
 });
-assert.equal(formatReleaseSummary({ ...published, SOURCE_RESULT: "failure", BUILD_RESULT: "skipped", PUBLISH_RESULT: "skipped" }).state, "FAILED");
+assert.equal(
+  formatReleaseSummary({
+    ...published,
+    SOURCE_RESULT: "failure",
+    BUILD_RESULT: "skipped",
+    PUBLISH_RESULT: "skipped",
+  }).state,
+  "FAILED",
+);
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), "ferriki-release-summary-"));
 try {

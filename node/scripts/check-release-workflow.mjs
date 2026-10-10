@@ -149,16 +149,44 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
 
   const cratesJob = workflowJob(workflow, "publish-crates");
   const gateJob = workflowJob(workflow, "verify-release-source");
-  assert.match(gateJob, /node \.\/node\/scripts\/release-source-gate\.mjs resolve/, "release source gate must resolve the tag and SHA");
-  assert.match(gateJob, /node \.\/node\/scripts\/release-source-gate\.mjs verify/, "release source gate must require exact-commit CI");
+  assert.match(
+    gateJob,
+    /node \.\/node\/scripts\/release-source-gate\.mjs resolve/,
+    "release source gate must resolve the tag and SHA",
+  );
+  assert.match(
+    gateJob,
+    /node \.\/node\/scripts\/release-source-gate\.mjs verify/,
+    "release source gate must require exact-commit CI",
+  );
   assert.match(gateJob, /actions: read/, "release source gate needs Actions read permission");
-  assert.match(gateJob, /ref: \$\{\{ steps\.source\.outputs\.release_sha \}\}/, "release source gate must verify the exact checkout");
-  assert.match(gateJob, /release_sha: \$\{\{ steps\.source\.outputs\.release_sha \}\}/, "release source gate must export the verified SHA");
-  assert.match(workflow, /release-tag:\n\s+description:/, "force publication must require an explicit release tag");
+  assert.match(
+    gateJob,
+    /ref: \$\{\{ steps\.source\.outputs\.release_sha \}\}/,
+    "release source gate must verify the exact checkout",
+  );
+  assert.match(
+    gateJob,
+    /release_sha: \$\{\{ steps\.source\.outputs\.release_sha \}\}/,
+    "release source gate must export the verified SHA",
+  );
+  assert.match(
+    workflow,
+    /release-tag:\n\s+description:/,
+    "force publication must require an explicit release tag",
+  );
   for (const jobName of ["publish-crates", "build-native", "publish-npm", "verify-npm-publish"]) {
     const job = workflowJob(workflow, jobName);
-    assert.match(job, /^\s+- verify-release-source\s*$/m, `${jobName} must depend on exact-release verification`);
-    assert.match(job, /ref: \$\{\{ needs\.verify-release-source\.outputs\.release_sha \}\}/, `${jobName} must check out the verified release SHA`);
+    assert.match(
+      job,
+      /^\s+- verify-release-source\s*$/m,
+      `${jobName} must depend on exact-release verification`,
+    );
+    assert.match(
+      job,
+      /ref: \$\{\{ needs\.verify-release-source\.outputs\.release_sha \}\}/,
+      `${jobName} must check out the verified release SHA`,
+    );
   }
   assert.match(
     cratesJob,

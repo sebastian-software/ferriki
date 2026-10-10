@@ -22,17 +22,26 @@ assert.doesNotThrow(() =>
   assertReleaseWorkflow({ workflow, checklist, releaseConfig, nodePackage }),
 );
 assert.throws(
-  () => assertReleaseWorkflow({
-    workflow: workflow.replace(/ {6}- verify-release-source\n(?= {4}if:)/, ""),
-    checklist, releaseConfig, nodePackage,
-  }),
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(/ {6}- verify-release-source\n(?= {4}if:)/, ""),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
   /publish-crates must depend on exact-release verification/,
 );
 assert.throws(
-  () => assertReleaseWorkflow({
-    workflow: workflow.replace(/ref: \$\{\{ needs\.verify-release-source\.outputs\.release_sha \}\}/, "ref: github.sha"),
-    checklist, releaseConfig, nodePackage,
-  }),
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(
+        /ref: \$\{\{ needs\.verify-release-source\.outputs\.release_sha \}\}/,
+        "ref: github.sha",
+      ),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
   /publish-crates must check out the verified release SHA/,
 );
 assert.doesNotThrow(() =>
