@@ -11,6 +11,12 @@ export declare class FerrikiHighlighter {
   getHtmlRenderData(code: string, options: NativeTokenOptions): HtmlRenderData;
   getHtmlRenderDataWithThemes(code: string, options: NativeTokenOptions): HtmlRenderDataWithThemes;
   codeToHtml(code: string, options: NativeHighlightOptions): string;
+  /** Highlight and decorate without transporting tokens or a tree to JS. */
+  codeToHtmlWithDecorations(
+    code: string,
+    options: NativeHighlightOptions,
+    decorations: Array<NativeHtmlDecoration>,
+  ): string | null;
   /** Plans missing standard payloads for Node to fetch and install. */
   planAssets(languages: Array<string>, themes: Array<string>): Promise<Array<AssetPlanEntry>>;
   assetCacheDir(): string | null;
@@ -141,6 +147,18 @@ export interface NativeHighlightOptions {
   tabindex?: string | boolean;
   styleMode?: string;
   themeEntries?: Array<ThemeEntry>;
+}
+
+export interface NativeHtmlAttribute {
+  name: string;
+  value: string;
+}
+
+/** Private declarative render input. Attributes retain JS enumeration order. */
+export interface NativeHtmlDecoration {
+  range: NativeDecorationRange;
+  tagName: string;
+  properties: Array<NativeHtmlAttribute>;
 }
 
 export interface NativeResolvedDecoration {

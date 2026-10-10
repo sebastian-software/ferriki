@@ -197,7 +197,7 @@ export function renderTransformedHast(result, options, transformers, commonConte
   return output;
 }
 
-function addClassToHast(node, className) {
+export function addClassToHast(node, className) {
   const current = node.properties?.class;
   const currentClasses = Array.isArray(current)
     ? current
@@ -235,7 +235,7 @@ function decorationRanges(decorations) {
 }
 
 let decorationBinding;
-function decorationNative(call) {
+export function decorationNative(call) {
   try {
     return call((decorationBinding ??= loadFerrikiNativeBinding()));
   } catch (error) {

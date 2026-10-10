@@ -343,7 +343,7 @@ fn nest_scope_tokens(tokens: &[HighlightToken], nodes: Vec<Value>) -> Vec<Value>
     output
 }
 
-fn prepare_tokens(
+pub(crate) fn prepare_tokens(
     source: &[Vec<HighlightToken>],
     options: &RenderOptions,
 ) -> Vec<Vec<HighlightToken>> {
@@ -433,7 +433,7 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
         .collect()
 }
 
-fn token_style(token: &HighlightToken) -> String {
+pub(crate) fn token_style(token: &HighlightToken) -> String {
     let mut declarations = Vec::new();
     if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
         declarations.push(format!("color:{color}"));
@@ -503,7 +503,7 @@ fn hast_node_to_html(node: &Value) -> String {
     }
 }
 
-fn escape_html(input: &str) -> Cow<'_, str> {
+pub(crate) fn escape_html(input: &str) -> Cow<'_, str> {
     if input.contains(['&', '<']) {
         Cow::Owned(input.replace('&', "&#x26;").replace('<', "&#x3C;"))
     } else {
@@ -511,7 +511,7 @@ fn escape_html(input: &str) -> Cow<'_, str> {
     }
 }
 
-fn escape_attribute(input: &str) -> Cow<'_, str> {
+pub(crate) fn escape_attribute(input: &str) -> Cow<'_, str> {
     let escaped = escape_html(input);
     if escaped.contains('"') {
         Cow::Owned(escaped.replace('"', "&#x22;"))

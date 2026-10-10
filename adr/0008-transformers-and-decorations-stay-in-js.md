@@ -24,7 +24,9 @@ CSS-class styling cover current presentation needs.
 
 - Transformer callbacks and `DecorationItem.transform` stay in JavaScript.
   They receive the existing objects and opaque callback metadata. No user
-  callback, HTML property, or callback payload is serialized into Rust.
+  callback, opaque HTML property, or callback payload is serialized into Rust.
+  A declarative render lane accepts ordered string attributes from plain data
+  records; the facade reuses its class normalization before transport.
 - The `ferriki` crate owns typed decoration range resolution and validation,
   token-boundary splitting, stable nesting order, section selection, and the
   decision to target a line, token, or wrapper. `ferriki-core` only converts
@@ -34,8 +36,17 @@ CSS-class styling cover current presentation needs.
   node shapes use checked numeric buffers rather than an object per entry;
   slices return as four-word `Uint32Array` records. The layout is private
   transport, not a public token or HAST schema.
-- Ordering stays explicit: preprocess callbacks, native tokenization, token
-  callbacks and merging, native decoration splitting, span/line/code/pre
+- Classic, single-theme HTML with inline theme styles and plain declarative
+  decorations runs as one native highlight-and-render operation. Rust prepares
+  tokens, splits boundaries, plans decorations using the same policy, applies
+  ordered attributes, and serializes the result without JS token/tree transport.
+  Constructor transformer defaults participate in eligibility. Callbacks,
+  accessor/custom-prototype records, proxies, non-string attributes, CSS-class
+  theme output, multi-theme output, inline structure, metadata, and grammar state
+  retain the existing host pipeline. Lone surrogate strings and token slices
+  inside surrogate pairs retain exact JS behavior through that pipeline.
+- Ordering in the callback pipeline stays explicit: preprocess callbacks, native
+  tokenization, token callbacks and merging, native decoration splitting, span/line/code/pre
   callbacks, native decoration planning and host replay, root callbacks,
   scope nesting and class extraction, serialization, then postprocess.
   Source ranges are resolved against the preprocessed source; selection uses
@@ -47,8 +58,10 @@ CSS-class styling cover current presentation needs.
   existing callback contract; it is not a general transaction API.
 - Node ranges count UTF-16 code units, including boundaries inside surrogate
   pairs. The bridge carries source text and numeric metadata; final token
-  string slicing stays in JavaScript. The typed Rust policy also supports UTF-8 byte
-  coordinates. Native transport requires finite integer coordinates.
+  string slicing stays in JavaScript when UTF-16 bounds cannot be represented
+  by Rust strings. The native declarative lane slices only complete characters.
+  The typed Rust policy also supports UTF-8 byte coordinates. Native transport
+  requires finite integer coordinates.
 - These primitives are exposed only through the semver-exempt
   `ferriki::__private` bridge (ADR 0014). This is an explicit API decision:
   adopting them for the existing Node consumer does not establish a stable
@@ -77,10 +90,12 @@ CSS-class styling cover current presentation needs.
   metadata object, separate from earlier render stages (#241).
 - Public Node methods return HTML or HTML/CSS. Token and HAST structures remain
   callback data; nested `codeToHast`/`codeToTokens` helpers remain absent.
-- Three extra native calls serve a normal decorated render: token splitting,
-  range/section preparation, and tree planning. Callback-heavy cases can need
+- Three extra native calls serve a decorated render in the host pipeline: token
+  splitting, range/section preparation, and tree planning. Callback-heavy cases can need
   more plans. Moving policy into Rust does not imply a speed improvement;
-  measurements must include transport and allocation costs.
+  measurements must include transport and allocation costs. Eligible declarative
+  calls use one native render operation instead of token transport plus three
+  decoration operations; common asset resolution is separate from this count.
 - The stable Rust API remains token- and render-oriented. Ferromark still owns
   its line wrappers, titles, line numbers, and annotations and receives escaped
   line fragments (ADR 0012).
@@ -97,3 +112,4 @@ CSS-class styling cover current presentation needs.
 - 2026-10-10: Moves declarative decoration policy into Rust through the private typed bridge, preserving JS callbacks and object identities; explicitly defers a stable Rust decoration API (#122).
 
 - 2026-10-10: Completes the JavaScript callback contract with stage-specific wrapper availability, metadata lifetime, return semantics and focused context tests; retains the frozen mixed-decoration coverage (#241).
+- 2026-10-10: Adds a complete native render lane for plain declarative decorations while preserving callback, opaque-property, and UTF-16 fallback contracts.

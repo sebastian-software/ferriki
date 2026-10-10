@@ -29,6 +29,7 @@
     "check:api-contract": "node ./scripts/check-ferriki-api-contract.mjs",
     "check:boundary": "node ./scripts/check-native-boundary.mjs",
     "check:release": "node ./scripts/check-release-workflow.mjs && node ./scripts/test-release-workflow-contract.mjs && node ./scripts/test-release-source-gate.mjs && node ./scripts/test-release-summary.mjs && node ./scripts/test-npm-publish-verification.mjs && node ./scripts/test-npm-publish-recovery.mjs && node ./scripts/test-crates-publish-verification.mjs",
+    "check:declarative-render": "node ./scripts/check-native-declarative-render.mjs",
     "check:decorations": "node ./scripts/check-native-decorations.mjs",
     "bench:decorations": "node ./scripts/bench-native-decorations.mjs",
     "check:transformers": "node ./scripts/check-ferriki-transformers.mjs",

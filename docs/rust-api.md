@@ -5,7 +5,8 @@ Node.js or N-API dependency. `ferriki-core` is the private N-API host and uses
 the same grammar, theme, tokenizer, and renderer implementation.
 
 The Rust crate also owns the decoration policy used by Node's HTML pipeline.
-Its typed ranges and edit plans belong to the internal `__private` bridge;
+Its typed ranges, edit plans, and complete declarative Node renderer belong
+to the internal `__private` bridge;
 this work does not introduce a stable Rust decoration or HAST API. Rust
 rendering consumers continue to own their wrappers and annotations. The
 boundary and API decision are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md).

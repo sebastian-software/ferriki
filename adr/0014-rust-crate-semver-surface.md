@@ -55,7 +55,8 @@ Each crate publishes a deliberate, curated surface.
   never used for items one published crate needs from another; those items are
   public, documented and non-exhaustive, because the version requirement
   between the crates is a caret range.
-- **Native decoration policy.** Typed range, token-slice, and tree-edit plans
+- **Native decoration policy.** Typed range, token-slice, tree-edit plans,
+  and the complete declarative renderer
   are private implementation primitives in `ferriki::__private`, used only by
   the unpublished N-API host. They add no stable Rust decoration or HAST API;
   UTF-16 support is a Node compatibility mode, not a change to public Rust
@@ -114,3 +115,5 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-05: Records the private typed N-API conversion instead of JSON transport (#217); the published Rust serialized shapes stay unchanged.
 
 - 2026-10-10: Explicitly keeps native decoration primitives within the semver-exempt Node bridge (#122).
+
+- 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
