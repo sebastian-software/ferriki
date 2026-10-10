@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-05
+Last updated: 2026-10-10
 
 ## Context
 
@@ -55,6 +55,11 @@ Each crate publishes a deliberate, curated surface.
   never used for items one published crate needs from another; those items are
   public, documented and non-exhaustive, because the version requirement
   between the crates is a caret range.
+- **Native decoration policy.** Typed range, token-slice, and tree-edit plans
+  are private implementation primitives in `ferriki::__private`, used only by
+  the unpublished N-API host. They add no stable Rust decoration or HAST API;
+  UTF-16 support is a Node compatibility mode, not a change to public Rust
+  UTF-8 token offsets (ADR 0008, #122).
 - **Serialized shapes are part of the contract.** Typed Rust fields serialize
   to the documented JSON shape that Rust consumers rely on (for example
   `fontStyle` as integer bits), and tests pin it.
@@ -107,3 +112,5 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-03: Adds owned lazy backtracking diagnostics to the documented `ferriki-textmate` and `ferriki` surfaces (#153).
 
 - 2026-10-05: Records the private typed N-API conversion instead of JSON transport (#217); the published Rust serialized shapes stay unchanged.
+
+- 2026-10-10: Explicitly keeps native decoration primitives within the semver-exempt Node bridge (#122).

@@ -123,8 +123,9 @@ covers the class names, custom CSS and theme switching.
 
 ## Transformers
 
-Shiki transformers and decorations run in JavaScript while Ferriki renders
-HTML, and their callbacks receive typed token and HAST data. The notation
+Transformer and decoration callbacks run in JavaScript and receive typed
+token and HAST data. Rust handles decoration ranges, token boundaries, and
+wrapping; the facade preserves the existing callback objects while rendering HTML. The notation
 helpers from `@shikijs/transformers` for focus, highlights, diffs and word
 highlights work with them.
 

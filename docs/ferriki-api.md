@@ -102,13 +102,13 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option           | Type                                 | Meaning                                                                                      |
-| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                           |
-| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                              |
-| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                |
-| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                 |
-| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                     |
+| Option           | Type                                 | Meaning                                                                                                   |
+| ---------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                                        |
+| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                                           |
+| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                             |
+| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                              |
+| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                                  |
 | `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
@@ -259,6 +259,17 @@ Transformers run in this order: `preprocess`, `tokens`, `span`, `line`, `code`,
 `this.options.meta.__raw`. A `DecorationItem.transform` callback instead
 receives `(element, type)` and does not receive the transformer context.
 
+Decoration positions are finite integers: an absolute UTF-16 offset, or a
+zero-based `{ line, character }`. A negative character counts backward from
+that line's length, excluding a trailing carriage return. Nested, touching,
+and empty ranges are supported; crossing overlaps and reversed ranges throw
+`ERR_USAGE`. Source ranges use the preprocessed code. Decorations split tokens
+after token hooks and apply to the current tree after `pre` hooks, before
+`root`, scope nesting, and class extraction. A decoration callback receives
+`line`, `token`, or `wrapper` as its second argument; its `this` value is the
+resolved decoration, including `{ line, character, offset }` for both bounds.
+Later sections observe its mutations and returned replacement nodes.
+
 ## Registrations and loaders
 
 `LanguageRegistration` and `ThemeRegistration` accept the JSON-shaped
@@ -356,8 +367,10 @@ making its implementation text part of the contract. Native loader messages
 remain actionable and start with the documented `[ferriki]` prefix.
 
 Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
-Transformer callbacks and decoration processing stay in JavaScript; callback
-objects do not cross the native boundary. Public Node rendering returns HTML
+Transformer and decoration callbacks stay in JavaScript. Rust resolves decoration
+ranges, splits token boundaries, and plans tree edits; the facade applies those
+edits to the existing objects. Callback payloads and properties do not cross
+the native boundary. Public Node rendering returns HTML
 only. Ferriki does not export Shiki's JavaScript/Oniguruma engine factories or
 WASM loading. Markdown adapters such as `rehype` and `markdown-it`, and the
 optional Vite integration, are separate packages rather than `@ferriki/core`

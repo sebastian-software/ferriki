@@ -248,7 +248,7 @@ import { ferrikiVersion } from '@ferriki/core'
 
 const project = ${JSON.stringify(project)}
 assert(ferrikiVersion(), 'packed Ferriki native binding did not load')
-const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
+const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', preprocess(code) { this.options.decorations = [{ start: 0, end: Math.min(5, code.length), alwaysWrap: true, properties: { class: 'packed-decoration', 'data-native-decoration': 'yes' } }]; return code }, pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
 function hastText(node) { return node.type === 'text' ? node.value : (node.children ?? []).map(hastText).join('') }
 function hastProperty(node, name) { if (node.type === 'element' && node.properties?.[name] !== undefined) return node.properties[name]; for (const child of node.children ?? []) { const value = hastProperty(child, name); if (value !== undefined) return value } }
 const oxcConfig = { jsx: { runtime: 'automatic', development: false } }
@@ -266,7 +266,7 @@ try {
   }
   const module = await server.transformRequest('/src/example.tsx')
   const plain = await server.transformRequest('/src/plain.ts')
-  assert(module?.code.includes('packedValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer'), 'packed Vite macro transform, callback, or CSS import failed')
+  assert(module?.code.includes('packedValue') && module.code.includes('virtual:ferriki-vite/') && module.code.includes('data-packed-transformer') && module.code.includes('data-native-decoration'), 'packed Vite macro transform, callback, or CSS import failed')
   assert(!module.code.includes('@ferriki/core/macro'), 'the packed macro import was not removed')
   assert(module.code.indexOf('"use client"') < module.code.indexOf('virtual:ferriki-vite/'), 'the macro transform moved the directive prologue')
   assert(plain?.code.includes('no macro import') && !plain.code.includes('virtual:ferriki-vite/'), 'a module without a macro import was changed')

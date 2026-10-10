@@ -155,6 +155,17 @@ const html = highlighter.codeToHtml('const answer = 42', {
 })
 if (!html.includes('const') || !html.includes('packed-hook') || !tokenHookRan || !preHookRan)
   throw new Error('the packed Ferriki HTML transformer pipeline did not produce the expected output')
+let decorationCallbackRan = false
+const decorated = highlighter.codeToHtml('const answer = 42', {
+  ...options,
+  decorations: [{ start: 6, end: 12, properties: { class: 'packed-decoration' }, transform(node, type) {
+    decorationCallbackRan = type === 'token' && this.start.offset === 6
+    node.properties['data-decoration-callback'] = 'yes'
+    return node
+  } }],
+})
+if (!decorated.includes('packed-decoration') || !decorated.includes('data-decoration-callback') || !decorationCallbackRan)
+  throw new Error('the packed native decoration bridge or JS callback failed')
 const classOutput = highlighter.codeToHtmlWithCss('const answer = 42', options)
 if (!classOutput.html.includes('const') || !classOutput.css || classOutput.html.includes(' style='))
   throw new Error('the packed Ferriki CSS-class renderer did not produce HTML and CSS')

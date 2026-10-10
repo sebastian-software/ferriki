@@ -32,7 +32,7 @@ the public types and is rejected with `ERR_UNSUPPORTED`; a future proposal
 requires a concrete consumer need beyond the supported theming path.
 
 The contract prioritizes the synchronous reusable HTML-rendering path, keeps
-transformers/decorations in the JavaScript layer, and keeps ecosystem adapters
+transformer callbacks in JavaScript and decoration policy in Rust, and keeps ecosystem adapters
 outside the public Ferriki package. Before 1.0, public Node HAST and token
 output methods are removed; the internal callback pipeline retains typed token
 and HAST data, and the public Rust token APIs remain available. The npm package
@@ -77,3 +77,5 @@ being mistaken for parity.
 - 2026-10-04: Takes over the mapping of child issues to the contract, which now states only the contract itself.
 - 2026-10-10: Adds the factory-only regex prefilter switch for one-shot workloads.
 - 2026-10-10: Classifies native color replacements as a non-goal after closing #190 as not planned; preserves explicit rejection and requires a concrete consumer need for any future proposal.
+
+- 2026-10-10: Clarifies native decoration ownership without changing public Node output methods (#122).

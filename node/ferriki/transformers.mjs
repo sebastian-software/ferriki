@@ -6,6 +6,7 @@ import {
   themeSwitchStyles,
 } from "./classes.mjs";
 import { ShikiError } from "./index.mjs";
+import { loadFerrikiNativeBinding } from "./native.mjs";
 
 export function sortTransformers(transformers) {
   if (transformers === undefined) return [];
@@ -219,161 +220,179 @@ function stringifyStyle(style) {
     .join(";");
 }
 
-export function splitTokensAtDecorations(tokens, decorations, source) {
-  const resolved = resolveDecorations(decorations, source);
-  const breakpoints = resolved.flatMap((item) => [item.start.offset, item.end.offset]);
-  return tokens.map((line) =>
-    line.flatMap((token) => {
-      const start = token.offset;
-      const end = start + token.content.length;
-      const points = [
-        ...new Set([start, ...breakpoints.filter((point) => point > start && point < end), end]),
-      ].sort((left, right) => left - right);
-      return points.slice(0, -1).map((point, index) => ({
-        ...token,
-        offset: point,
-        content: token.content.slice(point - start, points[index + 1] - start),
-      }));
-    }),
-  );
+// Range policy and tree edits are planned in Rust. This adapter retains opaque
+// JS properties, callback data, original node identities, and exact UTF-16 slices.
+function decorationRanges(decorations) {
+  return decorations.map((item) => ({
+    ...(typeof item.start === "number"
+      ? { startOffset: item.start }
+      : { startLine: item.start?.line, startCharacter: item.start?.character }),
+    ...(typeof item.end === "number"
+      ? { endOffset: item.end }
+      : { endLine: item.end?.line, endCharacter: item.end?.character }),
+    alwaysWrap: !!item.alwaysWrap,
+  }));
 }
 
-function resolveDecorations(decorations, source) {
-  const sourceLines = source.split("\n");
-  const lineStarts = [];
-  let offset = 0;
-  for (const line of sourceLines) {
-    lineStarts.push(offset);
-    offset += line.length + 1;
+let decorationBinding;
+function decorationNative(call) {
+  try {
+    return call((decorationBinding ??= loadFerrikiNativeBinding()));
+  } catch (error) {
+    if (["ERR_USAGE", "InvalidArg", "NumberExpected"].includes(error?.code))
+      throw new ShikiError(error.message, "ERR_USAGE", { cause: error });
+    throw error;
   }
-  const lineLength = (line) => (line.endsWith("\r") ? line.length - 1 : line.length);
-  const toPosition = (value) => {
-    if (typeof value === "number") {
-      if (value < 0 || value > source.length)
-        throw new ShikiError(
-          `Invalid decoration offset: ${value}. Code length: ${source.length}`,
-          "ERR_USAGE",
-        );
-      let line = 0;
-      while (line + 1 < lineStarts.length && lineStarts[line + 1] <= value) line++;
-      return { line, character: value - lineStarts[line], offset: value };
+}
+
+export function splitTokensAtDecorations(tokens, decorations, source) {
+  const slices = decorationNative((native) =>
+    native.splitDecorationTokens(
+      source,
+      decorationRanges(decorations),
+      tokens.map((line) => {
+        const metadata = new Float64Array(line.length * 2);
+        for (let index = 0; index < line.length; index++) {
+          metadata[index * 2] = line[index].offset;
+          metadata[index * 2 + 1] = line[index].content.length;
+        }
+        return metadata;
+      }),
+    ),
+  );
+  return slices.map((line, index) => {
+    const result = [];
+    for (let position = 0; position < line.length; position += 4) {
+      const token = tokens[index][line[position]];
+      result.push({
+        ...token,
+        offset: line[position + 3],
+        content: token.content.slice(line[position + 1], line[position + 2]),
+      });
     }
-    const line = sourceLines[value?.line] === undefined ? -1 : value.line;
-    if (line < 0)
-      throw new ShikiError(
-        `Invalid decoration position ${JSON.stringify(value)}. Lines length: ${sourceLines.length}`,
-        "ERR_USAGE",
-      );
-    let character = value.character;
-    if (character < 0) character = lineLength(sourceLines[line]) + character;
-    if (character < 0 || character > lineLength(sourceLines[line]))
-      throw new ShikiError(
-        `Invalid decoration position ${JSON.stringify(value)}. Line ${line} length: ${lineLength(sourceLines[line])}`,
-        "ERR_USAGE",
-      );
-    return { line, character, offset: lineStarts[line] + character };
-  };
-  const items = decorations.map((decoration) => ({
-    ...decoration,
-    start: toPosition(decoration.start),
-    end: toPosition(decoration.end),
-  }));
-  for (let index = 0; index < items.length; index++) {
-    const current = items[index];
-    if (current.start.offset > current.end.offset)
-      throw new ShikiError(
-        `Invalid decoration range: ${JSON.stringify(current.start)} - ${JSON.stringify(current.end)}`,
-        "ERR_USAGE",
-      );
-    for (const other of items.slice(index + 1)) {
-      const nested =
-        (current.start.offset <= other.start.offset && other.end.offset <= current.end.offset) ||
-        (other.start.offset <= current.start.offset && current.end.offset <= other.end.offset);
-      const intersects =
-        current.start.offset < other.end.offset && other.start.offset < current.end.offset;
-      if (intersects && !nested)
-        throw new ShikiError(
-          `Decorations ${JSON.stringify(current.start)} and ${JSON.stringify(other.start)} intersect.`,
-          "ERR_USAGE",
-        );
-    }
-  }
-  return items;
+    return result;
+  });
 }
 
 function applyDecorations(codeNode, decorations, source) {
-  const items = resolveDecorations(decorations, source);
+  const prepared = decorationNative((native) =>
+    native.decorationSections(source, decorationRanges(decorations)),
+  );
+  const sections = prepared.sections;
+  const items = decorations.map((item, index) => ({ ...item, ...prepared.ranges[index] }));
   const lines = (codeNode.children || []).filter(
     (node) => node.type === "element" && node.tagName === "span",
   );
-  const applyProperties = (node, decoration, type) => {
-    node.tagName = decoration.tagName || "span";
-    node.properties = { ...(node.properties || {}), ...(decoration.properties || {}) };
-    if (decoration.properties?.class) addClassToHast(node, decoration.properties.class);
-    return decoration.transform?.(node, type) || node;
-  };
-  const decorateSection = (line, start, end, decoration) => {
-    const lineNode = lines[line];
-    if (!lineNode) return;
-    let cursor = 0;
-    let startIndex = start === 0 ? 0 : -1;
-    let endIndex = end === Number.POSITIVE_INFINITY ? lineNode.children.length : -1;
-    for (let index = 0; index < lineNode.children.length; index++) {
-      const length = textContentLength(lineNode.children[index]);
-      if (startIndex < 0 && cursor + length >= start)
-        startIndex = cursor + length === start ? index + 1 : index;
-      if (endIndex < 0 && cursor + length >= end)
-        endIndex = cursor + length === end ? index + 1 : index;
-      cursor += length;
+  const execute = (batch) => {
+    const objects = [];
+    const metadata = [];
+    const ids = new Map();
+    const childArrays = new Set();
+    let sharedChildren = false;
+    const flatten = (node) => {
+      if (ids.has(node)) return ids.get(node);
+      const id = objects.length;
+      ids.set(node, id);
+      objects.push(node);
+      const children = node.type === "text" ? [] : node.children || [];
+      if (node.type !== "text" && node.children) {
+        sharedChildren ||= childArrays.has(node.children);
+        childArrays.add(node.children);
+      }
+      const record = metadata.length;
+      metadata.push(
+        Number(node.type === "element"),
+        node.type === "text" ? node.value.length : 0,
+        children.length,
+      );
+      for (let index = 0; index < children.length; index++) metadata.push(0);
+      for (let index = 0; index < children.length; index++)
+        metadata[record + 3 + index] = flatten(children[index]);
+      return id;
+    };
+    // Transport only the lines this batch can touch. Callbacks with many
+    // sections must not copy the entire block across N-API for every edit.
+    const sourceLines = [...new Set(batch.map((section) => section.line))].filter(
+      (index) => lines[index],
+    );
+    const localLines = new Map(sourceLines.map((index, local) => [index, local]));
+    const lineIds = sourceLines.map((index) => flatten(lines[index]));
+    // Mutating one aliased child array also changes its other owners. Re-read
+    // that graph between sections, just as after a user callback.
+    if (sharedChildren && batch.length > 1) {
+      for (const section of batch) execute([section]);
+      return;
     }
-    if (startIndex < 0 || endIndex < 0)
-      throw new ShikiError(`Failed to find decoration boundary on line ${line}`, "ERR_USAGE");
-    const children = lineNode.children.slice(startIndex, endIndex);
-    if (!decoration.alwaysWrap && children.length === lineNode.children.length) {
-      lines[line] = applyProperties(lineNode, decoration, "line");
-    } else if (!decoration.alwaysWrap && children.length === 1 && children[0].type === "element") {
-      lineNode.children[startIndex] = applyProperties(children[0], decoration, "token");
-    } else {
-      const wrapper = applyProperties(
-        {
+    const plan = decorationNative((native) =>
+      native.planDecorationMutations(
+        Float64Array.from(metadata),
+        lineIds,
+        batch.map((section) => ({
+          ...section,
+          line: localLines.get(section.line) ?? lineIds.length,
+        })),
+      ),
+    );
+    for (const edit of plan.mutations) {
+      const decoration = items[edit.decoration];
+      const line = objects[edit.line];
+      let node = objects[edit.node];
+      if (edit.target === "wrapper") {
+        node = {
           type: "element",
           tagName: decoration.tagName || "span",
           properties: {},
-          children,
-        },
-        decoration,
-        "wrapper",
-      );
-      lineNode.children.splice(startIndex, children.length, wrapper);
+          children: line.children.slice(edit.start, edit.start + edit.count),
+        };
+        objects[edit.node] = node;
+      }
+      node.tagName = decoration.tagName || "span";
+      node.properties = { ...(node.properties || {}), ...(decoration.properties || {}) };
+      if (decoration.properties?.class) addClassToHast(node, decoration.properties.class);
+      const transformed = decoration.transform?.(node, edit.target) || node;
+      if (edit.target === "line") lines[sourceLines[lineIds.indexOf(edit.line)]] = transformed;
+      else line.children.splice(edit.start, edit.count, transformed);
+      objects[edit.node] = transformed;
     }
+    if (plan.error) throw new ShikiError(plan.error, "ERR_USAGE");
   };
-  for (const decoration of [...items].sort(
-    (left, right) => right.start.offset - left.start.offset,
-  )) {
-    if (decoration.start.line === decoration.end.line) {
-      decorateSection(
-        decoration.start.line,
-        decoration.start.character,
-        decoration.end.character,
-        decoration,
+  // Batch sections between callbacks. Callback traversal stays in Rust, and
+  // reads the resolved decoration again after each callback (including edits
+  // to this.start/end or alwaysWrap).
+  let pending = [];
+  const flush = () => {
+    if (pending.length) execute(pending);
+    pending = [];
+  };
+  // Rust emits each decoration's sections together. Walk those groups once
+  // instead of rescanning the whole section list for every decoration.
+  for (let sectionIndex = 0; sectionIndex < sections.length;) {
+    const index = sections[sectionIndex].decoration;
+    let end = sectionIndex + 1;
+    while (end < sections.length && sections[end].decoration === index) end++;
+    const item = items[index];
+    if (!item.transform) {
+      for (; sectionIndex < end; sectionIndex++) pending.push(sections[sectionIndex]);
+      continue;
+    }
+    sectionIndex = end;
+    flush();
+    let cursor = { phase: 0, line: 0 };
+    while (cursor.phase !== 3) {
+      const next = decorationNative((native) =>
+        native.nextDecorationSection(
+          { start: item.start, end: item.end },
+          index,
+          !!item.alwaysWrap,
+          cursor,
+        ),
       );
-    } else {
-      decorateSection(
-        decoration.start.line,
-        decoration.start.character,
-        Number.POSITIVE_INFINITY,
-        decoration,
-      );
-      for (let line = decoration.start.line + 1; line < decoration.end.line; line++)
-        lines[line] = applyProperties(lines[line], decoration, "line");
-      decorateSection(decoration.end.line, 0, decoration.end.character, decoration);
+      if (!next) break;
+      execute([next.section]);
+      cursor = next.cursor;
     }
   }
-}
-
-function textContentLength(node) {
-  if (node.type === "text") return node.value.length;
-  return (node.children || []).reduce((total, child) => total + textContentLength(child), 0);
+  flush();
 }
 
 function tokenCss(token) {
