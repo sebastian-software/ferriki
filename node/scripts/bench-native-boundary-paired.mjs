@@ -15,12 +15,14 @@ import { loadCases, loadCorpus, quantile, sha256 } from "./tiobe-benchmark.mjs";
 const { values } = parseArgs({
   options: {
     engine: { type: "string", multiple: true, default: [] },
+    "prefilter-off": { type: "string", multiple: true, default: [] },
     processes: { type: "string", default: "6" },
     rounds: { type: "string", default: "20" },
     warmups: { type: "string", default: "3" },
     themes: { type: "string", default: "single,multi" },
     sizes: { type: "string", default: "example,large" },
     corpora: { type: "string", default: "tiobe,curated" },
+    languages: { type: "string" },
     worker: { type: "string" },
     write: { type: "string" },
     help: { type: "boolean" },
@@ -28,7 +30,7 @@ const { values } = parseArgs({
 });
 if (values.help) {
   console.log(
-    "Usage: node scripts/bench-native-boundary-paired.mjs --engine base=json:old.node --engine typed=new.node [--processes 6] [--rounds 20] [--themes single,multi,html] [--sizes example,large] [--corpora tiobe,curated] [--write report.json]",
+    "Usage: node scripts/bench-native-boundary-paired.mjs --engine base=json:old.node --engine typed=new.node [--prefilter-off typed] [--processes 6] [--rounds 20] [--themes single,multi,html] [--sizes example,large] [--corpora tiobe,curated] [--languages json,astro] [--write report.json]",
   );
   process.exit(0);
 }
@@ -38,8 +40,18 @@ const engines = values.engine.map((spec) => {
   const json = target.startsWith("json:");
   const path = json ? target.slice(5) : target;
   assert.ok(name && path, `Invalid --engine ${spec}`);
-  return { name, json, path };
+  return {
+    name,
+    json,
+    path,
+    regexPrefilter: values["prefilter-off"].includes(name) ? false : undefined,
+  };
 });
+for (const name of values["prefilter-off"])
+  assert.ok(
+    engines.some((engine) => engine.name === name),
+    `Unknown --prefilter-off engine ${name}`,
+  );
 assert.ok(engines.length >= 2, "Pass at least two --engine values");
 const list = (value) => value.split(",").filter(Boolean);
 
@@ -56,6 +68,7 @@ async function worker(seed) {
       encode({
         standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/shiki", import.meta.url)),
         assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
+        ...(engine.regexPrefilter === false ? { regexPrefilter: false } : {}),
       }),
     );
     highlighter.loadStandardTheme("github-dark");
@@ -65,7 +78,10 @@ async function worker(seed) {
   const cases = [];
   try {
     for (const corpus of list(values.corpora)) {
-      for (const language of loadCorpus(corpus).languages.filter((entry) => entry.file)) {
+      for (const language of loadCorpus(corpus).languages.filter(
+        (entry) =>
+          entry.file && (!values.languages || list(values.languages).includes(entry.textmate)),
+      )) {
         for (const engine of loaded) engine.highlighter.loadStandardGrammar(language.textmate);
         for (const entry of loadCases(language, list(values.sizes), corpus)) {
           for (const themes of list(values.themes)) {

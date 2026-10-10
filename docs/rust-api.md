@@ -59,6 +59,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+For one-shot highlighting, add `.with_regex_prefilter(false)` to the builder
+to prevent regex prefilter construction. The default uses the scanner's automatic
+warm-up policy, which counts scanner searches rather than highlighted documents.
+This is a creation-time choice for every grammar, including embedded languages
+and injections, and does not change matching or colors. Direct TextMate consumers
+can set `GrammarConfiguration::with_regex_prefilter(false)` when first compiling
+a grammar.
+
 Builder loads are eager. Unlisted standard grammars and themes remain lazy and
 can be loaded on the same highlighter later. A highlighter is intended for reuse
 across blocks and documents. Its `&mut self` methods make registry and cache

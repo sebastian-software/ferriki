@@ -102,18 +102,38 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option         | Type                                 | Meaning                                                                      |
-| -------------- | ------------------------------------ | ---------------------------------------------------------------------------- |
-| `langs`        | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.           |
-| `themes`       | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.              |
-| `langAlias`    | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                |
-| `transformers` | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering. |
-| `assets`       | `AssetOptions`                       | Where standard grammars and themes come from; see below.                     |
+| Option           | Type                                 | Meaning                                                                                      |
+| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                           |
+| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                              |
+| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                |
+| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                 |
+| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                     |
+| `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for one-shot use. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
 and are not a supported extension point. Additions require an explicit API
 contract and compatibility coverage.
+
+For a highlighter used once, `regexPrefilter: false` avoids the scanner's
+prefilter construction. The default keeps automatic prefiltering for repeated
+use; its warm-up counts scanner searches, not highlighting calls. Choose this
+at creation time, including the singleton's first creation; it is not a
+per-call `HighlightOptions` setting. Matching and colors remain the same.
+
+```js
+const highlighter = await createHighlighter({
+  langs: ["typescript"],
+  themes: ["github-dark"],
+  regexPrefilter: false,
+});
+try {
+  const html = highlighter.codeToHtml(code, { lang: "typescript", theme: "github-dark" });
+} finally {
+  highlighter.dispose();
+}
+```
 
 Constructor `transformers` are defaults for `codeToHtml` and
 `codeToHtmlWithCss`. A call with no `transformers` (or `undefined`) inherits

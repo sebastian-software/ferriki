@@ -11,8 +11,15 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::RegexError;
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
-pub(crate) use ferroni::scanner::{CaptureIndex, OnigString, ScannerFindOptions};
+pub(crate) use ferroni::scanner::{OnigString, ScannerFindOptions};
 use ferroni::scanner::{Scanner, ScannerConfig, ScannerSyntax};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CaptureIndex {
+    pub(crate) start: usize,
+    pub(crate) end: usize,
+    pub(crate) length: usize,
+}
 
 #[cfg(test)]
 std::thread_local! {
@@ -400,6 +407,7 @@ pub(crate) struct RegExpSourceList<T> {
     has_anchors: bool,
     cached: Option<Arc<CompiledRule<T>>>,
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
+    regex_prefilter: bool,
 }
 
 impl<T> Default for RegExpSourceList<T> {
@@ -411,11 +419,16 @@ impl<T> Default for RegExpSourceList<T> {
 impl<T> RegExpSourceList<T> {
     #[must_use]
     pub(crate) fn new() -> Self {
+        Self::with_regex_prefilter(true)
+    }
+
+    pub(crate) fn with_regex_prefilter(regex_prefilter: bool) -> Self {
         Self {
             items: Vec::new(),
             has_anchors: false,
             cached: None,
             anchor_cache: array::from_fn(|_| None),
+            regex_prefilter,
         }
     }
 
@@ -477,6 +490,7 @@ impl<T: Copy> RegExpSourceList<T> {
                 .map(|item| item.original_source.as_str())
                 .collect::<Vec<_>>(),
             self.items.iter().map(|item| item.rule_id).collect(),
+            self.regex_prefilter,
         )?);
         self.cached = Some(Arc::clone(&compiled));
         Ok(compiled)
@@ -505,6 +519,7 @@ impl<T: Copy> RegExpSourceList<T> {
                 .map(|item| item.original_source.as_str())
                 .collect(),
             self.items.iter().map(|item| item.rule_id).collect(),
+            self.regex_prefilter,
         )?);
         self.anchor_cache[cache_index] = Some(Arc::clone(&compiled));
         Ok(compiled)
@@ -530,6 +545,7 @@ impl<T: Copy> CompiledRule<T> {
         reg_exps: Vec<String>,
         original_patterns: Vec<&str>,
         rules: Vec<T>,
+        regex_prefilter: bool,
     ) -> Result<Self, RegexError> {
         let compiled_reg_exps: Vec<_> = reg_exps
             .iter()
@@ -539,10 +555,10 @@ impl<T: Copy> CompiledRule<T> {
         // vscode-oniguruma compiles scanner patterns with CAPTURE_GROUP by
         // default, so unnamed groups keep capturing next to named ones and
         // numbered backreferences stay valid in patterns with named groups.
-        let config = ScannerConfig {
-            options: ONIG_OPTION_CAPTURE_GROUP,
-            syntax: ScannerSyntax::Oniguruma,
-        };
+        let config = ScannerConfig::default()
+            .options(ONIG_OPTION_CAPTURE_GROUP)
+            .syntax(ScannerSyntax::Oniguruma)
+            .prefilter(regex_prefilter);
         let scanner = Scanner::with_config(&scanner_reg_exps, &config).map_err(RegexError::new)?;
         let mut backtracking_warnings = Vec::new();
         for (index, warnings) in scanner.warnings().iter().enumerate() {
@@ -598,7 +614,7 @@ impl<T: Copy> CompiledRule<T> {
         // TextMate distinction here rather than weakening shared Scanner
         // semantics for regular expression consumers.
         let pattern = self.reg_exps[matched.index].trim();
-        if matched.capture_indices[0].start == string.utf16_len()
+        if matched.captures()[0].start == string.utf16_len()
             && (pattern == "^$"
                 || (start_position < string.utf16_len() && rejects_artificial_end(pattern)))
         {
@@ -607,7 +623,15 @@ impl<T: Copy> CompiledRule<T> {
 
         Some(FindNextMatchResult {
             rule_id: self.rules[matched.index],
-            capture_indices: matched.capture_indices.into_vec(),
+            capture_indices: matched
+                .into_captures()
+                .into_iter()
+                .map(|capture| CaptureIndex {
+                    start: capture.start,
+                    end: capture.end,
+                    length: capture.length,
+                })
+                .collect(),
         })
     }
 }
@@ -1025,6 +1049,43 @@ mod tests {
             r"(?{callout})",
         ] {
             assert_eq!(normalize_ferroni_pattern(pattern), pattern);
+        }
+    }
+
+    #[test]
+    fn disabling_prefilter_preserves_captures_after_warmup_and_anchor_compilation() {
+        for anchors in [None, Some((true, true)), Some((true, false))] {
+            let make_scanner = |enabled| {
+                let mut sources = RegExpSourceList::with_regex_prefilter(enabled);
+                for index in 0..32_u32 {
+                    sources.push(RegExpSource::new(
+                        format!(r"\A(keyword{index})_[a-z]+"),
+                        index,
+                    ));
+                }
+                match anchors {
+                    None => sources.compile(),
+                    Some((allow_a, allow_g)) => sources.compile_ag(allow_a, allow_g),
+                }
+                .unwrap()
+            };
+            let enabled = make_scanner(true);
+            let disabled = make_scanner(false);
+            let line = OnigString::new("keyword19_value");
+            for _ in 0..64 {
+                let expected = enabled
+                    .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                    .unwrap();
+                let actual = disabled
+                    .find_next_match(&line, 0, ScannerFindOptions::NONE)
+                    .unwrap();
+                assert_eq!(actual.rule_id, expected.rule_id);
+                assert_eq!(actual.capture_indices, expected.capture_indices);
+            }
+            assert!(enabled.scanner.lock().unwrap().prefilter_stats().built);
+            let stats = disabled.scanner.lock().unwrap().prefilter_stats();
+            assert!(!stats.built);
+            assert_eq!(stats.covered, 0);
         }
     }
 

@@ -184,9 +184,12 @@ impl FerrikiHighlighter {
 
 #[napi(js_name = "createHighlighter")]
 pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHighlighter> {
+    let regex_prefilter = options.regex_prefilter.unwrap_or(true);
     let Some(root) = options.standard_asset_root else {
         return Ok(FerrikiHighlighter {
-            core: RefCell::new(native(HighlighterCore::new())?),
+            core: RefCell::new(native(HighlighterCore::new_with_regex_prefilter(
+                regex_prefilter,
+            ))?),
             assets: None,
         });
     };
@@ -199,7 +202,10 @@ pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHi
             cache_dir: options.cache_dir.map(PathBuf::from),
         },
     ))?);
-    let core = native(HighlighterCore::with_assets(native(assets.catalogs())?))?;
+    let core = native(HighlighterCore::with_assets_and_regex_prefilter(
+        native(assets.catalogs())?,
+        regex_prefilter,
+    ))?;
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
         assets: Some(assets),
@@ -298,6 +304,7 @@ pub(crate) mod tests {
                 cache_dir: Some(cache.display().to_string()),
                 ..Default::default()
             }),
+            ..Default::default()
         })
         .expect("highlighter")
     }

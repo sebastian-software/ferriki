@@ -1,0 +1,1006 @@
+{
+  "measuredAt": "2026-10-10T05:42:26.159Z",
+  "node": "v24.21.0",
+  "samples": [
+    {
+      "run": 0,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.389000000000003,
+      "setupMs": 3.995041999999998,
+      "firstHtmlMs": 84.309167,
+      "totalMs": 89.693209,
+      "bytes": 9724
+    },
+    {
+      "run": 0,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.3049579999999992,
+      "setupMs": 2.4944999999999986,
+      "firstHtmlMs": 201.61325,
+      "totalMs": 205.412708,
+      "bytes": 9724
+    },
+    {
+      "run": 0,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.4009999999999998,
+      "setupMs": 10.548207999999999,
+      "firstHtmlMs": 283.302333,
+      "totalMs": 295.251541,
+      "bytes": 7547
+    },
+    {
+      "run": 0,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3193340000000013,
+      "setupMs": 9.036708,
+      "firstHtmlMs": 566.892375,
+      "totalMs": 577.248417,
+      "bytes": 7547
+    },
+    {
+      "run": 0,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.4157079999999986,
+      "setupMs": 2.3057499999999997,
+      "firstHtmlMs": 56.13445899999999,
+      "totalMs": 59.85591699999999,
+      "bytes": 7689
+    },
+    {
+      "run": 0,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3134999999999977,
+      "setupMs": 1.7700829999999996,
+      "firstHtmlMs": 185.494833,
+      "totalMs": 188.578416,
+      "bytes": 7689
+    },
+    {
+      "run": 0,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.2994580000000013,
+      "setupMs": 1.4824589999999986,
+      "firstHtmlMs": 2.5736659999999993,
+      "totalMs": 5.355582999999999,
+      "bytes": 8565
+    },
+    {
+      "run": 0,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3390409999999981,
+      "setupMs": 1.276917000000001,
+      "firstHtmlMs": 7.511542000000002,
+      "totalMs": 10.127500000000001,
+      "bytes": 8565
+    },
+    {
+      "run": 0,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.463084000000002,
+      "setupMs": 3.967457999999997,
+      "firstHtmlMs": 70.70845800000001,
+      "totalMs": 76.139,
+      "bytes": 11829
+    },
+    {
+      "run": 0,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.2902500000000003,
+      "setupMs": 3.385333000000003,
+      "firstHtmlMs": 170.56675,
+      "totalMs": 175.242333,
+      "bytes": 11829
+    },
+    {
+      "run": 1,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.2660419999999988,
+      "setupMs": 2.418542000000002,
+      "firstHtmlMs": 199.408583,
+      "totalMs": 203.093167,
+      "bytes": 9724
+    },
+    {
+      "run": 1,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.3187919999999984,
+      "setupMs": 2.4803330000000017,
+      "firstHtmlMs": 83.004209,
+      "totalMs": 86.80333399999999,
+      "bytes": 9724
+    },
+    {
+      "run": 1,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3892500000000005,
+      "setupMs": 9.086625000000002,
+      "firstHtmlMs": 573.540125,
+      "totalMs": 584.0160000000001,
+      "bytes": 7547
+    },
+    {
+      "run": 1,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.3018339999999995,
+      "setupMs": 9.230500000000003,
+      "firstHtmlMs": 280.938833,
+      "totalMs": 291.471167,
+      "bytes": 7547
+    },
+    {
+      "run": 1,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.333708999999999,
+      "setupMs": 1.8092079999999982,
+      "firstHtmlMs": 185.230417,
+      "totalMs": 188.373334,
+      "bytes": 7689
+    },
+    {
+      "run": 1,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.3596669999999982,
+      "setupMs": 1.8051659999999998,
+      "firstHtmlMs": 57.113125,
+      "totalMs": 60.277958,
+      "bytes": 7689
+    },
+    {
+      "run": 1,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3898329999999994,
+      "setupMs": 1.2857920000000007,
+      "firstHtmlMs": 7.664957999999999,
+      "totalMs": 10.340582999999999,
+      "bytes": 8565
+    },
+    {
+      "run": 1,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.5001670000000011,
+      "setupMs": 1.3387080000000005,
+      "firstHtmlMs": 2.5269580000000005,
+      "totalMs": 5.365833000000002,
+      "bytes": 8565
+    },
+    {
+      "run": 1,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3494170000000025,
+      "setupMs": 3.426124999999999,
+      "firstHtmlMs": 168.16825,
+      "totalMs": 172.943792,
+      "bytes": 11829
+    },
+    {
+      "run": 1,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3091669999999986,
+      "setupMs": 3.466874999999998,
+      "firstHtmlMs": 70.35370800000001,
+      "totalMs": 75.12975,
+      "bytes": 11829
+    },
+    {
+      "run": 2,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.3071669999999997,
+      "setupMs": 2.5175410000000014,
+      "firstHtmlMs": 83.327292,
+      "totalMs": 87.152,
+      "bytes": 9724
+    },
+    {
+      "run": 2,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.3160419999999995,
+      "setupMs": 2.5867920000000026,
+      "firstHtmlMs": 206.13025,
+      "totalMs": 210.033084,
+      "bytes": 9724
+    },
+    {
+      "run": 2,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.2935410000000012,
+      "setupMs": 9.515291999999999,
+      "firstHtmlMs": 282.927333,
+      "totalMs": 293.73616599999997,
+      "bytes": 7547
+    },
+    {
+      "run": 2,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3322090000000024,
+      "setupMs": 9.236666,
+      "firstHtmlMs": 553.477375,
+      "totalMs": 564.04625,
+      "bytes": 7547
+    },
+    {
+      "run": 2,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.2920419999999986,
+      "setupMs": 1.7876670000000026,
+      "firstHtmlMs": 55.42741600000001,
+      "totalMs": 58.507125,
+      "bytes": 7689
+    },
+    {
+      "run": 2,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3115419999999993,
+      "setupMs": 1.8023330000000009,
+      "firstHtmlMs": 186.658625,
+      "totalMs": 189.7725,
+      "bytes": 7689
+    },
+    {
+      "run": 2,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3050840000000008,
+      "setupMs": 1.2440409999999993,
+      "firstHtmlMs": 2.6204590000000003,
+      "totalMs": 5.169584,
+      "bytes": 8565
+    },
+    {
+      "run": 2,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3454160000000002,
+      "setupMs": 1.2171669999999999,
+      "firstHtmlMs": 7.613541999999999,
+      "totalMs": 10.176124999999999,
+      "bytes": 8565
+    },
+    {
+      "run": 2,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.2965829999999983,
+      "setupMs": 3.3946250000000013,
+      "firstHtmlMs": 69.968167,
+      "totalMs": 74.659375,
+      "bytes": 11829
+    },
+    {
+      "run": 2,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3239589999999986,
+      "setupMs": 3.430416000000001,
+      "firstHtmlMs": 171.122917,
+      "totalMs": 175.87729199999998,
+      "bytes": 11829
+    },
+    {
+      "run": 3,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.4179580000000023,
+      "setupMs": 2.468291999999998,
+      "firstHtmlMs": 203.639083,
+      "totalMs": 207.525333,
+      "bytes": 9724
+    },
+    {
+      "run": 3,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.2921249999999986,
+      "setupMs": 2.5039170000000013,
+      "firstHtmlMs": 82.479917,
+      "totalMs": 86.275959,
+      "bytes": 9724
+    },
+    {
+      "run": 3,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3136670000000024,
+      "setupMs": 9.007749999999998,
+      "firstHtmlMs": 562.178875,
+      "totalMs": 572.500292,
+      "bytes": 7547
+    },
+    {
+      "run": 3,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.3539590000000032,
+      "setupMs": 9.427707999999999,
+      "firstHtmlMs": 281.853083,
+      "totalMs": 292.63475000000005,
+      "bytes": 7547
+    },
+    {
+      "run": 3,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.2919170000000015,
+      "setupMs": 1.7902500000000003,
+      "firstHtmlMs": 186.72275,
+      "totalMs": 189.804917,
+      "bytes": 7689
+    },
+    {
+      "run": 3,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.3540419999999997,
+      "setupMs": 1.8893750000000011,
+      "firstHtmlMs": 57.785124999999994,
+      "totalMs": 61.028542,
+      "bytes": 7689
+    },
+    {
+      "run": 3,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.4537499999999994,
+      "setupMs": 1.2946670000000005,
+      "firstHtmlMs": 7.566458000000001,
+      "totalMs": 10.314875,
+      "bytes": 8565
+    },
+    {
+      "run": 3,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3151670000000024,
+      "setupMs": 1.232958,
+      "firstHtmlMs": 2.5499589999999976,
+      "totalMs": 5.098084,
+      "bytes": 8565
+    },
+    {
+      "run": 3,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.5312090000000005,
+      "setupMs": 3.4602499999999985,
+      "firstHtmlMs": 174.436041,
+      "totalMs": 179.4275,
+      "bytes": 11829
+    },
+    {
+      "run": 3,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3274170000000005,
+      "setupMs": 3.4494159999999994,
+      "firstHtmlMs": 70.087542,
+      "totalMs": 74.864375,
+      "bytes": 11829
+    },
+    {
+      "run": 4,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.2966250000000024,
+      "setupMs": 2.4758749999999985,
+      "firstHtmlMs": 83.26037500000001,
+      "totalMs": 87.032875,
+      "bytes": 9724
+    },
+    {
+      "run": 4,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.2920830000000016,
+      "setupMs": 2.475583999999998,
+      "firstHtmlMs": 202.167083,
+      "totalMs": 205.93475,
+      "bytes": 9724
+    },
+    {
+      "run": 4,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.307500000000001,
+      "setupMs": 9.629999999999999,
+      "firstHtmlMs": 279.470375,
+      "totalMs": 290.407875,
+      "bytes": 7547
+    },
+    {
+      "run": 4,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3215000000000003,
+      "setupMs": 8.981333,
+      "firstHtmlMs": 562.598709,
+      "totalMs": 572.9015420000001,
+      "bytes": 7547
+    },
+    {
+      "run": 4,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.301791999999999,
+      "setupMs": 1.8257499999999993,
+      "firstHtmlMs": 55.791458000000006,
+      "totalMs": 58.919000000000004,
+      "bytes": 7689
+    },
+    {
+      "run": 4,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3505000000000003,
+      "setupMs": 1.777583,
+      "firstHtmlMs": 186.64837500000002,
+      "totalMs": 189.77645800000002,
+      "bytes": 7689
+    },
+    {
+      "run": 4,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3468750000000007,
+      "setupMs": 1.2289580000000022,
+      "firstHtmlMs": 2.552291999999998,
+      "totalMs": 5.128125000000001,
+      "bytes": 8565
+    },
+    {
+      "run": 4,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3921670000000006,
+      "setupMs": 1.2723329999999997,
+      "firstHtmlMs": 7.565624999999997,
+      "totalMs": 10.230124999999997,
+      "bytes": 8565
+    },
+    {
+      "run": 4,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3430420000000005,
+      "setupMs": 3.4222909999999978,
+      "firstHtmlMs": 72.259209,
+      "totalMs": 77.024542,
+      "bytes": 11829
+    },
+    {
+      "run": 4,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3715829999999976,
+      "setupMs": 3.7009170000000005,
+      "firstHtmlMs": 169.013708,
+      "totalMs": 174.086208,
+      "bytes": 11829
+    },
+    {
+      "run": 5,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.361333000000002,
+      "setupMs": 2.523917000000001,
+      "firstHtmlMs": 203.139333,
+      "totalMs": 207.024583,
+      "bytes": 9724
+    },
+    {
+      "run": 5,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.3426250000000017,
+      "setupMs": 2.4952499999999986,
+      "firstHtmlMs": 84.386292,
+      "totalMs": 88.224167,
+      "bytes": 9724
+    },
+    {
+      "run": 5,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3588340000000017,
+      "setupMs": 9.063958,
+      "firstHtmlMs": 562.848125,
+      "totalMs": 573.270917,
+      "bytes": 7547
+    },
+    {
+      "run": 5,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.3098339999999986,
+      "setupMs": 9.101958,
+      "firstHtmlMs": 280.23900000000003,
+      "totalMs": 290.650792,
+      "bytes": 7547
+    },
+    {
+      "run": 5,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3368329999999986,
+      "setupMs": 1.867958999999999,
+      "firstHtmlMs": 186.805666,
+      "totalMs": 190.010458,
+      "bytes": 7689
+    },
+    {
+      "run": 5,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.2943750000000023,
+      "setupMs": 1.7998750000000001,
+      "firstHtmlMs": 55.212582999999995,
+      "totalMs": 58.306833,
+      "bytes": 7689
+    },
+    {
+      "run": 5,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3251670000000004,
+      "setupMs": 1.2516250000000007,
+      "firstHtmlMs": 7.528917,
+      "totalMs": 10.105709000000001,
+      "bytes": 8565
+    },
+    {
+      "run": 5,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3148330000000001,
+      "setupMs": 1.211791999999999,
+      "firstHtmlMs": 2.594583,
+      "totalMs": 5.121207999999999,
+      "bytes": 8565
+    },
+    {
+      "run": 5,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3245840000000015,
+      "setupMs": 3.417458,
+      "firstHtmlMs": 172.98370799999998,
+      "totalMs": 177.72575,
+      "bytes": 11829
+    },
+    {
+      "run": 5,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3163750000000007,
+      "setupMs": 3.4899999999999984,
+      "firstHtmlMs": 70.45175,
+      "totalMs": 75.258125,
+      "bytes": 11829
+    },
+    {
+      "run": 6,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.2755829999999975,
+      "setupMs": 2.4845000000000006,
+      "firstHtmlMs": 84.825667,
+      "totalMs": 88.58574999999999,
+      "bytes": 9724
+    },
+    {
+      "run": 6,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.320249999999998,
+      "setupMs": 2.485083000000003,
+      "firstHtmlMs": 201.36637499999998,
+      "totalMs": 205.171708,
+      "bytes": 9724
+    },
+    {
+      "run": 6,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.2834579999999995,
+      "setupMs": 8.967292,
+      "firstHtmlMs": 278.61841599999997,
+      "totalMs": 288.86916599999995,
+      "bytes": 7547
+    },
+    {
+      "run": 6,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.2937499999999993,
+      "setupMs": 9.376207999999998,
+      "firstHtmlMs": 560.980417,
+      "totalMs": 571.6503749999999,
+      "bytes": 7547
+    },
+    {
+      "run": 6,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.3375410000000016,
+      "setupMs": 1.8016249999999978,
+      "firstHtmlMs": 55.228667,
+      "totalMs": 58.367833,
+      "bytes": 7689
+    },
+    {
+      "run": 6,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.303958999999999,
+      "setupMs": 1.798290999999999,
+      "firstHtmlMs": 184.322542,
+      "totalMs": 187.424792,
+      "bytes": 7689
+    },
+    {
+      "run": 6,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.2698329999999984,
+      "setupMs": 1.2649170000000005,
+      "firstHtmlMs": 2.6002079999999985,
+      "totalMs": 5.1349579999999975,
+      "bytes": 8565
+    },
+    {
+      "run": 6,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3676250000000003,
+      "setupMs": 1.2422499999999985,
+      "firstHtmlMs": 7.529084000000001,
+      "totalMs": 10.138959,
+      "bytes": 8565
+    },
+    {
+      "run": 6,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3256669999999993,
+      "setupMs": 3.479125,
+      "firstHtmlMs": 71.76566700000001,
+      "totalMs": 76.570459,
+      "bytes": 11829
+    },
+    {
+      "run": 6,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3786249999999995,
+      "setupMs": 3.4971250000000005,
+      "firstHtmlMs": 170.046167,
+      "totalMs": 174.921917,
+      "bytes": 11829
+    },
+    {
+      "run": 7,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.407,
+      "setupMs": 2.5232910000000004,
+      "firstHtmlMs": 207.822209,
+      "totalMs": 211.7525,
+      "bytes": 9724
+    },
+    {
+      "run": 7,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.307417000000001,
+      "setupMs": 2.522957999999999,
+      "firstHtmlMs": 82.42979199999999,
+      "totalMs": 86.260167,
+      "bytes": 9724
+    },
+    {
+      "run": 7,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.393374999999999,
+      "setupMs": 9.134584,
+      "firstHtmlMs": 568.974708,
+      "totalMs": 579.502667,
+      "bytes": 7547
+    },
+    {
+      "run": 7,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.335958999999999,
+      "setupMs": 9.036708,
+      "firstHtmlMs": 282.050083,
+      "totalMs": 292.42274999999995,
+      "bytes": 7547
+    },
+    {
+      "run": 7,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3084589999999992,
+      "setupMs": 1.7973329999999983,
+      "firstHtmlMs": 187.076583,
+      "totalMs": 190.18237499999998,
+      "bytes": 7689
+    },
+    {
+      "run": 7,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.366417000000002,
+      "setupMs": 1.8541670000000003,
+      "firstHtmlMs": 57.63033300000001,
+      "totalMs": 60.85091700000001,
+      "bytes": 7689
+    },
+    {
+      "run": 7,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3804160000000003,
+      "setupMs": 1.2844169999999977,
+      "firstHtmlMs": 7.635750000000002,
+      "totalMs": 10.300583,
+      "bytes": 8565
+    },
+    {
+      "run": 7,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3577089999999998,
+      "setupMs": 1.2746659999999999,
+      "firstHtmlMs": 2.6224169999999987,
+      "totalMs": 5.254791999999998,
+      "bytes": 8565
+    },
+    {
+      "run": 7,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3992499999999986,
+      "setupMs": 3.5337080000000007,
+      "firstHtmlMs": 170.798125,
+      "totalMs": 175.731083,
+      "bytes": 11829
+    },
+    {
+      "run": 7,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.2971660000000007,
+      "setupMs": 3.419709000000001,
+      "firstHtmlMs": 70.540166,
+      "totalMs": 75.25704100000002,
+      "bytes": 11829
+    },
+    {
+      "run": 8,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.359375,
+      "setupMs": 2.5348749999999995,
+      "firstHtmlMs": 82.787542,
+      "totalMs": 86.681792,
+      "bytes": 9724
+    },
+    {
+      "run": 8,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.2715420000000002,
+      "setupMs": 2.4349169999999987,
+      "firstHtmlMs": 202.66304100000002,
+      "totalMs": 206.36950000000002,
+      "bytes": 9724
+    },
+    {
+      "run": 8,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.3380839999999985,
+      "setupMs": 9.308375000000002,
+      "firstHtmlMs": 279.389208,
+      "totalMs": 290.035667,
+      "bytes": 7547
+    },
+    {
+      "run": 8,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3511249999999997,
+      "setupMs": 9.210125000000001,
+      "firstHtmlMs": 566.245583,
+      "totalMs": 576.8068330000001,
+      "bytes": 7547
+    },
+    {
+      "run": 8,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.3134999999999977,
+      "setupMs": 1.7906670000000027,
+      "firstHtmlMs": 55.550042000000005,
+      "totalMs": 58.65420900000001,
+      "bytes": 7689
+    },
+    {
+      "run": 8,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.2937919999999998,
+      "setupMs": 1.809124999999998,
+      "firstHtmlMs": 185.488292,
+      "totalMs": 188.591209,
+      "bytes": 7689
+    },
+    {
+      "run": 8,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.2996250000000025,
+      "setupMs": 1.2324999999999982,
+      "firstHtmlMs": 2.632875000000002,
+      "totalMs": 5.165000000000003,
+      "bytes": 8565
+    },
+    {
+      "run": 8,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3198340000000002,
+      "setupMs": 1.445999999999998,
+      "firstHtmlMs": 7.960291000000002,
+      "totalMs": 10.726125,
+      "bytes": 8565
+    },
+    {
+      "run": 8,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.293208,
+      "setupMs": 3.4371250000000018,
+      "firstHtmlMs": 70.66316699999999,
+      "totalMs": 75.39349999999999,
+      "bytes": 11829
+    },
+    {
+      "run": 8,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.3422079999999994,
+      "setupMs": 3.4806670000000004,
+      "firstHtmlMs": 171.678166,
+      "totalMs": 176.50104100000001,
+      "bytes": 11829
+    },
+    {
+      "run": 9,
+      "lang": "typescript",
+      "version": "2.0.0",
+      "loadMs": 1.3218330000000016,
+      "setupMs": 2.449375,
+      "firstHtmlMs": 203.734084,
+      "totalMs": 207.505292,
+      "bytes": 9724
+    },
+    {
+      "run": 9,
+      "lang": "typescript",
+      "version": "1.8.0",
+      "loadMs": 1.3355420000000002,
+      "setupMs": 2.4663749999999993,
+      "firstHtmlMs": 83.014625,
+      "totalMs": 86.816542,
+      "bytes": 9724
+    },
+    {
+      "run": 9,
+      "lang": "cpp",
+      "version": "2.0.0",
+      "loadMs": 1.3542079999999999,
+      "setupMs": 9.564125,
+      "firstHtmlMs": 563.1562080000001,
+      "totalMs": 574.0745410000001,
+      "bytes": 7547
+    },
+    {
+      "run": 9,
+      "lang": "cpp",
+      "version": "1.8.0",
+      "loadMs": 1.3255409999999976,
+      "setupMs": 9.166959000000002,
+      "firstHtmlMs": 280.5435,
+      "totalMs": 291.036,
+      "bytes": 7547
+    },
+    {
+      "run": 9,
+      "lang": "scss",
+      "version": "2.0.0",
+      "loadMs": 1.3422090000000004,
+      "setupMs": 1.8304580000000001,
+      "firstHtmlMs": 186.109125,
+      "totalMs": 189.281792,
+      "bytes": 7689
+    },
+    {
+      "run": 9,
+      "lang": "scss",
+      "version": "1.8.0",
+      "loadMs": 1.4026250000000005,
+      "setupMs": 1.8822079999999985,
+      "firstHtmlMs": 56.611042000000005,
+      "totalMs": 59.895875000000004,
+      "bytes": 7689
+    },
+    {
+      "run": 9,
+      "lang": "rust",
+      "version": "2.0.0",
+      "loadMs": 1.3234579999999987,
+      "setupMs": 1.2660420000000023,
+      "firstHtmlMs": 7.496374999999997,
+      "totalMs": 10.085874999999998,
+      "bytes": 8565
+    },
+    {
+      "run": 9,
+      "lang": "rust",
+      "version": "1.8.0",
+      "loadMs": 1.3098330000000011,
+      "setupMs": 1.275624999999998,
+      "firstHtmlMs": 2.697542000000002,
+      "totalMs": 5.283000000000001,
+      "bytes": 8565
+    },
+    {
+      "run": 9,
+      "lang": "html",
+      "version": "2.0.0",
+      "loadMs": 1.303874999999998,
+      "setupMs": 3.402000000000001,
+      "firstHtmlMs": 168.343458,
+      "totalMs": 173.049333,
+      "bytes": 11829
+    },
+    {
+      "run": 9,
+      "lang": "html",
+      "version": "1.8.0",
+      "loadMs": 1.3571659999999994,
+      "setupMs": 3.381416999999999,
+      "firstHtmlMs": 70.242167,
+      "totalMs": 74.98075,
+      "bytes": 11829
+    }
+  ]
+}

@@ -31,6 +31,7 @@ pub struct HighlighterCore {
     injections: BTreeMap<String, Vec<String>>,
     themes: BTreeMap<String, ThemeData>,
     active_theme: Option<String>,
+    regex_prefilter: bool,
 }
 
 /// Reusable, synchronous highlighter for Rust consumers.
@@ -99,6 +100,7 @@ pub struct HighlighterBuilder {
     assets: Option<StandardAssetCatalogs>,
     languages: Vec<String>,
     themes: Vec<String>,
+    regex_prefilter: Option<bool>,
 }
 
 impl Highlighter {
@@ -295,6 +297,14 @@ impl Highlighter {
 }
 
 impl HighlighterBuilder {
+    /// Enables automatic regex prefiltering (the default), or disables it to
+    /// avoid prefilter construction for one-shot highlighting. This choice
+    /// applies to all grammars loaded by the highlighter.
+    pub fn with_regex_prefilter(mut self, enabled: bool) -> Self {
+        self.regex_prefilter = Some(enabled);
+        self
+    }
+
     /// Uses portable asset catalogs prepared by a filesystem or memory source.
     pub fn with_assets(mut self, assets: StandardAssetCatalogs) -> Self {
         self.assets = Some(assets);
@@ -328,10 +338,9 @@ impl HighlighterBuilder {
 
     /// Builds one reusable highlighter. Unknown requested assets are errors.
     pub fn build(self) -> Result<Highlighter> {
-        let mut core = match self.assets {
-            Some(assets) => HighlighterCore::with_assets(assets)?,
-            None => HighlighterCore::new()?,
-        };
+        let mut core =
+            HighlighterCore::new_with_regex_prefilter(self.regex_prefilter.unwrap_or(true))?;
+        core.standard_assets = self.assets;
         for language in self.languages {
             if core.load_standard_language(&language)?.is_none() {
                 return Err(Error::new(
@@ -354,6 +363,10 @@ impl HighlighterBuilder {
 
 impl HighlighterCore {
     pub fn new() -> Result<Self> {
+        Self::new_with_regex_prefilter(true)
+    }
+
+    pub fn new_with_regex_prefilter(regex_prefilter: bool) -> Result<Self> {
         Ok(Self {
             standard_assets: None,
             registry: SyncRegistry::new(None, None).map_err(theme_error)?,
@@ -365,6 +378,7 @@ impl HighlighterCore {
             injections: BTreeMap::new(),
             themes: BTreeMap::new(),
             active_theme: None,
+            regex_prefilter,
         })
     }
 
@@ -373,7 +387,14 @@ impl HighlighterCore {
     }
 
     pub fn with_assets(assets: StandardAssetCatalogs) -> Result<Self> {
-        let mut highlighter = Self::new()?;
+        Self::with_assets_and_regex_prefilter(assets, true)
+    }
+
+    pub fn with_assets_and_regex_prefilter(
+        assets: StandardAssetCatalogs,
+        regex_prefilter: bool,
+    ) -> Result<Self> {
+        let mut highlighter = Self::new_with_regex_prefilter(regex_prefilter)?;
         highlighter.standard_assets = Some(assets);
         Ok(highlighter)
     }
@@ -753,6 +774,7 @@ impl HighlighterCore {
             .grammar_for_scope_name(
                 &scope_name,
                 GrammarConfiguration::default()
+                    .with_regex_prefilter(self.regex_prefilter)
                     .with_initial_language_id(1)
                     .with_balanced_bracket_selectors(Some(vec!["*".to_owned()])),
             )

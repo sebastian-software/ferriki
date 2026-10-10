@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-10
 
 ## Context
 
@@ -34,6 +34,9 @@ named `ferriki-textmate`.
 - Ferroni remains the external regex implementation from ADR 0005.
   `ferriki-textmate` adapts vscode-textmate's Oniguruma calls to Ferroni's
   Scanner API and does not add another regex engine.
+- `GrammarConfiguration::with_regex_prefilter` selects automatic prefiltering
+  (default) or disables it before a grammar's scanners compile. This tuning
+  extension preserves matching, capture, and TextMate traversal behavior.
 - `ferriki-textmate` owns raw grammar models, selector matching, themes, rules,
   grammar compilation, tokenization, and state stacks. The `ferriki` crate
   owns asset catalogs, runtime orchestration and rendering, and
@@ -115,3 +118,4 @@ this decision.
 - 2026-09-30: Records the curated public API of 0.6.0 and the handling of port code without callers.
 - 2026-10-01: Documents the combined scope/binary output extension; removes duplicate scans without changing upstream grammar traversal (#172).
 - 2026-10-03: Clarifies that the dated #30 Node HAST/token test coverage does not override the current HTML-only Node API contract (#207).
+- 2026-10-10: Documents the prefilter configuration extension for one-shot highlighting with Ferroni 2.1.0.

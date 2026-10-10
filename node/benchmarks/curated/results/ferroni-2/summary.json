@@ -1,0 +1,2078 @@
+{
+  "groups": {
+    "all": {
+      "cases": 234,
+      "geomeanChangePerProcess": [
+        -0.34597296693683055, -0.3425215992394339, -0.34646115664598554, -0.3422671142676288,
+        -0.3428909697632152, -0.3430630716311893
+      ],
+      "geomeanChangeMedian": -0.34297702069720226,
+      "geomeanChangeMin": -0.34646115664598554,
+      "geomeanChangeMax": -0.3422671142676288,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 2028.1195785000614,
+        "ferroni-2.0.0": 1225.2322750000017
+      }
+    },
+    "tiobe/example/single": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.4088244489243581, -0.4046649307931789, -0.4072986384301741, -0.40394990547596865,
+        -0.4077540654564332, -0.4080261135800246
+      ],
+      "geomeanChangeMedian": -0.40752635194330367,
+      "geomeanChangeMin": -0.4088244489243581,
+      "geomeanChangeMax": -0.40394990547596865,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 15.50881049999903,
+        "ferroni-2.0.0": 8.484085499998926
+      }
+    },
+    "tiobe/example/multi": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.3576825461404387, -0.35103306846688265, -0.3560958183354561, -0.3501207266755524,
+        -0.3577734809608659, -0.3508665352664816
+      ],
+      "geomeanChangeMedian": -0.3535644434011693,
+      "geomeanChangeMin": -0.3577734809608659,
+      "geomeanChangeMax": -0.3501207266755524,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 35.694750000002955,
+        "ferroni-2.0.0": 21.412625500009185
+      }
+    },
+    "tiobe/example/html": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.42108524483348797, -0.41690170218939493, -0.4188627510013876, -0.41807180771645736,
+        -0.41996369993754656, -0.4177215686187725
+      ],
+      "geomeanChangeMedian": -0.4184672793589225,
+      "geomeanChangeMin": -0.42108524483348797,
+      "geomeanChangeMax": -0.41690170218939493,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 15.047915999996988,
+        "ferroni-2.0.0": 8.082957500007524
+      }
+    },
+    "tiobe/large/single": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.4269550681700136, -0.4271436897235401, -0.4283075942178206, -0.427511179892194,
+        -0.42157293341491753, -0.42525322894681195
+      ],
+      "geomeanChangeMedian": -0.42704937894677686,
+      "geomeanChangeMin": -0.4283075942178206,
+      "geomeanChangeMax": -0.42157293341491753,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 238.65895749999873,
+        "ferroni-2.0.0": 126.16820750000034
+      }
+    },
+    "tiobe/large/multi": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.3974391030803891, -0.3976569495507618, -0.39684292887007844, -0.3976015772576843,
+        -0.3956229260938591, -0.39896924343040807
+      ],
+      "geomeanChangeMedian": -0.3975203401690367,
+      "geomeanChangeMin": -0.39896924343040807,
+      "geomeanChangeMax": -0.3956229260938591,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 511.3869560000029,
+        "ferroni-2.0.0": 285.514376999993
+      }
+    },
+    "tiobe/large/html": {
+      "cases": 19,
+      "geomeanChangePerProcess": [
+        -0.4389545771416352, -0.43523514089684234, -0.4392028373005301, -0.4346744300325496,
+        -0.43661078751679727, -0.4357593570452969
+      ],
+      "geomeanChangeMedian": -0.4361850722810471,
+      "geomeanChangeMin": -0.4392028373005301,
+      "geomeanChangeMax": -0.4346744300325496,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 232.38318699999638,
+        "ferroni-2.0.0": 120.31835149999824
+      }
+    },
+    "curated/example/single": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.2822928680793959, -0.27661076479061875, -0.28303921190449643, -0.27368020623452316,
+        -0.2799939298944616, -0.2713889948909115
+      ],
+      "geomeanChangeMedian": -0.2783023473425401,
+      "geomeanChangeMin": -0.28303921190449643,
+      "geomeanChangeMax": -0.2713889948909115,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 14.95585199999914,
+        "ferroni-2.0.0": 10.097124499996426
+      }
+    },
+    "curated/example/multi": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.2455106939432976, -0.2376406822201914, -0.24789864746149515, -0.23747719022493363,
+        -0.23679952601166, -0.2394114921768865
+      ],
+      "geomeanChangeMedian": -0.23852608719853896,
+      "geomeanChangeMin": -0.24789864746149515,
+      "geomeanChangeMax": -0.23679952601166,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 35.12464650002221,
+        "ferroni-2.0.0": 25.29002200000832
+      }
+    },
+    "curated/example/html": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.2889965750566825, -0.278035711697066, -0.29238762754590053, -0.28317584253225014,
+        -0.27800339874500724, -0.28347063274898165
+      ],
+      "geomeanChangeMedian": -0.28332323764061584,
+      "geomeanChangeMin": -0.29238762754590053,
+      "geomeanChangeMax": -0.27800339874500724,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 14.52837599999475,
+        "ferroni-2.0.0": 9.781248499992216
+      }
+    },
+    "curated/large/single": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.291880540946051, -0.2932915136241816, -0.2961573083144401, -0.2906962740590562,
+        -0.2904829742908177, -0.2928107553619801
+      ],
+      "geomeanChangeMedian": -0.29234564815401554,
+      "geomeanChangeMin": -0.2961573083144401,
+      "geomeanChangeMax": -0.2904829742908177,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 221.5267925000262,
+        "ferroni-2.0.0": 145.4984194999888
+      }
+    },
+    "curated/large/multi": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.2715678270278419, -0.2735437888159573, -0.2702046696418895, -0.2705078533030526,
+        -0.26943373117585245, -0.26979791434513567
+      ],
+      "geomeanChangeMedian": -0.27035626147247105,
+      "geomeanChangeMin": -0.2735437888159573,
+      "geomeanChangeMax": -0.26943373117585245,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 476.6160010000094,
+        "ferroni-2.0.0": 324.0753134999941
+      }
+    },
+    "curated/large/html": {
+      "cases": 20,
+      "geomeanChangePerProcess": [
+        -0.2974180891429835, -0.2947269462839067, -0.29900688582640367, -0.29571895130793324,
+        -0.29674062018260194, -0.29928051246110443
+      ],
+      "geomeanChangeMedian": -0.2970793546627928,
+      "geomeanChangeMin": -0.29928051246110443,
+      "geomeanChangeMax": -0.2947269462839067,
+      "sumOfMediansMs": {
+        "ferroni-1.8.0": 216.68733350001276,
+        "ferroni-2.0.0": 140.5095425000145
+      }
+    },
+    "html": {
+      "cases": 78,
+      "geomeanChangeMedian": -0.36046423036272435,
+      "geomeanChangeMin": -0.3642039705131206,
+      "geomeanChangeMax": -0.35829733978460365
+    },
+    "single": {
+      "cases": 78,
+      "geomeanChangeMedian": -0.35184568614688727,
+      "geomeanChangeMin": -0.35530969609896923,
+      "geomeanChangeMax": -0.3507688721114629
+    },
+    "multi": {
+      "cases": 78,
+      "geomeanChangeMedian": -0.31635541387269384,
+      "geomeanChangeMin": -0.31934906285700493,
+      "geomeanChangeMax": -0.3153392644632915
+    }
+  },
+  "cases": [
+    {
+      "id": "tiobe/python/example/single",
+      "medianChange": -0.1585365488032734,
+      "minChange": -0.1696185094216376,
+      "maxChange": -0.1431245323289757,
+      "baselineMedianMs": 0.4812920000000105,
+      "candidateMedianMs": 0.40787550000000294
+    },
+    {
+      "id": "tiobe/python/example/multi",
+      "medianChange": -0.13007672221657096,
+      "minChange": -0.15628153385239563,
+      "maxChange": -0.1146828722213512,
+      "baselineMedianMs": 1.2164579999999887,
+      "candidateMedianMs": 1.0603750000000076
+    },
+    {
+      "id": "tiobe/python/example/html",
+      "medianChange": -0.16370789723661838,
+      "minChange": -0.17135371653757314,
+      "maxChange": -0.15155755603068322,
+      "baselineMedianMs": 0.45112500000000466,
+      "candidateMedianMs": 0.3772705000000087
+    },
+    {
+      "id": "tiobe/python/large/single",
+      "medianChange": -0.15961299353936276,
+      "minChange": -0.1662444277203301,
+      "maxChange": -0.14983470497801699,
+      "baselineMedianMs": 7.112874999999974,
+      "candidateMedianMs": 5.983312500000011
+    },
+    {
+      "id": "tiobe/python/large/multi",
+      "medianChange": -0.13958886126058445,
+      "minChange": -0.14931469827419774,
+      "maxChange": -0.1370822291617162,
+      "baselineMedianMs": 16.065353999999957,
+      "candidateMedianMs": 13.747104500000034
+    },
+    {
+      "id": "tiobe/python/large/html",
+      "medianChange": -0.16258850970921057,
+      "minChange": -0.17031978357142652,
+      "maxChange": -0.15750409698747125,
+      "baselineMedianMs": 6.874812499999848,
+      "candidateMedianMs": 5.70699999999988
+    },
+    {
+      "id": "tiobe/c/example/single",
+      "medianChange": -0.46877203053269856,
+      "minChange": -0.47626792685425856,
+      "maxChange": -0.4660431813246362,
+      "baselineMedianMs": 0.637728999999922,
+      "candidateMedianMs": 0.336396499999978
+    },
+    {
+      "id": "tiobe/c/example/multi",
+      "medianChange": -0.39550079018345885,
+      "minChange": -0.40123651487504364,
+      "maxChange": -0.3545658807364923,
+      "baselineMedianMs": 1.5573334999999133,
+      "candidateMedianMs": 0.9286879999999655
+    },
+    {
+      "id": "tiobe/c/example/html",
+      "medianChange": -0.4912097587451951,
+      "minChange": -0.5026585269790402,
+      "maxChange": -0.47129260055276645,
+      "baselineMedianMs": 0.6065830000000005,
+      "candidateMedianMs": 0.31141700000000583
+    },
+    {
+      "id": "tiobe/c/large/single",
+      "medianChange": -0.48295774630906085,
+      "minChange": -0.49514478350741997,
+      "maxChange": -0.4812024722518874,
+      "baselineMedianMs": 9.823375000000055,
+      "candidateMedianMs": 5.05987499999992
+    },
+    {
+      "id": "tiobe/c/large/multi",
+      "medianChange": -0.44371816992828383,
+      "minChange": -0.45098688802721854,
+      "maxChange": -0.42214040467809355,
+      "baselineMedianMs": 21.71872950000011,
+      "candidateMedianMs": 12.07143750000023
+    },
+    {
+      "id": "tiobe/c/large/html",
+      "medianChange": -0.4979525299541052,
+      "minChange": -0.505315675945953,
+      "maxChange": -0.4959575657673072,
+      "baselineMedianMs": 9.510354000000007,
+      "candidateMedianMs": 4.743082999999842
+    },
+    {
+      "id": "tiobe/cpp/example/single",
+      "medianChange": -0.7682440643567383,
+      "minChange": -0.7728955932503334,
+      "maxChange": -0.7616716435445241,
+      "baselineMedianMs": 2.7300414999999703,
+      "candidateMedianMs": 0.6436040000003231
+    },
+    {
+      "id": "tiobe/cpp/example/multi",
+      "medianChange": -0.743739407373101,
+      "minChange": -0.744549834213328,
+      "maxChange": -0.7183827552249276,
+      "baselineMedianMs": 5.718124999999873,
+      "candidateMedianMs": 1.5093329999999696
+    },
+    {
+      "id": "tiobe/cpp/example/html",
+      "medianChange": -0.7724014557689304,
+      "minChange": -0.777167142284301,
+      "maxChange": -0.756243450692438,
+      "baselineMedianMs": 2.721166499999981,
+      "candidateMedianMs": 0.6417919999998958
+    },
+    {
+      "id": "tiobe/cpp/large/single",
+      "medianChange": -0.8063144296145083,
+      "minChange": -0.8099368190416102,
+      "maxChange": -0.8035477765552745,
+      "baselineMedianMs": 41.633062500000506,
+      "candidateMedianMs": 7.974895999999717
+    },
+    {
+      "id": "tiobe/cpp/large/multi",
+      "medianChange": -0.7951196940319958,
+      "minChange": -0.7998035692051029,
+      "maxChange": -0.7866082058971324,
+      "baselineMedianMs": 86.31454150000036,
+      "candidateMedianMs": 17.862979500000165
+    },
+    {
+      "id": "tiobe/cpp/large/html",
+      "medianChange": -0.813007194849146,
+      "minChange": -0.8200082942725826,
+      "maxChange": -0.8040203708907979,
+      "baselineMedianMs": 41.48166649999985,
+      "candidateMedianMs": 7.719354500000918
+    },
+    {
+      "id": "tiobe/java/example/single",
+      "medianChange": -0.5870366106432396,
+      "minChange": -0.5917520586697607,
+      "maxChange": -0.5828163414242529,
+      "baselineMedianMs": 0.7265210000005027,
+      "candidateMedianMs": 0.3001669999994192
+    },
+    {
+      "id": "tiobe/java/example/multi",
+      "medianChange": -0.516342269367616,
+      "minChange": -0.5208931494726814,
+      "maxChange": -0.5145481290137645,
+      "baselineMedianMs": 1.6915209999997387,
+      "candidateMedianMs": 0.8234580000007554
+    },
+    {
+      "id": "tiobe/java/example/html",
+      "medianChange": -0.6001653105039151,
+      "minChange": -0.6048813297396429,
+      "maxChange": -0.5848556419097322,
+      "baselineMedianMs": 0.7088750000002619,
+      "candidateMedianMs": 0.285458500000459
+    },
+    {
+      "id": "tiobe/java/large/single",
+      "medianChange": -0.6038007983063045,
+      "minChange": -0.6073516330782975,
+      "maxChange": -0.5943467147797152,
+      "baselineMedianMs": 11.432478999999148,
+      "candidateMedianMs": 4.547708000000057
+    },
+    {
+      "id": "tiobe/java/large/multi",
+      "medianChange": -0.5684809234484849,
+      "minChange": -0.5709478332473423,
+      "maxChange": -0.5643190070165917,
+      "baselineMedianMs": 24.443583500000386,
+      "candidateMedianMs": 10.544354000000567
+    },
+    {
+      "id": "tiobe/java/large/html",
+      "medianChange": -0.6126688102902978,
+      "minChange": -0.6163327395693288,
+      "maxChange": -0.6089932674115199,
+      "baselineMedianMs": 11.092062500000793,
+      "candidateMedianMs": 4.318166499999279
+    },
+    {
+      "id": "tiobe/csharp/example/single",
+      "medianChange": -0.6497956242064148,
+      "minChange": -0.6580079457091944,
+      "maxChange": -0.6164931068562356,
+      "baselineMedianMs": 1.2407915000003413,
+      "candidateMedianMs": 0.43199949999871023
+    },
+    {
+      "id": "tiobe/csharp/example/multi",
+      "medianChange": -0.5962734742644553,
+      "minChange": -0.6010313410561494,
+      "maxChange": -0.5733456467819185,
+      "baselineMedianMs": 2.7567915000008725,
+      "candidateMedianMs": 1.1053124999998545
+    },
+    {
+      "id": "tiobe/csharp/example/html",
+      "medianChange": -0.6649285130922675,
+      "minChange": -0.6668610227033462,
+      "maxChange": -0.6575659580341753,
+      "baselineMedianMs": 1.2270410000000993,
+      "candidateMedianMs": 0.4092290000007779
+    },
+    {
+      "id": "tiobe/csharp/large/single",
+      "medianChange": -0.6700941909938212,
+      "minChange": -0.6748821080611102,
+      "maxChange": -0.6636317686118507,
+      "baselineMedianMs": 19.649374999999964,
+      "candidateMedianMs": 6.421500000000378
+    },
+    {
+      "id": "tiobe/csharp/large/multi",
+      "medianChange": -0.6418209482337661,
+      "minChange": -0.644353421842241,
+      "maxChange": -0.6373148187726452,
+      "baselineMedianMs": 40.24347849999958,
+      "candidateMedianMs": 14.439312999999856
+    },
+    {
+      "id": "tiobe/csharp/large/html",
+      "medianChange": -0.6786410877326732,
+      "minChange": -0.6840373691774875,
+      "maxChange": -0.6757291825346307,
+      "baselineMedianMs": 19.025416500000574,
+      "candidateMedianMs": 6.107332999999926
+    },
+    {
+      "id": "tiobe/javascript/example/single",
+      "medianChange": -0.5712137603515761,
+      "minChange": -0.5820789106104116,
+      "maxChange": -0.5616023180008292,
+      "baselineMedianMs": 1.3397500000000946,
+      "candidateMedianMs": 0.5615415000002031
+    },
+    {
+      "id": "tiobe/javascript/example/multi",
+      "medianChange": -0.5136461122323724,
+      "minChange": -0.5244646557576795,
+      "maxChange": -0.49520320881367996,
+      "baselineMedianMs": 2.9418955000001006,
+      "candidateMedianMs": 1.4050205000003189
+    },
+    {
+      "id": "tiobe/javascript/example/html",
+      "medianChange": -0.5765381426205357,
+      "minChange": -0.5862547570084484,
+      "maxChange": -0.561099033223777,
+      "baselineMedianMs": 1.2855620000000272,
+      "candidateMedianMs": 0.5413960000005318
+    },
+    {
+      "id": "tiobe/javascript/large/single",
+      "medianChange": -0.5949574638096288,
+      "minChange": -0.6066167982633498,
+      "maxChange": -0.5920084180496157,
+      "baselineMedianMs": 20.23124949999965,
+      "candidateMedianMs": 8.198104000000058
+    },
+    {
+      "id": "tiobe/javascript/large/multi",
+      "medianChange": -0.5677580375473565,
+      "minChange": -0.5707865461271956,
+      "maxChange": -0.5647494569161097,
+      "baselineMedianMs": 42.67366650000076,
+      "candidateMedianMs": 18.5098339999995
+    },
+    {
+      "id": "tiobe/javascript/large/html",
+      "medianChange": -0.6094602632810573,
+      "minChange": -0.6166111976756621,
+      "maxChange": -0.6046501349161646,
+      "baselineMedianMs": 20.037853499999983,
+      "candidateMedianMs": 7.854124499999671
+    },
+    {
+      "id": "tiobe/vb/example/single",
+      "medianChange": -0.0992731146435466,
+      "minChange": -0.10864208611932469,
+      "maxChange": -0.09601324320931859,
+      "baselineMedianMs": 0.4458534999994299,
+      "candidateMedianMs": 0.4016879999999219
+    },
+    {
+      "id": "tiobe/vb/example/multi",
+      "medianChange": -0.08740072465238691,
+      "minChange": -0.09073124590295945,
+      "maxChange": -0.08067409159104022,
+      "baselineMedianMs": 1.0854584999997314,
+      "candidateMedianMs": 0.9963335000011284
+    },
+    {
+      "id": "tiobe/vb/example/html",
+      "medianChange": -0.10433315837903523,
+      "minChange": -0.10990863164570641,
+      "maxChange": -0.10142676358923286,
+      "baselineMedianMs": 0.42939599999954225,
+      "candidateMedianMs": 0.3842290000011417
+    },
+    {
+      "id": "tiobe/vb/large/single",
+      "medianChange": -0.10462457155431792,
+      "minChange": -0.11564950183386447,
+      "maxChange": -0.09526348895967429,
+      "baselineMedianMs": 6.843833499999164,
+      "candidateMedianMs": 6.090374999999767
+    },
+    {
+      "id": "tiobe/vb/large/multi",
+      "medianChange": -0.09763060573964633,
+      "minChange": -0.10095227625706138,
+      "maxChange": -0.09336020117585375,
+      "baselineMedianMs": 14.936687499999607,
+      "candidateMedianMs": 13.448562499999753
+    },
+    {
+      "id": "tiobe/vb/large/html",
+      "medianChange": -0.10662015287913273,
+      "minChange": -0.11980295157485232,
+      "maxChange": -0.08866532567367846,
+      "baselineMedianMs": 6.701708000000508,
+      "candidateMedianMs": 6.025187499999447
+    },
+    {
+      "id": "tiobe/sql/example/single",
+      "medianChange": -0.17880321762596696,
+      "minChange": -0.1811308759207485,
+      "maxChange": -0.16517896875854088,
+      "baselineMedianMs": 0.5321039999998902,
+      "candidateMedianMs": 0.43862500000068394
+    },
+    {
+      "id": "tiobe/sql/example/multi",
+      "medianChange": -0.15561590097591227,
+      "minChange": -0.15966962442324684,
+      "maxChange": -0.15081914266493968,
+      "baselineMedianMs": 1.2996875000008004,
+      "candidateMedianMs": 1.0983539999997447
+    },
+    {
+      "id": "tiobe/sql/example/html",
+      "medianChange": -0.18769843332506442,
+      "minChange": -0.19697720797514418,
+      "maxChange": -0.18231105197799946,
+      "baselineMedianMs": 0.5117504999998346,
+      "candidateMedianMs": 0.41658299999835435
+    },
+    {
+      "id": "tiobe/sql/large/single",
+      "medianChange": -0.19365428909155447,
+      "minChange": -0.1960891033605452,
+      "maxChange": -0.19055177436558834,
+      "baselineMedianMs": 8.139437500001804,
+      "candidateMedianMs": 6.555000000000291
+    },
+    {
+      "id": "tiobe/sql/large/multi",
+      "medianChange": -0.17154807215348455,
+      "minChange": -0.17748552873694157,
+      "maxChange": -0.16516449730030403,
+      "baselineMedianMs": 18.4022915000005,
+      "candidateMedianMs": 15.257791999998517
+    },
+    {
+      "id": "tiobe/sql/large/html",
+      "medianChange": -0.19718665313486428,
+      "minChange": -0.20138769106404453,
+      "maxChange": -0.1871154874102785,
+      "baselineMedianMs": 7.852271499998096,
+      "candidateMedianMs": 6.270103499999095
+    },
+    {
+      "id": "tiobe/r/example/single",
+      "medianChange": 0.021530230475368395,
+      "minChange": 0.014758105598835947,
+      "maxChange": 0.028268842392146665,
+      "baselineMedianMs": 0.2840204999993148,
+      "candidateMedianMs": 0.29068800000095507
+    },
+    {
+      "id": "tiobe/r/example/multi",
+      "medianChange": 0.012620947604854216,
+      "minChange": 0.005381034008633545,
+      "maxChange": 0.020062166690091976,
+      "baselineMedianMs": 0.8244790000007924,
+      "candidateMedianMs": 0.8365419999990991
+    },
+    {
+      "id": "tiobe/r/example/html",
+      "medianChange": 0.026070617209074776,
+      "minChange": 0.019463583565802134,
+      "maxChange": 0.029391739239479353,
+      "baselineMedianMs": 0.2510835000030056,
+      "candidateMedianMs": 0.2569579999999405
+    },
+    {
+      "id": "tiobe/r/large/single",
+      "medianChange": 0.022964548547751873,
+      "minChange": 0.013771257107943358,
+      "maxChange": 0.027938045006016488,
+      "baselineMedianMs": 4.355520500001148,
+      "candidateMedianMs": 4.453083499998684
+    },
+    {
+      "id": "tiobe/r/large/multi",
+      "medianChange": 0.020138914381292228,
+      "minChange": 0.012534356207279274,
+      "maxChange": 0.02915650543732662,
+      "baselineMedianMs": 11.230750000000626,
+      "candidateMedianMs": 11.446750499999325
+    },
+    {
+      "id": "tiobe/r/large/html",
+      "medianChange": 0.029974830063231206,
+      "minChange": 0.02036072799357269,
+      "maxChange": 0.03948167317964213,
+      "baselineMedianMs": 3.866958499998873,
+      "candidateMedianMs": 3.971228999998857
+    },
+    {
+      "id": "tiobe/rust/example/single",
+      "medianChange": -0.13036305030613404,
+      "minChange": -0.13380750646535866,
+      "maxChange": -0.12704436233598193,
+      "baselineMedianMs": 0.33368699999846285,
+      "candidateMedianMs": 0.29054200000064156
+    },
+    {
+      "id": "tiobe/rust/example/multi",
+      "medianChange": -0.09533884132310011,
+      "minChange": -0.10874187569442562,
+      "maxChange": -0.08915672240794015,
+      "baselineMedianMs": 0.9192290000009962,
+      "candidateMedianMs": 0.8275834999985818
+    },
+    {
+      "id": "tiobe/rust/example/html",
+      "medianChange": -0.1399311596662297,
+      "minChange": -0.14520124710244686,
+      "maxChange": -0.13641248299143605,
+      "baselineMedianMs": 0.310770500000217,
+      "candidateMedianMs": 0.26816650000000664
+    },
+    {
+      "id": "tiobe/rust/large/single",
+      "medianChange": -0.13657171527389744,
+      "minChange": -0.1403851987003495,
+      "maxChange": -0.1327186648630012,
+      "baselineMedianMs": 5.129520999998931,
+      "candidateMedianMs": 4.434041500000603
+    },
+    {
+      "id": "tiobe/rust/large/multi",
+      "medianChange": -0.1151520520626712,
+      "minChange": -0.12244372217345623,
+      "maxChange": -0.10880312644700818,
+      "baselineMedianMs": 12.179062499999418,
+      "candidateMedianMs": 10.768812500000422
+    },
+    {
+      "id": "tiobe/rust/large/html",
+      "medianChange": -0.14125522017423653,
+      "minChange": -0.1500641631717211,
+      "maxChange": -0.13102988544788075,
+      "baselineMedianMs": 4.886750000001484,
+      "candidateMedianMs": 4.199541499998304
+    },
+    {
+      "id": "tiobe/fortran-free-form/example/single",
+      "medianChange": -0.5356105149783481,
+      "minChange": -0.5476786658487918,
+      "maxChange": -0.4978435371168938,
+      "baselineMedianMs": 1.3434584999995423,
+      "candidateMedianMs": 0.6132704999999987
+    },
+    {
+      "id": "tiobe/fortran-free-form/example/multi",
+      "medianChange": -0.4849814629062351,
+      "minChange": -0.5024910406609254,
+      "maxChange": -0.4530467912633308,
+      "baselineMedianMs": 2.9328960000002553,
+      "candidateMedianMs": 1.4916455000020505
+    },
+    {
+      "id": "tiobe/fortran-free-form/example/html",
+      "medianChange": -0.5411267020858501,
+      "minChange": -0.5596351478103816,
+      "maxChange": -0.5312996177386768,
+      "baselineMedianMs": 1.3101039999983186,
+      "candidateMedianMs": 0.5883330000015121
+    },
+    {
+      "id": "tiobe/fortran-free-form/large/single",
+      "medianChange": -0.5571169909914189,
+      "minChange": -0.5584593763070831,
+      "maxChange": -0.5519159166518451,
+      "baselineMedianMs": 20.607395499999257,
+      "candidateMedianMs": 9.147500500001115
+    },
+    {
+      "id": "tiobe/fortran-free-form/large/multi",
+      "medianChange": -0.5329013439939282,
+      "minChange": -0.5360895668945229,
+      "maxChange": -0.5250855130768144,
+      "baselineMedianMs": 42.98029150000002,
+      "candidateMedianMs": 20.084249499999714
+    },
+    {
+      "id": "tiobe/fortran-free-form/large/html",
+      "medianChange": -0.5664097669398866,
+      "minChange": -0.5682356351151944,
+      "maxChange": -0.5639074798255839,
+      "baselineMedianMs": 20.15277099999912,
+      "candidateMedianMs": 8.70429200000217
+    },
+    {
+      "id": "tiobe/go/example/single",
+      "medianChange": -0.2976792606862486,
+      "minChange": -0.3136923289445003,
+      "maxChange": -0.29169378449727523,
+      "baselineMedianMs": 0.524999499997648,
+      "candidateMedianMs": 0.3686664999986533
+    },
+    {
+      "id": "tiobe/go/example/multi",
+      "medianChange": -0.25175209729903614,
+      "minChange": -0.26336896770197726,
+      "maxChange": -0.24136694345564347,
+      "baselineMedianMs": 1.2648955000004207,
+      "candidateMedianMs": 0.9427289999985078
+    },
+    {
+      "id": "tiobe/go/example/html",
+      "medianChange": -0.30396873527319523,
+      "minChange": -0.31697240328925214,
+      "maxChange": -0.2994666560646354,
+      "baselineMedianMs": 0.5023124999988795,
+      "candidateMedianMs": 0.3491460000004736
+    },
+    {
+      "id": "tiobe/go/large/single",
+      "medianChange": -0.307489548897552,
+      "minChange": -0.3145781764009923,
+      "maxChange": -0.3002713152593921,
+      "baselineMedianMs": 7.871499499999118,
+      "candidateMedianMs": 5.430625000000873
+    },
+    {
+      "id": "tiobe/go/large/multi",
+      "medianChange": -0.2832872120668296,
+      "minChange": -0.2877557972756152,
+      "maxChange": -0.28101304368760494,
+      "baselineMedianMs": 17.235749500001475,
+      "candidateMedianMs": 12.391499999999724
+    },
+    {
+      "id": "tiobe/go/large/html",
+      "medianChange": -0.3193326476901477,
+      "minChange": -0.3243034768954074,
+      "maxChange": -0.30349017867221173,
+      "baselineMedianMs": 7.621291999997993,
+      "candidateMedianMs": 5.240895499999169
+    },
+    {
+      "id": "tiobe/pascal/example/single",
+      "medianChange": -0.02771520526513216,
+      "minChange": -0.0368863352524782,
+      "maxChange": -0.02417452583067259,
+      "baselineMedianMs": 0.2478544999994483,
+      "candidateMedianMs": 0.2413959999994404
+    },
+    {
+      "id": "tiobe/pascal/example/multi",
+      "medianChange": -0.009312842868540283,
+      "minChange": -0.015965098634535657,
+      "maxChange": 0.001731845531411258,
+      "baselineMedianMs": 0.6852920000001177,
+      "candidateMedianMs": 0.6786879999999655
+    },
+    {
+      "id": "tiobe/pascal/example/html",
+      "medianChange": -0.02388256120560661,
+      "minChange": -0.03544734038944475,
+      "maxChange": -0.00909767916300408,
+      "baselineMedianMs": 0.23304149999785295,
+      "candidateMedianMs": 0.22727150000173424
+    },
+    {
+      "id": "tiobe/pascal/large/single",
+      "medianChange": -0.03274482996558992,
+      "minChange": -0.06028376629341636,
+      "maxChange": -0.006029402436943276,
+      "baselineMedianMs": 3.747729499998968,
+      "candidateMedianMs": 3.6076040000007197
+    },
+    {
+      "id": "tiobe/pascal/large/multi",
+      "medianChange": -0.017097522534232912,
+      "minChange": -0.024445299557019462,
+      "maxChange": -0.008973393152358122,
+      "baselineMedianMs": 8.849687499998254,
+      "candidateMedianMs": 8.702957999998034
+    },
+    {
+      "id": "tiobe/pascal/large/html",
+      "medianChange": -0.03153497710579489,
+      "minChange": -0.038710245543673194,
+      "maxChange": -0.016260651463393616,
+      "baselineMedianMs": 3.5661665000006906,
+      "candidateMedianMs": 3.4428955000021233
+    },
+    {
+      "id": "tiobe/php/example/single",
+      "medianChange": -0.5123640448448344,
+      "minChange": -0.5413473164733552,
+      "maxChange": -0.5070101513920602,
+      "baselineMedianMs": 0.7156874999982392,
+      "candidateMedianMs": 0.3523125000010623
+    },
+    {
+      "id": "tiobe/php/example/multi",
+      "medianChange": -0.44837662201336326,
+      "minChange": -0.4637184059417956,
+      "maxChange": -0.4380157982670154,
+      "baselineMedianMs": 1.7270415000002686,
+      "candidateMedianMs": 0.9714999999996508
+    },
+    {
+      "id": "tiobe/php/example/html",
+      "medianChange": -0.5277358232544598,
+      "minChange": -0.5353894251843414,
+      "maxChange": -0.5240826732213459,
+      "baselineMedianMs": 0.6963340000002063,
+      "candidateMedianMs": 0.3343750000003638
+    },
+    {
+      "id": "tiobe/php/large/single",
+      "medianChange": -0.5273233307669325,
+      "minChange": -0.5383780771528135,
+      "maxChange": -0.5210601375659694,
+      "baselineMedianMs": 11.33758300000045,
+      "candidateMedianMs": 5.383479000000079
+    },
+    {
+      "id": "tiobe/php/large/multi",
+      "medianChange": -0.48837034318973205,
+      "minChange": -0.49534882232048927,
+      "maxChange": -0.4846687810227316,
+      "baselineMedianMs": 23.642437500000597,
+      "candidateMedianMs": 12.05072950000067
+    },
+    {
+      "id": "tiobe/php/large/html",
+      "medianChange": -0.5368037461948175,
+      "minChange": -0.5429593419864656,
+      "maxChange": -0.5298200508084985,
+      "baselineMedianMs": 10.837938000000577,
+      "candidateMedianMs": 5.015187500001048
+    },
+    {
+      "id": "tiobe/asm/example/single",
+      "medianChange": -0.7004151108300587,
+      "minChange": -0.701701447065806,
+      "maxChange": -0.6987247289937055,
+      "baselineMedianMs": 0.6597085000012157,
+      "candidateMedianMs": 0.19750000000021828
+    },
+    {
+      "id": "tiobe/asm/example/multi",
+      "medianChange": -0.6175409755833781,
+      "minChange": -0.6226503406848879,
+      "maxChange": -0.6148937460414323,
+      "baselineMedianMs": 1.5072085000010702,
+      "candidateMedianMs": 0.5755000000026484
+    },
+    {
+      "id": "tiobe/asm/example/html",
+      "medianChange": -0.7242269960258265,
+      "minChange": -0.7248502466874177,
+      "maxChange": -0.7224066097586428,
+      "baselineMedianMs": 0.6346254999989469,
+      "candidateMedianMs": 0.17483350000111386
+    },
+    {
+      "id": "tiobe/asm/large/single",
+      "medianChange": -0.7166828630902656,
+      "minChange": -0.7177242354778144,
+      "maxChange": -0.7115600159994937,
+      "baselineMedianMs": 10.234270999999353,
+      "candidateMedianMs": 2.900291500000094
+    },
+    {
+      "id": "tiobe/asm/large/multi",
+      "medianChange": -0.6760496386561965,
+      "minChange": -0.6779370665456531,
+      "maxChange": -0.6714917723104035,
+      "baselineMedianMs": 21.788041499999963,
+      "candidateMedianMs": 7.0480625000000146
+    },
+    {
+      "id": "tiobe/asm/large/html",
+      "medianChange": -0.7411716541922894,
+      "minChange": -0.7442183824731337,
+      "maxChange": -0.7349066784962334,
+      "baselineMedianMs": 9.924874500000442,
+      "candidateMedianMs": 2.5640204999999696
+    },
+    {
+      "id": "tiobe/ada/example/single",
+      "medianChange": -0.1822912519351766,
+      "minChange": -0.19326928299653423,
+      "maxChange": -0.17592453960784404,
+      "baselineMedianMs": 0.4192915000003268,
+      "candidateMedianMs": 0.34339600000021164
+    },
+    {
+      "id": "tiobe/ada/example/multi",
+      "medianChange": -0.14041335367551022,
+      "minChange": -0.14464199520082732,
+      "maxChange": -0.13305130387683373,
+      "baselineMedianMs": 1.10443750000195,
+      "candidateMedianMs": 0.9440205000009882
+    },
+    {
+      "id": "tiobe/ada/example/html",
+      "medianChange": -0.20068358386145557,
+      "minChange": -0.21324785063178853,
+      "maxChange": -0.19279668820567908,
+      "baselineMedianMs": 0.3899794999997539,
+      "candidateMedianMs": 0.3122705000023416
+    },
+    {
+      "id": "tiobe/ada/large/single",
+      "medianChange": -0.19462329893127484,
+      "minChange": -0.20259067462598523,
+      "maxChange": -0.1898644187250219,
+      "baselineMedianMs": 6.476500500000839,
+      "candidateMedianMs": 5.219791499999701
+    },
+    {
+      "id": "tiobe/ada/large/multi",
+      "medianChange": -0.16618411285381618,
+      "minChange": -0.16695063803868448,
+      "maxChange": -0.16282476193111173,
+      "baselineMedianMs": 14.984291500000836,
+      "candidateMedianMs": 12.525104500000452
+    },
+    {
+      "id": "tiobe/ada/large/html",
+      "medianChange": -0.20671588767162952,
+      "minChange": -0.2121526174984254,
+      "maxChange": -0.1943287324338513,
+      "baselineMedianMs": 5.984437499999331,
+      "candidateMedianMs": 4.7012084999987565
+    },
+    {
+      "id": "tiobe/swift/example/single",
+      "medianChange": -0.40389542354314323,
+      "minChange": -0.4118763254777378,
+      "maxChange": -0.4004272607041127,
+      "baselineMedianMs": 0.5581040000033681,
+      "candidateMedianMs": 0.3335000000006403
+    },
+    {
+      "id": "tiobe/swift/example/multi",
+      "medianChange": -0.34001664928427466,
+      "minChange": -0.3481278336421284,
+      "maxChange": -0.333097581727378,
+      "baselineMedianMs": 1.3700209999988147,
+      "candidateMedianMs": 0.9052709999996296
+    },
+    {
+      "id": "tiobe/swift/example/html",
+      "medianChange": -0.41766472816874844,
+      "minChange": -0.42737328073842085,
+      "maxChange": -0.4126114472755569,
+      "baselineMedianMs": 0.5417495000001509,
+      "candidateMedianMs": 0.316395999998349
+    },
+    {
+      "id": "tiobe/swift/large/single",
+      "medianChange": -0.42339830479916807,
+      "minChange": -0.42827514217783014,
+      "maxChange": -0.4104501842305819,
+      "baselineMedianMs": 8.613812499999767,
+      "candidateMedianMs": 4.9842289999978675
+    },
+    {
+      "id": "tiobe/swift/large/multi",
+      "medianChange": -0.38872132747068044,
+      "minChange": -0.39182929898380303,
+      "maxChange": -0.38677085549133516,
+      "baselineMedianMs": 18.704811999999947,
+      "candidateMedianMs": 11.429270499997074
+    },
+    {
+      "id": "tiobe/swift/large/html",
+      "medianChange": -0.4333524956589163,
+      "minChange": -0.43762215481434286,
+      "maxChange": -0.42399177038946356,
+      "baselineMedianMs": 8.282937500000116,
+      "candidateMedianMs": 4.692750000001979
+    },
+    {
+      "id": "tiobe/objective-c/example/single",
+      "medianChange": -0.467316716768162,
+      "minChange": -0.4705898970092358,
+      "maxChange": -0.4611486026138354,
+      "baselineMedianMs": 0.6291040000032808,
+      "candidateMedianMs": 0.33552099999724305
+    },
+    {
+      "id": "tiobe/objective-c/example/multi",
+      "medianChange": -0.3971726061197589,
+      "minChange": -0.41223208402937983,
+      "maxChange": -0.3899210390247285,
+      "baselineMedianMs": 1.5354794999984733,
+      "candidateMedianMs": 0.9216670000023441
+    },
+    {
+      "id": "tiobe/objective-c/example/html",
+      "medianChange": -0.4823274261068664,
+      "minChange": -0.48662082390019257,
+      "maxChange": -0.4770403733046086,
+      "baselineMedianMs": 0.6050835000023653,
+      "candidateMedianMs": 0.31564549999893643
+    },
+    {
+      "id": "tiobe/objective-c/large/single",
+      "medianChange": -0.4800070091093278,
+      "minChange": -0.48482076536844054,
+      "maxChange": -0.47580617922533763,
+      "baselineMedianMs": 9.602833500000997,
+      "candidateMedianMs": 4.98633350000091
+    },
+    {
+      "id": "tiobe/objective-c/large/multi",
+      "medianChange": -0.443460873648314,
+      "minChange": -0.4497210153437624,
+      "maxChange": -0.4404777003301251,
+      "baselineMedianMs": 21.043478999999934,
+      "candidateMedianMs": 11.722896000002947
+    },
+    {
+      "id": "tiobe/objective-c/large/html",
+      "medianChange": -0.4914131972917468,
+      "minChange": -0.5009768789274676,
+      "maxChange": -0.49022291145863717,
+      "baselineMedianMs": 9.302166499997838,
+      "candidateMedianMs": 4.720957999998063
+    },
+    {
+      "id": "tiobe/cobol/example/single",
+      "medianChange": -0.04012413158368122,
+      "minChange": -0.05248117206736125,
+      "maxChange": -0.027726445780880016,
+      "baselineMedianMs": 1.658812499998021,
+      "candidateMedianMs": 1.595396000000619
+    },
+    {
+      "id": "tiobe/cobol/example/multi",
+      "medianChange": -0.044530843664343234,
+      "minChange": -0.05745329644273767,
+      "maxChange": -0.034275528807468314,
+      "baselineMedianMs": 3.5564999999987776,
+      "candidateMedianMs": 3.390604500003974
+    },
+    {
+      "id": "tiobe/cobol/example/html",
+      "medianChange": -0.045449979620528436,
+      "minChange": -0.05440855775360354,
+      "maxChange": -0.027864794087542277,
+      "baselineMedianMs": 1.6313329999975394,
+      "candidateMedianMs": 1.572187000001577
+    },
+    {
+      "id": "tiobe/cobol/large/single",
+      "medianChange": -0.0364148744023709,
+      "minChange": -0.05313850990028279,
+      "maxChange": -0.029259658496121888,
+      "baselineMedianMs": 25.816603999999643,
+      "candidateMedianMs": 24.79045799999949
+    },
+    {
+      "id": "tiobe/cobol/large/multi",
+      "medianChange": -0.0393296957464675,
+      "minChange": -0.058413257613294634,
+      "maxChange": -0.03407130323134744,
+      "baselineMedianMs": 53.95002100000056,
+      "candidateMedianMs": 51.462666499995976
+    },
+    {
+      "id": "tiobe/cobol/large/html",
+      "medianChange": -0.04065163824080886,
+      "minChange": -0.05403252217802057,
+      "maxChange": -0.028917734195224032,
+      "baselineMedianMs": 25.380750000000262,
+      "candidateMedianMs": 24.321020999999746
+    },
+    {
+      "id": "curated/typescript/example/single",
+      "medianChange": -0.4961357345708046,
+      "minChange": -0.4982512442281697,
+      "maxChange": -0.49340795765411627,
+      "baselineMedianMs": 1.0484785000007832,
+      "candidateMedianMs": 0.5271670000001905
+    },
+    {
+      "id": "curated/typescript/example/multi",
+      "medianChange": -0.44295622272014623,
+      "minChange": -0.4476331850631713,
+      "maxChange": -0.43751718307984544,
+      "baselineMedianMs": 2.4071250000015425,
+      "candidateMedianMs": 1.332646000002569
+    },
+    {
+      "id": "curated/typescript/example/html",
+      "medianChange": -0.5055575962376628,
+      "minChange": -0.5123878330137923,
+      "maxChange": -0.4986957863807314,
+      "baselineMedianMs": 1.0116454999988491,
+      "candidateMedianMs": 0.49962549999690964
+    },
+    {
+      "id": "curated/typescript/large/single",
+      "medianChange": -0.5196541958171524,
+      "minChange": -0.5249975967246635,
+      "maxChange": -0.5138186431160799,
+      "baselineMedianMs": 16.17920850000155,
+      "candidateMedianMs": 7.770646000000852
+    },
+    {
+      "id": "curated/typescript/large/multi",
+      "medianChange": -0.48870677937416396,
+      "minChange": -0.49244044322786285,
+      "maxChange": -0.48476419273588867,
+      "baselineMedianMs": 34.74852099999771,
+      "candidateMedianMs": 17.723188000003574
+    },
+    {
+      "id": "curated/typescript/large/html",
+      "medianChange": -0.529387410795889,
+      "minChange": -0.5334993097063984,
+      "maxChange": -0.5256355767529157,
+      "baselineMedianMs": 15.877166499998566,
+      "candidateMedianMs": 7.481458500002191
+    },
+    {
+      "id": "curated/tsx/example/single",
+      "medianChange": -0.36615120185962935,
+      "minChange": -0.37180558597619806,
+      "maxChange": -0.35740078383296026,
+      "baselineMedianMs": 0.9432290000004286,
+      "candidateMedianMs": 0.5952710000019579
+    },
+    {
+      "id": "curated/tsx/example/multi",
+      "medianChange": -0.3206420214341944,
+      "minChange": -0.334026685937708,
+      "maxChange": -0.3108722883424341,
+      "baselineMedianMs": 2.2177504999963276,
+      "candidateMedianMs": 1.48139600000286
+    },
+    {
+      "id": "curated/tsx/example/html",
+      "medianChange": -0.38006293456109774,
+      "minChange": -0.38509146789536586,
+      "maxChange": -0.36147892097239387,
+      "baselineMedianMs": 0.9186454999980924,
+      "candidateMedianMs": 0.5651460000008228
+    },
+    {
+      "id": "curated/tsx/large/single",
+      "medianChange": -0.3853776134572844,
+      "minChange": -0.402882995892461,
+      "maxChange": -0.38207318746463625,
+      "baselineMedianMs": 14.474917000003188,
+      "candidateMedianMs": 8.83454200000051
+    },
+    {
+      "id": "curated/tsx/large/multi",
+      "medianChange": -0.3566671298147741,
+      "minChange": -0.358353980783531,
+      "maxChange": -0.3508259276089414,
+      "baselineMedianMs": 31.185020999997505,
+      "candidateMedianMs": 20.01806249999936
+    },
+    {
+      "id": "curated/tsx/large/html",
+      "medianChange": -0.3927421434986904,
+      "minChange": -0.404722097452728,
+      "maxChange": -0.381167114849438,
+      "baselineMedianMs": 14.135687999998481,
+      "candidateMedianMs": 8.548458500001288
+    },
+    {
+      "id": "curated/rust/example/single",
+      "medianChange": -0.1313948163039449,
+      "minChange": -0.1334592960887332,
+      "maxChange": -0.12546234850654958,
+      "baselineMedianMs": 0.33470800000213785,
+      "candidateMedianMs": 0.29166650000115624
+    },
+    {
+      "id": "curated/rust/example/multi",
+      "medianChange": -0.10431680301047397,
+      "minChange": -0.1100502273567675,
+      "maxChange": -0.0939929146265075,
+      "baselineMedianMs": 0.9166250000016589,
+      "candidateMedianMs": 0.8207500000025902
+    },
+    {
+      "id": "curated/rust/example/html",
+      "medianChange": -0.13940773504659365,
+      "minChange": -0.14589571167119986,
+      "maxChange": -0.13372302738292752,
+      "baselineMedianMs": 0.309312500001397,
+      "candidateMedianMs": 0.2657295000026352
+    },
+    {
+      "id": "curated/rust/large/single",
+      "medianChange": -0.13550749107400373,
+      "minChange": -0.13837568440358883,
+      "maxChange": -0.13427616160307976,
+      "baselineMedianMs": 5.100208500000008,
+      "candidateMedianMs": 4.410874999997759
+    },
+    {
+      "id": "curated/rust/large/multi",
+      "medianChange": -0.114489796236807,
+      "minChange": -0.12046599714948392,
+      "maxChange": -0.1120231950164633,
+      "baselineMedianMs": 12.059062500000437,
+      "candidateMedianMs": 10.676916499996878
+    },
+    {
+      "id": "curated/rust/large/html",
+      "medianChange": -0.14046441104141394,
+      "minChange": -0.14437088257101394,
+      "maxChange": -0.13721156280213143,
+      "baselineMedianMs": 4.841854500002228,
+      "candidateMedianMs": 4.153104500001064
+    },
+    {
+      "id": "curated/css/example/single",
+      "medianChange": 0.03489266676629699,
+      "minChange": 0.030002835388629245,
+      "maxChange": 0.06106905109465233,
+      "baselineMedianMs": 0.39581249999901047,
+      "candidateMedianMs": 0.41049950000160607
+    },
+    {
+      "id": "curated/css/example/multi",
+      "medianChange": 0.03179300490544712,
+      "minChange": 0.023677057967733894,
+      "maxChange": 0.04699933197521844,
+      "baselineMedianMs": 1.0723539999999048,
+      "candidateMedianMs": 1.112562499998603
+    },
+    {
+      "id": "curated/css/example/html",
+      "medianChange": 0.042304540967625925,
+      "minChange": 0.03425034885857481,
+      "maxChange": 0.05267278457936486,
+      "baselineMedianMs": 0.36695849999887287,
+      "candidateMedianMs": 0.3835835000027146
+    },
+    {
+      "id": "curated/css/large/single",
+      "medianChange": 0.04329507242199382,
+      "minChange": 0.039074782726265855,
+      "maxChange": 0.06213668375392656,
+      "baselineMedianMs": 6.042187000002741,
+      "candidateMedianMs": 6.330292000002373
+    },
+    {
+      "id": "curated/css/large/multi",
+      "medianChange": 0.03907626443144108,
+      "minChange": 0.03554575663109483,
+      "maxChange": 0.05619405213221795,
+      "baselineMedianMs": 14.148562499998661,
+      "candidateMedianMs": 14.696062499999243
+    },
+    {
+      "id": "curated/css/large/html",
+      "medianChange": 0.05214940058795792,
+      "minChange": 0.03940363253957879,
+      "maxChange": 0.07324301646104225,
+      "baselineMedianMs": 5.759041500001331,
+      "candidateMedianMs": 6.012957999999344
+    },
+    {
+      "id": "curated/html/example/single",
+      "medianChange": -0.24356232858695726,
+      "minChange": -0.25152306819190307,
+      "maxChange": -0.22555755163844304,
+      "baselineMedianMs": 0.892395499999111,
+      "candidateMedianMs": 0.6742709999998624
+    },
+    {
+      "id": "curated/html/example/multi",
+      "medianChange": -0.21077442725371687,
+      "minChange": -0.21781759373908904,
+      "maxChange": -0.1959817754420905,
+      "baselineMedianMs": 2.145021000003908,
+      "candidateMedianMs": 1.7002084999985527
+    },
+    {
+      "id": "curated/html/example/html",
+      "medianChange": -0.2507752881024141,
+      "minChange": -0.2559628534754219,
+      "maxChange": -0.1884774152476847,
+      "baselineMedianMs": 0.8710625000021537,
+      "candidateMedianMs": 0.6632915000009234
+    },
+    {
+      "id": "curated/html/large/single",
+      "medianChange": -0.260389912628342,
+      "minChange": -0.2627904690637539,
+      "maxChange": -0.2542035579798976,
+      "baselineMedianMs": 13.844520500002545,
+      "candidateMedianMs": 10.24439600000187
+    },
+    {
+      "id": "curated/html/large/multi",
+      "medianChange": -0.23708827368448748,
+      "minChange": -0.24049179588596636,
+      "maxChange": -0.2355735613987503,
+      "baselineMedianMs": 29.8325205000001,
+      "candidateMedianMs": 22.732395499999257
+    },
+    {
+      "id": "curated/html/large/html",
+      "medianChange": -0.25965716854840726,
+      "minChange": -0.26177322773520795,
+      "maxChange": -0.24650613089269557,
+      "baselineMedianMs": 13.417499499999394,
+      "candidateMedianMs": 9.948458499999106
+    },
+    {
+      "id": "curated/cpp/example/single",
+      "medianChange": -0.7619926895729245,
+      "minChange": -0.7758130715748082,
+      "maxChange": -0.7472185223281177,
+      "baselineMedianMs": 2.6984579999989364,
+      "candidateMedianMs": 0.666854000002786
+    },
+    {
+      "id": "curated/cpp/example/multi",
+      "medianChange": -0.7385641035722758,
+      "minChange": -0.7511993544395091,
+      "maxChange": -0.7209586613733201,
+      "baselineMedianMs": 5.576145999999426,
+      "candidateMedianMs": 1.4875209999991057
+    },
+    {
+      "id": "curated/cpp/example/html",
+      "medianChange": -0.7726359861987377,
+      "minChange": -0.7786795661846948,
+      "maxChange": -0.7491180188624624,
+      "baselineMedianMs": 2.6636455000007118,
+      "candidateMedianMs": 0.6441874999982247
+    },
+    {
+      "id": "curated/cpp/large/single",
+      "medianChange": -0.8034649140465606,
+      "minChange": -0.8104857336338981,
+      "maxChange": -0.8016376728044101,
+      "baselineMedianMs": 40.35710400000244,
+      "candidateMedianMs": 7.925250500000402
+    },
+    {
+      "id": "curated/cpp/large/multi",
+      "medianChange": -0.7907749013644447,
+      "minChange": -0.8016402903297648,
+      "maxChange": -0.7868009681338916,
+      "baselineMedianMs": 82.61187500000233,
+      "candidateMedianMs": 17.39014600000155
+    },
+    {
+      "id": "curated/cpp/large/html",
+      "medianChange": -0.8089362201738952,
+      "minChange": -0.8159994021688683,
+      "maxChange": -0.8038290926957607,
+      "baselineMedianMs": 40.6686875000014,
+      "candidateMedianMs": 7.634271000002627
+    },
+    {
+      "id": "curated/swift/example/single",
+      "medianChange": -0.40626229742317155,
+      "minChange": -0.40983915082243216,
+      "maxChange": -0.4030726294540763,
+      "baselineMedianMs": 0.5666460000029474,
+      "candidateMedianMs": 0.33552100000088103
+    },
+    {
+      "id": "curated/swift/example/multi",
+      "medianChange": -0.34189852575410984,
+      "minChange": -0.3835572908095015,
+      "maxChange": -0.3348398482999777,
+      "baselineMedianMs": 1.375687999996444,
+      "candidateMedianMs": 0.906583000003593
+    },
+    {
+      "id": "curated/swift/example/html",
+      "medianChange": -0.42331421762739796,
+      "minChange": -0.4252922724668097,
+      "maxChange": -0.4179442838134124,
+      "baselineMedianMs": 0.5416249999980209,
+      "candidateMedianMs": 0.31362499999886495
+    },
+    {
+      "id": "curated/swift/large/single",
+      "medianChange": -0.42498193936380213,
+      "minChange": -0.4320384793625065,
+      "maxChange": -0.42029073441890885,
+      "baselineMedianMs": 8.528687500001979,
+      "candidateMedianMs": 4.932228999998188
+    },
+    {
+      "id": "curated/swift/large/multi",
+      "medianChange": -0.3910205633849331,
+      "minChange": -0.40091524833755987,
+      "maxChange": -0.3886377313534457,
+      "baselineMedianMs": 18.938521000000037,
+      "candidateMedianMs": 11.519624999997177
+    },
+    {
+      "id": "curated/swift/large/html",
+      "medianChange": -0.4350649704203611,
+      "minChange": -0.43753347156746525,
+      "maxChange": -0.43085307914709936,
+      "baselineMedianMs": 8.339332999999897,
+      "candidateMedianMs": 4.747062500002357
+    },
+    {
+      "id": "curated/java/example/single",
+      "medianChange": -0.5876829688693729,
+      "minChange": -0.5916975543411871,
+      "maxChange": -0.5793761258085042,
+      "baselineMedianMs": 0.7327499999992142,
+      "candidateMedianMs": 0.30135450000307173
+    },
+    {
+      "id": "curated/java/example/multi",
+      "medianChange": -0.5116291843585832,
+      "minChange": -0.534341290032539,
+      "maxChange": -0.4913560739951903,
+      "baselineMedianMs": 1.7049164999989443,
+      "candidateMedianMs": 0.8332709999995132
+    },
+    {
+      "id": "curated/java/example/html",
+      "medianChange": -0.5978508594375881,
+      "minChange": -0.6041503974251906,
+      "maxChange": -0.5799097015217809,
+      "baselineMedianMs": 0.716270999997505,
+      "candidateMedianMs": 0.288770499999373
+    },
+    {
+      "id": "curated/java/large/single",
+      "medianChange": -0.6020900442603488,
+      "minChange": -0.6089275903445148,
+      "maxChange": -0.5933851428195485,
+      "baselineMedianMs": 11.326333499997418,
+      "candidateMedianMs": 4.49560399999973
+    },
+    {
+      "id": "curated/java/large/multi",
+      "medianChange": -0.5681701866787332,
+      "minChange": -0.5729681491675511,
+      "maxChange": -0.5646889873235637,
+      "baselineMedianMs": 24.4074795000015,
+      "candidateMedianMs": 10.528291999999055
+    },
+    {
+      "id": "curated/java/large/html",
+      "medianChange": -0.6144902607328779,
+      "minChange": -0.6203548255370271,
+      "maxChange": -0.6104350475012614,
+      "baselineMedianMs": 11.092854500002431,
+      "candidateMedianMs": 4.2919795000052545
+    },
+    {
+      "id": "curated/markdown/example/single",
+      "medianChange": -0.3307391567192559,
+      "minChange": -0.3441885560042762,
+      "maxChange": -0.3116188577520518,
+      "baselineMedianMs": 0.524854499995854,
+      "candidateMedianMs": 0.35668749999967986
+    },
+    {
+      "id": "curated/markdown/example/multi",
+      "medianChange": -0.2900813303373557,
+      "minChange": -0.31856136001603363,
+      "maxChange": -0.2721200603537788,
+      "baselineMedianMs": 1.3438330000026326,
+      "candidateMedianMs": 0.9696040000017092
+    },
+    {
+      "id": "curated/markdown/example/html",
+      "medianChange": -0.34673559074052973,
+      "minChange": -0.3712444555236971,
+      "maxChange": -0.3289001685638665,
+      "baselineMedianMs": 0.5244999999995343,
+      "candidateMedianMs": 0.35122950000004494
+    },
+    {
+      "id": "curated/markdown/large/single",
+      "medianChange": -0.36627238424164266,
+      "minChange": -0.37447695427181016,
+      "maxChange": -0.35928904365671677,
+      "baselineMedianMs": 7.810520499999257,
+      "candidateMedianMs": 4.882771000000503
+    },
+    {
+      "id": "curated/markdown/large/multi",
+      "medianChange": -0.3389480063922041,
+      "minChange": -0.3562815641658361,
+      "maxChange": -0.324791780069176,
+      "baselineMedianMs": 16.740375000001222,
+      "candidateMedianMs": 11.082124999997177
+    },
+    {
+      "id": "curated/markdown/large/html",
+      "medianChange": -0.36947536241297674,
+      "minChange": -0.37658689807631807,
+      "maxChange": -0.36282168962350914,
+      "baselineMedianMs": 7.629146000002947,
+      "candidateMedianMs": 4.804958500000794
+    },
+    {
+      "id": "curated/toml/example/single",
+      "medianChange": 0.036866297685026694,
+      "minChange": 0.02715622068102208,
+      "maxChange": 0.044081517543195003,
+      "baselineMedianMs": 0.12810349999563186,
+      "candidateMedianMs": 0.13260449999506818
+    },
+    {
+      "id": "curated/toml/example/multi",
+      "medianChange": 0.02568910818943171,
+      "minChange": 0.006112122370920403,
+      "maxChange": 0.03168653660801213,
+      "baselineMedianMs": 0.40377100000478094,
+      "candidateMedianMs": 0.4129795000044396
+    },
+    {
+      "id": "curated/toml/example/html",
+      "medianChange": 0.036625231132278335,
+      "minChange": 0.03040478560541371,
+      "maxChange": 0.043228395131420516,
+      "baselineMedianMs": 0.12191700000403216,
+      "candidateMedianMs": 0.12627050000082818
+    },
+    {
+      "id": "curated/toml/large/single",
+      "medianChange": 0.03733878522659562,
+      "minChange": 0.03129226567406995,
+      "maxChange": 0.050940019797195424,
+      "baselineMedianMs": 1.8468959999991057,
+      "candidateMedianMs": 1.9129164999976638
+    },
+    {
+      "id": "curated/toml/large/multi",
+      "medianChange": 0.03076409386429546,
+      "minChange": 0.018165239266646482,
+      "maxChange": 0.04281634218835362,
+      "baselineMedianMs": 4.421687500002008,
+      "candidateMedianMs": 4.567770999998174
+    },
+    {
+      "id": "curated/toml/large/html",
+      "medianChange": 0.04249267515151911,
+      "minChange": 0.028604069789189834,
+      "maxChange": 0.04755321696627357,
+      "baselineMedianMs": 1.7719585000049847,
+      "candidateMedianMs": 1.8535834999966028
+    },
+    {
+      "id": "curated/yaml/example/single",
+      "medianChange": -0.10645069469783275,
+      "minChange": -0.11001303103452198,
+      "maxChange": -0.07840558225197691,
+      "baselineMedianMs": 0.2547085000005609,
+      "candidateMedianMs": 0.2269170000035956
+    },
+    {
+      "id": "curated/yaml/example/multi",
+      "medianChange": -0.07086394068793544,
+      "minChange": -0.08842239185721357,
+      "maxChange": -0.06308281576406838,
+      "baselineMedianMs": 0.6899164999995264,
+      "candidateMedianMs": 0.6372709999996005
+    },
+    {
+      "id": "curated/yaml/example/html",
+      "medianChange": -0.1037990095594643,
+      "minChange": -0.10654450807826632,
+      "maxChange": -0.10076798428656264,
+      "baselineMedianMs": 0.2407504999973753,
+      "candidateMedianMs": 0.2151869999943301
+    },
+    {
+      "id": "curated/yaml/large/single",
+      "medianChange": -0.10855032834292677,
+      "minChange": -0.1114320613561608,
+      "maxChange": -0.09792422368329057,
+      "baselineMedianMs": 3.8414170000069134,
+      "candidateMedianMs": 3.414437999992515
+    },
+    {
+      "id": "curated/yaml/large/multi",
+      "medianChange": -0.09709010167497989,
+      "minChange": -0.10203430584557238,
+      "maxChange": -0.09065773514352093,
+      "baselineMedianMs": 8.754208000002109,
+      "candidateMedianMs": 7.895270499997423
+    },
+    {
+      "id": "curated/yaml/large/html",
+      "medianChange": -0.11226074672533537,
+      "minChange": -0.11530315813820058,
+      "maxChange": -0.11123938319443072,
+      "baselineMedianMs": 3.6905625000035798,
+      "candidateMedianMs": 3.2929375000021537
+    },
+    {
+      "id": "curated/json/example/single",
+      "medianChange": 0.1342726543550561,
+      "minChange": 0.12683549594480237,
+      "maxChange": 0.15221418880251503,
+      "baselineMedianMs": 0.22368750000168802,
+      "candidateMedianMs": 0.25241649999588844
+    },
+    {
+      "id": "curated/json/example/multi",
+      "medianChange": 0.09590249731223266,
+      "minChange": 0.08855424994212924,
+      "maxChange": 0.10719763356646728,
+      "baselineMedianMs": 0.6250624999956926,
+      "candidateMedianMs": 0.6850000000013097
+    },
+    {
+      "id": "curated/json/example/html",
+      "medianChange": 0.13825924221498775,
+      "minChange": 0.1296559204535539,
+      "maxChange": 0.1467542563172295,
+      "baselineMedianMs": 0.20981249999749707,
+      "candidateMedianMs": 0.23943750000034925
+    },
+    {
+      "id": "curated/json/large/single",
+      "medianChange": 0.13304946175979504,
+      "minChange": 0.12945087978158853,
+      "maxChange": 0.16150871359629915,
+      "baselineMedianMs": 3.4492499999978463,
+      "candidateMedianMs": 3.941208499993081
+    },
+    {
+      "id": "curated/json/large/multi",
+      "medianChange": 0.11896588181649692,
+      "minChange": 0.11521429110201775,
+      "maxChange": 0.13020616218076175,
+      "baselineMedianMs": 8.210500000001048,
+      "candidateMedianMs": 9.196500000005472
+    },
+    {
+      "id": "curated/json/large/html",
+      "medianChange": 0.1410738515750467,
+      "minChange": 0.13005834337699462,
+      "maxChange": 0.14991091235028997,
+      "baselineMedianMs": 3.311187500006781,
+      "candidateMedianMs": 3.778374999994412
+    },
+    {
+      "id": "curated/astro/example/single",
+      "medianChange": 0.1737216557537653,
+      "minChange": 0.16603475491206332,
+      "maxChange": 0.23533347519611536,
+      "baselineMedianMs": 1.3394370000023628,
+      "candidateMedianMs": 1.582854000000225
+    },
+    {
+      "id": "curated/astro/example/multi",
+      "medianChange": 0.16968192565533702,
+      "minChange": 0.15242123704541632,
+      "maxChange": 0.22278509031084637,
+      "baselineMedianMs": 3.0287289999978384,
+      "candidateMedianMs": 3.5585420000024897
+    },
+    {
+      "id": "curated/astro/example/html",
+      "medianChange": 0.19867942424720342,
+      "minChange": 0.15476088263572896,
+      "maxChange": 0.21097399276359274,
+      "baselineMedianMs": 1.3700414999948407,
+      "candidateMedianMs": 1.6374164999942877
+    },
+    {
+      "id": "curated/astro/large/single",
+      "medianChange": 0.3229279472762321,
+      "minChange": 0.305006321704987,
+      "maxChange": 0.3515729979520126,
+      "baselineMedianMs": 16.037624500000675,
+      "candidateMedianMs": 21.196104500006186
+    },
+    {
+      "id": "curated/astro/large/multi",
+      "medianChange": 0.3172247877588652,
+      "minChange": 0.30281696266233693,
+      "maxChange": 0.3319382729959459,
+      "baselineMedianMs": 32.73706249999668,
+      "candidateMedianMs": 43.18850000000384
+    },
+    {
+      "id": "curated/astro/large/html",
+      "medianChange": 0.33554453916204174,
+      "minChange": 0.31361177351284875,
+      "maxChange": 0.342998914621538,
+      "baselineMedianMs": 15.417749999993248,
+      "candidateMedianMs": 20.605104499991285
+    },
+    {
+      "id": "curated/svelte/example/single",
+      "medianChange": -0.05544152516470202,
+      "minChange": -0.08377800541211167,
+      "maxChange": -0.040446326372457375,
+      "baselineMedianMs": 1.346125000003667,
+      "candidateMedianMs": 1.2769789999947534
+    },
+    {
+      "id": "curated/svelte/example/multi",
+      "medianChange": -0.04292371537732742,
+      "minChange": -0.07686118731329405,
+      "maxChange": -0.030940740041090153,
+      "baselineMedianMs": 3.0353959999993094,
+      "candidateMedianMs": 2.8818124999961583
+    },
+    {
+      "id": "curated/svelte/example/html",
+      "medianChange": -0.0495627380640955,
+      "minChange": -0.09498462939337071,
+      "maxChange": 0.027148989899598464,
+      "baselineMedianMs": 1.3140835000012885,
+      "candidateMedianMs": 1.2542080000057467
+    },
+    {
+      "id": "curated/svelte/large/single",
+      "medianChange": -0.05543385904651521,
+      "minChange": -0.06796807942205929,
+      "maxChange": -0.04995838238100414,
+      "baselineMedianMs": 20.21545850000257,
+      "candidateMedianMs": 19.09656299999915
+    },
+    {
+      "id": "curated/svelte/large/multi",
+      "medianChange": -0.05092749623106896,
+      "minChange": -0.057339464284039576,
+      "maxChange": -0.04859772582501687,
+      "baselineMedianMs": 42.17614600000525,
+      "candidateMedianMs": 39.9640209999925
+    },
+    {
+      "id": "curated/svelte/large/html",
+      "medianChange": -0.049984504109918504,
+      "minChange": -0.05497886817006081,
+      "maxChange": -0.036627795960728404,
+      "baselineMedianMs": 19.673125499997695,
+      "candidateMedianMs": 18.60585400000855
+    },
+    {
+      "id": "curated/ruby/example/single",
+      "medianChange": -0.28032264440299415,
+      "minChange": -0.2835903050360433,
+      "maxChange": -0.27890658376298527,
+      "baselineMedianMs": 0.41683349999948405,
+      "candidateMedianMs": 0.29977099999814527
+    },
+    {
+      "id": "curated/ruby/example/multi",
+      "medianChange": -0.22791935952960807,
+      "minChange": -0.24349658493671777,
+      "maxChange": -0.22479291699326553,
+      "baselineMedianMs": 1.06970800000272,
+      "candidateMedianMs": 0.8298540000032517
+    },
+    {
+      "id": "curated/ruby/example/html",
+      "medianChange": -0.296027242807525,
+      "minChange": -0.2991265984563588,
+      "maxChange": -0.29337018917970425,
+      "baselineMedianMs": 0.3931044999990263,
+      "candidateMedianMs": 0.27739549999387236
+    },
+    {
+      "id": "curated/ruby/large/single",
+      "medianChange": -0.29067301859313166,
+      "minChange": -0.2930419763725356,
+      "maxChange": -0.2801582508572684,
+      "baselineMedianMs": 6.314042000005429,
+      "candidateMedianMs": 4.505145999995875
+    },
+    {
+      "id": "curated/ruby/large/multi",
+      "medianChange": -0.25894443566943204,
+      "minChange": -0.2636441942246899,
+      "maxChange": -0.25513935043577174,
+      "baselineMedianMs": 14.431021000003966,
+      "candidateMedianMs": 10.651145999996515
+    },
+    {
+      "id": "curated/ruby/large/html",
+      "medianChange": -0.29987015849420595,
+      "minChange": -0.30993559329275044,
+      "maxChange": -0.28357526813806244,
+      "baselineMedianMs": 6.242041999998037,
+      "candidateMedianMs": 4.381207999998878
+    },
+    {
+      "id": "curated/python/example/single",
+      "medianChange": -0.15297476363027074,
+      "minChange": -0.16658823190295835,
+      "maxChange": -0.14844117713206983,
+      "baselineMedianMs": 0.46775000000343425,
+      "candidateMedianMs": 0.3971034999995027
+    },
+    {
+      "id": "curated/python/example/multi",
+      "medianChange": -0.13085291777330488,
+      "minChange": -0.15257190099154483,
+      "maxChange": -0.11726622234468875,
+      "baselineMedianMs": 1.1994585000065854,
+      "candidateMedianMs": 1.0446454999982961
+    },
+    {
+      "id": "curated/python/example/html",
+      "medianChange": -0.16291957902731424,
+      "minChange": -0.1642361281697461,
+      "maxChange": -0.1476877323024831,
+      "baselineMedianMs": 0.4483544999966398,
+      "candidateMedianMs": 0.37510399999882793
+    },
+    {
+      "id": "curated/python/large/single",
+      "medianChange": -0.1583174428999159,
+      "minChange": -0.1630895118375526,
+      "maxChange": -0.14997063287084733,
+      "baselineMedianMs": 7.079562999999325,
+      "candidateMedianMs": 5.963333499996224
+    },
+    {
+      "id": "curated/python/large/multi",
+      "medianChange": -0.13874677938305824,
+      "minChange": -0.1428909078865387,
+      "maxChange": -0.13664764128269336,
+      "baselineMedianMs": 15.852229000003717,
+      "candidateMedianMs": 13.707646000002569
+    },
+    {
+      "id": "curated/python/large/html",
+      "medianChange": -0.15991820753348507,
+      "minChange": -0.16283708571795363,
+      "maxChange": -0.15181832545860907,
+      "baselineMedianMs": 6.868687000001955,
+      "candidateMedianMs": 5.762479500001064
+    },
+    {
+      "id": "curated/vue/example/single",
+      "medianChange": -0.2991674998164092,
+      "minChange": -0.31289795763448014,
+      "maxChange": -0.2944787133891522,
+      "baselineMedianMs": 0.7206874999901629,
+      "candidateMedianMs": 0.4983120000033523
+    },
+    {
+      "id": "curated/vue/example/multi",
+      "medianChange": -0.2557442456078891,
+      "minChange": -0.27267026150195517,
+      "maxChange": -0.2337360456127029,
+      "baselineMedianMs": 1.723687500008964,
+      "candidateMedianMs": 1.2821459999977378
+    },
+    {
+      "id": "curated/vue/example/html",
+      "medianChange": -0.307729676439766,
+      "minChange": -0.32217146976534905,
+      "maxChange": -0.2998419927535704,
+      "baselineMedianMs": 0.6864580000037677,
+      "candidateMedianMs": 0.47924999999668216
+    },
+    {
+      "id": "curated/vue/large/single",
+      "medianChange": -0.3195448320357863,
+      "minChange": -0.3247879784426492,
+      "maxChange": -0.31443316823055467,
+      "baselineMedianMs": 10.87554149999778,
+      "candidateMedianMs": 7.3766040000045905
+    },
+    {
+      "id": "curated/vue/large/multi",
+      "medianChange": -0.289246910511089,
+      "minChange": -0.29154127490059467,
+      "maxChange": -0.2848170067184215,
+      "baselineMedianMs": 23.494604499996058,
+      "candidateMedianMs": 16.713479000005464
+    },
+    {
+      "id": "curated/vue/large/html",
+      "medianChange": -0.32155801607703194,
+      "minChange": -0.32836881882926827,
+      "maxChange": -0.31404565091482994,
+      "baselineMedianMs": 10.530041499994695,
+      "candidateMedianMs": 7.11970800000563
+    },
+    {
+      "id": "curated/mdx/example/single",
+      "medianChange": -0.4964045185453665,
+      "minChange": -0.5174195855016109,
+      "maxChange": -0.475916974578396,
+      "baselineMedianMs": 1.0325000000011642,
+      "candidateMedianMs": 0.5329584999999497
+    },
+    {
+      "id": "curated/mdx/example/multi",
+      "medianChange": -0.4368700749827199,
+      "minChange": -0.4527450318611522,
+      "maxChange": -0.406865423502606,
+      "baselineMedianMs": 2.3025830000042333,
+      "candidateMedianMs": 1.333125500001188
+    },
+    {
+      "id": "curated/mdx/example/html",
+      "medianChange": -0.49391158456187323,
+      "minChange": -0.5085910749344138,
+      "maxChange": -0.4705871057979968,
+      "baselineMedianMs": 0.9813330000033602,
+      "candidateMedianMs": 0.5130829999980051
+    },
+    {
+      "id": "curated/mdx/large/single",
+      "medianChange": -0.5107520613445117,
+      "minChange": -0.5379328776777208,
+      "maxChange": -0.5076001099044816,
+      "baselineMedianMs": 14.74531250000291,
+      "candidateMedianMs": 7.111417000000074
+    },
+    {
+      "id": "curated/mdx/large/multi",
+      "medianChange": -0.4869939417948317,
+      "minChange": -0.49860656100815726,
+      "maxChange": -0.4809315930667757,
+      "baselineMedianMs": 31.14806200000021,
+      "candidateMedianMs": 15.878103999995801
+    },
+    {
+      "id": "curated/mdx/large/html",
+      "medianChange": -0.5180268976522056,
+      "minChange": -0.5344728133340235,
+      "maxChange": -0.5142882978747797,
+      "baselineMedianMs": 14.525812500003667,
+      "candidateMedianMs": 6.942103500005032
+    },
+    {
+      "id": "curated/scss/example/single",
+      "medianChange": -0.2509453873767453,
+      "minChange": -0.25591515481073235,
+      "maxChange": -0.24324789970645333,
+      "baselineMedianMs": 0.4557085000051302,
+      "candidateMedianMs": 0.34156249999796273
+    },
+    {
+      "id": "curated/scss/example/multi",
+      "medianChange": -0.19813363709580945,
+      "minChange": -0.21855867866358725,
+      "maxChange": -0.18969557092697376,
+      "baselineMedianMs": 1.1675630000027013,
+      "candidateMedianMs": 0.931457999999111
+    },
+    {
+      "id": "curated/scss/example/html",
+      "medianChange": -0.2616190614803543,
+      "minChange": -0.2665825013674097,
+      "maxChange": -0.26061965385342867,
+      "baselineMedianMs": 0.4312710000012885,
+      "candidateMedianMs": 0.3177080000023125
+    },
+    {
+      "id": "curated/scss/large/single",
+      "medianChange": -0.2569238629729992,
+      "minChange": -0.2634206472949382,
+      "maxChange": -0.24090529294378726,
+      "baselineMedianMs": 6.893520999998145,
+      "candidateMedianMs": 5.106562000000849
+    },
+    {
+      "id": "curated/scss/large/multi",
+      "medianChange": -0.22473537795601495,
+      "minChange": -0.23035470813796022,
+      "maxChange": -0.21967784847419425,
+      "baselineMedianMs": 15.741416999997455,
+      "candidateMedianMs": 12.132292000002053
+    },
+    {
+      "id": "curated/scss/large/html",
+      "medianChange": -0.2651571643695918,
+      "minChange": -0.27235063911395474,
+      "maxChange": -0.2551817496259636,
+      "baselineMedianMs": 6.701166500002728,
+      "candidateMedianMs": 4.895250499997928
+    },
+    {
+      "id": "curated/shellscript/example/single",
+      "medianChange": -0.08460683628760002,
+      "minChange": -0.1004022907962282,
+      "maxChange": -0.07809698708664659,
+      "baselineMedianMs": 0.43297899999743095,
+      "candidateMedianMs": 0.39635399999679066
+    },
+    {
+      "id": "curated/shellscript/example/multi",
+      "medianChange": -0.06377052383005166,
+      "minChange": -0.09028532055719618,
+      "maxChange": -0.05238686702684481,
+      "baselineMedianMs": 1.1193124999990687,
+      "candidateMedianMs": 1.0486459999956423
+    },
+    {
+      "id": "curated/shellscript/example/html",
+      "medianChange": -0.08722252391095586,
+      "minChange": -0.09675380987547633,
+      "maxChange": -0.08405573523805376,
+      "baselineMedianMs": 0.4075840000004973,
+      "candidateMedianMs": 0.37100000000646105
+    },
+    {
+      "id": "curated/shellscript/large/single",
+      "medianChange": -0.08187196933215346,
+      "minChange": -0.09701883099572839,
+      "maxChange": -0.07858395762797565,
+      "baselineMedianMs": 6.564479500004381,
+      "candidateMedianMs": 6.047521000000415
+    },
+    {
+      "id": "curated/shellscript/large/multi",
+      "medianChange": -0.0756904568265595,
+      "minChange": -0.08315005672424325,
+      "maxChange": -0.07038307556732637,
+      "baselineMedianMs": 14.97712550000142,
+      "candidateMedianMs": 13.813771000000997
+    },
+    {
+      "id": "curated/shellscript/large/html",
+      "medianChange": -0.08564199114335691,
+      "minChange": -0.09405326780346546,
+      "maxChange": -0.08005304832070148,
+      "baselineMedianMs": 6.1937289999987115,
+      "candidateMedianMs": 5.650228999998944
+    }
+  ]
+}

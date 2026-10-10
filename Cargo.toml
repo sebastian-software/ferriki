@@ -88,7 +88,7 @@ keywords = [ "syntax-highlighting", "textmate", "shiki", "tokenizer", "ferrament
 categories = [ "text-processing", "parser-implementations", "development-tools" ]
 
 [workspace.dependencies]
-ferroni = "1.8.0"
+ferroni = "2.1.0"
 napi = { version = "3", default-features = false, features = [ "napi8" ] }
 napi-build = "2.6"
 napi-derive = "3"
