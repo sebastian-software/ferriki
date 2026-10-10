@@ -1,4 +1,4 @@
-/* cspell:words textnodes */
+/* cspell:words textnodes syntect */
 /* oxlint-disable react/jsx-no-comment-textnodes -- The code sample includes a literal source comment. */
 /* oxlint-disable react/no-danger -- HTML is generated from fixed repository samples by Ferriki. */
 import { ClosingAction, CodePanel, Ledger, Mark, Section } from "ferramenta-family";
@@ -124,7 +124,9 @@ export function CodeSection() {
         <>
           What changes and what stays is listed in the{" "}
           <Link to="/guide/migrating-from-shiki">migration guide</Link>; the{" "}
-          <Link to="/rust/getting-started">Rust guide</Link> covers assets and Ferromark.
+          <Link to="/rust/getting-started">Rust guide</Link> covers assets and Ferromark. For Rust
+          HTML projects evaluating another highlighter, see{" "}
+          <Link to="/guide/ferriki-and-syntect">Ferriki and syntect</Link>.
         </>
       }
     >

@@ -1,0 +1,96 @@
+astro	Orders.astro	astro	UNSUPPORTED: no exact extension entry	04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62
+java	Orders.java	java	Java	90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08
+svelte	Orders.svelte	svelte	UNSUPPORTED: no exact extension entry	9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83
+swift	Orders.swift	swift	UNSUPPORTED: no exact extension entry	b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6
+tsx	Orders.tsx	tsx	UNSUPPORTED: no exact extension entry	1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5
+vue	Orders.vue	vue	UNSUPPORTED: no exact extension entry	6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2
+cpp	orders.cpp	cpp	C++	31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f
+css	orders.css	css	CSS	118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d
+html	orders.html	html	HTML	07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653
+json	orders.json	json	JSON	11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c
+markdown	orders.md	md	Markdown	3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901
+mdx	orders.mdx	mdx	UNSUPPORTED: no exact extension entry	da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743
+python	orders.py	py	Python	a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766
+ruby	orders.rb	rb	Ruby	e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5
+rust	orders.rs	rs	Rust	fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9
+scss	orders.scss	scss	UNSUPPORTED: no exact extension entry	5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24
+shellscript	orders.sh	sh	Bourne Again Shell (bash)	33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc
+toml	orders.toml	toml	UNSUPPORTED: no exact extension entry	2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef
+typescript	orders.ts	ts	UNSUPPORTED: no exact extension entry	8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9
+yaml	orders.yaml	yaml	YAML	7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a
+AVAILABLE DEFAULT SYNTAX NAMES:
+SYNTAX	Plain Text	txt
+SYNTAX	ASP	asa
+SYNTAX	HTML (ASP)	asp
+SYNTAX	ActionScript	as
+SYNTAX	AppleScript	applescript,script editor
+SYNTAX	Batch File	bat,cmd
+SYNTAX	NAnt Build File	build
+SYNTAX	C#	cs,csx
+SYNTAX	C++	cpp,cc,cp,cxx,c++,C,h,hh,hpp,hxx,h++,inl,ipp
+SYNTAX	C	c,h
+SYNTAX	CSS	css,css.erb,css.liquid
+SYNTAX	Clojure	clj
+SYNTAX	D	d,di
+SYNTAX	Diff	diff,patch
+SYNTAX	Erlang	erl,hrl,Emakefile,emakefile
+SYNTAX	HTML (Erlang)	yaws
+SYNTAX	Go	go
+SYNTAX	Graphviz (DOT)	dot,DOT,gv
+SYNTAX	Groovy	groovy,gvy,gradle
+SYNTAX	HTML	html,htm,shtml,xhtml,inc,tmpl,tpl
+SYNTAX	Haskell	hs
+SYNTAX	Literate Haskell	lhs
+SYNTAX	Java Server Page (JSP)	jsp
+SYNTAX	Java	java,bsh
+SYNTAX	JavaDoc	
+SYNTAX	Java Properties	properties
+SYNTAX	JSON	json,sublime-settings,sublime-menu,sublime-keymap,sublime-mousemap,sublime-theme,sublime-build,sublime-project,sublime-completions,sublime-commands,sublime-macro,sublime-color-scheme
+SYNTAX	JavaScript	js,htc
+SYNTAX	Regular Expressions (Javascript)	
+SYNTAX	BibTeX	bib
+SYNTAX	LaTeX Log	
+SYNTAX	LaTeX	tex,ltx
+SYNTAX	TeX	sty,cls
+SYNTAX	Lisp	lisp,cl,clisp,l,mud,el,scm,ss,lsp,fasl
+SYNTAX	Lua	lua
+SYNTAX	Make Output	
+SYNTAX	Makefile	make,GNUmakefile,makefile,Makefile,OCamlMakefile,mak,mk
+SYNTAX	Markdown	md,mdown,markdown,markdn
+SYNTAX	MultiMarkdown	
+SYNTAX	MATLAB	matlab
+SYNTAX	OCaml	ml,mli
+SYNTAX	OCamllex	mll
+SYNTAX	OCamlyacc	mly
+SYNTAX	camlp4	
+SYNTAX	Objective-C++	mm,M,h
+SYNTAX	Objective-C	m,h
+SYNTAX	PHP Source	
+SYNTAX	PHP	php,php3,php4,php5,php7,phps,phpt,phtml
+SYNTAX	Pascal	pas,p,dpr
+SYNTAX	Perl	pl,pm,pod,t,PL
+SYNTAX	Python	py,py3,pyw,pyi,pyx,pyx.in,pxd,pxd.in,pxi,pxi.in,rpy,cpy,SConstruct,Sconstruct,sconstruct,SConscript,gyp,gypi,Snakefile,wscript
+SYNTAX	Regular Expressions (Python)	
+SYNTAX	R Console	
+SYNTAX	R	R,r,s,S,Rprofile
+SYNTAX	Rd (R Documentation)	rd
+SYNTAX	HTML (Rails)	rails,rhtml,erb,html.erb
+SYNTAX	JavaScript (Rails)	js.erb
+SYNTAX	Ruby Haml	haml,sass
+SYNTAX	Ruby on Rails	rxml,builder
+SYNTAX	SQL (Rails)	erbsql,sql.erb
+SYNTAX	Regular Expression	re
+SYNTAX	reStructuredText	rst,rest
+SYNTAX	Ruby	rb,Appfile,Appraisals,Berksfile,Brewfile,capfile,cgi,Cheffile,config.ru,Deliverfile,Fastfile,fcgi,Gemfile,gemspec,Guardfile,irbrc,jbuilder,podspec,prawn,rabl,rake,Rakefile,Rantfile,rbx,rjs,ruby.rail,Scanfile,simplecov,Snapfile,thor,Thorfile,Vagrantfile
+SYNTAX	Cargo Build Results	
+SYNTAX	Rust	rs
+SYNTAX	SQL	sql,ddl,dml
+SYNTAX	Scala	scala,sbt
+SYNTAX	Bourne Again Shell (bash)	sh,bash,zsh,fish,.bash_aliases,.bash_completions,.bash_functions,.bash_login,.bash_logout,.bash_profile,.bash_variables,.bashrc,.profile,.textmate_init
+SYNTAX	Shell-Unix-Generic	
+SYNTAX	commands-builtin-shell-bash	
+SYNTAX	HTML (Tcl)	adp
+SYNTAX	Tcl	tcl
+SYNTAX	Textile	textile
+SYNTAX	XML	xml,xsd,xslt,tld,dtml,rss,opml,svg
+SYNTAX	YAML	yaml,yml,sublime-syntax

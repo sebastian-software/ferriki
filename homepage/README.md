@@ -6,6 +6,7 @@ full homepage verification:
 
 ```sh
 pnpm --dir node install --frozen-lockfile
+pnpm --dir node run build:compat
 pnpm --dir node run build:native
 pnpm --dir homepage install --frozen-lockfile
 pnpm --dir homepage exec playwright install chromium

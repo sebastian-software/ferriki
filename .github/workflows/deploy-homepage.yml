@@ -75,9 +75,11 @@ jobs:
         working-directory: node
         run: pnpm install --frozen-lockfile
 
-      - name: Build native Ferriki package and seed its asset cache
+      - name: Build Shiki reference and native Ferriki package, and seed the asset cache
         working-directory: node
-        run: pnpm run build:native
+        run: |
+          pnpm run build:compat
+          pnpm run build:native
 
       - name: Install homepage dependencies
         run: pnpm install --frozen-lockfile
