@@ -63,6 +63,22 @@ assert.throws(
   /workspace must use pnpm 10/,
 );
 
+const concurrencyGroup = `  group: publish-\${{ github.repository }}\n`;
+assert.equal(workflow.split(concurrencyGroup).length - 1, 1);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(
+        concurrencyGroup,
+        `  group: publish-\${{ github.repository }}-\${{ github.ref }}\n`,
+      ),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /one non-canceling concurrency group/,
+);
+
 const smokeStep =
   "      - name: Verify packed main-package consumer\n" +
   "        run: node ./scripts/check-packed-consumer.mjs\n" +
@@ -292,6 +308,63 @@ assert.throws(
   /release-summary must report addon sizes/,
 );
 
+const cratesDependency = "      - verify-crates-publish\n";
+const cratesResult = `          CRATES_RESULT: \${{ needs.publish-crates.result }}\n`;
+assert.equal(workflow.split(cratesDependency).length - 1, 1);
+assert.equal(workflow.split(cratesResult).length - 1, 1);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(cratesDependency, ""),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /summary must wait for Rust verification/,
+);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(cratesResult, ""),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /CRATES_RESULT/,
+);
+const cratesGateGuard = "needs.verify-release-source.result == 'success' && ";
+const cratesJobIndex = workflow.indexOf("\n  verify-crates-publish:\n");
+assert(cratesJobIndex >= 0);
+assert(workflow.slice(cratesJobIndex).includes(cratesGateGuard));
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow:
+        workflow.slice(0, cratesJobIndex) +
+        workflow.slice(cratesJobIndex).replace(cratesGateGuard, ""),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /crates verification must not check out an unverified release source/,
+);
+
+const recoveryCommand = "        run: node ./scripts/publish-npm-product.mjs sidecars\n";
+assert.equal(workflow.split(recoveryCommand).length - 1, 1);
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(
+        recoveryCommand,
+        "        run: npm publish ./platforms/linux-x64-gnu\n",
+      ),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /release workflow is missing node \.\/scripts\/publish-npm-product\.mjs sidecars/,
+);
+
 const fixtureRoot = await mkdtemp(join(tmpdir(), "ferriki-publish-contract-"));
 const fixturePackage = join(fixtureRoot, "fixture");
 const fixturePack = join(fixtureRoot, "packed");
@@ -329,6 +402,37 @@ try {
   assert.equal(packedManifest.name, fixtureManifest.name);
   assert.equal(packedManifest.version, fixtureManifest.version);
   assert.deepEqual(packedManifest.dependencies, { "magic-string": "^0.30.21" });
+
+  // The recovery publisher uses this exact pnpm JSON shape for every product
+  // package, then passes the resulting tarball to npm.
+  for (const [directory, expectedName] of [
+    ["ferriki", "@ferriki/core"],
+    ["platforms/linux-x64-gnu", "@ferriki/linux-x64-gnu"],
+    ["vite", "@ferriki/vite"],
+  ]) {
+    const packageDirectory = join(nodeRoot, directory);
+    const result = JSON.parse(
+      execFileSync(
+        "pnpm",
+        ["--dir", packageDirectory, "pack", "--pack-destination", fixturePack, "--json"],
+        { cwd: nodeRoot, encoding: "utf8" },
+      ),
+    );
+    const sourceManifest = JSON.parse(
+      await readFile(join(packageDirectory, "package.json"), "utf8"),
+    );
+    assert.equal(result.name, expectedName);
+    assert.equal(result.version, sourceManifest.version);
+    assert(result.filename.startsWith(`${fixturePack}/`));
+    const productManifest = JSON.parse(
+      execFileSync("tar", ["-xOf", result.filename, "package/package.json"], {
+        encoding: "utf8",
+      }),
+    );
+    assert.equal(productManifest.name, expectedName);
+    assert.equal(productManifest.version, sourceManifest.version);
+    assert.doesNotMatch(JSON.stringify(productManifest), /\b(?:catalog|workspace):/);
+  }
 
   const npmCache = join(fixtureRoot, "npm-cache");
   const npmUserConfig = join(fixtureRoot, "npmrc");
