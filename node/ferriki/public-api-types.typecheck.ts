@@ -1,4 +1,9 @@
-import type { HighlighterOptions, HighlighterSyncOptions, HighlightOptions } from "./index.d.mts";
+import type {
+  HighlighterOptions,
+  HighlighterSyncOptions,
+  HighlightOptions,
+  ShikiTransformer,
+} from "./index.d.mts";
 
 type AssertTrue<T extends true> = T;
 type FerrikiPublicApi = typeof import("./index.d.mts");
@@ -49,3 +54,18 @@ const unsupportedHighlightOption: HighlightOptions = {
 void unsupportedFactoryOption;
 void unsupportedSyncOption;
 void unsupportedHighlightOption;
+
+// HAST hooks run while the tree is being assembled. Wrapper fields need guards.
+const stageAwareTransformer: ShikiTransformer = {
+  span() {
+    // @ts-expect-error The pre wrapper does not exist during token span hooks.
+    this.pre.properties.class = "unsafe";
+    // @ts-expect-error The code wrapper does not exist during token span hooks.
+    this.code.properties.class = "unsafe";
+  },
+  root() {
+    if (this.pre) this.addClassToHast(this.pre, "guarded");
+    if (this.code) this.addClassToHast(this.code, "guarded");
+  },
+};
+void stageAwareTransformer;
