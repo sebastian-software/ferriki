@@ -163,38 +163,45 @@ pub struct DecorationSlice {
     pub offset: usize,
 }
 
-pub fn split_decoration_tokens(
-    tokens: &[DecorationToken],
-    ranges: &[ResolvedDecoration],
-) -> Vec<DecorationSlice> {
-    let mut boundaries = ranges
-        .iter()
-        .flat_map(|range| [range.start.offset, range.end.offset])
-        .collect::<Vec<_>>();
-    boundaries.sort_unstable();
-    boundaries.dedup();
-    let mut slices = Vec::new();
-    for (index, token) in tokens.iter().enumerate() {
-        let end = token.offset + token.length;
-        let mut start = token.offset;
-        for point in boundaries
+/// Sorted, deduplicated boundaries shared by every line in a render.
+pub struct DecorationBoundaries(Vec<usize>);
+
+impl DecorationBoundaries {
+    pub fn new(ranges: &[ResolvedDecoration]) -> Self {
+        let mut boundaries = ranges
             .iter()
-            .copied()
-            .filter(|point| *point > token.offset && *point < end)
-            .chain(std::iter::once(end))
-        {
-            if point > start {
-                slices.push(DecorationSlice {
-                    token: index,
-                    start: start - token.offset,
-                    end: point - token.offset,
-                    offset: start,
-                });
+            .flat_map(|range| [range.start.offset, range.end.offset])
+            .collect::<Vec<_>>();
+        boundaries.sort_unstable();
+        boundaries.dedup();
+        Self(boundaries)
+    }
+
+    /// Emit slices directly so the host can build its packed output without
+    /// allocating a second intermediate list. Tokens need not be ordered.
+    pub fn split_tokens(&self, tokens: &[DecorationToken], mut emit: impl FnMut(DecorationSlice)) {
+        for (index, token) in tokens.iter().enumerate() {
+            let end = token.offset + token.length;
+            let mut start = token.offset;
+            let first = self.0.partition_point(|point| *point <= token.offset);
+            for point in self.0[first..]
+                .iter()
+                .copied()
+                .take_while(|point| *point < end)
+                .chain(std::iter::once(end))
+            {
+                if point > start {
+                    emit(DecorationSlice {
+                        token: index,
+                        start: start - token.offset,
+                        end: point - token.offset,
+                        offset: start,
+                    });
+                }
+                start = point;
             }
-            start = point;
         }
     }
-    slices
 }
 
 /// A section is applied after earlier sections, which may run JS callbacks.
@@ -326,12 +333,13 @@ pub struct DecorationMutation {
 fn text_lengths(nodes: &[DecorationNode]) -> Result<Vec<usize>, String> {
     let mut lengths = vec![0usize; nodes.len()];
     let mut state = vec![0u8; nodes.len()];
+    let mut stack = Vec::new();
     for root in 0..nodes.len() {
         if state[root] == 2 {
             continue;
         }
         state[root] = 1;
-        let mut stack = vec![(root, 0usize)];
+        stack.push((root, 0usize));
         while let Some((node, next)) = stack.last_mut() {
             if let Some(&child) = nodes[*node].children.get(*next) {
                 *next += 1;
@@ -375,7 +383,7 @@ pub fn plan_decoration_mutations(
     lines: &[usize],
     sections: &[DecorationSection],
 ) -> DecorationPlan {
-    let mut mutations = Vec::new();
+    let mut mutations = Vec::with_capacity(sections.len());
     let mut lengths = match text_lengths(&nodes) {
         Ok(lengths) => lengths,
         Err(error) => {
@@ -633,7 +641,9 @@ mod tests {
             },
             always_wrap: false,
         };
-        let slices = split_decoration_tokens(
+        let boundaries = DecorationBoundaries::new(&[range]);
+        let mut slices = Vec::new();
+        boundaries.split_tokens(
             &[
                 DecorationToken {
                     offset: 0,
@@ -644,7 +654,7 @@ mod tests {
                     length: 0,
                 },
             ],
-            &[range],
+            |slice| slices.push(slice),
         );
         assert_eq!(
             slices
@@ -653,6 +663,66 @@ mod tests {
                 .collect::<Vec<_>>(),
             [(0, 0, 1, 0), (0, 1, 3, 1), (0, 3, 4, 3)]
         );
+    }
+    #[test]
+    fn splitting_reuses_boundaries_for_unordered_tokens_and_other_lines() {
+        let source = DecorationSource::utf16("abcdefgh\nijklmnop");
+        let ranges = source
+            .resolve_ranges(&[
+                DecorationRange {
+                    start: DecorationPosition::Offset(1),
+                    end: DecorationPosition::Offset(3),
+                    always_wrap: false,
+                },
+                DecorationRange {
+                    start: DecorationPosition::Offset(3),
+                    end: DecorationPosition::Offset(5),
+                    always_wrap: false,
+                },
+                DecorationRange {
+                    start: DecorationPosition::Offset(11),
+                    end: DecorationPosition::Offset(13),
+                    always_wrap: false,
+                },
+            ])
+            .unwrap();
+        let boundaries = DecorationBoundaries::new(&ranges);
+        let mut slices = Vec::new();
+        for tokens in [
+            vec![
+                DecorationToken {
+                    offset: 3,
+                    length: 5,
+                },
+                DecorationToken {
+                    offset: 0,
+                    length: 3,
+                },
+                DecorationToken {
+                    offset: 1,
+                    length: 0,
+                },
+            ],
+            vec![DecorationToken {
+                offset: 9,
+                length: 8,
+            }],
+        ] {
+            slices.clear();
+            boundaries.split_tokens(&tokens, |slice| slices.push(slice));
+            let actual = slices
+                .iter()
+                .map(|slice| (slice.token, slice.start, slice.end, slice.offset))
+                .collect::<Vec<_>>();
+            if tokens.len() == 3 {
+                assert_eq!(
+                    actual,
+                    [(0, 0, 2, 3), (0, 2, 5, 5), (1, 0, 1, 0), (1, 1, 3, 1)]
+                );
+            } else {
+                assert_eq!(actual, [(0, 0, 2, 9), (0, 2, 4, 11), (0, 4, 8, 13)]);
+            }
+        }
     }
     #[test]
     fn plans_nested_wrappers_and_reports_missing_boundaries() {

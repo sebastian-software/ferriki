@@ -30,10 +30,10 @@ pub use ferriki_textmate::{
 #[doc(hidden)]
 pub mod __private {
     pub use crate::decorations::{
-        DecorationCursor, DecorationMutation, DecorationNode, DecorationPlan, DecorationPosition,
-        DecorationRange, DecorationSection, DecorationSlice, DecorationSource, DecorationTarget,
-        DecorationToken, ResolvedDecoration, ResolvedPosition, decoration_sections,
-        next_decoration_section, plan_decoration_mutations, split_decoration_tokens,
+        DecorationBoundaries, DecorationCursor, DecorationMutation, DecorationNode, DecorationPlan,
+        DecorationPosition, DecorationRange, DecorationSection, DecorationSlice, DecorationSource,
+        DecorationTarget, DecorationToken, ResolvedDecoration, ResolvedPosition,
+        decoration_sections, next_decoration_section, plan_decoration_mutations,
     };
     pub use crate::highlighter::HighlighterCore;
     pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions, PlannedAsset};

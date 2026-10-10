@@ -126,6 +126,8 @@ pub fn split_decoration_tokens(
     lines: Vec<Float64Array>,
 ) -> Result<Vec<Uint32Array>> {
     let ranges = ranges(&source, input)?;
+    let boundaries = core::DecorationBoundaries::new(&ranges);
+    let mut tokens = Vec::new();
     lines
         .into_iter()
         .map(|values| {
@@ -133,29 +135,23 @@ pub fn split_decoration_tokens(
                 return Err(usage("Invalid decoration token metadata".into()));
             }
             // Pairs carry exact JS numbers; validate before converting to Rust indices.
-            let tokens = values
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|pair| {
-                    Ok(core::DecorationToken {
-                        offset: integer(pair[0])?,
-                        length: integer(pair[1])?,
-                    })
-                })
-                .collect::<Result<Vec<_>>>()?;
+            tokens.clear();
+            for pair in values.as_chunks::<2>().0 {
+                tokens.push(core::DecorationToken {
+                    offset: integer(pair[0])?,
+                    length: integer(pair[1])?,
+                });
+            }
             // Four-word records: source token index, slice start, slice end, offset.
-            let slices = core::split_decoration_tokens(&tokens, &ranges)
-                .into_iter()
-                .flat_map(|s| {
-                    [
-                        s.token as u32,
-                        s.start as u32,
-                        s.end as u32,
-                        s.offset as u32,
-                    ]
-                })
-                .collect::<Vec<_>>();
+            let mut slices = Vec::with_capacity(tokens.len() * 4);
+            boundaries.split_tokens(&tokens, |s| {
+                slices.extend_from_slice(&[
+                    s.token as u32,
+                    s.start as u32,
+                    s.end as u32,
+                    s.offset as u32,
+                ]);
+            });
             Ok(slices.into())
         })
         .collect()

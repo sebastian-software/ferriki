@@ -357,12 +357,18 @@ function applyDecorations(codeNode, decorations, source) {
     if (pending.length) execute(pending);
     pending = [];
   };
-  for (const index of new Set(sections.map((section) => section.decoration))) {
+  // Rust emits each decoration's sections together. Walk those groups once
+  // instead of rescanning the whole section list for every decoration.
+  for (let sectionIndex = 0; sectionIndex < sections.length;) {
+    const index = sections[sectionIndex].decoration;
+    let end = sectionIndex + 1;
+    while (end < sections.length && sections[end].decoration === index) end++;
     const item = items[index];
     if (!item.transform) {
-      pending.push(...sections.filter((section) => section.decoration === index));
+      for (; sectionIndex < end; sectionIndex++) pending.push(sections[sectionIndex]);
       continue;
     }
+    sectionIndex = end;
     flush();
     let cursor = { phase: 0, line: 0 };
     while (cursor.phase !== 3) {
