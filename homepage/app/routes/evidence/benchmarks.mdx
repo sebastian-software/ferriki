@@ -160,3 +160,80 @@ prefilter. The archive includes the same per-file data for macOS.
 <BenchmarkChart perDocument />
 
 <BenchmarkDocuments />
+
+## Rust syntect comparison
+
+This separate Rust experiment compares syntect 5.3.0 with `regex-onig` and
+`regex-fancy` against Ferriki 0.13.0. It measures complete HTML-highlighting
+calls on the same pinned source documents. Each engine uses its own grammar
+catalog and dark theme: syntect uses `base16-ocean.dark`, while Ferriki uses
+`nord`. Grammars, scopes, theme colors, and markup differ, so these observations
+do not establish output parity or a speedup for equivalent work.
+The Ferriki measurements use the shared 0.13.0 base runtime before the
+scanner-cache work tracked in issue #230, so they do not include that change.
+
+The pinned set contains 20 formats. Syntect's default syntax set resolved exact
+grammars for 11; Astro, Svelte, Swift, TSX, Vue, MDX, SCSS, TOML, and TypeScript
+were excluded without fallback substitutions. The [comparison guide](/guide/ferriki-and-syntect)
+covers the catalog and migration boundaries; the [capture archive and method](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/syntect/2026-10-10)
+contains the resolved names, all 20 fixture hashes, six raw reports, support
+probes, binary receipts, and checksums.
+
+### Fresh-engine setup
+
+Each value is the median of ten engine setups in that capture round. Setup is
+outside the per-document render timings.
+
+| Engine                |  Round A |  Round B |
+| --------------------- | -------: | -------: |
+| syntect `regex-onig`  | 0.593 ms | 0.607 ms |
+| syntect `regex-fancy` | 0.659 ms | 0.660 ms |
+| Ferriki               | 0.598 ms | 0.622 ms |
+
+### First corpus pass
+
+First use is the first corpus pass on a fresh in-process engine instance. Each
+cell is the median over 20 samples for that document (ten per capture round).
+Process startup and cold operating-system caches are excluded; engine setup is
+reported above.
+
+| Language     | syntect `regex-onig` | syntect `regex-fancy` |    Ferriki |
+| ------------ | -------------------: | --------------------: | ---------: |
+| Java         |             2.065 ms |             15.391 ms |  12.314 ms |
+| C++          |             7.445 ms |             71.530 ms | 365.327 ms |
+| CSS          |             1.393 ms |              6.011 ms |  49.253 ms |
+| HTML         |             9.744 ms |             58.601 ms | 100.346 ms |
+| JSON         |             0.355 ms |              1.269 ms |   2.852 ms |
+| Markdown     |             3.063 ms |             58.863 ms | 118.916 ms |
+| Python       |             4.306 ms |             27.838 ms |  23.360 ms |
+| Ruby         |             2.628 ms |             20.382 ms |  83.645 ms |
+| Rust         |             3.544 ms |             25.590 ms |   5.585 ms |
+| Shell (bash) |             2.276 ms |             25.439 ms |  10.790 ms |
+| YAML         |             0.855 ms |              7.369 ms |   3.449 ms |
+
+### Warmed reuse
+
+Each engine uses a separate instance, five untimed corpus warmups, then 30
+timed renders per document in each round. Document order rotates; each cell is
+the median across 60 samples from both rounds.
+
+| Language     | syntect `regex-onig` | syntect `regex-fancy` |  Ferriki |
+| ------------ | -------------------: | --------------------: | -------: |
+| Java         |             0.678 ms |              1.289 ms | 0.449 ms |
+| C++          |             1.123 ms |              3.016 ms | 0.890 ms |
+| CSS          |             0.812 ms |              1.892 ms | 0.611 ms |
+| HTML         |             0.886 ms |              2.034 ms | 0.891 ms |
+| JSON         |             0.302 ms |              0.273 ms | 0.296 ms |
+| Markdown     |             0.433 ms |              3.189 ms | 0.597 ms |
+| Python       |             1.566 ms |              3.546 ms | 0.545 ms |
+| Ruby         |             0.985 ms |              2.552 ms | 0.379 ms |
+| Rust         |             0.682 ms |              1.796 ms | 0.368 ms |
+| Shell (bash) |             0.706 ms |              2.144 ms | 0.517 ms |
+| YAML         |             0.534 ms |              1.875 ms | 0.293 ms |
+
+Both rounds ran serially on an Apple M1 Ultra with Rust 1.99.0; the engine
+order was reversed across rounds. Every report verifies its binary hash did
+not change during capture, checks source preservation and highlighted spans,
+and records an unchanged manifest for all 20 fixture files. HTML output and
+colors were not compared. These per-language values describe this pinned corpus
+and this host, not the performance of another application.

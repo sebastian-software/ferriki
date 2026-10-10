@@ -37,6 +37,11 @@ representative dark theme. Grammars, themes, HTML markup, and language
 semantics differ, so these timings are descriptive observations—not equal-work
 parity, a speedup factor, or a prediction for another corpus.
 
+Ferroni also publishes a separate [regex-engine comparison](https://ferroni.dev/perf/engine-comparison#highlighting).
+It measures scanner and regex-engine work, not complete highlighter calls, so
+those figures are not highlighter results and do not predict the HTML timings
+above.
+
 ## Grammars and conversion
 
 Syntect documents `.sublime-syntax` as its native syntax-definition format.
@@ -51,11 +56,12 @@ describe their respective models.
 
 Syntect's default syntax set follows the syntax-definition package set
 shipped with Sublime Text, and applications can add `.sublime-syntax` files
-from other folders. `bat` ships separately reviewed extra definitions and
+from other folders. This is a smaller, more uniformly curated set centered on
+Sublime Text's package ecosystem than the broader Shiki catalog. Syntect
+remains maintained. `bat` ships separately reviewed extra definitions and
 documents conversions for some `.tmLanguage` grammars; those additions belong
-to bat's bundle, not every syntect default set. The Sublime package set is
-focused on syntax definitions, and syntect remains maintained. There are also
-separate conversion paths: [bat's asset guide](https://github.com/sharkdp/bat/blob/master/doc/assets.md)
+to bat's bundle, not every syntect default set. There are also separate
+conversion paths: [bat's asset guide](https://github.com/sharkdp/bat/blob/master/doc/assets.md)
 documents using Sublime Text to create a `.sublime-syntax` file from a
 `.tmLanguage` grammar, and the ecosystem has adapters such as
 [`syntect_tmlanguage`](https://docs.rs/syntect-tmlanguage). These are distinct
@@ -115,17 +121,21 @@ serialized HTML or claim equivalent highlighting.
 
 ## Which one fits?
 
-Choose Ferriki when a Rust or Node.js application emits HTML, wants a shared
+Choose Ferriki for a new Rust or Node.js project that emits HTML, wants one
 native highlighter across those runtimes, and can use its TextMate-based
-catalog or maintain a tested conversion for its custom grammar and theme.
-Rust static-site generators, documentation renderers, and Markdown HTML
-pipelines are representative use cases.
+catalog or maintain a tested conversion for its custom grammar and theme. It
+can also fit an existing HTML pipeline after checking the application's actual
+grammars, themes, detection rules, and asset distribution. Rust static-site
+generators, documentation renderers, and Markdown HTML pipelines are
+representative use cases.
 
 Keep syntect when your application needs ANSI terminal output, depends on a
 particular `.sublime-syntax` or `.tmTheme` definition, or needs syntect's
 language-detection APIs directly. For an existing syntect HTML application,
 first compare the specific grammar, theme, output wrappers, detection rules,
-and asset deployment it uses. The timing results can inform that evaluation;
+and asset deployment it uses. Terminal tools built around user-supplied
+Sublime syntax and theme files are not Ferriki's current target: Ferriki has no
+ANSI renderer. The timing results can inform an HTML migration evaluation;
 they cannot replace it.
 
 For Rust setup and HTML rendering, see [Start with Rust](/rust/getting-started)

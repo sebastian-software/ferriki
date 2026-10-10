@@ -750,10 +750,11 @@ fn build_provenance(
     binary_sha256_before: String,
     binary_sha256_after: String,
 ) -> Result<BuildProvenance, Box<dyn Error>> {
-    let target_dir = if engine_id() == "ferriki-only" {
-        "ferriki"
-    } else {
-        engine_id()
+    let target_dir = match engine_id() {
+        "syntect-onig" => "onig",
+        "syntect-fancy" => "fancy",
+        "ferriki-only" => "ferriki",
+        _ => unreachable!("the binary requires exactly one supported feature"),
     };
     Ok(BuildProvenance {
         binary_unchanged: binary_sha256_before == binary_sha256_after,
@@ -899,23 +900,23 @@ fn decode_html_entities(source: &str) -> String {
     let mut result = String::with_capacity(source.len());
     let mut rest = source;
     while !rest.is_empty() {
-        if rest.starts_with("&#") {
-            if let Some(end) = rest.find(';') {
-                let encoded = &rest[2..end];
-                let decoded = if let Some(hex) = encoded
-                    .strip_prefix('x')
-                    .or_else(|| encoded.strip_prefix('X'))
-                {
-                    u32::from_str_radix(hex, 16).ok()
-                } else {
-                    encoded.parse::<u32>().ok()
-                }
-                .and_then(char::from_u32);
-                if let Some(character) = decoded {
-                    result.push(character);
-                    rest = &rest[end + 1..];
-                    continue;
-                }
+        if rest.starts_with("&#")
+            && let Some(end) = rest.find(';')
+        {
+            let encoded = &rest[2..end];
+            let decoded = if let Some(hex) = encoded
+                .strip_prefix('x')
+                .or_else(|| encoded.strip_prefix('X'))
+            {
+                u32::from_str_radix(hex, 16).ok()
+            } else {
+                encoded.parse::<u32>().ok()
+            }
+            .and_then(char::from_u32);
+            if let Some(character) = decoded {
+                result.push(character);
+                rest = &rest[end + 1..];
+                continue;
             }
         }
         if let Some((entity, replacement)) =
@@ -935,7 +936,7 @@ fn decode_html_entities(source: &str) -> String {
 fn median(values: &[u64]) -> u64 {
     let mut sorted = values.to_vec();
     sorted.sort_unstable();
-    if sorted.len() % 2 == 0 {
+    if sorted.len().is_multiple_of(2) {
         (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2
     } else {
         sorted[sorted.len() / 2]
