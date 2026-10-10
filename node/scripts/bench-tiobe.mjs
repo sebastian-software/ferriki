@@ -32,17 +32,20 @@ const options = {
   rounds: { type: "string", default: "30" },
   "max-rounds": { type: "string", default: "1000" },
   "timeout-ms": { type: "string", default: "120000" },
+  "regex-prefilter": { type: "string", default: "on" },
   help: { type: "boolean" },
   worker: { type: "string" },
 };
 const { values } = parseArgs({ options });
 if (values.help) {
   console.log(
-    "Usage: pnpm bench:tiobe [--corpus tiobe|curated] [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000]",
+    "Usage: pnpm bench:tiobe [--corpus tiobe|curated] [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000] [--regex-prefilter on|off]",
   );
   process.exit(0);
 }
 const manifest = loadCorpus(values.corpus);
+if (!["on", "off"].includes(values["regex-prefilter"]))
+  throw new Error("--regex-prefilter must be on or off");
 const integer = (name, min, max) => {
   const number = Number(values[name]);
   if (!Number.isSafeInteger(number) || number < min || number > max)
@@ -50,6 +53,7 @@ const integer = (name, min, max) => {
   return number;
 };
 const method = {
+  regexPrefilter: values["regex-prefilter"] === "on",
   theme,
   apis: ["html"],
   sizes: values.sizes.split(","),
@@ -82,7 +86,7 @@ async function worker(language) {
     }
     const start = performance.now();
     try {
-      highlighters[id] = await createEngine(id, language);
+      highlighters[id] = await createEngine(id, language, method);
       setup[id] = { status: "ok", importAndSetupMs: performance.now() - start };
     } catch (error) {
       setup[id] = { status: "error", error: String(error) };

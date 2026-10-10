@@ -121,7 +121,7 @@ function collectHighlightSignatures(root) {
   return signatures;
 }
 
-export async function createEngine(id, language) {
+export async function createEngine(id, language, { regexPrefilter = true } = {}) {
   if (id === "prism") {
     const { default: Prism } = await import("prismjs");
     const { default: loadLanguages } = await import("prismjs/components/index.js");
@@ -145,6 +145,7 @@ export async function createEngine(id, language) {
     themes: [theme],
     engine,
     assets: { remote: false },
+    ...(id === "ferriki" ? { regexPrefilter } : {}),
   });
   const options = { lang: language.textmate, theme };
   return {

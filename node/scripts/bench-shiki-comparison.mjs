@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import { join } from "node:path";
@@ -41,11 +42,16 @@ const theme = "github-dark";
 const langs = [...new Set(corpus.map(([lang]) => lang))];
 const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
 const htmlApi = "codeToHtml";
+const prefilterIndex = process.argv.indexOf("--regex-prefilter");
+const prefilter = prefilterIndex === -1 ? "on" : process.argv[prefilterIndex + 1];
+if (!["on", "off"].includes(prefilter)) throw new Error("--regex-prefilter must be on or off");
+const regexPrefilter = prefilter === "on";
+const keepSamples = process.argv.includes("--raw-samples");
 
 async function createEngine(id) {
   if (id === "ferriki") {
     const ferriki = await import("../ferriki/index.mjs");
-    return ferriki.createHighlighter({ langs, themes: [theme] });
+    return ferriki.createHighlighter({ langs, themes: [theme], regexPrefilter });
   }
   const shiki = await import("shiki");
   const engine =
@@ -67,6 +73,7 @@ function loadCorpus(selectedPaths) {
         code,
         lines: code.split("\n").length,
         bytes: new TextEncoder().encode(code).length,
+        sha256: createHash("sha256").update(code).digest("hex"),
       };
     });
 }
@@ -248,6 +255,8 @@ async function measure(doc, documentIndex) {
     bytes: doc.bytes,
     medianMs,
     samples: samples[timed[0]].length,
+    sha256: doc.sha256,
+    ...(keepSamples ? { samplesMs: samples } : {}),
     ...(phikiWorker ? { phikiAgreement: phikiAgreement.get(doc.path)?.status ?? "error" } : {}),
   };
 }
@@ -282,7 +291,14 @@ if (htmlMeasurementError) throw htmlMeasurementError;
 function runNodeCold(id, selectedPaths) {
   const child = spawnSync(
     process.execPath,
-    [scriptPath, "--cold", id, ...(selectedPaths ? [JSON.stringify(selectedPaths)] : [])],
+    [
+      scriptPath,
+      "--cold",
+      id,
+      JSON.stringify(selectedPaths ?? null),
+      "--regex-prefilter",
+      prefilter,
+    ],
     { cwd: nodeRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 },
   );
   if (child.error || child.status !== 0) {
@@ -295,7 +311,10 @@ const cold = Object.fromEntries(
   nodeEngines.map((id) => {
     const runs = [];
     for (let run = 0; run < coldRuns; run++) runs.push(runNodeCold(id));
-    return [id, { medianMs: median(runs), runs: coldRuns }];
+    return [
+      id,
+      { medianMs: median(runs), runs: coldRuns, ...(keepSamples ? { samplesMs: runs } : {}) },
+    ];
   }),
 );
 
@@ -344,6 +363,7 @@ if (phikiPrepared && sharedHtmlDocs.length > 0) {
       ["phiki", median(phikiRuns)],
     ]),
     runs: coldRuns,
+    ...(keepSamples ? { samplesMs: { ...runs, phiki: phikiRuns } } : {}),
   };
 }
 
@@ -391,6 +411,7 @@ const report = {
   },
   theme,
   method: {
+    regexPrefilter,
     apis: [htmlApi],
     warmup,
     minSamples,
