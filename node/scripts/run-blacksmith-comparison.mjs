@@ -198,7 +198,9 @@ function run(directory) {
   writeFileSync(join(directory, "context.json"), `${JSON.stringify(context, null, 2)}\n`);
   const reports = {};
   const errors = [];
-  workloads: for (const corpus of ["comparison", "curated", "tiobe"]) {
+  let timedOut = false;
+  for (const corpus of ["comparison", "curated", "tiobe"]) {
+    if (timedOut) break;
     for (const mode of ["on", "off"]) {
       const name = `${corpus}-${mode}`;
       console.log(`[Blacksmith] ${name}`);
@@ -228,7 +230,10 @@ function run(directory) {
         errors.push(`${name}: ${error.message}`);
         // A timed-out parent may leave its worker alive briefly. Do not start
         // another timed workload while that worker could still occupy the CPU.
-        if (child?.error?.code === "ETIMEDOUT") break workloads;
+        if (child?.error?.code === "ETIMEDOUT") {
+          timedOut = true;
+          break;
+        }
       } finally {
         closeSync(log);
       }
