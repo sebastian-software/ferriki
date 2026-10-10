@@ -1,0 +1,156 @@
+{
+  "release": {
+    "version": "0.14.0",
+    "sourceCommit": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+    "sourceTree": "3a049211227e4127fc0d73e4c39ef5a0e20c9726"
+  },
+  "consumer": {
+    "homepageSourceCommit": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+    "ardoVersion": "5.0.0",
+    "ferromarkVersion": "3.1.0",
+    "ferromarkTag": "v3.1.0",
+    "ferromarkTagCommit": "15d4716921cde05a42ce381970c3555f19efa411",
+    "fourFenceSourceSha256": "ba209392fc4b48379cbdd151f07af7313492eb776ae9b46ab314f0ab9f80d20c",
+    "overrideManifest": "/private/tmp/ferriki-248-final-014-homepage/homepage/package.json",
+    "overrideManifestSha256": "3485b3cfbf092703faf2fdbea5a9e175aef4d2f5e092ecb4f9ba595de23d64a1",
+    "pnpmLockSha256": "40441fe2f6bf3202cb5fff8cf99e00c677fc47a6fae2cab06b53266b49848799",
+    "cargoManifestSha256": "708a19af6985aa530f64af2c7b78e885be28c8a3c12845887d614209cb3582dc",
+    "cargoLockSha256": "83ea3eddb8bf26863349d90cdabcfc129cb8eadd6e82adcf57eacd5348f27b71"
+  },
+  "npm": {
+    "core": {
+      "version": "0.14.0",
+      "tarballUrl": "https://registry.npmjs.org/@ferriki/core/-/core-0.14.0.tgz",
+      "integrity": "sha512-pCVkwlZDGuPYH/QyMT10zmaACfK8c4zMwoZdxl8ynxMVJ10PQUmbCzzBgEeOr2sP72TMwkEem00DSN1lJfNiKA==",
+      "installedPackagePath": "/private/tmp/ferriki-248-final-014-homepage/homepage/node_modules/.pnpm/@ferriki+core@0.14.0/node_modules/@ferriki/core/package.json",
+      "installedAddonPath": "/private/tmp/ferriki-248-final-014-homepage/homepage/node_modules/.pnpm/@ferriki+darwin-arm64@0.14.0/node_modules/@ferriki/darwin-arm64/ferriki.node",
+      "installedAddonSha256": "acb0e13c49fd453d174b87505c920a8647dfce038c2f8f776522b73186a4268e"
+    },
+    "hostSidecar": {
+      "version": "0.14.0",
+      "tarballUrl": "https://registry.npmjs.org/@ferriki/darwin-arm64/-/darwin-arm64-0.14.0.tgz",
+      "integrity": "sha512-jeuwJX7ImZgRPUsrFc2f9ncNUmHOMEDOIvBWw8vKH/CuVzobx53Xk1uszu7UtCK7JY2+dNPbIojiRWrinXe7Eg=="
+    },
+    "ardoResolvedEntry": "file:///private/tmp/ferriki-248-final-014-homepage/homepage/node_modules/.pnpm/ardo@5.0.0_@react-router+dev@8.4.0_react-router@8.4.0_react-dom@19.3.0_react@19.3.0__re_342349ec725f6a0ae8af09054cc582fc/node_modules/ardo/dist/vite/index.js",
+    "rebuiltFerromark": {
+      "packagePath": "/private/tmp/ferriki-248-final-014-homepage/homepage/node_modules/.pnpm/ferromark@file+..+..+ferriki-248-final-014-ferromark+packages+ferromark-3.1.0.tgz/node_modules/ferromark/package.json",
+      "addonPath": "/private/tmp/ferriki-248-final-014-homepage/homepage/node_modules/.pnpm/ferromark-darwin-arm64@file+..+..+ferriki-248-final-014-ferromark+packages+ferromark-darwin-arm64-3.1.0.tgz/node_modules/ferromark-darwin-arm64/ferromark.darwin-arm64.node",
+      "addonSha256": "3da11ebbf132c36566885e18faa27ece607c109d9a4905fec2d4ef5abd16467d",
+      "packageTarball": "/private/tmp/ferriki-248-final-014-ferromark/packages/ferromark-3.1.0.tgz",
+      "packageTarballSha256": "c7bf501abd9146eed70a1f5d289ebd1461a6a79b410eacb3fb591569f4541236",
+      "sidecarTarball": "/private/tmp/ferriki-248-final-014-ferromark/packages/ferromark-darwin-arm64-3.1.0.tgz",
+      "sidecarTarballSha256": "f598ce11585652228a36916fddf2b4fe708336fdfaf4c11e532b538840c3648f"
+    }
+  },
+  "crates": {
+    "ferriki": {
+      "version": "0.14.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "crateUrl": "https://static.crates.io/crates/ferriki/ferriki-0.14.0.crate",
+      "crateSha256": "5fed7921fd68a1b67715f1bfcda212e7bb2ac34670dc34afe80e76ce98fa9051",
+      "vcsSha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "pathInVcs": ""
+    },
+    "ferriki-asset-gen": {
+      "version": "0.14.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "crateUrl": "https://static.crates.io/crates/ferriki-asset-gen/ferriki-asset-gen-0.14.0.crate",
+      "crateSha256": "2f572c3d941d5bb546b3efd58ebfe7ff174ff154fe7909b37652490e3cfc04c2",
+      "vcsSha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "pathInVcs": "crates/ferriki-asset-gen"
+    },
+    "ferriki-textmate": {
+      "version": "0.14.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "crateUrl": "https://static.crates.io/crates/ferriki-textmate/ferriki-textmate-0.14.0.crate",
+      "crateSha256": "f37bdf7f3d8e0fb2fd7e1f5e083b84c1035a41cf9e7740882c0c94a2567468ab",
+      "vcsSha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "pathInVcs": "crates/ferriki-textmate"
+    }
+  },
+  "checks": {
+    "cargoCheck": {
+      "result": "pass",
+      "log": "/private/tmp/ferriki-248-final-014-ferromark/cargo-check.log"
+    },
+    "nativeBuild": {
+      "result": "pass",
+      "log": "/private/tmp/ferriki-248-final-014-ferromark/native-build.log"
+    },
+    "ferromarkJsxTests": {
+      "result": "pass",
+      "count": 5,
+      "log": "/private/tmp/ferriki-248-final-014-ferromark/ferromark-jsx-tests.log"
+    },
+    "homepageInstall": {
+      "result": "pass",
+      "log": "/private/tmp/ferriki-248-final-014-homepage/install.log"
+    },
+    "homepageBuild": {
+      "result": "pass",
+      "log": "/private/tmp/ferriki-248-final-014-homepage/build.log"
+    },
+    "homepageBuildVerification": {
+      "result": "pass",
+      "pages": 14,
+      "internalLinks": 515,
+      "log": "/private/tmp/ferriki-248-final-014-homepage/verify-build.log"
+    },
+    "frozenFourFence": {
+      "result": "pass",
+      "fences": 4,
+      "log": "/private/tmp/ferriki-248-final-014-homepage/verify-ardo.log"
+    },
+    "browser": {
+      "result": "pass",
+      "pages": 14,
+      "viewports": ["desktop", "phone", "landscape"],
+      "comparisonChoices": 9,
+      "keyboardNavigation": true,
+      "log": "/private/tmp/ferriki-248-final-014-homepage/browser-check.log"
+    },
+    "theme": {
+      "result": "pass",
+      "colors": {
+        "light": "rgb(207, 34, 46)",
+        "dark": "rgb(255, 123, 114)"
+      },
+      "sourceAndMetadata": true,
+      "highlightedLine": 2,
+      "receipt": "/private/tmp/ferriki-248-final-014-homepage/browser-theme.json"
+    },
+    "cache": {
+      "result": "pass",
+      "assets": 7,
+      "digests": [
+        "1b463d5bc89c274fac995f43ce6a3230676cfeed8026aca2b6cc7b18aabd24d2",
+        "34a9227ac6dec807768170cc47ebea439366f748a0b1c1be804405e445715d11",
+        "3c9f911beea5cedfe4197ad93c9f0c9d837954b6d400323f96dbf6fb390b3aaa",
+        "b15f8f35bf4c66146f7850cf003fa8bf085e573c2c7eaf7610ecd3b3fe56fafd",
+        "b5b398986282d23b99d462a20ebad7b75da8c07c3e1e876190b2f292a53c557b",
+        "b989ac945556d0b66ef60837410621ae0fd9aa8f80ef6e6c97c0dcb6d940f220",
+        "fd35a30a37e161fe19709f2e9f834bc06e2659dcbac1d10cfa08317a7245df45"
+      ],
+      "offlineEqual": true,
+      "missingAssetRecovered": true,
+      "corruptAssetRecovered": true,
+      "localMirrorRequests": 9,
+      "receipt": "/private/tmp/ferriki-248-final-014-homepage/native-remote.json"
+    },
+    "runtimeResolution": {
+      "result": "pass",
+      "receipt": "/private/tmp/ferriki-248-final-014-homepage/resolution.json",
+      "oldCoreAbsent": true
+    }
+  },
+  "reproducibility": {
+    "scripts": [
+      "/private/tmp/ferriki-248-final-014-homepage/homepage/verify-resolution.mjs",
+      "/private/tmp/ferriki-248-final-014-homepage/homepage/verify-rebuilt-theme.mjs",
+      "/private/tmp/ferriki-248-final-014-homepage/homepage/verify-rebuilt-remote.mjs",
+      "/private/tmp/ferriki-248-final-014-homepage/homepage/serve-ferriki-assets.mjs"
+    ],
+    "temporaryRoot": "/private/tmp/ferriki-248-final-014-homepage",
+    "ferromarkSourceRoot": "/private/tmp/ferriki-248-final-014-ferromark"
+  }
+}
