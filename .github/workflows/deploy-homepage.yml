@@ -85,6 +85,7 @@ jobs:
       - name: Check source samples, the footprint record and packed-package guide examples
         run: |
           pnpm sample:check
+          pnpm prism-sample:check
           pnpm class-sample:check
           pnpm macro-sample:check
           pnpm footprint:check

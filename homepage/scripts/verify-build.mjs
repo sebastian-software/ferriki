@@ -123,7 +123,13 @@ const homepage = await read("index.html");
 const benchmarks = await read("evidence/benchmarks/index.html");
 const footprintPage = await read("evidence/footprint/index.html");
 
+const prismComparison = await read("guide/ferriki-vs-prism/index.html");
 const required = [
+  [prismComparison, "Give your code examples the detail of your editor"],
+  [prismComparison, "prism-example"],
+  [prismComparison, "variable.parameter.ts"],
+  [prismComparison, "Plain text"],
+  [prismComparison, "prism-comparison-grid"],
   [homepage, `v${version}`],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
