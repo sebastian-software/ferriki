@@ -53,12 +53,15 @@ const html = await codeToHtml("const answer = 42;", {
 
 The one-shot functions share a singleton highlighter and return a Promise.
 They load the language and theme on first use.
+Later calls reuse that singleton, including its loaded languages and themes.
 
 ## Reuse a highlighter
 
 For a site build or a server, create one highlighter with the languages and
 themes you need. Rendering with loaded languages and themes is synchronous;
 you can still load additional ones through the asynchronous methods.
+In a CMS, keep it for the worker's lifetime rather than recreating it for
+each code block. The [benchmarks](/evidence/benchmarks) measure this repeated use.
 
 ```js ferriki-check=reusable
 import { createHighlighter } from "@ferriki/core";
@@ -79,6 +82,12 @@ try {
 
 A highlighter belongs to one thread: create one per worker for parallel builds.
 Dispose it when the build or server no longer needs it.
+
+Keep the default regex prefilter for repeated work. For a short-lived process,
+set `regexPrefilter: false` when creating the highlighter to avoid prefilter
+construction. This can reduce first-use work; it does not promise a shorter
+render for every snippet. See [factory options](/guide/api#highlighter-options)
+and the [measured tradeoff](/evidence/benchmarks#first-use-and-the-regex-prefilter).
 
 ## HTML with CSS
 

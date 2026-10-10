@@ -52,8 +52,29 @@ the option. These runs compare current engines and prefilter modes, not earlier
 Ferroni releases. An upgrade comparison requires a baseline measured on the same
 profile with identical fixtures, harness and compiler.
 
+## Published measurements
+
+The [October 10, 2026 archive](blacksmith/2026-10-10/README.md) preserves all
+twelve successful reports from both profiles with Ferroni 2.1.0. On the same
+14 repository files, default reused Ferriki highlighters were 4.7× faster
+than Shiki/WASM on Linux x86-64 and 5.5× faster on macOS ARM64, with identical
+HTML. Linux's observed processor was AMD EPYC; macOS used an Apple M4 Pro
+virtual machine. The Linux profile is x86-64, not a promise of Intel hardware.
+
+The [website](https://ferriki.dev/evidence/benchmarks) presents these two hosts,
+first-use and reuse results, and JSON/Astro with the unchanged Shiki controls.
+The controls moved with Ferriki in macOS's on/off windows, so that difference
+does not establish a prefilter benefit. The archive records the full scope
+and interpretation alongside the raw samples.
+
 The workflow does not replace the published homepage report automatically.
 Review machine provenance and output agreement before publishing new figures.
+Preserve a dated archive and point `scripts/publish-blacksmith-evidence.mjs`
+at it. Run the generator to refresh compact reports, review the copy, and run
+`node scripts/publish-blacksmith-evidence.mjs --check`. This verifies original
+artifact hashes, all report gates and published data; the homepage build runs
+the same check. Update `README.md.src` and regenerate the root README with
+`mise run readme:write` when its headline figures change.
 
 To reproduce locally, after native and compatibility builds:
 

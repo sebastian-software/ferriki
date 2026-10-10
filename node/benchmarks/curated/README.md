@@ -27,6 +27,13 @@ receipts, and exact TextMate HTML parity before timing. Current runs do not
 measure public Node token APIs.
 Prism's Astro/Svelte/Vue/MDX cells are explicitly unsupported.
 
+The [October 10, 2026 Blacksmith archive](../../../docs/benchmarks/blacksmith/2026-10-10/README.md)
+preserves default/off measurements on Linux x86-64 and macOS ARM64 with Ferroni
+2.1.0. The [published benchmarks](https://ferriki.dev/evidence/benchmarks#json-and-astro)
+show JSON/Astro medians and unchanged Shiki controls. The controls also moved
+between mode windows on macOS, so those off-mode differences do not establish
+a prefilter benefit.
+
 For a local Ferroni experiment, set `FERRIKI_FERRONI_PATH=/absolute/path/to/ferroni`
 when building. The [profiling instructions](../tiobe/README.md#profile-one-workload)
 also apply to this corpus with `--corpus curated`.

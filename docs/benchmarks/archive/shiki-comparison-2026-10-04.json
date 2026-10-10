@@ -1,0 +1,1252 @@
+{
+  "measured": "2026-10-04",
+  "revision": "38747b66",
+  "source": {
+    "revision": "38747b6634c09e2bb28aa1063098826ecce106ca",
+    "tree": "b2a7e7917514028ca378b1a553ab04ab01959b22",
+    "workingTreeClean": true,
+    "distribution": "Ferriki version is read from the workspace source package; this report does not certify a registry artifact."
+  },
+  "machine": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cores": 4,
+    "memoryGiB": 16,
+    "platform": "linux-x64",
+    "os": "Linux 6.18.44-fc-v64",
+    "node": "v22.22.0"
+  },
+  "versions": {
+    "ferriki": "0.11.0",
+    "shiki": "4.4.3",
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": "v2.2.1",
+    "psrSimpleCache": "3.0.0",
+    "php": "8.3.6",
+    "composer": "2.8.12"
+  },
+  "assets": {
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": {
+      "theme": "github-dark",
+      "themeSha256": "69b7a9693e9814d478a7d1fdafa52c24cb609b0b0832f50c0a415bf988364d91",
+      "grammarCount": 70,
+      "grammars": [
+        {
+          "name": "abap",
+          "scopeName": "source.abap",
+          "sha256": "d665cc8a82dcf96eaf4b0543459786f0d9192a5e712b757e526dc60369bce96e"
+        },
+        {
+          "name": "bat",
+          "scopeName": "source.batchfile",
+          "sha256": "187895f26d25236be6501e8c8d94192ceace95a4f6ae1f47e47fed19103ae904"
+        },
+        {
+          "name": "bibtex",
+          "scopeName": "text.bibtex",
+          "sha256": "2031f0fe56abab3490a9768ffa6ee94a7c8d05dc1fba8b130effea9d7587136c"
+        },
+        {
+          "name": "c",
+          "scopeName": "source.c",
+          "sha256": "6a783a491f44106a4c4710b87422bdcd8540ebe6ec2510dfcdcf7df7edd403f9"
+        },
+        {
+          "name": "clojure",
+          "scopeName": "source.clojure",
+          "sha256": "de03d10ea8a39ba74fda529e0c25c977cfce6a59f3eef8c1224f536a27c984d4"
+        },
+        {
+          "name": "cmake",
+          "scopeName": "source.cmake",
+          "sha256": "c02ac569fe3d30b1e36ee5ff9f8548b9f10ce6d8ae7338ef867a1133c1c130b3"
+        },
+        {
+          "name": "coffee",
+          "scopeName": "source.coffee",
+          "sha256": "b22b4e8fbbe6a2683f65265aa071c4815646e5b955ee1dd1662d76efb1761104"
+        },
+        {
+          "name": "cpp",
+          "scopeName": "source.cpp",
+          "sha256": "6a8899737f618f3ae6da693c782b32d5d1bb7c772ce9994a29b0d332cf8d0c83"
+        },
+        {
+          "name": "cpp-macro",
+          "scopeName": "source.cpp.embedded.macro",
+          "sha256": "02e157a7c1a96d98a3c8d3b3f3f33719886410de3a6fdbd6e05826ce2987a7e5"
+        },
+        {
+          "name": "csharp",
+          "scopeName": "source.cs",
+          "sha256": "c38071779c3f10613d3619b00a234a7aad775417808bd56eca4ec7ae497d8d34"
+        },
+        {
+          "name": "css",
+          "scopeName": "source.css",
+          "sha256": "eeed15521cc9e32ef9a92fa36dbf3674a6c13ba2fc20c666ef8c257e355246ec"
+        },
+        {
+          "name": "dart",
+          "scopeName": "source.dart",
+          "sha256": "650e673f72fc7f34045639b87b7e2bcc66867c1fe5ea300ac0329a492fd5e7cb"
+        },
+        {
+          "name": "diff",
+          "scopeName": "source.diff",
+          "sha256": "a711eda13cbf7abe386bf729dc088e127613641f2d0d1a28b62a9fece2877756"
+        },
+        {
+          "name": "docker",
+          "scopeName": "source.dockerfile",
+          "sha256": "4b407996ccef6df7feae745ed51e82a6a683339022d3a22cf5e5b2ea0a6db75e"
+        },
+        {
+          "name": "elixir",
+          "scopeName": "source.elixir",
+          "sha256": "feb3a4de9674321042744c3c0934f97639379a885e42bfee5a9a191fd68db01d"
+        },
+        {
+          "name": "erlang",
+          "scopeName": "source.erlang",
+          "sha256": "42de67bb8d971786462e99f0c8d59bc9166163dd60655bd9220e1b11dc02f92e"
+        },
+        {
+          "name": "fsharp",
+          "scopeName": "source.fsharp",
+          "sha256": "8e4c5c084814e2264771730fb40e2e9919d3c6512031c43cfe7a4f6b0239d955"
+        },
+        {
+          "name": "git-commit",
+          "scopeName": "text.git-commit",
+          "sha256": "21be35dcd1572e2d08c3d788840475744765c9b9d148e82057a0b68af109cba9"
+        },
+        {
+          "name": "git-rebase",
+          "scopeName": "text.git-rebase",
+          "sha256": "d3abee61347a7bafa3623fddb1bbca3707b565e9e32cd7b886ba3ab06de6f504"
+        },
+        {
+          "name": "glsl",
+          "scopeName": "source.glsl",
+          "sha256": "c4dd4bd5b1ff3a8c0fd729261a06e0d7cd2141177cf34f53684297d524e72bef"
+        },
+        {
+          "name": "gnuplot",
+          "scopeName": "source.gnuplot",
+          "sha256": "8a396e2c4d8aa121156d0069aabbdfc70451ac888583472eb5cf3476aa27d26f"
+        },
+        {
+          "name": "go",
+          "scopeName": "source.go",
+          "sha256": "ce39c438983c2eb8680c6612fb949598fdf780f79c91711d1380a5cd988a7dd7"
+        },
+        {
+          "name": "graphql",
+          "scopeName": "source.graphql",
+          "sha256": "f24255a06c7e9e80256fe65e3d8b68505e4a4f20f068007a739219ec386e73c8"
+        },
+        {
+          "name": "groovy",
+          "scopeName": "source.groovy",
+          "sha256": "1d3f39d1e474ae3bbd92480f9f985fe660d4af5e72b2ef7aee9e3937970bf8be"
+        },
+        {
+          "name": "haml",
+          "scopeName": "text.haml",
+          "sha256": "2ae1dd6bf77a716f4d96a90097c59a3a1548d64d92045a8cc8c19c2a55af5de9"
+        },
+        {
+          "name": "handlebars",
+          "scopeName": "text.html.handlebars",
+          "sha256": "42e0edb97aa02a764aa75e42916b5df4718593ac49d6cce697c084c7402eb1e8"
+        },
+        {
+          "name": "haskell",
+          "scopeName": "source.haskell",
+          "sha256": "030927a96a7d4ca5548e6d6631efb048617b6098fde26049d87dd7d17221af00"
+        },
+        {
+          "name": "html",
+          "scopeName": "text.html.basic",
+          "sha256": "7538c38e0d1703bae90fb097a0fbc8501bc112ae06f149934ea6464f2c5ddae4"
+        },
+        {
+          "name": "html-derivative",
+          "scopeName": "text.html.derivative",
+          "sha256": "9e90d5770e508d0c8a43004f782014fe0bfa97867e27c06fef46bcc82f0dfe4c"
+        },
+        {
+          "name": "ini",
+          "scopeName": "source.ini",
+          "sha256": "5b4a4ef9673429f7f13fec73eae543e3e00e1245762aacd89bb1849322338b61"
+        },
+        {
+          "name": "java",
+          "scopeName": "source.java",
+          "sha256": "c2d622b901b19119f2b3469583ef50fe6998788c179c0d3bbd7a0eab019378cb"
+        },
+        {
+          "name": "javascript",
+          "scopeName": "source.js",
+          "sha256": "a30cb0504491961b3d1bc99971daa5c2aedc7387f4782b567e1f0ac47aa83cba"
+        },
+        {
+          "name": "json",
+          "scopeName": "source.json",
+          "sha256": "f726cfcd953e00567c714a93c15a6227ef7bdb92c939cb07217e036ef5716dc0"
+        },
+        {
+          "name": "jsonc",
+          "scopeName": "source.json.comments",
+          "sha256": "87374ba1bee9a9af779038accbcbe4ecc7c30ae891b2fefcbc411aa88db24cfc"
+        },
+        {
+          "name": "jsonl",
+          "scopeName": "source.json.lines",
+          "sha256": "d9d9f117f348eec4d85e1ea2133b1e07316c566a8cafc151a42da87d1fb28ccc"
+        },
+        {
+          "name": "jsx",
+          "scopeName": "source.js.jsx",
+          "sha256": "e1a2dadc98b5750946aca0a754a974216fb0d7d5d0c9bdb9d9ad19450a56322b"
+        },
+        {
+          "name": "julia",
+          "scopeName": "source.julia",
+          "sha256": "9a1dfbc84de9803b03309b7635f21bebbd3b866e1865d763832b1db97fbfa2fd"
+        },
+        {
+          "name": "latex",
+          "scopeName": "text.tex.latex",
+          "sha256": "411a93c30c749368a537b0497edd03fadb006175e00ea531df40cdf913997ecb"
+        },
+        {
+          "name": "less",
+          "scopeName": "source.css.less",
+          "sha256": "2dcc623cd0f6457b77ce12765db469707d9da44c2033aa63bfb645bc670f44e9"
+        },
+        {
+          "name": "log",
+          "scopeName": "text.log",
+          "sha256": "41f32399f600df1710db2e417b5160a3c015c71f97ce851bce3068dd6b157860"
+        },
+        {
+          "name": "lua",
+          "scopeName": "source.lua",
+          "sha256": "cba0798e8a1155fa81b72d029332e097a6b7b1f2e45eff036adba602d2efea93"
+        },
+        {
+          "name": "make",
+          "scopeName": "source.makefile",
+          "sha256": "b39266e91f2b7619395e7c164674bb52ecf7c9ce815beb1065297766e1e2af03"
+        },
+        {
+          "name": "markdown",
+          "scopeName": "text.html.markdown",
+          "sha256": "02f472fd0df82f212be5dfde4d9ee90982885247a884323d8a6c80ecf87114b3"
+        },
+        {
+          "name": "objective-c",
+          "scopeName": "source.objc",
+          "sha256": "b4d74efae95f6320e43e77a7d2f944b6ad08a647ea9818aa846fea89601ece31"
+        },
+        {
+          "name": "perl",
+          "scopeName": "source.perl",
+          "sha256": "f13691f0d72752898f390d2dfbf014a43abe493995140986562e91ed99693688"
+        },
+        {
+          "name": "php",
+          "scopeName": "source.php",
+          "sha256": "3276ef9bc462b7e4c3b73458973090b831e3dbe77164e4ebd02b3771a01c7972"
+        },
+        {
+          "name": "powershell",
+          "scopeName": "source.powershell",
+          "sha256": "1a3466aa68404e2a9962ac7c14ed3cca05eeb173c7fa3c4566c89817df2bd857"
+        },
+        {
+          "name": "pug",
+          "scopeName": "text.pug",
+          "sha256": "98b0c9fe3464e55029a964658a6a701022957df0391006248ae857bc82b96174"
+        },
+        {
+          "name": "python",
+          "scopeName": "source.python",
+          "sha256": "8b6b4cb21cce413b2f764ef6b71dfae059a77433530f9dd77ea9b5a53af1ee35"
+        },
+        {
+          "name": "r",
+          "scopeName": "source.r",
+          "sha256": "87050d7d24035c6d7bc5c7b409e134f85d1dcaf2a5f08ef532fe1e25491c47de"
+        },
+        {
+          "name": "raku",
+          "scopeName": "source.perl.6",
+          "sha256": "30014c56087f97be1c4732dd86ac845d521de27b54264bc205d01d86ee6bfd50"
+        },
+        {
+          "name": "regexp",
+          "scopeName": "source.regexp.python",
+          "sha256": "87b56f94dc703cea1cd330d4cd088e4944d8df4358b235f2ae867cfb14143f2d"
+        },
+        {
+          "name": "rst",
+          "scopeName": "source.rst",
+          "sha256": "0de16f7839b2057fda5d59bf9c973185e5d596381d779e60131a350fc6d7620b"
+        },
+        {
+          "name": "ruby",
+          "scopeName": "source.ruby",
+          "sha256": "c3404aa8b18eebac2f164684d34fe26915cfd8aa59c5ad45dbc33761dcd3bf1b"
+        },
+        {
+          "name": "rust",
+          "scopeName": "source.rust",
+          "sha256": "41ad4b92eff153b69b65d03216d2f787861d3a23a0b4ab7a3ee8d6d6c016e34f"
+        },
+        {
+          "name": "sass",
+          "scopeName": "source.sass",
+          "sha256": "17504b4f319ae6ac8b1e137754bcde9ed6c0be6de46082999aa57467d3bd7fc8"
+        },
+        {
+          "name": "scala",
+          "scopeName": "source.scala",
+          "sha256": "ac7c4f2cc8b0f79e975048eefb40751ed6435727cac6dd4df07ce949436b1df5"
+        },
+        {
+          "name": "scss",
+          "scopeName": "source.css.scss",
+          "sha256": "35977f043318d4877b31e40064d90028bfeb085e240e72ae0defa167346112bf"
+        },
+        {
+          "name": "shellscript",
+          "scopeName": "source.shell",
+          "sha256": "f9a7ca3def50407b4500311cc47275295f6a2d3f9f683f1f0accc3056f0e4cc8"
+        },
+        {
+          "name": "sql",
+          "scopeName": "source.sql",
+          "sha256": "e81d7805c21622a84af98b48b36c5a0b33d05b14178ac2685db9aa82419c40a9"
+        },
+        {
+          "name": "stylus",
+          "scopeName": "source.stylus",
+          "sha256": "39d238fe3c42cd48f150dc0f21bc92beee534585f7026e5b1ef4c445ba797045"
+        },
+        {
+          "name": "swift",
+          "scopeName": "source.swift",
+          "sha256": "1bb401139dda5ef99bc39dc1719ffeefcb3ba4c2ad6a72457e2b3ff8248e86f9"
+        },
+        {
+          "name": "tex",
+          "scopeName": "text.tex",
+          "sha256": "5a6795ecb5dcc0bccc65ed86b9beebbd1410c80fc92e325041ba974fe6f19b77"
+        },
+        {
+          "name": "toml",
+          "scopeName": "source.toml",
+          "sha256": "d54ac615bfbf5d7f05c11723cf145470f74ea8cc59bb7b2a20e598d0abf92d08"
+        },
+        {
+          "name": "tsx",
+          "scopeName": "source.tsx",
+          "sha256": "367120b5adb2fe51f4c4b3edcab86e569e5a1e2a6c3652e318ba52281033fddd"
+        },
+        {
+          "name": "typescript",
+          "scopeName": "source.ts",
+          "sha256": "e86e45f551919f50ac5e5cf89990c3520877305b35708294de5ae83c9b6ca559"
+        },
+        {
+          "name": "vb",
+          "scopeName": "source.asp.vb.net",
+          "sha256": "f69b366bee20af30507108d1e4ebf1844114084ea8af19fa704dc011081ba0d5"
+        },
+        {
+          "name": "xml",
+          "scopeName": "text.xml",
+          "sha256": "4432e3aa5974256559326a692830cc5b375a21aac895de739e8b0a73a396edf6"
+        },
+        {
+          "name": "xsl",
+          "scopeName": "text.xml.xsl",
+          "sha256": "bda17f37f2f316482c6d85a9edd4c36819c101904f0de2bdcad0db44b949fdd4"
+        },
+        {
+          "name": "yaml",
+          "scopeName": "source.yaml",
+          "sha256": "960c376ae415e3258da44b8afe603828c919a2d6efbf8072b26b744246116542"
+        }
+      ],
+      "injections": [
+        {
+          "name": "angular-let-declaration",
+          "scopeName": "template.let.ng",
+          "injectionSelector": "L:text.html -comment -expression.ng -meta.tag -source.css -source.js",
+          "embeddedIn": [
+            "angular-ts",
+            "angular-html"
+          ],
+          "injectTo": [
+            "text.html.derivative",
+            "text.html.derivative.ng",
+            "source.ts.ng"
+          ],
+          "sha256": "d68fe60f06ddfbeaeef3168c66999cc5d986668bd489d5783ff2e95d24489005",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "angular-template",
+          "scopeName": "template.ng",
+          "injectionSelector": "L:text.html -comment",
+          "embeddedIn": [
+            "angular-ts",
+            "angular-html"
+          ],
+          "injectTo": [
+            "text.html.derivative",
+            "text.html.derivative.ng",
+            "source.ts.ng"
+          ],
+          "sha256": "67dbbdbb936ff0e9f5fb8cadefc0c33984369872576f45ee13685ec2316a84b5",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "angular-template-blocks",
+          "scopeName": "template.blocks.ng",
+          "injectionSelector": "L:text.html -comment -expression.ng -meta.tag -source.css -source.js",
+          "embeddedIn": [
+            "angular-ts",
+            "angular-html"
+          ],
+          "injectTo": [
+            "text.html.derivative",
+            "text.html.derivative.ng",
+            "source.ts.ng"
+          ],
+          "sha256": "0dbb6a2872a8ea633687db4bb8e5a75064a78fb3628ae809a296920abd4b0615",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "cpp-macro",
+          "scopeName": "source.cpp.embedded.macro",
+          "injectionSelector": null,
+          "embeddedIn": [
+            "cpp"
+          ],
+          "injectTo": [],
+          "sha256": "02e157a7c1a96d98a3c8d3b3f3f33719886410de3a6fdbd6e05826ce2987a7e5",
+          "activation": "registered-as-recursive-embedded-grammar"
+        },
+        {
+          "name": "es-tag-css",
+          "scopeName": "inline.es6-css",
+          "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string, L:source.vue -comment -string, L:source.svelte -comment -string, L:source.php -comment -string, L:source.rescript -comment -string",
+          "embeddedIn": [
+            "ts-tags"
+          ],
+          "injectTo": [
+            "source.ts",
+            "source.js"
+          ],
+          "sha256": "e7ab773b39220851de32dd949cd2d875f9acc49914401b729a0bea0fff9027b4",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "es-tag-glsl",
+          "scopeName": "inline.es6-glsl",
+          "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string",
+          "embeddedIn": [
+            "ts-tags"
+          ],
+          "injectTo": [
+            "source.ts",
+            "source.js"
+          ],
+          "sha256": "f7475721a2c19e907b97146ef9153ecba8fc948432e0ec203539ca9b6a0288ed",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "es-tag-html",
+          "scopeName": "inline.es6-html",
+          "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string",
+          "embeddedIn": [
+            "ts-tags"
+          ],
+          "injectTo": [
+            "source.ts",
+            "source.js"
+          ],
+          "sha256": "e5e5d8b20bc4ac5a022f3cd541d6ca4de49867e9b845fb8e0db7fc84f5009107",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "es-tag-sql",
+          "scopeName": "inline.tagged-template-sql",
+          "injectionSelector": "L:source -comment -string",
+          "embeddedIn": [
+            "ts-tags"
+          ],
+          "injectTo": [
+            "source.ts",
+            "source.js"
+          ],
+          "sha256": "dbf6329640c027e24a918c76a45463185230b0d7b690352a437d0bd6a15a22a0",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "es-tag-xml",
+          "scopeName": "inline.es6-xml",
+          "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string",
+          "embeddedIn": [
+            "ts-tags"
+          ],
+          "injectTo": [
+            "source.ts",
+            "source.js"
+          ],
+          "sha256": "ee89cadce96b92902cf8bd25ca50c26d0b1db92636c76365504433c6b2a96db9",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "markdown-nix",
+          "scopeName": "markdown.nix.codeblock",
+          "injectionSelector": "L:text.html.markdown",
+          "embeddedIn": [
+            "nix"
+          ],
+          "injectTo": [
+            "text.html.markdown"
+          ],
+          "sha256": "3112dca736910793b9fbe583de8d0159873d3b96fa78f766b43db2fbc2d62199",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "markdown-vue",
+          "scopeName": "markdown.vue.codeblock",
+          "injectionSelector": "L:text.html.markdown",
+          "embeddedIn": [
+            "vue"
+          ],
+          "injectTo": [
+            "text.html.markdown"
+          ],
+          "sha256": "90267df7bb8adc7cc8a9e9dc379f3b7e53f4f5547c80c534c64cb613a05355c2",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "vue-directives",
+          "scopeName": "vue.directives",
+          "injectionSelector": "L:meta.tag -meta.attribute -meta.ng-binding -entity.name.tag.pug -attribute_value -source.tsx -source.js.jsx, L:meta.element -meta.attribute",
+          "embeddedIn": [
+            "vue"
+          ],
+          "injectTo": [
+            "source.vue",
+            "text.html.markdown",
+            "text.html.derivative",
+            "text.pug"
+          ],
+          "sha256": "9bb72cafd98da0395423779319c2bb696063c30dd4cbd2219d30db1be3d86593",
+          "activation": "unsupported-external-injection-activation"
+        },
+        {
+          "name": "vue-interpolations",
+          "scopeName": "vue.interpolations",
+          "injectionSelector": "L:text.pug -comment -string.comment, L:text.html.derivative -comment.block, L:text.html.markdown -comment.block",
+          "embeddedIn": [
+            "vue"
+          ],
+          "injectTo": [
+            "source.vue",
+            "text.html.markdown",
+            "text.html.derivative",
+            "text.pug"
+          ],
+          "sha256": "2397d16983e9cc60afcb239833b5ed35c9e48369d435642eff0fc3e64235465e",
+          "activation": "unsupported-external-injection-activation"
+        }
+      ],
+      "unsupportedInjectionCount": 12,
+      "composerLockSha256": "6f7cf281248ba8b509ba9083e83c75dcd019fe7fddd891df6b0e9cb8f8d653cf"
+    }
+  },
+  "runtime": {
+    "node": "v22.22.0",
+    "phiki": {
+      "php": "8.3.6",
+      "sapi": "cli",
+      "os": "Linux",
+      "architecture": "x86_64",
+      "mbstring": true,
+      "oniguruma": "6.9.9",
+      "xdebug": false,
+      "opcache": {
+        "extensionLoaded": true,
+        "enabled": "1",
+        "enabledForCli": "0",
+        "jit": "disable",
+        "jitBufferSize": "0"
+      },
+      "phiki": "v2.2.1"
+    },
+    "phpIniArguments": [
+      "opcache.enable_cli=0",
+      "opcache.jit=disable",
+      "opcache.jit_buffer_size=0"
+    ]
+  },
+  "theme": "github-dark",
+  "method": {
+    "apis": [
+      "codeToHtml"
+    ],
+    "warmup": 5,
+    "minSamples": 30,
+    "minMilliseconds": 1500,
+    "coldRuns": 10,
+    "statistic": "median",
+    "phiki": {
+      "status": "available",
+      "warmProcess": "one persistent PHP CLI process and one Phiki highlighter for output checks, warmup and samples",
+      "warmTimingBoundary": "PHP hrtime around codeToHtml()->cache(null)->toString(); JSON stdin/stdout transport and post-render HTML length checks are excluded",
+      "coldTimingBoundary": "fresh Node or PHP process per run; process creation is excluded, Node module loading / Composer autoload, highlighter setup and rendering are included",
+      "warmTimingOrder": "serial; per document, warmup and measured orders each rotate by documentIndex + round among eligible engines, separately for each phase; Phiki sample duration comes from the PHP worker stopwatch",
+      "coldTimingOrder": "full corpus: ten consecutive fresh processes per Node engine in ferriki -> shiki-wasm -> shiki-js order; shared cohort: ten rounds in ferriki -> shiki-wasm -> shiki-js order, then ten consecutive Phiki processes",
+      "agreement": "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
+      "eolNormalization": "CRLF and CR normalize to LF; one final artificial LF is removed only when rendered text is exactly source plus one LF",
+      "differingOutputTimings": "per-document warm timings are shown with their output status but excluded from every aggregate total; cold Phiki timing requires a matching shared cohort",
+      "grammarRegistration": "recursive embedded grammars are registered by scope through a narrowly scoped ReflectionProperty bridge for the pinned Phiki 2.2.1 repository; external injectionSelector/injectTo assets are inventoried but not activated"
+    }
+  },
+  "agreement": {
+    "ferriki": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-wasm": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-js": {
+      "documents": 14,
+      "of": 14
+    },
+    "phiki": {
+      "status": "available",
+      "documents": 0,
+      "of": 14
+    }
+  },
+  "outputAgreement": {
+    "criteria": "visible source text and per-Unicode-codepoint color, font-style, font-weight, text-decoration",
+    "documents": [
+      {
+        "path": "src/highlighter.rs",
+        "lang": "rust",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 3,
+          "character": " ",
+          "expected": {
+            "color": "#b392f0",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/ferriki/src/api.mts",
+        "lang": "typescript",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 6,
+          "character": " ",
+          "expected": {
+            "color": "#f97583",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/ferriki/src/index.mjs",
+        "lang": "javascript",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 26,
+          "character": " ",
+          "expected": {
+            "color": "#9ecbff",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "docs/ferriki-api.md",
+        "lang": "markdown",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 2,
+          "character": "F",
+          "expected": {
+            "color": "#79b8ff",
+            "font-style": "normal",
+            "font-weight": "700",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#b392f0",
+            "font-style": "normal",
+            "font-weight": "700",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "lang": "yaml",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 14,
+          "character": " ",
+          "expected": {
+            "color": "#85e89d",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "lang": "css",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 32,
+          "character": " ",
+          "expected": {
+            "color": "#ffab70",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/package.json",
+        "lang": "json",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 2,
+          "character": " ",
+          "expected": {
+            "color": "#79b8ff",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "Cargo.toml",
+        "lang": "toml",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 76,
+          "character": "\n",
+          "expected": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#6a737d",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "lang": "python",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 18,
+          "character": " ",
+          "expected": {
+            "color": "#f97583",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "lang": "html",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 20,
+          "character": " ",
+          "expected": {
+            "color": "#b392f0",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "lang": "go",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 7,
+          "character": " ",
+          "expected": {
+            "color": "#b392f0",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "lang": "php",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 14,
+          "character": "\t",
+          "expected": {
+            "color": "#f97583",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "lang": "shellscript",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 19,
+          "character": "\n",
+          "expected": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#6a737d",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "lang": "sql",
+        "status": "different",
+        "textAgrees": true,
+        "stylesAgree": false,
+        "removedFinalNewlineSentinel": true,
+        "difference": {
+          "kind": "style",
+          "characterIndex": 6,
+          "character": " ",
+          "expected": {
+            "color": "#f97583",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          },
+          "actual": {
+            "color": "#e1e4e8",
+            "font-style": "normal",
+            "font-weight": "400",
+            "text-decoration": "none"
+          }
+        }
+      }
+    ]
+  },
+  "phiki": {
+    "status": "available",
+    "operations": {
+      "codeToHtml": "available"
+    },
+    "runtime": {
+      "php": "8.3.6",
+      "sapi": "cli",
+      "os": "Linux",
+      "architecture": "x86_64",
+      "mbstring": true,
+      "oniguruma": "6.9.9",
+      "xdebug": false,
+      "opcache": {
+        "extensionLoaded": true,
+        "enabled": "1",
+        "enabledForCli": "0",
+        "jit": "disable",
+        "jitBufferSize": "0"
+      },
+      "phiki": "v2.2.1"
+    }
+  },
+  "warm": {
+    "codeToHtml": [
+      {
+        "lang": "rust",
+        "path": "src/highlighter.rs",
+        "lines": 1374,
+        "bytes": 50030,
+        "medianMs": {
+          "ferriki": 31.062668999999005,
+          "shiki-wasm": 143.02500300000247,
+          "shiki-js": 145.81066449999344,
+          "phiki": 1632.9682905
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "typescript",
+        "path": "node/ferriki/src/api.mts",
+        "lines": 315,
+        "bytes": 10521,
+        "medianMs": {
+          "ferriki": 15.855731500007096,
+          "shiki-wasm": 37.4098154999956,
+          "shiki-js": 56.74674600000435,
+          "phiki": 547.9737494999999
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "javascript",
+        "path": "node/ferriki/src/index.mjs",
+        "lines": 1587,
+        "bytes": 54968,
+        "medianMs": {
+          "ferriki": 127.99936099999468,
+          "shiki-wasm": 307.1764450000046,
+          "shiki-js": 474.58906100000604,
+          "phiki": 1341.0039585
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "markdown",
+        "path": "docs/ferriki-api.md",
+        "lines": 353,
+        "bytes": 24094,
+        "medianMs": {
+          "ferriki": 9.406621000001905,
+          "shiki-wasm": 24.019041499996092,
+          "shiki-js": 24.38746800000081,
+          "phiki": 324.4450255
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "yaml",
+        "path": ".github/workflows/ci.yml",
+        "lines": 508,
+        "bytes": 16774,
+        "medianMs": {
+          "ferriki": 12.172485999995843,
+          "shiki-wasm": 25.564038500000606,
+          "shiki-js": 34.64473500000895,
+          "phiki": 287.155328
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "css",
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "lines": 289,
+        "bytes": 8014,
+        "medianMs": {
+          "ferriki": 5.064058500007377,
+          "shiki-wasm": 21.723597000003792,
+          "shiki-js": 11.333715500004473,
+          "phiki": 222.58788049999998
+        },
+        "samples": 30,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "json",
+        "path": "node/package.json",
+        "lines": 100,
+        "bytes": 5905,
+        "medianMs": {
+          "ferriki": 1.6812219999992521,
+          "shiki-wasm": 3.7327595000097062,
+          "shiki-js": 3.093254999999772,
+          "phiki": 112.851348
+        },
+        "samples": 46,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "toml",
+        "path": "Cargo.toml",
+        "lines": 116,
+        "bytes": 4288,
+        "medianMs": {
+          "ferriki": 1.7766180000035092,
+          "shiki-wasm": 4.1185589999950025,
+          "shiki-js": 2.9593279999971855,
+          "phiki": 69.085942
+        },
+        "samples": 71,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "python",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "lines": 98,
+        "bytes": 2119,
+        "medianMs": {
+          "ferriki": 6.505170999997063,
+          "shiki-wasm": 13.510784999991301,
+          "shiki-js": 7.417238499998348,
+          "phiki": 118.9469875
+        },
+        "samples": 38,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "html",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "lines": 42,
+        "bytes": 1200,
+        "medianMs": {
+          "ferriki": 2.3823689999990165,
+          "shiki-wasm": 4.7337530000077095,
+          "shiki-js": 4.741597000014735,
+          "phiki": 55.520941
+        },
+        "samples": 77,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "go",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "lines": 24,
+        "bytes": 572,
+        "medianMs": {
+          "ferriki": 1.1099359999934677,
+          "shiki-wasm": 2.255424999995739,
+          "shiki-js": 1.6277959999861196,
+          "phiki": 20.8405495
+        },
+        "samples": 198,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "php",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "lines": 46,
+        "bytes": 802,
+        "medianMs": {
+          "ferriki": 2.8416765000438318,
+          "shiki-wasm": 6.812118499990902,
+          "shiki-js": 5.2494135000160895,
+          "phiki": 66.8131775
+        },
+        "samples": 66,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "shellscript",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "lines": 31,
+        "bytes": 634,
+        "medianMs": {
+          "ferriki": 1.9383439999946859,
+          "shiki-wasm": 3.8769240000110585,
+          "shiki-js": 3.0358805000432767,
+          "phiki": 33.595277499999995
+        },
+        "samples": 122,
+        "phikiAgreement": "different"
+      },
+      {
+        "lang": "sql",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "lines": 6,
+        "bytes": 123,
+        "medianMs": {
+          "ferriki": 0.5065775000257418,
+          "shiki-wasm": 1.254490999999689,
+          "shiki-js": 0.7337775000196416,
+          "phiki": 5.898666
+        },
+        "samples": 578,
+        "phikiAgreement": "different"
+      }
+    ]
+  },
+  "cold": {
+    "ferriki": {
+      "medianMs": 1599.7441895000002,
+      "runs": 10
+    },
+    "shiki-wasm": {
+      "medianMs": 2550.3895350000003,
+      "runs": 10
+    },
+    "shiki-js": {
+      "medianMs": 3633.328302,
+      "runs": 10
+    }
+  },
+  "coldMatching": {
+    "status": "no-matching-documents",
+    "documents": 0,
+    "of": 14,
+    "reason": "No documents matched the four-engine HTML output agreement criteria."
+  },
+  "warmTotalMs": {
+    "codeToHtml": {
+      "ferriki": 220.30284100006247,
+      "shiki-wasm": 599.2127555000043,
+      "shiki-js": 776.3706760000932
+    }
+  }
+}

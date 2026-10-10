@@ -109,18 +109,33 @@ highlighter is no longer needed.
 | `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                |
 | `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                 |
 | `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                     |
-| `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for one-shot use. |
+| `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
 and are not a supported extension point. Additions require an explicit API
 contract and compatibility coverage.
 
-For a highlighter used once, `regexPrefilter: false` avoids the scanner's
-prefilter construction. The default keeps automatic prefiltering for repeated
-use; its warm-up counts scanner searches, not highlighting calls. Choose this
-at creation time, including the singleton's first creation; it is not a
-per-call `HighlightOptions` setting. Matching and colors remain the same.
+### Choosing the regex prefilter
+
+For a CMS, documentation server or site build, reuse a highlighter and keep
+the default `regexPrefilter: true`. Its automatic warm-up counts scanner
+searches, not highlighting calls. The top-level `codeToHtml()` shorthand also
+reuses a process-local singleton; one call per block does not mean one
+highlighter per block.
+
+For a short-lived process that creates a highlighter and uses it once,
+`regexPrefilter: false` avoids prefilter construction. Choose it at creation,
+including the singleton's first creation; it is not a per-call
+`HighlightOptions` setting. Matching and colors remain the same.
+
+The [two-host Blacksmith run](benchmarks/blacksmith/2026-10-10/README.md)
+recorded 35–37% shorter first use with the prefilter disabled, but 51–68%
+longer warm repository highlighting. First use includes imports, setup and
+rendering all 14 corpus files, excluding process creation and downloads.
+These Node HTML measurements do not predict one isolated snippet. JSON/Astro
+on/off timings do not establish a specific benefit; unchanged controls also
+moved between the macOS measurement windows.
 
 ```js
 const highlighter = await createHighlighter({

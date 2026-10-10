@@ -11,6 +11,13 @@ on a Rust port of VS Code's tokenizer and [Ferroni](https://ferroni.dev),
 Oniguruma in Rust, without WebAssembly or regex translation. Ferriki is in
 beta: until 1.0, a minor release can change the API.
 
+**Load once. Highlight block after block.** On our 14-file Blacksmith corpus,
+reused Ferriki highlighters produced identical HTML to both Shiki engines,
+running **4.7× faster than Shiki/WASM on Linux x86-64** and **5.5× on macOS
+ARM64**. These factors describe the measured corpus and machines. The
+[benchmarks](https://ferriki.dev/evidence/benchmarks) include both hosts,
+first-use timings, JSON/Astro and the committed raw reports.
+
 ## Install
 
 ```sh
@@ -44,9 +51,11 @@ const html = await codeToHtml('console.log("Hello")', {
 });
 ```
 
-## Highlight once, reuse
+## Reuse a highlighter
 
 A highlighter loads its languages and themes once; calls on it are synchronous.
+Keep the highlighter for the lifetime of a CMS worker or site build. The
+`codeToHtml()` shorthand also reuses a process-local singleton.
 Call `highlighter.dispose()` when you are done, or declare it with `using` in
 TypeScript:
 
@@ -70,6 +79,12 @@ registration shapes in `langs` and `themes` and are validated before they reach
 the native engine. Languages embedded by a grammar load with it; lazy
 embeddings load after an explicit `loadLanguage`. The synchronous factories
 accept already-resolved names and registrations only.
+
+Keep the default regex prefilter for repeated work. For a short-lived
+highlighter, pass `regexPrefilter: false` to `createHighlighter()` to skip
+prefilter construction. This is a creation-time choice, with unchanged output.
+The [prefilter guide](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#choosing-the-regex-prefilter)
+covers the measured setup/reuse tradeoff and the singleton's configuration.
 
 ## Light and dark themes
 

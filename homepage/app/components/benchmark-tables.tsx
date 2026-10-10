@@ -3,6 +3,7 @@ import { type ComparisonRow, ComparisonTable, type Contender, Measured } from "f
 import {
   type Api,
   apis,
+  blacksmith,
   type EngineId,
   engineLabels,
   formatFactor,
@@ -234,7 +235,10 @@ function versionDetail() {
       report.versions.composer,
     )} · PSR simple-cache ${displayValue(report.versions.psrSimpleCache)}`;
   }
-  return { label: "Versions", value: `${base} · ${phiki}` };
+  return {
+    label: "Versions",
+    value: `${base} · Ferroni ${blacksmith.profiles[0].ferroni} · ${phiki}`,
+  };
 }
 
 function nodeAgreementDetail() {

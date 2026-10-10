@@ -46,11 +46,20 @@ programs, Node.js and Vite builds share one engine. Ferriki is in beta: until
    notation plugs in as is. A pinned, unmodified mirror of Shiki v4.4.3's tests
    and the vscode-textmate v9.3.2 oracle check this in CI.
 
-On the [benchmark corpus](https://ferriki.dev/evidence/benchmarks), Ferriki
-renders the same HTML as Shiki. With a reused highlighter, it is about 2.7×
-faster than Shiki with WebAssembly and 3.5× faster than its JavaScript engine.
-Phiki (PHP) timings are also shown per document, with output differences noted.
-The report is committed, and `pnpm run bench:comparison` in `node/` runs it again.
+**Load once. Highlight block after block.** For a CMS, documentation server or
+site build, keep one highlighter with its loaded languages and themes. On our
+14-file Blacksmith corpus, Ferriki produced the same HTML as both Shiki
+engines and ran **4.7× faster than Shiki/WASM on Linux x86-64** and **5.5× on
+macOS ARM64** with reused highlighters. These are measured corpus totals,
+not a guarantee for every workload. The [benchmarks](https://ferriki.dev/evidence/benchmarks)
+include both hosts, JSON/Astro, first-use timings and committed raw reports.
+
+Keep the default regex prefilter for repeated work. For a short-lived process,
+`regexPrefilter: false` in Node or `.with_regex_prefilter(false)` in Rust avoids
+prefilter construction. In the recorded Node full-corpus run, it shortened first
+use by 35–37% but made repeated highlighting take 51–68% longer. See
+[choosing the prefilter](docs/ferriki-api.md#choosing-the-regex-prefilter) for
+the timing boundary and the singleton's reuse behavior.
 
 ## Install and highlight
 

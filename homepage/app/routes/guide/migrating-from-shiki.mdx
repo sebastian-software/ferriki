@@ -5,6 +5,13 @@ order: 3
 
 # Migrating from Shiki
 
+Keep a loaded highlighter for the lifetime of your CMS worker or site build.
+That reuse is the workload behind Ferriki's [two-host measurements](/evidence/benchmarks):
+4.7× faster than Shiki/WASM on the recorded Linux corpus and 5.5× on macOS,
+with identical HTML. Keep the default regex prefilter for repeated work;
+[factory options](/guide/api#highlighter-options) cover the alternative for
+short-lived highlighters.
+
 Ferriki follows the direct API shape of Shiki **v4.4.3** for a tested,
 HTML-focused subset and runs it on a native engine. For HTML highlighting,
 moving over is usually an import:
