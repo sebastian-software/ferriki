@@ -14,6 +14,12 @@ export default antfu(
       "**/*.d.mts",
       "compat/upstream/**",
       "pnpm-workspace.yaml",
+      // These committed syntax samples are exact benchmark inputs, not code
+      // maintained as executable Node fixtures.
+      "benchmarks/curated/results/prism-investigation/fixtures/**",
+      // Measurement-time source snapshots must remain byte-identical to the
+      // scripts that produced their retained output.
+      "benchmarks/curated/results/prism-investigation/**/harness/*.measured.mjs",
     ],
   },
   {

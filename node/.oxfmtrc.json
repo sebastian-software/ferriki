@@ -1,4 +1,18 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["dist", "**/dist", "coverage", "pnpm-lock.yaml", "CHANGELOG.md"]
+  "ignorePatterns": [
+    "dist",
+    "**/dist",
+    "coverage",
+    "pnpm-lock.yaml",
+    "CHANGELOG.md",
+    "benchmarks/curated/results/prism-investigation/fixtures/**",
+    "benchmarks/curated/results/prism-investigation/quality.json",
+    "benchmarks/curated/results/prism-investigation/timings/**/*.json",
+    "benchmarks/curated/results/prism-investigation/timings/**/*.measured.mjs",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.json",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.txt",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.measured.mjs",
+    "benchmarks/curated/results/prism-investigation/harness/**/*.measured.mjs"
+  ]
 }

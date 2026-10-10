@@ -44,6 +44,8 @@
     "check:bench-curated": "node scripts/check-bench-curated.mjs",
     "capture:prism-quality": "node scripts/capture-prism-quality.mjs",
     "bench:prism-output-modes": "node scripts/bench-prism-output-modes.mjs",
+    "capture:prism-profiles": "node scripts/capture-prism-profiles.mjs",
+    "summarize:prism-profiles": "node scripts/summarize-prism-profiles.mjs",
     "bench:comparison": "node scripts/bench-shiki-comparison.mjs",
     "test:bench-comparison": "node --test scripts/test-phiki-html-agreement.mjs scripts/test-phiki-benchmark.mjs scripts/test-blacksmith-comparison.mjs",
     "check:inline-macro": "node ./scripts/check-inline-macro-browser.mjs"

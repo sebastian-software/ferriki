@@ -1,25 +1,24 @@
 import assert from "node:assert/strict";
-import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import os from "node:os";
 import { dirname, join } from "node:path";
+import os from "node:os";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
 import * as shiki from "shiki";
-import { createHighlighter } from "../ferriki/index.mjs";
 import { resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
-import { loadCases, loadCorpus, repoRoot, sha256, statistics, theme } from "./tiobe-benchmark.mjs";
+import { createHighlighter } from "../ferriki/index.mjs";
+import { loadCorpus, loadCases, repoRoot, sha256, statistics, theme } from "./tiobe-benchmark.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const nodeRoot = dirname(dirname(scriptPath));
 const curatedFixtureRoot = join(nodeRoot, "benchmarks/curated/fixtures");
 const curated = loadCorpus("curated");
 const selectedNames = new Set(["cpp", "typescript", "tsx", "json", "html", "astro"]);
-const candidates = curated.languages.filter((language) => selectedNames.has(language.textmate));
 const sizes = ["example", "large"];
 const minRounds = 30;
 const maxRounds = 1000;
@@ -72,9 +71,7 @@ function identitySnapshot() {
       sha256: native.binarySha256,
       receiptSha256: sha256(readFileSync(native.receiptPath)),
     },
-    assetsSha256: sha256(
-      readFileSync(join(nodeRoot, "ferriki/assets/shiki/release-manifest.json")),
-    ),
+    assetsSha256: sha256(readFileSync(join(nodeRoot, "ferriki/assets/shiki/release-manifest.json"))),
     harnessSha256: sha256(readFileSync(scriptPath)),
     sharedHarnessSha256: sha256(readFileSync(join(nodeRoot, "scripts/tiobe-benchmark.mjs"))),
     curatedManifestSha256: sha256(readFileSync(join(nodeRoot, "benchmarks/curated/manifest.json"))),
@@ -96,11 +93,10 @@ function consume(mode, output) {
   return mode === "inline" ? output.length : output.html.length + output.css.length;
 }
 
-assert.equal(
-  candidates.length,
-  selectedNames.size,
-  "Curated corpus is missing a requested profile language",
+const candidates = curated.languages.filter((language) =>
+  selectedNames.has(language.textmate),
 );
+assert.equal(candidates.length, selectedNames.size, "Curated corpus is missing a requested profile language");
 
 const identityBefore = identitySnapshot();
 const buildReceipt = nativeIdentity().receipt;
@@ -129,15 +125,8 @@ for (const language of candidates) {
       const oracleHtml = oracle.codeToHtml(code, { lang: language.textmate, theme });
       sourcePreserved(inlineValidation, code);
       sourcePreserved(classValidation.html, code);
-      assert.equal(
-        inlineValidation,
-        oracleHtml,
-        `${language.textmate}/${workload.size}: Shiki HTML parity failed`,
-      );
-      assert(
-        !classValidation.html.includes(" style="),
-        "Class output unexpectedly contains inline styles",
-      );
+      assert.equal(inlineValidation, oracleHtml, `${language.textmate}/${workload.size}: Shiki HTML parity failed`);
+      assert(!classValidation.html.includes(" style="), "Class output unexpectedly contains inline styles");
 
       const samples = { inline: [], classes: [] };
       const consumed = { inline: 0, classes: 0 };
@@ -185,25 +174,17 @@ for (const language of candidates) {
           classHtmlSha256: sha256(classOutput.html),
           classCssBytes: Buffer.byteLength(classOutput.css),
           classCssSha256: sha256(classOutput.css),
-          classCombinedBytes:
-            Buffer.byteLength(classOutput.html) + Buffer.byteLength(classOutput.css),
+          classCombinedBytes: Buffer.byteLength(classOutput.html) + Buffer.byteLength(classOutput.css),
         },
         timing: {
           samplesMs: samples,
           inline: statistics(samples.inline, workload.bytes),
           classes: statistics(samples.classes, workload.bytes),
-          classesVsInlinePercent:
-            100 *
-            (statistics(samples.classes, workload.bytes).medianMs /
-              statistics(samples.inline, workload.bytes).medianMs -
-              1),
+          classesVsInlinePercent: 100 * (statistics(samples.classes, workload.bytes).medianMs / statistics(samples.inline, workload.bytes).medianMs - 1),
           consumedCharacters: consumed,
           elapsedMs,
-          samplesPerMode: Object.fromEntries(
-            Object.entries(samples).map(([mode, values]) => [mode, values.length]),
-          ),
-          method:
-            "Each call renders complete HTML; class mode also constructs and returns its CSS. Five warmups; rotate inline/classes order each round; source/HTML validation excluded.",
+          samplesPerMode: Object.fromEntries(Object.entries(samples).map(([mode, values]) => [mode, values.length])),
+          method: "Each call renders complete HTML; class mode also constructs and returns its CSS. Five warmups; rotate inline/classes order each round; source/HTML validation excluded.",
           minRounds,
           budgetMsPerMode,
         },
@@ -227,9 +208,7 @@ const output = {
   },
   versions: {
     ferriki: JSON.parse(readFileSync(join(nodeRoot, "ferriki/package.json"), "utf8")).version,
-    shiki: JSON.parse(
-      readFileSync(join(nodeRoot, "compat/upstream/shiki/packages/shiki/package.json"), "utf8"),
-    ).version,
+    shiki: JSON.parse(readFileSync(join(nodeRoot, "compat/upstream/shiki/packages/shiki/package.json"), "utf8")).version,
     ferroni: buildReceipt.ferroni.version,
   },
   nativeBuild: buildReceipt,
@@ -237,20 +216,14 @@ const output = {
   harnessSha256: sha256(readFileSync(scriptPath)),
   curatedManifestSha256: sha256(readFileSync(join(nodeRoot, "benchmarks/curated/manifest.json"))),
   method: {
-    corpus:
-      "Existing curated examples; example is one source fixture, large is 16 repeated copies.",
-    output:
-      "Ferriki inline mode returns themed HTML with inline styles. Class mode returns HTML and its required CSS from codeToHtmlWithCss; both resolve the same TextMate grammar and github-dark theme.",
+    corpus: "Existing curated examples; example is one source fixture, large is 16 repeated copies.",
+    output: "Ferriki inline mode returns themed HTML with inline styles. Class mode returns HTML and its required CSS from codeToHtmlWithCss; both resolve the same TextMate grammar and github-dark theme.",
     host: "Native release addon from the verified build receipt; remote assets disabled.",
   },
   rows,
 };
 
-assert.deepEqual(
-  identitySnapshot(),
-  identityBefore,
-  "Addon, build receipt, assets, fixtures, or harness changed during timed run",
-);
+assert.deepEqual(identitySnapshot(), identityBefore, "Addon, build receipt, assets, fixtures, or harness changed during timed run");
 
 writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
 console.log(`Wrote ${outputPath}`);

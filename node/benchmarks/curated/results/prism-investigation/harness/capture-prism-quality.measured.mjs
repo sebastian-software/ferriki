@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
@@ -11,8 +11,8 @@ import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
 import Prism from "prismjs";
 import loadLanguages from "prismjs/components/index.js";
-import * as shiki from "shiki";
 import { createHighlighter as createFerrikiHighlighter } from "../ferriki/index.mjs";
+import * as shiki from "shiki";
 import "./test-asset-env.mjs";
 
 const require = createRequire(import.meta.url);
@@ -118,10 +118,7 @@ try {
   for (const entry of manifest.cases) {
     const fixturePath = join(resultRoot, entry.file);
     const code = readFileSync(fixturePath, "utf8");
-    const wasmHtml = wasmHighlighter.codeToHtml(code, {
-      lang: entry.language,
-      theme: manifest.theme,
-    });
+    const wasmHtml = wasmHighlighter.codeToHtml(code, { lang: entry.language, theme: manifest.theme });
     const jsHtml = jsHighlighter.codeToHtml(code, { lang: entry.language, theme: manifest.theme });
     const ferrikiHtml = ferrikiHighlighter.codeToHtml(code, {
       lang: entry.language,
@@ -184,8 +181,7 @@ try {
 
     const source = readFileSync(fixturePath);
     const tsParse = typeScriptParseResult(entry, code);
-    if (tsParse)
-      assert.equal(tsParse.diagnostics.length, 0, `${entry.id}: TypeScript syntax parse failed`);
+    if (tsParse) assert.equal(tsParse.diagnostics.length, 0, `${entry.id}: TypeScript syntax parse failed`);
     const grammarTraceTree = fromHtml(classOutput.html, { fragment: true });
     const exactScopes = collectNodes(
       grammarTraceTree,
@@ -241,9 +237,7 @@ try {
 }
 
 const shikiSource = readJson(join(repoRoot, "node/compat/upstream/shiki/.source.json"));
-const textmateSource = readJson(
-  join(repoRoot, "node/compat/upstream/vscode-textmate/.source.json"),
-);
+const textmateSource = readJson(join(repoRoot, "node/compat/upstream/vscode-textmate/.source.json"));
 const assetManifestPath = join(nodeRoot, "ferriki/assets/shiki/release-manifest.json");
 const assetManifest = readJson(assetManifestPath);
 const tmGrammarsPath = join(nodeRoot, "node_modules/tm-grammars/package.json");
@@ -309,14 +303,10 @@ const output = {
   },
   theme: manifest.theme,
   method: {
-    prism:
-      "Prism.highlight returns fragment HTML using the loaded component grammar; no browser CSS is applied.",
-    textmate:
-      "Ferriki and Shiki return codeToHtml HTML using the same pinned grammar assets and github-dark theme.",
-    classMode:
-      "Ferriki codeToHtmlWithCss returns HTML plus the CSS needed to resolve the same TextMate theme through generated classes.",
-    correctness:
-      "HTML text content is parsed and compared with each exact source. TypeScript and TSX fixtures also pass the pinned TypeScript parser with zero syntax diagnostics.",
+    prism: "Prism.highlight returns fragment HTML using the loaded component grammar; no browser CSS is applied.",
+    textmate: "Ferriki and Shiki return codeToHtml HTML using the same pinned grammar assets and github-dark theme.",
+    classMode: "Ferriki codeToHtmlWithCss returns HTML plus the CSS needed to resolve the same TextMate theme through generated classes.",
+    correctness: "HTML text content is parsed and compared with each exact source. TypeScript and TSX fixtures also pass the pinned TypeScript parser with zero syntax diagnostics.",
   },
   cases,
 };
