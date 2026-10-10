@@ -37,6 +37,11 @@ benchmarks concurrently. The contract check uses minimal samples and must not
 be interpreted as a performance result. `--help` lists measurement controls;
 `--language rust --sizes large` narrows a follow-up to one workload.
 
+The [manual Blacksmith workflow](../../../docs/benchmarks/blacksmith.md) runs
+these workloads and the curated and repository corpora on the same Linux x86-64
+and macOS ARM64 runner profiles as Ferroni. `--regex-prefilter on|off` selects
+the Ferriki factory option and records it in the report's method.
+
 ## Compare Ferroni experiments
 
 Keep each Ferroni experiment on its own branch and commit. Keep Ferriki on the

@@ -1,0 +1,75 @@
+name: Blacksmith comparison
+
+# Same runner profiles as Ferroni. Paid runners are only started by a manual
+# dispatch; all workloads and both prefilter modes share one VM per profile.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Runner profile
+        type: choice
+        options: [both, macos-arm64, linux-x86-64]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blacksmith-comparison-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+    working-directory: node
+
+env:
+  CARGO_TERM_COLOR: never
+  RUSTUP_TOOLCHAIN: stable
+
+jobs:
+  compare:
+    name: ${{ matrix.profile }}
+    if: github.repository == 'sebastian-software/ferriki'
+    runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(inputs.platform == 'macos-arm64' && '["macos-arm64"]' || inputs.platform == 'linux-x86-64' && '["linux-x86-64"]' || '["macos-arm64","linux-x86-64"]') }}
+    env:
+      PROFILE: ${{ matrix.profile }}
+      RUNNER_LABEL: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
+      COMPARISON_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: blacksmith-comparison-${{ matrix.profile }}
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build pinned comparators
+        run: pnpm run build:compat
+      - name: Build release addon and local assets
+        run: pnpm run build:native
+      - name: Validate and measure serially
+        run: node scripts/run-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE"
+      - name: Keep the measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: comparison-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/compare/${{ matrix.profile }}/
+          if-no-files-found: warn
+          retention-days: 90
