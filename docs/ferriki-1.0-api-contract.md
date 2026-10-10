@@ -96,7 +96,7 @@ The singleton retains its first creation's defaults.
 | `includeExplanation`                          | Stable   | Controls `scopeNames` and `type` metadata in token transformer callbacks; there is no public explanation array (#47, #207).                                                                                                      |
 | `grammarState`                                | Stable   | Continues HTML grammar inference from serializable state returned by `getLastGrammarState(code, options)`; no token/HAST result overloads.                                                                                       |
 | `mergeWhitespaces` / `mergeSameStyleTokens`   | Stable   | Rendering controls with deterministic token boundaries.                                                                                                                                                                          |
-| `colorReplacements`                           | Deferred | Not implemented by Ferriki; supplying it throws `ShikiError` with `ERR_UNSUPPORTED`. Runtime support is tracked separately in #190.                                                                                              |
+| `colorReplacements`                           | Non-goal | Not planned (#190); use themes or CSS-class styling. Supplying it throws `ShikiError` with `ERR_UNSUPPORTED`.                                                                                              |
 | `rootStyle` / `tabindex`                      | Stable   | Explicit HTML root attributes; `false`/`null` disable the corresponding output.                                                                                                                                                  |
 | `tokenizeMaxLineLength` / `tokenizeTimeLimit` | Stable   | Resource limits with deterministic `ShikiError` failures (#51).                                                                                                                                                                  |
 | ANSI input                                    | Removed  | Ferriki rejects terminal escape sequences with `ShikiError`; callers must strip or parse ANSI before highlighting.                                                                                                               |
@@ -189,7 +189,7 @@ must be supported or added to the explicit boundary below.
   fields cannot silently disappear. Theme registrations are narrowed to the
   named values Ferriki accepts, and `undefined` entries in `themes` are filtered
   at runtime. String `tabindex` is supported; `mergeWhitespaces` accepts
-  booleans only. `colorReplacements` is deferred and rejected at runtime with
+  booleans only. `colorReplacements` is not planned and rejected at runtime with
   `ERR_UNSUPPORTED` (#190); `grammarContextCode` and `colorsRendering` are
   outside the Ferriki input contract. The broad HAST-options value comparison
   separately lists `grammarState`, `transformers`, and `decorations` as native

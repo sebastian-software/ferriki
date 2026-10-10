@@ -26,6 +26,11 @@ native scanner's automatic warm-up policy. `false` disables prefilter
 construction for all grammars in that highlighter. It changes performance
 policy without exposing Ferroni types or changing highlighting semantics.
 
+`colorReplacements` is a non-goal for the current contract (#190). Themes and
+CSS-class styling cover current presentation needs. The option stays outside
+the public types and is rejected with `ERR_UNSUPPORTED`; a future proposal
+requires a concrete consumer need beyond the supported theming path.
+
 The contract prioritizes the synchronous reusable HTML-rendering path, keeps
 transformers/decorations in the JavaScript layer, and keeps ecosystem adapters
 outside the public Ferriki package. Before 1.0, public Node HAST and token
@@ -71,3 +76,4 @@ being mistaken for parity.
 - 2026-10-03: Removes public Node HAST and token output methods before 1.0 while retaining transformer callback data and Rust token APIs (#207).
 - 2026-10-04: Takes over the mapping of child issues to the contract, which now states only the contract itself.
 - 2026-10-10: Adds the factory-only regex prefilter switch for one-shot workloads.
+- 2026-10-10: Classifies native color replacements as a non-goal after closing #190 as not planned; preserves explicit rejection and requires a concrete consumer need for any future proposal.
