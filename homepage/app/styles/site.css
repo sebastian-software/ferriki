@@ -225,3 +225,110 @@
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
 }
+
+/* The comparison keeps typography and panel ground equal across both renderers. */
+.prism-comparison {
+  margin-block: 1.5rem 2rem;
+}
+.prism-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.prism-comparison-grid figcaption strong,
+.prism-comparison-grid figcaption span {
+  display: block;
+}
+.prism-comparison-grid figcaption span {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+.prism-comparison-grid pre {
+  overflow: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.prism-comparison-grid pre code {
+  font: inherit;
+  background: transparent;
+  padding: 0;
+  border: 0;
+}
+.prism-comparison-grid pre:focus-visible {
+  outline: 3px solid #ffb757;
+  outline-offset: -3px;
+}
+.prism-presentation-note {
+  font-size: 0.85rem;
+}
+.prism-classifications {
+  margin-top: 1.25rem;
+}
+.prism-classifications summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.prism-classifications table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+.prism-classifications th,
+.prism-classifications td {
+  min-width: 8rem;
+  vertical-align: top;
+}
+.prism-classifications small {
+  display: block;
+  margin-top: 0.35rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.prism-classifications code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Prism CSS maps its original token names to GitHub Dark High Contrast's palette; it does not change tokens. */
+.prism-rendered .token.comment,
+.prism-rendered .token.prolog,
+.prism-rendered .token.doctype {
+  color: #9ea7b3;
+}
+.prism-rendered .token.keyword,
+.prism-rendered .token.operator,
+.prism-rendered .token.atrule {
+  color: #ff9492;
+}
+.prism-rendered .token.string,
+.prism-rendered .token.attr-value {
+  color: #addcff;
+}
+.prism-rendered .token.number,
+.prism-rendered .token.boolean,
+.prism-rendered .token.property,
+.prism-rendered .token.constant {
+  color: #91cbff;
+}
+.prism-rendered .token.function {
+  color: #dbb7ff;
+}
+.prism-rendered .token.variable,
+.prism-rendered .token.class-name,
+.prism-rendered .token.selector {
+  color: #ffb757;
+}
+.prism-rendered .token.tag,
+.prism-rendered .token.attr-name {
+  color: #72f088;
+}
+@media (max-width: 900px) {
+  .prism-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.prism-comparison-grid .ferriki-highlighted-panel {
+  background: #0a0c10;
+  color: #f0f3f6;
+}
