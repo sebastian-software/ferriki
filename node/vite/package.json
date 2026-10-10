@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/vite",
-  "version": "0.14.0",
+  "version": "1.0.0",
   "description": "Build-time preparation of Ferriki's inline highlighting macros for Vite",
   "keywords": [
     "ferriki",
@@ -39,7 +39,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ferriki/core": "0.14.0",
+    "@ferriki/core": "1.0.0",
     "magic-string": "catalog:integrations"
   },
   "peerDependencies": {
