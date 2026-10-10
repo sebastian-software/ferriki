@@ -77,3 +77,53 @@ checksums, sizes and the local Cargo toolchain.
 For another release, change the exact versions and source SHA together and
 use new consumer/cache directories. Do not reuse a warm environment as proof
 of a cold start.
+
+## Ardo/Ferromark rehearsal
+
+The retained [Ardo probes](ardo/) target macOS arm64 and the frozen four-fence
+homepage fixture. For 0.14.0, use a new temporary Ferromark checkout at tag
+`v3.1.0`, commit `15d4716921cde05a42ce381970c3555f19efa411`, and a new export of
+Ferriki `1e8d363ee01c8c60af42d78e8129b74ed22fd362`. Keep these separate from
+normal development checkouts.
+
+1. Clone Ferromark with `--depth 1 --filter=blob:none --sparse --branch v3.1.0`
+   from `https://github.com/sebastian-software/ferromark.git`; sparse-check out
+   `src transforms node examples benches` and verify its commit. In this
+   temporary root Cargo.toml only, set the Ferriki dependency to
+   `ferriki = { version = "=0.14.0", optional = true, default-features = false }`.
+   Run `cargo update -p ferriki --precise 0.14.0`, `cargo fetch --locked`,
+   `cargo tree -p ferromark-node -i ferriki`, and
+   `cargo check -p ferromark-node --locked --offline` with a fresh
+   `CARGO_TARGET_DIR`. Check all three registry crate versions, archive
+   checksums and packaged VCS identities against the release, as above.
+2. From the temporary `node/`, run `corepack pnpm install` and
+   `corepack pnpm --filter ferromark build:native` with that same target
+   directory. Its build script invokes bare `pnpm`; if unavailable, prepend a
+   temporary executable shim that forwards to `corepack pnpm "$@"`.
+   Pack from `node/ferromark` and `node/ferromark/npm/darwin-arm64` with
+   `corepack pnpm pack --pack-destination <absolute-temp-package-directory>`.
+   Retain both 3.1.0 tarballs and the native addon SHA-256. From the temporary
+   Ferromark root, run `node --test node/ferromark/test/jsx-highlighting.test.mjs`.
+3. Export the exact Ferriki source with `git archive <source-sha> ... | tar -x -C <new-directory>`.
+   Include `homepage/`, `assets/shiki/`, `node/ferriki/package.json`, and
+   `docs/benchmarks/blacksmith-comparison.json` plus
+   `docs/benchmarks/shiki-comparison.json`. In the temporary homepage's
+   package.json, set `pnpm.overrides` for `@ferriki/core` and
+   `@ferriki/darwin-arm64` to `0.14.0`; set `ferromark` and
+   `ferromark-darwin-arm64` to the absolute `file:` paths of the two rebuilt
+   tarballs. Run `corepack pnpm install` there and retain the resulting lock.
+4. From the temporary homepage, run `corepack pnpm exec react-router build`,
+   `node scripts/verify-build.mjs`, `node scripts/verify-ardo-acceptance.mjs`,
+   and `corepack pnpm run browser:check`. Copy the four retained Ardo probes
+   into that same directory and run `node verify-resolution.mjs <addon-sha256>`,
+   `node verify-rebuilt-theme.mjs`, and
+   `node verify-rebuilt-remote.mjs <source-sha> <absolute-export-root>`.
+   The last probe starts its own loopback-only, manifest-validating asset
+   mirror and checks cold/warm offline behavior and missing/corrupt recovery.
+
+Retain the command outputs, lock/manifest hashes, npm URLs and integrities,
+crate checksums/VCS identities and installed binary digests. For another
+release, use fresh directories, change exact dependency versions and the
+source SHA together, and update the version assertions in
+`verify-resolution.mjs`. The rebuilt downstream tarballs are local acceptance
+artifacts; do not publish them or add permanent overrides to the homepage.
