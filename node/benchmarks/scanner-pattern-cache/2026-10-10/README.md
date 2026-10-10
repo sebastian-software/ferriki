@@ -14,7 +14,7 @@ The table reports medians across nine fresh-process samples per language and rev
 | JSON       |          3.57 ms |               3.48 ms |  −2.6% |        0.219 ms |             0.219 ms |
 | Astro      |        209.65 ms |              78.70 ms | −62.5% |        1.161 ms |             1.162 ms |
 
-Warm HTML medians remain within 3.4% across these samples. This change primarily reduces repeated pattern compilation during grammar setup; it does not materially change the measured warmed render path in this fixture set.
+Warm HTML medians remain within 3.4% across these samples. This change primarily reduces repeated pattern compilation during initial scanner construction on first tokenization; it does not materially change the measured warmed render path in this fixture set.
 
 Five paired fresh-process memory runs each created one highlighter/registry and loaded/highlighted all five grammars. The median RSS snapshot after the fifth grammar was 102.4 MiB for base and 67.6 MiB for the candidate. Median Node `external` memory at that checkpoint was 2.43 MiB for both. These are coarse whole-process snapshots after GC where available, not cache-allocation measurements or peak-memory proof. RSS can fluctuate between checkpoints; the raw JSON preserves every observation.
 
