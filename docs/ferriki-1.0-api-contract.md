@@ -146,6 +146,11 @@ sidecar is published (see #52).
 - Concurrent async loads are deduplicated per handle. Rendering calls are
   safe to interleave without leaking languages, themes, or aliases between
   handles (#51).
+- Concurrent first singleton calls share one initialization attempt. If it
+  fails, each caller receives that failure and a later explicit call can
+  initialize again. A failed later registration does not discard a healthy
+  singleton or its first creation's defaults. Ferriki does not automatically
+  retry asset downloads (#244).
 - Validation failures have stable `ShikiError` identity and a
   machine-readable `code` category (#50). Message text is documented for
   user-facing migration errors; native stack details are not part of the
