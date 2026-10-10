@@ -18,6 +18,8 @@ Warm HTML medians remain within 3.4% across these samples. This change primarily
 
 Five paired fresh-process memory runs each created one highlighter/registry and loaded/highlighted all five grammars. The median RSS snapshot after the fifth grammar was 102.4 MiB for base and 67.6 MiB for the candidate. Median Node `external` memory at that checkpoint was 2.43 MiB for both. These are coarse whole-process snapshots after GC where available, not cache-allocation measurements or peak-memory proof. RSS can fluctuate between checkpoints; the raw JSON preserves every observation.
 
+Ferroni's current cache API applies to the full pattern list passed to one scanner; it does not let Ferriki cache only the static members of a mixed list. To bound resolved end/while backreferences, Ferriki bypasses shared caching for the entire scanner list when any member contains a backreference. This also skips reuse of any static members in that list and is a candidate Ferroni API follow-up. C++'s near-flat first-use result is consistent with this limitation, but these measurements do not isolate its cause.
+
 All base and candidate HTML SHA-256 values match for each fixture across the timed and memory samples. Fixture bytes, the manifest, and the standard asset manifest were also checked for equality before measurement.
 
 ## Method and provenance
