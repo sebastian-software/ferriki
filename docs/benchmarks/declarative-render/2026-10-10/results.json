@@ -1,0 +1,6065 @@
+{
+  "date": "2026-10-10T20:50:06.586Z",
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M1 Ultra",
+  "harnessSha256": "db8313623c99befc1057cbb290ca8491fe63338b8a5da65617e3251cb5da3548",
+  "assetsManifestSha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+  "identities": {
+    "baseline": {
+      "revision": "7cfb66d504b12fa42111346c28fb94a2a0ec4573",
+      "runtimeSourceSha256": "660cd1d604e23e8dff9d5ba58507dfd33cca145df2032c032559d19e99e36a84",
+      "addonSha256": "0f17b60075cc91f2d40c817a646671505bd04245b17c4349c843bb0b5baddedc",
+      "build": {
+        "builtAt": "2026-10-10T20:47:26.510Z",
+        "binarySha256": "0f17b60075cc91f2d40c817a646671505bd04245b17c4349c843bb0b5baddedc",
+        "ferriki": {
+          "commit": "7cfb66d504b12fa42111346c28fb94a2a0ec4573",
+          "status": ""
+        },
+        "rustSourceSha256": "0e1dd80441a0eb7359a1466e5666911e563180868a4b5c8ee4b404c2223d4ce1",
+        "ferroni": {
+          "version": "2.1.0",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+          "revision": null,
+          "sourceSha256": null,
+          "features": [
+            "default",
+            "dfa-prefilter"
+          ]
+        },
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+        "cargoArgs": [
+          "build",
+          "--release",
+          "--manifest-path",
+          "/private/tmp/ferriki-declarative-baseline/crates/ferriki-core/Cargo.toml"
+        ],
+        "rustflags": null,
+        "encodedRustflags": null,
+        "targetRustflags": {},
+        "cargoProfileEnv": {},
+        "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33"
+      }
+    },
+    "current": {
+      "revision": "d8cc172aa48d1fd3be6a08d8f34ffe88cb3f96c6",
+      "runtimeSourceSha256": "8906a5f9bbce5a4e6b6e4ecc7b01d1592094de6702b959d75679f256b4721845",
+      "addonSha256": "b50087535c5e99290a08e4c1cafffa1d5bff3afe0fb141493181d2974ad5cd9a",
+      "build": {
+        "builtAt": "2026-10-10T20:48:39.019Z",
+        "binarySha256": "b50087535c5e99290a08e4c1cafffa1d5bff3afe0fb141493181d2974ad5cd9a",
+        "ferriki": {
+          "commit": "d8cc172aa48d1fd3be6a08d8f34ffe88cb3f96c6",
+          "status": "?? docs/benchmarks/declarative-render/"
+        },
+        "rustSourceSha256": "8e0badee2cd8ad9a8ab1a7ea39315752fb73b0225e23b7c408c7d50b0acdd333",
+        "ferroni": {
+          "version": "2.1.0",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+          "revision": null,
+          "sourceSha256": null,
+          "features": [
+            "default",
+            "dfa-prefilter"
+          ]
+        },
+        "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+        "cargoArgs": [
+          "build",
+          "--release",
+          "--manifest-path",
+          "/private/tmp/ferriki-native-decorations/crates/ferriki-core/Cargo.toml"
+        ],
+        "rustflags": null,
+        "encodedRustflags": null,
+        "targetRustflags": {},
+        "cargoProfileEnv": {},
+        "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33"
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "4-lines/inline/control",
+      "baselineMs": 0.11050468750000011,
+      "currentMs": 0.10995364999999993,
+      "changePercent": -0.49865531722369516
+    },
+    {
+      "name": "4-lines/inline/declarative",
+      "baselineMs": 0.2507104124999998,
+      "currentMs": 0.13741302500000002,
+      "changePercent": -45.190539303986775
+    },
+    {
+      "name": "4-lines/inline/mixed",
+      "baselineMs": 0.26860886249999966,
+      "currentMs": 0.27101927500000045,
+      "changePercent": 0.8973689391952977
+    },
+    {
+      "name": "4-lines/inline/line-range",
+      "baselineMs": 0.21983749999999985,
+      "currentMs": 0.13117500000000035,
+      "changePercent": -40.33092625234529
+    },
+    {
+      "name": "4-lines/classes/control",
+      "baselineMs": 0.6256031249999978,
+      "currentMs": 0.630089575000001,
+      "changePercent": 0.7171399599391615
+    },
+    {
+      "name": "4-lines/classes/declarative",
+      "baselineMs": 0.6681140625000012,
+      "currentMs": 0.6709812499999999,
+      "changePercent": 0.429146407915737
+    },
+    {
+      "name": "4-lines/classes/mixed",
+      "baselineMs": 0.6992296875000023,
+      "currentMs": 0.6952437500000002,
+      "changePercent": -0.5700469489865689
+    },
+    {
+      "name": "4-lines/classes/line-range",
+      "baselineMs": 0.6437005250000027,
+      "currentMs": 0.6401229125000014,
+      "changePercent": -0.5557883458307433
+    },
+    {
+      "name": "80-lines/inline/control",
+      "baselineMs": 1.8342041999999765,
+      "currentMs": 1.8097625000000335,
+      "changePercent": -1.3325506505733276
+    },
+    {
+      "name": "80-lines/inline/declarative",
+      "baselineMs": 3.3727332999999815,
+      "currentMs": 2.251754200000005,
+      "changePercent": -33.236517693230674
+    },
+    {
+      "name": "80-lines/inline/mixed",
+      "baselineMs": 3.7966917000000193,
+      "currentMs": 3.8537832999999866,
+      "changePercent": 1.503719672576187
+    },
+    {
+      "name": "80-lines/inline/line-range",
+      "baselineMs": 3.0903249999999844,
+      "currentMs": 2.092387499999995,
+      "changePercent": -32.292315533155715
+    },
+    {
+      "name": "80-lines/classes/control",
+      "baselineMs": 8.615775000000031,
+      "currentMs": 8.489149999999972,
+      "changePercent": -1.4696878690548254
+    },
+    {
+      "name": "80-lines/classes/declarative",
+      "baselineMs": 9.46942909999998,
+      "currentMs": 9.293066700000054,
+      "changePercent": -1.862439626903445
+    },
+    {
+      "name": "80-lines/classes/mixed",
+      "baselineMs": 10.00079169999999,
+      "currentMs": 9.978341600000022,
+      "changePercent": -0.22448322766255302
+    },
+    {
+      "name": "80-lines/classes/line-range",
+      "baselineMs": 8.831666700000005,
+      "currentMs": 8.879975000000012,
+      "changePercent": 0.5469896186187206
+    }
+  ],
+  "runs": [
+    {
+      "engine": "baseline",
+      "loadedAddonSha256": "0f17b60075cc91f2d40c817a646671505bd04245b17c4349c843bb0b5baddedc",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.11315000000000008,
+            0.10866042499999988,
+            0.1121875000000001,
+            0.11103957499999986,
+            0.10854531250000007,
+            0.11073386250000006,
+            0.10928125000000008
+          ],
+          "heapGrowthBytes": [
+            24000,
+            24000,
+            24000,
+            24000,
+            24520
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.11662499999999909,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.11662499999999909
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2595729125000002,
+            0.24832968750000006,
+            0.24363646249999996,
+            0.24380365000000026,
+            0.23638906249999964,
+            0.2473546875000004,
+            0.24951718749999968
+          ],
+          "heapGrowthBytes": [
+            177264,
+            168280,
+            167776,
+            167280,
+            165352
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.15608300000002373,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.13145800000000918
+              },
+              {
+                "operation": "split",
+                "ms": 0.008874999999989086,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008042000000045846
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00770799999997962,
+                "nodeMetadataWords": 198,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2646817750000004,
+            0.250990625,
+            0.26990156250000014,
+            0.27314427499999994,
+            0.26818437499999986,
+            0.2557781249999998,
+            0.2517708374999998
+          ],
+          "heapGrowthBytes": [
+            187376,
+            196464,
+            190152,
+            189928,
+            187944
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.1619180000001279,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.13199999999994816
+              },
+              {
+                "operation": "split",
+                "ms": 0.00908300000003237,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007667000000083135
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004750000000058208,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.003959000000008928
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004458999999997104,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.21945886249999944,
+            0.22563176249999942,
+            0.2106197999999992,
+            0.2196322875000007,
+            0.22948802499999915,
+            0.22340677500000083,
+            0.2196593749999991
+          ],
+          "heapGrowthBytes": [
+            145096,
+            150528,
+            150288,
+            148416,
+            148416
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.1608330000000251,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1269999999999527
+              },
+              {
+                "operation": "split",
+                "ms": 0.02250000000003638,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.00620800000001509
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005125000000020918,
+                "nodeMetadataWords": 91,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.6248072999999991,
+            0.6459151000000005,
+            0.6412599,
+            0.5952609374999994,
+            0.5773020750000001,
+            0.6408927000000005,
+            0.6351895874999997
+          ],
+          "heapGrowthBytes": [
+            953432,
+            1020944,
+            1025760,
+            1004184,
+            1000528
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.15945799999985866,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.15945799999985866
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6806947874999991,
+            0.6564984374999995,
+            0.6879619875000003,
+            0.6436328124999988,
+            0.6329224000000011,
+            0.6364843749999978,
+            0.6820177000000001
+          ],
+          "heapGrowthBytes": [
+            1133816,
+            1133384,
+            1071720,
+            1058400,
+            1062464
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.1987490000001344,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.17191600000001017
+              },
+              {
+                "operation": "split",
+                "ms": 0.00920799999994415,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.0086660000001757
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00895900000000438,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.7290348874999978,
+            0.6697067750000002,
+            0.7157036500000004,
+            0.6992296875000023,
+            0.6473661499999992,
+            0.703790112499999,
+            0.6745421875000005
+          ],
+          "heapGrowthBytes": [
+            1137288,
+            1138616,
+            1143096,
+            1137400,
+            1136952
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.1987069999997857,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1689160000000811
+              },
+              {
+                "operation": "split",
+                "ms": 0.008499999999912689,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.00808299999994233
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005457999999862295,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0029999999999290594
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004750000000058208,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.6732270874999984,
+            0.6277890624999998,
+            0.6844223999999997,
+            0.6318734375000019,
+            0.6079239624999957,
+            0.6810963624999999,
+            0.6437005250000027
+          ],
+          "heapGrowthBytes": [
+            980600,
+            1043656,
+            1048472,
+            1031464,
+            1027192
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.2106260000000475,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.19033400000034817
+              },
+              {
+                "operation": "split",
+                "ms": 0.008124999999836291,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.006457999999838648
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005709000000024389,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.8195458000000144,
+            1.8172084000000268,
+            1.8371250000000146,
+            1.8186707999999725,
+            1.8099207999999636,
+            1.8349208999999973,
+            1.83459170000001
+          ],
+          "heapGrowthBytes": [
+            77712,
+            77712,
+            77712,
+            77712,
+            77712
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.8589590000001408,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 1.8589590000001408
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.33117500000003,
+            3.3358624999999846,
+            3.3995124999999917,
+            3.319725000000017,
+            3.4016665999999987,
+            3.3727332999999815,
+            3.4242707999999764
+          ],
+          "heapGrowthBytes": [
+            2733960,
+            2737480,
+            2727512,
+            2728352,
+            2723920
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.2307080000000497,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.9183330000000751
+              },
+              {
+                "operation": "split",
+                "ms": 0.12875000000030923,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09691699999984849
+              },
+              {
+                "operation": "plan",
+                "ms": 0.08670799999981682,
+                "nodeMetadataWords": 3960,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.768966599999976,
+            3.777187499999991,
+            3.7811542000000373,
+            3.7571332999999867,
+            3.885670900000014,
+            3.9580124999999953,
+            4.044354199999998
+          ],
+          "heapGrowthBytes": [
+            3074768,
+            3120544,
+            3123416,
+            3077976,
+            3128880
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.2327059999993253,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.8782499999997526
+              },
+              {
+                "operation": "split",
+                "ms": 0.13283300000011877,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09516600000006292
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01141700000016499,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002749999999650754
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00383300000021336,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009875000000192813,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024170000001504377
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037089999996169354,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009708000000046013,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022910000002411834
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0034580000001369626,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009499999999661668,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.00233299999990777
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003584000000046217,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009500000000116415,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0033750000002328306,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009500000000116415,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003624999999829015,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0097499999997126,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0034580000001369626,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009499999999661668,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022499999995488906
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0036660000000665605,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            2.986258399999997,
+            3.0903249999999844,
+            3.072550000000001,
+            3.064533300000039,
+            3.0359833999999863,
+            3.350154100000009,
+            3.1888750000000075
+          ],
+          "heapGrowthBytes": [
+            2180352,
+            2224336,
+            2183368,
+            2229640,
+            2223336
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.081709000000501,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.9496670000003178
+              },
+              {
+                "operation": "split",
+                "ms": 0.09049999999979264,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.02058400000032634
+              },
+              {
+                "operation": "plan",
+                "ms": 0.020958000000064203,
+                "nodeMetadataWords": 637,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            8.855083399999966,
+            8.30434580000001,
+            8.77823330000001,
+            8.226408300000003,
+            8.240400000000045,
+            8.787816600000042,
+            8.492299999999977
+          ],
+          "heapGrowthBytes": [
+            14757304,
+            15917760,
+            15864640,
+            15848776,
+            15939872
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 3.02429199999915,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 3.02429199999915
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.122545900000024,
+            9.238108300000022,
+            9.616891699999996,
+            9.45082080000002,
+            9.208495800000037,
+            9.737529200000063,
+            9.265725000000021
+          ],
+          "heapGrowthBytes": [
+            15880568,
+            16929712,
+            16893704,
+            16907288,
+            16944400
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.2082909999999174,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.852042000000438
+              },
+              {
+                "operation": "split",
+                "ms": 0.14245800000026065,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.11091599999963364
+              },
+              {
+                "operation": "plan",
+                "ms": 0.10287499999958527,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            10.00079169999999,
+            9.746820800000023,
+            9.70981670000001,
+            10.297729200000049,
+            10.067662499999916,
+            9.832750000000033,
+            10.548825000000033
+          ],
+          "heapGrowthBytes": [
+            17057080,
+            17054064,
+            18086632,
+            18072632,
+            18087168
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.0965419999993173,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.729000000000269
+              },
+              {
+                "operation": "split",
+                "ms": 0.12216700000044511,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.1037079999996422
+              },
+              {
+                "operation": "plan",
+                "ms": 0.018707999999605818,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003917000000001281
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0045419999996738625,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010833999999704247,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003917000000001281,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010459000000082597,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002292000000124972
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037919999995210674,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010333000000173342,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.00220900000022084
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003749999999854481,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010291000000506756,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0021670000005542533
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037089999996169354,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01020799999969313,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0021660000002157176
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003832999999758613,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010208000000602624,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0021669999996447586
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037080000001878943,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010124999999788997,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002207999999882304
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003665999999611813,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.758341699999983,
+            8.536375000000044,
+            8.663954199999989,
+            9.04168749999999,
+            8.83199170000007,
+            8.598429200000009,
+            9.101958300000025
+          ],
+          "heapGrowthBytes": [
+            15095120,
+            15092072,
+            16151248,
+            16116856,
+            16131744
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.07945799999834,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.926166999999623
+              },
+              {
+                "operation": "split",
+                "ms": 0.10162499999933061,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.027207999999518506
+              },
+              {
+                "operation": "plan",
+                "ms": 0.024457999999867752,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    },
+    {
+      "engine": "current",
+      "loadedAddonSha256": "b50087535c5e99290a08e4c1cafffa1d5bff3afe0fb141493181d2974ad5cd9a",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.10982708749999989,
+            0.11018593750000001,
+            0.1087781249999999,
+            0.11036458750000015,
+            0.10800833750000009,
+            0.11194740000000003,
+            0.1084671874999998
+          ],
+          "heapGrowthBytes": [
+            24048,
+            24048,
+            24048,
+            24048,
+            24568
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.10958300000001486,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.10958300000001486
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.1422359374999999,
+            0.13815208749999996,
+            0.13773386250000003,
+            0.13539792499999984,
+            0.1336275999999998,
+            0.14037136249999982,
+            0.13500208749999984
+          ],
+          "heapGrowthBytes": [
+            39456,
+            21752,
+            21720,
+            21720,
+            21720
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.135708999999963,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.135708999999963
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.27612552499999976,
+            0.27319427500000015,
+            0.2557213500000003,
+            0.2474718750000001,
+            0.2659822875000003,
+            0.2680869875000006,
+            0.27713021250000053
+          ],
+          "heapGrowthBytes": [
+            191472,
+            197784,
+            190960,
+            194592,
+            189088
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.14487500000012687,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.11700000000001864
+              },
+              {
+                "operation": "split",
+                "ms": 0.008334000000047581,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007749999999987267
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004667000000040389,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0030409999999960746
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004083000000036918,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.14356457499999992,
+            0.13034269999999992,
+            0.13332865,
+            0.1306171875000004,
+            0.12976509999999877,
+            0.13117500000000035,
+            0.12987656250000015
+          ],
+          "heapGrowthBytes": [
+            18528,
+            18528,
+            18528,
+            18528,
+            18528
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.12504100000001017,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.12504100000001017
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.6380390625000004,
+            0.6322484375000001,
+            0.6561203125000006,
+            0.5862062499999994,
+            0.5757958375000001,
+            0.6471958375,
+            0.6057317749999995
+          ],
+          "heapGrowthBytes": [
+            952808,
+            1020176,
+            1025760,
+            1004184,
+            1000528
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.15433299999995143,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.15433299999995143
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6872302000000019,
+            0.6307171874999995,
+            0.6884578125000018,
+            0.6269427124999993,
+            0.6701666625000001,
+            0.6830426999999986,
+            0.6316531249999997
+          ],
+          "heapGrowthBytes": [
+            1021152,
+            1138232,
+            1075728,
+            1062464,
+            1062464
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.19070799999985866,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.16608300000007148
+              },
+              {
+                "operation": "split",
+                "ms": 0.008166999999957625,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008124999999836291
+              },
+              {
+                "operation": "plan",
+                "ms": 0.008332999999993262,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6799703125000007,
+            0.6729250000000008,
+            0.7137416625000015,
+            0.6780692749999986,
+            0.6603984374999982,
+            0.7060859375000007,
+            0.6699812499999979
+          ],
+          "heapGrowthBytes": [
+            1137288,
+            1138616,
+            1143096,
+            1141000,
+            1140704
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.19191699999987577,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1632919999999558
+              },
+              {
+                "operation": "split",
+                "ms": 0.00829199999998309,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007624999999961801
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0049579999999878055,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0029580000000350992
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004791999999952168,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.6401229125000014,
+            0.6072546875,
+            0.6577296875000002,
+            0.6191145749999976,
+            0.6149963500000013,
+            0.6734437500000012,
+            0.6473786500000017
+          ],
+          "heapGrowthBytes": [
+            976992,
+            1043656,
+            1048472,
+            1031560,
+            1027608
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.17487500000015643,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.15637500000002547
+              },
+              {
+                "operation": "split",
+                "ms": 0.007040999999844644,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.005959000000075321
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005500000000211003,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.8135041,
+            1.7974125000000185,
+            1.8118459000000258,
+            1.787845900000002,
+            1.8148124999999709,
+            1.8066499999999905,
+            1.781795800000009
+          ],
+          "heapGrowthBytes": [
+            77760,
+            77760,
+            77760,
+            77760,
+            77760
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.7912089999999807,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 1.7912089999999807
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            2.2514333999999963,
+            2.215666599999986,
+            2.2392624999999953,
+            2.3535667000000102,
+            2.379191600000013,
+            2.414433299999973,
+            2.322400000000016
+          ],
+          "heapGrowthBytes": [
+            347744,
+            347744,
+            347744,
+            347744,
+            347744
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.301332999999886,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 2.301332999999886
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.616070899999977,
+            3.7000167000000146,
+            3.8745207999999822,
+            3.9193459000000077,
+            3.945854199999985,
+            3.8272582999999942,
+            3.73745829999998
+          ],
+          "heapGrowthBytes": [
+            3027888,
+            3126936,
+            3080808,
+            3078744,
+            3079584
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.4157099999997627,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.0442500000003747
+              },
+              {
+                "operation": "split",
+                "ms": 0.13229199999977936,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10204199999998309
+              },
+              {
+                "operation": "plan",
+                "ms": 0.016374999999698048,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0037080000001878943
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004917000000205007,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010291999999935797,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002708999999867956
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0038749999998799467,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009958000000096945,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002541999999721156
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003666999999950349,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0099169999998594,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0025000000000545697
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003666999999950349,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009833000000071479,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003541999999924883,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009750000000167347,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024160000002666493
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037080000001878943,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009625000000141881,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003459000000020751,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009832999999616732,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002415999999811902
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003584000000046217,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            2.0151916999999684,
+            2.0110874999999853,
+            2.034529199999997,
+            1.9884417000000212,
+            2.0071040999999696,
+            2.0287624999999934,
+            2.092387499999995
+          ],
+          "heapGrowthBytes": [
+            90160,
+            90160,
+            90160,
+            90160,
+            90160
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.9340000000001965,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 1.9340000000001965
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            8.703608399999984,
+            8.473108400000001,
+            8.862587500000064,
+            8.489149999999972,
+            8.182558300000073,
+            9.00049170000002,
+            8.44133329999995
+          ],
+          "heapGrowthBytes": [
+            14751728,
+            15937000,
+            15854184,
+            15876664,
+            15951440
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 3.1700419999997393,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 3.1700419999997393
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.195637499999975,
+            9.264237499999945,
+            9.21502500000006,
+            9.19339999999993,
+            9.83848339999995,
+            9.303512499999943,
+            9.209445800000049
+          ],
+          "heapGrowthBytes": [
+            16942024,
+            16906976,
+            16968832,
+            16984568,
+            16922688
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.348667000000205,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.9592499999998836
+              },
+              {
+                "operation": "split",
+                "ms": 0.13799999999991996,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.12625000000025466
+              },
+              {
+                "operation": "plan",
+                "ms": 0.1251670000001468,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.978341600000022,
+            10.056320799999957,
+            10.17527089999994,
+            9.8465416,
+            10.030825000000004,
+            10.257666700000026,
+            9.63778339999999
+          ],
+          "heapGrowthBytes": [
+            17094624,
+            18065728,
+            18098840,
+            18134224,
+            18097752
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.1947089999994205,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.816957999999431
+              },
+              {
+                "operation": "split",
+                "ms": 0.1262090000000171,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10229199999957928
+              },
+              {
+                "operation": "plan",
+                "ms": 0.020167000000583357,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0037080000001878943
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004708999999820662,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011457999999947788,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002749999999650754
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0040829999998095445,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011000000000422006,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003915999999662745,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010541999999986729,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0038749999994251993,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010540999999648193,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002292000000124972
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00370900000052643,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010750000000371074,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004042000000481494,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01062499999989086,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037089999996169354,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010708000000704487,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0045419999996738625,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.879975000000012,
+            9.07374580000005,
+            9.115587500000037,
+            8.65102079999997,
+            8.758966599999985,
+            9.081437499999993,
+            8.58660829999999
+          ],
+          "heapGrowthBytes": [
+            15167416,
+            16108304,
+            16143064,
+            16197792,
+            16144808
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.326665000000503,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 3.1607080000003407
+              },
+              {
+                "operation": "split",
+                "ms": 0.10320800000044983,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.03379099999983737
+              },
+              {
+                "operation": "plan",
+                "ms": 0.028957999999875028,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    },
+    {
+      "engine": "current",
+      "loadedAddonSha256": "b50087535c5e99290a08e4c1cafffa1d5bff3afe0fb141493181d2974ad5cd9a",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.10914427500000005,
+            0.10995364999999993,
+            0.11031301249999999,
+            0.10992396249999992,
+            0.1119791750000001,
+            0.1145203125000002,
+            0.10951249999999994
+          ],
+          "heapGrowthBytes": [
+            24048,
+            24048,
+            24016,
+            24048,
+            24536
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.11183400000001598,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.11183400000001598
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.1377932249999997,
+            0.1397343750000001,
+            0.1350598999999999,
+            0.13748281250000005,
+            0.1367635374999999,
+            0.14060624999999974,
+            0.13472343749999993
+          ],
+          "heapGrowthBytes": [
+            39184,
+            21752,
+            21720,
+            21720,
+            21720
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.13108299999998962,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.13108299999998962
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2805677000000003,
+            0.29620885,
+            0.26014011250000024,
+            0.24923958749999997,
+            0.27753333750000025,
+            0.2696932249999996,
+            0.27101927500000045
+          ],
+          "heapGrowthBytes": [
+            191120,
+            197784,
+            190960,
+            194592,
+            194808
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.1656229999999823,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.12816600000002154
+              },
+              {
+                "operation": "split",
+                "ms": 0.016624999999976353,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008332999999993262
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005083000000013271,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0031660000000215405
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004249999999956344,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.1304015625000005,
+            0.13115365000000026,
+            0.13343802499999952,
+            0.13291406249999937,
+            0.13252760000000025,
+            0.13951250000000073,
+            0.13411667499999994
+          ],
+          "heapGrowthBytes": [
+            18240,
+            18528,
+            18528,
+            18528,
+            18528
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.1272910000000138,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.1272910000000138
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.6428531250000006,
+            0.6295942624999995,
+            0.6732447999999991,
+            0.5888296875000009,
+            0.5693416624999997,
+            0.6224343750000003,
+            0.6295187499999997
+          ],
+          "heapGrowthBytes": [
+            952808,
+            952808,
+            1025232,
+            1021472,
+            1004184
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.16895900000008623,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.16895900000008623
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.688590099999999,
+            0.6493755249999993,
+            0.7096854250000006,
+            0.6527953124999982,
+            0.6499599000000018,
+            0.6709812499999999,
+            0.6287739625000001
+          ],
+          "heapGrowthBytes": [
+            1020720,
+            1142968,
+            1139968,
+            1062352,
+            1062464
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.19154200000002675,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.16516700000011042
+              },
+              {
+                "operation": "split",
+                "ms": 0.009082999999918684,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008542000000034022
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00874999999996362,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.7019885500000015,
+            0.6952437500000002,
+            0.7194140625000017,
+            0.6774213500000001,
+            0.677674487500002,
+            0.7318125000000009,
+            0.6905906249999987
+          ],
+          "heapGrowthBytes": [
+            1137720,
+            1142216,
+            1142664,
+            1137400,
+            1142368
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.26920700000005127,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.21504200000003948
+              },
+              {
+                "operation": "split",
+                "ms": 0.022040999999944688,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.011666999999988548
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010375000000067303,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.004290999999966516
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005791000000044733,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.6586937500000005,
+            0.6232807250000008,
+            0.6834677124999985,
+            0.6174343749999991,
+            0.6222302000000013,
+            0.6603114625000046,
+            0.6430151125000009
+          ],
+          "heapGrowthBytes": [
+            976992,
+            1043656,
+            1052184,
+            1027808,
+            1026936
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.20458400000097754,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1819170000003396
+              },
+              {
+                "operation": "split",
+                "ms": 0.010000000000218279,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.006292000000030384
+              },
+              {
+                "operation": "plan",
+                "ms": 0.006375000000389264,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.8047250000000077,
+            1.7821082999999818,
+            1.797649999999976,
+            1.830233300000009,
+            1.905837500000007,
+            1.9012833000000229,
+            1.8626000000000205
+          ],
+          "heapGrowthBytes": [
+            77760,
+            77760,
+            77760,
+            77760,
+            77760
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.7727499999996326,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 1.7727499999996326
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            2.204995800000006,
+            2.2253458000000137,
+            2.2689374999999927,
+            2.244420799999989,
+            2.2514832999999728,
+            2.275020799999993,
+            2.2451250000000074
+          ],
+          "heapGrowthBytes": [
+            347744,
+            347744,
+            347744,
+            347744,
+            347744
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.092666999999892,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 2.092666999999892
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.7796042000000396,
+            3.7568750000000364,
+            3.8537832999999866,
+            3.8641458000000055,
+            4.088487500000019,
+            4.080929100000003,
+            4.119445799999994
+          ],
+          "heapGrowthBytes": [
+            3128112,
+            3078648,
+            3079584,
+            3126408,
+            3080808
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.3569129999987126,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.0096659999999247
+              },
+              {
+                "operation": "split",
+                "ms": 0.11425000000008367,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09854100000029575
+              },
+              {
+                "operation": "plan",
+                "ms": 0.015207999999802269,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003333999999995285
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004417000000103144,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010499999999865395,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0026250000000800355
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0041659999997136765,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01025000000026921,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024170000001504377
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0036660000000665605,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009583000000020547,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.00233299999990777
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003790999999637279,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009915999999975611,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003499999999803549,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009583000000020547,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022919999996702245
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003499999999803549,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009667000000263215,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023339999997915584
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003499999999803549,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009666999999808468,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022910000002411834
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003665999999611813,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            2.0777000000000045,
+            2.092670899999985,
+            2.09496250000002,
+            2.0111833999999815,
+            2.0470833000000312,
+            2.0991457999999965,
+            2.176370799999995
+          ],
+          "heapGrowthBytes": [
+            90160,
+            90160,
+            90160,
+            90160,
+            90160
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.1616659999999683,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 2.1616659999999683
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            8.674962499999992,
+            8.503283299999975,
+            8.741095799999993,
+            8.093933300000026,
+            8.329604199999995,
+            8.85227500000001,
+            8.29717499999997
+          ],
+          "heapGrowthBytes": [
+            14756184,
+            15918568,
+            15864608,
+            15854440,
+            15939800
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.8755410000003394,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.8755410000003394
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.12131249999993,
+            9.742454199999974,
+            9.214333299999998,
+            9.137391599999955,
+            9.652104100000088,
+            9.432279199999993,
+            9.294075000000067
+          ],
+          "heapGrowthBytes": [
+            16873024,
+            16955360,
+            16902864,
+            16895168,
+            16971032
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.1770420000011654,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.8413330000003043
+              },
+              {
+                "operation": "split",
+                "ms": 0.12691700000050332,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10554200000024139
+              },
+              {
+                "operation": "plan",
+                "ms": 0.10325000000011642,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.952333299999918,
+            9.620370899999944,
+            10.373124999999982,
+            9.886249999999928,
+            9.762712499999997,
+            10.362016700000003,
+            9.943658300000061
+          ],
+          "heapGrowthBytes": [
+            17117456,
+            18116976,
+            18067776,
+            18087672,
+            18147944
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.2243319999997766,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.853124999999636
+              },
+              {
+                "operation": "split",
+                "ms": 0.12504100000023755,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10133399999995163
+              },
+              {
+                "operation": "plan",
+                "ms": 0.017291999999542895,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003666999999950349
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004208999999718799,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011290999999800988,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002540999999837368
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004041999999571999,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011000000000422006,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002417000000605185
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003749999999854481,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010874999999941792,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023330000003625173
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004041000000142958,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010833999999704247,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037080000001878943,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010665999999218911,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003832999999758613,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010583999999653315,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002291000000695931
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003875000000334694,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01062499999989086,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023330000003625173
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003875000000334694,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.840104199999951,
+            9.207574999999997,
+            9.315450000000055,
+            8.952087500000015,
+            8.869337499999983,
+            9.367920800000046,
+            8.856458400000065
+          ],
+          "heapGrowthBytes": [
+            15101872,
+            16149432,
+            16142064,
+            16131512,
+            16175352
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.228708000001461,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 3.062667000000147
+              },
+              {
+                "operation": "split",
+                "ms": 0.09912500000064028,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.03341600000021572
+              },
+              {
+                "operation": "plan",
+                "ms": 0.033500000000458385,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    },
+    {
+      "engine": "baseline",
+      "loadedAddonSha256": "0f17b60075cc91f2d40c817a646671505bd04245b17c4349c843bb0b5baddedc",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.11262708749999994,
+            0.10950988750000015,
+            0.11245833749999985,
+            0.10984739999999996,
+            0.11026042499999988,
+            0.11091457499999997,
+            0.10860312500000013
+          ],
+          "heapGrowthBytes": [
+            24000,
+            24000,
+            24000,
+            24000,
+            24520
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.1545420000000206,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.1545420000000206
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2814401,
+            0.29144323750000006,
+            0.26756093750000004,
+            0.2507104124999998,
+            0.26727447499999996,
+            0.26833333749999966,
+            0.26459375000000024
+          ],
+          "heapGrowthBytes": [
+            177264,
+            168280,
+            167776,
+            167024,
+            159848
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.15416499999997768,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.12479099999995924
+              },
+              {
+                "operation": "split",
+                "ms": 0.008958000000006905,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007833000000005086
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01258300000000645,
+                "nodeMetadataWords": 198,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2672859375000002,
+            0.2785624999999996,
+            0.26860886249999966,
+            0.2804750000000006,
+            0.2720812500000001,
+            0.2620682374999994,
+            0.24651927499999998
+          ],
+          "heapGrowthBytes": [
+            189688,
+            196080,
+            189816,
+            193480,
+            193224
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.16212500000006003,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.13229200000000674
+              },
+              {
+                "operation": "split",
+                "ms": 0.008542000000034022,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007625000000075488
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0049999999999954525,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.004040999999915584
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004625000000032742,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.21986875000000056,
+            0.21396093750000061,
+            0.20633541250000037,
+            0.21877603750000105,
+            0.21983749999999985,
+            0.21939011249999965,
+            0.21755781250000011
+          ],
+          "heapGrowthBytes": [
+            142880,
+            150632,
+            150528,
+            150288,
+            148176
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.15254299999992327,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.12479199999995672
+              },
+              {
+                "operation": "split",
+                "ms": 0.007375000000024556,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.005541999999991276
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01483399999995072,
+                "nodeMetadataWords": 91,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.6222750000000005,
+            0.6393104124999993,
+            0.6490348875000009,
+            0.5940838499999999,
+            0.5781072875000006,
+            0.613402087499999,
+            0.6256031249999978
+          ],
+          "heapGrowthBytes": [
+            953432,
+            953432,
+            1025232,
+            1021472,
+            1004184
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.15949999999998,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.15949999999998
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6998619750000017,
+            0.6458984375,
+            0.6831411374999987,
+            0.6542249999999996,
+            0.6381687500000026,
+            0.6415088499999996,
+            0.6939197875000019
+          ],
+          "heapGrowthBytes": [
+            1056304,
+            1056304,
+            1144704,
+            1134592,
+            1062352
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.18691700000022138,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.16112500000008367
+              },
+              {
+                "operation": "split",
+                "ms": 0.009082999999918684,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008500000000140062
+              },
+              {
+                "operation": "plan",
+                "ms": 0.008209000000078959,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6906239624999984,
+            0.6716776124999996,
+            0.7149526124999994,
+            0.6831229124999993,
+            0.663766662499998,
+            0.719658849999999,
+            0.6747526000000021
+          ],
+          "heapGrowthBytes": [
+            1137288,
+            1139064,
+            1146264,
+            1137400,
+            1137064
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.20583499999997912,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.17533400000002075
+              },
+              {
+                "operation": "split",
+                "ms": 0.008708999999953448,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008249999999861757
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005625000000009095,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0029170000000249274
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005000000000109139,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.6444828125000015,
+            0.6216135375000021,
+            0.6684703124999999,
+            0.6087229124999964,
+            0.6247849000000031,
+            0.643597912499996,
+            0.6478963625000006
+          ],
+          "heapGrowthBytes": [
+            986680,
+            1043208,
+            1036728,
+            1027808,
+            1026832
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.18062499999996362,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.162166999999954
+              },
+              {
+                "operation": "split",
+                "ms": 0.007000000000061846,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.0057500000002619345
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005707999999685853,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.7955667000000175,
+            1.773412499999995,
+            1.786820899999975,
+            1.806387500000028,
+            1.8342041999999765,
+            1.8188000000000102,
+            1.8063750000000254
+          ],
+          "heapGrowthBytes": [
+            77712,
+            77712,
+            77712,
+            77712,
+            77712
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.8164999999999054,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 1.8164999999999054
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.4998083000000406,
+            3.4384041000000254,
+            3.3484833999999863,
+            3.262525000000005,
+            3.346470900000031,
+            3.2908249999999954,
+            3.324933400000009
+          ],
+          "heapGrowthBytes": [
+            2733960,
+            2737000,
+            2727512,
+            2728352,
+            2723920
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.2229159999997137,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.9151659999997719
+              },
+              {
+                "operation": "split",
+                "ms": 0.12895800000023883,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09329200000001947
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0854999999996835,
+                "nodeMetadataWords": 3960,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.652983300000005,
+            3.698070800000005,
+            3.898841700000003,
+            3.8420916999999917,
+            3.784837500000003,
+            3.7966917000000193,
+            4.004845799999975
+          ],
+          "heapGrowthBytes": [
+            3074768,
+            3120544,
+            3133432,
+            3077976,
+            3120720
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.281377999999677,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.9187500000002728
+              },
+              {
+                "operation": "split",
+                "ms": 0.13658399999985704,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09474999999974898
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0126669999999649,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.00287499999967622
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037080000001878943,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010041999999884865,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024170000001504377
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037919999999758147,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00954200000023775,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002292000000124972
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003707999999733147,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009541999999783002,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022919999996702245
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0035830000001624285,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009500000000116415,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0036250000002837623,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009500000000116415,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037080000001878943,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009625000000141881,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003624999999829015,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009624999999687134,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022919999996702245
+              },
+              {
+                "operation": "plan",
+                "ms": 0.00658400000020265,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            2.9821542000000134,
+            3.0302250000000184,
+            3.051520899999969,
+            3.085649999999987,
+            2.9937625000000025,
+            3.2851166999999806,
+            3.0712332999999945
+          ],
+          "heapGrowthBytes": [
+            2180352,
+            2224336,
+            2183368,
+            2229640,
+            2229640
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 1.975292000000536,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.8524170000000595
+              },
+              {
+                "operation": "split",
+                "ms": 0.08612500000026557,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.019833000000289758
+              },
+              {
+                "operation": "plan",
+                "ms": 0.016916999999921245,
+                "nodeMetadataWords": 637,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            8.827820900000006,
+            8.421654200000011,
+            9.103699999999936,
+            8.593754199999967,
+            8.450316700000077,
+            8.732529100000011,
+            8.423191700000007
+          ],
+          "heapGrowthBytes": [
+            14756184,
+            15917760,
+            15865640,
+            15882392,
+            15946832
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.819040999999743,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.819040999999743
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.522641699999985,
+            9.359470800000054,
+            9.846045799999956,
+            9.519883299999947,
+            9.441866699999991,
+            9.740145800000027,
+            9.570037499999945
+          ],
+          "heapGrowthBytes": [
+            15876968,
+            16929712,
+            16894704,
+            16959336,
+            16990072
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.1355419999999867,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.7655000000004293
+              },
+              {
+                "operation": "split",
+                "ms": 0.12512499999957072,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.13795899999968242
+              },
+              {
+                "operation": "plan",
+                "ms": 0.10695800000030431,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            10.567724999999973,
+            9.994558400000006,
+            10.350704099999984,
+            9.485595900000044,
+            9.795108400000027,
+            10.33917080000001,
+            9.83995419999992
+          ],
+          "heapGrowthBytes": [
+            16936792,
+            18107952,
+            18099512,
+            18078976,
+            18139600
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.348918999999114,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.928208000000268
+              },
+              {
+                "operation": "split",
+                "ms": 0.1531669999994847,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10712500000045111
+              },
+              {
+                "operation": "plan",
+                "ms": 0.018584000000373635,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.004500000000007276
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004958999999871594,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011749999999665306,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002749999999650754
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005000000000109139,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011666999999761174,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002749999999650754
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0044589999997697305,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011375000000043656,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002500000000509317
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004208999999718799,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.012000000000625732,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002458999999362277
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003917000000001281,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011457999999947788,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023330000003625173
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004791999999724794,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0154579999998532,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023329999994530226
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004208000000289758,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010666000000128406,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023339999997915584
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003958000000238826,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.831666700000005,
+            8.641420800000015,
+            8.589287500000045,
+            9.11674579999999,
+            8.986924999999975,
+            8.679787500000021,
+            9.256079200000112
+          ],
+          "heapGrowthBytes": [
+            15096272,
+            15092072,
+            16155952,
+            16123552,
+            16149024
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.9161260000000766,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.7751250000001164
+              },
+              {
+                "operation": "split",
+                "ms": 0.08729200000016135,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.030167000000801636
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0235419999989972,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    },
+    {
+      "engine": "baseline",
+      "loadedAddonSha256": "0f17b60075cc91f2d40c817a646671505bd04245b17c4349c843bb0b5baddedc",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.11050468750000011,
+            0.11145730000000001,
+            0.11049323750000006,
+            0.10949011249999999,
+            0.11262812500000016,
+            0.11290208749999983,
+            0.10732708749999986
+          ],
+          "heapGrowthBytes": [
+            24000,
+            24000,
+            24000,
+            24000,
+            24520
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.11283299999999485,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.11283299999999485
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2623015624999997,
+            0.26821301250000007,
+            0.2444645874999999,
+            0.2500916750000002,
+            0.24849947499999986,
+            0.24765625,
+            0.2568994874999994
+          ],
+          "heapGrowthBytes": [
+            177264,
+            168024,
+            162056,
+            167496,
+            165352
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.16733299999998508,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1363749999999868
+              },
+              {
+                "operation": "split",
+                "ms": 0.011374999999986812,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.009000000000014552
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0105829999999969,
+                "nodeMetadataWords": 198,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2799713500000003,
+            0.26425990000000044,
+            0.2986750000000001,
+            0.28640156250000004,
+            0.27938646249999977,
+            0.2908515625,
+            0.26762448749999945
+          ],
+          "heapGrowthBytes": [
+            187376,
+            196856,
+            190152,
+            195208,
+            187944
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.17991700000004585,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.14712499999995998
+              },
+              {
+                "operation": "split",
+                "ms": 0.009709000000043488,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.00829199999998309
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005458000000089669,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.004332999999974163
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0049999999999954525,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.22733021250000007,
+            0.22477917500000047,
+            0.22289480000000025,
+            0.23381146249999887,
+            0.22236197500000116,
+            0.2345885375000009,
+            0.2170479125
+          ],
+          "heapGrowthBytes": [
+            145096,
+            150288,
+            144752,
+            148416,
+            148176
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.145666000000233,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.12687500000004093
+              },
+              {
+                "operation": "split",
+                "ms": 0.007375000000024556,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.006083000000103311
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005333000000064203,
+                "nodeMetadataWords": 91,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.6279104124999989,
+            0.6565151,
+            0.6596864624999995,
+            0.6179156250000005,
+            0.5883322875000004,
+            0.6635734374999999,
+            0.620126049999999
+          ],
+          "heapGrowthBytes": [
+            953432,
+            1020944,
+            1025760,
+            1004184,
+            1000528
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.17516699999987395,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.17516699999987395
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.7064781249999982,
+            0.6674328124999989,
+            0.7273817624999992,
+            0.6916494875000012,
+            0.6681140625000012,
+            0.6614385499999997,
+            0.7086895874999982
+          ],
+          "heapGrowthBytes": [
+            1133816,
+            1133384,
+            1072784,
+            1059496,
+            1062464
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.20720699999992576,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.17862500000001091
+              },
+              {
+                "operation": "split",
+                "ms": 0.010166000000026543,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008957999999893218
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009457999999995081,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.7272812500000014,
+            0.7017239625000002,
+            0.7316729250000009,
+            0.714109375000001,
+            0.6793734374999986,
+            0.727080724999999,
+            0.6878328124999996
+          ],
+          "heapGrowthBytes": [
+            1137288,
+            1138616,
+            1143096,
+            1141000,
+            1137064
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.22504000000003543,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1881670000000213
+              },
+              {
+                "operation": "split",
+                "ms": 0.010749999999916326,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.010041000000001077
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0072079999999914435,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0033330000001114968
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005540999999993801,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.67102395,
+            0.6230005250000034,
+            0.678830212500003,
+            0.6108005250000019,
+            0.6179093749999993,
+            0.6917364624999948,
+            0.6584218750000048
+          ],
+          "heapGrowthBytes": [
+            980600,
+            1043656,
+            1048472,
+            1027752,
+            1027192
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.20604099999900427,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.18454099999962637
+              },
+              {
+                "operation": "split",
+                "ms": 0.008333999999649677,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.0064159999997173145
+              },
+              {
+                "operation": "plan",
+                "ms": 0.006750000000010914,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.8875875000000177,
+            1.9935625000000072,
+            1.9898208999999951,
+            1.9093374999999924,
+            1.9663375000000087,
+            1.881616699999995,
+            1.9357833999999912
+          ],
+          "heapGrowthBytes": [
+            77712,
+            77712,
+            77712,
+            77712,
+            77712
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.0418750000003456,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 2.0418750000003456
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.3096165999999814,
+            3.2812917000000197,
+            3.4719916999999896,
+            3.42507499999997,
+            3.4357708000000002,
+            3.381058299999995,
+            3.3878749999999855
+          ],
+          "heapGrowthBytes": [
+            2733960,
+            2737000,
+            2727512,
+            2728352,
+            2723920
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.1469169999995756,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 1.870332999999846
+              },
+              {
+                "operation": "split",
+                "ms": 0.1036669999998594,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.09095799999977316
+              },
+              {
+                "operation": "plan",
+                "ms": 0.08195900000009715,
+                "nodeMetadataWords": 3960,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.742425000000003,
+            3.760775000000012,
+            3.726129200000014,
+            3.875170900000012,
+            4.110262499999999,
+            4.122316699999965,
+            4.284379199999966
+          ],
+          "heapGrowthBytes": [
+            3074768,
+            3120544,
+            3123416,
+            3077976,
+            3127408
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.4842490000000907,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.108832999999777
+              },
+              {
+                "operation": "split",
+                "ms": 0.12329200000021956,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.10141699999985576
+              },
+              {
+                "operation": "plan",
+                "ms": 0.013584000000264496,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0032919999998739513
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003958000000238826,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01895799999965675,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003875000000334694
+              },
+              {
+                "operation": "plan",
+                "ms": 0.006207999999787717,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010833999999704247,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003208000000086031
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004124999999930878,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01025000000026921,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0025000000000545697
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037910000000920263,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010082999999667663,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0025000000000545697
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003624999999829015,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01008300000012241,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024169999996956903
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037919999999758147,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010125000000243745,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.00233299999990777
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037910000000920263,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01008300000012241,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.003000000000156433
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004292000000077678,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            3.178991700000006,
+            3.235841699999992,
+            3.216683299999977,
+            3.3289250000000266,
+            3.2424875000000157,
+            3.447699999999986,
+            3.31211659999999
+          ],
+          "heapGrowthBytes": [
+            2180352,
+            2224336,
+            2183368,
+            2229640,
+            2229640
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.2005840000001626,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.070125000000189
+              },
+              {
+                "operation": "split",
+                "ms": 0.08862500000032014,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.02216699999962657
+              },
+              {
+                "operation": "plan",
+                "ms": 0.019667000000026746,
+                "nodeMetadataWords": 637,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            9.255795800000033,
+            8.615775000000031,
+            9.417341599999963,
+            8.672808400000031,
+            8.171762499999932,
+            8.789845799999966,
+            8.44135839999999
+          ],
+          "heapGrowthBytes": [
+            14757304,
+            15917760,
+            15865640,
+            15876696,
+            15946888
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.860791000000063,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.860791000000063
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.209462499999972,
+            9.280704100000003,
+            9.81396249999998,
+            9.46942909999998,
+            9.460029100000066,
+            9.789679200000046,
+            9.712174999999934
+          ],
+          "heapGrowthBytes": [
+            15876968,
+            16929712,
+            16894704,
+            16953640,
+            16990112
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.211165999999139,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.866541999999754
+              },
+              {
+                "operation": "split",
+                "ms": 0.12954100000024482,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.11337499999990541
+              },
+              {
+                "operation": "plan",
+                "ms": 0.10170799999923474,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            10.729908400000022,
+            10.25323330000001,
+            10.439508299999943,
+            9.772691699999996,
+            9.71063750000003,
+            10.196345800000017,
+            9.663495799999964
+          ],
+          "heapGrowthBytes": [
+            16936792,
+            18107952,
+            18089496,
+            18073632,
+            18139656
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.228745999995226,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.8400830000000497
+              },
+              {
+                "operation": "split",
+                "ms": 0.12054099999932077,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.1187499999996362
+              },
+              {
+                "operation": "plan",
+                "ms": 0.019417000000430562,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0041659999997136765
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004915999999866472,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011416999999710242,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0026250000000800355
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004208999999718799,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010832999999365711,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003915999999662745,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010833000000275206,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023329999994530226
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0039999999999054126,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010791999999128166,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003749999999854481,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011124999999992724,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0023330000003625173
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003917000000001281,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010707999999794993,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002290999999786436
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003749999999854481,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010957999999845924,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002292000000124972
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003957999999329331,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.9578708,
+            8.786262499999975,
+            8.834337500000037,
+            9.387324999999965,
+            8.800033299999996,
+            8.772666699999899,
+            9.063770900000055
+          ],
+          "heapGrowthBytes": [
+            15095120,
+            15092072,
+            16161264,
+            16117856,
+            16159680
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 2.990207000000737,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.828958000000057
+              },
+              {
+                "operation": "split",
+                "ms": 0.09066600000005565,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.03562500000043656
+              },
+              {
+                "operation": "plan",
+                "ms": 0.034958000000187894,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    },
+    {
+      "engine": "current",
+      "loadedAddonSha256": "b50087535c5e99290a08e4c1cafffa1d5bff3afe0fb141493181d2974ad5cd9a",
+      "cases": [
+        {
+          "name": "4-lines/inline/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.10812707499999999,
+            0.10854062500000002,
+            0.1100364625000001,
+            0.111513025,
+            0.11092968749999983,
+            0.11228228750000006,
+            0.10906927500000023
+          ],
+          "heapGrowthBytes": [
+            24048,
+            24048,
+            24048,
+            24048,
+            24568
+          ],
+          "outputSha256": "65162647f0b2879ec3801aee02f443b66ff151e3453e79536a7de3fb2707fe35",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.11987499999997908,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 0.11987499999997908
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.1367270874999999,
+            0.13741302500000002,
+            0.13913906250000033,
+            0.13447292500000002,
+            0.13816615,
+            0.13516822499999961,
+            0.1363390625000001
+          ],
+          "heapGrowthBytes": [
+            39456,
+            21752,
+            21720,
+            21720,
+            21720
+          ],
+          "outputSha256": "bc7aeb741e828ec12c2ec0d3a3a79de4f04e936449e9e7e03d1296907be65832",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.13166599999999562,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.13166599999999562
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.2766281249999999,
+            0.28792968750000014,
+            0.2546791750000004,
+            0.2466432249999997,
+            0.2745770874999998,
+            0.2606869875000001,
+            0.28057499999999963
+          ],
+          "heapGrowthBytes": [
+            191472,
+            197784,
+            190960,
+            194592,
+            189088
+          ],
+          "outputSha256": "6adb71b56a0c76f513f47f3e9ed67d2defaf2318285445a431e257a93a5b83e5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.14446000000003778,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.11704200000002629
+              },
+              {
+                "operation": "split",
+                "ms": 0.008124999999949978,
+                "tokenMetadataWords": 88
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.007500000000050022
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004500000000007276,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0029590000000325745
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004333999999971638,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/inline/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.12949635000000015,
+            0.12854113750000024,
+            0.13283228750000048,
+            0.12821249999999934,
+            0.1275739625,
+            0.14302083749999922,
+            0.16205261249999978
+          ],
+          "heapGrowthBytes": [
+            18528,
+            18528,
+            18528,
+            18528,
+            18528
+          ],
+          "outputSha256": "6f01077d281b94a5f6edcdd1d3e891307d3488fa236602258be4e3ded6da4c07",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.13437499999997726,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 0.13437499999997726
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/control",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 0,
+          "iterations": 80,
+          "samplesMs": [
+            0.637788024999999,
+            0.6421276124999992,
+            0.6658703125000003,
+            0.5966177000000001,
+            0.5881135375,
+            0.6463442624999999,
+            0.630089575000001
+          ],
+          "heapGrowthBytes": [
+            952808,
+            1020176,
+            1025760,
+            1004184,
+            1000528
+          ],
+          "outputSha256": "075c01e071f8a009b74d03dd9bcfcdb697b6ad1b40e78d8a8680ce9d496ce280",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 0.18145800000002055,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.18145800000002055
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/declarative",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.6987656249999986,
+            0.6863848875000003,
+            0.7169692749999996,
+            0.6521786500000019,
+            0.674371875,
+            0.6855937499999982,
+            0.6507406250000003
+          ],
+          "heapGrowthBytes": [
+            1021152,
+            1141832,
+            1072128,
+            1062464,
+            1062464
+          ],
+          "outputSha256": "f9a8193d20b4e19b9b3b86103817bd4f6f0c5d80b4fbb16bb904e3ba81659896",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.26595800000018244,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.22795799999994415
+              },
+              {
+                "operation": "split",
+                "ms": 0.014166000000159329,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.010874999999941792
+              },
+              {
+                "operation": "plan",
+                "ms": 0.012959000000137166,
+                "nodeMetadataWords": 262,
+                "sections": 2
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/mixed",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 2,
+          "iterations": 80,
+          "samplesMs": [
+            0.7180416624999992,
+            0.708829162500001,
+            0.7506317749999993,
+            0.6997984374999987,
+            0.6697489625000003,
+            0.7114963500000016,
+            0.6934296875000001
+          ],
+          "heapGrowthBytes": [
+            1137288,
+            1138616,
+            1143096,
+            1141000,
+            1140704
+          ],
+          "outputSha256": "b74e1ed7c1b8c163ada0261b322a3cb2dc80442d60011a9bcb05093b30460be5",
+          "boundary": {
+            "calls": 6,
+            "totalMs": 0.20779199999947195,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1761669999998503
+              },
+              {
+                "operation": "split",
+                "ms": 0.009041999999908512,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.008499999999912689
+              },
+              {
+                "operation": "plan",
+                "ms": 0.006041999999979453,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "next",
+                "ms": 0.0030829999998331914
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0049579999999878055,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "4-lines/classes/line-range",
+          "sourceSha256": "5dcc85449aef8479bf224e454766e7c8ec6df584c4000529e9a0f591af2c258d",
+          "sourceUtf16": 171,
+          "decorations": 1,
+          "iterations": 80,
+          "samplesMs": [
+            0.677936975,
+            0.6269781249999994,
+            0.6562927000000002,
+            0.6239734375000012,
+            0.624781250000001,
+            0.6746885374999977,
+            0.6346625000000017
+          ],
+          "heapGrowthBytes": [
+            976992,
+            1043656,
+            1048472,
+            1031560,
+            1026936
+          ],
+          "outputSha256": "8128a038fc59a68b41599ae0421f444a0e445533584293fe278a0a99066165bf",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 0.18395699999973658,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 0.1641660000000229
+              },
+              {
+                "operation": "split",
+                "ms": 0.007457999999587628,
+                "tokenMetadataWords": 128
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.006250000000363798
+              },
+              {
+                "operation": "plan",
+                "ms": 0.006082999999762251,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            1.792366600000014,
+            1.8256458999999723,
+            1.8097625000000335,
+            1.7851125000000139,
+            1.843979100000024,
+            1.827895899999976,
+            1.8034958000000187
+          ],
+          "heapGrowthBytes": [
+            77760,
+            77760,
+            77760,
+            77760,
+            77760
+          ],
+          "outputSha256": "1812af2404f1a7d0a11de2f8c375ecc359b117602ee9ca436ca52aa9e842b9cf",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 1.7423330000001442,
+            "operations": [
+              {
+                "operation": "html",
+                "ms": 1.7423330000001442
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            2.2429291999999803,
+            2.27760830000002,
+            2.271179200000006,
+            2.251754200000005,
+            2.245291700000007,
+            2.2981416999999964,
+            2.2564417000000048
+          ],
+          "heapGrowthBytes": [
+            347744,
+            347744,
+            347744,
+            347744,
+            347744
+          ],
+          "outputSha256": "f9a7be24fc3e22d1ccbdb3cc33ae3176cbb55e9b627b4ad7e3940e592b2cfea6",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.388209000000188,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 2.388209000000188
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            3.729662499999995,
+            3.7108000000000176,
+            3.9959749999999987,
+            3.9896541999999955,
+            4.126904200000036,
+            3.851158299999997,
+            3.8240582999999786
+          ],
+          "heapGrowthBytes": [
+            3027888,
+            3126936,
+            3080808,
+            3078744,
+            3079584
+          ],
+          "outputSha256": "fa84118c445d1cbed97674211a3fcc18bb75f8ccc402f6caed34455b60f7c01a",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 2.4406250000010914,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.0677089999999225
+              },
+              {
+                "operation": "split",
+                "ms": 0.13137499999993452,
+                "tokenMetadataWords": 1760
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.1016250000002401
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01712500000030559,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.004167000000052212
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0054169999998521234,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010957999999845924,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0028339999998934218
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004333000000315224,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.010291000000052009,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0025000000000545697
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037919999999758147,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0099169999998594,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002375000000029104
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0037919999999758147,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009750000000167347,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0022910000002411834
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003541999999924883,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009708000000046013,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003624999999829015,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009790999999950145,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002207999999882304
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0036250000002837623,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.009875000000192813,
+                "nodeMetadataWords": 396,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002250000000003638
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0035000000002582965,
+                "nodeMetadataWords": 99,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/inline/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            2.1178875000000064,
+            3.666666699999996,
+            2.1619000000000144,
+            2.095499999999993,
+            2.128279199999997,
+            2.688204199999973,
+            2.0755625000000237
+          ],
+          "heapGrowthBytes": [
+            90160,
+            90160,
+            90160,
+            90160,
+            90160
+          ],
+          "outputSha256": "b9ac1b374c6b72e37c0cc4a9581fc8eb7338aef3240913feaf5993f654dec08a",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.1643330000001697,
+            "operations": [
+              {
+                "operation": "render",
+                "ms": 2.1643330000001697
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/control",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 0,
+          "iterations": 10,
+          "samplesMs": [
+            8.749095799999987,
+            8.33239999999996,
+            8.834037500000068,
+            8.352295800000046,
+            8.17210839999998,
+            8.936004199999934,
+            8.242504099999952
+          ],
+          "heapGrowthBytes": [
+            14750384,
+            15917728,
+            15839944,
+            15882360,
+            15957416
+          ],
+          "outputSha256": "04235254418893d5522e082ff4b4723890a84368dcf1b6846b347a039bb5fc23",
+          "boundary": {
+            "calls": 1,
+            "totalMs": 2.964708999999857,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.964708999999857
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/declarative",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.304179199999998,
+            9.494854099999975,
+            9.25925419999994,
+            9.293066700000054,
+            9.915045800000007,
+            9.341295799999989,
+            9.138612499999999
+          ],
+          "heapGrowthBytes": [
+            16938216,
+            16911264,
+            16964544,
+            16994552,
+            16918360
+          ],
+          "outputSha256": "6c11892d5d5520c3fa3e08171c01a61e3df19cd43535d684a0bed986c6931f7d",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.223500000000058,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.8431250000003274
+              },
+              {
+                "operation": "split",
+                "ms": 0.1387909999994008,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.11862500000006548
+              },
+              {
+                "operation": "plan",
+                "ms": 0.1229590000002645,
+                "nodeMetadataWords": 5240,
+                "sections": 40
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/mixed",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 40,
+          "iterations": 10,
+          "samplesMs": [
+            9.854258300000037,
+            10.281812500000068,
+            10.481020799999987,
+            9.89972090000001,
+            10.122104200000013,
+            10.588074999999936,
+            9.562191600000006
+          ],
+          "heapGrowthBytes": [
+            17094608,
+            18065728,
+            18098840,
+            18139920,
+            18097696
+          ],
+          "outputSha256": "971cb7a6382113a1dead96806bb7687d3813ebb82093293973039c4c9f005313",
+          "boundary": {
+            "calls": 27,
+            "totalMs": 3.296831999999995,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.886959000000388
+              },
+              {
+                "operation": "split",
+                "ms": 0.1405830000003334,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.11216699999931734
+              },
+              {
+                "operation": "plan",
+                "ms": 0.020249999999577994,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.004249999999956344
+              },
+              {
+                "operation": "plan",
+                "ms": 0.005208999999922526,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.012041999999382824,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0027500000005602487
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004958000000442553,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.01154199999928096,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002583000000413449
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004041000000142958,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011457999999947788,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002457999999933236
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004166000000623171,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011375000000043656,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.002417000000605185
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0039999999999054126,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011415999999371707,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0025420000001759036
+              },
+              {
+                "operation": "plan",
+                "ms": 0.0040829999998095445,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011250000000472937,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024169999996956903
+              },
+              {
+                "operation": "plan",
+                "ms": 0.003875000000334694,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              },
+              {
+                "operation": "plan",
+                "ms": 0.011582999999518506,
+                "nodeMetadataWords": 524,
+                "sections": 4
+              },
+              {
+                "operation": "next",
+                "ms": 0.0024169999996956903
+              },
+              {
+                "operation": "plan",
+                "ms": 0.004041000000142958,
+                "nodeMetadataWords": 131,
+                "sections": 1
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        },
+        {
+          "name": "80-lines/classes/line-range",
+          "sourceSha256": "5662f29ab5fa99d43af10c8f3a1405168bd7dea51912116b2bcfcf246fe39bcf",
+          "sourceUtf16": 3439,
+          "decorations": 1,
+          "iterations": 10,
+          "samplesMs": [
+            8.780016700000033,
+            9.233699999999953,
+            9.11746659999999,
+            8.575554100000044,
+            8.782791599999928,
+            9.203383399999984,
+            8.730287500000031
+          ],
+          "heapGrowthBytes": [
+            15167400,
+            16108304,
+            16143064,
+            16182688,
+            16158208
+          ],
+          "outputSha256": "4c7034c4fc9f1cd488b8af66b3af45951e9e2b91a839948ebce886ac0d35b1ab",
+          "boundary": {
+            "calls": 4,
+            "totalMs": 3.1033339999994496,
+            "operations": [
+              {
+                "operation": "tokens",
+                "ms": 2.9436249999998836
+              },
+              {
+                "operation": "split",
+                "ms": 0.10170899999957328,
+                "tokenMetadataWords": 2560
+              },
+              {
+                "operation": "prepare",
+                "ms": 0.03220899999996618
+              },
+              {
+                "operation": "plan",
+                "ms": 0.025791000000026543,
+                "nodeMetadataWords": 917,
+                "sections": 7
+              }
+            ]
+          },
+          "diagnosticPhaseScope": "separate-decoration-bridge-only"
+        }
+      ]
+    }
+  ]
+}

@@ -41,12 +41,12 @@ CSS-class styling cover current presentation needs.
   tokens, splits boundaries, plans decorations using the same policy, applies
   ordered attributes, and serializes the result without JS token/tree transport.
   Constructor transformer defaults participate in eligibility. Callbacks,
-  accessor/custom-prototype records, proxies, non-string attributes, CSS-class theme
-  output, multi-theme output, inline structure, metadata, and grammar state
+  accessor/custom-prototype records, proxies, non-string attributes, CSS-class
+  theme output, multi-theme output, inline structure, metadata, and grammar state
   retain the existing host pipeline. Lone surrogate strings and token slices
   inside surrogate pairs retain exact JS behavior through that pipeline.
-- Ordering in the callback pipeline stays explicit: preprocess callbacks, native tokenization, token
-  callbacks and merging, native decoration splitting, span/line/code/pre
+- Ordering in the callback pipeline stays explicit: preprocess callbacks, native
+  tokenization, token callbacks and merging, native decoration splitting, span/line/code/pre
   callbacks, native decoration planning and host replay, root callbacks,
   scope nesting and class extraction, serialization, then postprocess.
   Source ranges are resolved against the preprocessed source; selection uses
@@ -59,8 +59,9 @@ CSS-class styling cover current presentation needs.
 - Node ranges count UTF-16 code units, including boundaries inside surrogate
   pairs. The bridge carries source text and numeric metadata; final token
   string slicing stays in JavaScript when UTF-16 bounds cannot be represented
-  by Rust strings. The native declarative lane slices only complete characters. The typed Rust policy also supports UTF-8 byte
-  coordinates. Native transport requires finite integer coordinates.
+  by Rust strings. The native declarative lane slices only complete characters.
+  The typed Rust policy also supports UTF-8 byte coordinates. Native transport
+  requires finite integer coordinates.
 - These primitives are exposed only through the semver-exempt
   `ferriki::__private` bridge (ADR 0014). This is an explicit API decision:
   adopting them for the existing Node consumer does not establish a stable
@@ -89,8 +90,8 @@ CSS-class styling cover current presentation needs.
   metadata object, separate from earlier render stages (#241).
 - Public Node methods return HTML or HTML/CSS. Token and HAST structures remain
   callback data; nested `codeToHast`/`codeToTokens` helpers remain absent.
-- Three extra native calls serve a decorated render in the host pipeline: token splitting,
-  range/section preparation, and tree planning. Callback-heavy cases can need
+- Three extra native calls serve a decorated render in the host pipeline: token
+  splitting, range/section preparation, and tree planning. Callback-heavy cases can need
   more plans. Moving policy into Rust does not imply a speed improvement;
   measurements must include transport and allocation costs. Eligible declarative
   calls use one native render operation instead of token transport plus three
