@@ -198,7 +198,7 @@ function run(directory) {
   writeFileSync(join(directory, "context.json"), `${JSON.stringify(context, null, 2)}\n`);
   const reports = {};
   const errors = [];
-  for (const corpus of ["comparison", "curated", "tiobe"]) {
+  workloads: for (const corpus of ["comparison", "curated", "tiobe"]) {
     for (const mode of ["on", "off"]) {
       const name = `${corpus}-${mode}`;
       console.log(`[Blacksmith] ${name}`);
@@ -209,8 +209,9 @@ function run(directory) {
           : ["scripts/bench-tiobe.mjs", "--corpus", corpus];
       args.push("--regex-prefilter", mode, "--write", path);
       const log = openSync(join(directory, "logs", `${name}.log`), "w");
+      let child;
       try {
-        const child = spawnSync(process.execPath, args, {
+        child = spawnSync(process.execPath, args, {
           cwd: nodeRoot,
           stdio: ["ignore", log, log],
           timeout: 20 * 60 * 1000,
@@ -225,6 +226,9 @@ function run(directory) {
         reports[name] = report;
       } catch (error) {
         errors.push(`${name}: ${error.message}`);
+        // A timed-out parent may leave its worker alive briefly. Do not start
+        // another timed workload while that worker could still occupy the CPU.
+        if (child?.error?.code === "ETIMEDOUT") break workloads;
       } finally {
         closeSync(log);
       }
