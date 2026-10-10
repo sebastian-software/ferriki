@@ -69,7 +69,12 @@ CSS-class styling cover current presentation needs.
 - Transformers using shared fields can run through Ferriki's hook pipeline;
   full Shiki context type interchangeability is not promised (ADR 0011).
   Constructor defaults and context types are separate from native decoration
-  ownership; their remaining contract work is tracked in #241.
+  ownership. The stage-specific context, replacement/mutation behavior,
+  synchronous execution and error propagation are documented in the
+  [API reference](../docs/ferriki-api.md#callback-context-and-return-values).
+  Wrapper fields are optional because span/line hooks run before wrappers
+  exist and inline structure has no `pre`. Postprocess hooks share their own
+  metadata object, separate from earlier render stages (#241).
 - Public Node methods return HTML or HTML/CSS. Token and HAST structures remain
   callback data; nested `codeToHast`/`codeToTokens` helpers remain absent.
 - Three extra native calls serve a normal decorated render: token splitting,
@@ -90,3 +95,5 @@ CSS-class styling cover current presentation needs.
 - 2026-10-03: Limits public Node transformer defaults to HTML calls while retaining internal token/HAST callback payloads and removing structured-output methods (#207).
 - 2026-10-10: Closes the native color-replacement backlog as not planned (#190); the explicit unsupported contract remains in place, and future support requires a concrete consumer need beyond theme/CSS-class styling.
 - 2026-10-10: Moves declarative decoration policy into Rust through the private typed bridge, preserving JS callbacks and object identities; explicitly defers a stable Rust decoration API (#122).
+
+- 2026-10-10: Completes the JavaScript callback contract with stage-specific wrapper availability, metadata lifetime, return semantics and focused context tests; retains the frozen mixed-decoration coverage (#241).
