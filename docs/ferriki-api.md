@@ -302,6 +302,37 @@ after token hooks and apply to the current tree after `pre` hooks, before
 resolved decoration, including `{ line, character, offset }` for both bounds.
 Later sections observe its mutations and returned replacement nodes.
 
+### Declarative line and range highlighting
+
+Pass decorations with the highlight request. For example, this marks displayed
+lines 4 through 10 in a source with at least ten lines; positions are zero-based and the end
+character is exclusive:
+
+```ts
+const lines = source.split("\n");
+const html = highlighter.codeToHtml(source, {
+  lang: "typescript",
+  theme: "nord",
+  decorations: [{
+    start: { line: 3, character: 0 },
+    end: { line: 9, character: lines[9].replace(/\r$/, "").length },
+    properties: { class: "highlighted" },
+  }],
+});
+```
+
+With classic structure, a single theme, inline theme styles, and no transformers
+or decoration callbacks, plain decorations with string attributes render
+entirely in Rust. This includes partial ranges, nesting, `alwaysWrap`, tags,
+classes, and string attributes. No new option is required: Ferriki chooses the
+path automatically and returns the same HTML.
+
+Callbacks, class-based theme CSS, multi-theme output, inline structure, grammar
+state, block metadata, accessors/custom prototypes, and non-string properties
+use the existing host pipeline. String slices inside UTF-16 surrogate pairs and
+lone surrogate strings also keep that path. The stable public Rust API is
+unchanged; this renderer belongs to the private Node consumer bridge.
+
 ## Registrations and loaders
 
 `LanguageRegistration` and `ThemeRegistration` accept the JSON-shaped
@@ -401,8 +432,10 @@ remain actionable and start with the documented `[ferriki]` prefix.
 Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
 Transformer and decoration callbacks stay in JavaScript. Rust resolves decoration
 ranges, splits token boundaries, and plans tree edits; the facade applies those
-edits to the existing objects. Callback payloads and properties do not cross
-the native boundary. Public Node rendering returns HTML
+edits to the existing objects in the host pipeline. Plain declarative HTML
+uses the complete native renderer described above, with ordered string
+attributes. Callback payloads and opaque properties do not cross the native
+boundary. Public Node rendering returns HTML
 only. Ferriki does not export Shiki's JavaScript/Oniguruma engine factories or
 WASM loading. Markdown adapters such as `rehype` and `markdown-it`, and the
 optional Vite integration, are separate packages rather than `@ferriki/core`

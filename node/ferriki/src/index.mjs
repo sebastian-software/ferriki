@@ -6,8 +6,10 @@ import { fileURLToPath } from "node:url";
 import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
+  addClassToHast,
   applyTokenTransformers,
   classStylesByTree,
+  decorationNative,
   renderTransformedHast,
   sortTransformers,
   splitTokensAtDecorations,
@@ -511,6 +513,15 @@ export function createHighlighterCoreSync(options = {}) {
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
       if (options?.grammarState)
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
+      const decorations = nativeDecorationInputs(code, options);
+      if (decorations) {
+        const html = callNativeOperation("Ferriki HTML rendering failed", () =>
+          decorationNative(() =>
+            native.codeToHtmlWithDecorations(code, prepareOptions(options), decorations),
+          ),
+        );
+        if (html !== null && html !== undefined) return html;
+      }
       if (hasHastPipeline(options)) {
         const validated = validateHighlightOptions(options);
         const html = hastToHtml(buildHast(code, validated));
@@ -1493,6 +1504,100 @@ function renderTokenResultHast(result, options = {}) {
       },
     ],
   };
+}
+
+// Project plain declarative data only. Accessors, custom prototypes, callbacks,
+// and opaque values keep their existing JS evaluation and identity semantics.
+function nativeDecorationInputs(code, options) {
+  if (!options || !Object.hasOwn(options, "decorations")) return undefined;
+  const record = (value) => {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      ![Object.prototype, null].includes(Object.getPrototypeOf(value))
+    )
+      return undefined;
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    if (Object.values(descriptors).some((descriptor) => !Object.hasOwn(descriptor, "value")))
+      return undefined;
+    return descriptors;
+  };
+  if (!record(options)) return undefined;
+  if (
+    !options?.decorations?.length ||
+    options.transformers?.length ||
+    options.styleMode === "classes" ||
+    (options.structure && options.structure !== "classic") ||
+    options.meta ||
+    options.data ||
+    options.grammarState ||
+    options.themes ||
+    typeof options.theme !== "string" ||
+    options.theme === "none" ||
+    (options.lang !== undefined && typeof options.lang !== "string") ||
+    !code.isWellFormed() ||
+    /[\u0085\uFEFF]/u.test(code) ||
+    (typeof options.rootStyle === "string" && !options.rootStyle.isWellFormed()) ||
+    (typeof options.tabindex === "string" && !options.tabindex.isWellFormed())
+  )
+    return undefined;
+  if (
+    !Array.isArray(options.decorations) ||
+    Object.getPrototypeOf(options.decorations) !== Array.prototype ||
+    Object.values(Object.getOwnPropertyDescriptors(options.decorations)).some(
+      (descriptor) => !Object.hasOwn(descriptor, "value"),
+    )
+  )
+    return undefined;
+  const position = (value) => {
+    if (typeof value === "number") return value;
+    const descriptors = record(value);
+    if (!descriptors) return undefined;
+    return { line: descriptors.line?.value, character: descriptors.character?.value };
+  };
+  const output = [];
+  for (const item of options.decorations) {
+    const descriptors = record(item);
+    if (!descriptors || descriptors.transform?.value != null) return undefined;
+    const start = position(descriptors.start?.value);
+    const end = position(descriptors.end?.value);
+    if (start === undefined || end === undefined) return undefined;
+    const tagName = descriptors.tagName?.value;
+    if (tagName !== undefined && (typeof tagName !== "string" || !tagName.isWellFormed()))
+      return undefined;
+    const properties = descriptors.properties?.value;
+    const attributes = properties === undefined ? {} : record(properties);
+    if (!attributes) return undefined;
+    const projected = [];
+    for (const [name, descriptor] of Object.entries(attributes)) {
+      if (!descriptor.enumerable) continue;
+      // JS orders integer property names before ordinary keys after merging.
+      if (/^(?:0|[1-9]\d*)$/u.test(name)) return undefined;
+      let value = descriptor.value;
+      if (typeof value !== "string" || !value.isWellFormed() || !name.isWellFormed())
+        return undefined;
+      if (name === "class" && value) {
+        const node = { properties: { class: value } };
+        addClassToHast(node, value);
+        value = node.properties.class;
+      }
+      projected.push({ name, value });
+    }
+    output.push({
+      range: {
+        ...(typeof start === "number"
+          ? { startOffset: start }
+          : { startLine: start.line, startCharacter: start.character }),
+        ...(typeof end === "number"
+          ? { endOffset: end }
+          : { endLine: end.line, endCharacter: end.character }),
+        alwaysWrap: !!descriptors.alwaysWrap?.value,
+      },
+      tagName: tagName || "span",
+      properties: projected,
+    });
+  }
+  return output;
 }
 
 function hasHastPipeline(options) {

@@ -125,7 +125,9 @@ covers the class names, custom CSS and theme switching.
 
 Transformer and decoration callbacks run in JavaScript and receive typed
 token and HAST data. Rust handles decoration ranges, token boundaries, and
-wrapping; the facade preserves the existing callback objects while rendering HTML. The notation
+wrapping. Plain declarative ranges with string attributes render directly in Rust
+for classic single-theme HTML with inline theme styles; callbacks and other
+render modes retain the host pipeline and existing objects. The notation
 helpers from `@shikijs/transformers` for focus, highlights, diffs and word
 highlights work with them.
 

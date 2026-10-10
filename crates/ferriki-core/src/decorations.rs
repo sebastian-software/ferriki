@@ -101,20 +101,25 @@ fn ranges(
     source: &str,
     ranges: Vec<NativeDecorationRange>,
 ) -> Result<Vec<core::ResolvedDecoration>> {
-    let ranges = ranges
-        .into_iter()
-        .map(|r| {
-            Ok(core::DecorationRange {
-                start: position(r.start_offset, r.start_line, r.start_character)?,
-                end: position(r.end_offset, r.end_line, r.end_character)?,
-                always_wrap: r.always_wrap,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
     core::DecorationSource::utf16(source)
-        .resolve_ranges(&ranges)
+        .resolve_ranges(&range_inputs(ranges)?)
         .map_err(usage)
 }
+
+pub(crate) fn range_inputs(
+    ranges: Vec<NativeDecorationRange>,
+) -> Result<Vec<core::DecorationRange>> {
+    ranges.into_iter().map(range_input).collect()
+}
+
+pub(crate) fn range_input(r: NativeDecorationRange) -> Result<core::DecorationRange> {
+    Ok(core::DecorationRange {
+        start: position(r.start_offset, r.start_line, r.start_character)?,
+        end: position(r.end_offset, r.end_line, r.end_character)?,
+        always_wrap: r.always_wrap,
+    })
+}
+
 fn usage(reason: String) -> Error {
     Error::new(Status::InvalidArg, reason)
 }

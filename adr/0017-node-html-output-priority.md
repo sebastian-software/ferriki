@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-10
 
 ## Context
 
@@ -36,7 +36,9 @@ measurements.
   the top-level shorthands and reusable-highlighter methods. Do not retain
   deprecated aliases or add a compatibility package for these methods. This
   is an intentional pre-1.0 breaking divergence from Shiki.
-- Keep the JavaScript transformer and decoration pipeline for HTML rendering.
+- Keep the JavaScript transformer and decoration pipeline for HTML rendering
+  that needs callbacks or opaque values. Eligible plain declarative decorations
+  use a complete native render operation (ADR 0008).
   Token payloads and Ferriki-typed HAST nodes remain callback data inside that
   pipeline, including `includeExplanation`-driven scope/type metadata, but
   callers cannot request them as a standalone Node result. Remove
@@ -67,3 +69,5 @@ measurements.
 
 - 2026-10-01: Accepted the HTML and CSS priority; leaves pre-1.0 retention of public Node HAST and token exports open.
 - 2026-10-03: Resolves issue #207 by removing public Node HAST and token outputs before 1.0 while retaining HTML transformer data and Rust token APIs.
+
+- 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
