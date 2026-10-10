@@ -4,15 +4,16 @@
 
 Accepted
 
-Last updated: 2026-10-03
+Last updated: 2026-10-10
 
 ## Context
 
 Whitespace and same-style token merging and the render options used to build
 Ferriki's internal HAST tree live in the Rust core (see ADR 0001).
-`colorReplacements` is not implemented by Ferriki and remains deferred under
-#190. Two features were still unassigned to either side of the native/JS
-boundary:
+`colorReplacements` is unsupported and not planned (#190). The supported
+theme/CSS-class path covers current presentation needs; any future proposal
+requires a concrete consumer need that path cannot reasonably meet. Two
+features were still unassigned to either side of the native/JS boundary:
 
 - `transformers`: user-supplied callback hooks that receive Ferriki HAST nodes
   and token structures at defined pipeline points. These are callback payloads
@@ -82,3 +83,4 @@ primitives, and supplies typed render data for the JS layer to transform.
 - 2026-10-01: Clarifies the Ferriki-typed transformer boundary and that `colorReplacements` remains deferred (#190).
 - 2026-10-03: Records Vite's forwarding of caller-supplied JS transformers for Shiki notation without adding a second annotation dialect (#166).
 - 2026-10-03: Limits public Node transformer defaults to HTML calls while retaining internal token/HAST callback payloads and removing structured-output methods (#207).
+- 2026-10-10: Closes the native color-replacement backlog as not planned (#190); the explicit unsupported contract remains in place, and future support requires a concrete consumer need beyond theme/CSS-class styling.
