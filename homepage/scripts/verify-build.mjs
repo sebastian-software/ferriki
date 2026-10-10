@@ -21,6 +21,9 @@ const report = await readJson(
   new URL("../../docs/benchmarks/shiki-comparison.json", import.meta.url),
 );
 const footprint = await readJson(new URL("../app/data/footprint.json", import.meta.url));
+const blacksmith = await readJson(
+  new URL("../../docs/benchmarks/blacksmith-comparison.json", import.meta.url),
+);
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
@@ -140,6 +143,15 @@ const required = [
 for (const engine of ["shiki-wasm", "shiki-js"]) {
   required.push([benchmarks, oneDecimal(factor("codeToHtml", engine))]);
 }
+for (const profile of blacksmith.profiles) {
+  required.push([benchmarks, profile.machine.cpu], [benchmarks, profile.runner]);
+  required.push([homepage, profile.label], [benchmarks, profile.label]);
+  for (const engine of ["shiki-wasm", "shiki-js"]) {
+    const observedFactor = oneDecimal(profile.warm.on[engine] / profile.warm.on.ferriki);
+    required.push([homepage, observedFactor], [benchmarks, observedFactor]);
+  }
+}
+required.push([benchmarks, blacksmith.runUrl], [benchmarks, "JSON and Astro"]);
 
 if (report.phiki?.status === "available") {
   const outputRows = report.outputAgreement?.documents ?? [];

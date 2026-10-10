@@ -1,9 +1,8 @@
-// Every figure the site states about speed comes from one committed report,
-// written by `node/scripts/bench-shiki-comparison.mjs`. The landing page and
-// the benchmark page derive their numbers here, so they cannot drift apart or
-// outlive the next measurement; `scripts/verify-build.mjs` checks that the
-// prerendered pages carry them.
+// Compact reports are derived from the checksum-verified Blacksmith archive by
+// scripts/publish-blacksmith-evidence.mjs. Pages share these measured values.
 import sourceReport from "../../../docs/benchmarks/shiki-comparison.json";
+
+export { default as blacksmith } from "../../../docs/benchmarks/blacksmith-comparison.json";
 
 export type EngineId = "ferriki" | "phiki" | "shiki-js" | "shiki-wasm";
 export type NodeEngineId = Exclude<EngineId, "phiki">;
@@ -156,5 +155,5 @@ export const agreeingDocuments = report.agreement.ferriki.documents;
 export const phikiAvailable = report.phiki?.status === "available";
 export const phikiMatchingDocuments = report.agreement.phiki?.documents ?? 0;
 
-/** "4 × Intel(R) Xeon(R) Processor @ 2.10GHz, linux-x64, Node v22.22.2" */
+/** Observed hardware and runtime for the detailed Linux report. */
 export const machine = `${report.machine.cores} × ${report.machine.cpu}, ${report.machine.platform}, Node ${report.machine.node}`;

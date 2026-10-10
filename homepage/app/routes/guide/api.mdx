@@ -33,6 +33,19 @@ A highlighter carries the methods above plus `loadLanguage`, `loadTheme` (and
 their `Sync` forms), `getLoadedLanguages`, `getLoadedThemes`,
 `resolveLangAlias` and `dispose`.
 
+## Highlighter options
+
+Factory options include `langs`, `themes`, `langAlias`, `transformers`,
+`assets` and `regexPrefilter`. Keep `regexPrefilter: true` (the default) for
+reused highlighters in a CMS or site build. For a short-lived process,
+`regexPrefilter: false` avoids building the regex prefilter. Matching and
+colors stay the same. This is a creation-time option, including the
+singleton's first creation; it is not a `HighlightOptions` field.
+
+The [benchmarks](/evidence/benchmarks#first-use-and-the-regex-prefilter) separate
+first use from repeated rendering. Top-level shorthand functions reuse the
+singleton and do not create a fresh highlighter for each code block.
+
 ## Highlight options
 
 The common ones: `lang`, `theme` or `themes`, `defaultColor`,

@@ -1,0 +1,370 @@
+{
+  "measured": "2026-10-10",
+  "revision": "ad991d0d",
+  "source": {
+    "revision": "ad991d0d1cbcc8e5f24d5cbcc95d3468425323db",
+    "tree": "7060bc6118b01a52ce8a95131fa6b018496395d7",
+    "workingTreeClean": true,
+    "distribution": "Ferriki version is read from the workspace source package; this report does not certify a registry artifact."
+  },
+  "machine": {
+    "cpu": "Apple M4 Pro (Virtual)",
+    "cores": 6,
+    "memoryGiB": 24,
+    "platform": "darwin-arm64",
+    "os": "Darwin 25.3.0",
+    "node": "v24.21.0"
+  },
+  "versions": {
+    "ferriki": "0.12.0",
+    "shiki": "4.4.3",
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": null,
+    "psrSimpleCache": null,
+    "php": null,
+    "composer": null
+  },
+  "assets": {
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": null
+  },
+  "runtime": {
+    "node": "v24.21.0",
+    "phiki": null,
+    "phpIniArguments": []
+  },
+  "theme": "github-dark",
+  "method": {
+    "regexPrefilter": true,
+    "apis": [
+      "codeToHtml"
+    ],
+    "warmup": 5,
+    "minSamples": 30,
+    "minMilliseconds": 1500,
+    "coldRuns": 10,
+    "statistic": "median",
+    "phiki": {
+      "status": "skipped",
+      "reason": "PHP executable “php” is unavailable.",
+      "warmProcess": "one persistent PHP CLI process and one Phiki highlighter for output checks, warmup and samples",
+      "warmTimingBoundary": "PHP hrtime around codeToHtml()->cache(null)->toString(); JSON stdin/stdout transport and post-render HTML length checks are excluded",
+      "coldTimingBoundary": "fresh Node or PHP process per run; process creation is excluded, Node module loading / Composer autoload, highlighter setup and rendering are included",
+      "warmTimingOrder": "serial; per document, warmup and measured orders each rotate by documentIndex + round among eligible engines, separately for each phase; Phiki sample duration comes from the PHP worker stopwatch",
+      "coldTimingOrder": "full corpus: ten consecutive fresh processes per Node engine in ferriki -> shiki-wasm -> shiki-js order; shared cohort: ten rounds in ferriki -> shiki-wasm -> shiki-js order, then ten consecutive Phiki processes",
+      "agreement": "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
+      "eolNormalization": "CRLF and CR normalize to LF; one final artificial LF is removed only when rendered text is exactly source plus one LF",
+      "differingOutputTimings": "per-document warm timings are shown with their output status but excluded from every aggregate total; cold Phiki timing requires a matching shared cohort",
+      "grammarRegistration": "recursive embedded grammars are registered by scope through a narrowly scoped ReflectionProperty bridge for the pinned Phiki 2.2.1 repository; external injectionSelector/injectTo assets are inventoried but not activated"
+    }
+  },
+  "agreement": {
+    "ferriki": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-wasm": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-js": {
+      "documents": 14,
+      "of": 14
+    },
+    "phiki": {
+      "status": "skipped",
+      "documents": 0,
+      "of": 14
+    }
+  },
+  "outputAgreement": {
+    "criteria": "visible source text and per-Unicode-codepoint color, font-style, font-weight, text-decoration",
+    "documents": [
+      {
+        "path": "src/highlighter.rs",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/ferriki/src/api.mts",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/ferriki/src/index.mjs",
+        "status": "unavailable"
+      },
+      {
+        "path": "docs/ferriki-api.md",
+        "status": "unavailable"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/package.json",
+        "status": "unavailable"
+      },
+      {
+        "path": "Cargo.toml",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "status": "unavailable"
+      }
+    ]
+  },
+  "phiki": {
+    "status": "skipped",
+    "reason": "PHP executable “php” is unavailable.",
+    "operations": {
+      "codeToHtml": "skipped"
+    },
+    "runtime": null
+  },
+  "warm": {
+    "codeToHtml": [
+      {
+        "lang": "rust",
+        "path": "src/highlighter.rs",
+        "lines": 1396,
+        "bytes": 50936,
+        "medianMs": {
+          "ferriki": 7.414186999999856,
+          "shiki-wasm": 49.4261249999995,
+          "shiki-js": 37.475583500000084
+        },
+        "samples": 48,
+        "sha256": "e72f489ee1e61bdd6cdfa4937f15834e7536225ebcd21321e5d92f682cc64653"
+      },
+      {
+        "lang": "typescript",
+        "path": "node/ferriki/src/api.mts",
+        "lines": 319,
+        "bytes": 10783,
+        "medianMs": {
+          "ferriki": 2.6279169999997976,
+          "shiki-wasm": 11.654540999999881,
+          "shiki-js": 15.342583999999988
+        },
+        "samples": 151,
+        "sha256": "5da7dd878c4187ffa8e5c42b56678c17b41fe3bb5d7d5aa3ce7710bce3bc86a9"
+      },
+      {
+        "lang": "javascript",
+        "path": "node/ferriki/src/index.mjs",
+        "lines": 1591,
+        "bytes": 55272,
+        "medianMs": {
+          "ferriki": 14.072124999998778,
+          "shiki-wasm": 93.5593540000009,
+          "shiki-js": 114.9471250000006
+        },
+        "samples": 30,
+        "sha256": "96349fb1ead14bfdb5405a88d3436d4d47bd8b4785b502b554a6dca2441f85ab"
+      },
+      {
+        "lang": "markdown",
+        "path": "docs/ferriki-api.md",
+        "lines": 372,
+        "bytes": 24860,
+        "medianMs": {
+          "ferriki": 2.2435000000004948,
+          "shiki-wasm": 8.10418750000099,
+          "shiki-js": 7.595499999999447
+        },
+        "samples": 248,
+        "sha256": "230c54f6705bfa9be9f5e2f859f4d63d7d3203578ec62f48547ad5bfc89552db"
+      },
+      {
+        "lang": "yaml",
+        "path": ".github/workflows/ci.yml",
+        "lines": 526,
+        "bytes": 17681,
+        "medianMs": {
+          "ferriki": 2.5472919999992882,
+          "shiki-wasm": 8.252916000001278,
+          "shiki-js": 10.959040999998251
+        },
+        "samples": 205,
+        "sha256": "c9d778e8e2a72d20f899ded356c62ce91a761c7c06eb361d80d311e9bf26483a"
+      },
+      {
+        "lang": "css",
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "lines": 289,
+        "bytes": 8014,
+        "medianMs": {
+          "ferriki": 1.7334999999984575,
+          "shiki-wasm": 6.534207999997307,
+          "shiki-js": 2.4893750000010186
+        },
+        "samples": 407,
+        "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+      },
+      {
+        "lang": "json",
+        "path": "node/package.json",
+        "lines": 101,
+        "bytes": 5979,
+        "medianMs": {
+          "ferriki": 0.4771874999969441,
+          "shiki-wasm": 1.1391455000011774,
+          "shiki-js": 0.8677914999971108
+        },
+        "samples": 1692,
+        "sha256": "3efe9f5692125d3b7dfb3312736028467685a9aa58782381f4f20880b68077e5"
+      },
+      {
+        "lang": "toml",
+        "path": "Cargo.toml",
+        "lines": 116,
+        "bytes": 4290,
+        "medianMs": {
+          "ferriki": 0.46287499999743886,
+          "shiki-wasm": 1.127082999999402,
+          "shiki-js": 0.7509169999975711
+        },
+        "samples": 1721,
+        "sha256": "3abeee62fd221a2d041e8ad77e965fa768da1fe0cd7034810dcec568c7398a6a"
+      },
+      {
+        "lang": "python",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "lines": 98,
+        "bytes": 2119,
+        "medianMs": {
+          "ferriki": 1.5536250000004657,
+          "shiki-wasm": 3.7228329999998095,
+          "shiki-js": 2.0036249999975553
+        },
+        "samples": 581,
+        "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+      },
+      {
+        "lang": "html",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "lines": 42,
+        "bytes": 1200,
+        "medianMs": {
+          "ferriki": 0.44533299999602605,
+          "shiki-wasm": 1.1587910000016564,
+          "shiki-js": 1.0027499999996508
+        },
+        "samples": 1527,
+        "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+      },
+      {
+        "lang": "go",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "lines": 24,
+        "bytes": 572,
+        "medianMs": {
+          "ferriki": 0.13770900000235997,
+          "shiki-wasm": 0.5772499999948195,
+          "shiki-js": 0.3749580000003334
+        },
+        "samples": 3713,
+        "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+      },
+      {
+        "lang": "php",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "lines": 46,
+        "bytes": 802,
+        "medianMs": {
+          "ferriki": 0.37995800000499,
+          "shiki-wasm": 1.9923339999950258,
+          "shiki-js": 1.1623749999998836
+        },
+        "samples": 1149,
+        "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+      },
+      {
+        "lang": "shellscript",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "lines": 31,
+        "bytes": 634,
+        "medianMs": {
+          "ferriki": 0.2983749999984866,
+          "shiki-wasm": 0.9330000000045402,
+          "shiki-js": 0.7001659999950789
+        },
+        "samples": 2101,
+        "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+      },
+      {
+        "lang": "sql",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "lines": 6,
+        "bytes": 123,
+        "medianMs": {
+          "ferriki": 0.039959000001545064,
+          "shiki-wasm": 0.3422500000015134,
+          "shiki-js": 0.0812080000032438
+        },
+        "samples": 8873,
+        "sha256": "65c2946d148989654c3273d28a84280d4fef7de781f9a139d318f36b6e5da6f6"
+      }
+    ]
+  },
+  "cold": {
+    "ferriki": {
+      "medianMs": 819.1632705000001,
+      "runs": 10
+    },
+    "shiki-wasm": {
+      "medianMs": 986.0357505,
+      "runs": 10
+    },
+    "shiki-js": {
+      "medianMs": 1051.3974994999999,
+      "runs": 10
+    }
+  },
+  "coldMatching": {
+    "status": "skipped",
+    "documents": 0,
+    "of": 14,
+    "reason": "PHP executable “php” is unavailable."
+  },
+  "warmTotalMs": {
+    "codeToHtml": {
+      "ferriki": 34.43354249999493,
+      "shiki-wasm": 188.5240179999978,
+      "shiki-js": 195.7529989999898
+    }
+  },
+  "evidence": {
+    "profile": "macos-arm64",
+    "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/38043610857",
+    "ferroni": "2.1.0",
+    "archive": "docs/benchmarks/blacksmith/2026-10-10/macos-arm64/"
+  }
+}

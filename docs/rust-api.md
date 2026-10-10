@@ -59,13 +59,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-For one-shot highlighting, add `.with_regex_prefilter(false)` to the builder
+For a CMS worker or site build, keep one highlighter and the default prefilter.
+For a short-lived process, add `.with_regex_prefilter(false)` to the builder
 to prevent regex prefilter construction. The default uses the scanner's automatic
 warm-up policy, which counts scanner searches rather than highlighted documents.
 This is a creation-time choice for every grammar, including embedded languages
 and injections, and does not change matching or colors. Direct TextMate consumers
 can set `GrammarConfiguration::with_regex_prefilter(false)` when first compiling
 a grammar.
+
+The [Blacksmith measurements](benchmarks/blacksmith/2026-10-10/README.md)
+recorded shorter full-corpus first use with the prefilter disabled and faster
+repeated work with it enabled. Those measurements exercise the Node HTML path;
+they are not Rust API speedup factors or isolated-snippet latency promises.
 
 Builder loads are eager. Unlisted standard grammars and themes remain lazy and
 can be loaded on the same highlighter later. A highlighter is intended for reuse

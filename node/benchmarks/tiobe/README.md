@@ -42,6 +42,11 @@ these workloads and the curated and repository corpora on the same Linux x86-64
 and macOS ARM64 runner profiles as Ferroni. `--regex-prefilter on|off` selects
 the Ferriki factory option and records it in the report's method.
 
+The [October 10, 2026 archive](../../../docs/benchmarks/blacksmith/2026-10-10/README.md)
+preserves all twelve repository, curated and TIOBE reports from both profiles
+with Ferroni 2.1.0. TIOBE remains a per-language diagnostic; the website's
+headline factors use the separate 14-file repository corpus.
+
 ## Compare Ferroni experiments
 
 Keep each Ferroni experiment on its own branch and commit. Keep Ferriki on the

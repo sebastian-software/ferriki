@@ -22,7 +22,7 @@ export function BenchmarkChart({ perDocument = false }: { perDocument?: boolean 
   return (
     <figure className="ferriki-benchmark-chart">
       <figcaption>
-        <strong>Time to render highlighted HTML</strong>
+        <strong>Linux x86-64 · time to render highlighted HTML</strong>
         <span>
           {document
             ? `${document.lang} · ${document.lines} lines · median time`

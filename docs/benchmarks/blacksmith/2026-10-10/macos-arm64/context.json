@@ -1,0 +1,52 @@
+{
+  "measuredAt": "2026-10-10T10:05:15.458Z",
+  "profile": "macos-arm64",
+  "runnerLabel": "blacksmith-6vcpu-macos-26",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/38043610857",
+  "runAttempt": "1",
+  "commit": "ad991d0d1cbcc8e5f24d5cbcc95d3468425323db",
+  "tree": "7060bc6118b01a52ce8a95131fa6b018496395d7",
+  "status": "",
+  "cpu": "Apple M4 Pro (Virtual)",
+  "cores": 6,
+  "platform": "darwin-arm64",
+  "os": "Darwin 25.3.0",
+  "memoryBytes": 25769803776,
+  "node": "v24.21.0",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+  "nativeBuild": {
+    "builtAt": "2026-10-10T10:05:15.037Z",
+    "binarySha256": "7eb388a8c1e601aa794cef084b04ad20bb6a1ce6f31d5f7fc45c34825b89cfce",
+    "ferriki": {
+      "commit": "ad991d0d1cbcc8e5f24d5cbcc95d3468425323db",
+      "status": ""
+    },
+    "rustSourceSha256": "656f472317d6dab6a8f90121c074a05ee01deb4312268ecd28539db999d59da9",
+    "ferroni": {
+      "version": "2.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/Users/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter"
+      ]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/Users/runner/_work/ferriki/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "ab01d39156adefc0619061a0e4b9c5a31717c3cf0ad57a1be5ae1d7b516d2e1f"
+  },
+  "cargoLockSha256": "ab01d39156adefc0619061a0e4b9c5a31717c3cf0ad57a1be5ae1d7b516d2e1f",
+  "pnpmLockSha256": "1e9940e63925ba002a5b2e717845c78ac38dd33a00001e9910dd0737ca51f0e6",
+  "schedule": "Serial comparison, curated and TIOBE reports; prefilter on then off per corpus; engines rotate warm order within each report. Both modes use the same addon."
+}

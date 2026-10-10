@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router";
 
 import { BenchmarkChart } from "../components/benchmark-chart";
+import { BlacksmithSummary } from "../components/blacksmith-benchmarks";
 import {
   ClosingSection,
   CodeSection,
@@ -18,16 +19,7 @@ import {
   FlowSection,
   MacroSection,
 } from "../components/home-sections";
-import {
-  agreeingDocuments,
-  documents,
-  formatFactor,
-  machine,
-  phikiAvailable,
-  phikiMatchingDocuments,
-  report,
-  speedup,
-} from "../data/benchmarks";
+import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
 import sample from "../data/sample.json";
 import { version } from "../version";
 
@@ -37,7 +29,7 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="A native syntax highlighter for Node.js and Rust."
-      lede="Shiki's HTML API and the TextMate grammars your editor uses, on a Rust engine. Highlight at build time with Vite macros, or from Rust without Node.js."
+      lede="Shiki's HTML API, grammars and themes on a native Rust engine. Load a highlighter once and reuse it across your CMS or site build. Vite macros prepare code examples before they reach the browser."
       facts={[
         { label: "Succeeds", value: "Shiki" },
         { label: "Grammars", value: "260" },
@@ -117,9 +109,9 @@ function SampleSection() {
 function EvidenceIntro() {
   return (
     <>
-      The same {documents} documents, languages and theme. Strict HTML checks qualify the Node
-      full-corpus totals; Ferriki passed those checks on {agreeingDocuments} of {documents}. Each
-      factor is Shiki&rsquo;s time divided by Ferriki&rsquo;s; higher is faster.
+      Load the grammars once, then render block after block. On the same {documents} files, Ferriki
+      and both Shiki engines produced identical HTML on both Blacksmith hosts. These figures measure
+      repeated highlighting with loaded languages and themes.
     </>
   );
 }
@@ -127,17 +119,12 @@ function EvidenceIntro() {
 function EvidenceNote() {
   return (
     <>
-      Measured on {report.measured} at commit <code>{report.revision}</code> on {machine}, against
-      Shiki {report.versions.shiki}.{" "}
-      {phikiAvailable
-        ? `Phiki (PHP) is also measured per document; its HTML matched on ${phikiMatchingDocuments} of ${
-            report.agreement.phiki?.of ?? documents
-          } documents. Its timings remain visible on the benchmark page, with the output differences noted.`
-        : report.phiki?.status === "skipped"
-          ? `The optional Phiki HTML comparison was skipped: ${report.phiki.reason ?? "PHP and Composer prerequisites unavailable"}.`
-          : "Phiki is not recorded in this benchmark report."}{" "}
-      The <Link to="/evidence/benchmarks">benchmark page</Link> has every document, HTML timings and
-      the command to reproduce them.
+      Measured {report.measured} at commit <code>{report.revision}</code>, with Ferroni{" "}
+      {blacksmith.profiles[0].ferroni} and Shiki {report.versions.shiki}. Strict HTML checks passed
+      on {agreeingDocuments} of {documents} repository files. The{" "}
+      <Link to="/evidence/benchmarks">benchmark page</Link> includes both hosts, first-use timings,
+      JSON and Astro, raw reports and reproduction commands. Your workload and hardware determine
+      your result.
     </>
   );
 }
@@ -147,27 +134,20 @@ function EvidenceSection() {
     <Section
       id="evidence"
       layout="split"
-      title="Measured against Shiki"
+      title="Same HTML. Faster repeated highlighting."
       intro={<EvidenceIntro />}
       note={<EvidenceNote />}
     >
       <div>
         <EvidenceFigures
-          figures={[
-            {
-              label: "Faster than Shiki with WASM",
-              value: formatFactor(speedup("codeToHtml", "shiki-wasm")),
-              detail: "codeToHtml on a reused highlighter",
-              measure: "Oniguruma compiled to WebAssembly",
-            },
-            {
-              label: "Faster than Shiki with the JS engine",
-              value: formatFactor(speedup("codeToHtml", "shiki-js")),
-              detail: "codeToHtml on a reused highlighter",
-              measure: "Oniguruma patterns translated to JavaScript",
-            },
-          ]}
+          figures={blacksmith.profiles.map((profile) => ({
+            label: `${profile.label} · faster than Shiki/WASM`,
+            value: formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki),
+            detail: "codeToHtml on a reused highlighter · 14-file corpus",
+            measure: profile.machine.cpu,
+          }))}
         />
+        <BlacksmithSummary />
         <BenchmarkChart />
       </div>
     </Section>

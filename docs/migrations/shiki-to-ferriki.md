@@ -66,6 +66,13 @@ For one-off calls, `codeToHtml(source, options)` uses a shared singleton and
 returns a Promise. For repeated rendering, prefer an explicitly configured
 highlighter so language/theme loading and disposal are visible.
 
+Keep that instance for a CMS worker or site build and leave the regex prefilter
+enabled. The [Blacksmith evidence](../benchmarks/blacksmith/2026-10-10/README.md)
+measures repeated rendering separately from first use. A short-lived process
+can create its highlighter with `regexPrefilter: false`; see the
+[factory guidance](../ferriki-api.md#choosing-the-regex-prefilter). This is a
+Ferriki creation-time option, rather than a per-render Shiki option.
+
 ## Error handling
 
 Ferriki validates options before the native call. Catch `ShikiError` for

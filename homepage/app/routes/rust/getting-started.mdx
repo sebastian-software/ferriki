@@ -80,6 +80,14 @@ there. Custom grammars and themes register through `LanguageRegistration` and
 `ThemeData`, or from JSON with `register_language_json` and
 `register_theme_json`.
 
+Keep the default regex prefilter for a CMS worker or a build that highlights
+many blocks. For a short-lived highlighter, add
+`.with_regex_prefilter(false)` to the builder to skip prefilter construction.
+This choice applies to loaded grammars, including embeddings and injections;
+it does not change the rendered colors. The [benchmark page](/evidence/benchmarks)
+shows the setup/reuse tradeoff measured through the Node API. Its percentages
+do not measure standalone Rust calls.
+
 ## With Ferromark
 
 [Ferromark](https://crates.io/crates/ferromark), the Markdown parser of the

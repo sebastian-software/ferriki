@@ -92,6 +92,13 @@ components, Markdown/MDX, styles and configuration workloads. Use
 `pnpm run check:bench-curated` and `pnpm run bench:curated` from `node/`.
 Both corpora share the same measurement and profiling harness.
 
+The [Blacksmith workflow](docs/benchmarks/blacksmith.md) measures both corpora
+and the repository corpus on Linux x86-64 and macOS ARM64. Published figures
+come from the [checksummed measurement archive](docs/benchmarks/blacksmith/2026-10-10/README.md).
+Run `node scripts/publish-blacksmith-evidence.mjs --check` before publishing
+benchmark changes; the homepage build also runs this check. It validates all
+twelve reports and the compact website data against the preserved originals.
+
 ## Coverage
 
 CI measures line coverage over the whole workspace and fails the `coverage`
