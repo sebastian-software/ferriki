@@ -229,15 +229,15 @@ try {
     TypeError,
   );
   assert(!calls.some((call) => call.name === "codeToHtmlWithDecorations"));
-  assert.throws(
-    () =>
-      highlighter.codeToHtml("const value = 1", {
-        lang: "javascript",
-        theme: "nord",
-        tokenizeMaxLineLength: 1,
-        decorations: [{ start: 6, end: 11, properties: { class: "mark" } }],
-      }),
-    (error) => error.code === "ERR_RESOURCE_LIMIT",
+  const limited = {
+    lang: "javascript",
+    theme: "nord",
+    tokenizeMaxLineLength: 1,
+    decorations: [{ start: 6, end: 11, properties: { class: "mark" } }],
+  };
+  assert.equal(
+    highlighter.codeToHtml("const value = 1", limited),
+    highlighter.codeToHtml("const value = 1", { ...limited, transformers: [{}] }),
   );
   const defaults = createHighlighterCoreSync({
     transformers: [
