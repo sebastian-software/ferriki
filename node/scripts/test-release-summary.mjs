@@ -14,6 +14,7 @@ const script = fileURLToPath(new URL("./write-release-summary.mjs", import.meta.
 const published = {
   RELEASES_CREATED: "true",
   RELEASE_RESULT: "success",
+  SOURCE_RESULT: "success",
   BUILD_RESULT: "success",
   PUBLISH_RESULT: "success",
   VERIFY_RESULT: "success",
@@ -23,6 +24,7 @@ const outcome = [
   "",
   "- npm dist-tag: `latest`",
   "- release-please: `success` (releases created: `true`)",
+  "- exact release source and CI gate: `success`",
   "- native build matrix: `success`",
   "- npm publication: `success`",
   "- public registry/install verification: `success`",
@@ -33,6 +35,7 @@ assert.deepEqual(formatReleaseSummary(published), {
   state: "PUBLISHED",
   summary: `${outcome.join("\n")}\n`,
 });
+assert.equal(formatReleaseSummary({ ...published, SOURCE_RESULT: "failure", BUILD_RESULT: "skipped", PUBLISH_RESULT: "skipped" }).state, "FAILED");
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), "ferriki-release-summary-"));
 try {
