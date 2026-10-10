@@ -6,6 +6,7 @@
 mod asset_catalog;
 mod asset_settings;
 mod asset_source;
+mod decorations;
 mod error;
 mod highlighter;
 mod node_assets;
@@ -28,6 +29,12 @@ pub use ferriki_textmate::{
 /// Implementation bridge for Ferriki's N-API host, exempt from semver guarantees.
 #[doc(hidden)]
 pub mod __private {
+    pub use crate::decorations::{
+        DecorationCursor, DecorationMutation, DecorationNode, DecorationPlan, DecorationPosition,
+        DecorationRange, DecorationSection, DecorationSlice, DecorationSource, DecorationTarget,
+        DecorationToken, ResolvedDecoration, ResolvedPosition, decoration_sections,
+        next_decoration_section, plan_decoration_mutations, split_decoration_tokens,
+    };
     pub use crate::highlighter::HighlighterCore;
     pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions, PlannedAsset};
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]

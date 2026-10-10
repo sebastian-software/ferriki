@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-05
+Last updated: 2026-10-10
 
 ## Context
 
@@ -33,7 +33,7 @@ exclusively in the Rust core.
 
 - JavaScript remains a thin host: addon loading, public API wiring, standard
   asset transport through Node's built-in `fetch` (ADR 0013), hast-level
-  transformation (transformers and decorations per ADR 0008), the catalog
+  callback dispatch and decoration edit replay (native policy per ADR 0008), the catalog
   projection, and the type surface.
 - The bundled JS engine and `FERRIKI_BACKEND=js` are removed. The
   native-boundary check in the core gate forbids the removed runtime paths from
@@ -162,3 +162,5 @@ internal.
 
 - 2026-10-05: Adopts NAPI-RS v3 and generated binding declarations with typed options, token results and asset plans (#217); retains the Ferriki build and loader.
 - 2026-10-05: Records the optimized token-result writer, the `profiling` feature and per-target size and cold-load reporting in CI (#225).
+
+- 2026-10-10: Records typed native decoration plans while JS retains opaque objects and callbacks (#122).

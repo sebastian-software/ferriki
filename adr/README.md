@@ -4,26 +4,26 @@ These records explain why Ferriki is built the way it is. Read the accepted
 ones as constraints: work that conflicts with a record either follows it or
 changes the record first.
 
-| ADR | Decision | Status |
-| --- | --- | --- |
-| [0001](0001-rust-first-architecture.md) | Rust-first runtime architecture | Accepted |
-| [0002](0002-node-workspace-under-node.md) | Isolate the Node workspace under `node/` | Accepted |
-| [0003](0003-strict-shiki-compat-mirror.md) | Strict mirrored Shiki compatibility suite | Accepted |
-| [0004](0004-core-vs-adapter-scope.md) | Core product scope vs. optional adapter lanes | Accepted |
-| [0005](0005-ferroni-stays-external.md) | Ferroni stays an external dependency | Accepted |
-| [0006](0006-lazy-shiki-asset-loading.md) | Lazy loading for Shiki-derived assets | Accepted |
-| [0007](0007-adapter-integrations-stay-outside-ferriki.md) | Adapter integrations stay outside Ferriki | Accepted |
-| [0008](0008-transformers-and-decorations-stay-in-js.md) | Transformers and decorations stay in the JS layer | Accepted |
-| [0009](0009-native-only-runtime.md) | Native-only runtime — JS is a facade, WASM is the future fallback | Accepted |
-| [0010](0010-mechanical-vscode-textmate-port.md) | Mechanically port vscode-textmate into a separate Rust crate | Accepted |
-| [0011](0011-ferriki-1.0-api-contract.md) | Freeze the Ferriki 1.0 Node API contract | Accepted |
-| [0012](0012-publishable-rust-highlighter.md) | Publishable Rust highlighter and external Ferromark adapter | Accepted |
-| [0013](0013-cdn-loaded-standard-assets.md) | Standard assets loaded from a release-pinned CDN mirror | Accepted |
-| [0014](0014-rust-crate-semver-surface.md) | Semver surface of the published Rust crates | Accepted |
-| [0015](0015-postcard-asset-codec.md) | Encode binary assets with postcard, format version first | Accepted |
-| [0016](0016-optional-nested-scope-class-output.md) | Optional nested scope classes with resolved theme CSS | Accepted |
-| [0017](0017-node-html-output-priority.md) | Prioritize HTML output for Node consumers | Accepted |
-| [0018](0018-inline-highlighting-macros.md) | Prepare inline highlighting macros at build time | Accepted |
+| ADR                                                       | Decision                                                          | Status   |
+| --------------------------------------------------------- | ----------------------------------------------------------------- | -------- |
+| [0001](0001-rust-first-architecture.md)                   | Rust-first runtime architecture                                   | Accepted |
+| [0002](0002-node-workspace-under-node.md)                 | Isolate the Node workspace under `node/`                          | Accepted |
+| [0003](0003-strict-shiki-compat-mirror.md)                | Strict mirrored Shiki compatibility suite                         | Accepted |
+| [0004](0004-core-vs-adapter-scope.md)                     | Core product scope vs. optional adapter lanes                     | Accepted |
+| [0005](0005-ferroni-stays-external.md)                    | Ferroni stays an external dependency                              | Accepted |
+| [0006](0006-lazy-shiki-asset-loading.md)                  | Lazy loading for Shiki-derived assets                             | Accepted |
+| [0007](0007-adapter-integrations-stay-outside-ferriki.md) | Adapter integrations stay outside Ferriki                         | Accepted |
+| [0008](0008-transformers-and-decorations-stay-in-js.md)   | JavaScript transformer callbacks and native decoration policy     | Accepted |
+| [0009](0009-native-only-runtime.md)                       | Native-only runtime — JS is a facade, WASM is the future fallback | Accepted |
+| [0010](0010-mechanical-vscode-textmate-port.md)           | Mechanically port vscode-textmate into a separate Rust crate      | Accepted |
+| [0011](0011-ferriki-1.0-api-contract.md)                  | Freeze the Ferriki 1.0 Node API contract                          | Accepted |
+| [0012](0012-publishable-rust-highlighter.md)              | Publishable Rust highlighter and external Ferromark adapter       | Accepted |
+| [0013](0013-cdn-loaded-standard-assets.md)                | Standard assets loaded from a release-pinned CDN mirror           | Accepted |
+| [0014](0014-rust-crate-semver-surface.md)                 | Semver surface of the published Rust crates                       | Accepted |
+| [0015](0015-postcard-asset-codec.md)                      | Encode binary assets with postcard, format version first          | Accepted |
+| [0016](0016-optional-nested-scope-class-output.md)        | Optional nested scope classes with resolved theme CSS             | Accepted |
+| [0017](0017-node-html-output-priority.md)                 | Prioritize HTML output for Node consumers                         | Accepted |
+| [0018](0018-inline-highlighting-macros.md)                | Prepare inline highlighting macros at build time                  | Accepted |
 
 Other decision records:
 

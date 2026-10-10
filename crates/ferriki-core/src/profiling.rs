@@ -172,6 +172,108 @@ impl FerrikiHighlighter {
     }
 }
 
+/// Diagnostic phases for the private decoration bridge. Input conversion is
+/// measured explicitly; JS arena creation and replay remain host-side work.
+#[napi(object, object_from_js = false)]
+pub struct DecorationBoundaryProfile {
+    pub input: BoundaryPhase,
+    pub policy: BoundaryPhase,
+    pub output: BoundaryPhase,
+}
+
+#[napi(object)]
+pub(crate) struct DecorationSplitInput {
+    pub source: String,
+    pub ranges: Vec<crate::decorations::NativeDecorationRange>,
+    pub lines: Vec<napi::bindgen_prelude::Float64Array>,
+}
+
+#[napi(object)]
+pub(crate) struct DecorationRangeInput {
+    pub source: String,
+    pub ranges: Vec<crate::decorations::NativeDecorationRange>,
+}
+
+#[napi(object)]
+pub(crate) struct DecorationPlanInput {
+    pub nodes: napi::bindgen_prelude::Float64Array,
+    pub lines: Vec<u32>,
+    pub sections: Vec<crate::decorations::NativeDecorationSection>,
+}
+
+#[napi(object)]
+pub(crate) struct DecorationNextInput {
+    pub range: crate::decorations::NativeResolvedDecoration,
+    pub decoration: u32,
+    pub always_wrap: bool,
+    pub cursor: crate::decorations::NativeDecorationCursor,
+}
+
+#[napi(js_name = "profileDecorationBoundary")]
+pub fn profile_decoration_boundary(
+    env: Env,
+    operation: String,
+    value: napi::Unknown<'_>,
+) -> Result<DecorationBoundaryProfile> {
+    if value.get_type()? != napi::ValueType::Object {
+        return Err(napi::Error::new(
+            napi::Status::InvalidArg,
+            "Expected a decoration input object",
+        ));
+    }
+    // SAFETY: The value is an object in the current callback's environment.
+    // The generated FromNapiValue implementations validate its typed fields.
+    let (input, policy, output) = match operation.as_str() {
+        "split" => {
+            let (input, input_phase) = phase(|| unsafe { value.cast::<DecorationSplitInput>() })?;
+            let (result, policy) = phase(|| {
+                crate::decorations::split_decoration_tokens(input.source, input.ranges, input.lines)
+            })?;
+            (input_phase, policy, convert(&env, result)?)
+        }
+        "prepare" => {
+            let (input, input_phase) = phase(|| unsafe { value.cast::<DecorationRangeInput>() })?;
+            let (result, policy) =
+                phase(|| crate::decorations::decoration_sections(input.source, input.ranges))?;
+            (input_phase, policy, convert(&env, result)?)
+        }
+        "next" => {
+            let (input, input_phase) = phase(|| unsafe { value.cast::<DecorationNextInput>() })?;
+            let (result, policy) = phase(|| {
+                crate::decorations::next_decoration_section(
+                    input.range,
+                    input.decoration,
+                    input.always_wrap,
+                    input.cursor,
+                )
+            })?;
+            (input_phase, policy, convert(&env, result)?)
+        }
+        "plan" => {
+            let (input, input_phase) = phase(|| unsafe { value.cast::<DecorationPlanInput>() })?;
+            let (result, policy) = phase(|| {
+                crate::decorations::plan_decoration_mutations(
+                    input.nodes,
+                    input.lines,
+                    input.sections,
+                )
+            })?;
+            (input_phase, policy, convert(&env, result)?)
+        }
+        _ => {
+            return Err(napi::Error::new(
+                napi::Status::InvalidArg,
+                "Unknown decoration profiling operation",
+            ));
+        }
+    };
+    Ok(DecorationBoundaryProfile {
+        input,
+        policy,
+        output,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
