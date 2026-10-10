@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0](https://github.com/sebastian-software/ferriki/compare/v0.13.0...v0.14.0) (2026-10-10)
+
+
+### Features
+
+* **render:** move decoration policy into Rust ([#250](https://github.com/sebastian-software/ferriki/issues/250)) ([819deba](https://github.com/sebastian-software/ferriki/commit/819debad8b7d4e141e9c1b233257f40c62102eb4))
+
+
+### Bug Fixes
+
+* gate registry publishing on exact release CI ([#255](https://github.com/sebastian-software/ferriki/issues/255)) ([e9aa0b9](https://github.com/sebastian-software/ferriki/commit/e9aa0b92bd86ab19f239b52697f8c2d2153c941c))
+* **node:** load CSS shorthand assets and recover singleton initialization ([#253](https://github.com/sebastian-software/ferriki/issues/253)) ([814b304](https://github.com/sebastian-software/ferriki/commit/814b3044d2e0f66cf81be66da84807dd2dcd1a75))
+* **release:** recover partial npm publication and verify crates ([#256](https://github.com/sebastian-software/ferriki/issues/256)) ([7cfb66d](https://github.com/sebastian-software/ferriki/commit/7cfb66d504b12fa42111346c28fb94a2a0ec4573))
+* **types:** document stage-aware transformer callbacks ([#252](https://github.com/sebastian-software/ferriki/issues/252)) ([8f7b4f9](https://github.com/sebastian-software/ferriki/commit/8f7b4f9596e6b29bae3e35841a6c613733f6b9e0))
+
+
+### Performance Improvements
+
+* **render:** memoize scope classes and style hashes per render ([0715304](https://github.com/sebastian-software/ferriki/commit/07153043a3fb931d343eb7e179abc7c9188f562c))
+* **textmate:** share scanner patterns across registry grammars ([#235](https://github.com/sebastian-software/ferriki/issues/235)) ([dc84a14](https://github.com/sebastian-software/ferriki/commit/dc84a14ae618b0606e4916a4cf58f83cc881a6fe))
+
 ## [0.13.0](https://github.com/sebastian-software/ferriki/compare/v0.12.0...v0.13.0) (2026-10-10)
 
 

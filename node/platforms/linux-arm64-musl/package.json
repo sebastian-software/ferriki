@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/linux-arm64-musl",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Ferriki native addon for Linux arm64 with musl libc",
   "license": "MIT OR Apache-2.0",
   "repository": {

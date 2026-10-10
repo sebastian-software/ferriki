@@ -162,7 +162,7 @@ checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
 
 [[package]]
 name = "ferriki"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "ferriki-asset-gen",
  "ferriki-textmate",
@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-asset-gen"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "postcard",
  "serde",
@@ -185,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-core"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "ferriki",
  "napi",
@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "ferriki-textmate"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "ferroni",
  "serde",
