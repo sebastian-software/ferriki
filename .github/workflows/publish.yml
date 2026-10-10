@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-${{ github.repository }}-${{ github.ref }}
+  group: publish-${{ github.repository }}
   cancel-in-progress: false
 
 env:
@@ -193,6 +193,10 @@ jobs:
       contents: read
       id-token: write
     env:
+      FERRIKI_RELEASE_SHA: ${{ needs.verify-release-source.outputs.release_sha }}
+      FERRIKI_RELEASE_TAG: ${{ needs.verify-release-source.outputs.release_tag }}
+      FERRIKI_RELEASE_VERSION: ${{ needs.verify-release-source.outputs.release_version }}
+      FERRIKI_RECOVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish || false }}
       # Must list every target in node/ferriki/platforms.mjs, in that order;
       # check:platform-matrix enforces it.
       FERRIKI_PLATFORM_IDS: linux-x64-gnu linux-arm64-gnu linux-x64-musl linux-arm64-musl darwin-arm64 win32-x64-msvc win32-arm64-msvc
@@ -225,6 +229,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # OIDC dist-tag promotion requires npm 11.21.0 or later. Pin the CLI
+      # rather than relying on the npm version bundled by Node 24.
+      - name: Set npm CLI for Trusted Publishing dist-tags
+        run: npm install --global npm@11.21.0
 
       - name: Download Linux native sidecar
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -300,24 +309,17 @@ jobs:
 
       - name: Publish platform packages with npm provenance
         working-directory: node
-        run: |
-          for platform_id in $FERRIKI_PLATFORM_IDS; do
-            npm publish "./platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
-          done
+        run: node ./scripts/publish-npm-product.mjs sidecars
 
       - name: Publish main package with npm provenance
-        working-directory: node/ferriki
-        run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
+        working-directory: node
+        run: node ./scripts/publish-npm-product.mjs core
 
       # Pack with pnpm 10 to rewrite catalog: dependencies, then give the
       # explicit tarball to npm 11 for OIDC Trusted Publishing and provenance.
       - name: Pack and publish Vite integration with npm provenance
         working-directory: node
-        run: |
-          pnpm --dir vite pack --pack-destination "$RUNNER_TEMP" --json > "$RUNNER_TEMP/vite-pack.json"
-          vite_tarball="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).filename)' "$RUNNER_TEMP/vite-pack.json")"
-          test -f "$vite_tarball"
-          npm publish "$vite_tarball" --access public --provenance --tag "$NPM_DIST_TAG"
+        run: node ./scripts/publish-npm-product.mjs vite
 
   verify-npm-publish:
     needs:
@@ -342,12 +344,42 @@ jobs:
         env:
           NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
 
+  verify-crates-publish:
+    needs:
+      - release-please
+      - verify-release-source
+      - publish-crates
+    if: ${{ always() && needs.verify-release-source.result == 'success' && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Verify all three crates.io versions
+        run: node ./node/scripts/verify-crates-publish.mjs
+        env:
+          FERRIKI_RELEASE_VERSION: ${{ needs.verify-release-source.outputs.release_version }}
+          CRATES_PUBLISH_RESULT: ${{ needs.publish-crates.result }}
+
   release-summary:
     needs:
       - release-please
+      - verify-release-source
       - build-native
       - publish-npm
       - verify-npm-publish
+      - publish-crates
+      - verify-crates-publish
     if: ${{ always() }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -378,8 +410,11 @@ jobs:
           RELEASES_CREATED: ${{ needs.release-please.outputs.releases_created }}
           FORCE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish || false }}
           RELEASE_RESULT: ${{ needs.release-please.result }}
+          SOURCE_RESULT: ${{ needs.verify-release-source.result }}
           BUILD_RESULT: ${{ needs.build-native.result }}
           PUBLISH_RESULT: ${{ needs.publish-npm.result }}
           VERIFY_RESULT: ${{ needs.verify-npm-publish.result }}
+          CRATES_RESULT: ${{ needs.publish-crates.result }}
+          CRATES_VERIFY_RESULT: ${{ needs.verify-crates-publish.result }}
           NATIVE_SIDECARS_DIR: native-sidecars
         run: node ./node/scripts/write-release-summary.mjs

@@ -14,18 +14,24 @@ const script = fileURLToPath(new URL("./write-release-summary.mjs", import.meta.
 const published = {
   RELEASES_CREATED: "true",
   RELEASE_RESULT: "success",
+  SOURCE_RESULT: "success",
   BUILD_RESULT: "success",
   PUBLISH_RESULT: "success",
   VERIFY_RESULT: "success",
+  CRATES_RESULT: "success",
+  CRATES_VERIFY_RESULT: "success",
 };
 const outcome = [
   "## Ferriki release outcome: PUBLISHED",
   "",
   "- npm dist-tag: `latest`",
   "- release-please: `success` (releases created: `true`)",
+  "- release source and CI gate: `success`",
   "- native build matrix: `success`",
   "- npm publication: `success`",
-  "- public registry/install verification: `success`",
+  "- npm public registry/install verification: `success`",
+  "- crates.io publication: `success`",
+  "- crates.io public version verification: `success`",
 ];
 
 // Without sizes the summary keeps its established lines.
@@ -33,6 +39,35 @@ assert.deepEqual(formatReleaseSummary(published), {
   state: "PUBLISHED",
   summary: `${outcome.join("\n")}\n`,
 });
+
+for (const [field, result] of [
+  ["CRATES_RESULT", "failure"],
+  ["CRATES_RESULT", "cancelled"],
+  ["CRATES_RESULT", "skipped"],
+  ["CRATES_RESULT", undefined],
+  ["CRATES_VERIFY_RESULT", "failure"],
+  ["CRATES_VERIFY_RESULT", "cancelled"],
+  ["CRATES_VERIFY_RESULT", undefined],
+  ["PUBLISH_RESULT", "failure"],
+  ["VERIFY_RESULT", "failure"],
+  ["SOURCE_RESULT", "failure"],
+]) {
+  const env = { ...published, [field]: result };
+  assert.equal(formatReleaseSummary(env).state, "FAILED", `${field}=${result}`);
+}
+assert.equal(
+  formatReleaseSummary({
+    ...published,
+    RELEASES_CREATED: "false",
+    SOURCE_RESULT: "skipped",
+    BUILD_RESULT: "skipped",
+    PUBLISH_RESULT: "skipped",
+    VERIFY_RESULT: "skipped",
+    CRATES_RESULT: "skipped",
+    CRATES_VERIFY_RESULT: "skipped",
+  }).state,
+  "NO_RELEASE",
+);
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), "ferriki-release-summary-"));
 try {

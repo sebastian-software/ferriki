@@ -116,6 +116,10 @@ part of release verification.
       target runners are available; each native matrix job has a timeout.
 - [ ] npm Trusted Publishing is enabled for Ferriki and `@ferriki/vite` after
       the one-time Vite bootstrap above.
+- [ ] Each of the nine npm product packages has `Allow npm dist-tag` enabled in its
+      Trusted Publisher settings before a dist-tag promotion. This is a
+      separate permission from direct publishing; the recovery job uses npm
+      11.21.0 only when the selected tag needs to move.
 - [ ] crates.io Trusted Publishing is configured for `ferriki-textmate`,
       `ferriki-asset-gen` and `ferriki` (after the one-time bootstrap above).
 
@@ -127,7 +131,7 @@ part of release verification.
 - [ ] Confirm every documented target build completes and every platform
       package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from
-      “published” and records failed or skipped target jobs.
+      “published” and records failed or skipped npm, crates.io, and target jobs.
 - [ ] Compare the "Native addon sizes" table in the release summary with the
       previous release's table, or with the previous sidecars' unpacked size
       on npm where that release has none. Explain in the release discussion
@@ -147,6 +151,41 @@ part of release verification.
       Vite 8 release.
 - [ ] Verify npm provenance on the main package, Vite integration, and all
       platform packages.
+- [ ] Confirm the summary reports successful publication and public version
+      verification for all three Rust crates as well as npm verification.
+
+## Recover a partial publication
+
+Recover from the original release tag after the registry has accepted only
+some packages or after public verification failed. Keep the originally chosen
+`latest` or `next` tag, unless deliberately promoting a verified candidate.
+The tag must contain this recovery workflow and point at the release commit;
+running the workflow on a newer `main` would give new source identity to old
+artifacts. For a release tagged `v<version>`, run:
+
+```sh
+gh workflow run publish.yml --ref v<version> \
+  -f force-publish=true -f release-tag=v<version> -f dist-tag=next
+```
+
+Use `-f dist-tag=latest` for a stable release or deliberate promotion. The
+release-source gate checks that the workflow run, tag, manifest version and
+successful main CI belong to the same immutable commit. Recovery checks each
+public npm name/version, tarball digest and SLSA provenance source/workflow
+identity before skipping it; a 404 means the version is absent, while registry,
+authentication, or provenance errors stop the job. Existing versions whose
+selected tag already points at them are skipped without a registry write. A
+tag that points elsewhere is promoted with `npm dist-tag add`; missing
+versions publish in sidecar, core, then Vite order. Every package is packed
+by pnpm and published as a tarball by npm with OIDC.
+The public npm and crates.io verification jobs check the complete product set
+again, and the summary reports `PUBLISHED` only if both registries pass.
+
+The recovery check compares HTTPS npm registry responses with its canonical
+attestation endpoint. It does not independently validate Sigstore
+signatures; use `npm audit signatures` for that cryptographic check when
+reviewing an installed package. A tag created before this workflow existed
+cannot be recovered through this command.
 
 ## Go/no-go and rollback
 

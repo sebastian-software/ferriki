@@ -121,6 +121,11 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     /sync:platform-versions/,
     "release workflow must not patch generated release candidates",
   );
+  assert.match(
+    workflow,
+    /concurrency:\n {2}group: publish-\$\{\{ github\.repository \}\}\n {2}cancel-in-progress: false/,
+    "main publication and tag recovery must share one non-canceling concurrency group",
+  );
   for (const job of [
     "release-please:",
     "publish-crates:",
@@ -135,9 +140,11 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "dist-tag:",
     "timeout-minutes:",
     "actions/download-artifact@",
-    "npm publish --access public --provenance",
-    'pnpm --dir vite pack --pack-destination "$RUNNER_TEMP" --json',
-    'npm publish "$vite_tarball" --access public --provenance --tag "$NPM_DIST_TAG"',
+    "npm install --global npm@11.21.0",
+    "node ./scripts/publish-npm-product.mjs sidecars",
+    "node ./scripts/publish-npm-product.mjs core",
+    "node ./scripts/publish-npm-product.mjs vite",
+    "verify-crates-publish:",
     "NPM_PUBLISH_RESULT:",
     "write-release-summary.mjs",
     // The package ships no payloads; its release manifest must name the commit
@@ -181,9 +188,9 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
   const viteSmokeMatch = publishWorkflow.match(/^[ \t]+run:[ \t]+pnpm run check:packed-vite\s*$/m);
   assert(viteSmokeMatch, "publish-npm must run the packed Vite consumer smoke command");
   const publicationMatches = [
-    ...publishWorkflow.matchAll(/^[ \t]*run:[ \t]+npm publish\b/gm),
-    ...publishWorkflow.matchAll(/^[ \t]+npm publish\b/gm),
-    ...publishWorkflow.matchAll(/^[ \t]*run:[ \t]+pnpm --dir vite publish\b/gm),
+    ...publishWorkflow.matchAll(
+      /^[ \t]*run:[ \t]+node \.\/scripts\/publish-npm-product\.mjs (?:sidecars|core|vite)\s*$/gm,
+    ),
   ].sort((left, right) => left.index - right.index);
   assert(publicationMatches.length > 0, "publish-npm must contain a registry publication step");
   const firstPublicationIndex = publicationMatches[0].index;
@@ -213,18 +220,40 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "publish-npm needs an OIDC token for npm Trusted Publishing",
   );
   assert(
-    publishWorkflow.indexOf("pnpm --dir vite pack --pack-destination") <
-      publishWorkflow.indexOf('npm publish "$vite_tarball"'),
-    "pnpm must pack the Vite integration before npm publishes its tarball",
-  );
-  assert.doesNotMatch(
-    publishWorkflow,
-    /pnpm --dir vite publish\b/,
-    "publish-npm must pass the packed Vite tarball directly to npm",
+    publishWorkflow.indexOf("node ./scripts/publish-npm-product.mjs sidecars") < corePublishIndex &&
+      corePublishIndex < vitePublishIndex,
+    "sidecars must publish before core and Vite",
   );
 
   // Every release summary lists each sidecar's addon size (#216).
   const summaryJob = workflowJob(workflow, "release-summary");
+  const cratesVerifyJob = workflowJob(workflow, "verify-crates-publish");
+  assert.match(
+    cratesVerifyJob,
+    /^\s+- publish-crates\s*$/m,
+    "crates verification must wait for publication",
+  );
+  assert.match(
+    cratesVerifyJob,
+    /needs\.verify-release-source\.result == 'success'/,
+    "crates verification must not check out an unverified release source",
+  );
+  assert.match(
+    cratesVerifyJob,
+    /verify-crates-publish\.mjs/,
+    "crates verification must run the public verifier",
+  );
+  assert.match(summaryJob, /^\s+- publish-crates\s*$/m, "summary must wait for Rust publication");
+  assert.match(
+    summaryJob,
+    /^\s+- verify-crates-publish\s*$/m,
+    "summary must wait for Rust verification",
+  );
+  assert.match(summaryJob, /^\s+CRATES_RESULT: \$\{\{ needs\.publish-crates\.result \}\}\s*$/m);
+  assert.match(
+    summaryJob,
+    /^\s+CRATES_VERIFY_RESULT: \$\{\{ needs\.verify-crates-publish\.result \}\}\s*$/m,
+  );
   const sidecarDirectory = /^\s+pattern: native-\*\n\s+path: (\S+)$/m.exec(summaryJob)?.[1];
   assert(sidecarDirectory, "release-summary must download every native sidecar artifact");
   assert(
@@ -240,6 +269,7 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "deprecate",
     "go/no-go",
     "Trusted Publishing",
+    "Allow npm dist-tag",
     "@ferriki/vite",
     "0.0.0-bootstrap.0",
     "bootstrap",

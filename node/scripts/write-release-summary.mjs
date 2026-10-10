@@ -46,6 +46,9 @@ export function formatReleaseSummary(env, addonSizes = []) {
   const buildResult = env.BUILD_RESULT ?? "unknown";
   const publishResult = env.PUBLISH_RESULT ?? "unknown";
   const verifyResult = env.VERIFY_RESULT ?? "unknown";
+  const cratesResult = env.CRATES_RESULT ?? "unknown";
+  const cratesVerifyResult = env.CRATES_VERIFY_RESULT ?? "unknown";
+  const sourceResult = env.SOURCE_RESULT ?? "unknown";
   const releaseFailed = releaseResult !== "success";
   const state =
     !intended && !releaseFailed
@@ -53,7 +56,10 @@ export function formatReleaseSummary(env, addonSizes = []) {
       : releaseResult === "success" &&
           buildResult === "success" &&
           publishResult === "success" &&
-          verifyResult === "success"
+          verifyResult === "success" &&
+          cratesResult === "success" &&
+          cratesVerifyResult === "success" &&
+          sourceResult === "success"
         ? "PUBLISHED"
         : "FAILED";
 
@@ -62,9 +68,12 @@ export function formatReleaseSummary(env, addonSizes = []) {
     "",
     `- npm dist-tag: \`${env.NPM_DIST_TAG ?? "latest"}\``,
     `- release-please: \`${releaseResult}\` (releases created: \`${releasesCreated}\`)`,
+    `- release source and CI gate: \`${sourceResult}\``,
     `- native build matrix: \`${buildResult}\``,
     `- npm publication: \`${publishResult}\``,
-    `- public registry/install verification: \`${verifyResult}\``,
+    `- npm public registry/install verification: \`${verifyResult}\``,
+    `- crates.io publication: \`${cratesResult}\``,
+    `- crates.io public version verification: \`${cratesVerifyResult}\``,
   ];
   // Addon growth is otherwise visible only after installation (#216).
   if (addonSizes.length > 0) {
