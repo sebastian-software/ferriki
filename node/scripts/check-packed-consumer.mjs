@@ -110,7 +110,7 @@ try {
     consumerProbe,
     `
 import * as ferriki from '@ferriki/core'
-const { codeToHtml, createHighlighter, ferrikiVersion } = ferriki
+const { codeToHtml, codeToHtmlWithCss, createHighlighter, ferrikiVersion } = ferriki
 const removedOutputs = ['codeToHast', 'codeToTokens', 'codeToTokensBase', 'codeToTokensWithThemes', 'hastToHtml']
 for (const name of removedOutputs)
   if (name in ferriki)
@@ -130,6 +130,10 @@ catch (error) {
 }
 if (nativeSubpathExported)
   throw new Error('the internal native loader must not be exported as @ferriki/core/native')
+
+const firstCss = await codeToHtmlWithCss('{"x":1}', { lang: 'json', theme: 'nord' })
+if (!firstCss.html.includes('token') || !firstCss.css.includes('.ferriki-style-'))
+  throw new Error('the packed CSS shorthand did not render on first use')
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
 for (const name of removedOutputs)

@@ -32,7 +32,7 @@ export const coreCompatDeferredTests = [
   {
     path: "compat/upstream/shiki/packages/shiki/test/color-replacement.test.ts",
     reason:
-      "Ferriki colorReplacements has no runtime implementation and is deferred pending a product decision",
+      "colorReplacements is an accepted non-goal; Ferriki rejects the option with ERR_UNSUPPORTED",
     issue: 190,
   },
   {
