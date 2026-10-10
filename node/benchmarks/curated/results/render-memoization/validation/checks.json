@@ -1,0 +1,22 @@
+{
+  "coreCompatibilityGate": {
+    "exitCode": 0,
+    "command": "pnpm run test:ferriki-compat:core"
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "classHighlighting": {
+    "exitCode": 0
+  },
+  "lint": {
+    "exitCode": 0
+  },
+  "format": {
+    "exitCode": 0
+  },
+  "edgeParityScenarios": 17,
+  "measuredRuntimeSourceMatchesFinalRuntime": true,
+  "measuredAddonMatchesRebuiltAddon": true,
+  "measuredHarnessSnapshotsMatchReports": true
+}

@@ -1,10 +1,4 @@
-import {
-  addScopeClasses,
-  createScopeClassCache,
-  extractClassStyles,
-  nestScopes,
-  themeSwitchStyles,
-} from "./classes.mjs";
+import { addScopeClasses, createScopeClassCache, extractClassStyles, nestScopes, themeSwitchStyles } from "./classes.mjs";
 import { ShikiError } from "./index.mjs";
 
 export function sortTransformers(transformers) {

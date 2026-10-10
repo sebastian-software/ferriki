@@ -1,10 +1,4 @@
-import {
-  addScopeClasses,
-  createScopeClassCache,
-  extractClassStyles,
-  nestScopes,
-  themeSwitchStyles,
-} from "./classes.mjs";
+import { addScopeClasses, extractClassStyles, nestScopes, themeSwitchStyles } from "./classes.mjs";
 import { ShikiError } from "./index.mjs";
 
 export function sortTransformers(transformers) {
@@ -28,7 +22,6 @@ export function applyTokenTransformers(tokens, transformers, context) {
 export const classStylesByTree = new WeakMap();
 
 export function renderTransformedHast(result, options, transformers, commonContext, source) {
-  const scopeClasses = options.styleMode === "classes" ? createScopeClassCache() : undefined;
   const properties = {
     class:
       result.hastClass ||
@@ -111,7 +104,7 @@ export function renderTransformedHast(result, options, transformers, commonConte
       if (options.styleMode === "classes") {
         const scopes =
           token.scopeNames || token.explanation?.[0]?.scopes.map((item) => item.scopeName) || [];
-        addScopeClasses(span, scopes, scopeClasses);
+        addScopeClasses(span, scopes);
         scopePaths.set(span, scopes);
       }
       lineNode.children.push(span);
@@ -187,7 +180,7 @@ export function renderTransformedHast(result, options, transformers, commonConte
         { type: "element", tagName: "code", properties, children: output.children },
       ];
     }
-    nestScopes(output, scopePaths, scopeClasses);
+    nestScopes(output, scopePaths);
     classStylesByTree.set(
       output,
       [extractClassStyles(output), themeStyles.css].filter(Boolean).join("\n"),
