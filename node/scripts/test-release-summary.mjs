@@ -26,7 +26,7 @@ const outcome = [
   "",
   "- npm dist-tag: `latest`",
   "- release-please: `success` (releases created: `true`)",
-  "- release source and CI gate: `success`",
+  "- exact release source and CI gate: `success`",
   "- native build matrix: `success`",
   "- npm publication: `success`",
   "- npm public registry/install verification: `success`",
@@ -39,6 +39,15 @@ assert.deepEqual(formatReleaseSummary(published), {
   state: "PUBLISHED",
   summary: `${outcome.join("\n")}\n`,
 });
+assert.equal(
+  formatReleaseSummary({
+    ...published,
+    SOURCE_RESULT: "failure",
+    BUILD_RESULT: "skipped",
+    PUBLISH_RESULT: "skipped",
+  }).state,
+  "FAILED",
+);
 
 for (const [field, result] of [
   ["CRATES_RESULT", "failure"],

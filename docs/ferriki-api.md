@@ -259,6 +259,38 @@ Transformers run in this order: `preprocess`, `tokens`, `span`, `line`, `code`,
 `this.options.meta.__raw`. A `DecorationItem.transform` callback instead
 receives `(element, type)` and does not receive the transformer context.
 
+### Callback context and return values
+
+Hooks run synchronously. Within each stage, Ferriki runs the `pre` tier, the
+normal tier, and the `post` tier, preserving the supplied order inside each
+tier. `span` and `line` stages repeat as each line is assembled: all spans of a
+line run before that line's hook. `line` and `span` receive a one-based line
+number; `span` receives a zero-based token column, not a character offset.
+
+| Stage | Available context and behavior |
+| --- | --- |
+| `preprocess` | `options` and a mutable `meta` object. The source argument is the current text after earlier preprocess hooks. |
+| `tokens` | The same `options` and `meta`, plus `source` containing the preprocessed text. Tokens have not yet been split at decoration boundaries. |
+| `span`, `line` | The render context adds `root`, split `tokens`, `lines`, `structure`, and `addClassToHast`. `lines` contains only completed lines; `pre` and `code` are still `undefined`. The root is still being assembled. |
+| `code`, `pre`, `root` | `code` is available. `pre` is available only for classic structure; inline output skips the `pre` hook. The getters follow replacement code/pre nodes. For inline structure, the code wrapper is detached: its properties and replacement do not enter the output, although mutations to shared line children do. `root` receives the decorated tree before final scope nesting and CSS extraction. |
+| `postprocess` | `options` and a new `meta` object shared among postprocess hooks for that call. It does not share the earlier rendering stages' `meta` or expose the render tree. |
+
+Token and HAST hooks may mutate their argument and return `undefined`, or
+return replacement tokens/nodes for the following hooks. Returning a nonempty
+string from `preprocess` or `postprocess` replaces the current text; an omitted
+return or empty string leaves it unchanged. Hooks are not awaited; async
+callbacks are outside this contract. A thrown callback error aborts rendering
+and propagates unchanged, without disposing the highlighter or rolling back
+mutations already visible to callbacks.
+
+Use the hook argument for its current node. `this.root` refers to the original
+root container; returning a different root passes that replacement onward but
+does not change `this.root`. Guard `this.pre` and `this.code` when accessing
+them through the shared `ShikiTransformerContext` type. Read fence metadata
+from `this.options.meta`; `this.meta` is callback scratch data, and
+`HighlightOptions.data` is separate metadata on the classic `<pre>` node.
+The full upstream Shiki context is not interchangeable with this contract.
+
 Decoration positions are finite integers: an absolute UTF-16 offset, or a
 zero-based `{ line, character }`. A negative character counts backward from
 that line's length, excluding a trailing carriage return. Nested, touching,

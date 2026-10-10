@@ -3,10 +3,12 @@
 // streams, hashes and atomically installs the bytes.
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { spawn } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { createHighlighter, createHighlighterCoreSync } from "../ferriki/index.mjs";
@@ -16,14 +18,15 @@ import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
 const repoAssets = fileURLToPath(new URL("../../assets/shiki/", import.meta.url));
 const packageAssets = fileURLToPath(new URL("../ferriki/assets/shiki/", import.meta.url));
-const prefix = `/${COMMIT}/assets/shiki/`;
+const packageReleasePath = join(packageAssets, "release-manifest.json");
 const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-node-assets-check-"));
 const assetRoot = join(tempRoot, "assets");
 await mkdir(join(assetRoot, "languages"), { recursive: true });
 await mkdir(join(assetRoot, "themes"), { recursive: true });
 for (const relative of ["languages/manifest.fkindex", "themes/manifest.fkindex"])
   await copyFile(join(packageAssets, relative), join(assetRoot, relative));
-const release = JSON.parse(await readFile(join(packageAssets, "release-manifest.json"), "utf8"));
+const originalPackageRelease = await readFile(packageReleasePath, "utf8");
+const release = JSON.parse(originalPackageRelease);
 release.commit = COMMIT;
 await writeFile(join(assetRoot, "release-manifest.json"), JSON.stringify(release));
 
@@ -36,7 +39,7 @@ const oversized = new Set();
 const interrupted = new Set();
 const server = createServer(async (request, response) => {
   requests.push(request.url);
-  const relative = request.url.startsWith(prefix) ? request.url.slice(prefix.length) : undefined;
+  const relative = /^\/[0-9a-f]{40}\/assets\/shiki\/(.+)$/u.exec(request.url)?.[1];
   if (!relative || missing.has(relative)) {
     response.writeHead(404).end();
     return;
@@ -69,6 +72,27 @@ const binding = loadFerrikiNativeBinding();
 
 function createNative(assets) {
   return binding.createHighlighter({ standardAssetRoot: assetRoot, assets });
+}
+
+async function runOneShotProbe(scenario, cacheDir, remote = true) {
+  const probe = fileURLToPath(new URL("./fixtures/one-shot-asset-probe.mjs", import.meta.url));
+  const child = spawn(process.execPath, [probe, scenario], {
+    env: {
+      ...process.env,
+      FERRIKI_ASSETS_BASE_URL: baseUrl,
+      FERRIKI_ASSETS_REMOTE: remote ? "1" : "0",
+      FERRIKI_CACHE_DIR: cacheDir,
+    },
+  });
+  let output = "";
+  for (const stream of [child.stdout, child.stderr])
+    stream.on("data", (chunk) => (output += chunk));
+  const result = await new Promise((resolve, reject) => {
+    child.on("error", reject);
+    child.on("close", (code, signal) => resolve({ code, signal }));
+  });
+  assert.equal(result.code, 0, `${scenario} exited ${result.signal || result.code}:\n${output}`);
+  assert.match(output, new RegExp(`One-shot asset probe passed: ${scenario}`));
 }
 
 try {
@@ -203,6 +227,63 @@ try {
   );
   concurrent.dispose();
 
+  // Each probe imports the public facade in a new process with an empty cache.
+  // The parent serves release-pinned fixture bytes and observes every download.
+  const singleCache = join(tempRoot, "one-shot-single-cache");
+  // A checkout has no publish commit. Give the generated, untracked package
+  // manifest a local mirror commit for these facade probes, then restore it.
+  await writeFile(packageReleasePath, JSON.stringify(release));
+  const singleOffset = requests.length;
+  await runOneShotProbe("css-single", singleCache);
+  const singleRequests = requests.slice(singleOffset);
+  assert.deepEqual(
+    new Set(singleRequests.map((url) => url.slice(url.indexOf("/assets/shiki/") + 14))),
+    new Set(["languages/json.fkgram", "themes/nord.fktheme"]),
+  );
+  assert.equal(singleRequests.length, 2, "warm CSS shorthand calls do not redownload assets");
+
+  const embeddedCache = join(tempRoot, "one-shot-embedded-cache");
+  const embeddedOffset = requests.length;
+  await runOneShotProbe("css-multi-embedded", embeddedCache);
+  const embeddedRequests = requests.slice(embeddedOffset);
+  for (const path of [
+    "languages/vue.fkgram",
+    "languages/typescript.fkgram",
+    "themes/vitesse-light.fktheme",
+    "themes/nord.fktheme",
+  ])
+    assert(
+      embeddedRequests.some((url) => url.endsWith(path)),
+      `CSS shorthand did not fetch ${path}`,
+    );
+  assert.equal(
+    embeddedRequests.length,
+    new Set(embeddedRequests).size,
+    "warm multi-theme CSS shorthand calls do not redownload assets",
+  );
+
+  const offlineOffset = requests.length;
+  await runOneShotProbe("css-offline", join(tempRoot, "one-shot-offline-cache"), false);
+  assert.equal(requests.length, offlineOffset, "offline CSS shorthand never fetches");
+
+  const integrityCache = join(tempRoot, "one-shot-integrity-cache");
+  replaced.set("themes/nord.fktheme", Buffer.from("not the pinned theme"));
+  await runOneShotProbe("css-integrity", integrityCache);
+  replaced.delete("themes/nord.fktheme");
+  assert.equal(
+    await readFile(join(integrityCache, release.assets["themes/nord.fktheme"].sha256)).catch(
+      () => undefined,
+    ),
+    undefined,
+    "the CSS shorthand never caches a corrupt theme",
+  );
+
+  const retryCache = join(tempRoot, "one-shot-retry-cache");
+  const retryOffset = requests.length;
+  await runOneShotProbe("singleton-retry", retryCache);
+  const retryRequests = requests.slice(retryOffset);
+  assert.equal(retryRequests.length, 2, "only the explicit retry downloads the two assets");
+
   const empty = { remote: false, cacheDir: join(tempRoot, "facade-empty") };
   await assert.rejects(createHighlighter({ assets: empty, langs: ["rust"] }), {
     name: "FerrikiError",
@@ -227,6 +308,7 @@ try {
   ])
     assert.throws(() => createHighlighterCoreSync({ assets }), { code: "ERR_USAGE" });
 } finally {
+  await writeFile(packageReleasePath, originalPackageRelease);
   await new Promise((resolve, reject) =>
     server.close((error) => (error ? reject(error) : resolve())),
   );

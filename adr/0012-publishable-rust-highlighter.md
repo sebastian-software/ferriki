@@ -84,7 +84,11 @@ version, one release signal; see Ferromark ADR-0020 and
   publishes the platform packages, `@ferriki/core` and `@ferriki/vite`, and,
   through the shared `publish-crates` action, the three crates in dependency
   order: `ferriki-textmate`, `ferriki-asset-gen`, then `ferriki`. `ferriki-core`
-  remains private.
+  remains private. Both registry jobs wait for a successful `CI` push run for
+  the tag's exact commit, including the core compatibility and native smoke
+  gates. All release builds and publishers check out that commit. A manual
+  recovery dispatch runs on the same tag ref so the OIDC event source and
+  published bytes identify the same commit.
 - Product releases authenticate through Trusted Publishing; no long-lived
   registry token is stored in CI. The first npm package version must exist
   before its Trusted Publisher can be configured, so `@ferriki/vite` is seeded
@@ -133,4 +137,5 @@ version, one release signal; see Ferromark ADR-0020 and
 
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
 - 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).
+- 2026-10-10: Requires exact release-commit CI before either registry publisher and binds manual recovery to the release tag and OIDC event SHA (#245).
 - 2026-10-10: Require source-pinned recovery for partial npm publication and both registries in the final product outcome (#246, #247).
