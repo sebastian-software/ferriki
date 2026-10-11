@@ -363,7 +363,7 @@ pub struct Theme {
     color_map: ColorMap,
     defaults: StyleAttributes,
     root: ThemeTrieElement,
-    cached_match_root: RwLock<HashMap<String, Vec<ThemeTrieElementRule>>>,
+    cached_match_root: RwLock<HashMap<String, Arc<[ThemeTrieElementRule]>>>,
 }
 
 impl Theme {
@@ -405,11 +405,11 @@ impl Theme {
             .get(scope_name)
             .cloned();
         let matching_trie_elements = cached_rules.unwrap_or_else(|| {
-            let rules = self.root.match_scope(scope_name);
+            let rules: Arc<[ThemeTrieElementRule]> = self.root.match_scope(scope_name).into();
             self.cached_match_root
                 .write()
                 .expect("theme match cache lock poisoned")
-                .insert(scope_name.clone(), rules.clone());
+                .insert(scope_name.clone(), Arc::clone(&rules));
             rules
         });
 
