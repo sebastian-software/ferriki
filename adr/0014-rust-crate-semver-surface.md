@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Context
 
@@ -79,6 +79,22 @@ Each crate publishes a deliberate, curated surface.
 - **MSRV.** `rust-version` in the workspace `Cargo.toml` is the only source. It
   follows the Ferramenta policy of the four latest stable releases, and raising
   it in a minor release is not a breaking change.
+- **Released Rust baseline.** The `rust-semver` CI job runs pinned
+  `cargo-semver-checks` for `ferriki`, `ferriki-textmate`, and
+  `ferriki-asset-gen`, never the unpublished `ferriki-core`. For each public
+  crate it compares against the newest non-yanked stable crates.io version of
+  the current major, with default and all features. The latter includes
+  `ferriki`'s optional `remote` API. The gate fails when the registry has no
+  valid baseline or the candidate is older than a published version. While
+  ordinary development still has the latest released manifest version, the
+  check treats it as a minor update: additions are allowed, but major breaks
+  are not. A new patch or minor candidate uses that release type instead.
+- **Intentional major.** The first candidate of a next major fails the gate
+  until its reviewed CI command explicitly passes `--allow-major <new-major>`.
+  That selects the latest stable previous-major release and runs the check as
+  a major update. The opt-in becomes invalid once a same-major release exists,
+  so it must be removed after the first major release. Prerelease candidates
+  and skipped major numbers are not accepted by this policy.
 
 ## Consequences
 
@@ -99,8 +115,12 @@ Each crate publishes a deliberate, curated surface.
 - `tests/public_api.rs` exercises the documented surface.
 - Building with `RUSTFLAGS="-W unnameable_types"` reports no public item that
   leaks an unnameable type; this is a manual check today.
-- After 1.0, add `cargo semver-checks` to CI and revisit this record when it
-  reports a break that the rules above did not prevent.
+- CI's pinned checker compares all three public crates to actual released
+  sources. Its test proves that removing a released documented public type
+  produces a deny-level finding. `#[doc(hidden)]` remains confined to
+  `ferriki::__private` and `ferriki_textmate::__oracle`; neither bridge is a
+  reason to downgrade or disable checks for documented public items. Review
+  any checker finding against this boundary before changing the API or policy.
 - Revisit the `doc(hidden)` rule if the crates stop sharing one version or the
   release tooling starts preserving exact requirements.
 
@@ -114,3 +134,4 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-05: Records the private typed N-API conversion instead of JSON transport (#217); the published Rust serialized shapes stay unchanged.
 
 - 2026-10-10: Explicitly keeps native decoration primitives within the semver-exempt Node bridge (#122).
+- 2026-10-11: Adds the released Rust semver baseline and explicit major-release policy (#254).
