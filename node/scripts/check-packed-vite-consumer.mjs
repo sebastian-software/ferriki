@@ -239,6 +239,9 @@ try {
       probe,
       `
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { build, createServer } from 'vite'
@@ -284,7 +287,7 @@ try {
   assert.equal(ssrModule.renderCalls, 0, 'the packed render callback ran during module transformation')
   const defaultCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.DefaultCodeMacroExample))
   const defaultCodeTree = fromHtml(defaultCodeMarkup, { fragment: true })
-  assert.equal(hastText(defaultCodeTree), '', 'React must render only the reference host')
+  assert(hastText(defaultCodeTree).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'direct macro SSR omitted the prepared code')
   const codeRef = /code-ref="([^"]+)"/.exec(defaultCodeMarkup)?.[1]
   assert.match(codeRef, /^ferriki-[a-f0-9]{64}$/, 'the default macro omitted its stable reference')
   const highlightedHtml = plugin.api.codeElementBlocks()[codeRef]
@@ -292,15 +295,16 @@ try {
   assert(highlightedHtml.includes('data-title="Default macro"'), 'the default React Code macro omitted metadata from prepared HTML')
   assert.match(defaultCodeMarkup, /<ferriki-code\\b[^>]*class="default-packed-class"/, 'the default React Code macro did not forward className to its shadow host in SSR')
   assert(defaultCodeMarkup.includes('data-ferriki-theme="dark"'), 'the default host omitted its runtime theme')
-  assert(!defaultCodeMarkup.includes('highlightedCode=') && !defaultCodeMarkup.includes('<template') && !defaultCodeMarkup.includes('<style'), 'React transported prepared HTML or per-block styles')
+  assert(!defaultCodeMarkup.includes('highlightedCode=') && !defaultCodeMarkup.includes('<style'), 'SSR transported the HTML property or per-block style declarations')
   assert(defaultCodeMarkup.includes('min-block-size:min(calc(') && defaultCodeMarkup.includes('--ferriki-code-line-height'), 'the empty SSR host did not reserve code-line space')
   assert(defaultCodeMarkup.includes('max-lines="1"') && defaultCodeMarkup.includes('--ferriki-code-max-block-size:calc(1 *'), 'the default macro omitted its SSR line cap')
-  assert.equal(defaultCodeTree.children[0].children.length, 0, 'React must not own code children')
-  const declarativeMarkup = plugin.api.renderCodeElements(defaultCodeMarkup, { stylesheetHref: '/code.css' })
-  assert.equal(declarativeMarkup, renderCodeElementShadows(defaultCodeMarkup, { blocks: plugin.api.codeElementBlocks(), stylesheetHref: '/code.css' }))
-  assert(declarativeMarkup.includes('<template shadowrootmode="open">') && declarativeMarkup.includes(highlightedHtml), 'the server HTML stage omitted Declarative Shadow DOM')
-  assert(declarativeMarkup.includes('href="/code.css" data-ferriki-code-css'), 'the DSD roots did not reference the shared stylesheet')
-  assert(hastText(fromHtml(declarativeMarkup, { fragment: true })).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'the server stage lost prepared code')
+  assert(defaultCodeMarkup.includes('<template shadowrootmode="open">') && defaultCodeMarkup.includes(highlightedHtml), 'the macro omitted direct Declarative Shadow DOM')
+  assert(defaultCodeMarkup.includes('href="/@ferriki/code-elements.css" data-ferriki-code-css'), 'the DSD root did not reference the automatic Vite stylesheet')
+  assert.equal(plugin.api.renderCodeElements(defaultCodeMarkup), defaultCodeMarkup, 'manual postprocessing changed a completed macro template')
+  const manualHost = '<ferriki-code code-ref="' + codeRef + '"></ferriki-code>'
+  const manualMarkup = plugin.api.renderCodeElements(manualHost, { stylesheetHref: '/code.css' })
+  assert.equal(manualMarkup, renderCodeElementShadows(manualHost, { blocks: plugin.api.codeElementBlocks(), stylesheetHref: '/code.css' }))
+  assert(manualMarkup.includes('href="/code.css" data-ferriki-code-css'), 'the manual helper omitted its explicit stylesheet')
   assert(plugin.api.codeElementCss().includes('.ferriki-style-') && plugin.api.codeElementCss().includes(':host'), 'the shared DSD CSS asset is incomplete')
   const customCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.CustomCodeMacroExample))
   const customCodeTree = fromHtml(customCodeMarkup, { fragment: true })
@@ -318,6 +322,16 @@ const output = await build({ configFile: false, root: project, plugins: [ferriki
 const outputs = Array.isArray(output) ? output.flatMap((item) => item.output) : output.output
 const text = outputs.map((item) => ('source' in item ? String(item.source) : item.code)).join('\\n')
 assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') && text.includes('no macro import'), 'packed Vite production build omitted the prepared macro or its CSS')
+const ssrBuild = await build({ configFile: false, root: project, base: '/nested/app/', plugins: [ferriki(options)], oxc: oxcConfig, build: { ssr: join(project, 'src/macro-ssr.jsx'), outDir: 'dist-ssr', minify: false, rolldownOptions: { output: { entryFileNames: 'entry.mjs' } } } })
+const ssrFiles = Array.isArray(ssrBuild) ? ssrBuild.flatMap((item) => item.output) : ssrBuild.output
+const codeStylesheet = ssrFiles.find((item) => item.type === 'asset' && /^assets\\/ferriki-code-[\\w-]+\\.css$/.test(item.fileName))
+assert(codeStylesheet, 'the packed SSR build did not retain its required hashed CSS asset')
+assert.equal(await readFile(join(project, 'dist-ssr', codeStylesheet.fileName), 'utf8'), codeStylesheet.source, 'the packed stylesheet asset was not written')
+assert(codeStylesheet.source.includes(':host') && codeStylesheet.source.includes('.ferriki-style-'), 'the packed stylesheet asset was incomplete')
+const builtModule = await import(pathToFileURL(join(project, 'dist-ssr/entry.mjs')).href)
+const builtMarkup = renderToStaticMarkup(React.createElement(builtModule.DefaultCodeMacroExample))
+assert(builtMarkup.includes('<template shadowrootmode="open">'), 'the production macro omitted its direct SSR template')
+assert(builtMarkup.includes('href="/nested/app/' + codeStylesheet.fileName + '" data-ferriki-code-css'), 'the production macro stylesheet URL did not respect Vite base')
 `,
     );
     run(process.execPath, [probe], {

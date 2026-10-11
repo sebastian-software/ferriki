@@ -57,8 +57,11 @@ Ferriki remains responsible for the outputs those integrations build on:
 already-prepared HTML and CSS. Its `/server` subpath fills complete HTML with
 Declarative Shadow DOM from a prepared registry. Neither entry highlights code
 or loads native assets.
-The Vite adapter uses it for the default React `Code` presentation; the
-framework-specific macro and its compile-time work remain in `@ferriki/vite`.
+The Vite adapter uses it for the default React `Code` presentation. During SSR,
+the macro emits DSD from the prepared HTML directly; its browser branch registers
+the same block for reference hosts. The separate `/server` helper remains for
+manually authored reference hosts. The framework-specific macro and its
+compile-time work remain in `@ferriki/vite`.
 
 Public Node HAST and token result methods, including the serializer helper, are
 removed before 1.0 under [ADR 0017](0017-node-html-output-priority.md). The
@@ -111,3 +114,5 @@ runtime highlighting.
 - 2026-10-11: Adds framework-free prepared-HTML presentation and complete-HTML
   DSD entries while keeping highlighting native and framework-specific macro
   recognition and SSR integration in the optional Vite adapter.
+- 2026-10-11: Records that the Vite macro emits DSD directly during React SSR;
+  the complete-HTML helper is retained for manually authored reference hosts.

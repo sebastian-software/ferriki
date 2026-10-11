@@ -68,31 +68,42 @@ theme supplies the default colors. Aliases used by React macros must start with
 an ASCII letter or underscore and contain only letters, digits, underscores,
 and hyphens.
 
-The generated JSX passes only a content-derived `codeRef`. The empty host's
-`code-ref` attribute selects prepared HTML registered outside React; the element
-owns its token nodes. All instances share one constructed stylesheet and one
-theme configuration. Without a server HTML stage, the host is empty until
-JavaScript registers its content. Hydration, theme changes, and parent updates
-retain token nodes. Changed references replace only root contents.
+The generated JSX passes only a content-derived `codeRef`. In a browser build,
+the empty host's `code-ref` attribute selects prepared HTML registered outside
+React; the element owns its token nodes. During React SSR, the macro emits that
+HTML in Declarative Shadow DOM through a server-only HTML sink. The browser
+parser creates the shadow root before upgrade, and hydration retains its nodes.
+Both paths use one constructed stylesheet and one theme configuration. The
+client registry also supplies blocks for later client-rendered navigation.
 
-The default host reserves space from the build-known source line count before
-JavaScript. Its sizing style and shadow `pre` share line-height and padding
-variables, so client rendering can retain the surrounding layout without
-highlighted SSR markup. `maxLines` is an optional runtime positive safe integer;
-longer blocks keep all code and scroll vertically, while shorter blocks stay
-short. Omit it or pass `undefined` for no cap. The macro matches the height
-reservation to the cap automatically. See the [sizing guide](../../docs/shadow-code-elements.md#client-rendering-with-reserved-space)
+The default host reserves space from the build-known source line count. Its
+sizing style and shadow `pre` share line-height and padding variables, so a
+client-only mount retains the surrounding layout until registration fills the
+host. SSR includes the highlighted DSD markup as well. `maxLines` is an optional
+runtime positive safe integer; longer blocks keep all code and scroll vertically,
+while shorter blocks stay short. Omit it or pass `undefined` for no cap. The
+macro matches the height reservation to the cap automatically. See the
+[sizing guide](../../docs/shadow-code-elements.md#client-rendering-with-reserved-space)
 for manual hosts, custom dimensions, and the nonwrapping-line estimate.
 
-For highlighted output before JavaScript, call
-`plugin.api.renderCodeElements(reactHtml, { stylesheetHref: "/code.css" })`
-after rendering complete SSR HTML. Serve `plugin.api.codeElementCss()` at that
-URL. This separate stage inserts Declarative Shadow DOM outside React. Register
-the component after the document has parsed; upgrade retains the parser-created
-nodes. For production, save `plugin.api.codeElementBlocks()` and the CSS after
-the SSR build and use `renderCodeElementShadows` from
+The default React SSR path already emits Declarative Shadow DOM; it does not
+need a post-render rewrite. Its template links the shared component stylesheet
+so highlighted output is styled before JavaScript. In development, Vite serves
+that stylesheet at `${base}@ferriki/code-elements.css`. A production build
+emits one aggregated, hashed `assets/ferriki-code-*.css` file. Deploy the CSS
+emitted by the SSR build with the application's public assets. The plugin
+re-emits this required stylesheet when Vite suppresses ordinary SSR assets;
+SSR and client builds can produce different hashes. The default `/` base and
+absolute path or CDN bases are supported. Direct macro SSR rejects `base: "./"`
+and `base: ""` because a relative stylesheet URL is ambiguous on nested routes.
+
+For manually authored empty reference hosts, the plugin API still provides
+`renderCodeElements()` and `codeElementCss()` for a complete-HTML server stage.
+Production applications can save `codeElementBlocks()` and the CSS after the
+SSR build, then call `renderCodeElementShadows()` from
 `@ferriki/core/web-component/server` with that registry. These APIs read modules
-already transformed by the same plugin instance. Streaming SSR is unsupported.
+already transformed by the same plugin instance. Streaming SSR and React
+Server Components are unsupported.
 
 Titles, copy buttons, and tabs can wrap the default `<Code />` without replacing
 its isolated code presentation. For complete control over the result, use the

@@ -123,13 +123,16 @@ means `x & y`. Expression literals such as `source={"x &amp; y"}` retain the
 literal entity spelling. Templates preserve the authored formatting and use
 normal JavaScript escape semantics.
 
-By default, the transform emits a `<ferriki-code>` Web Component. Its open
-shadow root contains the complete prepared `pre`/`code` HTML and adopts one
-shared stylesheet. React passes only a stable content reference; the component's
-registry holds the HTML and the component owns the token nodes. React owns the
-empty host. `className` applies to it; page selectors such as `.example pre`
-cannot reach inside the root. `theme` selects a configured alias. These
-presentation props accept ordinary runtime expressions:
+By default, the transform emits a `<ferriki-code>` Web Component. In React SSR,
+its host contains Declarative Shadow DOM with the complete prepared `pre`/`code`
+HTML and a link to the shared component stylesheet. The browser parser creates
+the open shadow root before custom-element upgrade; the component reuses it and
+keeps its token nodes through hydration. In the browser render, React receives
+an empty host with a stable content reference and the module registers prepared
+HTML for hydration and later client-rendered navigation. `className` applies to
+the host; page selectors such as `.example pre` cannot reach inside the root.
+`theme` selects a configured alias. These presentation props accept ordinary
+runtime expressions:
 
 ```tsx
 <Code
@@ -149,20 +152,30 @@ reservation automatically. Manual hosts can use
 `codeElementSizing(lineCount, maxLines)` with the `max-lines` attribute; see the
 [sizing guide](shadow-code-elements.md#client-rendering-with-reserved-space).
 
-The default helper registers the module's prepared content once when rendered.
-React SSR emits an empty `<ferriki-code code-ref="…">`. Without an additional
-server stage it remains empty until JavaScript runs, with space reserved from
-the build-known source line count and, when set, the `maxLines` cap. The
-reservation and shadow content share line-height and padding variables;
-highlighted SSR is optional. Call
-`plugin.api.renderCodeElements(reactHtml, { stylesheetHref: "/code.css" })`
-on complete SSR HTML and serve `plugin.api.codeElementCss()` at that URL to
-display highlighted Declarative Shadow DOM before JavaScript. Registration
-after document parsing and subsequent hydration retain those code nodes.
-Theme and parent updates retain them too; source/HMR updates use a new reference
-inside the existing root. All elements use one configured theme mapping.
-See [Shadow code elements](shadow-code-elements.md) for saved production
-registries, direct property use, shared CSS, and the complete-HTML SSR boundary.
+The macro uses `import.meta.env.SSR` to select the server or browser output, so
+local `window` or `globalThis` bindings cannot change the branch. The server
+branch puts the prepared HTML in a server-only `dangerouslySetInnerHTML` value
+on the custom-element host; React serializes it as DSD with a matching reference
+marker. This is the default SSR path and needs no post-render rewrite. The
+browser branch registers the module's prepared content for client-created hosts.
+Both paths use the build-known source line count and optional `maxLines` cap for
+the host reservation. The component shares one stylesheet and one theme
+mapping. After parser creation, upgrade and hydration retain the server nodes;
+later theme and parent updates retain them too. Source/HMR updates use a new
+reference inside the existing root. The complete-HTML
+`plugin.api.renderCodeElements()` and `renderCodeElementShadows()` helpers remain
+available for manually authored reference hosts. See the [lifecycle diagram](shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
+and [ownership diagram](shadow-code-elements.md#dom-and-module-ownership), plus
+the guidance on saved production registries, direct property use, shared CSS,
+and the complete-HTML SSR boundary.
+
+Vite serves the shared stylesheet in development at
+`${base}@ferriki/code-elements.css` and emits one aggregated, hashed
+`assets/ferriki-code-*.css` file in production. Deploy the asset emitted by the
+SSR build with the application's public assets; SSR and client builds can have
+different hashes. Direct macro SSR supports the default `/` base and absolute
+path or CDN bases. It rejects relative `base: "./"` and `base: ""` values.
+See the [Vite guide](../node/vite/README.md) for deployment details.
 
 Titles, copy buttons, and tabs can wrap the default `<Code />` in ordinary React
 components while its code remains isolated. For complete control over the
@@ -349,10 +362,11 @@ and imperative use in Chromium, Firefox, and WebKit.
 `codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
 that string in its `html` field. React escapes a string in `{html}`, so it
 displays the tags as text. Use `dangerouslySetInnerHTML` to
-insert the prepared markup in ordinary HTML. `<Code />` instead emits a
-`<ferriki-code code-ref="…">` host and registers the HTML outside React.
-The optional server stage fills Declarative Shadow DOM outside React, or the
-component parses it internally on the client. Direct
+insert the prepared markup in ordinary HTML. `<Code />` uses a
+`<ferriki-code code-ref="…">` host: its SSR branch emits prepared markup as
+Declarative Shadow DOM through a server-only HTML sink, while its browser branch
+registers HTML for empty reference hosts. The optional server helper fills
+manually authored reference hosts outside React. Direct
 `<ferriki-code highlightedCode={html} />` remains supported. These paths keep
 the finished HTML intact without converting its tokens into React elements.
 

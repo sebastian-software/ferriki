@@ -1,12 +1,13 @@
 # Shadow DOM code element example
 
-This consumer fixture covers four presentations of the same prepared Ferriki
-code: a light-DOM baseline, the existing `highlightedCode` property adapter, an
-empty reference-backed React host, and a reference host completed with
-Declarative Shadow DOM (DSD). The property lane remains useful for imperative
-consumers. The default React `Code` macro now emits a short `code-ref`; a server
-postprocessor can add DSD so highlighted text and styles are present before
-JavaScript runs.
+This consumer fixture covers a light-DOM baseline, the existing
+`highlightedCode` property adapter, the default React `Code` macro, and a
+separate manual reference registry. The property lane remains useful for
+imperative consumers. The default macro renders a short `code-ref` host and,
+on the server, includes prepared code in Declarative Shadow DOM (DSD). Vite adds
+a shared stylesheet link directly to each DSD root, so the highlighted block
+and its styles are available before JavaScript runs. No postprocessing call is
+needed.
 
 `ReferenceCode.mjs` accepts only the short reference and presentation props.
 Trusted highlighted HTML stays in a separate registry:
@@ -17,25 +18,23 @@ import { Code } from "@ferriki/core/react/macro";
 <Code source={`const example = "build-prepared";\n`} language="ts" theme="dark" />;
 ```
 
-For Vite SSR, `api.renderCodeElements(markup, { stylesheetHref })` resolves
-references collected by the transformed `Code` macro, adds one marked
-stylesheet link per DSD root, and inserts the prepared HTML. Serve the shared
-CSS from `api.codeElementCss()` at the URL passed as `stylesheetHref`:
+The transformed `Code` macro has separate server and browser branches. The
+server branch embeds the prepared HTML inside DSD with a compact reference
+marker. During development, Vite serves the shared stylesheet at
+`/@ferriki/code-elements.css`; production builds emit one hashed
+`assets/ferriki-code-*.css` asset, and each shadow root links to that shared
+stylesheet. The browser branch registers the reference once per module and
+keeps the host itself empty, so parsing creates the DSD nodes before hydration
+and hydration can preserve them.
 
-```js
-const html = ferrikiPlugin.api.renderCodeElements(renderedMarkup, {
-  stylesheetHref: "/ferriki-code.css",
-});
-const css = ferrikiPlugin.api.codeElementCss();
-```
-
-The standalone `@ferriki/core/web-component/server` helper supports manual
-reference registries. In the browser, register `defineCodeElement({ css,
-themeAliases, blocks })` before hydrating. An unknown DSD reference keeps its
-server-rendered nodes and marked stylesheet link until its block and CSS are
-registered. A matching reference keeps its nodes when registration or
-hydration runs again. A changed reference replaces the rendered code inside
-the existing shadow root.
+For manual reference registries, `@ferriki/core/web-component/server` exports
+`renderCodeElementShadows(markup, { blocks, stylesheetHref })`. The reference
+fixture uses this lower-level helper separately from the default macro. In the
+browser, register `defineCodeElement({ css, themeAliases, blocks })` before
+hydrating. An unknown DSD reference keeps its server-rendered nodes and marked
+stylesheet link until its block and CSS are registered. A matching reference
+keeps its nodes when registration or hydration runs again. A changed reference
+replaces the rendered code inside the existing shadow root.
 
 The reference fixture also exercises the low-level `max-lines` host attribute.
 Its source-derived `codeElementSizing(lineCount, maxLines)` style reserves the
@@ -68,13 +67,16 @@ FERRIKI_SHADOW_BENCH_DEPS_ROOT="$shadow_spike_deps" \
   pnpm run demo:shadow-dom
 ```
 
-The browser check covers both style modes, no-JavaScript DSD output, late and
-partial block registration, hydration and node identity, reference changes,
-the property adapter, theme and parent updates, CSS isolation, selection,
-copy, HMR, and source maps. Chromium also runs the CDP accessibility-tree and
-`window.find` checks. The demo command prints its local URL and runs until
-Ctrl+C. Both use temporary consumers and do not modify workspace manifests or
-the lockfile.
+The browser check covers both style modes, direct macro DSD with JavaScript
+disabled, its stylesheet, source-derived sizing, and a two-line cap injected
+into the temporary copy of the existing macro fixture. It also checks late
+and partial block registration, hydration and retained DSD node identity,
+reference changes, the property adapter, theme and parent updates, CSS
+isolation, selection, copy, HMR, and source maps. The manual reference fixture
+continues to exercise the standalone server helper and capped no-JavaScript
+sizing. Chromium also runs the CDP accessibility-tree and `window.find`
+checks. The demo command prints its local URL and runs until Ctrl+C. Both use
+temporary consumers and do not modify workspace manifests or the lockfile.
 
 On macOS 27, Playwright's bundled Firefox may exit with `Could not find profile
 folder` because Gecko cannot access Firefox's shared app-data directory when

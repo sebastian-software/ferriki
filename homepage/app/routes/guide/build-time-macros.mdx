@@ -4,6 +4,7 @@ order: 2
 ---
 
 import { HighlightingFlows } from "../../components/highlighting-flows";
+import codeElementLifecycle from "../../../../docs/assets/code-element-lifecycle.png";
 
 # Build-time macros
 
@@ -132,17 +133,32 @@ runtime prop must resolve to a positive safe integer; omit it for an unlimited
 block. These presentation props accept runtime expressions.
 Spreads, duplicate attributes and other attributes fail the build.
 
-The default renderer registers the module's prepared content once. React emits
-an empty host with a short `code-ref` and space reserved from the source line
-count; the HTML stays outside React. The optional runtime `maxLines` prop caps
+<img
+  src={codeElementLifecycle}
+  width={1536}
+  height={1024}
+  loading="lazy"
+  alt="Code macro lifecycle: build prepares HTML, SSR emits a template, the browser consumes it into a Shadow Root, and React hydrates only the host. All roots share one constructed stylesheet."
+/>
+
+The browser renderer registers the module's prepared content for its reference
+host and reserves space from the source line count. During SSR, the macro emits
+the prepared HTML inside Declarative Shadow DOM through a server-only HTML sink.
+The browser parser creates the shadow root before upgrade; hydration retains its
+nodes, and later client-rendered navigation resolves references from the client
+registry. The optional runtime `maxLines` prop caps
 the visible viewport while keeping all code available for vertical scrolling;
 shorter blocks stay short. The macro adjusts its pre-JavaScript reservation to
 the same cap. The reservation and shadow content use the same line-height and
-padding variables. For highlighted output before JavaScript, use the separate
-server HTML stage to supply Declarative Shadow DOM and link to one shared CSS
-file. Without that stage, the host stays empty until upgrade. Register after
-parsing to preserve the existing root and tokens through hydration. All blocks share one
-constructed stylesheet. Page selectors do not reach
+padding variables. The SSR template links the shared stylesheet so its code is
+styled before JavaScript. Register after parsing to preserve the existing root
+and tokens through hydration. All blocks share one constructed stylesheet.
+Vite serves its shared CSS automatically in development and emits one hashed
+stylesheet asset in production; deploy the SSR build's asset because the client
+and SSR filenames may differ. Direct macro SSR requires an absolute Vite base
+path or URL. See the
+[Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
+for details. Page selectors do not reach
 inside the root, and ancestor theme attributes do not select its theme: pass
 `theme={darkMode ? "dark" : "light"}` explicitly. The first configured theme
 supplies the default colors. See the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)

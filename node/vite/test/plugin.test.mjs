@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { runInNewContext } from "node:vm";
 import { originalPositionFor, TraceMap } from "@jridgewell/trace-mapping";
 import { build, createServer, parseAst, transformWithOxc } from "vite";
@@ -193,6 +193,12 @@ async function macroError(source, id, { message, at }, options) {
 
 async function evaluateJsx(code, filename, globals = {}, resultExpression = "") {
   const source = withoutVirtualStyles(code)
+    .replaceAll("import.meta.env.SSR", String(globals.ssr ?? false))
+    .replace(
+      /import (\w+) from "virtual:ferriki-vite\/code-element-stylesheet-url";/g,
+      (_match, name) =>
+        `const ${name} = ${JSON.stringify(globals.stylesheetUrl ?? "/@ferriki/code-elements.css")};`,
+    )
     .replace(
       /import \{ defineCodeElement as (\w+) \} from "@ferriki\/core\/web-component";/g,
       "const { defineCodeElement: $1 } = codeElementRuntime;",
@@ -326,7 +332,9 @@ export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} l
     );
     expect(result.moduleType).toBeUndefined();
     const ast = parseOutput(result.code);
-    const [fallback] = jsxElements(ast, "ferriki-code");
+    const fallback = jsxElements(ast, "ferriki-code").find(
+      (element) => !jsxAttribute(element, "dangerouslySetInnerHTML"),
+    );
     expect(attributeNames(fallback)).toEqual([
       "JSXSpreadAttribute",
       "data-ferriki-theme",
@@ -612,7 +620,7 @@ const value = <Code source="const local = 1;" language="ts" lineNumbers classNam
     expect(result.code).toContain("defineCodeElement as FerrikiDefineCodeElement1");
     expect(result.code).toContain("const FerrikiCodeElementConfig1 = ");
     expect(result.code).not.toContain("codeElementTemplate");
-    expect(result.code).not.toContain("dangerouslySetInnerHTML");
+    expect(result.code).toContain("if (import.meta.env.SSR)");
     const registrations = [];
     const evaluated = await evaluateJsx(result.code, "/src/shadow-default.tsx", {
       codeElementRuntime: {
@@ -631,6 +639,7 @@ const value = <Code source="const local = 1;" language="ts" lineNumbers classNam
     expect(host.props).not.toHaveProperty("suppressHydrationWarning");
     expect(host.props).not.toHaveProperty("children");
     expect(host.props).not.toHaveProperty("highlightedCode");
+    expect(host.props).not.toHaveProperty("dangerouslySetInnerHTML");
     expect(registrations).toHaveLength(1);
     expect(registrations[0].themeAliases).toEqual(["day", "night"]);
     expect(registrations[0].css).toContain(".ferriki-highlight-line");
@@ -724,7 +733,7 @@ make;`;
     }
   });
 
-  it("shares stable references and fills SSR hosts through the separate HTML stage", async () => {
+  it("shares stable references and fills manual hosts through the optional HTML stage", async () => {
     const vitePlugin = plugin({ styleMode: "classes" });
     const source = `import { Code } from "@ferriki/core/react/macro";
 const first = <Code source="const shared = 1;" language="ts" meta='title="Shared"' />;
@@ -769,6 +778,50 @@ const second = <Code source="const shared = 1;" language="ts" meta='title="Share
     expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(1);
     expect(() => vitePlugin.api.renderCodeElements(markup)).toThrow(/No trusted HTML block/);
     expect(blocks[refs[0]]).toContain("shared");
+  });
+
+  it("renders cached Declarative Shadow DOM directly on the server with one shared stylesheet URL", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    const result = await transformModule(
+      vitePlugin,
+      `import { Code } from "@ferriki/core/react/macro";
+const window = "an authored binding";
+const globalThis = null;
+const FerrikiCodeServerHtml = null;
+const make = (theme, maxLines, render) => <Code source="const server = 42;" language="ts" theme={theme} maxLines={maxLines} render={render} />;
+make;`,
+      "/src/direct-ssr.tsx",
+    );
+    expect(result.code.match(/"html":/g)).toHaveLength(1);
+    const make = await evaluateJsx(result.code, "/src/direct-ssr.tsx", {
+      ssr: true,
+      stylesheetUrl: '/nested/code.css?query="<>&',
+      codeElementRuntime: {
+        defineCodeElement() {
+          throw new Error("Server rendering must not register a browser element");
+        },
+      },
+    });
+    const first = make("night", 2);
+    const host = first.type(first.props);
+    const ref = first.props.codeRef;
+    expect(host.type).toBe("ferriki-code");
+    expect(host.props["code-ref"]).toBe(ref);
+    expect(host.props["data-ferriki-theme"]).toBe("night");
+    expect(host.props.style).toEqual(codeElementRuntime.codeElementSizing(1, 2));
+    const html = host.props.dangerouslySetInnerHTML;
+    expect(html.__html).toContain('<template shadowrootmode="open">');
+    expect(html.__html).toContain(`<!--ferriki-code:${ref.replaceAll("-", "%2D")}-->`);
+    expect(html.__html).toContain(
+      'href="/nested/code.css?query=&quot;&lt;&gt;&amp;" data-ferriki-code-css',
+    );
+    expect(html.__html).toContain(vitePlugin.api.codeElementBlocks()[ref]);
+    expect(html.__html).not.toContain("<style");
+    expect(host.props).not.toHaveProperty("children");
+    const second = make("day", undefined);
+    expect(second.type(second.props).props.dangerouslySetInnerHTML).toBe(html);
+    const custom = make("night", 2, (props) => props);
+    expect(custom.type(custom.props)).toMatchObject({ theme: "night", maxLines: 2 });
   });
 
   it("initializes shared CSS before eager rendering while preserving directives", async () => {
@@ -1111,6 +1164,102 @@ export const block = <Code source="const mdx = 2;" language="ts" />;`;
     expect(output).toContain("virtualValue");
   });
 
+  it("emits and retains one shared SSR CSS asset, including lazy modules and Vite base paths", async () => {
+    const root = await createProject({
+      "src/main.tsx":
+        'export { host as first } from "./first.tsx"; export const second = (await import("./second.tsx")).host;',
+      "src/first.tsx": `import { Code } from "@ferriki/core/react/macro";
+const h = (type, props) => ({ type, props });
+const block = <Code source="const first = 42;" language="ts" />;
+export const host = block.type(block.props);`,
+      "src/second.tsx": `import { Code } from "@ferriki/core/react/macro";
+const h = (type, props) => ({ type, props });
+const block = <Code source={\`first\\nsecond\\nthird\`} language="text" lineNumbers maxLines={2} />;
+export const host = block.type(block.props);`,
+    });
+    for (const [index, base] of ["/", "/nested/app/", "https://cdn.example.test/app"].entries()) {
+      const result = await build({
+        configFile: false,
+        root,
+        base,
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: {
+          ssr: join(root, "src/main.tsx"),
+          outDir: `ssr-${index}`,
+          minify: false,
+          sourcemap: true,
+          target: "esnext",
+          rolldownOptions: {
+            output: { entryFileNames: "entry.mjs", chunkFileNames: "[name].mjs" },
+          },
+        },
+      });
+      const files = result.output;
+      const stylesheets = files.filter(
+        (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+      );
+      expect(stylesheets).toHaveLength(1);
+      const stylesheet = stylesheets[0];
+      expect(stylesheet.fileName).toMatch(/^assets\/ferriki-code-[\w-]+\.css$/);
+      expect(stylesheet.source).toContain(":host");
+      expect(stylesheet.source).toContain(".ferriki-style-");
+      expect(stylesheet.source).toContain(".ferriki-highlight-line[data-ln]");
+      expect(await readFile(join(root, `ssr-${index}`, stylesheet.fileName), "utf8")).toBe(
+        stylesheet.source,
+      );
+      const hosts = await import(pathToFileURL(join(root, `ssr-${index}/entry.mjs`)).href);
+      const href = `${base.replace(/\/+$/u, "")}/${stylesheet.fileName}`;
+      for (const host of [hosts.first, hosts.second]) {
+        expect(host.type).toBe("ferriki-code");
+        expect(host.props.dangerouslySetInnerHTML.__html).toContain(
+          '<template shadowrootmode="open">',
+        );
+        expect(host.props.dangerouslySetInnerHTML.__html).toContain(
+          `href="${href}" data-ferriki-code-css`,
+        );
+        expect(host.props.dangerouslySetInnerHTML.__html).not.toContain("<style");
+      }
+      expect(hosts.second.props.style).toEqual(codeElementRuntime.codeElementSizing(3, 2));
+      expect(
+        files
+          .filter((file) => file.type === "chunk")
+          .map((file) => file.code)
+          .join("\n"),
+      ).not.toContain("FERRIKI_CODE_STYLESHEET_URL");
+      const maps = files
+        .filter((file) => file.type === "asset" && file.fileName.endsWith(".mjs.map"))
+        .map((file) => JSON.parse(String(file.source)));
+      expect(maps.length).toBeGreaterThan(0);
+      expect(maps.flatMap((map) => map.sources).every((source) => source.length > 0)).toBe(true);
+      expect(maps.flatMap((map) => map.sources).join("\n")).toContain("src/first.tsx");
+      expect(maps.flatMap((map) => map.sources).join("\n")).toContain("src/second.tsx");
+    }
+  });
+
+  it("rejects relative Vite bases for direct macro SSR", async () => {
+    const root = await createProject({
+      "src/main.tsx": `import { Code } from "@ferriki/core/react/macro";
+const h = (type, props) => ({ type, props });
+const block = <Code source="plain" language="text" />;
+export const host = block.type(block.props);`,
+    });
+    for (const base of ["./", ""]) {
+      await expect(
+        build({
+          configFile: false,
+          root,
+          base,
+          logLevel: "silent",
+          plugins: [plugin()],
+          oxc: { jsx: { runtime: "classic", pragma: "h" } },
+          build: { ssr: join(root, "src/main.tsx"), write: false },
+        }),
+      ).rejects.toThrow(/SSR requires an absolute Vite `base`/);
+    }
+  });
+
   it("parses only modules that import a macro, in Vite build and dev", async () => {
     const root = await createProject({
       "index.html":
@@ -1197,7 +1346,8 @@ console.log(block);
     });
     try {
       const module = await server.transformRequest("/src/example.tsx");
-      expect(module.code).not.toContain("virtual:ferriki-vite/");
+      expect(cssImportId(module.code)).toBeUndefined();
+      expect(module.code).toContain("virtual:ferriki-vite/code-element-stylesheet-url");
       expect(module.code).toContain("web-component.mjs");
       expect(module.code).toContain("jsxValue");
       expect(module.code).toContain('h("ferriki-code"');

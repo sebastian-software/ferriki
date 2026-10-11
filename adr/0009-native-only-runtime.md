@@ -123,14 +123,16 @@ the [cross-build reference](https://napi.rs/docs/cli/build), and the
 
 The browser-safe `@ferriki/core/macro` subpath contains only a marker that
 throws when it is not transformed. It imports no engine or native loader.
-`@ferriki/vite` recognizes the marker at build time, and prepared HTML/CSS is
-delivered to the browser; the addon contains no macro scanner. The marker
-provides no browser highlighting ([ADR 0018](0018-inline-highlighting-macros.md)).
-The framework-free `@ferriki/core/web-component` subpath presents trusted
-prepared HTML/CSS and also imports no engine or native loader
-([ADR 0019](0019-shadow-dom-code-elements.md)). Its `/server` subpath only inserts
-prepared HTML into Declarative Shadow DOM; it does not highlight. The native loader remains
-internal.
+`@ferriki/vite` recognizes the marker at build time and prepares HTML/CSS with
+the native highlighter; the addon contains no macro scanner. The React macro's
+server branch emits that prepared HTML as Declarative Shadow DOM, and its
+browser branch registers blocks for reference hosts. Neither branch highlights
+in the browser ([ADR 0018](0018-inline-highlighting-macros.md)). The
+framework-free `@ferriki/core/web-component` subpath presents trusted prepared
+HTML/CSS and imports no engine or native loader ([ADR
+0019](0019-shadow-dom-code-elements.md)). Its `/server` subpath remains a
+complete-HTML helper for manually authored hosts; it does not highlight. The
+native loader remains internal.
 
 ## Consequences
 
@@ -172,3 +174,5 @@ internal.
 - 2026-10-11: Clarifies that native-only applies to highlighting; separate
   framework-free browser and DSD server entries present prepared HTML/CSS
   without adding a browser highlighter or native dependency.
+- 2026-10-11: Records direct macro-generated DSD during React SSR; the
+  framework-free server helper remains for manually authored reference hosts.

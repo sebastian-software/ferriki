@@ -196,6 +196,24 @@ export const FerrikiCodeElement = defineCodeElement(${JSON.stringify({ css, them
   );
 }
 
+async function addNoJsMacroCap(project) {
+  const appPath = join(project, "src", "app.jsx");
+  const source = await readFile(appPath, "utf8");
+  const macroProps = '          lineNumbers\n          className="macro-shadow-code"';
+  assert.equal(
+    source.split(macroProps).length - 1,
+    1,
+    "the default macro fixture should have one stable insertion point for its no-JS cap",
+  );
+  await writeFile(
+    appPath,
+    source.replace(
+      macroProps,
+      '          lineNumbers\n          maxLines={2}\n          className="macro-shadow-code"',
+    ),
+  );
+}
+
 async function writeElementProbe(project) {
   await writeFile(
     join(project, "src", "element-probe.js"),
@@ -1711,7 +1729,10 @@ async function check(styleMode, browserName) {
     );
   await symlink(join(nodeRoot, "ferriki"), join(projectModules, "@ferriki", "core"), "dir");
   await writeElementProbe(project);
-  if (!serveOnly) await writeFontFixture(project, styleMode);
+  if (!serveOnly) {
+    await addNoJsMacroCap(project);
+    await writeFontFixture(project, styleMode);
+  }
   const template = await readFile(join(project, "index.html"), "utf8");
   let server;
   let ferrikiPlugin;
@@ -1720,13 +1741,11 @@ async function check(styleMode, browserName) {
     configureServer(vite) {
       vite.middlewares.use(async (request, response, next) => {
         const url = new URL(request.url ?? "/", "http://localhost");
-        if (url.pathname === "/ferriki-code.css" || url.pathname === "/reference.css") {
+        if (url.pathname === "/reference.css") {
           try {
             response.setHeader("content-type", "text/css; charset=utf-8");
-            if (url.pathname === "/reference.css") {
-              const { referenceCss } = await vite.ssrLoadModule("/src/reference-server.jsx");
-              response.end(referenceCss);
-            } else response.end(ferrikiPlugin.api.codeElementCss());
+            const { referenceCss } = await vite.ssrLoadModule("/src/reference-server.jsx");
+            response.end(referenceCss);
           } catch (error) {
             response.statusCode = 500;
             response.end(error.stack ?? String(error));
@@ -1747,9 +1766,15 @@ async function check(styleMode, browserName) {
               : referenceServer.renderReferenceShadows();
           } else {
             const { render } = await vite.ssrLoadModule("/src/server.jsx");
-            rendered = ferrikiPlugin.api.renderCodeElements(render(), {
-              stylesheetHref: "/ferriki-code.css",
-            });
+            const renderCodeElements = ferrikiPlugin.api.renderCodeElements;
+            ferrikiPlugin.api.renderCodeElements = () => {
+              throw new Error("the default Code macro must render DSD without postprocessing");
+            };
+            try {
+              rendered = render();
+            } finally {
+              ferrikiPlugin.api.renderCodeElements = renderCodeElements;
+            }
           }
           let html = template.replace("<!--ssr-outlet-->", rendered);
           if (url.pathname === "/reference")
@@ -1804,20 +1829,17 @@ async function check(styleMode, browserName) {
     const { initialBlock, updatedBlock } = await server.ssrLoadModule("/src/snippets.jsx");
     const { render } = await server.ssrLoadModule("/src/server.jsx");
     const html = render();
-    const macroMarkup = ferrikiPlugin.api.renderCodeElements(html, {
-      stylesheetHref: "/ferriki-code.css",
-    });
-    assert.match(macroMarkup, /<template shadowrootmode="open">/);
-    assert.match(macroMarkup, /<!--ferriki-code:ferriki%2D[0-9a-f]+-->/u);
-    const rawMacroHost = html.match(
-      /<ferriki-code[^>]+code-ref="ferriki-[a-f0-9]{64}"[^>]*><\/ferriki-code>/u,
+    const macroHost = html.match(
+      /<ferriki-code[^>]+code-ref="ferriki-[a-f0-9]{64}"[^>]*>[\s\S]*?<\/ferriki-code>/u,
     )?.[0];
-    assert(rawMacroHost, "raw default Code output did not contain an empty code-ref host");
-    assert.doesNotMatch(rawMacroHost, /highlightedCode=|<pre/iu);
-    assert.match(macroMarkup, /<pre[^>]*>[\s\S]*?<code>/u);
+    assert(macroHost, "default Code macro SSR did not render a reference-backed custom element");
+    assert.match(macroHost, /<template shadowrootmode="open">/);
+    assert.match(macroHost, /<!--ferriki-code:ferriki%2D[0-9a-f]+-->/u);
+    assert.match(macroHost, /<pre[^>]*>[\s\S]*?<code>/u);
     assert.match(
-      macroMarkup,
-      /<link rel="stylesheet" href="\/ferriki-code\.css" data-ferriki-code-css>/u,
+      macroHost,
+      /<link rel="stylesheet" href="\/@ferriki\/code-elements\.css" data-ferriki-code-css>/u,
+      "default Code macro SSR did not include the Vite-managed shared stylesheet URL",
     );
     await checkUpgradePaths(browser, baseUrl, initialBlock);
     const referenceServer = await server.ssrLoadModule("/src/reference-server.jsx");
@@ -1857,6 +1879,13 @@ async function check(styleMode, browserName) {
         "SSR did not preserve highlighted HTML in the custom property attribute",
       );
       const macroHostWithoutJs = page.locator('[data-panel="macro"] ferriki-code');
+      await page.waitForFunction(() =>
+        Boolean(
+          document
+            .querySelector('[data-panel="macro"] ferriki-code')
+            ?.shadowRoot?.querySelector("link[data-ferriki-code-css]")?.sheet,
+        ),
+      );
       assert.deepEqual(
         await macroHostWithoutJs.evaluate((host) => ({
           root: Boolean(host.shadowRoot),
@@ -1871,10 +1900,38 @@ async function check(styleMode, browserName) {
           root: true,
           visible: true,
           ref: await macroHostWithoutJs.getAttribute("code-ref"),
-          links: [`${baseUrl}/ferriki-code.css`],
+          links: [`${baseUrl}/@ferriki/code-elements.css`],
           inlineStyles: 0,
         },
         "default Code macro SSR did not use declarative Shadow DOM and one external stylesheet URL",
+      );
+      assert.deepEqual(
+        await macroHostWithoutJs.evaluate(tokenStyles),
+        await page.locator("[data-light-code]").evaluate(tokenStyles),
+        "default Code macro's no-JavaScript stylesheet differs from the light DOM baseline",
+      );
+      assert(
+        (await macroHostWithoutJs.evaluate((host) =>
+          Number.parseFloat(getComputedStyle(host).minBlockSize),
+        )) > 0,
+        "default Code macro SSR did not reserve its source-derived height without JavaScript",
+      );
+      const macroCap = await macroHostWithoutJs.evaluate((host) => {
+        const pre = host.shadowRoot.querySelector("pre");
+        return {
+          maxLines: host.getAttribute("max-lines"),
+          maxBlockSize: host.style.getPropertyValue("--ferriki-code-max-block-size"),
+          overflow: getComputedStyle(pre).overflow,
+          clientHeight: pre.clientHeight,
+          scrollHeight: pre.scrollHeight,
+        };
+      });
+      assert.equal(macroCap.maxLines, "2", "default macro SSR did not preserve its maxLines prop");
+      assert.match(macroCap.maxBlockSize, /^calc\(2 \*/u);
+      assert.equal(macroCap.overflow, "auto");
+      assert(
+        macroCap.scrollHeight > macroCap.clientHeight,
+        "default macro's no-JavaScript DSD cap did not make the code pane scrollable",
       );
       await page.goto(`${baseUrl}/fonts`);
       assert.equal(

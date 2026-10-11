@@ -258,10 +258,12 @@ host, or are passed to the renderer when supplied. `theme` selects a configured
 alias; `maxLines` is an optional positive safe integer visible-line cap with
 vertical scrolling. An absent or `undefined` renderer uses the single built-in
 Web Component presentation; callback results are retained. The element owns
-prepared HTML in its shadow root, while React owns an empty reference host.
-Without the optional complete-HTML Declarative Shadow DOM stage, highlighted
-content appears after client registration; the host reserves its expected
-height. See [Shadow code elements](shadow-code-elements.md) for styling and SSR
-migration. The marker and import are erased before React's JSX transform. React
-is only required by consumers of this entry's type declarations and generated
-JSX, not by the core runtime.
+prepared HTML in its shadow root. React SSR emits it as Declarative Shadow DOM
+through a server-only HTML sink; the browser parser creates the root before
+upgrade, and hydration retains its nodes. The browser render emits an empty
+reference host and registers prepared blocks for hydration and later client
+navigation. The macro uses Vite's SSR mode flag to select the output. See
+[Shadow code elements](shadow-code-elements.md) for the lifecycle, styling,
+and migration details. The marker and import are erased before React's JSX
+transform. React is only required by consumers of this entry's type declarations
+and generated JSX, not by the core runtime.

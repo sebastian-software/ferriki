@@ -9,16 +9,20 @@ Last updated: 2026-10-11
 ## Context
 
 Ferriki prepares HTML plus optional CSS. An ordinary custom element can own
-that finished markup while React manages its empty host. A reference registry
-keeps the HTML outside React props, and a separate server HTML stage can
-populate the shadow root before JavaScript without a JSX token serializer.
+that finished markup while React manages its host. A reference registry keeps
+HTML outside React props. During SSR, the macro can put prepared HTML inside
+Declarative Shadow DOM (DSD) through a server-only HTML sink; in the browser it
+returns an empty reference host and registers the same block for later client
+navigation. The document parser creates the shadow root before custom-element
+upgrade, which preserves the server nodes without a JSX token serializer.
 
-The initial template-based implementation retained React HTML injection and
-repeated local CSS in each root. A direct property interface is simpler and
-allows all code instances to adopt one constructed stylesheet. That property
-path still serializes the complete HTML as an escaped SSR attribute. A short
-reference avoids that transport, while Declarative Shadow DOM restores
-highlighted output before JavaScript through the document parser.
+A direct property interface remains useful for consumers who need to transport
+HTML themselves, but it serializes the complete value as an escaped SSR
+attribute. A short reference avoids that transport. One shared stylesheet can
+serve the DSD template before JavaScript and then be adopted by every root.
+The [lifecycle diagram](../docs/shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
+and [ownership diagram](../docs/shadow-code-elements.md#dom-and-module-ownership)
+show the build, parser, upgrade, hydration, and later client-rendered paths.
 
 ## Decision
 
@@ -81,50 +85,60 @@ highlighted output before JavaScript through the document parser.
   scroll it. The default `Code` macro applies both the cap and matching
   no-JavaScript reservation; manual hosts supply the attribute and
   `codeElementSizing(lineCount, maxLines)` themselves.
-- The React `Code` macro returns an empty custom-element JSX host with
+- The React `Code` macro produces a custom-element host with
   `code-ref={codeRef}`. Module-level descriptors and HTML registration stay
   outside React props. Content-derived IDs share identical prepared results;
-  the module registers once on its first default render. It uses no React
-  HTML injection, hooks, portals, or hydration suppression. React owns the host; the element owns
-  the highlighted shadow contents. Runtime `className` and `theme` apply to
-  the host. Module-level styles reserve space from the build-known source line
-  count and optional cap, including trailing blank lines; empty source reserves
-  one line. Runtime `className`, `theme`, and `maxLines` apply to the host. Theme
-  aliases are validated as CSS-safe identifiers at build time.
+  the client module registers once on its first default render. The helper uses
+  `import.meta.env.SSR` to select its output. The server branch passes the DSD
+  template through server-only `dangerouslySetInnerHTML`; the client branch
+  returns an empty reference host after registering prepared HTML and CSS.
+  This trusted HTML boundary does not create token JSX or use hydration
+  suppression. React owns the host; the element owns the highlighted shadow
+  contents. Runtime `className` and `theme` apply to the host. Module-level
+  styles reserve space from the build-known source line count and optional cap,
+  including trailing blank lines; empty source reserves one line. Theme aliases
+  are validated as CSS-safe identifiers at build time.
 - `@ferriki/core/web-component/server` exports the framework-free
   `renderCodeElementShadows(markup, { blocks, stylesheetHref })` helper. It
   fills eligible empty reference hosts in complete, well-formed server HTML
   with Declarative Shadow DOM, a reference marker, and an optional link to
   one CSS asset. It skips manual/property hosts and inert contexts, rejects
   unknown eligible references, and is idempotent. This stage runs outside React.
-- Register after the browser has parsed the DSD HTML. Upgrade reuses the root
-  and retains nodes for a matching reference marker. React hydrates the empty
-  light-DOM host. Marked CSS links are removed after that block is registered
-  and the shared sheet adopted; unresolved blocks keep their links so partial
-  registration preserves SSR styling. Class-mode CSS must be supplied with or
-  before its blocks: ID registration signals style readiness. The generated
-  Vite helper supplies both together. Without this server stage, reference
-  hosts are empty before JavaScript. The direct property interface can still
-  use escaped-attribute SSR and caller-supplied plain fallback children.
-  Ordinary complete-page `renderToString` hydration is verified. Parser-time
-  predefinition, streaming SSR, and React Server Components are outside the
-  verified contract.
-- Each transformed React module contributes its combined descriptor CSS to
-  registration. Default-only React output requires no page CSS asset.
-  `code()` and React calls with a declared `render` prop keep ordinary Vite CSS
-  delivery and the unchanged HTML-backed descriptor. A runtime absent or
-  `undefined` renderer selects the default; a callback's result is returned
-  unchanged. Custom renderers do not reserve the tag unless they use it.
+- Register after the browser has parsed the DSD HTML and before hydration.
+  Upgrade reuses the parser-created root and retains nodes for a matching
+  reference marker. React hydrates the host without moving shadow nodes. Marked
+  CSS links are removed after the matching block's CSS is registered and the
+  shared sheet is adopted; unresolved blocks keep their links so partial or
+  lazy registration preserves SSR styling. Class-mode CSS must be supplied
+  with or before its blocks. The generated Vite helper supplies both together.
+  Ordinary complete-page `renderToString` hydration is verified. Defining the
+  element before the parser reaches DSD, streaming SSR, and React Server
+  Components are outside the verified contract.
+- Each transformed React module contributes its descriptor CSS to the shared
+  constructed sheet, and the DSD template links one shared component CSS asset
+  for pre-JavaScript rendering. `code()` and React calls with a declared
+  `render` prop keep ordinary Vite CSS delivery and the unchanged HTML-backed
+  descriptor. A runtime absent or `undefined` renderer selects the default; a
+  callback's result is returned unchanged. Custom renderers do not reserve the
+  tag unless they use it.
+- The Vite adapter serves the shared stylesheet at `${base}@ferriki/code-elements.css`
+  in development and emits one aggregated, hashed `assets/ferriki-code-*.css`
+  file in production. The SSR build re-emits that asset even when Vite suppresses
+  ordinary SSR assets; applications deploy the CSS emitted by the SSR build
+  because client and server graphs can use different hashes. Direct macro SSR
+  requires an absolute path or URL `base`; relative bases are rejected because
+  the DSD URL would be ambiguous on nested routes.
 - The Vite plugin API exposes `renderCodeElements`, `codeElementBlocks`, and
-  `codeElementCss` for already transformed React modules. Applications install
-  their SSR HTML stage and shared CSS route explicitly. Production builds can
-  save the registry and CSS for the standalone helper. Client and server
-  preparation must use identical options for matching content-derived IDs.
+  `codeElementCss` for already transformed React modules. `renderCodeElements`
+  remains an explicit complete-HTML path for manually authored reference hosts;
+  default macro SSR needs no post-render rewrite. Production builds can save
+  the registry and CSS for the standalone helper. Client and server preparation
+  must use identical options for matching content-derived IDs.
 - The browser HTML parser remains necessary inside the element. Source is
   escaped by Ferriki, while custom transformer markup is trusted caller code.
-  Shadow DOM is not a sanitizer or security boundary. String sinks can be
-  rejected by strict Trusted Types policies; no policy or `TrustedHTML` hook
-  is provided. Inline token output still requires CSP permission for style
+  Shadow DOM is not a sanitizer or security boundary. The component's client
+  HTML sink can be rejected by strict Trusted Types policies; no policy or `TrustedHTML` hook is
+  provided. Inline token output still requires CSP permission for style
   attributes; classes output avoids token style attributes. Automatic SSR
   sizing uses host style attributes in both modes and needs the corresponding
   permission too. Shared constructed CSS replaces per-root style tags and
@@ -134,13 +148,13 @@ highlighted output before JavaScript through the document parser.
 
 - Consumers can use `<ferriki-code code-ref="…" />` directly in React 19 and
   register prepared HTML separately. The `highlightedCode` property remains
-  available for direct string transport. There is no token-component output
-  variant or React HTML injection in the default presentation. The browser
-  runtime only presents prepared code.
-- Shared CSS reduces repeated declarations. Reference SSR carries only IDs;
-  DSD adds raw prepared HTML outside React and highlights before JavaScript.
-  The default client module still carries prepared HTML for registration and
-  updates. The registry can also be delivered separately by a consumer.
+  available for direct string transport. The default presentation uses a
+  server-only raw HTML sink to serialize DSD; it does not create a token JSX
+  tree. The browser runtime only presents prepared code.
+- Shared CSS reduces repeated declarations. Server HTML contains DSD with the
+  prepared block inside the host; the client render carries only the reference
+  host and registers HTML for hydration and later navigation. The registry can
+  also be delivered separately by a consumer.
 - The Node highlighter remains HTML-only. The root API, `code()` descriptor,
   theme preparation, and native renderer retain their existing contracts.
 - CSS isolation and ownership are the primary benefits; no general performance
@@ -173,3 +187,7 @@ highlighted output before JavaScript through the document parser.
   with reference registration, shared styles, line caps, and optional complete-HTML
   DSD. Preserves the HTML API and custom-render escape hatch; records measurement
   boundaries and the limits of CSS isolation.
+- 2026-10-11: Makes direct macro-generated DSD the default React SSR path and
+  reserves the complete-HTML helper for manually authored reference hosts.
+  Records Vite's one shared development/production stylesheet asset and the
+  absolute-base requirement for direct SSR URLs.

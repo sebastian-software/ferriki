@@ -442,12 +442,13 @@ resolve `code-ref` IDs; the direct `highlightedCode` property and
 `highlighted-code` attribute also remain available. The optional `maxLines`
 property or `max-lines` attribute caps visible lines and keeps longer code
 scrollable; `codeElementSizing(lineCount, maxLines?)` reserves matching height
-before JavaScript. The React `Code` macro renders an empty reference host by
-default and applies that reservation automatically. The separate
+before JavaScript. The React `Code` macro applies that reservation automatically.
+During SSR it emits prepared HTML as Declarative Shadow DOM; in the browser it
+emits an empty reference host and registers blocks for hydration and later
+client-side navigation. The browser parser creates the server shadow root before
+upgrade, and hydration retains its nodes. The separate
 `@ferriki/core/web-component/server` entry exports `renderCodeElementShadows`
-to fill complete server HTML with Declarative Shadow DOM, preserving highlighted
-output before JavaScript. Both entries import no native loader or browser
-highlighter. Without that server stage, reference hosts are empty before upgrade.
-The root HTML API and `code()` descriptor remain unchanged. See [Shadow code
-elements](shadow-code-elements.md) for registration, SSR, themes, CSS migration,
-and policy limits.
+for manually authored reference hosts in complete server HTML. Both entries
+import no native loader or browser highlighter. The root HTML API and `code()`
+descriptor remain unchanged. See [Shadow code elements](shadow-code-elements.md)
+for registration, the full lifecycle, CSS delivery, and policy limits.

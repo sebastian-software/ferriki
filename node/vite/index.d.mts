@@ -25,13 +25,15 @@ export type FerrikiViteApi = {
   /** Snapshot of prepared React HTML, suitable for a saved server-side registry. */
   codeElementBlocks(): Readonly<Record<string, string>>;
   /**
-   * Fill empty prepared `ferriki-code` hosts in complete SSR HTML with Declarative
-   * Shadow DOM. Call after rendering; this does not process a stream.
+   * Fill manually authored empty `ferriki-code` hosts in complete SSR HTML with
+   * Declarative Shadow DOM. React Code macros already emit their own templates.
+   * Call after rendering; this does not process a stream.
    */
   renderCodeElements(markup: string, options?: { stylesheetHref?: string }): string;
   /**
-   * Shared shadow CSS for transformed React macros. Serve this as the stylesheet
-   * referenced by `renderCodeElements` to preserve highlighting before JavaScript.
+   * Shared shadow CSS for transformed React macros. The plugin serves/emits it
+   * automatically for Code macros; manual `renderCodeElements` consumers can use
+   * this snapshot for their own stylesheet endpoint or asset.
    */
   codeElementCss(): string;
 };

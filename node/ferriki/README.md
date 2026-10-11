@@ -141,17 +141,18 @@ with the same version as this package:
 npm install @ferriki/core @ferriki/vite
 ```
 
-React `<Code />` renders an empty `<ferriki-code code-ref="…">` host by default.
-It reserves space from the source line count before JavaScript fills the host.
-Pass `maxLines={12}` to cap the visible height; longer blocks retain all code
-and scroll vertically, while shorter blocks stay short. Omit it for an
-unlimited block. The macro adjusts its pre-JavaScript reservation automatically.
-Prepared HTML lives in the Web Component's registry, and its Shadow DOM instances
-share a stylesheet. The optional server HTML stage supplies Declarative Shadow
-DOM for highlighted output before JavaScript; React hydrates only the host.
+React `<Code />` uses `<ferriki-code>` as its built-in presentation. React SSR
+includes Declarative Shadow DOM with the prepared highlighted code, while the
+browser render uses an empty reference host and registers its prepared blocks
+for hydration and later client-rendered navigation. The parser creates the
+server shadow root before the component upgrades; upgrade and hydration retain
+its nodes. Both paths share one stylesheet. Pass `maxLines={12}` to cap the
+visible height; longer blocks retain all code and scroll vertically, while
+shorter blocks stay short. Omit it for an unlimited block. The macro adjusts
+its pre-JavaScript reservation automatically.
 `@ferriki/core/web-component` also presents prepared HTML/CSS without React,
-and `@ferriki/core/web-component/server` fills server-rendered reference hosts.
-The direct `highlightedCode` property remains available. See the
+and `@ferriki/core/web-component/server` fills manually authored server-rendered
+reference hosts. The direct `highlightedCode` property remains available. See the
 [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
 for SSR, registration, theme switching, CSS migration, and policy limits.
 

@@ -1,8 +1,8 @@
 # Inline macro consumer fixture
 
 This React fixture covers both the `code()` descriptor API and the `Code` JSX
-macro. The first route uses the macro's reference host plus the plugin's
-Declarative Shadow DOM server stage and shared CSS URL; the lazy second
+macro. The first route exercises the macro's built-in Declarative Shadow DOM
+SSR output and shared stylesheet; the lazy second
 route uses a render function that explicitly forwards the prepared descriptor
 and `className` to a custom component. Both
 routes render on the server, hydrate in the browser and exercise navigation,

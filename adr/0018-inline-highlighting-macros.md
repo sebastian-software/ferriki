@@ -58,11 +58,14 @@ host's parser is right here.
   only its declarations refer to React types. No separate npm package is needed.
 - `Code` imports are resolved by their reserved name before JSX lowering. Vite
   replaces each element with a stable module-local React helper. When its
-  runtime `render` prop is absent or `undefined`, the helper registers
-  `<ferriki-code>` and returns an empty reference host. The element resolves
-  the prepared HTML inside its Shadow DOM. Registration occurs once inside this
-  default branch, before React creates the
-  returned host, so a custom renderer does not reserve the custom-element name.
+  runtime `render` prop is absent or `undefined`, the helper uses
+  `import.meta.env.SSR` to select output. The server branch returns a
+  `<ferriki-code>` host whose server-only `dangerouslySetInnerHTML` value
+  contains Declarative Shadow DOM for the prepared block. The client branch
+  registers the module's HTML and CSS once and returns an empty reference host.
+  The element resolves client-created references inside its shadow root.
+  Registration occurs only inside this default branch, so a custom renderer
+  does not reserve the custom-element name.
   `className` applies to the host and accepts a string or runtime expression.
   Runtime `theme` selects a configured theme alias. Runtime `maxLines` accepts
   a positive safe integer and is optional; omission or `undefined` leaves the
@@ -75,17 +78,18 @@ host's parser is right here.
   element is created, never during compilation. The unreleased `component` prop
   is replaced without an alias.
 - The default React presentation uses the framework-free
-  `@ferriki/core/web-component` entry. Prepared HTML stays outside React in a
-  module-level registry; the helper passes only a content reference and renders
-  an empty `code-ref` host. React owns the host; the element owns its highlighted
-  shadow contents. A separate complete-HTML server stage can fill Declarative
-  Shadow DOM, preserving highlighted no-JavaScript output and parser-created
-  nodes through upgrade and hydration. Without that stage the host is empty
-  until registration. No React HTML injection, hooks, or hydration suppression
-  is required. This contract covers
-  ordinary React `renderToString` hydration, not streaming SSR. Theme aliases
-  from the Vite `themes` map must be CSS-safe identifiers; the macro validates
-  them during the build. Shared CSS, lifecycle, and trust limits are in ADR 0019.
+  `@ferriki/core/web-component` entry. The browser helper keeps prepared HTML
+  in a module-level registry, passes only a content reference, and renders an
+  empty `code-ref` host. For SSR, the helper uses a server-only
+  `dangerouslySetInnerHTML` value to emit DSD directly; the browser parser
+  creates the root before upgrade, and hydration retains its nodes. Later
+  client navigation resolves new references from the client registry. The
+  macro does not serialize tokens as JSX or suppress hydration. This contract
+  covers ordinary complete-page React `renderToString` hydration, not streaming
+  SSR or React Server Components. Theme aliases from the Vite `themes` map must
+  be CSS-safe identifiers; the macro validates them during the build. Shared
+  CSS, lifecycle, diagrams, and trust limits are in ADR 0019 and the
+  [Shadow code elements guide](../docs/shadow-code-elements.md).
 - `code()` keeps its existing HTML-backed prepared descriptor. Its applicable
   CSS continues through normal Vite CSS delivery. React calls that declare a
   `render` prop retain the same descriptor, including `code.html`, and retain
@@ -188,13 +192,15 @@ host's parser is right here.
   into successful highlighting. Per-call `lineNumbers` overrides the plugin
   default; explicit `showLineNumbers` metadata also enables numbering.
 - Transformed server and client modules contain the same prepared code, HTML,
-  CSS and metadata. React server rendering emits only a reference host. The
-  plugin API exposes the transformed HTML registry and shared CSS, plus a
-  separate DSD stage for complete server HTML. Applications can save registry
-  and CSS assets after an SSR build. Registering after browser parsing retains
-  matching DSD nodes and adopts shared CSS. Hydration and navigation use that prepared data without
-  native highlighting or browser asset downloads. Browser-side highlighting
-  remains unsupported ([ADR 0009](0009-native-only-runtime.md)).
+  CSS and metadata. React server rendering emits a host with DSD directly; the
+  browser branch emits an empty reference host and registers prepared content
+  for hydration and navigation. The plugin API exposes the transformed HTML
+  registry and shared CSS. Its separate complete-HTML DSD helper remains for
+  manually authored reference hosts. Applications can save registry and CSS
+  assets after an SSR build. Registering after browser parsing retains matching
+  DSD nodes and adopts shared CSS. Hydration and navigation use prepared data
+  without native highlighting or browser asset downloads. Browser-side
+  highlighting remains unsupported ([ADR 0009](0009-native-only-runtime.md)).
 - A Markdown/MDX host must expose the imported marker and call before lowering
   or hiding that module. `include(id)` adds such an exposed module ID; an
   included ID without a script extension is parsed as TSX. The macro does not
@@ -221,8 +227,9 @@ host's parser is right here.
 - The core macro subpath is safe to import in a browser but is not a browser
   highlighting runtime. The separate web-component subpath presents prepared
   output without native or React runtime dependencies. Missing Vite integration
-  fails clearly; the prepared content is shared between server and client
-  through stable references, with optional DSD transport outside React.
+  fails clearly. The React macro emits DSD in its server branch and shares
+  prepared content with client rendering through stable references; the
+  complete-HTML helper remains for manual reference hosts.
 - Macro recognition is not built into the N-API host. Neither the addon nor
   the published Rust highlighter acquires JavaScript parser dependencies or a
   macro API. The release summary lists the size of every sidecar's
@@ -258,6 +265,9 @@ host's parser is right here.
   presentation with shared CSS, line-count reservation, and optional maxLines.
   Adds a separate complete-HTML DSD stage while retaining the HTML descriptor
   and application-owned render callback.
+- 2026-10-11: Makes direct macro-generated DSD the default SSR output, keeps the
+  client reference registry for hydration and later navigation, and leaves the
+  complete-HTML DSD helper for manually authored reference hosts.
 
 - 2026-10-04: `@ferriki/vite` requires Vite 8, transforms only modules that import a macro and parses them once with Vite's parser; the imported macro name is reserved in its module instead of yielding to lexical shadowing; diagnostics use Vite's plugin error channel; the marked HTML and static intrinsic JSX paths are removed (#216).
 
