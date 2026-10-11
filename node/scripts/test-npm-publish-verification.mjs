@@ -1,13 +1,96 @@
 import assert from "node:assert/strict";
 
-import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   MAX_ATTEMPTS,
   registryVersionUrl,
+  runPublicNpmInstall,
   verifyCdnPayloads,
   verifyNpmPublication,
 } from "./verify-npm-publish.mjs";
+
+let npmVersionProbes = 0;
+assert.throws(
+  () =>
+    runPublicNpmInstall({
+      packageName: "@ferriki/core",
+      version: "1.0.0",
+      cwd: tmpdir(),
+      nodeVersion: "v22.23.3",
+      spawnImpl: (_command, args, options) => {
+        assert.equal(options.stdio, "pipe", "a failed install must retain diagnostic output");
+        assert.equal(options.maxBuffer, 1024 * 1024, "captured output must be bounded");
+        if (args[0] === "--version") {
+          npmVersionProbes += 1;
+          return { status: 0, stdout: "10.9.9\n" };
+        }
+        assert.deepEqual(args, [
+          "install",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund",
+          "@ferriki/core@1.0.0",
+        ]);
+        return {
+          status: 1,
+          signal: "SIGTERM",
+          stdout: `${"old output\n".repeat(500)}npm error code ETARGET\n`,
+          stderr:
+            "npm error https://writer:secret@registry.npmjs.org/x?token=private\nNODE_AUTH_TOKEN=hidden\n",
+        };
+      },
+    }),
+  (error) => {
+    assert.match(error.message, /@ferriki\/core@1\.0\.0/);
+    assert.match(error.message, /Node v22\.23\.3, npm 10\.9\.9/);
+    assert.match(error.message, /exit status 1; signal SIGTERM; spawn error none/);
+    assert.match(error.message, /stdout tail:[\s\S]*npm error code ETARGET/);
+    assert.match(error.message, /stderr tail:/);
+    assert.doesNotMatch(error.message, /writer:secret|token=private|NODE_AUTH_TOKEN=hidden/);
+    assert(error.message.length < 5_000, "diagnostic tails must remain bounded");
+    return true;
+  },
+);
+assert.equal(npmVersionProbes, 1, "npm version is queried only after a failure");
+
+let successfulInstallCalls = 0;
+assert.equal(
+  runPublicNpmInstall({
+    packageName: "@ferriki/core",
+    version: "1.0.0",
+    cwd: tmpdir(),
+    spawnImpl: (_command, args) => {
+      assert.equal(args[0], "install", "a successful install does not probe npm again");
+      successfulInstallCalls += 1;
+      return { status: 0, signal: null, stdout: "npm install succeeded", stderr: "" };
+    },
+  }),
+  undefined,
+);
+assert.equal(successfulInstallCalls, 1);
+
+assert.throws(
+  () =>
+    runPublicNpmInstall({
+      packageName: "@ferriki/vite",
+      version: "1.0.0",
+      cwd: tmpdir(),
+      npmCommand: join(tmpdir(), `ferriki-missing-npm-${randomUUID()}`),
+      spawnImpl: (command, args, options) => spawnSync(command, args, { ...options, shell: false }),
+    }),
+  (error) => {
+    assert.match(error.message, /@ferriki\/vite@1\.0\.0/);
+    assert.match(error.message, /npm unavailable/);
+    assert.match(error.message, /exit status none; signal none; spawn error ENOENT:/);
+    assert.match(error.message, /stdout tail:\n\(empty\)/);
+    return true;
+  },
+  "a real spawn failure must retain the executable error",
+);
 
 // The main package and its sidecars live in the `@ferriki` scope, so the
 // helper has to encode the scope separator for the registry path.

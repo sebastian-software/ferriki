@@ -22,6 +22,78 @@ export const REQUEST_TIMEOUT_MS = 10_000;
 
 export const ASSETS_BASE_URL = "https://assets.ferriki.dev";
 const CDN_CONCURRENCY = 8;
+const NPM_OUTPUT_MAX_BYTES = 1024 * 1024;
+const NPM_DIAGNOSTIC_TAIL_CHARS = 2048;
+
+function safeDiagnosticTail(value) {
+  const redacted = String(value ?? "")
+    .replace(/\bBearer\s+[^\s"']+/gi, "Bearer [redacted]")
+    .replace(/(https?:\/\/)[^\s/@]+@/gi, "$1[redacted]@")
+    .replace(/([?&](?:token|auth|key|password)=)[^&#\s]+/gi, "$1[redacted]")
+    .replace(
+      /^.*(?:_authToken|_auth\s*[=:]|Authorization\s*:|npm_token|NODE_AUTH_TOKEN|password\s*[=:]).*$/gim,
+      "[redacted credential line]",
+    );
+  const output = [...redacted]
+    .map((character) => {
+      const code = character.codePointAt(0);
+      return (code < 32 && code !== 9 && code !== 10) || code === 127 ? "?" : character;
+    })
+    .join("");
+  if (!output) return "(empty)";
+  return `${output.length > NPM_DIAGNOSTIC_TAIL_CHARS ? "[earlier output omitted]\n" : ""}${output.slice(-NPM_DIAGNOSTIC_TAIL_CHARS)}`;
+}
+
+/** Install an exact public package and retain bounded diagnostics only on failure. */
+export function runPublicNpmInstall({
+  packageName,
+  version,
+  cwd,
+  npmCommand = process.platform === "win32" ? "npm.cmd" : "npm",
+  spawnImpl = spawnSync,
+  nodeVersion = process.version,
+}) {
+  const options = {
+    cwd,
+    encoding: "utf8",
+    stdio: "pipe",
+    shell: process.platform === "win32",
+    maxBuffer: NPM_OUTPUT_MAX_BYTES,
+  };
+  const args = [
+    "install",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund",
+    `${packageName}@${version}`,
+  ];
+  let result;
+  try {
+    result = spawnImpl(npmCommand, args, options);
+  } catch (error) {
+    result = { status: null, signal: null, error, stdout: "", stderr: "" };
+  }
+  if (result.status === 0 && !result.error && !result.signal) return;
+
+  let npmVersion = "unavailable";
+  try {
+    const probe = spawnImpl(npmCommand, ["--version"], options);
+    const output = String(probe.stdout ?? "").trim();
+    if (probe.status === 0 && /^\d+\.\d+\.\d+(?:[-+][0-9a-z.-]+)?$/i.test(output))
+      npmVersion = output;
+  } catch {
+    // The original install failure remains authoritative when npm cannot start.
+  }
+
+  const spawnError = result.error
+    ? safeDiagnosticTail(`${result.error.code ?? result.error.name}: ${result.error.message}`)
+    : "none";
+  throw new Error(
+    `public npm install failed for ${packageName}@${version} (Node ${nodeVersion}, npm ${npmVersion}; exit status ${result.status ?? "none"}; signal ${result.signal ?? "none"}; spawn error ${spawnError})\n` +
+      `stdout tail:\n${safeDiagnosticTail(result.stdout)}\n` +
+      `stderr tail:\n${safeDiagnosticTail(result.stderr)}`,
+  );
+}
 
 export function registryVersionUrl(packageName, version) {
   return `https://registry.npmjs.org/${encodeURIComponent(packageName)}/${encodeURIComponent(version)}`;
@@ -142,9 +214,7 @@ async function verifyPublicInstall(packageName, version) {
 
   try {
     run(["init", "--yes"], { stdio: "ignore" });
-    run(["install", "--ignore-scripts", "--no-audit", "--no-fund", `${packageName}@${version}`], {
-      stdio: "ignore",
-    });
+    runPublicNpmInstall({ packageName, version, cwd: tempRoot, npmCommand: npm });
     const releaseManifest = JSON.parse(
       await readFile(
         join(
@@ -226,9 +296,7 @@ async function verifyPublicViteInstall(packageName, version) {
 
   try {
     run(["init", "--yes"], { stdio: "ignore" });
-    run(["install", "--ignore-scripts", "--no-audit", "--no-fund", `${packageName}@${version}`], {
-      stdio: "ignore",
-    });
+    runPublicNpmInstall({ packageName, version, cwd: tempRoot, npmCommand: npm });
     const probe = join(tempRoot, "probe.mjs");
     await writeFile(
       probe,
