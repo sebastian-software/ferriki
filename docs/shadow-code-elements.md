@@ -10,7 +10,8 @@ that people can select and copy.
 Ferriki adds the syntax colors during the build. The browser receives the
 prepared result and does not run a highlighter.
 
-![One code block moves from a React component through build-time highlighting
+![A complete JSX Code call passes its example through the source property as a
+string with braces and backticks. The code moves through build-time highlighting
 and server HTML to an isolated area in the browser. React manages the page and
 outer code element; the Web Component manages the text inside.](assets/code-element-lifecycle-v2.png)
 

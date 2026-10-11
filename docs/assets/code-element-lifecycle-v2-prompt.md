@@ -5,6 +5,37 @@ block's journey and the boundary between React and the Web Component. The
 editable Mermaid diagrams in `../shadow-code-elements.md` cover implementation
 details separately.
 
+## Source example edit
+
+The selected image uses the following targeted edit to show the complete JSX
+call, including the string's braces and backticks. Its source matches the code
+shown in every later panel.
+
+```text
+Use case: precise-object-edit
+Asset type: introductory documentation infographic, US English
+Input image: edit target, the existing Ferriki four-step infographic.
+Primary request: Replace only the abbreviated JSX in the FIRST panel ('You write code') with a real, complete JSX macro call. The reader must see exactly how the example code is passed as a string through the source property, including curly braces and backticks.
+
+Render this exact seven-line code verbatim in the React component card:
+<Code
+  language="js"
+  source={`const answer = 42;
+function add(a, b) {
+  return a + b;
+}`}
+/>
+
+CRITICAL punctuation: On line 3, source= is followed by an opening curly brace { and then an actual backtick ` immediately before const. On line 6 the function's closing curly brace } is followed by an actual backtick ` and then the JSX expression's closing curly brace }. The final line is />. Do not use quotes around the full source string. No ellipses. No Markdown fence around the displayed code. Do not add a capitalized Source prop, children, or JSX interpolation inside the string.
+
+Use a readable, crisp monospaced font and subtle code coloring. Make the code fit naturally in that first card; a small adjustment to its internal padding or code font size is allowed. The complete first example must be comfortably legible, with every brace and backtick visible.
+The source body is EXACTLY the same four-line code already shown in panels 2, 3, 4 and the final browser picture. Preserve those code examples unchanged.
+
+Invariants: Keep all other panel headings, captions, labels, arrows, callouts, colors, layout, and the final browser ownership illustration unchanged. Preserve the image's landscape 1536 by 1024 proportions. Do not add extra explanations or implementation jargon. Modify only the contents and if necessary padding of the first React component card. No watermark.
+```
+
+## Original generation prompt
+
 ```text
 Use case: infographic-diagram
 Asset type: accessible introductory documentation illustration, US English labels
