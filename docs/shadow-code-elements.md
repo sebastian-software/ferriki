@@ -130,6 +130,12 @@ uses ordinary Vite CSS delivery. It does not register the tag automatically.
 
 ## Migrate existing React macros
 
+This default presentation transition targets Ferriki 1.1.0 as a one-time
+exception during the initial 1.x adoption period. Existing macro calls remain
+valid, but consumers of the previous DOM and CSS scoping need the migration
+below. See [ADR 0019](../adr/0019-shadow-dom-code-elements.md#release-scope)
+for the release scope.
+
 Existing `<Code />` calls select the Web Component without an opt-in flag.
 The generated host changes from a `div` containing highlighted HTML to
 `<ferriki-code>` with shadow content. This changes observable markup and CSS

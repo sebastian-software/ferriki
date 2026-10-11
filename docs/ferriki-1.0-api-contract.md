@@ -226,6 +226,13 @@ must be supported or added to the explicit boundary below.
 ### Release guarantees
 
 - The accepted Stable rows are the Ferriki 1.x compatibility promise.
+- The initial React `Code` macro presentation transition ships in 1.1.0 as
+  the one-time exception in [ADR 0019](../adr/0019-shadow-dom-code-elements.md#release-scope).
+  Its generated DOM and CSS scoping change; the existing call syntax, HTML API,
+  prepared descriptor, and custom renderer retain their contracts. Consumers
+  of the previous light-DOM presentation follow the
+  [migration guide](shadow-code-elements.md#migrate-existing-react-macros).
+  This exception does not extend to other Stable rows or future changes.
 - Shims are documented, covered by migration tests, and may emit a deprecation
   notice in a minor release. They are removed only in a planned major release
   or before 1.0 when this document marks them **Remove**.

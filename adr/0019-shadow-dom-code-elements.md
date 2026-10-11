@@ -181,6 +181,23 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   timer starts. React hydrates the outer hosts without walking shadow tokens;
   the interval difference does not establish corresponding React overhead.
 
+## Release scope
+
+Ship this first default React presentation transition as Ferriki 1.1.0. This
+is a one-time exception during the initial 1.x adoption period, limited to the
+macro's generated DOM and CSS scoping. Existing `<Code />` calls, the HTML API,
+the `code()` descriptor, and custom `render` callbacks retain their contracts.
+Consumers that style or inspect the previous light-DOM contents must follow
+the [migration guide](../docs/shadow-code-elements.md#migrate-existing-react-macros).
+This does not relax the published Rust semver gate or future compatibility
+guarantees for stable APIs.
+
+The integration commit carries `Release-As: 1.1.0`; the PR's commit override
+carries the same version for squash merges. This overrides the earlier major
+marker for this transition without changing global Release Please versioning
+or keeping a persistent `release-as` configuration. Release Please continues
+to own the synchronized package and crate version updates.
+
 ## History
 
 - 2026-10-11: Accepts the Web Component as the single built-in React presentation,
@@ -191,3 +208,6 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   reserves the complete-HTML helper for manually authored reference hosts.
   Records Vite's one shared development/production stylesheet asset and the
   absolute-base requirement for direct SSR URLs.
+- 2026-10-11: Targets 1.1.0 with a one-time release override for the initial
+  React macro presentation transition; retains the migration guidance and all
+  other stable API and Rust semver guarantees (#263).
