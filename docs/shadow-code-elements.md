@@ -1,29 +1,41 @@
 # Shadow code elements
 
-`<ferriki-code>` is a framework-free Web Component for prepared highlighted
-HTML. The React macro uses a short `code-ref`; the component resolves that
-reference and owns the token nodes in an open shadow root. During React SSR, the
-macro emits Declarative Shadow DOM (DSD) directly, so highlighted code is in the
-HTML before JavaScript. In the browser, it renders an empty reference host and
-registers prepared HTML for hydration and later client navigation. The parser
-creates the server shadow root before custom-element upgrade, and the element
-preserves those nodes.
+Think of each code block as a small display with its own styling. React
+controls where that display sits on the page and the attributes of its outer
+element. The `<ferriki-code>` Web Component controls the code inside it.
+Shadow DOM provides the boundary: page CSS selectors do not reach the code,
+and React does not manage its individual tokens. The code remains real text
+that people can select and copy.
 
-The React `Code` macro uses this reference interface in the browser and its
-server-rendered DSD form during SSR. The optional
-`@ferriki/core/web-component` and `@ferriki/core/web-component/server` entries
+Ferriki adds the syntax colors during the build. The browser receives the
+prepared result and does not run a highlighter.
+
+![One code block moves from a React component through build-time highlighting
+and server HTML to an isolated area in the browser. React manages the page and
+outer code element; the Web Component manages the text inside.](assets/code-element-lifecycle-v2.png)
+
+For the first page load with server rendering, the server sends the actual
+highlighted HTML inside a template in the code element. The browser moves that
+template's contents into the element's isolated area before JavaScript runs.
+The template is gone, and the code is already visible. React then attaches to
+the surrounding page and the outer code element; the code inside stays in
+place. This path needs no extra HTML processing step after server rendering.
+
+On later client navigation, the Web Component fills new code elements from
+prepared HTML included in the browser modules. The highlighter still does not
+run in the browser. The blocks share their style rules; the
+[style delivery details](#share-styles) appear later in this guide.
+
+This introductory illustration was generated with ImageGen; its
+[saved prompt](assets/code-element-lifecycle-v2-prompt.md) records the visual.
+The [implementation diagrams](#react-ssr-and-declarative-shadow-dom) show the
+individual runtime steps and final DOM structure.
+
+The optional `@ferriki/core/web-component` and
+`@ferriki/core/web-component/server` entries also work without React. They
 import no React runtime, native binding, asset loader, or highlighter. Prepare
 the HTML at build time or on the server. The server helper remains available
-for manually authored reference hosts; the default macro needs no post-render
-HTML stage.
-
-![Code macro lifecycle: build-time preparation, direct server template,
-browser parser, and React host hydration; two Shadow Roots share one browser
-stylesheet.](assets/code-element-lifecycle.png)
-
-This illustration is generated with ImageGen; its [saved prompt](assets/code-element-lifecycle-prompt.md)
-records the visual. The editable diagrams below show the lifecycle and final
-ownership in more detail.
+for manually authored reference hosts.
 
 ## Use the custom element in React
 

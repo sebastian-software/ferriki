@@ -4,7 +4,7 @@ order: 2
 ---
 
 import { HighlightingFlows } from "../../components/highlighting-flows";
-import codeElementLifecycle from "../../../../docs/assets/code-element-lifecycle.png";
+import codeElementLifecycle from "../../../../docs/assets/code-element-lifecycle-v2.png";
 
 # Build-time macros
 
@@ -138,21 +138,33 @@ Spreads, duplicate attributes and other attributes fail the build.
   width={1536}
   height={1024}
   loading="lazy"
-  alt="Code macro lifecycle: build prepares HTML, SSR emits a template, the browser consumes it into a Shadow Root, and React hydrates only the host. All roots share one constructed stylesheet."
+  alt="One code block moves from a React component through build-time highlighting and server HTML to an isolated area in the browser. React manages the page and outer code element; the Web Component manages the text inside."
 />
 
-The browser renderer registers the module's prepared content for its reference
-host and reserves space from the source line count. During SSR, the macro emits
-the prepared HTML inside Declarative Shadow DOM through a server-only HTML sink.
-The browser parser creates the shadow root before upgrade; hydration retains its
-nodes, and later client-rendered navigation resolves references from the client
-registry. The optional runtime `maxLines` prop caps
-the visible viewport while keeping all code available for vertical scrolling;
-shorter blocks stay short. The macro adjusts its pre-JavaScript reservation to
-the same cap. The reservation and shadow content use the same line-height and
-padding variables. The SSR template links the shared stylesheet so its code is
-styled before JavaScript. Register after parsing to preserve the existing root
-and tokens through hydration. All blocks share one constructed stylesheet.
+React manages the page and the outer code element. The Web Component manages
+the code inside. Shadow DOM is the boundary between them: page CSS selectors
+do not reach the inner code, and React does not manage its individual tokens.
+The code stays real text that people can select and copy.
+
+For the first page load with server rendering, the server sends the actual
+highlighted HTML inside a template in the code element. The browser moves that
+template's contents into the isolated area before JavaScript runs. The
+template is gone, and the code is already visible. React attaches to the page
+and outer element while keeping the code inside in place. On later client
+navigation, the Web Component fills new code elements from prepared HTML in
+the browser modules; it does not run a highlighter.
+
+The macro reserves space from the source line count for client-only mounts.
+The optional `maxLines` prop caps the visible block while keeping all code
+available for vertical scrolling; shorter blocks stay short. The reservation
+uses the same cap, line height, and padding as the displayed code.
+
+### SSR and styles
+
+The server template links the shared stylesheet so the code is styled before
+JavaScript. Register the component after document parsing so it reuses the
+existing code. After registration, all blocks share one constructed
+stylesheet.
 Vite serves its shared CSS automatically in development and emits one hashed
 stylesheet asset in production; deploy the SSR build's asset because the client
 and SSR filenames may differ. Direct macro SSR requires an absolute Vite base
