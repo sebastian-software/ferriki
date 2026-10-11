@@ -1,9 +1,9 @@
 # Ferriki release checklist
 
-This checklist applies to every pre-1.0 release candidate and to the final
-1.0 go/no-go. A green Release workflow is not by itself evidence that npm was
-published: the release summary must say whether it created a release, skipped
-publication, or published successfully.
+This checklist applies to product releases; the pre-1.0 and final 1.0 steps
+below remain as a record of that release transition. A green Release workflow
+is not by itself evidence that npm was published: the release summary must say
+whether it created a release, skipped publication, or published successfully.
 
 ## Release authority
 
@@ -107,6 +107,16 @@ part of release verification.
 - [ ] The release PR is merged to `main` and the normal CI matrix is green for
       the merge commit that will become the release tag. PR checks on a
       different SHA do not qualify.
+- [ ] The `rust-semver` CI job passes on that exact SHA. It compares the three
+      published Rust crates with their latest non-yanked stable crates.io
+      baselines, with both default and all features (`remote` included for
+      `ferriki`). It does not check the private `ferriki-core` package. A
+      missing baseline or registry error is a failure, not a skipped check.
+      For ordinary unreleased work still at the last published version, the
+      gate assumes a minor update so additive changes remain possible.
+      Before the first release of a new major, review its breaking changes and
+      add `--allow-major <new-major>` to the CI command in the same release PR;
+      remove that opt-in after the first version of that major is published.
 - [ ] The package version, changelog, release-please manifest, and intended npm
       dist-tag agree.
 - [ ] The generated release PR updates the main package, every platform
