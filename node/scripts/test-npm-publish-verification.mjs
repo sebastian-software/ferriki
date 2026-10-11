@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 
 import {
   MAX_ATTEMPTS,
@@ -37,7 +38,7 @@ assert.throws(
         ]);
         return {
           status: 1,
-          signal: "SIGTERM",
+          signal: null,
           stdout: `${"old output\n".repeat(500)}npm error code ETARGET\n`,
           stderr:
             "npm error https://writer:secret@registry.npmjs.org/x?token=private\nNODE_AUTH_TOKEN=hidden\n",
@@ -47,7 +48,7 @@ assert.throws(
   (error) => {
     assert.match(error.message, /@ferriki\/core@1\.0\.0/);
     assert.match(error.message, /Node v22\.23\.3, npm 10\.9\.9/);
-    assert.match(error.message, /exit status 1; signal SIGTERM; spawn error none/);
+    assert.match(error.message, /exit status 1; signal none; spawn error none/);
     assert.match(error.message, /stdout tail:[\s\S]*npm error code ETARGET/);
     assert.match(error.message, /stderr tail:/);
     assert.doesNotMatch(error.message, /writer:secret|token=private|NODE_AUTH_TOKEN=hidden/);
@@ -56,6 +57,34 @@ assert.throws(
   },
 );
 assert.equal(npmVersionProbes, 1, "npm version is queried only after a failure");
+
+assert.throws(
+  () =>
+    runPublicNpmInstall({
+      packageName: "@ferriki/vite",
+      version: "1.0.0",
+      cwd: tmpdir(),
+      spawnImpl: (_command, args, options) =>
+        spawnSync(
+          process.execPath,
+          [
+            "-e",
+            args[0] === "--version"
+              ? 'process.stdout.write("10.9.9\\n")'
+              : 'process.stderr.write("npm error code ETARGET\\n"); process.exit(7)',
+          ],
+          { ...options, shell: false },
+        ),
+    }),
+  (error) => {
+    assert.match(error.message, /@ferriki\/vite@1\.0\.0/);
+    assert.match(error.message, /Node v\d+\.\d+\.\d+, npm 10\.9\.9/);
+    assert.match(error.message, /exit status 7; signal none; spawn error none/);
+    assert.match(error.message, /stderr tail:\nnpm error code ETARGET/);
+    return true;
+  },
+  "a real nonzero process exit must retain its stderr and status",
+);
 
 let successfulInstallCalls = 0;
 assert.equal(
