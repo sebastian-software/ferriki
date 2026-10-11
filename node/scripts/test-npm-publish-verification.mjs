@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,19 +15,21 @@ import {
 } from "./verify-npm-publish.mjs";
 
 let npmVersionProbes = 0;
-assert.throws(
-  () =>
+await assert.rejects(
+  async () =>
     runPublicNpmInstall({
       packageName: "@ferriki/core",
       version: "1.0.0",
       cwd: tmpdir(),
       nodeVersion: "v22.23.3",
       spawnImpl: (_command, args, options) => {
-        assert.equal(options.stdio, "pipe", "a failed install must retain diagnostic output");
-        assert.equal(options.maxBuffer, 1024 * 1024, "captured output must be bounded");
+        assert.deepEqual(options.stdio, ["ignore", "pipe", "pipe"]);
         if (args[0] === "--version") {
           npmVersionProbes += 1;
-          return { status: 0, stdout: "10.9.9\n" };
+          return spawn(process.execPath, ["-e", 'process.stdout.write("10.9.9\\n")'], {
+            ...options,
+            shell: false,
+          });
         }
         assert.deepEqual(args, [
           "install",
@@ -36,85 +38,75 @@ assert.throws(
           "--no-fund",
           "@ferriki/core@1.0.0",
         ]);
-        return {
-          status: 1,
-          signal: null,
-          stdout: `${"old output\n".repeat(500)}npm error code ETARGET\n`,
-          stderr:
-            "npm error https://writer:secret@registry.npmjs.org/x?token=private\nNODE_AUTH_TOKEN=hidden\n",
-        };
+        return spawn(
+          process.execPath,
+          [
+            "-e",
+            `process.stdout.write("old output\\n".repeat(160000));
+             process.stdout.write("NODE_AUTH_TOKEN=" + "A".repeat(100000) + "SecretSliceMarker\\n");
+             process.stdout.write("stdout trailing diagnostic\\n");
+             process.stderr.write("warning\\n".repeat(160000));
+             process.stderr.write("npm error https://writer:secret@registry.npmjs.org/x?token=private\\n");
+             process.stderr.write("NODE_AUTH_TOKEN=hidden\\n");
+             process.stderr.write("npm error code ETARGET\\n");
+             process.exitCode = 1;`,
+          ],
+          { ...options, shell: false },
+        );
       },
     }),
   (error) => {
     assert.match(error.message, /@ferriki\/core@1\.0\.0/);
     assert.match(error.message, /Node v22\.23\.3, npm 10\.9\.9/);
     assert.match(error.message, /exit status 1; signal none; spawn error none/);
-    assert.match(error.message, /stdout tail:[\s\S]*npm error code ETARGET/);
-    assert.match(error.message, /stderr tail:/);
-    assert.doesNotMatch(error.message, /writer:secret|token=private|NODE_AUTH_TOKEN=hidden/);
+    assert.match(error.message, /stdout tail:[\s\S]*stdout trailing diagnostic/);
+    assert.match(error.message, /stderr tail:[\s\S]*npm error code ETARGET/);
+    assert.doesNotMatch(
+      error.message,
+      /writer:secret|token=private|NODE_AUTH_TOKEN=hidden|SecretSliceMarker/,
+    );
     assert(error.message.length < 5_000, "diagnostic tails must remain bounded");
     return true;
   },
 );
 assert.equal(npmVersionProbes, 1, "npm version is queried only after a failure");
 
-assert.throws(
-  () =>
-    runPublicNpmInstall({
-      packageName: "@ferriki/vite",
-      version: "1.0.0",
-      cwd: tmpdir(),
-      spawnImpl: (_command, args, options) =>
-        spawnSync(
-          process.execPath,
-          [
-            "-e",
-            args[0] === "--version"
-              ? 'process.stdout.write("10.9.9\\n")'
-              : 'process.stderr.write("npm error code ETARGET\\n"); process.exit(7)',
-          ],
-          { ...options, shell: false },
-        ),
-    }),
-  (error) => {
-    assert.match(error.message, /@ferriki\/vite@1\.0\.0/);
-    assert.match(error.message, /Node v\d+\.\d+\.\d+, npm 10\.9\.9/);
-    assert.match(error.message, /exit status 7; signal none; spawn error none/);
-    assert.match(error.message, /stderr tail:\nnpm error code ETARGET/);
-    return true;
-  },
-  "a real nonzero process exit must retain its stderr and status",
-);
-
 let successfulInstallCalls = 0;
 assert.equal(
-  runPublicNpmInstall({
+  await runPublicNpmInstall({
     packageName: "@ferriki/core",
     version: "1.0.0",
     cwd: tmpdir(),
-    spawnImpl: (_command, args) => {
+    spawnImpl: (_command, args, options) => {
       assert.equal(args[0], "install", "a successful install does not probe npm again");
       successfulInstallCalls += 1;
-      return { status: 0, signal: null, stdout: "npm install succeeded", stderr: "" };
+      return spawn(
+        process.execPath,
+        [
+          "-e",
+          'process.stdout.write("warning\\n".repeat(160000)); process.stderr.write("notice\\n".repeat(200000));',
+        ],
+        { ...options, shell: false },
+      );
     },
   }),
   undefined,
 );
 assert.equal(successfulInstallCalls, 1);
 
-assert.throws(
-  () =>
+await assert.rejects(
+  async () =>
     runPublicNpmInstall({
       packageName: "@ferriki/vite",
       version: "1.0.0",
       cwd: tmpdir(),
       npmCommand: join(tmpdir(), `ferriki-missing-npm-${randomUUID()}`),
-      spawnImpl: (command, args, options) => spawnSync(command, args, { ...options, shell: false }),
+      spawnImpl: (command, args, options) => spawn(command, args, { ...options, shell: false }),
     }),
   (error) => {
     assert.match(error.message, /@ferriki\/vite@1\.0\.0/);
     assert.match(error.message, /npm unavailable/);
-    assert.match(error.message, /exit status none; signal none; spawn error ENOENT:/);
+    assert.match(error.message, /exit status (?:none|-?\d+); signal none; spawn error ENOENT:/);
     assert.match(error.message, /stdout tail:\n\(empty\)/);
     return true;
   },
