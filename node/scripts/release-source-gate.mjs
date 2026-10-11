@@ -11,6 +11,7 @@ const REQUIRED_JOBS = [
   "workflow-pins",
   "Decision records",
   "rust",
+  "rust-semver",
   "msrv",
   "rust-docs",
   "cargo-deny",

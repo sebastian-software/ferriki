@@ -103,6 +103,7 @@ const jobs = [
   "workflow-pins",
   "Decision records",
   "rust",
+  "rust-semver",
   "msrv",
   "rust-docs",
   "cargo-deny",
@@ -116,6 +117,24 @@ const jobs = [
   ...FERRIKI_PLATFORM_TARGETS.map(({ id }) => `native-smoke (22.x, ${id})`),
 ].map((name) => ({ name, head_sha: sha, conclusion: "success" }));
 assert.equal(inspectCiJobs(jobs, sha).state, "allowed");
+// Stable Rust compatibility is part of publication readiness, even if a
+// workflow run is otherwise green because this job was removed or skipped.
+for (const conclusion of [null, "failure", "cancelled", "skipped"]) {
+  assert.match(
+    inspectCiJobs(
+      jobs.map((job) => (job.name === "rust-semver" ? { ...job, conclusion } : job)),
+      sha,
+    ).detail,
+    /rust-semver/,
+  );
+}
+assert.match(
+  inspectCiJobs(
+    jobs.filter((job) => job.name !== "rust-semver"),
+    sha,
+  ).detail,
+  /rust-semver/,
+);
 assert.match(
   inspectCiJobs(
     jobs.filter((job) => job.name !== "core-compat"),
