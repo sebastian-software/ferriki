@@ -110,7 +110,7 @@ try {
     consumerProbe,
     `
 import * as ferriki from '@ferriki/core'
-const { codeToHtml, createHighlighter, ferrikiVersion } = ferriki
+const { codeToHtml, codeToHtmlWithCss, createHighlighter, ferrikiVersion } = ferriki
 const removedOutputs = ['codeToHast', 'codeToTokens', 'codeToTokensBase', 'codeToTokensWithThemes', 'hastToHtml']
 for (const name of removedOutputs)
   if (name in ferriki)
@@ -130,6 +130,10 @@ catch (error) {
 }
 if (nativeSubpathExported)
   throw new Error('the internal native loader must not be exported as @ferriki/core/native')
+
+const firstCss = await codeToHtmlWithCss('{"x":1}', { lang: 'json', theme: 'nord' })
+if (!firstCss.html.includes('token') || !firstCss.css.includes('.ferriki-style-'))
+  throw new Error('the packed CSS shorthand did not render on first use')
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
 for (const name of removedOutputs)
@@ -155,6 +159,17 @@ const html = highlighter.codeToHtml('const answer = 42', {
 })
 if (!html.includes('const') || !html.includes('packed-hook') || !tokenHookRan || !preHookRan)
   throw new Error('the packed Ferriki HTML transformer pipeline did not produce the expected output')
+let decorationCallbackRan = false
+const decorated = highlighter.codeToHtml('const answer = 42', {
+  ...options,
+  decorations: [{ start: 6, end: 12, properties: { class: 'packed-decoration' }, transform(node, type) {
+    decorationCallbackRan = type === 'token' && this.start.offset === 6
+    node.properties['data-decoration-callback'] = 'yes'
+    return node
+  } }],
+})
+if (!decorated.includes('packed-decoration') || !decorated.includes('data-decoration-callback') || !decorationCallbackRan)
+  throw new Error('the packed native decoration bridge or JS callback failed')
 const classOutput = highlighter.codeToHtmlWithCss('const answer = 42', options)
 if (!classOutput.html.includes('const') || !classOutput.css || classOutput.html.includes(' style='))
   throw new Error('the packed Ferriki CSS-class renderer did not produce HTML and CSS')

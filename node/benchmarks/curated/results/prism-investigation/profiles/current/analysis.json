@@ -1,0 +1,867 @@
+{
+  "schema": 1,
+  "summaryScriptSha256": "6cc4816011df8fda8079f4da7e6d6a6d3659cf60822fa5d9ea940d1b05d9b3c8",
+  "method": {
+    "javascript": "Node Inspector timeDeltas are summed at the sampled node and grouped by function name/source class. Percentages are exclusive sampled self time; inclusive JavaScript ancestors are not added.",
+    "native": "Parse the macOS sample call graph as a tree, isolate the com.apple.main-thread root, and compute each family as the union of matching subtrees. Every branch is counted once within a family; weights overlap across families and are not additive.",
+    "limits": "Sampling weights are not latency benchmarks or allocation counts/bytes. Optimized/inlined frames, native callback attribution, allocator sampling, and symbolization limit interpretation."
+  },
+  "javascript": [
+    {
+      "id": "js-prism-typescript",
+      "engine": "prism",
+      "language": "typescript",
+      "sampleCount": 5356,
+      "sampledMs": 8059.375,
+      "profileSha256": "50f2b85630db930325ec9dbe300129fe84c33617072be0bd8eaf57bbef6f1025",
+      "selfFrames": [
+        {
+          "functionName": "matchPattern",
+          "source": "Prism",
+          "sampledMs": 3983.169,
+          "percentOfSampledTime": 49.4
+        },
+        {
+          "functionName": "encode",
+          "source": "Prism",
+          "sampledMs": 1519.884,
+          "percentOfSampledTime": 18.9
+        },
+        {
+          "functionName": "stringify",
+          "source": "Prism",
+          "sampledMs": 848.548,
+          "percentOfSampledTime": 10.5
+        },
+        {
+          "functionName": "matchGrammar",
+          "source": "Prism",
+          "sampledMs": 634.261,
+          "percentOfSampledTime": 7.9
+        },
+        {
+          "functionName": "tokenize",
+          "source": "Prism",
+          "sampledMs": 312.034,
+          "percentOfSampledTime": 3.9
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 288.2,
+          "percentOfSampledTime": 3.6
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Prism",
+          "sampledMs": 275.531,
+          "percentOfSampledTime": 3.4
+        },
+        {
+          "functionName": "(program)",
+          "source": "native or generated",
+          "sampledMs": 92.33,
+          "percentOfSampledTime": 1.1
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-typescript",
+      "engine": "ferriki",
+      "language": "typescript",
+      "sampleCount": 5293,
+      "sampledMs": 8050.166,
+      "profileSha256": "c1c0aa1a82dedb7ed0c9741e1cf4e681bff1dc70bcda37a9a1826083a3076770",
+      "selfFrames": [
+        {
+          "functionName": "FerrikiHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7763.876,
+          "percentOfSampledTime": 96.4
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 207.998,
+          "percentOfSampledTime": 2.6
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 46.083,
+          "percentOfSampledTime": 0.6
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 18.333,
+          "percentOfSampledTime": 0.2
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 6.168,
+          "percentOfSampledTime": 0.1
+        },
+        {
+          "functionName": "prepareOptions",
+          "source": "Ferriki facade",
+          "sampledMs": 3.084,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "callNativeOperation",
+          "source": "Ferriki facade",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "assertAnsiInput",
+          "source": "Ferriki facade",
+          "sampledMs": 1.541,
+          "percentOfSampledTime": 0
+        }
+      ]
+    },
+    {
+      "id": "js-prism-tsx",
+      "engine": "prism",
+      "language": "tsx",
+      "sampleCount": 4416,
+      "sampledMs": 8085,
+      "profileSha256": "c65feab0af34893da7fdc1b6c9aaf2f758e9ac09f4e4e785d46622b72f4ce6af",
+      "selfFrames": [
+        {
+          "functionName": "matchPattern",
+          "source": "Prism",
+          "sampledMs": 2934.42,
+          "percentOfSampledTime": 36.3
+        },
+        {
+          "functionName": "encode",
+          "source": "Prism",
+          "sampledMs": 1071.546,
+          "percentOfSampledTime": 13.3
+        },
+        {
+          "functionName": "matchGrammar",
+          "source": "Prism",
+          "sampledMs": 1023.29,
+          "percentOfSampledTime": 12.7
+        },
+        {
+          "functionName": "stringify",
+          "source": "Prism",
+          "sampledMs": 819.249,
+          "percentOfSampledTime": 10.1
+        },
+        {
+          "functionName": "tokenize",
+          "source": "Prism",
+          "sampledMs": 761.954,
+          "percentOfSampledTime": 9.4
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 721.035,
+          "percentOfSampledTime": 8.9
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Prism",
+          "sampledMs": 306.585,
+          "percentOfSampledTime": 3.8
+        },
+        {
+          "functionName": "walkTokens",
+          "source": "Prism",
+          "sampledMs": 300.414,
+          "percentOfSampledTime": 3.7
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-tsx",
+      "engine": "ferriki",
+      "language": "tsx",
+      "sampleCount": 5037,
+      "sampledMs": 8049.167,
+      "profileSha256": "a2c243b93dd0bd8d0c733428b43ad2c7abf514f7975cf2fbd7c2429c87a2f9c0",
+      "selfFrames": [
+        {
+          "functionName": "FerrikiHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7697.834,
+          "percentOfSampledTime": 95.6
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 256.457,
+          "percentOfSampledTime": 3.2
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 46.542,
+          "percentOfSampledTime": 0.6
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 30.667,
+          "percentOfSampledTime": 0.4
+        },
+        {
+          "functionName": "wrappedFn",
+          "source": "Node",
+          "sampledMs": 4.584,
+          "percentOfSampledTime": 0.1
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "codeToHtml",
+          "source": "Ferriki facade",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "get",
+          "source": "Node",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        }
+      ]
+    },
+    {
+      "id": "js-prism-html",
+      "engine": "prism",
+      "language": "html",
+      "sampleCount": 4215,
+      "sampledMs": 8068.417,
+      "profileSha256": "cdff8cf5821ac8afba3b46de775f236ae8ebaa464ac46faa2cd7f5b4ff321ba8",
+      "selfFrames": [
+        {
+          "functionName": "matchPattern",
+          "source": "Prism",
+          "sampledMs": 1792.071,
+          "percentOfSampledTime": 22.2
+        },
+        {
+          "functionName": "encode",
+          "source": "Prism",
+          "sampledMs": 1791.624,
+          "percentOfSampledTime": 22.2
+        },
+        {
+          "functionName": "stringify",
+          "source": "Prism",
+          "sampledMs": 1481.638,
+          "percentOfSampledTime": 18.4
+        },
+        {
+          "functionName": "matchGrammar",
+          "source": "Prism",
+          "sampledMs": 930.117,
+          "percentOfSampledTime": 11.5
+        },
+        {
+          "functionName": "tokenize",
+          "source": "Prism",
+          "sampledMs": 824,
+          "percentOfSampledTime": 10.2
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 745.754,
+          "percentOfSampledTime": 9.2
+        },
+        {
+          "functionName": "run",
+          "source": "Prism",
+          "sampledMs": 125.207,
+          "percentOfSampledTime": 1.6
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Prism",
+          "sampledMs": 113.378,
+          "percentOfSampledTime": 1.4
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-html",
+      "engine": "ferriki",
+      "language": "html",
+      "sampleCount": 5267,
+      "sampledMs": 8055.458,
+      "profileSha256": "4b65ba6aaf264039ed33d9219bf0bd5f67190eb7d94979e286fb127bccd98d2c",
+      "selfFrames": [
+        {
+          "functionName": "FerrikiHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7769.337,
+          "percentOfSampledTime": 96.4
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 195.495,
+          "percentOfSampledTime": 2.4
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 49.958,
+          "percentOfSampledTime": 0.6
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 26.877,
+          "percentOfSampledTime": 0.3
+        },
+        {
+          "functionName": "prepareOptions",
+          "source": "Ferriki facade",
+          "sampledMs": 4.666,
+          "percentOfSampledTime": 0.1
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 3,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Node",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "html",
+          "source": "harness or other",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        }
+      ]
+    },
+    {
+      "id": "js-prism-cpp",
+      "engine": "prism",
+      "language": "cpp",
+      "sampleCount": 5286,
+      "sampledMs": 8047.375,
+      "profileSha256": "68c13e056d11fdc500979d6ee7d738c8ad0188b53ce2d4c29896e9d48ae7b999",
+      "selfFrames": [
+        {
+          "functionName": "matchPattern",
+          "source": "Prism",
+          "sampledMs": 2570.206,
+          "percentOfSampledTime": 31.9
+        },
+        {
+          "functionName": "encode",
+          "source": "Prism",
+          "sampledMs": 2136.371,
+          "percentOfSampledTime": 26.5
+        },
+        {
+          "functionName": "stringify",
+          "source": "Prism",
+          "sampledMs": 1305.752,
+          "percentOfSampledTime": 16.2
+        },
+        {
+          "functionName": "matchGrammar",
+          "source": "Prism",
+          "sampledMs": 794.756,
+          "percentOfSampledTime": 9.9
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Prism",
+          "sampledMs": 403.039,
+          "percentOfSampledTime": 5
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 306.788,
+          "percentOfSampledTime": 3.8
+        },
+        {
+          "functionName": "tokenize",
+          "source": "Prism",
+          "sampledMs": 281.874,
+          "percentOfSampledTime": 3.5
+        },
+        {
+          "functionName": "(program)",
+          "source": "native or generated",
+          "sampledMs": 120.296,
+          "percentOfSampledTime": 1.5
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-cpp",
+      "engine": "ferriki",
+      "language": "cpp",
+      "sampleCount": 5303,
+      "sampledMs": 8047.584,
+      "profileSha256": "dd1455c9501ffcf497a7303dbf7c19a775a638e8f76cd02789792d2d8e4d8e79",
+      "selfFrames": [
+        {
+          "functionName": "FerrikiHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7810.539,
+          "percentOfSampledTime": 97.1
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 178.294,
+          "percentOfSampledTime": 2.2
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 45.125,
+          "percentOfSampledTime": 0.6
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 3,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "codeToHtml",
+          "source": "Ferriki facade",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "isSpecialLanguage",
+          "source": "Ferriki facade",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "prepareOptions",
+          "source": "Ferriki facade",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 1.5,
+          "percentOfSampledTime": 0
+        }
+      ]
+    },
+    {
+      "id": "js-prism-json",
+      "engine": "prism",
+      "language": "json",
+      "sampleCount": 5306,
+      "sampledMs": 8042.125,
+      "profileSha256": "79a8f8d7989f4ae6bef0df66b6682007592d9ad369833e04b391af217038383b",
+      "selfFrames": [
+        {
+          "functionName": "encode",
+          "source": "Prism",
+          "sampledMs": 2703.631,
+          "percentOfSampledTime": 33.6
+        },
+        {
+          "functionName": "stringify",
+          "source": "Prism",
+          "sampledMs": 1575.132,
+          "percentOfSampledTime": 19.6
+        },
+        {
+          "functionName": "matchPattern",
+          "source": "Prism",
+          "sampledMs": 1541.077,
+          "percentOfSampledTime": 19.2
+        },
+        {
+          "functionName": "matchGrammar",
+          "source": "Prism",
+          "sampledMs": 862.405,
+          "percentOfSampledTime": 10.7
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Prism",
+          "sampledMs": 457.039,
+          "percentOfSampledTime": 5.7
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 348.377,
+          "percentOfSampledTime": 4.3
+        },
+        {
+          "functionName": "tokenize",
+          "source": "Prism",
+          "sampledMs": 277.086,
+          "percentOfSampledTime": 3.4
+        },
+        {
+          "functionName": "(program)",
+          "source": "native or generated",
+          "sampledMs": 143.581,
+          "percentOfSampledTime": 1.8
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-json",
+      "engine": "ferriki",
+      "language": "json",
+      "sampleCount": 5306,
+      "sampledMs": 8034.084,
+      "profileSha256": "4aacfd4475deb166fca48b8d2b7bc7d9d4941efdef1267c355185e71d42e8eb3",
+      "selfFrames": [
+        {
+          "functionName": "createHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7582.708,
+          "percentOfSampledTime": 94.4
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 381.67,
+          "percentOfSampledTime": 4.8
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 33.25,
+          "percentOfSampledTime": 0.4
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 19.832,
+          "percentOfSampledTime": 0.2
+        },
+        {
+          "functionName": "prepareOptions",
+          "source": "Ferriki facade",
+          "sampledMs": 7.582,
+          "percentOfSampledTime": 0.1
+        },
+        {
+          "functionName": "validateHighlightOptions",
+          "source": "Ferriki facade",
+          "sampledMs": 2.959,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "(program)",
+          "source": "native or generated",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 1.541,
+          "percentOfSampledTime": 0
+        }
+      ]
+    },
+    {
+      "id": "js-ferriki-astro",
+      "engine": "ferriki",
+      "language": "astro",
+      "sampleCount": 5370,
+      "sampledMs": 8059.583,
+      "profileSha256": "c38ab471473fc634582c3fca19578054110437f391bdc0c467b85149aa5c2ac9",
+      "selfFrames": [
+        {
+          "functionName": "FerrikiHighlighter",
+          "source": "native or generated",
+          "sampledMs": 7852.502,
+          "percentOfSampledTime": 97.4
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "Ferriki facade",
+          "sampledMs": 139.373,
+          "percentOfSampledTime": 1.7
+        },
+        {
+          "functionName": "post",
+          "source": "Node",
+          "sampledMs": 46.541,
+          "percentOfSampledTime": 0.6
+        },
+        {
+          "functionName": "(garbage collector)",
+          "source": "native or generated",
+          "sampledMs": 10.708,
+          "percentOfSampledTime": 0.1
+        },
+        {
+          "functionName": "run",
+          "source": "harness or other",
+          "sampledMs": 3.042,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "get",
+          "source": "Node",
+          "sampledMs": 1.542,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "(anonymous)",
+          "source": "harness or other",
+          "sampledMs": 1.5,
+          "percentOfSampledTime": 0
+        },
+        {
+          "functionName": "callNativeOperation",
+          "source": "Ferriki facade",
+          "sampledMs": 1.5,
+          "percentOfSampledTime": 0
+        }
+      ]
+    }
+  ],
+  "native": [
+    {
+      "id": "native-ferriki-typescript",
+      "language": "typescript",
+      "mainThreadSamples": 3446,
+      "profileSha256": "0da280cbc8ef3c9321873126dd9a0e4867916e5b14d64eecdffa47ea0c50c422",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 2729,
+          "percentOfMainThread": 79.2
+        },
+        "regexScanning": {
+          "samples": 1394,
+          "percentOfMainThread": 40.5
+        },
+        "capturesAndScopes": {
+          "samples": 682,
+          "percentOfMainThread": 19.8
+        },
+        "themeMatching": {
+          "samples": 346,
+          "percentOfMainThread": 10
+        },
+        "tokenPreparation": {
+          "samples": 174,
+          "percentOfMainThread": 5
+        },
+        "htmlRendering": {
+          "samples": 368,
+          "percentOfMainThread": 10.7
+        },
+        "allocatorFrames": {
+          "samples": 734,
+          "percentOfMainThread": 21.3
+        }
+      }
+    },
+    {
+      "id": "native-ferriki-tsx",
+      "language": "tsx",
+      "mainThreadSamples": 3801,
+      "profileSha256": "b74a87bb9b3f819b0eafe9716ba6493a4592120eeea29ee413d405321f5130f5",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 2941,
+          "percentOfMainThread": 77.4
+        },
+        "regexScanning": {
+          "samples": 1434,
+          "percentOfMainThread": 37.7
+        },
+        "capturesAndScopes": {
+          "samples": 691,
+          "percentOfMainThread": 18.2
+        },
+        "themeMatching": {
+          "samples": 345,
+          "percentOfMainThread": 9.1
+        },
+        "tokenPreparation": {
+          "samples": 213,
+          "percentOfMainThread": 5.6
+        },
+        "htmlRendering": {
+          "samples": 477,
+          "percentOfMainThread": 12.5
+        },
+        "allocatorFrames": {
+          "samples": 816,
+          "percentOfMainThread": 21.5
+        }
+      }
+    },
+    {
+      "id": "native-ferriki-html",
+      "language": "html",
+      "mainThreadSamples": 3713,
+      "profileSha256": "5fdae9fb8df04d87344d4341ced7b7ed4af73dad598558f57f972813bd1fcb86",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 3053,
+          "percentOfMainThread": 82.2
+        },
+        "regexScanning": {
+          "samples": 1327,
+          "percentOfMainThread": 35.7
+        },
+        "capturesAndScopes": {
+          "samples": 592,
+          "percentOfMainThread": 15.9
+        },
+        "themeMatching": {
+          "samples": 258,
+          "percentOfMainThread": 6.9
+        },
+        "tokenPreparation": {
+          "samples": 151,
+          "percentOfMainThread": 4.1
+        },
+        "htmlRendering": {
+          "samples": 344,
+          "percentOfMainThread": 9.3
+        },
+        "allocatorFrames": {
+          "samples": 862,
+          "percentOfMainThread": 23.2
+        }
+      }
+    },
+    {
+      "id": "native-ferriki-cpp",
+      "language": "cpp",
+      "mainThreadSamples": 4023,
+      "profileSha256": "53747904fe8c1c0304387869733e355e9f06ce5c94b79d4ab67519886ae44635",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 3348,
+          "percentOfMainThread": 83.2
+        },
+        "regexScanning": {
+          "samples": 1960,
+          "percentOfMainThread": 48.7
+        },
+        "capturesAndScopes": {
+          "samples": 1311,
+          "percentOfMainThread": 32.6
+        },
+        "themeMatching": {
+          "samples": 353,
+          "percentOfMainThread": 8.8
+        },
+        "tokenPreparation": {
+          "samples": 148,
+          "percentOfMainThread": 3.7
+        },
+        "htmlRendering": {
+          "samples": 358,
+          "percentOfMainThread": 8.9
+        },
+        "allocatorFrames": {
+          "samples": 721,
+          "percentOfMainThread": 17.9
+        }
+      }
+    },
+    {
+      "id": "native-ferriki-json",
+      "language": "json",
+      "mainThreadSamples": 3773,
+      "profileSha256": "7e63de35b5bbe00f653aaaaf25fcd2c984da8ce89c694794243998d781b83a75",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 2614,
+          "percentOfMainThread": 69.3
+        },
+        "regexScanning": {
+          "samples": 524,
+          "percentOfMainThread": 13.9
+        },
+        "capturesAndScopes": {
+          "samples": 1052,
+          "percentOfMainThread": 27.9
+        },
+        "themeMatching": {
+          "samples": 505,
+          "percentOfMainThread": 13.4
+        },
+        "tokenPreparation": {
+          "samples": 282,
+          "percentOfMainThread": 7.5
+        },
+        "htmlRendering": {
+          "samples": 642,
+          "percentOfMainThread": 17
+        },
+        "allocatorFrames": {
+          "samples": 1106,
+          "percentOfMainThread": 29.3
+        }
+      }
+    },
+    {
+      "id": "native-ferriki-astro",
+      "language": "astro",
+      "mainThreadSamples": 3819,
+      "profileSha256": "71cb09e3c56d32727f063bbdb37608a12a82ee267a29b1a7a517d7384d089a4a",
+      "familyWeights": {
+        "textmateTokenization": {
+          "samples": 3471,
+          "percentOfMainThread": 90.9
+        },
+        "regexScanning": {
+          "samples": 1355,
+          "percentOfMainThread": 35.5
+        },
+        "capturesAndScopes": {
+          "samples": 513,
+          "percentOfMainThread": 13.4
+        },
+        "themeMatching": {
+          "samples": 211,
+          "percentOfMainThread": 5.5
+        },
+        "tokenPreparation": {
+          "samples": 88,
+          "percentOfMainThread": 2.3
+        },
+        "htmlRendering": {
+          "samples": 188,
+          "percentOfMainThread": 4.9
+        },
+        "allocatorFrames": {
+          "samples": 1045,
+          "percentOfMainThread": 27.4
+        }
+      }
+    }
+  ]
+}

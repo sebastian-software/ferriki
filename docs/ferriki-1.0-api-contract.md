@@ -92,11 +92,11 @@ The singleton retains its first creation's defaults.
 | `meta`                                        | Stable   | Opaque fence metadata passed through the JS facade for Ferromark/Ardo integration (#55), without changing the source trust boundary. Ardo parses title/label/line attributes; Ferriki never interpolates `meta.__raw` into HTML. |
 | `data`                                        | Stable   | Callback-only metadata attached to the internal root `<pre>` HAST node in classic structure. The serializer omits it from HTML; inline structure has no `<pre>` node, and no public method returns the node.                     |
 | `transformers`                                | Stable   | JS callbacks run during HTML rendering. Token payloads and Ferriki HAST nodes are callback data, not public structured results (ADR 0008, #45, #207).                                                                            |
-| `decorations`                                 | Stable   | Declarative ranges are validated and applied in the JS rendering layer (ADR 0008, #45).                                                                                                                                          |
+| `decorations`                                 | Stable   | Rust validates declarative ranges and plans edits; the JS facade preserves object identities and callbacks (ADR 0008, #122).                                                                                                     |
 | `includeExplanation`                          | Stable   | Controls `scopeNames` and `type` metadata in token transformer callbacks; there is no public explanation array (#47, #207).                                                                                                      |
 | `grammarState`                                | Stable   | Continues HTML grammar inference from serializable state returned by `getLastGrammarState(code, options)`; no token/HAST result overloads.                                                                                       |
 | `mergeWhitespaces` / `mergeSameStyleTokens`   | Stable   | Rendering controls with deterministic token boundaries.                                                                                                                                                                          |
-| `colorReplacements`                           | Deferred | Not implemented by Ferriki; supplying it throws `ShikiError` with `ERR_UNSUPPORTED`. Runtime support is tracked separately in #190.                                                                                              |
+| `colorReplacements`                           | Non-goal | Not planned (#190); use themes or CSS-class styling. Supplying it throws `ShikiError` with `ERR_UNSUPPORTED`.                                                                                                                    |
 | `rootStyle` / `tabindex`                      | Stable   | Explicit HTML root attributes; `false`/`null` disable the corresponding output.                                                                                                                                                  |
 | `tokenizeMaxLineLength` / `tokenizeTimeLimit` | Stable   | Resource limits with deterministic `ShikiError` failures (#51).                                                                                                                                                                  |
 | ANSI input                                    | Removed  | Ferriki rejects terminal escape sequences with `ShikiError`; callers must strip or parse ANSI before highlighting.                                                                                                               |
@@ -146,6 +146,11 @@ sidecar is published (see #52).
 - Concurrent async loads are deduplicated per handle. Rendering calls are
   safe to interleave without leaking languages, themes, or aliases between
   handles (#51).
+- Concurrent first singleton calls share one initialization attempt. If it
+  fails, each caller receives that failure and a later explicit call can
+  initialize again. A failed later registration does not discard a healthy
+  singleton or its first creation's defaults. Ferriki does not automatically
+  retry asset downloads (#244).
 - Validation failures have stable `ShikiError` identity and a
   machine-readable `code` category (#50). Message text is documented for
   user-facing migration errors; native stack details are not part of the
@@ -171,7 +176,7 @@ sidecar is published (see #52).
 | Light/dark output              | `themes`, `defaultColor`, HTML and resolved CSS                                   | #43              |
 | Line/title/fence metadata      | `meta` through HTML callbacks; Ardo owns container/title/line attributes          | #45, #55         |
 | Safe unknown-language fallback | `ShikiError` taxonomy and the public adapter's escaped fallback/diagnostic policy | #50, #55         |
-| Line highlighting/decorations  | JS transformer/decorator pipeline                                                 | #45, ADR 0008    |
+| Line highlighting/decorations  | JS transformer callbacks and native decoration policy                             | #45, ADR 0008    |
 | No private native calls        | Node exports only                                                                 | #10, #31         |
 
 ## Compatibility and semver policy
@@ -189,7 +194,7 @@ must be supported or added to the explicit boundary below.
   fields cannot silently disappear. Theme registrations are narrowed to the
   named values Ferriki accepts, and `undefined` entries in `themes` are filtered
   at runtime. String `tabindex` is supported; `mergeWhitespaces` accepts
-  booleans only. `colorReplacements` is deferred and rejected at runtime with
+  booleans only. `colorReplacements` is not planned and rejected at runtime with
   `ERR_UNSUPPORTED` (#190); `grammarContextCode` and `colorsRendering` are
   outside the Ferriki input contract. The broad HAST-options value comparison
   separately lists `grammarState`, `transformers`, and `decorations` as native

@@ -17,12 +17,16 @@ on:
           - latest
           - next
         default: latest
+      release-tag:
+        description: Exact v<version> tag required for force-publish; dispatch on this tag ref
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: publish-${{ github.repository }}-${{ github.ref }}
+  group: publish-${{ github.repository }}
   cancel-in-progress: false
 
 env:
@@ -38,6 +42,9 @@ jobs:
       pull-requests: write
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      release_sha: ${{ steps.release.outputs.sha }}
+      release_tag: ${{ steps.release.outputs.tag_name }}
+      release_version: ${{ steps.release.outputs.version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -46,15 +53,64 @@ jobs:
 
       - name: Run release-please
         id: release
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
         uses: googleapis/release-please-action@0dfd8538845b8e92600d271a895a5372865d4062 # v5
         with:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
+  verify-release-source:
+    name: Verify exact release source
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      release_sha: ${{ steps.source.outputs.release_sha }}
+      release_tag: ${{ steps.source.outputs.release_tag }}
+      release_version: ${{ steps.source.outputs.release_version }}
+    steps:
+      - name: Check out gate code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Resolve immutable release source
+        id: source
+        run: node ./node/scripts/release-source-gate.mjs resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FORCE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish }}
+          INPUT_RELEASE_TAG: ${{ inputs.release-tag }}
+          RELEASE_PLEASE_SHA: ${{ needs.release-please.outputs.release_sha }}
+          RELEASE_PLEASE_TAG: ${{ needs.release-please.outputs.release_tag }}
+          RELEASE_PLEASE_VERSION: ${{ needs.release-please.outputs.release_version }}
+
+      - name: Check out exact release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.source.outputs.release_sha }}
+          persist-credentials: false
+
+      - name: Require green CI for exact release commit
+        run: node ./node/scripts/release-source-gate.mjs verify
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.source.outputs.release_sha }}
+          RELEASE_VERSION: ${{ steps.source.outputs.release_version }}
+
   publish-crates:
     name: Publish to crates.io
-    needs: release-please
+    needs:
+      - release-please
+      - verify-release-source
     if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
@@ -68,6 +124,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
@@ -86,7 +145,9 @@ jobs:
             ferriki
 
   build-native:
-    needs: release-please
+    needs:
+      - release-please
+      - verify-release-source
     if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
     timeout-minutes: 30
     permissions:
@@ -127,6 +188,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -185,6 +249,7 @@ jobs:
   publish-npm:
     needs:
       - release-please
+      - verify-release-source
       - build-native
     if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
     timeout-minutes: 30
@@ -193,6 +258,10 @@ jobs:
       contents: read
       id-token: write
     env:
+      FERRIKI_RELEASE_SHA: ${{ needs.verify-release-source.outputs.release_sha }}
+      FERRIKI_RELEASE_TAG: ${{ needs.verify-release-source.outputs.release_tag }}
+      FERRIKI_RELEASE_VERSION: ${{ needs.verify-release-source.outputs.release_version }}
+      FERRIKI_RECOVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish || false }}
       # Must list every target in node/ferriki/platforms.mjs, in that order;
       # check:platform-matrix enforces it.
       FERRIKI_PLATFORM_IDS: linux-x64-gnu linux-arm64-gnu linux-x64-musl linux-arm64-musl darwin-arm64 win32-x64-msvc win32-arm64-msvc
@@ -202,6 +271,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -225,6 +297,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # OIDC dist-tag promotion requires npm 11.21.0 or later. Pin the CLI
+      # rather than relying on the npm version bundled by Node 24.
+      - name: Set npm CLI for Trusted Publishing dist-tags
+        run: npm install --global npm@11.21.0
 
       - name: Download Linux native sidecar
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -300,30 +377,24 @@ jobs:
 
       - name: Publish platform packages with npm provenance
         working-directory: node
-        run: |
-          for platform_id in $FERRIKI_PLATFORM_IDS; do
-            npm publish "./platforms/$platform_id" --access public --provenance --tag "$NPM_DIST_TAG"
-          done
+        run: node ./scripts/publish-npm-product.mjs sidecars
 
       - name: Publish main package with npm provenance
-        working-directory: node/ferriki
-        run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
+        working-directory: node
+        run: node ./scripts/publish-npm-product.mjs core
 
       # Pack with pnpm 10 to rewrite catalog: dependencies, then give the
       # explicit tarball to npm 11 for OIDC Trusted Publishing and provenance.
       - name: Pack and publish Vite integration with npm provenance
         working-directory: node
-        run: |
-          pnpm --dir vite pack --pack-destination "$RUNNER_TEMP" --json > "$RUNNER_TEMP/vite-pack.json"
-          vite_tarball="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).filename)' "$RUNNER_TEMP/vite-pack.json")"
-          test -f "$vite_tarball"
-          npm publish "$vite_tarball" --access public --provenance --tag "$NPM_DIST_TAG"
+        run: node ./scripts/publish-npm-product.mjs vite
 
   verify-npm-publish:
     needs:
       - release-please
+      - verify-release-source
       - publish-npm
-    if: ${{ always() && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
+    if: ${{ always() && needs.verify-release-source.result == 'success' && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
@@ -331,6 +402,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+          persist-credentials: false
 
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -342,12 +416,42 @@ jobs:
         env:
           NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
 
+  verify-crates-publish:
+    needs:
+      - release-please
+      - verify-release-source
+      - publish-crates
+    if: ${{ always() && needs.verify-release-source.result == 'success' && (needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish)) }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+
+      - name: Set Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Verify all three crates.io versions
+        run: node ./node/scripts/verify-crates-publish.mjs
+        env:
+          FERRIKI_RELEASE_VERSION: ${{ needs.verify-release-source.outputs.release_version }}
+          CRATES_PUBLISH_RESULT: ${{ needs.publish-crates.result }}
+
   release-summary:
     needs:
       - release-please
+      - verify-release-source
       - build-native
       - publish-npm
       - verify-npm-publish
+      - publish-crates
+      - verify-crates-publish
     if: ${{ always() }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -378,8 +482,11 @@ jobs:
           RELEASES_CREATED: ${{ needs.release-please.outputs.releases_created }}
           FORCE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force-publish || false }}
           RELEASE_RESULT: ${{ needs.release-please.result }}
+          SOURCE_RESULT: ${{ needs.verify-release-source.result }}
           BUILD_RESULT: ${{ needs.build-native.result }}
           PUBLISH_RESULT: ${{ needs.publish-npm.result }}
           VERIFY_RESULT: ${{ needs.verify-npm-publish.result }}
+          CRATES_RESULT: ${{ needs.publish-crates.result }}
+          CRATES_VERIFY_RESULT: ${{ needs.verify-crates-publish.result }}
           NATIVE_SIDECARS_DIR: native-sidecars
         run: node ./node/scripts/write-release-summary.mjs

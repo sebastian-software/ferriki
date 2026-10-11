@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "react-router dev",
-    "verify": "pnpm sample:check && pnpm class-sample:check && pnpm macro-sample:check && pnpm footprint:check && pnpm guide-samples:check && pnpm lint && pnpm typecheck && pnpm format:check && pnpm build && pnpm browser:check",
+    "verify": "pnpm sample:check && pnpm prism-sample:check && pnpm class-sample:check && pnpm macro-sample:check && pnpm footprint:check && pnpm guide-samples:check && pnpm lint && pnpm typecheck && pnpm format:check && pnpm build && pnpm browser:check",
     "build": "node ../scripts/publish-blacksmith-evidence.mjs --check && react-router build && node scripts/verify-build.mjs",
     "class-sample:write": "node scripts/render-class-sample.mjs",
     "class-sample:check": "node scripts/render-class-sample.mjs --check",
@@ -23,7 +23,9 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prism-sample:write": "node ../node/scripts/render-prism-comparison.mjs",
+    "prism-sample:check": "node ../node/scripts/render-prism-comparison.mjs --check"
   },
   "dependencies": {
     "ardo": "^5.0.0",

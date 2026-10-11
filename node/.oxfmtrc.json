@@ -6,6 +6,16 @@
     "coverage",
     "pnpm-lock.yaml",
     "CHANGELOG.md",
+    "benchmarks/curated/results/prism-investigation/fixtures/**",
+    "benchmarks/curated/results/prism-investigation/quality.json",
+    "benchmarks/curated/results/prism-investigation/timings/**/*.json",
+    "benchmarks/curated/results/prism-investigation/timings/**/*.measured.mjs",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.json",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.txt",
+    "benchmarks/curated/results/prism-investigation/profiles/**/*.measured.mjs",
+    "benchmarks/curated/results/prism-investigation/harness/**/*.measured.mjs",
+    "benchmarks/curated/results/render-memoization/**/*.json",
+    "benchmarks/curated/results/render-memoization/harness/*.measured.mjs",
     "benchmarks/shadow-dom-spike/fixtures/**",
     "benchmarks/shadow-dom-spike/results/*.json"
   ]

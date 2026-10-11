@@ -1,0 +1,77 @@
+{
+  "cargo_version": "cargo 1.100.0-nightly (3c0b53475 2026-09-04)",
+  "cdn_assets": {
+    "languages/rust.fkgram": {
+      "actual_sha256": "13aa5bbd69f081454afac0a1b87ca9978cc0b4dbb17de81b72953755d54cddb4",
+      "actual_size": 14739,
+      "expected_sha256": "13aa5bbd69f081454afac0a1b87ca9978cc0b4dbb17de81b72953755d54cddb4",
+      "expected_size": 14739
+    },
+    "themes/github-light-default.fktheme": {
+      "actual_sha256": "b989ac945556d0b66ef60837410621ae0fd9aa8f80ef6e6c97c0dcb6d940f220",
+      "actual_size": 14149,
+      "expected_sha256": "b989ac945556d0b66ef60837410621ae0fd9aa8f80ef6e6c97c0dcb6d940f220",
+      "expected_size": 14149
+    },
+    "themes/nord.fktheme": {
+      "actual_sha256": "e68ff2dae71a50102ba8c9d37f1938c88a877b71b42e7aefd20b3f2cf801d784",
+      "actual_size": 26684,
+      "expected_sha256": "e68ff2dae71a50102ba8c9d37f1938c88a877b71b42e7aefd20b3f2cf801d784",
+      "expected_size": 26684
+    }
+  },
+  "checked_at_utc": "2026-10-10T20:52:44.796804+00:00",
+  "consumer_source_sha256": "98ef6d51b2ee38bcfaed23993c839c007163e02231db425430aeb86c8f61b8e4",
+  "packages": {
+    "ferriki": {
+      "cargo_vcs_info": {
+        "git": {
+          "sha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362"
+        },
+        "path_in_vcs": ""
+      },
+      "lock": {
+        "checksum": "5fed7921fd68a1b67715f1bfcda212e7bb2ac34670dc34afe80e76ce98fa9051",
+        "name": "ferriki",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "version": "0.14.0"
+      },
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.14.0"
+    },
+    "ferriki-asset-gen": {
+      "cargo_vcs_info": {
+        "git": {
+          "sha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362"
+        },
+        "path_in_vcs": "crates/ferriki-asset-gen"
+      },
+      "lock": {
+        "checksum": "2f572c3d941d5bb546b3efd58ebfe7ff174ff154fe7909b37652490e3cfc04c2",
+        "name": "ferriki-asset-gen",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "version": "0.14.0"
+      },
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.14.0"
+    },
+    "ferriki-textmate": {
+      "cargo_vcs_info": {
+        "git": {
+          "sha1": "1e8d363ee01c8c60af42d78e8129b74ed22fd362"
+        },
+        "path_in_vcs": "crates/ferriki-textmate"
+      },
+      "lock": {
+        "checksum": "f37bdf7f3d8e0fb2fd7e1f5e083b84c1035a41cf9e7740882c0c94a2567468ab",
+        "name": "ferriki-textmate",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "version": "0.14.0"
+      },
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.14.0"
+    }
+  },
+  "release_commit": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+  "release_version": "0.14.0"
+}

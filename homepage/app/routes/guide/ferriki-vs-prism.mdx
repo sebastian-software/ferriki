@@ -1,0 +1,113 @@
+---
+title: Ferriki vs Prism
+order: 4.5
+---
+
+import { PrismComparison } from "../../components/prism-comparison";
+
+# Ferriki vs Prism
+
+## Give your code examples the detail of your editor
+
+Parameters, property names, embedded languages: those details help readers
+follow the code you publish. Ferriki brings the TextMate grammars and themes
+used by Shiki to your documentation, blog, or CMS, backed by a native Rust
+engine and a familiar Node.js API.
+
+See what that means in practice. These examples use the grammars shipped with
+Ferriki and Prism, with no grammar patches or token edits. Start with
+TypeScript to see the extra identifier distinctions, then explore a generic
+TSX component, C++ templates and raw strings, Go, Rust, CSS, embedded HTML, and
+a complete Astro component.
+
+<PrismComparison />
+
+## Details you can use
+
+**Make identifiers easier to follow.** In the TypeScript example, Ferriki
+separates a parameter declaration, a later variable read, and a property in a
+type. Prism's shipped TypeScript grammar leaves those identifiers unclassified.
+A theme can use Ferriki's distinctions to give each role its own color.
+
+**Show the roles in your Go code.** Ferriki classifies `Reply` as a declared
+type and `Message` as a struct field in the HTTP-handler example. Prism's Go
+grammar leaves both as plain text. A theme can give the type and field their
+own treatment while keeping the function declaration distinct.
+
+**Keep CSS vocabulary distinct.** Ferriki distinguishes a custom-property
+declaration from a regular property name and classifies `grid` as a property
+value. Prism assigns `property` to both declarations and leaves `grid` as plain
+text in this example. Ferriki's scopes give a theme more distinctions to use.
+
+**Style tokens in context.** Ferriki retains property context in CSS and
+embedded-language context in HTML. TextMate theme selectors can target those
+parent scopes. Ferriki's optional
+[scope-class output](/guide/class-highlighting) makes the hierarchy available
+to your CSS as well.
+
+**Keep component examples together.** Ferriki has an Astro grammar that routes
+frontmatter, markup, and embedded code to their corresponding grammars.
+Prism 1.30.0 has no Astro grammar in the tested component manifest. The example
+shows the whole component rather than substituting an HTML grammar that would
+change what is being compared.
+
+**Use the themes you already know.** Ferriki supports the Shiki theme catalog
+and TextMate scope selectors. That gives your site's code blocks the same
+grammar and theme foundation as Shiki, across [Node.js](/guide/getting-started)
+and [Rust](/rust/getting-started). It does not add an editor's language server
+or semantic highlighting.
+
+## Follow syntax through nested contexts
+
+Code examples rarely stay in one flat layer. The TSX component combines generic
+TypeScript types, JSX attributes, a callback, and a template inside a JSX
+expression. The C++ example combines a template function, a capturing lambda,
+a macro, and a raw string with a custom delimiter.
+
+Both highlighters recognize key constructs in these examples. Ferriki's scope
+table also retains where each token occurs: a JSX attribute inside an embedded
+expression, a function definition, or a raw-string delimiter. That context
+lets TextMate themes and scope-class CSS target more specific situations.
+
+## Compare the shipped result
+
+A language name alone does not promise the same highlighting. Compare three
+things: which constructs a grammar recognizes, how precisely it classifies
+them, and what context remains available for styling.
+
+The examples compare the installed grammars, including the constructs both
+highlighters recognize. Both handle nested templates and embedded HTML here.
+Both classify the Rust type and function declarations, with different labels
+and context. Alongside those shared capabilities, the TypeScript, Go, and CSS
+examples show specific distinctions you can use with Ferriki today.
+
+The live panels show original token output with presentation wrappers. Their
+color palettes are aligned, but the theme rules differ. Use the token table to
+separate classification differences from color preferences. The
+[inputs](https://github.com/sebastian-software/ferriki/blob/main/homepage/scripts/prism-inputs.json),
+[generated samples](https://github.com/sebastian-software/ferriki/blob/main/homepage/app/data/prism-comparison.json),
+and [renderer](https://github.com/sebastian-software/ferriki/blob/main/node/scripts/render-prism-comparison.mjs)
+are committed and checked for source preservation. Ferriki's inline HTML must
+also match Shiki's WebAssembly output on every example.
+
+## Performance in context
+
+Prism was faster in the repeated, warmed HTML benchmarks on the 16 formats it
+supported. The [full investigation](https://github.com/sebastian-software/ferriki/blob/ea49b175ca62e4bc10eb15c866cfe5b8e842635b/node/benchmarks/curated/results/prism-investigation/README.md)
+retains both runs, unsupported formats, and profiles. Those measurements use
+Ferriki 0.13.0 and Prism 1.30.0 on an Apple M1 Ultra, before Ferriki's shared
+scanner-cache change. Grammars and HTML output differ, so the timings are not
+an equal-feature comparison. The examples on this page are quality previews,
+not new benchmark inputs or proof that less detailed classification caused
+Prism's speed advantage.
+
+For a documentation site or CMS that needs TextMate detail, Shiki themes, and
+modern component grammars, Ferriki brings those capabilities to one native
+HTML pipeline. Try the [getting-started example](/guide/getting-started) with
+the code and theme your readers will actually see.
+
+## References
+
+- [Prism's grammar and token model](https://prismjs.com/extending.html), including nested tokens and granular highlighting.
+- [VS Code's TextMate scope and theme model](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide), including parent scopes and the separate semantic-token layer.
+- [Prism 1.30.0 component manifest](https://github.com/PrismJS/prism/blob/v1.30.0/components.json).

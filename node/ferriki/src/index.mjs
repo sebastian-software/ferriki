@@ -42,13 +42,18 @@ export async function createHighlighter(options = {}) {
   options = validateHighlighterOptions(options);
   const { langs = [], themes = [], ...coreOptions } = options;
   const highlighter = createHighlighterCoreSync(coreOptions);
-  const [languages, resolvedThemes] = await Promise.all([
-    resolveRegistrations(langs),
-    resolveRegistrations(themes),
-  ]);
-  await highlighter.loadLanguage(...languages);
-  await highlighter.loadTheme(...resolvedThemes);
-  return highlighter;
+  try {
+    const [languages, resolvedThemes] = await Promise.all([
+      resolveRegistrations(langs),
+      resolveRegistrations(themes),
+    ]);
+    await highlighter.loadLanguage(...languages);
+    await highlighter.loadTheme(...resolvedThemes);
+    return highlighter;
+  } catch (error) {
+    highlighter.dispose();
+    throw error;
+  }
 }
 
 export const createHighlighterCore = createHighlighter;
@@ -558,8 +563,14 @@ export function createShikiPrimitive(options = {}) {
 }
 
 export async function getSingletonHighlighter(options = {}) {
-  singleton ||= createHighlighter(options);
-  const highlighter = await singleton;
+  const pending = (singleton ||= createHighlighter(options));
+  let highlighter;
+  try {
+    highlighter = await pending;
+  } catch (error) {
+    if (singleton === pending) singleton = undefined;
+    throw error;
+  }
   if (options.langs?.length) await highlighter.loadLanguage(...options.langs);
   if (options.themes?.length) await highlighter.loadTheme(...options.themes);
   return highlighter;
@@ -578,7 +589,7 @@ export function codeToHtml(highlighterOrCode, codeOrOptions, options) {
 export function codeToHtmlWithCss(highlighterOrCode, codeOrOptions, options) {
   if (isHighlighter(highlighterOrCode, "codeToHtmlWithCss"))
     return highlighterOrCode.codeToHtmlWithCss(codeOrOptions, options);
-  return getSingletonHighlighter().then((highlighter) =>
+  return getSingletonHighlighter(shorthandLoads(codeOrOptions)).then((highlighter) =>
     highlighter.codeToHtmlWithCss(highlighterOrCode, codeOrOptions),
   );
 }

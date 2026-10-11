@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "normalizer": "node/scripts/normalize-prism-artifacts.mjs",
+  "rules": [
+    {
+      "label": "worktree checkout prefix",
+      "to": "/WORKTREE/ferriki/"
+    },
+    {
+      "label": "captured Cargo registry prefix",
+      "to": "$CARGO_HOME/"
+    },
+    {
+      "label": "captured host name",
+      "to": "<capture-host>"
+    }
+  ],
+  "files": [
+    {
+      "path": "profiles/current/index.capture.json",
+      "originalSha256": "4abf0853c11f7a0b92a5349662a3d52e18615d436d956f12e4c59206e48f35c0",
+      "publishedSha256": "3185242816badbe1d7ab0f858ad357855bff4736522ffe0328e1a8a71562a694"
+    },
+    {
+      "path": "profiles/current/index.json",
+      "originalSha256": "41ddfae808e57db49593de3a82230feb56bf1c2303b55c6d8c429e8cf49b4bf7",
+      "publishedSha256": "ee9e88c4c783f2bb5b900138e12f3e477e900eb6e02f3bc664ca98364ffa861b"
+    },
+    {
+      "path": "profiles/current/js-ferriki-astro/cpu-profile.json",
+      "originalSha256": "7db8955aca383fc0a1066e743f33084de5c373b3c052fe3103dcdd4039364c2f",
+      "publishedSha256": "c38ab471473fc634582c3fca19578054110437f391bdc0c467b85149aa5c2ac9"
+    },
+    {
+      "path": "profiles/current/js-ferriki-astro/run.stdout.json",
+      "originalSha256": "5767375d79fe7d2529ded2999c7bd747f1c3cd6b5aee4986077a3433055c8c48",
+      "publishedSha256": "c302e997499567f48f15a4b2ed03c1f4b5e6b9dfb460142dea37059de1f5737a"
+    },
+    {
+      "path": "profiles/current/js-ferriki-cpp/cpu-profile.json",
+      "originalSha256": "8fa97e7aee33eb0682443bce7e59452c147cebd036b469db7b14e6549485a834",
+      "publishedSha256": "dd1455c9501ffcf497a7303dbf7c19a775a638e8f76cd02789792d2d8e4d8e79"
+    },
+    {
+      "path": "profiles/current/js-ferriki-cpp/run.stdout.json",
+      "originalSha256": "669f797864f603b0aa5ebac551b32ba1439de6793e8304b6ed414a6700acf699",
+      "publishedSha256": "e0e2bd10e7520c16657562520c61e503187140a29b2de04223ada94603690b9a"
+    },
+    {
+      "path": "profiles/current/js-ferriki-html/cpu-profile.json",
+      "originalSha256": "84c7fcc3f901bf041f8daa742d0495427d496121ef22b53743aa176b345ea47f",
+      "publishedSha256": "4b65ba6aaf264039ed33d9219bf0bd5f67190eb7d94979e286fb127bccd98d2c"
+    },
+    {
+      "path": "profiles/current/js-ferriki-html/run.stdout.json",
+      "originalSha256": "ed2b45a3e4af7fd84ea8a669c79a0cc1dba0412a3399239df8a57b0c2d76d483",
+      "publishedSha256": "62e3f5ac489627361947b85e21f7f525b527a1ed71f3f7592c9975728d24b03c"
+    },
+    {
+      "path": "profiles/current/js-ferriki-json/cpu-profile.json",
+      "originalSha256": "74886f38b810b9ec9c6bc3333e41ad3423d9627a0a3a476a27074155cc90009e",
+      "publishedSha256": "4aacfd4475deb166fca48b8d2b7bc7d9d4941efdef1267c355185e71d42e8eb3"
+    },
+    {
+      "path": "profiles/current/js-ferriki-json/run.stdout.json",
+      "originalSha256": "2bb3399932aed19e7789787157e3ffd9543fb4de2c1e4ab8de59a14b19b9fb1e",
+      "publishedSha256": "4b2235f086261e4a42e1c7dbd08feccf7312a37f23b702606501f48037dde44d"
+    },
+    {
+      "path": "profiles/current/js-ferriki-tsx/cpu-profile.json",
+      "originalSha256": "817708ec270b13a5fed3df8e2e28541e01d0cfb3e5fe141e6258b6ced0683ed3",
+      "publishedSha256": "a2c243b93dd0bd8d0c733428b43ad2c7abf514f7975cf2fbd7c2429c87a2f9c0"
+    },
+    {
+      "path": "profiles/current/js-ferriki-tsx/run.stdout.json",
+      "originalSha256": "a8aaa3b86e6dc2897956d557c2aa36a7b956ebc1691a64c82b0a6d73de25333d",
+      "publishedSha256": "314b9ebc847996596aed65105d3ffae3823a007441bd3d61c74171a4b9fa5059"
+    },
+    {
+      "path": "profiles/current/js-ferriki-typescript/cpu-profile.json",
+      "originalSha256": "06a418c651ce02a5be49a560b61843e67f9fd3ea7f24bff3afb9924317682464",
+      "publishedSha256": "c1c0aa1a82dedb7ed0c9741e1cf4e681bff1dc70bcda37a9a1826083a3076770"
+    },
+    {
+      "path": "profiles/current/js-ferriki-typescript/run.stdout.json",
+      "originalSha256": "4357fb144192f32def722955b57a13fc719c9cfbbac59b8cb433b7abdb889c51",
+      "publishedSha256": "f5fc7b84e82f41824e2bb79a04db55e50ee339486e834c1995713e54bca3f219"
+    },
+    {
+      "path": "profiles/current/js-prism-cpp/cpu-profile.json",
+      "originalSha256": "bfd687a1e14ba32a6f23ddf63e7a7289f5cb1b4c6402e47a41b554dc5c4632b3",
+      "publishedSha256": "68c13e056d11fdc500979d6ee7d738c8ad0188b53ce2d4c29896e9d48ae7b999"
+    },
+    {
+      "path": "profiles/current/js-prism-cpp/run.stdout.json",
+      "originalSha256": "512f738070e5affccfb860f1e5a228720f5fc8e2e959a02aa4acb434d4a0f03a",
+      "publishedSha256": "bdff509a4b3cf223fa7fc661e9c3b8f966812e0e60456e574464d72b267b1dc3"
+    },
+    {
+      "path": "profiles/current/js-prism-html/cpu-profile.json",
+      "originalSha256": "e8ce370730f51faa61fefd960d903384b50fd173e827b9ca934e9c891054eedc",
+      "publishedSha256": "cdff8cf5821ac8afba3b46de775f236ae8ebaa464ac46faa2cd7f5b4ff321ba8"
+    },
+    {
+      "path": "profiles/current/js-prism-html/run.stdout.json",
+      "originalSha256": "27cc2f4ef1959e5907581e4e3738d1cdd0471409d3da41a74ee2c4902ec8d6da",
+      "publishedSha256": "b7278d5df10afd686316fb3c02ba177c9b03009cd46ece7041d92fd3fa126d90"
+    },
+    {
+      "path": "profiles/current/js-prism-json/cpu-profile.json",
+      "originalSha256": "100a44088cd5900c4d5ed38f528824124850cb40f603a9b7f96d7bbf2dd669f8",
+      "publishedSha256": "79a8f8d7989f4ae6bef0df66b6682007592d9ad369833e04b391af217038383b"
+    },
+    {
+      "path": "profiles/current/js-prism-json/run.stdout.json",
+      "originalSha256": "f95f30f27b026b7fb309dd5ae86c1e9a20a01e4c3f86e1c3848ce5d4aff3fd8b",
+      "publishedSha256": "957e472cf85050a5ebc132a3ec689d0178c6861850f1db81b585634298a6493a"
+    },
+    {
+      "path": "profiles/current/js-prism-tsx/cpu-profile.json",
+      "originalSha256": "a578a2bb56bf64d36366322ebaa92db81d00818a19de086326983cd59fa6f7bd",
+      "publishedSha256": "c65feab0af34893da7fdc1b6c9aaf2f758e9ac09f4e4e785d46622b72f4ce6af"
+    },
+    {
+      "path": "profiles/current/js-prism-tsx/run.stdout.json",
+      "originalSha256": "7e3529f51b2b639143d148b2ba4234b836e604fc9032dbe9f2ba4cac262a9e46",
+      "publishedSha256": "ecdb949bd6121a70cfdb84c0f605dd51df18bf26af0d0e4bec465dd180568b29"
+    },
+    {
+      "path": "profiles/current/js-prism-typescript/cpu-profile.json",
+      "originalSha256": "30439ce61c9acbed9df7b23fae1d3e1151aed08fcd7e31acd5457e24d839cb28",
+      "publishedSha256": "50f2b85630db930325ec9dbe300129fe84c33617072be0bd8eaf57bbef6f1025"
+    },
+    {
+      "path": "profiles/current/js-prism-typescript/run.stdout.json",
+      "originalSha256": "5b04f5a0656afe8311e6f6acecef6a38ff4b5cf34cabdac7fd6eadd66e294cdf",
+      "publishedSha256": "50d3402829018053e003308ef3d6b172ab2edd892129b3a46077fc123bbdebcf"
+    },
+    {
+      "path": "profiles/current/native-ferriki-astro/run.stdout.json",
+      "originalSha256": "669a44457cf772026d51cf401731ff984bcd4bae980d2e9c7073e55dcc064896",
+      "publishedSha256": "2a3fdaac7a682299881f05a6b64b8c4ff912d75a726b5d997bf372a0ddb74a79"
+    },
+    {
+      "path": "profiles/current/native-ferriki-astro/sample.stderr.log",
+      "originalSha256": "ef175386a8bd2ecf1bca632108d8dfc524c2ef49abb0e3e071701c57267a801d",
+      "publishedSha256": "c9c5144ee1eb1a78b73ec1eef92c9b8ca4fedf59cf5f6c555d9a93ac5d80530b"
+    },
+    {
+      "path": "profiles/current/native-ferriki-cpp/run.stdout.json",
+      "originalSha256": "5889e544e128e0e32afeddb0e6c61cd016abc672c039930dfb314cd891933692",
+      "publishedSha256": "cfb5e9ee5a8a5aebf177df52d8de45b42531b5493945d88b1ef268ac96acc6ad"
+    },
+    {
+      "path": "profiles/current/native-ferriki-cpp/sample.stderr.log",
+      "originalSha256": "60f35053ed8fce8e13076863da899edf1e6a22fb67d196ce7a2685751aacead4",
+      "publishedSha256": "a1a67ce12057f2f82088aec3b1ac544d8ab71a2abc26686bc050b2fb4a737b42"
+    },
+    {
+      "path": "profiles/current/native-ferriki-html/run.stdout.json",
+      "originalSha256": "1971751eadf4518a758ade25e3a7e5b74a94f4104f0d8d16549cc3037b8e8a56",
+      "publishedSha256": "b1b8e81699378417da956ff4a62f7bec85581b5f2a6d8bbbfe4782c187a84301"
+    },
+    {
+      "path": "profiles/current/native-ferriki-html/sample.stderr.log",
+      "originalSha256": "9b4ef31c5a04b02fa48bc39914e955556f825fe4c4e5e4e81c3991b55d77cbe7",
+      "publishedSha256": "ff8c6422c4dde4e748e9238fe5d07ad620c18b123353542afe5033253f22bc62"
+    },
+    {
+      "path": "profiles/current/native-ferriki-json/run.stdout.json",
+      "originalSha256": "dd53bb933961ae0ddd2e94cfc298613c32d52a60732c5c059c73b966e1b88ee0",
+      "publishedSha256": "2ac7aa229c9701ad952773e09464622a10e0d45c1a75d45c5646ee37e5801b2d"
+    },
+    {
+      "path": "profiles/current/native-ferriki-json/sample.stderr.log",
+      "originalSha256": "b61753ef1cb251f3c0ad95f544ca1f4de1253c45d523d271ef999334faefd76e",
+      "publishedSha256": "814eaff1ae3b0f2930d1bc9f0b40488d104579d4a0865e4f10a16986fa9b2127"
+    },
+    {
+      "path": "profiles/current/native-ferriki-tsx/run.stdout.json",
+      "originalSha256": "1358a6fdc2dffcb3bdead1dc50c02c9ee59a1446c40a930c09748188c82e95fb",
+      "publishedSha256": "c18e5417a17122821c77be088de2d0b242ff25733923f3ba09e71a79a6a2ee5c"
+    },
+    {
+      "path": "profiles/current/native-ferriki-tsx/sample.stderr.log",
+      "originalSha256": "09979b9e5ca1c84a15e01bbd760e31a213c4cc2034a360a1f06c8276b23dd41f",
+      "publishedSha256": "8ac2205f6bffb7595de41fd2474c398e5f9fe3e2a2025d5d154d82163941d012"
+    },
+    {
+      "path": "profiles/current/native-ferriki-typescript/run.stdout.json",
+      "originalSha256": "b4b7e08744d0f7554e4b65b0ec1e8480f21233fd9bbce8c3634bab0269462765",
+      "publishedSha256": "68cd796713fdf81e8ed94493ca687891555cf00152297222b0fc72070429494b"
+    },
+    {
+      "path": "profiles/current/native-ferriki-typescript/sample.stderr.log",
+      "originalSha256": "629e8671d303f3f39c916d9fc32ca20f2cee5879bdf818e7be6e3e9e51223a17",
+      "publishedSha256": "09ba9c0efe572f92378e831a3193db616be830cd2b206da3578ce58ad0248c45"
+    },
+    {
+      "path": "profiles/window-context.txt",
+      "originalSha256": "5f105b2bb2bd977a9251223a52da07dabae5d31838be19cf0662c52b188f2bc8",
+      "publishedSha256": "47b5bc31556d2a9f799c418429ec2d8fcf44e631a7fe97e5a1bb719b2eb28c24"
+    },
+    {
+      "path": "timings/curated-run-01.json",
+      "originalSha256": "04795d89e193e4363393c744a8457225b92853e32eabedd2df3607288ce6db23",
+      "publishedSha256": "ae63c25971cd2de53dd2856f69c853b0170d5b2ab518f1fd33a08ed65faf7ec4"
+    },
+    {
+      "path": "timings/curated-run-02.json",
+      "originalSha256": "a7179a7bd03fc72cded58697e10c542739b57a019bd8b079fec7dba6a3959cc6",
+      "publishedSha256": "400efbacb19915d22e8d1e1ff2531a99376f6ae696ad5d25ff5560ed11fc3c0b"
+    },
+    {
+      "path": "timings/ordinary-build-receipt.json",
+      "originalSha256": "11fdb7bff86a45241e3661c8ec03e870fca1fdc594adceb8c41f49a04790c275",
+      "publishedSha256": "a42e1a33ef2cc2e97db308b2ed4f69f2a46e27e7ff4257fcb63965ba17b1517c"
+    },
+    {
+      "path": "timings/output-modes.json",
+      "originalSha256": "2bda07e164539c95dac1148f3d06d47846c49a5eb23c7a29e7a3c707b5dbe040",
+      "publishedSha256": "14880e89a62c13362e2abc66b518f410e1d7a6ff229effa6179191828693cb4c"
+    },
+    {
+      "path": "timings/output-modes.stdout.log",
+      "originalSha256": "eb4a1e8582701197faba0fbe99c6c4afb760583d9584d365c53894cbf6f0d45b",
+      "publishedSha256": "d2116a821a91127d3684594999420e899b44a1bfa6fd24858097c66cb8e19727"
+    },
+    {
+      "path": "timings/window-context.txt",
+      "originalSha256": "66d97d715b668d04dd77f63dece7f6bf2ca1f6c04e0753db7b91cdbaa7541ba9",
+      "publishedSha256": "cf350f596e22b3702c89d9f6a0240f6caa7002d263432284fd13a5d7c7eb4eb8"
+    }
+  ],
+  "preservation": "Only exact local path/host strings were replaced. Profile samples, timing samples, symbols, UUIDs, source fixtures, and binary identities were retained; artifact hashes distinguish captured originals from published normalized files."
+}

@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.0.0](https://github.com/sebastian-software/ferriki/compare/v0.14.0...v1.0.0) (2026-10-10)
+
+
+### Miscellaneous Chores
+
+* record 1.0 release acceptance ([#258](https://github.com/sebastian-software/ferriki/issues/258)) ([3459022](https://github.com/sebastian-software/ferriki/commit/34590220120cb56a1a473208fc0e1505ba5439ea))
+
+## [0.14.0](https://github.com/sebastian-software/ferriki/compare/v0.13.0...v0.14.0) (2026-10-10)
+
+
+### Features
+
+* **render:** move decoration policy into Rust ([#250](https://github.com/sebastian-software/ferriki/issues/250)) ([819deba](https://github.com/sebastian-software/ferriki/commit/819debad8b7d4e141e9c1b233257f40c62102eb4))
+
+
+### Bug Fixes
+
+* gate registry publishing on exact release CI ([#255](https://github.com/sebastian-software/ferriki/issues/255)) ([e9aa0b9](https://github.com/sebastian-software/ferriki/commit/e9aa0b92bd86ab19f239b52697f8c2d2153c941c))
+* **node:** load CSS shorthand assets and recover singleton initialization ([#253](https://github.com/sebastian-software/ferriki/issues/253)) ([814b304](https://github.com/sebastian-software/ferriki/commit/814b3044d2e0f66cf81be66da84807dd2dcd1a75))
+* **release:** recover partial npm publication and verify crates ([#256](https://github.com/sebastian-software/ferriki/issues/256)) ([7cfb66d](https://github.com/sebastian-software/ferriki/commit/7cfb66d504b12fa42111346c28fb94a2a0ec4573))
+* **types:** document stage-aware transformer callbacks ([#252](https://github.com/sebastian-software/ferriki/issues/252)) ([8f7b4f9](https://github.com/sebastian-software/ferriki/commit/8f7b4f9596e6b29bae3e35841a6c613733f6b9e0))
+
+
+### Performance Improvements
+
+* **render:** memoize scope classes and style hashes per render ([0715304](https://github.com/sebastian-software/ferriki/commit/07153043a3fb931d343eb7e179abc7c9188f562c))
+* **textmate:** share scanner patterns across registry grammars ([#235](https://github.com/sebastian-software/ferriki/issues/235)) ([dc84a14](https://github.com/sebastian-software/ferriki/commit/dc84a14ae618b0606e4916a4cf58f83cc881a6fe))
+
+## [0.13.0](https://github.com/sebastian-software/ferriki/compare/v0.12.0...v0.13.0) (2026-10-10)
+
+
+### Features
+
+* upgrade Ferroni to 2.1 and expose prefilter control ([#231](https://github.com/sebastian-software/ferriki/issues/231)) ([36a2f73](https://github.com/sebastian-software/ferriki/commit/36a2f735e58c28426cc1a9cbb93fe751153c1947))
+
+
+### Bug Fixes
+
+* **ci:** read the published sidecar without an external tar ([75bef63](https://github.com/sebastian-software/ferriki/commit/75bef63cb5186396ec1103ed9a2f8af2790fcea4))
+* stop Blacksmith measurements after a process timeout ([#233](https://github.com/sebastian-software/ferriki/issues/233)) ([2914f90](https://github.com/sebastian-software/ferriki/commit/2914f90375979d4ec6e05f4b92e07ac2514619b2))
+
+
+### Performance Improvements
+
+* **core:** convert typed token results with cached keys and shared strings ([fa293c5](https://github.com/sebastian-software/ferriki/commit/fa293c5ebf4c9b6ffead0b216a5917c7a8f0f569))
+* **textmate:** keep compiled grammars when the theme changes ([3996b85](https://github.com/sebastian-software/ferriki/commit/3996b85e146bf29678afd799571f1187e63acbc7))
+
 ## [0.12.0](https://github.com/sebastian-software/ferriki/compare/v0.11.0...v0.12.0) (2026-10-04)
 
 

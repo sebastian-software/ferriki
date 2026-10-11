@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-10
 
 ## Context
 
@@ -39,7 +39,7 @@ through an attribute without retokenizing or replacing token elements.
 This does not add another theme interpreter or grammar engine. Rust owns grammar
 boundaries, scope paths, and theme resolution. The Rust renderer supports nested
 classes and CSS extraction. The Node facade applies the corresponding HAST
-projection after JavaScript transformers and decorations, preserving the boundary
+projection after JavaScript transformer callbacks and native-planned decorations, preserving the boundary
 of [ADR 0008](0008-transformers-and-decorations-stay-in-js.md).
 
 The [class-output guide](../docs/class-highlighting.md) defines the public class
@@ -65,3 +65,5 @@ contract and integration rules. Enforcement lives in
 
 - 2026-09-30: Accepted the optional nested-scope output and reuse of native theme resolution.
 - 2026-09-30: Recorded GitHub's PrettyLights and wooorm's starry-night as the design inspiration.
+
+- 2026-10-10: Clarifies that scope nesting follows native-planned decorations and JS hooks (#122).

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-02
+Last updated: 2026-10-10
 
 ## Context
 
@@ -32,7 +32,7 @@ Ferriki is Rust-first.
   HAST and line rendering live in the Rust `ferriki` crate. `ferriki-core` is
   only the N-API host ([ADR 0012](0012-publishable-rust-highlighter.md)).
 - The JavaScript layer keeps the facade, addon loading, the catalog projection,
-  and transformer and decoration dispatch, the bounded exception of
+  and transformer callback dispatch and native decoration edit replay, the bounded exception of
   [ADR 0008](0008-transformers-and-decorations-stay-in-js.md).
 - Token JSON is a compatibility surface, not the preferred internal pipeline.
   Structured Node results cross the N-API boundary as JSON strings and are
@@ -53,3 +53,5 @@ Ferriki is Rust-first.
 - 2026-10-01: Clarifies the JSON-string N-API transport and dates the API comparison to Ferriki 0.4.1.
 - 2026-10-02: Records Node's standard-asset transport as a host boundary while
   keeping manifest planning and cache verification in Rust.
+
+- 2026-10-10: Records native decoration policy with JS object replay and callbacks (#122).

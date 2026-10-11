@@ -1,4 +1,5 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
+/* cspell:words syntect */
 // Checks the prerendered site after `react-router build`: every documentation
 // page exists, the landing page carries the published version, the HTML
 // measurements and the macro sample, the footprint page carries its committed
@@ -122,19 +123,34 @@ const grouped = (value) => value.toLocaleString("en-US");
 const homepage = await read("index.html");
 const benchmarks = await read("evidence/benchmarks/index.html");
 const footprintPage = await read("evidence/footprint/index.html");
+const syntectGuide = await read("guide/ferriki-and-syntect/index.html");
+const rustGuide = await read("rust/getting-started/index.html");
 
+const prismComparison = await read("guide/ferriki-vs-prism/index.html");
 const required = [
+  [prismComparison, "Give your code examples the detail of your editor"],
+  [prismComparison, "prism-example"],
+  [prismComparison, "variable.parameter.ts"],
+  [prismComparison, "Plain text"],
+  [prismComparison, "prism-comparison-grid"],
   [homepage, `v${version}`],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
   [homepage, report.revision],
   [homepage, "@ferriki/core/react/macro"],
   [homepage, 'href="/guide/build-time-macros"'],
+  [homepage, 'href="/guide/ferriki-and-syntect"'],
   [homepage, 'class="site-header"'],
   [homepage, 'class="site-footer"'],
+  [syntectGuide, "Ferriki and syntect"],
+  [syntectGuide, "as_24_bit_terminal_escaped"],
+  [rustGuide, 'href="/guide/ferriki-and-syntect"'],
   [benchmarks, report.revision],
   [benchmarks, report.machine.cpu],
   [benchmarks, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
+  [benchmarks, 'id="rust-syntect-comparison"'],
+  [benchmarks, "365.327 ms"],
+  [benchmarks, "five untimed corpus warmups"],
   [footprintPage, grouped(footprint.addon.bytes)],
   [footprintPage, grouped(footprint.core.packedBytes)],
   [footprintPage, grouped(footprint.core.unpackedBytes)],

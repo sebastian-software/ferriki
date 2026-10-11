@@ -1,0 +1,118 @@
+{
+  "baseline": [
+    {
+      "package": "@ferriki/linux-x64-gnu",
+      "version": "0.13.0",
+      "binaryBytes": 3516624,
+      "binarySha256": "3d7359795a098e65c7a8782ff62e5a685cf257b5caedf1c50e5c6be69aaeea3a",
+      "tarballIntegrity": "sha512-jcZSQwLkVwrD/XGHlVsG3NY0MowmbGqrI8oKw6nNQ2YztukkXgwMmkQIASgcQYLKAaNRlaRpToauUcKYJJb5dQ==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-x64-gnu/-/linux-x64-gnu-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-arm64-gnu",
+      "version": "0.13.0",
+      "binaryBytes": 3030120,
+      "binarySha256": "2ea58c0d9372f0a909c9507eea3d253b73964b25b7004de7a7177938a2973491",
+      "tarballIntegrity": "sha512-qlkWb3LkvLWIc/Rvi173MXIkkJZpr+o6HXfHs46VKVkIo/Zp8LVrumHnYLVMbNI3pbQ+hxes7/Vjy076fSp1NA==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-arm64-gnu/-/linux-arm64-gnu-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-x64-musl",
+      "version": "0.13.0",
+      "binaryBytes": 3539200,
+      "binarySha256": "06656935d63d1825a1cfd04d4c852f79c2da2a9eebb0fd8611b0f502f3fe93dd",
+      "tarballIntegrity": "sha512-57JmUJC6OXtc1ReO4OJ5YWl3mo/8MsMBr1hOjpirp+n8V3/Xalo4zxtK5T42u8GxofuGBhIxXeGOCIEyAJoQFQ==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-x64-musl/-/linux-x64-musl-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-arm64-musl",
+      "version": "0.13.0",
+      "binaryBytes": 3036016,
+      "binarySha256": "f770500037ef1397fc909ae999f584674aa3ca40ef1cba4198fe0c8657f40543",
+      "tarballIntegrity": "sha512-8Pmkqz6wx93RGfycRUCixk+ydJ5ApIpZ617AXeqYv+RsqrYQfu4HUb+O43xcO7/hnnpxf/575OHKqSkl2OMS5A==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-arm64-musl/-/linux-arm64-musl-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/darwin-arm64",
+      "version": "0.13.0",
+      "binaryBytes": 2921792,
+      "binarySha256": "3a9ba75a57066bc8bfa227a9bcd926ef2e7307e3335921df9115bd44a3ff2af3",
+      "tarballIntegrity": "sha512-kgFKVnnvj0nXHTdgKXHLhC8MiVTso/KamPxLJAHQuB0c+R+JEJpzpX4bY6iWyFngtNWBClAxm3unVI53Dwt6cw==",
+      "tarball": "https://registry.npmjs.org/@ferriki/darwin-arm64/-/darwin-arm64-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/win32-x64-msvc",
+      "version": "0.13.0",
+      "binaryBytes": 3571712,
+      "binarySha256": "40b84e239e593e22e647d339104b08608bcfccff37cf6a7cc3f664afde08d33c",
+      "tarballIntegrity": "sha512-j6tJhU+6DJkCKeHJHuzgMJ/+WC9tupFmPzG+eDM+zfc2m6E43e1Y75N+ncfrpd6n72sF/wXkYHdLOcRzzKR9lA==",
+      "tarball": "https://registry.npmjs.org/@ferriki/win32-x64-msvc/-/win32-x64-msvc-0.13.0.tgz"
+    },
+    {
+      "package": "@ferriki/win32-arm64-msvc",
+      "version": "0.13.0",
+      "binaryBytes": 2995712,
+      "binarySha256": "081407491607ed5821eb40d4214de992c71705bfeca7618880e205b984f07bd3",
+      "tarballIntegrity": "sha512-14kpkwPrcmdibx2vk1Su5S0f4yCL4NdRbNl5UNEv6Ii9c5CEL8Wi7PAuAjVIZqAB2emvs8wj6GsF0lo31rgmJw==",
+      "tarball": "https://registry.npmjs.org/@ferriki/win32-arm64-msvc/-/win32-arm64-msvc-0.13.0.tgz"
+    }
+  ],
+  "candidate": [
+    {
+      "package": "@ferriki/linux-x64-gnu",
+      "version": "0.14.0",
+      "binaryBytes": 3614584,
+      "binarySha256": "ca8d9754fafaf20c7bd7549693b645a7e6090002f528b986dcd9adba530a7ec6",
+      "tarballIntegrity": "sha512-mDDFaD+FRP7JoqYIa8LW+wywiiowmhYu4slnsoZOZ4BxJpl9IRiKl5cxUkAFOXkY7bzf4xukonCtfBDH+TDTTA==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-x64-gnu/-/linux-x64-gnu-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-arm64-gnu",
+      "version": "0.14.0",
+      "binaryBytes": 3095656,
+      "binarySha256": "cff11d1799996a1521571fcadab30b7566181965800f94a708b90d113da01efa",
+      "tarballIntegrity": "sha512-8LTQgfoghrV+X3FYkRslbGKbJkWGPw4CaFi1JXFuTSkP8Srcx/rRV0L7L73obrpEVnmSGIByvLqe+3phYxTMTg==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-arm64-gnu/-/linux-arm64-gnu-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-x64-musl",
+      "version": "0.14.0",
+      "binaryBytes": 3637160,
+      "binarySha256": "504183ec76f315da881ed514578a71008a1608b07af75ea70fe8a1eb2b6ec2b2",
+      "tarballIntegrity": "sha512-7FmZaGXQoVb7ha0Zus73RL4Tu7K73+IqfBKer6fOOi3FAiQI+d7vxXzPB+hiit7gtax6e60gAQCwEidPyn07iw==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-x64-musl/-/linux-x64-musl-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/linux-arm64-musl",
+      "version": "0.14.0",
+      "binaryBytes": 3117848,
+      "binarySha256": "a48dd8a6bbf99fec2522c00779eb6d9a4201c21e05ae2d9af4a186953631c8f2",
+      "tarballIntegrity": "sha512-WiL9Sb32j2KPW69ezz29eqn7gAbfY0GxhAgo/bZpYeTgk1n0ErbDQpioVg5zLEUknDDqNFXzd24F5FjfUj0uDA==",
+      "tarball": "https://registry.npmjs.org/@ferriki/linux-arm64-musl/-/linux-arm64-musl-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/darwin-arm64",
+      "version": "0.14.0",
+      "binaryBytes": 3004992,
+      "binarySha256": "acb0e13c49fd453d174b87505c920a8647dfce038c2f8f776522b73186a4268e",
+      "tarballIntegrity": "sha512-jeuwJX7ImZgRPUsrFc2f9ncNUmHOMEDOIvBWw8vKH/CuVzobx53Xk1uszu7UtCK7JY2+dNPbIojiRWrinXe7Eg==",
+      "tarball": "https://registry.npmjs.org/@ferriki/darwin-arm64/-/darwin-arm64-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/win32-x64-msvc",
+      "version": "0.14.0",
+      "binaryBytes": 3688448,
+      "binarySha256": "0d7c11a0e980498c606646656d924e9552911fc1636ea56c1e354a3e10f7bb8b",
+      "tarballIntegrity": "sha512-yNQJ0WD6M0qpF13KvbNuvOEZ4zjTIVRy1Yhl8MydLUzmSOpYFcOYP56xy9Bz8jEfVYPM8d6SkVRCqqJpsIts6Q==",
+      "tarball": "https://registry.npmjs.org/@ferriki/win32-x64-msvc/-/win32-x64-msvc-0.14.0.tgz"
+    },
+    {
+      "package": "@ferriki/win32-arm64-msvc",
+      "version": "0.14.0",
+      "binaryBytes": 3093504,
+      "binarySha256": "92e9a079d4e4173fe85cc96106e539c1c475958fe68fa81e1473056b58211156",
+      "tarballIntegrity": "sha512-i8SghoXOi5uyqe8jzaIE/qmaOWp+eSwH3bnHtci6drmHEf9/7J0bikcqnfpD61wfz3RBnippDUXnobnapfG1jA==",
+      "tarball": "https://registry.npmjs.org/@ferriki/win32-arm64-msvc/-/win32-arm64-msvc-0.14.0.tgz"
+    }
+  ]
+}
