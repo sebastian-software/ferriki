@@ -5,6 +5,31 @@ block's journey and the boundary between React and the Web Component. The
 editable Mermaid diagrams in `../shadow-code-elements.md` cover implementation
 details separately.
 
+## Final plain source correction
+
+The final illustration shows the entire first JSX example as plain text in one
+color. Syntax highlighting begins in the second panel, after Ferriki prepares
+the code. The following edit was applied after the source example edit below.
+
+```text
+Use case: precise-object-edit
+Asset type: Ferriki introductory documentation infographic
+Input image: edit target, the current infographic with complete JSX in its first panel.
+Make one precise correction: in panel 1, 'You write code', every character of the seven-line JSX code example must be the SAME dark navy/near-black color. There must be NO syntax highlighting anywhere in that first code example. This is plain source text before Ferriki processes it. Use uniform monospaced type and uniform weight. Specifically remove the blue from <Code and />, the red from "js" and backticks, the purple from const/function/return, and the teal from 42. Set all those characters, identifiers, punctuation, braces, strings, numbers, and tags to exactly the same dark near-black color as 'answer' currently has.
+
+Preserve this exact code, all line breaks, all indentation, all curly braces and the two literal backticks:
+<Code
+  language="js"
+  source={`const answer = 42;
+function add(a, b) {
+  return a + b;
+}`}
+/>
+
+Change ONLY the color (and if necessary weight to make it uniform) of the code glyphs inside the FIRST React component code card. Keep its blue heading 'React component' blue. Do not change any card background, label, caption, number, arrow, size, position or layout.
+Critical invariant: Keep the existing syntax highlighting in panel 2, panel 3, panel 4 and the lower browser illustration EXACTLY as it is. The visible contrast must be first panel = plain single-color source; all later panels = highlighted output. Do not recolor those later examples. Do not remove the complete source example, abbreviate it, omit braces/backticks, or introduce ellipses. Preserve all other pixels and text as closely as possible. No other edits. No watermark.
+```
+
 ## Source example edit
 
 The selected image uses the following targeted edit to show the complete JSX
