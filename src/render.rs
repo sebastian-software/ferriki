@@ -434,28 +434,35 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 }
 
 fn token_style(token: &HighlightToken) -> String {
-    let mut declarations = Vec::new();
+    let mut declarations = String::new();
     if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
-        declarations.push(format!("color:{color}"));
+        declarations.reserve("color:".len() + color.len());
+        declarations.push_str("color:");
+        declarations.push_str(color);
     }
     let style = token.font_style.unwrap_or_default();
+    let mut append = |declaration: &str| {
+        if !declarations.is_empty() {
+            declarations.push(';');
+        }
+        declarations.push_str(declaration);
+    };
     if style.contains(FontStyle::ITALIC) {
-        declarations.push("font-style:italic".to_owned());
+        append("font-style:italic");
     }
     if style.contains(FontStyle::BOLD) {
-        declarations.push("font-weight:bold".to_owned());
+        append("font-weight:bold");
     }
-    let mut decorations = Vec::new();
-    if style.contains(FontStyle::UNDERLINE) {
-        decorations.push("underline");
+    match (
+        style.contains(FontStyle::UNDERLINE),
+        style.contains(FontStyle::STRIKETHROUGH),
+    ) {
+        (true, true) => append("text-decoration:underline line-through"),
+        (true, false) => append("text-decoration:underline"),
+        (false, true) => append("text-decoration:line-through"),
+        (false, false) => {}
     }
-    if style.contains(FontStyle::STRIKETHROUGH) {
-        decorations.push("line-through");
-    }
-    if !decorations.is_empty() {
-        declarations.push(format!("text-decoration:{}", decorations.join(" ")));
-    }
-    declarations.join(";")
+    declarations
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {

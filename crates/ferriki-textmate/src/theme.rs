@@ -209,6 +209,18 @@ impl ScopeStack {
     }
 
     #[must_use]
+    pub(crate) fn get_borrowed_segments(&self) -> Vec<&str> {
+        let mut item = Some(self);
+        let mut result = Vec::new();
+        while let Some(scope) = item {
+            result.push(scope.scope_name.as_str());
+            item = scope.parent.as_deref();
+        }
+        result.reverse();
+        result
+    }
+
+    #[must_use]
     #[allow(
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"

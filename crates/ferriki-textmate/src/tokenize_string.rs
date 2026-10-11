@@ -450,7 +450,8 @@ fn match_injections<G: TokenizerGrammar>(
         .content_name_scopes_list
         .as_ref()
         .expect("grammar state must have content-name scopes")
-        .scope_names();
+        .scope_path
+        .get_borrowed_segments();
     let scope_slice = scopes.as_slice();
     let mut best: Option<(usize, FindNextMatchResult<RuleScannerId>, MatcherPriority)> = None;
 
@@ -625,14 +626,14 @@ fn produce_from_scopes(
     line_fonts.produce_from_scopes(scopes, end_index);
 }
 
-fn matches_scope_identifiers(identifiers: &[String], scopes: &&[String]) -> bool {
+fn matches_scope_identifiers(identifiers: &[String], scopes: &&[&str]) -> bool {
     if scopes.len() < identifiers.len() {
         return false;
     }
     let mut last_index = 0;
     identifiers.iter().all(|identifier| {
         for (index, scope) in scopes.iter().enumerate().skip(last_index) {
-            if scope == identifier
+            if *scope == identifier
                 || scope
                     .strip_prefix(identifier)
                     .is_some_and(|remainder| remainder.starts_with('.'))
