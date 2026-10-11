@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-04
+Last updated: 2026-10-11
 
 ## Context
 
@@ -15,9 +15,11 @@ adapter highlighted, cannot identify that component-independent boundary.
 Issue #211 narrows the initial requirement to inline content, following
 Palamedes' explicitly imported macro model.
 
-The public Node output direction remains HTML and CSS ([ADR 0017](0017-node-html-output-priority.md)).
-Macro processing must not introduce a browser highlighter or execute arbitrary
-application JavaScript during a transform.
+The public Node output direction remains HTML and CSS ([ADR
+0017](0017-node-html-output-priority.md)). Macro processing must not introduce
+a browser highlighter or execute arbitrary application JavaScript during a
+transform. The React presentation uses the framework-free prepared-output
+boundary in [ADR 0019](0019-shadow-dom-code-elements.md).
 
 Issue #216 assessed what macro recognition costs consumers that do not use it.
 The first implementation compiled an OXC parser with semantic analysis into
@@ -48,22 +50,51 @@ host's parser is right here.
 - `@ferriki/core/react/macro` exports the optional React JSX marker `Code`.
   Its required `source` attribute accepts the same direct string or cooked
   template literal as `code()`. It requires static `language` and accepts
-  static `meta` and `lineNumbers`. It accepts only self-closing JSX elements;
-  children, spreads, duplicate attributes and unsupported attributes fail
-  compilation. The entry contains no React runtime import or native loader;
+  static `meta` and `lineNumbers`. Runtime `className`, `theme`, `maxLines`, and
+  `render` are accepted. `maxLines` must be a positive safe integer when
+  supplied. It accepts only self-closing JSX elements; children, spreads,
+  duplicate attributes and unsupported attributes fail compilation. The entry
+  contains no React runtime import or native loader;
   only its declarations refer to React types. No separate npm package is needed.
 - `Code` imports are resolved by their reserved name before JSX lowering. Vite
-  replaces each element with a `div` containing the prepared HTML. Optional
-  `className` applies to that outer container and accepts a string or runtime
-  expression. An optional runtime `render` function instead receives
-  `{ code: PreparedCodeBlock, className?: string }`; consumers explicitly
-  forward props in ordinary JSX. It accepts no JSX-element shorthand. An absent
-  or `undefined` renderer retains the default output, while a callback
-  returning `null` or `undefined` retains its result. Presentation expressions
-  are evaluated once in authored attribute order when the JSX element is created,
-  never during compilation. A stable generated module-local React component
-  defers callback invocation until React renders that element. The unreleased
-  `component` prop is replaced without an alias.
+  replaces each element with a stable module-local React helper. When its
+  runtime `render` prop is absent or `undefined`, the helper registers
+  `<ferriki-code>` and returns an empty reference host. The element resolves
+  the prepared HTML inside its Shadow DOM. Registration occurs once inside this
+  default branch, before React creates the
+  returned host, so a custom renderer does not reserve the custom-element name.
+  `className` applies to the host and accepts a string or runtime expression.
+  Runtime `theme` selects a configured theme alias. Runtime `maxLines` accepts
+  a positive safe integer and is optional; omission or `undefined` leaves the
+  block unlimited. A custom `render` function receives
+  `{ code: PreparedCodeBlock, className?, theme?, maxLines? }`; consumers
+  explicitly forward the props they use in ordinary JSX. It accepts no
+  JSX-element shorthand. The callback runs when React renders the helper, and
+  its `null` or `undefined` result is returned unchanged. Presentation
+  expressions are evaluated once in authored attribute order when the JSX
+  element is created, never during compilation. The unreleased `component` prop
+  is replaced without an alias.
+- The default React presentation uses the framework-free
+  `@ferriki/core/web-component` entry. Prepared HTML stays outside React in a
+  module-level registry; the helper passes only a content reference and renders
+  an empty `code-ref` host. React owns the host; the element owns its highlighted
+  shadow contents. A separate complete-HTML server stage can fill Declarative
+  Shadow DOM, preserving highlighted no-JavaScript output and parser-created
+  nodes through upgrade and hydration. Without that stage the host is empty
+  until registration. No React HTML injection, hooks, or hydration suppression
+  is required. This contract covers
+  ordinary React `renderToString` hydration, not streaming SSR. Theme aliases
+  from the Vite `themes` map must be CSS-safe identifiers; the macro validates
+  them during the build. Shared CSS, lifecycle, and trust limits are in ADR 0019.
+- `code()` keeps its existing HTML-backed prepared descriptor. Its applicable
+  CSS continues through normal Vite CSS delivery. React calls that declare a
+  `render` prop retain the same descriptor, including `code.html`, and retain
+  normal CSS delivery for the custom renderer. Default-only React calls place
+  their prepared CSS and theme rules in one shared constructed stylesheet
+  adopted by all roots instead of adding them to the page stylesheet. Module
+  CSS chunks and overlapping rules are deduplicated. All instances use the same
+  theme alias configuration. No JSX serializer or alternate Node output mode
+  is retained.
 - Code is a directly supplied string literal or cooked template literal with
   no interpolations. Options are an object literal with required `language`
   and optional `meta` and `lineNumbers` literals. Dynamic values, identifier or
@@ -156,10 +187,14 @@ host's parser is right here.
   Native failures and missing assets propagate; they are not silently turned
   into successful highlighting. Per-call `lineNumbers` overrides the plugin
   default; explicit `showLineNumbers` metadata also enables numbering.
-- Transformed server and client modules contain the same serializable prepared
-  data. Hydration and navigation consume that data without native highlighting
-  or browser asset downloads. Native-only runtime policy continues to apply
-  to actual highlighting ([ADR 0009](0009-native-only-runtime.md)).
+- Transformed server and client modules contain the same prepared code, HTML,
+  CSS and metadata. React server rendering emits only a reference host. The
+  plugin API exposes the transformed HTML registry and shared CSS, plus a
+  separate DSD stage for complete server HTML. Applications can save registry
+  and CSS assets after an SSR build. Registering after browser parsing retains
+  matching DSD nodes and adopts shared CSS. Hydration and navigation use that prepared data without
+  native highlighting or browser asset downloads. Browser-side highlighting
+  remains unsupported ([ADR 0009](0009-native-only-runtime.md)).
 - A Markdown/MDX host must expose the imported marker and call before lowering
   or hiding that module. `include(id)` adds such an exposed module ID; an
   included ID without a script extension is parsed as TSX. The macro does not
@@ -184,8 +219,10 @@ host's parser is right here.
 - The first integration supports inline examples without compile-time constant
   evaluation, file loaders or a runtime/server preparation service.
 - The core macro subpath is safe to import in a browser but is not a browser
-  highlighting runtime. Missing integration fails clearly instead of changing
-  output between server and client.
+  highlighting runtime. The separate web-component subpath presents prepared
+  output without native or React runtime dependencies. Missing Vite integration
+  fails clearly; the prepared content is shared between server and client
+  through stable references, with optional DSD transport outside React.
 - Macro recognition is not built into the N-API host. Neither the addon nor
   the published Rust highlighter acquires JavaScript parser dependencies or a
   macro API. The release summary lists the size of every sidecar's
@@ -194,7 +231,8 @@ host's parser is right here.
   filter check, in development and in builds; the adapter never sees it.
 - `@ferriki/vite` does not support Vite 7. Another build host needs its own
   adapter that prepares HTML through the supported highlighter, preserves
-  source maps and delivers the same prepared data and CSS on server and client.
+  source maps and delivers prepared data on server and client. It may use the
+  framework-free web-component entry for the same Shadow DOM presentation.
 - Projects that used the marked HTML or static intrinsic JSX blocks move their
   examples to `code()` or `<Code />`; no compatibility path remains.
 - A module that imports a macro cannot reuse its name. A React module that
@@ -206,13 +244,20 @@ host's parser is right here.
   navigation and HMR are checked at their respective compiler/consumer
   boundaries. Package tests exercise the real packed core, sidecar and Vite
   packages; the packed consumer check runs against Vite 8.0.0 and the current
-  Vite 8 release.
+  Vite 8 release. The React custom-element integration and its browser contract
+  are recorded in ADR 0019.
 - Prepared HTML carries the same trust boundary as normal Ferriki HTML:
   original source is escaped, while custom transformer output is trusted
   caller code. Components must not pass arbitrary unrelated HTML as prepared
-  Ferriki output.
+  Ferriki output. The component's HTML parser has the same trust boundary and
+  string-sink limitations under strict Trusted Types enforcement (ADR 0019).
 
 ## History
+
+- 2026-10-11: Makes the reference-backed Web Component the default React
+  presentation with shared CSS, line-count reservation, and optional maxLines.
+  Adds a separate complete-HTML DSD stage while retaining the HTML descriptor
+  and application-owned render callback.
 
 - 2026-10-04: `@ferriki/vite` requires Vite 8, transforms only modules that import a macro and parses them once with Vite's parser; the imported macro name is reserved in its module instead of yielding to lexical shadowing; diagnostics use Vite's plugin error channel; the marked HTML and static intrinsic JSX paths are removed (#216).
 

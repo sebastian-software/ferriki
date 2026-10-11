@@ -1,4 +1,12 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["dist", "**/dist", "coverage", "pnpm-lock.yaml", "CHANGELOG.md"]
+  "ignorePatterns": [
+    "dist",
+    "**/dist",
+    "coverage",
+    "pnpm-lock.yaml",
+    "CHANGELOG.md",
+    "benchmarks/shadow-dom-spike/fixtures/**",
+    "benchmarks/shadow-dom-spike/results/*.json"
+  ]
 }

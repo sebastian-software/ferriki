@@ -1,13 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { originalPositionFor, TraceMap } from "@jridgewell/trace-mapping";
 import { build, createServer, parseAst, transformWithOxc } from "vite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { code } from "../../ferriki/macro.mjs";
+import * as codeElementRuntime from "../../ferriki/web-component.mjs";
 import { ferriki } from "../index.mjs";
 import "../../scripts/test-asset-env.mjs";
 
@@ -125,17 +127,27 @@ function objectProperty(object, name) {
   );
 }
 
-/** Elements that receive a prepared descriptor as a `code={{ ... }}` object literal. */
+/** Prepared macro calls pass only a content reference through React. */
 function preparedComponents(ast) {
   return [...nodes(ast)].filter((node) => {
     if (node.type !== "JSXElement") return false;
-    const expression = jsxAttribute(node, "code")?.value?.expression;
-    return expression?.type === "ObjectExpression" && objectProperty(expression, "html");
+    return typeof jsxAttribute(node, "codeRef")?.value?.value === "string";
   });
 }
 
 function preparedDescriptors(ast) {
-  return preparedComponents(ast).map((element) => jsxAttribute(element, "code").value.expression);
+  const records = [...nodes(ast)].filter(
+    (node) =>
+      node.type === "ObjectExpression" &&
+      node.properties.some(
+        (property) =>
+          property.value?.type === "ObjectExpression" && objectProperty(property.value, "html"),
+      ),
+  );
+  return preparedComponents(ast).map((element) => {
+    const ref = jsxAttribute(element, "codeRef").value.value;
+    return records.map((record) => objectProperty(record, ref)?.value).find(Boolean);
+  });
 }
 
 /** Text content of rendered HTML, with the escapes Ferriki emits and HTML's newline normalization. */
@@ -179,20 +191,42 @@ async function macroError(source, id, { message, at }, options) {
   return error;
 }
 
-async function evaluateJsx(code, filename, globals = {}) {
-  const executable = await transformWithOxc(withoutVirtualStyles(code), filename, {
+async function evaluateJsx(code, filename, globals = {}, resultExpression = "") {
+  const source = withoutVirtualStyles(code)
+    .replace(
+      /import \{ defineCodeElement as (\w+) \} from "@ferriki\/core\/web-component";/g,
+      "const { defineCodeElement: $1 } = codeElementRuntime;",
+    )
+    .replace(
+      /import \{ codeElementSizing as (\w+) \} from "@ferriki\/core\/web-component";/g,
+      "const { codeElementSizing: $1 } = codeElementRuntime;",
+    );
+  const executable = await transformWithOxc(source, filename, {
     lang: "tsx",
     jsx: { runtime: "classic", pragma: "jsx" },
   });
-  return runInNewContext(executable.code, {
-    jsx: (type, props) => ({ type, props }),
+  return runInNewContext(`${executable.code}\n${resultExpression}`, {
+    jsx: (type, props, ...children) => ({
+      type,
+      props: {
+        ...props,
+        ...(children.length ? { children: children.length === 1 ? children[0] : children } : {}),
+      },
+    }),
     ...globals,
+    codeElementRuntime: { ...codeElementRuntime, ...globals.codeElementRuntime },
   });
 }
 
 async function createProject(files) {
   const root = await realpath(await mkdtemp(join(tmpdir(), "ferriki-vite-test-")));
   tempRoots.push(root);
+  await mkdir(join(root, "node_modules/@ferriki"), { recursive: true });
+  await symlink(
+    fileURLToPath(new URL("../../ferriki", import.meta.url)),
+    join(root, "node_modules/@ferriki/core"),
+    "dir",
+  );
   for (const [path, content] of Object.entries(files)) {
     await mkdir(join(root, path, ".."), { recursive: true });
     await writeFile(join(root, path), content);
@@ -215,6 +249,7 @@ const numbered = renderSnippet("const value = 1;", { language: "ts", meta: "show
     const result = await transformModule(vitePlugin, source, "/src/example.mts");
 
     expect(result.code).not.toContain("code as renderSnippet");
+    expect(result.code).not.toContain("@ferriki/core/web-component");
     expect(result.code).toContain('import type { PreparedCodeBlock } from "@ferriki/core/macro";');
     expect(() => parseOutput(result.code, "ts")).not.toThrow();
     expect(result.code).not.toContain("</script>");
@@ -273,7 +308,7 @@ const numbered = renderSnippet("const value = 1;", { language: "ts", meta: "show
     expect(vitePlugin.load(`\0${beforeId}`)).not.toBe(vitePlugin.load(`\0${afterId}`));
   });
 
-  it("lowers React Code macros to HTML or named and inline render callbacks", async () => {
+  it("lowers React Code macros to a shadow host or named and inline render callbacks", async () => {
     const source = `const before = "🧪";
 import { Code as PrepareCode } from "@ferriki/core/react/macro";
 export const defaultBlock = <PrepareCode source={'const tag = "</script>";\\r\\n// λ'} language="ts" meta='title="Demo" [API] {1}' lineNumbers={false} />;
@@ -286,12 +321,28 @@ export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} l
     expect(result.code).not.toContain("@ferriki/core/react/macro");
     expect(result.code).not.toContain("<PrepareCode");
     expect(result.code).not.toContain('from "react"');
+    expect(result.code).toContain(
+      'import { defineCodeElement as FerrikiDefineCodeElement } from "@ferriki/core/web-component";',
+    );
     expect(result.moduleType).toBeUndefined();
     const ast = parseOutput(result.code);
-    const [fallback] = jsxElements(ast, "div");
-    expect(attributeNames(fallback)).toEqual(["dangerouslySetInnerHTML"]);
-    const fallbackHtml = jsxAttribute(fallback, "dangerouslySetInnerHTML").value.expression
-      .properties[0].value.value;
+    const [fallback] = jsxElements(ast, "ferriki-code");
+    expect(attributeNames(fallback)).toEqual([
+      "JSXSpreadAttribute",
+      "data-ferriki-theme",
+      "code-ref",
+      "max-lines",
+      "style",
+    ]);
+    expect(jsxElements(ast, "pre")).toHaveLength(0);
+    expect(jsxElements(ast, "code")).toHaveLength(0);
+    expect(fallback.children).toHaveLength(0);
+    expect(jsxAttribute(fallback, "dangerouslySetInnerHTML")).toBeUndefined();
+    expect(result.code).not.toContain("codeElementTemplate");
+    expect(result.code).not.toContain("useMemo");
+    const components = preparedComponents(ast);
+    const [defaultDescriptor, namedDescriptor, customDescriptor] = preparedDescriptors(ast);
+    const fallbackHtml = objectProperty(defaultDescriptor, "html").value.value;
     expect(fallbackHtml).toMatch(/^<pre\b/);
     expect(fallbackHtml).toContain('data-title="Demo"');
     expect(fallbackHtml).toContain('data-label="API"');
@@ -299,14 +350,13 @@ export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} l
     expect(fallbackHtml).not.toContain("data-ln");
     expect(result.code).not.toContain("</script>");
 
-    const components = preparedComponents(ast);
-    const [namedDescriptor, customDescriptor] = preparedDescriptors(ast);
-    expect(components).toHaveLength(2);
+    expect(components).toHaveLength(3);
     expect(objectProperty(namedDescriptor, "code").value.value).toBe('console.log("named");\n');
     expect(objectProperty(customDescriptor, "code").value.value).toBe('console.log("custom");\n');
     expect(objectProperty(customDescriptor, "language").value.value).toBe("js");
-    expect(attributeNames(components[0])).toEqual(["code", "render"]);
-    expect(attributeNames(components[1])).toEqual(["code", "className", "render"]);
+    expect(attributeNames(components[0])).toEqual(["codeRef"]);
+    expect(attributeNames(components[1])).toEqual(["codeRef", "render"]);
+    expect(attributeNames(components[2])).toEqual(["codeRef", "className", "render"]);
     const sections = jsxElements(ast, "section");
     expect(sections).toHaveLength(2);
     expect(attributeNames(sections[1])).toContain("JSXSpreadAttribute");
@@ -315,6 +365,8 @@ export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} l
     const customMetadata = objectProperty(customDescriptor, "metadata").value;
     expect(objectProperty(customMetadata, "lineNumbers").value.value).toBe(true);
     expect(objectProperty(customDescriptor, "css").value.value).toContain(".ferriki-style-");
+    expect(result.code).toContain("FerrikiCodeElementConfig");
+    expect(result.code).toContain("FerrikiDefineCodeElement(FerrikiCodeElementConfig)");
     expect(result.code).toContain("currentClassName()");
     const cssId = cssImportId(result.code);
     expect(cssId).toBeTruthy();
@@ -406,7 +458,7 @@ export const customBlock = <PrepareCode source={\`console.log("custom");\\n\`} l
       `import { Code as MacroCode } from "@ferriki/core/react/macro";\n<MacroCode source="x" language="text" className="syntax &amp; &#x1F680;" />`,
       "/src/class-entity.tsx",
     );
-    const [wrapper] = jsxElements(parseOutput(staticResult.code), "div");
+    const [wrapper] = preparedComponents(parseOutput(staticResult.code));
     // The quoted attribute is kept verbatim, so the JSX compiler decodes it once.
     expect(jsxAttribute(wrapper, "className").value.raw).toBe('"syntax &amp; &#x1F680;"');
     const evaluated = await evaluateJsx(staticResult.code, "/src/class-entity.tsx");
@@ -456,11 +508,19 @@ const withoutClassName = <PrepareCode source="const noClass = true;" language="t
     const source = `import { Code } from "@ferriki/core/react/macro";
 type FerrikiMacroRenderHelper = string;
 const label = { FerrikiMacroRenderHelper1: true };
+const FerrikiDefineCodeElement = true;
+const FerrikiDefineCodeElement1 = false;
+const FerrikiCodeElementConfig = null;
+const FerrikiCodeElementConfig1 = "user binding";
 <FerrikiMacroRenderHelper2 />;
 export const block = <Code source="x" language="text" render={(props) => props} />;`;
     const result = await transformModule(plugin(), source, "/src/helper-name.tsx");
     expect(result.code).toContain("function FerrikiMacroRenderHelper3(props)");
-    expect(result.code).toContain("<FerrikiMacroRenderHelper3 code={");
+    expect(result.code).toContain(
+      'import { defineCodeElement as FerrikiDefineCodeElement2 } from "@ferriki/core/web-component";',
+    );
+    expect(result.code).toContain("const FerrikiCodeElementConfig2 = ");
+    expect(result.code).toContain("<FerrikiMacroRenderHelper3 codeRef=");
   });
 
   it("maps renderer expressions back to their original source locations", async () => {
@@ -522,10 +582,255 @@ value;`;
     expect(classNameReads).toBe(1);
     expect(evaluated.type.name).toBe("FerrikiMacroRenderHelper");
     const fallback = evaluated.type(evaluated.props);
-    expect(fallback.type).toBe("div");
+    expect(fallback.type).toBe("ferriki-code");
     expect(fallback.props.className).toBe("syntax");
-    expect(fallback.props.dangerouslySetInnerHTML.__html).toContain("fallback");
+    expect(fallback.props["code-ref"]).toMatch(/^ferriki-[a-f0-9]{64}$/);
+    expect(fallback.props).not.toHaveProperty("highlightedCode");
+    expect(fallback.props).not.toHaveProperty("children");
+    expect(fallback.props).not.toHaveProperty("dangerouslySetInnerHTML");
     expect(result.code.match(/"html":/g)).toHaveLength(1);
+  });
+
+  it("registers prepared content outside React and renders an empty reference host", async () => {
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const FerrikiDefineCodeElement = null;
+const FerrikiCodeElementConfig = null;
+const window = "a user binding must not change server output";
+const globalThis = null;
+const events = [];
+const value = <Code source="const local = 1;" language="ts" lineNumbers className="local" theme={events.push("theme") && "night"} />;
+({ value, events });`;
+    const result = await transformModule(
+      ferriki({
+        themes: { day: "github-light-default", night: "github-dark-default" },
+        styleMode: "classes",
+      }),
+      source,
+      "/src/shadow-default.tsx",
+    );
+    expect(cssImportId(result.code)).toBeUndefined();
+    expect(result.code).toContain("defineCodeElement as FerrikiDefineCodeElement1");
+    expect(result.code).toContain("const FerrikiCodeElementConfig1 = ");
+    expect(result.code).not.toContain("codeElementTemplate");
+    expect(result.code).not.toContain("dangerouslySetInnerHTML");
+    const registrations = [];
+    const evaluated = await evaluateJsx(result.code, "/src/shadow-default.tsx", {
+      codeElementRuntime: {
+        defineCodeElement(options) {
+          registrations.push(options);
+        },
+      },
+    });
+    expect(evaluated.events).toEqual(["theme"]);
+    const host = evaluated.value.type(evaluated.value.props);
+    expect(host.type).toBe("ferriki-code");
+    expect(host.props.className).toBe("local");
+    expect(host.props["data-ferriki-theme"]).toBe("night");
+    expect(evaluated.value.props).not.toHaveProperty("code");
+    expect(host.props["code-ref"]).toBe(evaluated.value.props.codeRef);
+    expect(host.props).not.toHaveProperty("suppressHydrationWarning");
+    expect(host.props).not.toHaveProperty("children");
+    expect(host.props).not.toHaveProperty("highlightedCode");
+    expect(registrations).toHaveLength(1);
+    expect(registrations[0].themeAliases).toEqual(["day", "night"]);
+    expect(registrations[0].css).toContain(".ferriki-highlight-line");
+    expect(registrations[0].css).toContain(".ferriki-style-");
+    expect(registrations[0].blocks[host.props["code-ref"]]).toContain("const");
+  });
+
+  it("reserves source-line space on empty hosts before browser registration", async () => {
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const FerrikiCodeElementSizing = null;
+const FerrikiCodeSizes = null;
+const values = [
+  <Code source="" language="text" />,
+  <Code source={\`first\\r\\nsecond\\n\`} language="text" />,
+  <Code source={\`first\\rsecond\`} language="text" />,
+];
+values;`;
+    const result = await transformModule(plugin(), source, "/src/reserved-space.tsx");
+    expect(result.code).toContain("codeElementSizing as FerrikiCodeElementSizing1");
+    expect(result.code).toContain("const FerrikiCodeSizes1 = ");
+    const values = await evaluateJsx(result.code, "/src/reserved-space.tsx");
+    const hosts = values.map((value) => value.type(value.props));
+    expect(hosts.map((host) => host.props.style)).toEqual(
+      [1, 3, 2].map((lines) => codeElementRuntime.codeElementSizing(lines)),
+    );
+    for (const value of values) {
+      expect(value.props).not.toHaveProperty("code");
+      expect(value.props).not.toHaveProperty("source");
+    }
+    for (const host of hosts) expect(host.props).not.toHaveProperty("children");
+    expect(values[1].type(values[1].props).props.style).toBe(hosts[1].props.style);
+  });
+
+  it("reuses the module configuration across presentation changes", async () => {
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const make = ({ className, theme, render }) => <Code source="const stable = 1;" language="text" className={className} theme={theme} render={render} />;
+make;`;
+    const result = await transformModule(plugin(), source, "/src/property-updates.tsx");
+    const registrations = [];
+    const make = await evaluateJsx(result.code, "/src/property-updates.tsx", {
+      codeElementRuntime: {
+        defineCodeElement(options) {
+          registrations.push(options);
+        },
+      },
+    });
+    const renderDefault = (presentation) => {
+      const element = make({ render: undefined, ...presentation });
+      return element.type(element.props);
+    };
+    const before = renderDefault({ className: "before", theme: "day" });
+    const after = renderDefault({ className: "after", theme: "night" });
+    expect(after.props.className).toBe("after");
+    expect(after.props["data-ferriki-theme"]).toBe("night");
+    expect(after.props["code-ref"]).toBe(before.props["code-ref"]);
+    expect(registrations).toHaveLength(1);
+    expect(registrations.every((options) => options === registrations[0])).toBe(true);
+    expect(registrations[0].themeAliases).toEqual([]);
+    expect(result.code).not.toContain("useMemo");
+
+    const custom = make({ className: "custom", theme: "night", render: (props) => props });
+    expect(custom.type(custom.props)).toMatchObject({ className: "custom", theme: "night" });
+    expect(registrations).toHaveLength(1);
+  });
+
+  it("caps reserved space with runtime maxLines and forwards it to custom renderers", async () => {
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const make = (maxLines, render) => <Code source={\`first\\r\\nsecond\\nthird\\n\`} language="text" maxLines={maxLines} render={render} />;
+make;`;
+    const result = await transformModule(plugin(), source, "/src/capped-space.tsx");
+    const make = await evaluateJsx(result.code, "/src/capped-space.tsx");
+    const hosts = [2, 10, undefined].map((maxLines) => {
+      const value = make(maxLines);
+      expect(value.props).not.toHaveProperty("code");
+      const host = value.type(value.props);
+      expect(host.props["max-lines"]).toBe(maxLines);
+      expect(host.props).not.toHaveProperty("maxLines");
+      expect(host.props).not.toHaveProperty("children");
+      expect(host.props.style).toEqual(codeElementRuntime.codeElementSizing(4, maxLines));
+      return host;
+    });
+    expect(new Set(hosts.map((host) => host.props["code-ref"])).size).toBe(1);
+    const custom = make(2, (props) => props);
+    expect(custom.type(custom.props)).toMatchObject({
+      maxLines: 2,
+      code: { code: "first\r\nsecond\nthird\n" },
+    });
+    for (const maxLines of [0, -1, 1.5, Infinity, "2", null]) {
+      const invalid = make(maxLines);
+      expect(() => invalid.type(invalid.props)).toThrow(/maxLines.*positive safe integer/);
+    }
+  });
+
+  it("shares stable references and fills SSR hosts through the separate HTML stage", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const first = <Code source="const shared = 1;" language="ts" meta='title="Shared"' />;
+const second = <Code source="const shared = 1;" language="ts" meta='title="Shared"' className="other" />;
+({ first, second });`;
+    const firstResult = await transformModule(vitePlugin, source, "/src/shared.tsx");
+    const components = preparedComponents(parseOutput(firstResult.code));
+    const refs = components.map((element) => jsxAttribute(element, "codeRef").value.value);
+    expect(refs[0]).toBe(refs[1]);
+    expect(firstResult.code.match(/"html":/g)).toHaveLength(1);
+    const blocks = vitePlugin.api.codeElementBlocks();
+    expect(Object.keys(blocks)).toEqual([refs[0]]);
+    const markup = `<main><ferriki-code code-ref="${refs[0]}" class="other"></ferriki-code></main>`;
+    const rendered = vitePlugin.api.renderCodeElements(markup, {
+      stylesheetHref: "/code.css?a=1&b=2",
+    });
+    expect(rendered).toContain('<template shadowrootmode="open">');
+    expect(rendered).toContain(blocks[refs[0]]);
+    expect(rendered).toContain('href="/code.css?a=1&amp;b=2" data-ferriki-code-css');
+    expect(rendered).toContain('data-title="Shared"');
+    expect(rendered).not.toContain("highlightedCode=");
+    expect(vitePlugin.api.codeElementCss()).toContain(":host");
+    expect(vitePlugin.api.codeElementCss()).toContain(".ferriki-style-");
+    expect(vitePlugin.api.renderCodeElements(rendered)).toBe(rendered);
+
+    const again = await transformModule(vitePlugin, source, "/src/another.tsx");
+    expect(
+      jsxAttribute(preparedComponents(parseOutput(again.code))[0], "codeRef").value.value,
+    ).toBe(refs[0]);
+    expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(1);
+    await transformModule(
+      vitePlugin,
+      source.replaceAll("const shared = 1;", "const changed = 2;"),
+      "/src/shared.tsx",
+    );
+    expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(2);
+    await transformModule(
+      vitePlugin,
+      'import { Code } from "@ferriki/core/react/macro";',
+      "/src/another.tsx",
+    );
+    expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(1);
+    expect(() => vitePlugin.api.renderCodeElements(markup)).toThrow(/No trusted HTML block/);
+    expect(blocks[refs[0]]).toContain("shared");
+  });
+
+  it("initializes shared CSS before eager rendering while preserving directives", async () => {
+    const source = `"use client";
+"use strict";
+import { Code } from "@ferriki/core/react/macro";
+const eager = <Code source="const eager = 1;" language="ts" lineNumbers />;
+eager;`;
+    const result = await transformModule(plugin(), source, "/src/eager-render.tsx");
+    const ast = parseOutput(result.code);
+    expect(ast.body.slice(0, 2).map((statement) => statement.directive)).toEqual([
+      "use client",
+      "use strict",
+    ]);
+    const registrations = [];
+    const eager = await evaluateJsx(result.code, "/src/eager-render.tsx", {
+      jsx(type, props, ...children) {
+        const renderedProps = {
+          ...props,
+          ...(children.length ? { children: children.length === 1 ? children[0] : children } : {}),
+        };
+        return typeof type === "function" ? type(renderedProps) : { type, props: renderedProps };
+      },
+      codeElementRuntime: {
+        defineCodeElement(options) {
+          registrations.push(options);
+        },
+      },
+    });
+    expect(eager.type).toBe("ferriki-code");
+    expect(registrations[0].blocks[eager.props["code-ref"]]).toContain("const");
+    expect(registrations).toHaveLength(1);
+    expect(registrations[0].css).toContain(".ferriki-highlight-line");
+  });
+
+  it("forwards theme to custom renderers without changing their return value", async () => {
+    const source = `import { Code } from "@ferriki/core/react/macro";
+const captured = [];
+const first = <Code source="first" language="text" theme="dark" render={(props) => { captured.push(props); return null; }} />;
+const second = <Code source="second" language="text" render={(props) => { captured.push(props); return undefined; }} />;
+({ first, second, captured });`;
+    const result = await transformModule(plugin(), source, "/src/render-theme.tsx");
+    const evaluated = await evaluateJsx(result.code, "/src/render-theme.tsx", {
+      codeElementRuntime: {
+        defineCodeElement() {
+          throw new Error("Custom rendering must not register a global tag");
+        },
+      },
+    });
+    expect(evaluated.captured).toEqual([]);
+    expect(evaluated.first.type(evaluated.first.props)).toBeNull();
+    expect(evaluated.second.type(evaluated.second.props)).toBeUndefined();
+    expect(evaluated.captured[0]).toMatchObject({ theme: "dark" });
+    expect(Object.keys(evaluated.captured[1])).toEqual(["code"]);
+  });
+
+  it("rejects unsupported shadow theme aliases at build time", async () => {
+    const source =
+      'import { Code } from "@ferriki/core/react/macro"; <Code source="x" language="text" />;';
+    await expect(
+      transformModule(ferriki({ themes: { "night mode": "github-dark-default" } }), source),
+    ).rejects.toThrow(/theme alias/i);
   });
 
   it("keeps a descriptor an expression at the start of a statement or concise arrow body", async () => {
@@ -594,8 +899,8 @@ export const element = <Code language="ts" source={\`const word = 1; // [!code w
     );
     const ast = parseOutput(result.code);
     const descriptor = [...nodes(ast)].find(
-      (node) => node.type === "ObjectExpression" && objectProperty(node, "html"),
-    );
+      (node) => node.type === "VariableDeclarator" && node.id.name === "prepared",
+    ).init;
     const html = objectProperty(descriptor, "html").value.value;
     const lines = [...html.matchAll(/<span class="(line[^"]*)"/g)].map((match) =>
       match[1].split(" "),
@@ -611,9 +916,8 @@ export const element = <Code language="ts" source={\`const word = 1; // [!code w
     expect(text).not.toContain("[!code ++]");
     expect(text).not.toContain("[!code --]");
     expect(text).toContain('const marker = "// [!code focus]";');
-    const [wrapper] = jsxElements(ast, "div");
-    const elementHtml = jsxAttribute(wrapper, "dangerouslySetInnerHTML").value.expression
-      .properties[0].value.value;
+    const [elementDescriptor] = preparedDescriptors(ast);
+    const elementHtml = objectProperty(elementDescriptor, "html").value.value;
     expect(elementHtml).toContain("highlighted-word");
   });
 
@@ -755,7 +1059,7 @@ const snippet = prepare("const mdx = 1;", { language: "ts" });`;
     const react = `import { Code } from "@ferriki/core/react/macro";
 export const block = <Code source="const mdx = 2;" language="ts" />;`;
     const reactResult = await transformModule(includedPlugin, react, "\0virtual:markdown/page.mdx");
-    expect(reactResult.code).toContain("<div dangerouslySetInnerHTML");
+    expect(reactResult.code).toContain("<ferriki-code");
     expect(reactResult.moduleType).toBe("tsx");
     const declared = await transformModule(
       includedPlugin,
@@ -801,7 +1105,9 @@ export const block = <Code source="const mdx = 2;" language="ts" />;`;
       }),
     );
     expect(output).toContain('from "react/jsx-runtime"');
-    expect(output).toMatch(/jsx\("div", \{\s*className: "virtual",\s*dangerouslySetInnerHTML/);
+    expect(output).toContain('"ferriki-code"');
+    expect(output).toContain('className: "virtual"');
+    expect(output).toContain("defineCodeElement(FerrikiCodeElementConfig)");
     expect(output).toContain("virtualValue");
   });
 
@@ -891,9 +1197,11 @@ console.log(block);
     });
     try {
       const module = await server.transformRequest("/src/example.tsx");
-      expect(module.code).toContain("virtual:ferriki-vite/");
+      expect(module.code).not.toContain("virtual:ferriki-vite/");
+      expect(module.code).toContain("web-component.mjs");
       expect(module.code).toContain("jsxValue");
-      expect(module.code).toMatch(/h\("div", \{\s*className: "example"/);
+      expect(module.code).toContain('h("ferriki-code"');
+      expect(module.code).toContain('className: "example"');
     } finally {
       await server.close();
     }
@@ -915,6 +1223,17 @@ console.log(block);
 });
 
 describe("@ferriki/vite diagnostics", () => {
+  it("rejects quoted and invalid literal maxLines values", async () => {
+    for (const value of ['"12"', "{0}", "{1.5}", "{true}", "{null}"]) {
+      const source = `import { Code } from "@ferriki/core/react/macro";
+const value = <Code source="text" language="text" maxLines=${value} />;`;
+      await macroError(source, "/src/invalid-cap.tsx", {
+        message: "`maxLines` must be a positive safe integer",
+        at: value.startsWith("{") ? value.slice(1, -1) : value,
+      });
+    }
+  });
+
   it("reserves the macro name against declarations in the same scope and nested scopes", async () => {
     const forms = [
       ["function code() {}", "code() {}"],
@@ -1337,7 +1656,7 @@ const plain = inline('plain', { language: 'text' });`;
     expect(result.code).toContain(
       "import type { CodeProps as Props } from '@ferriki/core/react/macro';",
     );
-    expect(result.code).not.toMatch(/^import \{/m);
+    expect(result.code).not.toMatch(/^import \{.*from ['"]@ferriki\/core\/(?:react\/)?macro['"]/m);
     expect(result.code).toContain("render={ui /* keep the bound member */ . CodeBlock} />");
     const [descriptor, plain] = [...nodes(parseOutput(result.code))].filter(
       (node) => node.type === "ObjectExpression" && objectProperty(node, "html"),
@@ -1358,21 +1677,15 @@ const third = <Code source={\`default\`} language="js" lineNumbers render={(sour
 const fourth = <Code source="escaped" language="js" render={function Renderer() { return null; }} />;`;
     const result = await transformModule(plugin(), source, "/src/react-attributes.jsx");
     const ast = parseOutput(result.code, "jsx");
-    const [wrapper] = jsxElements(ast, "div").filter((element) =>
-      jsxAttribute(element, "className"),
-    );
+    const [wrapper] = preparedComponents(ast);
     expect(jsxAttribute(wrapper, "className").value.raw).toBe('"syntax &amp; color"');
-    expect(
-      htmlText(
-        jsxAttribute(wrapper, "dangerouslySetInnerHTML").value.expression.properties[0].value.value,
-      ),
-    ).toBe("x & y");
+    expect(htmlText(objectProperty(preparedDescriptors(ast)[0], "html").value.value)).toBe("x & y");
     const descriptors = preparedDescriptors(ast);
     expect(descriptors.map((descriptor) => objectProperty(descriptor, "code").value.value)).toEqual(
-      ["const π = 1;", "default", "escaped"],
+      ["x & y", "const π = 1;", "default", "escaped"],
     );
     expect(
-      objectProperty(objectProperty(descriptors[1], "metadata").value, "lineNumbers").value.value,
+      objectProperty(objectProperty(descriptors[2], "metadata").value, "lineNumbers").value.value,
     ).toBe(true);
     expect(result.code).toContain("render={$Block} />");
     expect(result.code).toContain("render={(source) => <pre>{source}</pre>} />");
@@ -1386,8 +1699,10 @@ const fourth = <Code source="escaped" language="js" render={function Renderer() 
       'import { Code } from \'@ferriki/core/react/macro\'; const block = <Code source="x" language="ts" />;',
       "/src/empty-presentation.tsx",
     );
-    expect(result.code).toMatch(/^ const block = <div dangerouslySetInnerHTML=\{\{ __html: "/);
-    expect(result.code).not.toContain("FerrikiMacroRenderHelper");
+    const [block] = preparedComponents(parseOutput(result.code));
+    expect(attributeNames(block)).toEqual(["codeRef"]);
+    expect(result.code).toContain("FerrikiDefineCodeElement(FerrikiCodeElementConfig)");
+    expect(result.code).toContain("code-ref={codeRef}");
   });
 
   it("keeps presentation order around non-ASCII source", async () => {
@@ -1395,10 +1710,10 @@ const fourth = <Code source="escaped" language="js" render={function Renderer() 
       'const π = 1; import { Code } from \'@ferriki/core/react/macro\';\nconst block = <Code render={renderExample} source="x" language="ts" className="例 &amp; code" />;';
     const result = await transformModule(plugin(), source, "/src/presentation-spans.tsx");
     expect(result.code).toMatch(
-      /<FerrikiMacroRenderHelper code=\{\{.*\}\} render=\{renderExample\} className="例 &amp; code" \/>;/,
+      /<FerrikiMacroRenderHelper codeRef="ferriki-[a-f0-9]{64}" render=\{renderExample\} className="例 &amp; code" \/>;/,
     );
     const [helper] = preparedComponents(parseOutput(result.code));
-    expect(attributeNames(helper)).toEqual(["code", "render", "className"]);
+    expect(attributeNames(helper)).toEqual(["codeRef", "render", "className"]);
   });
 
   it("lowers nested macros inside render callbacks and checks marker escapes", async () => {
@@ -1406,7 +1721,7 @@ const fourth = <Code source="escaped" language="js" render={function Renderer() 
 const outer = <Code source="outer" language="ts" render={(text) => <Code source="inner" language="ts" className={classFor(text)} />} />;`;
     const result = await transformModule(plugin(), source, "/src/nested-render.tsx");
     expect(result.code).toMatch(
-      /render=\{\(text\) => <div className=\{classFor\(text\)\} dangerouslySetInnerHTML=/,
+      /render=\{\(text\) => <FerrikiMacroRenderHelper codeRef="ferriki-[a-f0-9]{64}" className=\{classFor\(text\)\} \/>/,
     );
     expect(result.code).toContain('"code":"outer"');
 

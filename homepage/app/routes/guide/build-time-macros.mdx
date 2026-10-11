@@ -112,6 +112,7 @@ export function Example() {
     <Code
       language="tsx"
       className="example-code"
+      maxLines={12}
       lineNumbers
       source={`function Hello() {
   return <h1>Hello</h1>;
@@ -124,13 +125,36 @@ export function Example() {
 The element is self-closing. `source` is a string literal or a template
 literal without interpolations; JSX children are not supported. `language` is
 required, and it, `meta` and `lineNumbers` are static, with the same meaning as
-for `code()`. `className` accepts any runtime expression. By default, the
-element becomes a `div` that holds the prepared HTML, with `className` on that
-`div`. Spreads, duplicate attributes and other attributes fail the build.
+for `code()`. By default, the element becomes a `<ferriki-code>` Web Component
+with the prepared HTML and styles in an open shadow root. `className` applies
+to that host and `theme` selects a configured alias. The optional `maxLines`
+runtime prop must resolve to a positive safe integer; omit it for an unlimited
+block. These presentation props accept runtime expressions.
+Spreads, duplicate attributes and other attributes fail the build.
 
-For a title, a copy button or tabs, pass a `render` function. It receives
-`{ code, className }`, where `code` is the `PreparedCodeBlock`, and runs during
-normal rendering, never at build time:
+The default renderer registers the module's prepared content once. React emits
+an empty host with a short `code-ref` and space reserved from the source line
+count; the HTML stays outside React. The optional runtime `maxLines` prop caps
+the visible viewport while keeping all code available for vertical scrolling;
+shorter blocks stay short. The macro adjusts its pre-JavaScript reservation to
+the same cap. The reservation and shadow content use the same line-height and
+padding variables. For highlighted output before JavaScript, use the separate
+server HTML stage to supply Declarative Shadow DOM and link to one shared CSS
+file. Without that stage, the host stays empty until upgrade. Register after
+parsing to preserve the existing root and tokens through hydration. All blocks share one
+constructed stylesheet. Page selectors do not reach
+inside the root, and ancestor theme attributes do not select its theme: pass
+`theme={darkMode ? "dark" : "light"}` explicitly. The first configured theme
+supplies the default colors. See the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
+for framework-free use, custom CSS, browser support, and CSP/Trusted Types limits.
+
+Titles, copy buttons, and tabs can wrap the default `<Code />` in ordinary React
+components and keep its isolated code presentation. For complete control over
+the result, pass a `render` function. This application-owned escape hatch
+replaces the default presentation; the example below opts into light-DOM HTML
+and its page CSS. It receives
+`{ code, className, theme, maxLines }`, where `code` is the `PreparedCodeBlock`,
+and runs during normal rendering, never at build time:
 
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
@@ -162,7 +186,10 @@ export function Example() {
 
 The macro import is removed from the transformed module, so neither the
 marker nor a parser reaches the browser. Server rendering, hydration and
-client navigation all use the same prepared HTML and CSS.
+client navigation all use the same prepared HTML and CSS. The default React
+path loads only the framework-free presentation module; `code()` alone has no
+presentation runtime. Default styles are shared by all shadow roots; `code()`
+and custom renderers keep ordinary Vite stylesheet delivery.
 
 ## Annotate lines with Shiki's notation
 
@@ -246,13 +273,18 @@ the transform throws a configuration error that names the missing Vite setup.
 
 ## Themes and CSS
 
-With `styleMode: "classes"`, set `data-ferriki-theme="dark"` on a prepared
-block or one of its ancestors to switch to another configured theme; the
-switch is a CSS change. Each transformed module imports a
-content-addressed stylesheet, so editing an example replaces its CSS during
-hot module replacement. The surrounding presentation, such as titles and copy
-buttons, stays yours. See [Class-based output](/guide/class-highlighting) for
-the class contract.
+Inline output already carries its colors in the highlighted HTML. With
+`styleMode: "classes"`, resolved token and theme rules live in generated CSS.
+For `code()` and custom renderers, each transformed module imports a
+content-addressed stylesheet. Set `data-ferriki-theme="dark"` on the prepared
+block or an ancestor to switch themes in ordinary HTML.
+
+Default `<Code />` blocks share one stylesheet across their shadow roots.
+Their runtime `theme` prop selects the host's theme; ancestor theme selectors
+do not cross that boundary. Multiple inline themes also use shared switching
+rules for their CSS variables. The surrounding presentation, such as titles
+and copy buttons, stays yours. See [Class-based output](/guide/class-highlighting)
+for the class contract.
 
 ## MDX and other compilers
 
@@ -272,8 +304,9 @@ highlights them.
 `codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
 that string in its `html` field. React escapes a string in `{html}`, so it
 displays the tags as text. Use `dangerouslySetInnerHTML` to
-insert the prepared markup, or use `<Code />` to let the macro supply that
-container for you.
+insert the prepared markup in ordinary HTML. `<Code />` supplies a shadow
+host by default. The browser still parses prepared HTML; React manages only
+the opaque host and does not create elements for each highlighted token.
 
 Literal HTML cannot simply be pasted into JSX: attributes such as `class`
 and `style` have different representations, and escaped source text must be
@@ -284,5 +317,7 @@ ordinary `pre`, `code` and `span` elements.
 Ferriki escapes the original source. Custom transformers control their own
 markup; only insert HTML from your highlighting pipeline.
 
-Direct React-JSX rendering is proposed in
-[issue #221](https://github.com/sebastian-software/ferriki/issues/221).
+The direct JSX experiment from
+[issue #221](https://github.com/sebastian-software/ferriki/issues/221) was removed
+in favor of an isolated Web Component. The Node HTML API and `code()` descriptor
+remain unchanged.

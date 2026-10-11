@@ -140,6 +140,20 @@ with the same version as this package:
 npm install @ferriki/core @ferriki/vite
 ```
 
+React `<Code />` renders an empty `<ferriki-code code-ref="…">` host by default.
+It reserves space from the source line count before JavaScript fills the host.
+Pass `maxLines={12}` to cap the visible height; longer blocks retain all code
+and scroll vertically, while shorter blocks stay short. Omit it for an
+unlimited block. The macro adjusts its pre-JavaScript reservation automatically.
+Prepared HTML lives in the Web Component's registry, and its Shadow DOM instances
+share a stylesheet. The optional server HTML stage supplies Declarative Shadow
+DOM for highlighted output before JavaScript; React hydrates only the host.
+`@ferriki/core/web-component` also presents prepared HTML/CSS without React,
+and `@ferriki/core/web-component/server` fills server-rendered reference hosts.
+The direct `highlightedCode` property remains available. See the
+[Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
+for SSR, registration, theme switching, CSS migration, and policy limits.
+
 See the [inline code macros guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md).
 
 ## Rust

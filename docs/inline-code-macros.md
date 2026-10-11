@@ -123,21 +123,54 @@ means `x & y`. Expression literals such as `source={"x &amp; y"}` retain the
 literal entity spelling. Templates preserve the authored formatting and use
 normal JavaScript escape semantics.
 
-By default, the transform emits a `div` containing the complete prepared
-`pre`/`code` HTML and delivers its CSS. Optional `className` applies to this
-outer `div`, leaving the generated highlighting classes inside it intact.
-Unlike highlighting inputs, `className` accepts ordinary runtime expressions:
+By default, the transform emits a `<ferriki-code>` Web Component. Its open
+shadow root contains the complete prepared `pre`/`code` HTML and adopts one
+shared stylesheet. React passes only a stable content reference; the component's
+registry holds the HTML and the component owns the token nodes. React owns the
+empty host. `className` applies to it; page selectors such as `.example pre`
+cannot reach inside the root. `theme` selects a configured alias. These
+presentation props accept ordinary runtime expressions:
 
 ```tsx
 <Code
   className={compact ? "example compact" : "example"}
+  theme={darkMode ? "dark" : "light"}
+  maxLines={12}
   language="ts"
   source={`const answer = 42;`}
-/>;
+/>
 ```
 
-For a custom copy button, title or tabs, provide a `render` function. It receives
-`{ code: PreparedCodeBlock, className?: string }`. You explicitly decide which
+`maxLines` is a runtime presentation prop. It must be a positive safe integer
+when supplied; omit it or pass `undefined` for an unlimited block. Longer blocks
+keep all highlighted code and scroll vertically, while blocks shorter than the
+cap remain short. The default host applies the matching no-JavaScript height
+reservation automatically. Manual hosts can use
+`codeElementSizing(lineCount, maxLines)` with the `max-lines` attribute; see the
+[sizing guide](shadow-code-elements.md#client-rendering-with-reserved-space).
+
+The default helper registers the module's prepared content once when rendered.
+React SSR emits an empty `<ferriki-code code-ref="…">`. Without an additional
+server stage it remains empty until JavaScript runs, with space reserved from
+the build-known source line count and, when set, the `maxLines` cap. The
+reservation and shadow content share line-height and padding variables;
+highlighted SSR is optional. Call
+`plugin.api.renderCodeElements(reactHtml, { stylesheetHref: "/code.css" })`
+on complete SSR HTML and serve `plugin.api.codeElementCss()` at that URL to
+display highlighted Declarative Shadow DOM before JavaScript. Registration
+after document parsing and subsequent hydration retain those code nodes.
+Theme and parent updates retain them too; source/HMR updates use a new reference
+inside the existing root. All elements use one configured theme mapping.
+See [Shadow code elements](shadow-code-elements.md) for saved production
+registries, direct property use, shared CSS, and the complete-HTML SSR boundary.
+
+Titles, copy buttons, and tabs can wrap the default `<Code />` in ordinary React
+components while its code remains isolated. For complete control over the
+rendered result, provide a `render` function. This application-owned escape hatch
+replaces the default presentation; the example below opts into light-DOM HTML
+and its page CSS. It receives
+`{ code: PreparedCodeBlock, className?: string, theme?: string, maxLines?: number }`.
+You explicitly decide which
 props to pass to your components:
 
 ```tsx
@@ -170,16 +203,16 @@ export function Example() {
 ```
 
 Destructuring is equally valid:
-`render={({ code, className }) => <MyCodeBlock code={code} className={className} />}`.
+`render={({ code, className, maxLines }) => <MyCodeBlock code={code} className={className} maxLines={maxLines} />}`.
 The renderer can pass its own props, capture local values, return a fragment
 or `null`, or be a named function. It runs during normal application rendering;
 Ferriki never evaluates it at build time. A stable module-local React component
 invokes it when React renders the element, including JSX stored at module scope.
 Render ordinary React components through JSX inside the callback. There is no
 implicit prop insertion or extra container around its result. `className` is included in the renderer's props
-only when supplied on `Code`; the callback controls where to apply it.
+only when supplied on `Code`; `theme` and `maxLines` follow the same rule. The callback controls where to apply them.
 An omitted renderer, or one that evaluates to `undefined`, uses the default
-`div`. A renderer returning `null` or `undefined` keeps that result.
+`<ferriki-code>` host. A renderer returning `null` or `undefined` keeps that result.
 `render` accepts functions, not JSX elements.
 
 Import aliases with JSX component names such as `Code as HighlightedCode` work.
@@ -189,8 +222,13 @@ function, passing it elsewhere or re-exporting it is rejected. An unprocessed
 marker throws an actionable integration error.
 
 Server rendering, hydration, navigation and HMR use the same prepared HTML/CSS
-path as `code()`. The macro import is removed from transformed application
-modules, so the browser does not load it or any build-time parser.
+data. Default React output loads `@ferriki/core/web-component` for presentation;
+`code()` alone adds no presentation runtime. Macro markers, native highlighting,
+asset transport, and the build-time parser stay out of browser bundles.
+Default React styles are shared between shadow roots; `code()` and custom
+renderers keep the Vite stylesheet delivery described above. Custom transformer
+presentation rules must be registered in the shared component stylesheet to
+style shadow contents, or used with a renderer that keeps ordinary HTML.
 
 ## Supported function inputs
 
@@ -203,11 +241,11 @@ rejected instead of changing the original source.
 
 Options must be an object literal with these supported keys:
 
-| Option | Meaning |
-| --- | --- |
-| `language` | Required nonempty string literal, such as `"ts"`. |
-| `meta` | Optional string literal. Uses the adapter's existing `title="..."`, `[label]`, `{2,4-5}` and `showLineNumbers` metadata syntax. |
-| `lineNumbers` | Optional boolean literal overriding the plugin default. Explicit `showLineNumbers` metadata also enables numbering. |
+| Option        | Meaning                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `language`    | Required nonempty string literal, such as `"ts"`.                                                                               |
+| `meta`        | Optional string literal. Uses the adapter's existing `title="..."`, `[label]`, `{2,4-5}` and `showLineNumbers` metadata syntax. |
+| `lineNumbers` | Optional boolean literal overriding the plugin default. Explicit `showLineNumbers` metadata also enables numbering.             |
 
 Themes, style mode, assets and transformer callbacks are configured on the
 plugin. Dynamic options, spreads, computed keys, duplicate keys and unsupported
@@ -291,6 +329,7 @@ After the repository's normal native setup, run from `node/`:
 
 ```sh
 pnpm run test:vite
+pnpm run test:web-component
 pnpm run check:packed-vite
 pnpm dlx playwright@1.63.0 install --with-deps chromium
 pnpm run check:inline-macro
@@ -300,24 +339,31 @@ The focused browser check uses the real packed core, sidecar and Vite packages.
 It covers server rendering and hydration, navigation, exact source copying,
 theme/CSS delivery, HMR and the browser module boundary. The portable packed
 consumer check runs both macros, their diagnostics and a production build
-against Vite 8.0.0 and the current Vite 8 release.
+against Vite 8.0.0 and the current Vite 8 release. The [Shadow DOM consumer
+check](../node/examples/shadow-dom/README.md) covers the reference component,
+highlighted no-JavaScript DSD, direct property mode, registration, shared styles, node preservation, themes, updates,
+and imperative use in Chromium, Firefox, and WebKit.
 
 ## Rendering HTML in React
 
 `codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
 that string in its `html` field. React escapes a string in `{html}`, so it
 displays the tags as text. Use `dangerouslySetInnerHTML` to
-insert the prepared markup, or use `<Code />` to let the macro supply that
-container for you.
+insert the prepared markup in ordinary HTML. `<Code />` instead emits a
+`<ferriki-code code-ref="…">` host and registers the HTML outside React.
+The optional server stage fills Declarative Shadow DOM outside React, or the
+component parses it internally on the client. Direct
+`<ferriki-code highlightedCode={html} />` remains supported. These paths keep
+the finished HTML intact without converting its tokens into React elements.
 
 Literal HTML cannot simply be pasted into JSX: attributes such as `class`
 and `style` have different representations, and escaped source text must be
 preserved. The current adapter keeps Ferriki's HTML intact instead of converting each
-highlighted span into a React element. The resulting page still contains
-ordinary `pre`, `code` and `span` elements.
+highlighted span into a React element. The shadow root contains real, selectable `pre`, `code` and `span` elements.
 
 Ferriki escapes the original source. Custom transformers control their own
 markup; only insert HTML from your highlighting pipeline.
 
-Direct React-JSX rendering is proposed in
-[issue #221](https://github.com/sebastian-software/ferriki/issues/221).
+The direct JSX experiment from [issue #221](https://github.com/sebastian-software/ferriki/issues/221)
+was removed in favor of the isolated HTML presentation described in
+[ADR 0019](../adr/0019-shadow-dom-code-elements.md).

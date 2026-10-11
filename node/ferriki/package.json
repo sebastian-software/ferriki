@@ -39,7 +39,11 @@
     "src/api.d.mts",
     "src/asset-download.mjs",
     "src/index.mjs",
-    "transformers.mjs"
+    "transformers.mjs",
+    "web-component-server.d.mts",
+    "web-component-server.mjs",
+    "web-component.d.mts",
+    "web-component.mjs"
   ],
   "type": "module",
   "sideEffects": false,
@@ -58,6 +62,14 @@
     "./react/macro": {
       "types": "./react-macro.d.mts",
       "default": "./react-macro.mjs"
+    },
+    "./web-component": {
+      "types": "./web-component.d.mts",
+      "default": "./web-component.mjs"
+    },
+    "./web-component/server": {
+      "types": "./web-component-server.d.mts",
+      "default": "./web-component-server.mjs"
     },
     "./package.json": "./package.json"
   },

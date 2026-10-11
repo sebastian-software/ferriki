@@ -102,13 +102,13 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option           | Type                                 | Meaning                                                                                      |
-| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                           |
-| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                              |
-| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                |
-| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                 |
-| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                     |
+| Option           | Type                                 | Meaning                                                                                                   |
+| ---------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                                        |
+| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                                           |
+| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                             |
+| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                              |
+| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                                  |
 | `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
@@ -377,10 +377,32 @@ returns `undefined` when no supported binary is installed.
 
 `@ferriki/core/macro` exposes the browser-safe `code` marker and
 `PreparedCodeBlock` type. `@ferriki/core/react/macro` exposes the optional React
-`Code` JSX marker with a literal `source` attribute, optional runtime `className`
-and an explicit `render` function receiving `CodeRenderProps`. Both are erased
+`Code` JSX marker with a literal `source` attribute, optional runtime `className`,
+`theme`, and `maxLines`, and an explicit `render` function receiving
+`CodeRenderProps`. Both are erased
 during the build; the React marker adds no React runtime import to the core package.
 `@ferriki/vite` recognizes the markers; `@ferriki/core` ships no macro scanner,
 and these entries are separate from the root highlighter exports. See
 [Inline code macros](inline-code-macros.md) for the literal-only contract, Vite
 setup and prepared HTML/CSS.
+
+## Present prepared HTML in a Web Component
+
+`@ferriki/core/web-component` is a separate framework-free presentation entry.
+It exports `FERRIKI_CODE_TAG`, `defineCodeElement`, `codeElementStyles`, and
+`codeElementSizing`.
+`defineCodeElement({ css, themeAliases, blocks })` registers trusted HTML by ID
+and configures one stylesheet shared by all roots in a document. Elements
+resolve `code-ref` IDs; the direct `highlightedCode` property and
+`highlighted-code` attribute also remain available. The optional `maxLines`
+property or `max-lines` attribute caps visible lines and keeps longer code
+scrollable; `codeElementSizing(lineCount, maxLines?)` reserves matching height
+before JavaScript. The React `Code` macro renders an empty reference host by
+default and applies that reservation automatically. The separate
+`@ferriki/core/web-component/server` entry exports `renderCodeElementShadows`
+to fill complete server HTML with Declarative Shadow DOM, preserving highlighted
+output before JavaScript. Both entries import no native loader or browser
+highlighter. Without that server stage, reference hosts are empty before upgrade.
+The root HTML API and `code()` descriptor remain unchanged. See [Shadow code
+elements](shadow-code-elements.md) for registration, SSR, themes, CSS migration,
+and policy limits.

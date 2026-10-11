@@ -13,6 +13,8 @@ export default antfu(
       "**/dist/**",
       "**/*.d.mts",
       "compat/upstream/**",
+      // Keep the measured benchmark inputs byte-identical to the saved run.
+      "benchmarks/shadow-dom-spike/fixtures/**",
       "pnpm-workspace.yaml",
     ],
   },

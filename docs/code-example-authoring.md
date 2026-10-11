@@ -101,9 +101,15 @@ The transformers add classes but no presentation: `has-focused`, `has-highlighte
 }
 ```
 
+These page selectors apply to ordinary HTML from `code()` or a custom React
+renderer. The default `<Code />` macro uses a shadow root, so page CSS cannot
+reach its lines or tokens. Include custom presentation rules in the local
+block CSS through a custom renderer/element integration, or keep the ordinary
+HTML renderer. See [Shadow code elements](shadow-code-elements.md#css-migration-and-custom-transformers).
+
 Keep surrounding context at full text contrast and use a clear leading border and background to focus the relevant lines. Highlight, focus, and diff styles can appear together. Solid and dashed borders distinguish additions from removals without relying on color alone. Highlighted output gives each `<pre>` `tabindex="0"`, so a horizontally scrollable block is reachable from the keyboard; make `:focus-visible` clear. A `<summary>` toggles with Enter or Space, and a copy button uses its native keyboard behavior.
 
-Ferriki does not install a copy handler. The descriptor's `code` is the exact authored source, including notation comments and removed lines. A "Copy final code" action that should omit them reads the rendered lines instead: keep every `.line` element without the `remove` class, take its text content (including whitespace) in order, and join the lines with LF. Selecting the rendered diff copies its code text, including removed lines, but not comment annotations or line-number CSS.
+Ferriki does not install a copy handler. The descriptor's `code` is the exact authored source, including notation comments and removed lines. A "Copy final code" action that should omit them reads the rendered lines instead (query `element.shadowRoot` for a shadow element): keep every `.line` element without the `remove` class, take its text content (including whitespace) in order, and join the lines with LF. Selecting the rendered diff copies its code text, including removed lines, but not comment annotations or line-number CSS.
 
 ## Verify the behavior
 

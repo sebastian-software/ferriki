@@ -15,7 +15,7 @@ const flows = [
       { label: "Vite build", detail: "@ferriki/vite highlights the example" },
       {
         label: "HTML and CSS in the bundle",
-        detail: "code(): prepared data · <Code />: React markup",
+        detail: "code(): prepared data · <Code />: shadow code element",
       },
       { label: "Browser", detail: "Render without running a highlighter" },
     ],

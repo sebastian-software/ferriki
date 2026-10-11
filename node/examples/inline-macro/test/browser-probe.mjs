@@ -12,7 +12,9 @@ import { build, createServer } from "vite";
 function hastText(node) {
   return node.type === "text"
     ? node.value
-    : (node.children ?? []).map((child) => hastText(child)).join("");
+    : [...(node.children ?? []), ...(node.content ? [node.content] : [])]
+        .map((child) => hastText(child))
+        .join("");
 }
 
 async function main() {
@@ -25,6 +27,7 @@ async function main() {
     lineNumbers: true,
     assets: { remote: false },
   };
+  const macroPlugin = ferriki(options);
 
   const indexTemplate = await readFile(join(project, "index.html"), "utf8");
   let serverMarkup;
@@ -32,11 +35,26 @@ async function main() {
     name: "inline-macro-browser-fixture-ssr",
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
+        if ((request.url ?? "/").split("?", 1)[0] === "/ferriki-code.css") {
+          response.setHeader("content-type", "text/css; charset=utf-8");
+          response.end(macroPlugin.api.codeElementCss());
+          return;
+        }
         if ((request.url ?? "/").split("?", 1)[0] !== "/") return next();
         try {
           const { App } = await server.ssrLoadModule("/src/app.jsx");
           serverMarkup = renderToString(React.createElement(App, { initialRoute: "first" }));
-          const html = indexTemplate.replace("<!--ssr-outlet-->", serverMarkup);
+          const referenceOnly = new URL(request.url ?? "/", "http://localhost").searchParams.has(
+            "reference",
+          );
+          const html = indexTemplate.replace(
+            "<!--ssr-outlet-->",
+            referenceOnly
+              ? serverMarkup
+              : macroPlugin.api.renderCodeElements(serverMarkup, {
+                  stylesheetHref: "/ferriki-code.css",
+                }),
+          );
           const transformed = await server.transformIndexHtml(request.url ?? "/", html);
           response.statusCode = 200;
           response.setHeader("content-type", "text/html; charset=utf-8");
@@ -53,7 +71,7 @@ async function main() {
   const server = await createServer({
     configFile: false,
     root: project,
-    plugins: [ferriki(options), ssrPlugin],
+    plugins: [macroPlugin, ssrPlugin],
     oxc: { jsx: { runtime: "automatic" } },
     optimizeDeps: {
       include: ["react", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime"],
@@ -102,11 +120,22 @@ async function main() {
       lineNumbers: true,
       highlightedLines: [2],
     });
-    assert(initialMarkup.includes(firstModule.block.html));
-    assert.match(initialMarkup, /data-title="First React macro"/);
+    assert.match(initialMarkup, /code-ref="ferriki-[a-f0-9]{64}"/);
+    assert.match(initialMarkup, /min-block-size:min\(calc\(/);
+    assert(!initialMarkup.includes("highlightedCode="));
+    const initialDeclarative = macroPlugin.api.renderCodeElements(initialMarkup, {
+      stylesheetHref: "/ferriki-code.css",
+    });
+    assert.match(initialDeclarative, /data-title="First React macro"/);
+    assert(
+      initialMarkup.includes(firstModule.block.html),
+      "ordinary descriptor output lost its prepared HTML",
+    );
     assert.match(initialMarkup, /class="first-react-macro-class"/);
     assert(
-      hastText(fromHtml(initialMarkup, { fragment: true })).includes("const macroRoute = 'first';"),
+      hastText(fromHtml(initialDeclarative, { fragment: true })).includes(
+        "const macroRoute = 'first';",
+      ),
     );
     assert.match(firstModule.block.css, /ferriki-style-[a-f0-9]{64}/);
     assert.match(firstModule.block.html, /<pre\b/);
@@ -157,6 +186,41 @@ async function main() {
     }
 
     const page = await browser.newPage();
+    const noJsContext = await browser.newContext({ javaScriptEnabled: false });
+    let reservedHeight;
+    try {
+      const noJsPage = await noJsContext.newPage();
+      await noJsPage.goto(`${baseUrl}/?reference`, { waitUntil: "load" });
+      const emptyHost = await noJsPage.locator(".first-react-macro-class").evaluate((host) => ({
+        height: host.getBoundingClientRect().height,
+        childCount: host.childNodes.length,
+        shadow: Boolean(host.shadowRoot),
+      }));
+      assert.equal(emptyHost.childCount, 0, "the reference-only SSR macro transported children");
+      assert.equal(emptyHost.shadow, false, "the reference-only SSR macro emitted DSD");
+      assert(emptyHost.height > 0, "the empty SSR macro did not reserve space before JavaScript");
+      reservedHeight = emptyHost.height;
+    } finally {
+      await noJsContext.close();
+    }
+    const referencePage = await browser.newPage();
+    try {
+      await referencePage.goto(`${baseUrl}/?reference`, { waitUntil: "networkidle" });
+      await referencePage.waitForFunction(() => window.__ferrikiHydrated === true);
+      const filledHost = await referencePage
+        .locator(".first-react-macro-class")
+        .evaluate((host) => ({
+          height: host.getBoundingClientRect().height,
+          code: host.shadowRoot?.querySelector("pre code")?.textContent,
+        }));
+      assert(filledHost.code?.includes("const macroRoute = 'first';"));
+      assert(
+        Math.abs(filledHost.height - reservedHeight) < 0.5,
+        `reference-only macro height changed from ${reservedHeight} to ${filledHost.height}`,
+      );
+    } finally {
+      await referencePage.close();
+    }
     const clientWarnings = [];
     page.on("console", (message) => {
       if (message.type() === "warning" || message.type() === "error")
@@ -186,6 +250,8 @@ async function main() {
     const hydratedMarkup = await page.locator("#root").innerHTML();
     const normalizedServerMarkup = await page.evaluate((markup) => {
       const template = document.createElement("template");
+      // Compare the parser-normalized SSR light DOM; the custom-element check
+      // verifies its declarative shadow content separately.
       template.innerHTML = markup;
       return template.innerHTML;
     }, serverMarkup);
@@ -201,16 +267,29 @@ async function main() {
     const initialCode = (await firstBlock.locator(".rendered-code").textContent()) ?? "";
     assert(initialCode.includes("const route = 'first';"));
     assert(initialCode.includes("console.log(route);"));
-    assert.equal(await firstBlock.locator("pre[class*='ferriki-themes-']").count(), 1);
-    assert(await firstBlock.locator(".token").count());
-    const defaultMacroBlock = page.locator('pre[data-title="First React macro"]');
-    assert.equal(await defaultMacroBlock.count(), 1);
     assert.equal(
-      await page.locator('.first-react-macro-class pre[data-title="First React macro"]').count(),
+      await firstBlock.locator(".rendered-code pre[class*='ferriki-themes-']").count(),
       1,
     );
-    assert(((await defaultMacroBlock.textContent()) ?? "").includes("const macroRoute = 'first';"));
-    assert(await defaultMacroBlock.locator(".token").count());
+    assert(await firstBlock.locator(".token").count());
+    const defaultMacroHost = page.locator(".first-react-macro-class");
+    assert.equal(await defaultMacroHost.count(), 1);
+    assert.equal(await defaultMacroHost.evaluate((host) => host.localName), "ferriki-code");
+    const defaultMacroEvidence = await defaultMacroHost.evaluate((host) => ({
+      source: host.shadowRoot?.querySelector('pre[data-title="First React macro"]')?.textContent,
+      lightChildren: host.childNodes.length,
+      tokenCount: host.shadowRoot?.querySelectorAll(".token").length,
+      codeRef: host.getAttribute("code-ref"),
+      highlightedCode: host.hasAttribute("highlightedcode"),
+    }));
+    assert.equal(
+      defaultMacroEvidence.source,
+      "const macroRoute = 'first';\nconsole.log(macroRoute);",
+    );
+    assert.equal(defaultMacroEvidence.lightChildren, 0);
+    assert(defaultMacroEvidence.tokenCount > 0, "the default macro did not render syntax tokens");
+    assert.match(defaultMacroEvidence.codeRef, /^ferriki-[a-f0-9]{64}$/);
+    assert.equal(defaultMacroEvidence.highlightedCode, false);
 
     const annotations = await firstBlock.evaluate((section) => {
       const lines = [...section.querySelectorAll(".ferriki-highlight-line[data-ln]")];
@@ -409,11 +488,12 @@ async function main() {
       secondRouteChunks.some((chunk) => chunk.isDynamicEntry),
       "the second client route was not included as a precompiled browser module",
     );
-    const forbidden = moduleIds.filter((id) =>
-      /@ferriki\/(?:core|engine)(?:[\\/]|$)|ferriki-core|@?oxc(?:[-/]|$)|(?:^|[\\/])(?:native|engine|downloader)\.mjs(?:[?#]|$)|asset-downloader|remote-asset/i.test(
+    const forbidden = moduleIds.filter((id) => {
+      if (/(?:@ferriki[\\/]core|ferriki)[\\/]web-component\.mjs(?:[?#]|$)/.test(id)) return false;
+      return /@ferriki\/(?:core|engine)(?:[\\/]|$)|ferriki-core|@?oxc(?:[-/]|$)|(?:^|[\\/])(?:native|engine|downloader)\.mjs(?:[?#]|$)|asset-downloader|remote-asset/i.test(
         id,
-      ),
-    );
+      );
+    });
     assert.deepEqual(
       forbidden,
       [],
@@ -423,7 +503,9 @@ async function main() {
       .map((item) => ("source" in item ? String(item.source) : (item.code ?? "")))
       .join("\n");
     assert(
-      !browserSource.includes("@ferriki/core"),
+      !chunks
+        .flatMap((chunk) => [...chunk.imports, ...chunk.dynamicImports])
+        .some((specifier) => specifier.startsWith("@ferriki/core")),
       "the browser bundle retained an unresolved macro import",
     );
     assert(!browserSource.includes("code() is a compile-time macro"));

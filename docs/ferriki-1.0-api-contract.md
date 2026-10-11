@@ -245,11 +245,18 @@ guide](inline-code-macros.md). Root render outputs stay unchanged.
 `@ferriki/core/react/macro` adds the optional `Code` JSX marker. Its required
 `source` and `language` and optional `meta` and `lineNumbers` attributes are
 literal-only. Elements are self-closing and accept no children. An optional
-`render` function receives `{ code: PreparedCodeBlock, className?: string }`
+`render` function receives
+`{ code: PreparedCodeBlock, className?: string, theme?: string, maxLines?: number }`
 during application rendering, with explicit prop forwarding in ordinary JSX.
-`className` accepts a string or runtime expression and applies to the default
-`div`, or is passed to the renderer when supplied. An absent or `undefined`
-renderer uses the default prepared-HTML container; callback results are
-retained. The marker and import are erased before React's JSX transform. React
+Runtime `className`, `theme`, and `maxLines` apply to the default `<ferriki-code>`
+host, or are passed to the renderer when supplied. `theme` selects a configured
+alias; `maxLines` is an optional positive safe integer visible-line cap with
+vertical scrolling. An absent or `undefined` renderer uses the single built-in
+Web Component presentation; callback results are retained. The element owns
+prepared HTML in its shadow root, while React owns an empty reference host.
+Without the optional complete-HTML Declarative Shadow DOM stage, highlighted
+content appears after client registration; the host reserves its expected
+height. See [Shadow code elements](shadow-code-elements.md) for styling and SSR
+migration. The marker and import are erased before React's JSX transform. React
 is only required by consumers of this entry's type declarations and generated
 JSX, not by the core runtime.

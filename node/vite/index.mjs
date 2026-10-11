@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { createHighlighter, ShikiError } from "@ferriki/core";
+import { codeElementStyles } from "@ferriki/core/web-component";
+import { renderCodeElementShadows } from "@ferriki/core/web-component/server";
 import MagicString from "magic-string";
 import { parseAst } from "vite";
 
@@ -20,7 +22,7 @@ const DEFAULT_THEME = "github-dark-default";
  * Only modules that import `@ferriki/core/macro` or `@ferriki/core/react/macro`
  * reach the transform; they are parsed once with Vite's own parser.
  * @param {import("./index.d.mts").FerrikiViteOptions} options
- * @returns {import("vite").Plugin} A plugin that replaces `code()` calls and `<Code />` elements.
+ * @returns {import("./index.d.mts").FerrikiVitePlugin} A plugin that prepares code macros.
  */
 export function ferriki(options = {}) {
   if (options.theme && options.themes)
@@ -41,6 +43,15 @@ export function ferriki(options = {}) {
   const languageLoads = new Map();
   const virtualCss = new Map();
   const warnedFiles = new Set();
+  const reactModules = new Map();
+
+  function preparedReactBlocks() {
+    return Object.fromEntries(
+      [...reactModules.values()].flatMap(({ blocks }) =>
+        [...blocks].map(([ref, block]) => [ref, block.html]),
+      ),
+    );
+  }
 
   function getHighlighter() {
     highlighterPromise ??= createHighlighter({ themes: themeNames, assets: options.assets });
@@ -102,6 +113,22 @@ export function ferriki(options = {}) {
   return {
     name: "@ferriki/vite",
     enforce: "pre",
+    api: {
+      codeElementBlocks: preparedReactBlocks,
+      renderCodeElements(markup, options = {}) {
+        return renderCodeElementShadows(markup, {
+          ...options,
+          blocks: preparedReactBlocks(),
+        });
+      },
+      codeElementCss() {
+        const css = new Set();
+        for (const { blocks } of reactModules.values()) {
+          for (const block of blocks.values()) if (block.css) css.add(block.css);
+        }
+        return [codeElementStyles(themes ? Object.keys(themes) : []), ...css].join("\n");
+      },
+    },
 
     resolveId(id) {
       if (id.startsWith(VIRTUAL_CSS_PREFIX) && virtualCss.has(id)) return `\0${id}`;
@@ -148,11 +175,30 @@ export function ferriki(options = {}) {
 
         const magic = new MagicString(source);
         const macroCss = new Set();
-        const needsRenderHelper = scan.calls.some((call) =>
-          call.presentation?.some((item) => item.name === "render"),
-        );
+        const reactCss = new Set();
+        const reactBlocks = new Map();
+        const needsRenderHelper = scan.calls.some((call) => call.kind === "react");
+        if (needsRenderHelper && themes) codeElementStyles(Object.keys(themes));
         const renderHelperName = needsRenderHelper
           ? uniqueIdentifierName(scan.names, "FerrikiMacroRenderHelper")
+          : undefined;
+        const registrationName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiDefineCodeElement")
+          : undefined;
+        const sizingName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeElementSizing")
+          : undefined;
+        const codeSizesName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeSizes")
+          : undefined;
+        const codeElementConfigName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeElementConfig")
+          : undefined;
+        const codeBlocksName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeBlocks")
+          : undefined;
+        const codeElementRegisteredName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeElementRegistered")
           : undefined;
         // Lower the innermost calls first; an enclosing React element only
         // rewrites the text around its presentation expressions.
@@ -187,15 +233,48 @@ export function ferriki(options = {}) {
             parsedMeta,
             effectiveLineNumbers,
           );
-          lowerMacroCall(magic, call, descriptor, renderHelperName);
-          if (descriptorCss) macroCss.add(descriptorCss);
+          const codeRef =
+            call.kind === "react"
+              ? `ferriki-${createHash("sha256").update(JSON.stringify(descriptor)).digest("hex")}`
+              : undefined;
+          if (codeRef) reactBlocks.set(codeRef, descriptor);
+          lowerMacroCall(magic, call, descriptor, renderHelperName, codeRef);
+          const hasCustomRenderProp =
+            call.kind === "react" && call.presentation.some((item) => item.name === "render");
+          if (call.kind === "react" && descriptorCss) reactCss.add(descriptorCss);
+          // Default React hosts share styles through the element definition.
+          // Descriptor consumers and syntactic custom renderers keep ordinary CSS delivery.
+          if (descriptorCss && (call.kind !== "react" || hasCustomRenderProp))
+            macroCss.add(descriptorCss);
         }
+        reactModules.set(id, { blocks: reactBlocks });
 
         for (const item of scan.imports) {
           if (item.replacement) magic.overwrite(item.start, item.end, item.replacement);
           else magic.remove(item.start, item.end);
         }
-        if (needsRenderHelper) magic.append(`\n${renderHelperSource(renderHelperName)}\n`);
+        if (needsRenderHelper) {
+          // Initialize prepared content before authored code can eagerly render a
+          // macro, while keeping framework directive prologues first.
+          let helperOffset = source.startsWith("#!") ? source.indexOf("\n") + 1 : 0;
+          for (const statement of program.body) {
+            if (typeof statement.directive !== "string") break;
+            helperOffset = statement.end;
+          }
+          const registrySource = [...reactBlocks.keys()]
+            .map((ref) => `${JSON.stringify(ref)}: ${codeBlocksName}[${JSON.stringify(ref)}].html`)
+            .join(", ");
+          const sizingSource = [...reactBlocks]
+            .map(([ref, block]) => {
+              const lineCount = block.code.split(/\r\n|\r|\n/u).length;
+              return `${JSON.stringify(ref)}: { lineCount: ${lineCount}, style: ${sizingName}(${lineCount}) }`;
+            })
+            .join(", ");
+          magic.appendLeft(
+            helperOffset,
+            `\nimport { defineCodeElement as ${registrationName} } from "@ferriki/core/web-component";\nimport { codeElementSizing as ${sizingName} } from "@ferriki/core/web-component";\nconst ${codeBlocksName} = ${safeJsLiteral(Object.fromEntries(reactBlocks))};\nconst ${codeSizesName} = { ${sizingSource} };\nconst ${codeElementConfigName} = { ...${safeJsLiteral({ css: [...reactCss].join("\n"), themeAliases: themes ? Object.keys(themes) : [] })}, blocks: { ${registrySource} } };\nlet ${codeElementRegisteredName} = false;\n${renderHelperSource(renderHelperName, registrationName, codeElementConfigName, codeBlocksName, codeElementRegisteredName, codeSizesName, sizingName)}\n`,
+          );
+        }
         const css = [...macroCss].join("\n");
         if (css) magic.append(`\nimport ${JSON.stringify(makeCssModule(css))};\n`);
 
@@ -342,7 +421,7 @@ function safeJsLiteral(value) {
   });
 }
 
-function lowerMacroCall(magic, call, descriptor, renderHelperName) {
+function lowerMacroCall(magic, call, descriptor, renderHelperName, codeRef) {
   const { start, end } = call;
   if (call.kind !== "react") {
     const literal = safeJsLiteral(descriptor);
@@ -352,29 +431,20 @@ function lowerMacroCall(magic, call, descriptor, renderHelperName) {
 
   const presentation = call.presentation.map((item) => ({
     ...item,
-    isLiteral: item.name === "className" && item.literal !== undefined,
+    isLiteral: item.literal !== undefined,
   }));
   if (presentation.length === 0) {
-    magic.overwrite(
-      start,
-      end,
-      `<div dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`,
-    );
+    magic.overwrite(start, end, `<${renderHelperName} codeRef=${JSON.stringify(codeRef)} />`);
     return;
   }
 
-  const hasRenderer = presentation.some((item) => item.name === "render");
   const first = presentation[0];
   const attributeStart = (item) => `${item.name}${item.isLiteral ? "=" : "={"}`;
-  if (hasRenderer) {
-    magic.overwrite(
-      start,
-      first.start,
-      `<${renderHelperName} code={${safeJsLiteral(descriptor)}} ${attributeStart(first)}`,
-    );
-  } else {
-    magic.overwrite(start, first.start, `<div ${attributeStart(first)}`);
-  }
+  magic.overwrite(
+    start,
+    first.start,
+    `<${renderHelperName} codeRef=${JSON.stringify(codeRef)} ${attributeStart(first)}`,
+  );
 
   for (let index = 1; index < presentation.length; index++) {
     const previous = presentation[index - 1];
@@ -387,9 +457,7 @@ function lowerMacroCall(magic, call, descriptor, renderHelperName) {
   }
 
   const last = presentation.at(-1);
-  const suffix = hasRenderer
-    ? `${last.isLiteral ? "" : "}"} />`
-    : `${last.isLiteral ? "" : "}"} dangerouslySetInnerHTML={{ __html: ${safeJsLiteral(descriptor.html)} }} />`;
+  const suffix = `${last.isLiteral ? "" : "}"} />`;
   magic.overwrite(last.end, end, suffix);
 }
 
@@ -400,11 +468,25 @@ function uniqueIdentifierName(used, base) {
   return candidate;
 }
 
-function renderHelperSource(name) {
+function renderHelperSource(
+  name,
+  registrationName,
+  codeElementConfigName,
+  codeBlocksName,
+  codeElementRegisteredName,
+  codeSizesName,
+  sizingName,
+) {
   return `function ${name}(props) {
-  const { code, render, ...presentationProps } = props;
-  if (render === undefined)
-    return <div {...presentationProps} dangerouslySetInnerHTML={{ __html: code.html }} />;
-  return render({ code, ...presentationProps });
+  const { codeRef, render, theme, maxLines, ...presentationProps } = props;
+  if (render === undefined) {
+    if (!${codeElementRegisteredName}) {
+      ${registrationName}(${codeElementConfigName});
+      ${codeElementRegisteredName} = true;
+    }
+    const sizing = ${codeSizesName}[codeRef];
+    return <ferriki-code {...presentationProps} data-ferriki-theme={theme} code-ref={codeRef} max-lines={maxLines} style={maxLines === undefined ? sizing.style : ${sizingName}(sizing.lineCount, maxLines)} />;
+  }
+  return render({ code: ${codeBlocksName}[codeRef], ...presentationProps, ...(theme === undefined ? {} : { theme }), ...(maxLines === undefined ? {} : { maxLines }) });
 }`;
 }
