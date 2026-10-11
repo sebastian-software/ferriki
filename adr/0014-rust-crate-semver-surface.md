@@ -117,9 +117,9 @@ Each crate publishes a deliberate, curated surface.
   leaks an unnameable type; this is a manual check today.
 - CI's pinned checker compares all three public crates to actual released
   sources. Its test proves that removing a released documented public type
-  produces a deny-level finding. `#[doc(hidden)]` remains confined to
-  `ferriki::__private` and `ferriki_textmate::__oracle`; neither bridge is a
-  reason to downgrade or disable checks for documented public items. Review
+  produces a deny-level finding. The hidden bridges `ferriki::__private` and
+  `ferriki_textmate::__oracle` remain semver-exempt; neither bridge is a reason
+  to downgrade or disable checks for documented public items. Review
   any checker finding against this boundary before changing the API or policy.
 - Revisit the `doc(hidden)` rule if the crates stop sharing one version or the
   release tooling starts preserving exact requirements.
