@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-12
 
 ## Context
 
@@ -18,11 +18,12 @@ upstream-driven source for the standard language and theme catalog.
 
 ## Decision
 
-Ferriki uses Shiki-derived assets and loads and registers them lazily.
+Ferriki loads and registers its standard assets lazily.
 
-- Shiki remains the upstream source for standard grammars, language metadata,
-  aliases, embedded-language metadata, and standard themes.
-- Ferriki mirrors those inputs as data assets, not as JavaScript runtime code.
+- Ferriki owns standard grammar selection, original source pins, language
+  metadata, aliases, and embedded-language metadata (ADR 0020). Existing theme
+  snapshots remain supported.
+- Ferriki maintains these inputs as data assets, not as JavaScript runtime code.
   `ferriki-asset-gen` turns the normalized upstream mirror into the binary
   catalogs under `assets/shiki/` ([ADR 0015](0015-postcard-asset-codec.md)).
 - The Rust core owns efficient registration, compilation, and caching after an
@@ -38,15 +39,15 @@ Ferriki uses Shiki-derived assets and loads and registers them lazily.
 
 - Ferriki avoids a large always-on in-memory catalog for 100+ languages/themes.
 - External themes remain first-class and are not second to built-in themes.
-- Standard Shiki compatibility can still be preserved through mirrored asset
-  sync, while the runtime stays Rust-first.
+- Supported Shiki HTML behavior is checked through the compatibility mirror,
+  while the standard language selection belongs to Ferriki.
 - The JS bundle-based asset layer is gone. The Ferriki-owned pipeline
   generates the catalogs, and a release manifest pins every payload by digest.
-- Which grammars the standard set should contain, instead of mirroring the
-  whole Shiki collection, is an open proposal (#152). It would change the
-  source list, not this loading model.
+- ADR 0020 settles the curated grammar source list proposed in #152 without
+  changing the lazy loading model.
 
 ## History
 
 - 2026-03-09: Accepted.
 - 2026-09-30: The Ferriki-owned pipeline replaced the JS bundle assets; delivery of payloads moved to ADR 0013.
+- 2026-10-12: Ferriki owns curated grammar sources and metadata per ADR 0020.

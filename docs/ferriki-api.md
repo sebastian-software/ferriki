@@ -286,6 +286,10 @@ catalog cannot be overwritten.
 `BundledLanguage` and `BundledTheme` are key unions for those maps and are
 provided for typed consumers such as Ardo configuration and language guards.
 
+Ferriki owns a curated standard language set. See [standard and external
+grammars](grammars.md) for coverage, source pins, and the `ferriki grammar fetch`
+CLI. The resulting JSON registration uses the existing load methods above.
+
 ## Results and helpers
 
 ```ts

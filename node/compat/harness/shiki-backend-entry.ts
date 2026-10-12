@@ -1,4 +1,25 @@
+import { createHighlighter as createNativeHighlighter } from "../../ferriki/index.mjs";
+import baselineYaml from "./fixtures/yaml-v4.4.3.json";
 export * from "../../ferriki/index.mjs";
+
+// The immutable snapshot suite asserts colors from its pinned YAML grammar.
+// Run that fixture data through the native engine; the product's independently
+// updated YAML data is tested against identical data in the corpus checks.
+export function createHighlighter(
+  options: Parameters<typeof createNativeHighlighter>[0] = {},
+): ReturnType<typeof createNativeHighlighter> {
+  if (!options.langs?.some((input) => input === "yaml" || input === "yml"))
+    return createNativeHighlighter(options);
+  return createNativeHighlighter({
+    ...options,
+    langs: options.langs.map((input) =>
+      input === "yaml" || input === "yml"
+        ? { ...baselineYaml, name: "compat-yaml-baseline", aliases: [] }
+        : input,
+    ),
+    langAlias: { ...options.langAlias, yaml: "compat-yaml-baseline", yml: "compat-yaml-baseline" },
+  });
+}
 
 // This marker is test-harness state, not a public Ferriki export. Keeping it
 // here lets the honest-alias sentinel prove routing without widening the API.

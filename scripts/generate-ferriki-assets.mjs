@@ -11,7 +11,9 @@ const cmd = [
   '--upstream-dir',
   args.upstreamDir,
   '--output-dir',
-  args.outputDir
+  args.outputDir,
+  '--source-name',
+  args.sourceName
 ];
 
 if (args.sourceVersion) {
@@ -48,6 +50,7 @@ function parseArgs(argv) {
   let outputDir = path.resolve('assets/shiki');
   let sourceVersion;
   let sourceCommit;
+  let sourceName = 'ferriki-curated';
 
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
@@ -59,6 +62,8 @@ function parseArgs(argv) {
       upstreamDir = path.resolve(value);
     } else if (flag === '--output-dir') {
       outputDir = path.resolve(value);
+    } else if (flag === '--source-name') {
+      sourceName = value;
     } else if (flag === '--source-version') {
       sourceVersion = value;
     } else if (flag === '--source-commit') {
@@ -68,5 +73,5 @@ function parseArgs(argv) {
     }
   }
 
-  return { upstreamDir, outputDir, sourceVersion, sourceCommit };
+  return { upstreamDir, outputDir, sourceName, sourceVersion, sourceCommit };
 }

@@ -24,6 +24,9 @@ const footprint = await readJson(new URL("../app/data/footprint.json", import.me
 const blacksmith = await readJson(
   new URL("../../docs/benchmarks/blacksmith-comparison.json", import.meta.url),
 );
+const grammarSources = await readJson(
+  new URL("../../assets/grammars/sources.json", import.meta.url),
+);
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
@@ -192,11 +195,34 @@ const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, awa
 const linkCount = await verifyRenderedPages(pageFiles);
 verifyFocusableMarkdownCodeBlocks(await read("guide/getting-started/index.html"));
 verifyFocusableMarkdownTables(await read("guide/api/index.html"));
+verifyGrammarCoverage(await read("guide/languages-and-themes/index.html"));
 verifyArdoAcceptanceHtml(await read("evidence/compatibility/index.html"));
 
 console.log(
   `Verified ${expectedPages.length} pages, ${linkCount} internal links and fragments, Ferriki v${version}, report ${report.revision}.`,
 );
+
+function verifyGrammarCoverage(html) {
+  const rows = [...html.matchAll(/<tr\s[^>]*data-grammar-id="([^"]+)"[^>]*>[\s\S]*?<\/tr>/g)];
+  const actualIds = rows.map((row) => row[1]).sort();
+  const expectedIds = grammarSources.languages.map((entry) => entry.id).sort();
+  if (JSON.stringify(actualIds) !== JSON.stringify(expectedIds)) {
+    throw new Error("The grammar overview must show every accepted catalog entry exactly once.");
+  }
+  for (const [row, id] of rows) {
+    const entry = grammarSources.languages.find((language) => language.id === id);
+    const tag = htmlTags(row)[0];
+    const keys = [...row.matchAll(/<code\b[^>]*>([^<]*)<\/code>/g)].map((match) =>
+      decodeHtml(match[1]),
+    );
+    if (
+      attribute(tag.raw, "data-grammar-role") !== entry.role ||
+      JSON.stringify(keys) !== JSON.stringify([entry.id, ...entry.aliases])
+    ) {
+      throw new Error(`The grammar overview has stale IDs, aliases, or role for ${id}.`);
+    }
+  }
+}
 
 async function verifyRenderedPages(pages) {
   const context = {

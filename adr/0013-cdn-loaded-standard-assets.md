@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-02
+Last updated: 2026-10-12
 
 ## Context
 
@@ -197,8 +197,9 @@ verifies every pinned payload on `assets.ferriki.dev` by SHA-256.
 - The on-disk layout of the npm package and the Rust asset API change before
   1.0. [ADR 0011](0011-ferriki-1.0-api-contract.md) and the API contract
   documents must list the new options and errors before they are frozen.
-- One package per language and a bundled subset of languages are both ruled
-  out.
+- One package per language and bundling language payloads inside release
+  packages are ruled out. ADR 0020 curates the available standard catalog;
+  every selected payload still loads through this CDN model.
 
 ## History
 
@@ -216,3 +217,4 @@ verifies every pinned payload on `assets.ferriki.dev` by SHA-256.
 - 2026-10-02: Node uses built-in fetch for bounded, digest-checked downloads;
   Rust keeps manifest planning and cache verification, while the optional Rust
   `remote` feature retains its independent ureq transport.
+- 2026-10-12: Clarifies that catalog curation (ADR 0020) preserves CDN-only payload delivery.

@@ -52,18 +52,27 @@ the package manifest and source tree against Shiki, WebAssembly, and regex
 engine dependencies, fallback loaders, and forbidden runtime files. A clean
 working tree is required after compatibility preparation.
 
-The core gate also runs Shiki's `bundle-full` and `bundle-web` smoke tests. The
-current pinned baseline expects 364 and 96 loaded languages respectively. Those
-numbers count language *keys*, not grammar files: the shipped catalog holds 260
-grammars (`ls assets/shiki/languages/*.fkgram | wc -l`) and 65 themes
-(`ls assets/shiki/themes/*.fktheme | wc -l`), while `getLoadedLanguages()`
-reports every canonical ID plus each of its aliases — 364 keys for Shiki's
-full bundle, and 96 for the curated subset behind its `bundle/web` entry point.
+Ferriki maintains its own curated standard catalog (including embedded
+dependencies) and the existing 65 themes. The source list is independent of
+Shiki's catalog. Shiki's `bundle-full` and `bundle-web` count snapshots are
+explicitly excluded in the compatibility manifest (#152, ADR 0020). The core
+gate checks the owned source hashes, catalog enumeration, every grammar's
+native compilation, and external importing instead. See [grammar coverage and
+importing](grammars.md). `getLoadedLanguages()` reports canonical IDs and aliases.
+Six upstream tests also assume historical dependency lists. The compatibility
+harness replaces only those metadata assertions with reviewed Ferriki ID/alias
+sets or counts from `compat/harness/fixtures/loaded-languages.json`. All of their
+HTML and theme snapshots still run unchanged; loaded-key order is not promised.
 
-The catalog contains two less common grammar shapes: captures written as
-arrays, a legacy TextMate form (for example, `jinja`), and repository entries
-represented as rule arrays (for example, `racket`). Ferriki normalizes both at
-the raw-grammar boundary, with focused Rust tests covering the conversion.
+The immutable YAML color/merging snapshots use their pinned grammar data in
+the native test adapter. Corpus comparisons use the current Ferriki grammar
+data in both tokenizer engines. This keeps grammar-source updates independent
+of the upstream snapshot colors while retaining native renderer assertions.
+
+External TextMate grammars can contain two less common shapes: captures written
+as arrays, a legacy TextMate form, and repository entries represented as rule
+arrays. Ferriki normalizes both at the raw-grammar boundary, with focused Rust
+tests covering the conversion.
 
 ## Platform support
 

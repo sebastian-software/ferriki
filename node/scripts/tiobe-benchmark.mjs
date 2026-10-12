@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
+import { standardGrammarRegistrations } from "./standard-grammar-reference.mjs";
 import "./test-asset-env.mjs";
 
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -20,6 +21,17 @@ export const engines = ["ferriki", "shiki-wasm", "shiki-js", "prism"];
 export const theme = "github-dark";
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 export const plain = (value) => JSON.parse(JSON.stringify(value));
+export const yamlJavaScriptUnsupported =
+  "Shiki's JavaScript engine cannot translate the current VS Code YAML multi-codepoint hex escape; native and WASM output remain required";
+export function engineUnsupportedReason(id, language, error) {
+  if (
+    id === "shiki-js" &&
+    language.textmate === "yaml" &&
+    String(error).includes('Incomplete or invalid escape "\\x{FEFF FFFE FFFF}"')
+  )
+    return yamlJavaScriptUnsupported;
+  return undefined;
+}
 export function readReport(path) {
   const bytes = readFileSync(path);
   return JSON.parse((path.endsWith(".gz") ? gunzipSync(bytes) : bytes).toString("utf8"));
@@ -140,8 +152,18 @@ export async function createEngine(id, language, { regexPrefilter = true } = {})
       : id === "shiki-wasm"
         ? module.createOnigurumaEngine(import("shiki/wasm"))
         : module.createJavaScriptRegexEngine();
+  const languageInputs = await Promise.all(
+    [language.textmate, ...(language.embedded ?? [])].map(async (name) => {
+      const { bundledLanguages } = await import("../ferriki/index.mjs");
+      if (Object.hasOwn(bundledLanguages, name))
+        return id === "ferriki" ? name : standardGrammarRegistrations([name]);
+      // The dated TIOBE corpus includes languages outside Ferriki's standard
+      // set. Keep measuring those through the public custom-grammar API.
+      return (await import(`@shikijs/langs/${name}`)).default;
+    }),
+  );
   const highlighter = await module.createHighlighter({
-    langs: [language.textmate, ...(language.embedded ?? [])],
+    langs: languageInputs,
     themes: [theme],
     engine,
     assets: { remote: false },

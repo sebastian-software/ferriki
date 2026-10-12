@@ -1,11 +1,6 @@
 {
-  "injectTo": [
-    "text.html.derivative",
-    "text.html.derivative.ng",
-    "source.ts.ng"
-  ],
+  "scopeName": "template.ng",
   "injectionSelector": "L:text.html -comment",
-  "name": "angular-template",
   "patterns": [
     {
       "include": "#interpolation"
@@ -13,19 +8,19 @@
   ],
   "repository": {
     "interpolation": {
-      "begin": "\\{\\{",
+      "begin": "{{",
       "beginCaptures": {
         "0": {
           "name": "punctuation.definition.block.ts"
         }
       },
-      "contentName": "expression.ng",
       "end": "}}",
       "endCaptures": {
         "0": {
           "name": "punctuation.definition.block.ts"
         }
       },
+      "contentName": "expression.ng",
       "patterns": [
         {
           "include": "expression.ng"
@@ -33,8 +28,16 @@
       ]
     }
   },
-  "scopeName": "template.ng",
+  "name": "angular-template",
+  "displayName": null,
+  "aliases": [],
   "embeddedLangs": [
     "angular-expression"
+  ],
+  "embeddedLangsLazy": [],
+  "injectTo": [
+    "text.html.derivative",
+    "text.html.derivative.ng",
+    "source.ts.ng"
   ]
 }

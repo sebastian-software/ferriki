@@ -21,7 +21,7 @@ guide is for a Shiki **v4.4.3** consumer moving to `@ferriki/core`.
 | `codeToHtml` | Supported | Keep the call shape and use a Ferriki theme/language ID. HTML is the only public Node render output. |
 | `codeToHast`, `codeToTokens`, `codeToTokensBase`, `codeToTokensWithThemes`, `hastToHtml` | Not in the Node API | Use `codeToHtml`/`codeToHtmlWithCss`; token and HAST values reach transformer callbacks during rendering. Rust consumers get tokens from the `ferriki` crate. |
 | Reusable highlighters and singleton | Supported | Keep the factory pattern and dispose long-lived instances explicitly. |
-| Standard language/theme loaders and aliases | Supported | Use `bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`. |
+| Standard language/theme loaders and aliases | Supported for Ferriki's curated catalog | Use `bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`; import other grammars through the custom registration API. |
 | Custom TextMate grammar/theme registrations | Supported | Pass validated JSON-shaped registrations to the factory or load methods. |
 | Ordered `themes` map and `defaultColor: false` | Supported | Use for Ardo/Ferromark light/dark output. |
 | HAST serialization | Not in the Node API | Ferriki serializes HTML itself; change the tree through transformer hooks. |
@@ -39,6 +39,11 @@ guide is for a Shiki **v4.4.3** consumer moving to `@ferriki/core`.
 The exact baseline and exclusions are machine-checked from the pinned Shiki
 mirror. “Shiki-compatible” means a tested subset, not that every Shiki package
 is a Ferriki feature.
+
+Ferriki maintains its standard language catalog and required embedding
+dependencies. It does not mirror every Shiki language. Check your IDs in
+`bundledLanguages` and use the [external grammar importer](../grammars.md) for
+languages outside the set. The existing 65-theme catalog remains available.
 
 The asynchronous factory and loading methods download standard grammar and
 theme payloads by default, then verify and cache them. Highlighting on a loaded

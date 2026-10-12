@@ -4,6 +4,7 @@ import { createHighlighter as createShikiHighlighter } from "shiki";
 
 import { createHighlighter, ShikiError } from "../ferriki/index.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
+import { standardGrammarRegistrations } from "./standard-grammar-reference.mjs";
 
 import "./test-asset-env.mjs";
 
@@ -97,7 +98,7 @@ console.log("Ferriki multi-theme contract verified");
 const themes = ["github-light", "github-dark"];
 const native = await createHighlighter({ langs: comparisonCorpus.map(([lang]) => lang), themes });
 const reference = await createShikiHighlighter({
-  langs: comparisonCorpus.map(([lang]) => lang),
+  langs: standardGrammarRegistrations(comparisonCorpus.map(([lang]) => lang)),
   themes,
 });
 try {

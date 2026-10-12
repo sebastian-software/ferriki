@@ -669,7 +669,7 @@ mod tests {
     #[test]
     fn direct_inline_html_matches_hast_for_benchmark_fixtures() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let corpus = root.join("node/benchmarks/tiobe");
+        let corpus = root.join("node/benchmarks/curated");
         let manifest: Value = serde_json::from_str(
             &std::fs::read_to_string(corpus.join("manifest.json")).expect("fixture manifest"),
         )

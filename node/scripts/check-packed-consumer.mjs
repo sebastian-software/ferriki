@@ -56,7 +56,14 @@ try {
   const packed = run(npmCommand, ["pack", "--json", "--pack-destination", tempRoot]);
   const metadata = JSON.parse(packed.stdout)[0];
   const files = new Set(metadata.files.map((file) => file.path));
-  for (const required of ["index.mjs", "index.d.mts", "native.mjs", "assets/shiki/catalog.mjs"])
+  for (const required of [
+    "index.mjs",
+    "index.d.mts",
+    "native.mjs",
+    "grammar.mjs",
+    "assets/shiki/catalog.mjs",
+    "assets/shiki/GRAMMAR-NOTICES.md",
+  ])
     assert(files.has(required), `packed Ferriki package is missing ${required}`);
   assert(
     ![...files].some((file) => file.endsWith(".node")),
@@ -105,11 +112,36 @@ try {
   await cp(examplePath, consumerExample);
   run(process.execPath, [consumerExample], { cwd: consumer, stdio: "inherit" });
 
+  const grammarInput = join(consumer, "external.tmLanguage.json");
+  await writeFile(
+    grammarInput,
+    JSON.stringify({
+      scopeName: "source.packed-external",
+      patterns: [{ match: "\\bTODO\\b", name: "keyword.control" }],
+    }),
+  );
+  const grammarBin = join(
+    consumer,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "ferriki.cmd" : "ferriki",
+  );
+  const importedGrammar = JSON.parse(
+    run(
+      grammarBin,
+      ["grammar", "fetch", grammarInput, "--name", "packed-external", "--aliases", "pext"],
+      { cwd: consumer, shell: process.platform === "win32" },
+    ).stdout,
+  );
+  assert.equal(importedGrammar.name, "packed-external");
+  await writeFile(join(consumer, "external.ferriki.json"), JSON.stringify(importedGrammar));
+
   const consumerProbe = join(consumer, "packed-probe.mjs");
   await writeFile(
     consumerProbe,
     `
 import * as ferriki from '@ferriki/core'
+import externalGrammar from './external.ferriki.json' with { type: 'json' }
 const { codeToHtml, createHighlighter, ferrikiVersion } = ferriki
 const removedOutputs = ['codeToHast', 'codeToTokens', 'codeToTokensBase', 'codeToTokensWithThemes', 'hastToHtml']
 for (const name of removedOutputs)
@@ -132,6 +164,9 @@ if (nativeSubpathExported)
   throw new Error('the internal native loader must not be exported as @ferriki/core/native')
 
 const highlighter = await createHighlighter({ themes: ['nord'] })
+await highlighter.loadLanguage(externalGrammar)
+if (!highlighter.codeToHtml('TODO', { lang: 'pext', theme: 'nord' }).includes('color:'))
+  throw new Error('the packed grammar CLI did not produce a usable registration')
 for (const name of removedOutputs)
   if (name in highlighter)
     throw new Error('removed output is still on the packed highlighter: ' + name)

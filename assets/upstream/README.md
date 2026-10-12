@@ -3,24 +3,33 @@
 This directory is reserved for upstream raw asset sources that Ferriki turns
 into its own asset catalogs.
 
-Primary upstream mirror:
+Standard normalized sources:
 
 - `textmate-grammars-themes`
 
 These sources are not the product runtime format. Ferriki converts them into
 its own asset representation under `assets/shiki/`.
 
-Current mirror workflow:
+The directory name is retained from the original bootstrap. Ferriki owns the
+grammar selection and metadata in
+[`assets/grammars/catalog.json`](../grammars/catalog.json), with original
+repository files pinned by commit and digest in
+[`sources.json`](../grammars/sources.json). Theme snapshots remain unchanged.
 
-1. Sync a local `textmate-grammars-themes` checkout plus Shiki metadata into
-   `assets/upstream/textmate-grammars-themes/` with
-   [`scripts/sync-textmate-grammars-themes.mjs`](../../scripts/sync-textmate-grammars-themes.mjs).
-2. Generate Ferriki-owned binary catalogs from that normalized upstream layout
-   with `cargo run -p ferriki-asset-gen -- generate ...`.
+Current workflow:
 
-Bootstrap workflow:
+1. Prepare and validate repository updates with
+   `scripts/prepare-grammar-update.mjs` and `scripts/validate-grammar-candidate.mjs`,
+   then apply them with `scripts/apply-grammar-update.mjs`. The weekly/manual
+   Grammar updates workflow runs the same path. `scripts/sync-grammars.mjs`
+   reproduces the accepted pinned files.
+2. Run `node scripts/generate-ferriki-assets.mjs` to generate the runtime
+   catalogs and release manifest.
+3. Run `node scripts/sync-grammars.mjs --check` to verify the committed source
+   and metadata hashes without network access.
 
-- When only the mirrored Shiki workspace is available, use
-  [`scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs`](../../scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs)
-  to derive a normalized upstream layout plus Ferriki binary catalogs from the
-  checked-in Shiki mirror.
+Compatibility-only helpers:
+
+- The old Shiki bootstrap and `textmate-grammars-themes` sync helpers target
+  `assets/compat/` by default. They are reference-data tools and are not the
+  standard catalog pipeline. See [the grammar guide](../../docs/grammars.md).

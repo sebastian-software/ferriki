@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
-import { engines, loadCorpus, repoRoot } from "./tiobe-benchmark.mjs";
+import { engines, loadCorpus, repoRoot, yamlJavaScriptUnsupported } from "./tiobe-benchmark.mjs";
 
 const nodeRoot = join(repoRoot, "node");
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -38,12 +38,31 @@ export function validateReport(report, corpus, regexPrefilter) {
       comparisonCorpus.map(([, path]) => path),
     );
     for (const id of engines.filter((id) => id !== "prism")) {
-      assert.equal(report.agreement[id].documents, comparisonCorpus.length, `${id}: HTML mismatch`);
-      checkSamples(report.cold[id].samplesMs, report.method.coldRuns);
-      for (const row of report.warm.codeToHtml) {
+      const unsupported = [];
+      for (const [index, row] of report.warm.codeToHtml.entries()) {
         assert.match(row.sha256, /^[a-f0-9]{64}$/);
+        if (row.unsupported?.[id]) {
+          assert.equal(id, "shiki-js");
+          assert.equal(comparisonCorpus[index][0], "yaml");
+          assert.equal(row.unsupported[id], yamlJavaScriptUnsupported);
+          assert.equal(row.samplesMs?.[id], undefined);
+          assert.equal(row.medianMs?.[id], undefined);
+          unsupported.push(row.path);
+          continue;
+        }
         checkSamples(row.samplesMs[id], report.method.minSamples);
       }
+      assert.equal(
+        report.agreement[id].documents,
+        comparisonCorpus.length - unsupported.length,
+        `${id}: HTML mismatch`,
+      );
+      if (unsupported.length) {
+        assert.equal(report.cold[id].status, "unsupported");
+        assert.deepEqual(report.cold[id].paths, unsupported);
+        assert.equal(report.cold[id].samplesMs, undefined);
+        assert.equal(report.warmTotalMs?.codeToHtml?.[id], undefined);
+      } else checkSamples(report.cold[id].samplesMs, report.method.coldRuns);
     }
     return;
   }
@@ -70,6 +89,11 @@ export function validateReport(report, corpus, regexPrefilter) {
         const result = entry.results[id];
         if (id === "prism" && !language.prism) {
           assert.equal(result.status, "unsupported");
+          continue;
+        }
+        if (result.status === "unsupported" && id === "shiki-js" && language.textmate === "yaml") {
+          assert.equal(result.reason, yamlJavaScriptUnsupported);
+          assert.equal(result.html, undefined);
           continue;
         }
         assert.equal(result.status, "ok", `${row.name}/${entry.size}/${id}: ${result.error}`);
@@ -99,7 +123,7 @@ export function renderSummary(reports, context, errors = []) {
   ];
   const table = (label, mode, values) =>
     lines.push(
-      `| ${label} | ${mode} | ${["ferriki", "shiki-wasm", "shiki-js"].map((id) => (Number.isFinite(values[id]) ? values[id].toFixed(3) : "invalid")).join(" | ")} |`,
+      `| ${label} | ${mode} | ${["ferriki", "shiki-wasm", "shiki-js"].map((id) => (Number.isFinite(values[id]) ? values[id].toFixed(3) : reports[`comparison-${mode}`]?.cold[id]?.status === "unsupported" ? "unsupported" : "invalid")).join(" | ")} |`,
     );
   for (const mode of ["on", "off"]) {
     const report = reports[`comparison-${mode}`];

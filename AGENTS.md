@@ -6,7 +6,8 @@
   load-bearing ones: ADR 0003 (the upstream mirror is never hand-edited),
   ADR 0009 (native-only runtime), ADR 0010 (the mechanical vscode-textmate
   port), ADR 0012 (crate boundaries and release), ADR 0013 (CDN-loaded
-  assets) and ADR 0014 (what the crates promise under semver).
+  assets), ADR 0014 (what the crates promise under semver), and ADR 0020
+  (owned curated grammar sources and external imports).
 - [`plans/native-only-migration.md`](plans/native-only-migration.md) records
   the migration history, including the measured decision to re-port the
   tokenizer (#30) and the cut-over scope (#31). It is context, not the

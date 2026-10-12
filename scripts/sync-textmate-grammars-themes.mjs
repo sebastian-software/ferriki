@@ -2,7 +2,8 @@ import { mkdir, readFile, readdir, rm, stat, writeFile, copyFile } from 'node:fs
 import path from 'node:path';
 
 const DEFAULT_SHIKI_ROOT = path.resolve('node/compat/upstream/shiki');
-const DEFAULT_OUTPUT_DIR = path.resolve('assets/upstream/textmate-grammars-themes');
+// Compatibility reference data; the product catalog uses sync-grammars.mjs.
+const DEFAULT_OUTPUT_DIR = path.resolve('assets/compat/upstream/textmate-grammars-themes');
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));

@@ -20,6 +20,9 @@
     "url": "git+https://github.com/sebastian-software/ferriki.git",
     "directory": "node/ferriki"
   },
+  "bin": {
+    "ferriki": "./grammar.mjs"
+  },
   "files": [
     "CHANGELOG.md",
     "LICENSE-APACHE",
@@ -27,6 +30,7 @@
     "README.md",
     "assets/shiki",
     "classes.mjs",
+    "grammar.mjs",
     "index.d.mts",
     "index.mjs",
     "macro.d.mts",

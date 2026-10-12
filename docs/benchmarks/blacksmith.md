@@ -34,11 +34,16 @@ for each corpus. Separate hosts may run concurrently.
   and large sizes. The TIOBE corpus covers its pinned language ranking. Both
   retain every warm HTML sample and reuse one highlighter per language. Setup
   diagnostics in these reports are not fair cold-start comparisons.
-- Ferriki and both Shiki engines must preserve exact TextMate HTML. Curated and
-  TIOBE reports additionally check source preservation, with explicit unsupported
-  Prism grammars and Scratch. Errors, timeouts, missing cases and output changes
-  fail the job even if the underlying harness exits zero. Prism uses independent
-  grammars; its raw timings do not claim TextMate parity.
+- Ferriki and Shiki/WASM must preserve exact TextMate HTML using the same
+  current grammar data. Shiki/JS has the same gate for supported grammars. The
+  current VS Code YAML multi-codepoint hex escape cannot be converted by its
+  JavaScript engine; only that precise failure is reported as unsupported.
+  That case has no JS samples, and repository reports omit full-corpus JS totals
+  when YAML is unsupported. Curated and TIOBE reports additionally check source
+  preservation, with explicit unsupported Prism grammars and Scratch. Other
+  errors, timeouts, missing cases and output changes fail the job even if the
+  underlying harness exits zero. Prism uses independent grammars; its raw
+  timings do not claim TextMate parity.
 - Phiki is optional in the repository harness. This workflow does not install
   PHP or Composer; availability and skips are reported explicitly. Phiki output
   differences do not weaken the required Node HTML gate.

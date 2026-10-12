@@ -1,0 +1,94 @@
+[
+  {
+    "path": "/patterns/9",
+    "before": {
+      "contentName": "source.css.scss",
+      "begin": "(?<=<style\\s(?:jsx|jsx\\s+global|global\\s+jsx)+\\>\\{)`",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.template.begin.js string.template.js"
+        }
+      },
+      "end": "`(?=\\}\\<\\/style\\>)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.template.end.js string.template.js"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.css.styled"
+        }
+      ]
+    },
+    "after": {
+      "name": "meta.embedded.styled-jsx",
+      "begin": "(<)(style)(\\b(?=[^>]*\\bjsx\\b)[^>]*>)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.js"
+        },
+        "2": {
+          "name": "entity.name.tag.js"
+        },
+        "3": {
+          "name": "meta.tag.attributes.js"
+        }
+      },
+      "end": "(</)(style)(\\s*>)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.begin.js"
+        },
+        "2": {
+          "name": "entity.name.tag.js"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.end.js"
+        }
+      },
+      "patterns": [
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.embedded.begin.js"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.embedded.end.js"
+            }
+          },
+          "patterns": [
+            {
+              "contentName": "source.css.scss",
+              "begin": "`",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.definition.string.template.begin.js string.template.js"
+                }
+              },
+              "end": "`",
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.definition.string.template.end.js string.template.js"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "source.css.styled"
+                }
+              ]
+            },
+            {
+              "include": "source.ts#expression"
+            }
+          ]
+        }
+      ]
+    },
+    "reason": "Track Styled JSX tags, expression braces, and template strings as separate TextMate states so whitespace and line breaks do not prevent CSS highlighting."
+  }
+]

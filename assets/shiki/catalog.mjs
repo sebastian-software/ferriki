@@ -2,61 +2,6 @@
 export const ferrikiCatalogVersion = 1
 export const languageCatalog = Object.freeze([
   {
-    "id": "abap",
-    "scopeName": "source.abap",
-    "assetFile": "abap.fkgram",
-    "displayName": "ABAP",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "actionscript-3",
-    "scopeName": "source.actionscript.3",
-    "assetFile": "actionscript-3.fkgram",
-    "displayName": "ActionScript",
-    "aliases": [
-      "actionscript",
-      "as3"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ada",
-    "scopeName": "source.ada",
-    "assetFile": "ada.fkgram",
-    "displayName": "Ada",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ahk",
-    "scopeName": "source.ahk",
-    "assetFile": "ahk.fkgram",
-    "displayName": "AutoHotkey",
-    "aliases": [
-      "ahk1"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ahk2",
-    "scopeName": "source.ahk2",
-    "assetFile": "ahk2.fkgram",
-    "displayName": "AutoHotkey2",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "angular-expression",
     "scopeName": "expression.ng",
     "assetFile": "angular-expression.fkgram",
@@ -172,144 +117,18 @@ export const languageCatalog = Object.freeze([
       "angular-inline-template",
       "angular-let-declaration",
       "angular-template",
-      "angular-template-blocks"
+      "angular-template-blocks",
+      "es-tag-css",
+      "es-tag-html"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
-    "id": "apache",
-    "scopeName": "source.apacheconf",
-    "assetFile": "apache.fkgram",
-    "displayName": "Apache Conf",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "apex",
-    "scopeName": "source.apex",
-    "assetFile": "apex.fkgram",
-    "displayName": "Apex",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "apl",
-    "scopeName": "source.apl",
-    "assetFile": "apl.fkgram",
-    "displayName": "APL",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "xml",
-      "css",
-      "javascript",
-      "json"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "applescript",
-    "scopeName": "source.applescript",
-    "assetFile": "applescript.fkgram",
-    "displayName": "AppleScript",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ara",
-    "scopeName": "source.ara",
-    "assetFile": "ara.fkgram",
-    "displayName": "Ara",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "asciidoc",
-    "scopeName": "text.asciidoc",
-    "assetFile": "asciidoc.fkgram",
-    "displayName": "AsciiDoc",
-    "aliases": [
-      "adoc"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [
-      "html",
-      "yaml",
-      "csv",
-      "css",
-      "ini",
-      "java",
-      "lua",
-      "make",
-      "perl",
-      "r",
-      "ruby",
-      "php",
-      "sql",
-      "vb",
-      "xml",
-      "xsl",
-      "bat",
-      "clojure",
-      "coffee",
-      "c",
-      "cpp",
-      "diff",
-      "docker",
-      "git-commit",
-      "git-rebase",
-      "go",
-      "groovy",
-      "pug",
-      "javascript",
-      "json",
-      "jsonc",
-      "less",
-      "objective-c",
-      "swift",
-      "scss",
-      "raku",
-      "powershell",
-      "python",
-      "julia",
-      "regexp",
-      "rust",
-      "scala",
-      "shellscript",
-      "typescript",
-      "tsx",
-      "csharp",
-      "fsharp",
-      "dart",
-      "handlebars",
-      "markdown",
-      "log",
-      "erlang",
-      "elixir",
-      "latex",
-      "bibtex",
-      "abap",
-      "rst",
-      "haskell",
-      "kotlin"
-    ],
-    "injectTo": []
-  },
-  {
-    "id": "asm",
-    "scopeName": "source.asm.x86_64",
-    "assetFile": "asm.fkgram",
-    "displayName": "Assembly",
+    "id": "annotation-liquidhaskell-haskell",
+    "scopeName": "annotation.liquidhaskell.haskell",
+    "assetFile": "annotation-liquidhaskell-haskell.fkgram",
+    "displayName": null,
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -332,128 +151,8 @@ export const languageCatalog = Object.freeze([
     "embeddedLangsLazy": [
       "sass",
       "scss",
-      "stylus",
       "less"
     ],
-    "injectTo": []
-  },
-  {
-    "id": "awk",
-    "scopeName": "source.awk",
-    "assetFile": "awk.fkgram",
-    "displayName": "AWK",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ballerina",
-    "scopeName": "source.ballerina",
-    "assetFile": "ballerina.fkgram",
-    "displayName": "Ballerina",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "bat",
-    "scopeName": "source.batchfile",
-    "assetFile": "bat.fkgram",
-    "displayName": "Batch File",
-    "aliases": [
-      "batch",
-      "cmd"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "beancount",
-    "scopeName": "text.beancount",
-    "assetFile": "beancount.fkgram",
-    "displayName": "Beancount",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "berry",
-    "scopeName": "source.berry",
-    "assetFile": "berry.fkgram",
-    "displayName": "Berry",
-    "aliases": [
-      "be"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "bibtex",
-    "scopeName": "text.bibtex",
-    "assetFile": "bibtex.fkgram",
-    "displayName": "BibTeX",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "bicep",
-    "scopeName": "source.bicep",
-    "assetFile": "bicep.fkgram",
-    "displayName": "Bicep",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "bird2",
-    "scopeName": "source.bird2",
-    "assetFile": "bird2.fkgram",
-    "displayName": "BIRD2 Configuration",
-    "aliases": [
-      "bird"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "blade",
-    "scopeName": "text.html.php.blade",
-    "assetFile": "blade.fkgram",
-    "displayName": "Blade",
-    "aliases": [],
-    "embeddedLangs": [
-      "html-derivative",
-      "html",
-      "xml",
-      "sql",
-      "javascript",
-      "json",
-      "css"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "bsl",
-    "scopeName": "source.bsl",
-    "assetFile": "bsl.fkgram",
-    "displayName": "1C (Enterprise)",
-    "aliases": [
-      "1c"
-    ],
-    "embeddedLangs": [
-      "sdbl"
-    ],
-    "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
@@ -461,64 +160,6 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.c",
     "assetFile": "c.fkgram",
     "displayName": "C",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "c3",
-    "scopeName": "source.c3",
-    "assetFile": "c3.fkgram",
-    "displayName": "C3",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "cadence",
-    "scopeName": "source.cadence",
-    "assetFile": "cadence.fkgram",
-    "displayName": "Cadence",
-    "aliases": [
-      "cdc"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "cairo",
-    "scopeName": "source.cairo0",
-    "assetFile": "cairo.fkgram",
-    "displayName": "Cairo",
-    "aliases": [],
-    "embeddedLangs": [
-      "python"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "chapel",
-    "scopeName": "source.chapel",
-    "assetFile": "chapel.fkgram",
-    "displayName": "Chapel",
-    "aliases": [
-      "chpl"
-    ],
-    "embeddedLangs": [
-      "c"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "clarity",
-    "scopeName": "source.clar",
-    "assetFile": "clarity.fkgram",
-    "displayName": "Clarity",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -547,77 +188,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "cobol",
-    "scopeName": "source.cobol",
-    "assetFile": "cobol.fkgram",
-    "displayName": "COBOL",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "java"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "codeowners",
-    "scopeName": "text.codeowners",
-    "assetFile": "codeowners.fkgram",
-    "displayName": "CODEOWNERS",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "codeql",
-    "scopeName": "source.ql",
-    "assetFile": "codeql.fkgram",
-    "displayName": "CodeQL",
-    "aliases": [
-      "ql"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "coffee",
-    "scopeName": "source.coffee",
-    "assetFile": "coffee.fkgram",
-    "displayName": "CoffeeScript",
-    "aliases": [
-      "coffeescript"
-    ],
-    "embeddedLangs": [
-      "javascript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "common-lisp",
-    "scopeName": "source.commonlisp",
-    "assetFile": "common-lisp.fkgram",
-    "displayName": "Common Lisp",
-    "aliases": [
-      "lisp"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "coq",
-    "scopeName": "source.rocq",
-    "assetFile": "coq.fkgram",
-    "displayName": "Rocq",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "cpp",
     "scopeName": "source.cpp",
     "assetFile": "cpp.fkgram",
@@ -627,8 +197,7 @@ export const languageCatalog = Object.freeze([
     ],
     "embeddedLangs": [
       "cpp-macro",
-      "regexp",
-      "glsl"
+      "regexp"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -641,24 +210,7 @@ export const languageCatalog = Object.freeze([
     "aliases": [],
     "embeddedLangs": [
       "regexp",
-      "glsl"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "crystal",
-    "scopeName": "source.crystal",
-    "assetFile": "crystal.fkgram",
-    "displayName": "Crystal",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "sql",
-      "css",
-      "c",
-      "javascript",
-      "shellscript"
+      "cpp"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -687,44 +239,15 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "csv",
-    "scopeName": "text.csv",
-    "assetFile": "csv.fkgram",
-    "displayName": "CSV",
+    "id": "css-styled",
+    "scopeName": "source.css.styled",
+    "assetFile": "css-styled.fkgram",
+    "displayName": "CSS-in-JS declaration support",
     "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "cue",
-    "scopeName": "source.cue",
-    "assetFile": "cue.fkgram",
-    "displayName": "CUE",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "cypher",
-    "scopeName": "source.cypher",
-    "assetFile": "cypher.fkgram",
-    "displayName": "Cypher",
-    "aliases": [
-      "cql"
+    "embeddedLangs": [
+      "css",
+      "typescript"
     ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "d",
-    "scopeName": "source.d",
-    "assetFile": "d.fkgram",
-    "displayName": "D",
-    "aliases": [],
-    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -733,26 +256,6 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.dart",
     "assetFile": "dart.fkgram",
     "displayName": "Dart",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "dax",
-    "scopeName": "source.dax",
-    "assetFile": "dax.fkgram",
-    "displayName": "DAX",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "desktop",
-    "scopeName": "source.desktop",
-    "assetFile": "desktop.fkgram",
-    "displayName": "Desktop",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -781,36 +284,12 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "dotenv",
-    "scopeName": "source.dotenv",
-    "assetFile": "dotenv.fkgram",
-    "displayName": "dotEnv",
+    "id": "eex",
+    "scopeName": "text.elixir",
+    "assetFile": "eex.fkgram",
+    "displayName": null,
     "aliases": [],
     "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "dream-maker",
-    "scopeName": "source.dm",
-    "assetFile": "dream-maker.fkgram",
-    "displayName": "Dream Maker",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "edge",
-    "scopeName": "text.html.edge",
-    "assetFile": "edge.fkgram",
-    "displayName": "Edge",
-    "aliases": [],
-    "embeddedLangs": [
-      "typescript",
-      "html",
-      "html-derivative"
-    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -819,60 +298,13 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.elixir",
     "assetFile": "elixir.fkgram",
     "displayName": "Elixir",
-    "aliases": [],
+    "aliases": [
+      "ex",
+      "exs"
+    ],
     "embeddedLangs": [
+      "eex",
       "html"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "elm",
-    "scopeName": "source.elm",
-    "assetFile": "elm.fkgram",
-    "displayName": "Elm",
-    "aliases": [],
-    "embeddedLangs": [
-      "glsl"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "emacs-lisp",
-    "scopeName": "source.emacs.lisp",
-    "assetFile": "emacs-lisp.fkgram",
-    "displayName": "Emacs Lisp",
-    "aliases": [
-      "elisp"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "erb",
-    "scopeName": "text.html.erb",
-    "assetFile": "erb.fkgram",
-    "displayName": "ERB",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "ruby"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "erlang",
-    "scopeName": "source.erlang",
-    "assetFile": "erlang.fkgram",
-    "displayName": "Erlang",
-    "aliases": [
-      "erl"
-    ],
-    "embeddedLangs": [
-      "markdown"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -881,178 +313,55 @@ export const languageCatalog = Object.freeze([
     "id": "es-tag-css",
     "scopeName": "inline.es6-css",
     "assetFile": "es-tag-css.fkgram",
-    "displayName": null,
+    "displayName": "CSS-in-JS",
     "aliases": [],
     "embeddedLangs": [
       "typescript",
-      "css",
-      "javascript"
+      "css-styled"
     ],
     "embeddedLangsLazy": [],
     "injectTo": [
+      "source.js",
+      "source.js.jsx",
       "source.ts",
-      "source.js"
-    ]
-  },
-  {
-    "id": "es-tag-glsl",
-    "scopeName": "inline.es6-glsl",
-    "assetFile": "es-tag-glsl.fkgram",
-    "displayName": null,
-    "aliases": [],
-    "embeddedLangs": [
-      "typescript",
-      "glsl",
-      "javascript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": [
-      "source.ts",
-      "source.js"
+      "source.tsx",
+      "source.ts.ng",
+      "source.gjs",
+      "source.gts",
+      "text.html.vue",
+      "source.svelte",
+      "source.astro",
+      "text.html.basic",
+      "text.html.handlebars",
+      "text.html.liquid"
     ]
   },
   {
     "id": "es-tag-html",
     "scopeName": "inline.es6-html",
     "assetFile": "es-tag-html.fkgram",
-    "displayName": null,
+    "displayName": "HTML and SVG tagged templates",
     "aliases": [],
     "embeddedLangs": [
       "typescript",
-      "html",
-      "javascript"
+      "html"
     ],
     "embeddedLangsLazy": [],
     "injectTo": [
+      "source.js",
+      "source.js.jsx",
       "source.ts",
-      "source.js"
+      "source.tsx",
+      "source.ts.ng",
+      "source.gjs",
+      "source.gts",
+      "text.html.vue",
+      "source.svelte",
+      "source.astro",
+      "text.html.basic",
+      "text.html.handlebars",
+      "text.html.liquid"
     ]
-  },
-  {
-    "id": "es-tag-sql",
-    "scopeName": "inline.tagged-template-sql",
-    "assetFile": "es-tag-sql.fkgram",
-    "displayName": null,
-    "aliases": [],
-    "embeddedLangs": [
-      "typescript",
-      "sql"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": [
-      "source.ts",
-      "source.js"
-    ]
-  },
-  {
-    "id": "es-tag-xml",
-    "scopeName": "inline.es6-xml",
-    "assetFile": "es-tag-xml.fkgram",
-    "displayName": null,
-    "aliases": [],
-    "embeddedLangs": [
-      "xml"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": [
-      "source.ts",
-      "source.js"
-    ]
-  },
-  {
-    "id": "fennel",
-    "scopeName": "source.fnl",
-    "assetFile": "fennel.fkgram",
-    "displayName": "Fennel",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "fish",
-    "scopeName": "source.fish",
-    "assetFile": "fish.fkgram",
-    "displayName": "Fish",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "fluent",
-    "scopeName": "source.ftl",
-    "assetFile": "fluent.fkgram",
-    "displayName": "Fluent",
-    "aliases": [
-      "ftl"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "fortran-fixed-form",
-    "scopeName": "source.fortran.fixed",
-    "assetFile": "fortran-fixed-form.fkgram",
-    "displayName": "Fortran (Fixed Form)",
-    "aliases": [
-      "f",
-      "for",
-      "f77"
-    ],
-    "embeddedLangs": [
-      "fortran-free-form"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "fortran-free-form",
-    "scopeName": "source.fortran.free",
-    "assetFile": "fortran-free-form.fkgram",
-    "displayName": "Fortran (Free Form)",
-    "aliases": [
-      "f90",
-      "f95",
-      "f03",
-      "f08",
-      "f18"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "fsharp",
-    "scopeName": "source.fsharp",
-    "assetFile": "fsharp.fkgram",
-    "displayName": "F#",
-    "aliases": [
-      "f#",
-      "fs"
-    ],
-    "embeddedLangs": [
-      "markdown"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "gdresource",
-    "scopeName": "source.gdresource",
-    "assetFile": "gdresource.fkgram",
-    "displayName": "GDResource",
-    "aliases": [
-      "tscn",
-      "tres"
-    ],
-    "embeddedLangs": [
-      "gdshader",
-      "gdscript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
   },
   {
     "id": "gdscript",
@@ -1063,60 +372,6 @@ export const languageCatalog = Object.freeze([
       "gd"
     ],
     "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "gdshader",
-    "scopeName": "source.gdshader",
-    "assetFile": "gdshader.fkgram",
-    "displayName": "GDShader",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "genie",
-    "scopeName": "source.genie",
-    "assetFile": "genie.fkgram",
-    "displayName": "Genie",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "gherkin",
-    "scopeName": "text.gherkin.feature",
-    "assetFile": "gherkin.fkgram",
-    "displayName": "Gherkin",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "git-commit",
-    "scopeName": "text.git-commit",
-    "assetFile": "git-commit.fkgram",
-    "displayName": "Git Commit Message",
-    "aliases": [],
-    "embeddedLangs": [
-      "diff"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "git-rebase",
-    "scopeName": "text.git-rebase",
-    "assetFile": "git-rebase.fkgram",
-    "displayName": "Git Rebase Message",
-    "aliases": [],
-    "embeddedLangs": [
-      "shellscript"
-    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1140,9 +395,9 @@ export const languageCatalog = Object.freeze([
     ],
     "embeddedLangs": [
       "javascript",
-      "typescript",
       "css",
-      "html"
+      "html",
+      "typescript"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -1158,41 +413,9 @@ export const languageCatalog = Object.freeze([
     "embeddedLangs": [
       "typescript",
       "css",
-      "javascript",
-      "html"
+      "html",
+      "javascript"
     ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "glsl",
-    "scopeName": "source.glsl",
-    "assetFile": "glsl.fkgram",
-    "displayName": "GLSL",
-    "aliases": [],
-    "embeddedLangs": [
-      "c"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "gn",
-    "scopeName": "source.gn",
-    "assetFile": "gn.fkgram",
-    "displayName": "GN",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "gnuplot",
-    "scopeName": "source.gnuplot",
-    "assetFile": "gnuplot.fkgram",
-    "displayName": "Gnuplot",
-    "aliases": [],
-    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1224,29 +447,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "groovy",
-    "scopeName": "source.groovy",
-    "assetFile": "groovy.fkgram",
-    "displayName": "Groovy",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hack",
-    "scopeName": "source.hack",
-    "assetFile": "hack.fkgram",
-    "displayName": "Hack",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "sql"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "haml",
     "scopeName": "text.haml",
     "assetFile": "haml.fkgram",
@@ -1259,7 +459,6 @@ export const languageCatalog = Object.freeze([
     "embeddedLangsLazy": [
       "ruby",
       "sass",
-      "coffee",
       "markdown"
     ],
     "injectTo": []
@@ -1270,7 +469,8 @@ export const languageCatalog = Object.freeze([
     "assetFile": "handlebars.fkgram",
     "displayName": "Handlebars",
     "aliases": [
-      "hbs"
+      "hbs",
+      "hjs"
     ],
     "embeddedLangs": [
       "html",
@@ -1289,17 +489,9 @@ export const languageCatalog = Object.freeze([
     "aliases": [
       "hs"
     ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "haxe",
-    "scopeName": "source.hx",
-    "assetFile": "haxe.fkgram",
-    "displayName": "Haxe",
-    "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "annotation-liquidhaskell-haskell"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1308,26 +500,6 @@ export const languageCatalog = Object.freeze([
     "scopeName": "source.hcl",
     "assetFile": "hcl.fkgram",
     "displayName": "HashiCorp HCL",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hjson",
-    "scopeName": "source.hjson",
-    "assetFile": "hjson.fkgram",
-    "displayName": "Hjson",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hlsl",
-    "scopeName": "source.hlsl",
-    "assetFile": "hlsl.fkgram",
-    "displayName": "HLSL",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -1355,67 +527,6 @@ export const languageCatalog = Object.freeze([
     "embeddedLangs": [
       "html"
     ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "http",
-    "scopeName": "source.http",
-    "assetFile": "http.fkgram",
-    "displayName": "HTTP",
-    "aliases": [],
-    "embeddedLangs": [
-      "shellscript",
-      "json",
-      "xml",
-      "graphql"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hurl",
-    "scopeName": "source.hurl",
-    "assetFile": "hurl.fkgram",
-    "displayName": "Hurl",
-    "aliases": [],
-    "embeddedLangs": [
-      "graphql",
-      "xml",
-      "csv"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hxml",
-    "scopeName": "source.hxml",
-    "assetFile": "hxml.fkgram",
-    "displayName": "HXML",
-    "aliases": [],
-    "embeddedLangs": [
-      "haxe"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "hy",
-    "scopeName": "source.hy",
-    "assetFile": "hy.fkgram",
-    "displayName": "Hy",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "imba",
-    "scopeName": "source.imba",
-    "assetFile": "imba.fkgram",
-    "displayName": "Imba",
-    "aliases": [],
-    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1451,39 +562,28 @@ export const languageCatalog = Object.freeze([
       "cjs",
       "mjs"
     ],
+    "embeddedLangs": [
+      "es-tag-css",
+      "es-tag-html"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "js-regexp",
+    "scopeName": "source.js.regexp",
+    "assetFile": "js-regexp.fkgram",
+    "displayName": null,
+    "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
-    "id": "jinja",
-    "scopeName": "source.jinja",
-    "assetFile": "jinja.fkgram",
-    "displayName": "Jinja",
-    "aliases": [],
-    "embeddedLangs": [
-      "jinja-html"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "jinja-html",
-    "scopeName": "text.html.jinja",
-    "assetFile": "jinja-html.fkgram",
-    "displayName": "jinja-html",
-    "aliases": [],
-    "embeddedLangs": [
-      "html"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "jison",
-    "scopeName": "source.jison",
-    "assetFile": "jison.fkgram",
-    "displayName": "Jison",
+    "id": "jsdoc",
+    "scopeName": "source.jsdoc",
+    "assetFile": "jsdoc.fkgram",
+    "displayName": null,
     "aliases": [],
     "embeddedLangs": [
       "javascript"
@@ -1507,7 +607,13 @@ export const languageCatalog = Object.freeze([
     "assetFile": "json5.fkgram",
     "displayName": "JSON5",
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "graphql",
+      "html",
+      "js-regexp",
+      "jsdoc",
+      "sql"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1522,44 +628,15 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "jsonl",
-    "scopeName": "source.json.lines",
-    "assetFile": "jsonl.fkgram",
-    "displayName": "JSON Lines",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "jsonnet",
-    "scopeName": "source.jsonnet",
-    "assetFile": "jsonnet.fkgram",
-    "displayName": "Jsonnet",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "jssm",
-    "scopeName": "source.jssm",
-    "assetFile": "jssm.fkgram",
-    "displayName": "JSSM",
-    "aliases": [
-      "fsl"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "jsx",
     "scopeName": "source.js.jsx",
     "assetFile": "jsx.fkgram",
     "displayName": "JSX",
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "es-tag-css",
+      "es-tag-html"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -1582,35 +659,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "just",
-    "scopeName": "source.just",
-    "assetFile": "just.fkgram",
-    "displayName": "Just",
-    "aliases": [
-      "justfile"
-    ],
-    "embeddedLangs": [
-      "shellscript",
-      "javascript",
-      "typescript",
-      "perl",
-      "python",
-      "ruby"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "kdl",
-    "scopeName": "source.kdl",
-    "assetFile": "kdl.fkgram",
-    "displayName": "KDL",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "kotlin",
     "scopeName": "source.kotlin",
     "assetFile": "kotlin.fkgram",
@@ -1618,59 +666,6 @@ export const languageCatalog = Object.freeze([
     "aliases": [
       "kt",
       "kts"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "kusto",
-    "scopeName": "source.kusto",
-    "assetFile": "kusto.fkgram",
-    "displayName": "Kusto",
-    "aliases": [
-      "kql"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "latex",
-    "scopeName": "text.tex.latex",
-    "assetFile": "latex.fkgram",
-    "displayName": "LaTeX",
-    "aliases": [],
-    "embeddedLangs": [
-      "tex"
-    ],
-    "embeddedLangsLazy": [
-      "shellscript",
-      "css",
-      "gnuplot",
-      "haskell",
-      "html",
-      "java",
-      "julia",
-      "javascript",
-      "lua",
-      "python",
-      "ruby",
-      "rust",
-      "typescript",
-      "xml",
-      "yaml",
-      "scala"
-    ],
-    "injectTo": []
-  },
-  {
-    "id": "lean",
-    "scopeName": "source.lean4",
-    "assetFile": "lean.fkgram",
-    "displayName": "Lean 4",
-    "aliases": [
-      "lean4"
     ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -1696,40 +691,28 @@ export const languageCatalog = Object.freeze([
       "html",
       "css",
       "json",
-      "javascript"
+      "javascript",
+      "liquid-injection"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
-    "id": "llvm",
-    "scopeName": "source.llvm",
-    "assetFile": "llvm.fkgram",
-    "displayName": "LLVM IR",
+    "id": "liquid-injection",
+    "scopeName": "liquid.injection",
+    "assetFile": "liquid-injection.fkgram",
+    "displayName": "Liquid embedded syntax",
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "html",
+      "css",
+      "json",
+      "javascript"
+    ],
     "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "log",
-    "scopeName": "text.log",
-    "assetFile": "log.fkgram",
-    "displayName": "Log file",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "logo",
-    "scopeName": "source.logo",
-    "assetFile": "logo.fkgram",
-    "displayName": "Logo",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
+    "injectTo": [
+      "text.html.liquid"
+    ]
   },
   {
     "id": "lua",
@@ -1786,31 +769,21 @@ export const languageCatalog = Object.freeze([
       "ruby",
       "php",
       "sql",
-      "vb",
       "xml",
-      "xsl",
       "yaml",
-      "bat",
       "clojure",
-      "coffee",
       "c",
       "cpp",
       "diff",
       "docker",
-      "git-commit",
-      "git-rebase",
       "go",
-      "groovy",
       "pug",
       "javascript",
       "json",
       "jsonc",
-      "jsonl",
       "less",
-      "objective-c",
       "swift",
       "scss",
-      "raku",
       "powershell",
       "python",
       "julia",
@@ -1821,31 +794,10 @@ export const languageCatalog = Object.freeze([
       "typescript",
       "tsx",
       "csharp",
-      "fsharp",
       "dart",
-      "handlebars",
-      "log",
-      "erlang",
-      "elixir",
-      "latex",
-      "bibtex",
-      "abap",
-      "rst",
       "html-derivative"
     ],
     "injectTo": []
-  },
-  {
-    "id": "markdown-nix",
-    "scopeName": "markdown.nix.codeblock",
-    "assetFile": "markdown-nix.fkgram",
-    "displayName": null,
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": [
-      "text.html.markdown"
-    ]
   },
   {
     "id": "markdown-vue",
@@ -1853,50 +805,13 @@ export const languageCatalog = Object.freeze([
     "assetFile": "markdown-vue.fkgram",
     "displayName": null,
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "vue"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": [
       "text.html.markdown"
     ]
-  },
-  {
-    "id": "marko",
-    "scopeName": "text.marko",
-    "assetFile": "marko.fkgram",
-    "displayName": "Marko",
-    "aliases": [],
-    "embeddedLangs": [
-      "css",
-      "less",
-      "scss",
-      "typescript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "matlab",
-    "scopeName": "source.matlab",
-    "assetFile": "matlab.fkgram",
-    "displayName": "MATLAB",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "mdc",
-    "scopeName": "text.markdown.mdc.standalone",
-    "assetFile": "mdc.fkgram",
-    "displayName": "MDC",
-    "aliases": [],
-    "embeddedLangs": [
-      "markdown",
-      "yaml",
-      "html-derivative"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
   },
   {
     "id": "mdx",
@@ -1911,15 +826,11 @@ export const languageCatalog = Object.freeze([
       "yaml",
       "c",
       "clojure",
-      "coffee",
       "cpp",
       "csharp",
       "css",
       "diff",
       "docker",
-      "elixir",
-      "elm",
-      "erlang",
       "go",
       "graphql",
       "haskell",
@@ -1934,7 +845,6 @@ export const languageCatalog = Object.freeze([
       "lua",
       "make",
       "markdown",
-      "objective-c",
       "perl",
       "python",
       "r",
@@ -1943,7 +853,6 @@ export const languageCatalog = Object.freeze([
       "scala",
       "scss",
       "shellscript",
-      "shellsession",
       "sql",
       "xml",
       "swift",
@@ -1952,279 +861,10 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "mermaid",
-    "scopeName": "markdown.mermaid.codeblock",
-    "assetFile": "mermaid.fkgram",
-    "displayName": "Mermaid",
-    "aliases": [
-      "mmd"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "mipsasm",
-    "scopeName": "source.mips",
-    "assetFile": "mipsasm.fkgram",
-    "displayName": "MIPS Assembly",
-    "aliases": [
-      "mips"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "mojo",
-    "scopeName": "source.mojo",
-    "assetFile": "mojo.fkgram",
-    "displayName": "Mojo",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "moonbit",
-    "scopeName": "source.moonbit",
-    "assetFile": "moonbit.fkgram",
-    "displayName": "MoonBit",
-    "aliases": [
-      "mbt",
-      "mbti"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "move",
-    "scopeName": "source.move",
-    "assetFile": "move.fkgram",
-    "displayName": "Move",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "narrat",
-    "scopeName": "source.narrat",
-    "assetFile": "narrat.fkgram",
-    "displayName": "Narrat Language",
-    "aliases": [
-      "nar"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nextflow",
-    "scopeName": "source.nextflow",
-    "assetFile": "nextflow.fkgram",
-    "displayName": "Nextflow",
-    "aliases": [
-      "nf"
-    ],
-    "embeddedLangs": [
-      "nextflow-groovy"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nextflow-groovy",
-    "scopeName": "source.nextflow-groovy",
-    "assetFile": "nextflow-groovy.fkgram",
-    "displayName": "Nextflow Groovy",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nginx",
-    "scopeName": "source.nginx",
-    "assetFile": "nginx.fkgram",
-    "displayName": "Nginx",
-    "aliases": [],
-    "embeddedLangs": [
-      "lua"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nim",
-    "scopeName": "source.nim",
-    "assetFile": "nim.fkgram",
-    "displayName": "Nim",
-    "aliases": [],
-    "embeddedLangs": [
-      "c",
-      "html",
-      "xml",
-      "javascript",
-      "css",
-      "glsl",
-      "markdown"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "nix",
     "scopeName": "source.nix",
     "assetFile": "nix.fkgram",
     "displayName": "Nix",
-    "aliases": [],
-    "embeddedLangs": [
-      "markdown-nix"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nsis",
-    "scopeName": "source.nsis",
-    "assetFile": "nsis.fkgram",
-    "displayName": "NSIS",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "nushell",
-    "scopeName": "source.nushell",
-    "assetFile": "nushell.fkgram",
-    "displayName": "nushell",
-    "aliases": [
-      "nu"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "objective-c",
-    "scopeName": "source.objc",
-    "assetFile": "objective-c.fkgram",
-    "displayName": "Objective-C",
-    "aliases": [
-      "objc"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "objective-cpp",
-    "scopeName": "source.objcpp",
-    "assetFile": "objective-cpp.fkgram",
-    "displayName": "Objective-C++",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ocaml",
-    "scopeName": "source.ocaml",
-    "assetFile": "ocaml.fkgram",
-    "displayName": "OCaml",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "odin",
-    "scopeName": "source.odin",
-    "assetFile": "odin.fkgram",
-    "displayName": "Odin",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "openscad",
-    "scopeName": "source.scad",
-    "assetFile": "openscad.fkgram",
-    "displayName": "OpenSCAD",
-    "aliases": [
-      "scad"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "org",
-    "scopeName": "source.org",
-    "assetFile": "org.fkgram",
-    "displayName": "Org Markup",
-    "aliases": [],
-    "embeddedLangs": [
-      "javascript",
-      "typescript",
-      "tsx",
-      "java",
-      "python",
-      "regexp",
-      "css",
-      "lua",
-      "ini",
-      "make",
-      "perl",
-      "r",
-      "ruby",
-      "php",
-      "sql",
-      "vb",
-      "clojure",
-      "coffee",
-      "c",
-      "cpp",
-      "objective-c",
-      "diff",
-      "docker",
-      "go",
-      "groovy",
-      "less",
-      "scss",
-      "raku",
-      "rust",
-      "scala",
-      "shellscript",
-      "csharp",
-      "dart",
-      "nim",
-      "elixir",
-      "erlang",
-      "ocaml",
-      "zig",
-      "yaml",
-      "json",
-      "xml",
-      "xsl",
-      "markdown",
-      "html",
-      "git-commit",
-      "git-rebase",
-      "latex"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "pascal",
-    "scopeName": "source.pascal",
-    "assetFile": "pascal.fkgram",
-    "displayName": "Pascal",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -2264,63 +904,10 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "pkl",
-    "scopeName": "source.pkl",
-    "assetFile": "pkl.fkgram",
-    "displayName": "Pkl",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "plsql",
-    "scopeName": "source.plsql.oracle",
-    "assetFile": "plsql.fkgram",
-    "displayName": "PL/SQL",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "po",
-    "scopeName": "source.po",
-    "assetFile": "po.fkgram",
-    "displayName": "Gettext PO",
-    "aliases": [
-      "pot",
-      "potx"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "polar",
-    "scopeName": "source.polar",
-    "assetFile": "polar.fkgram",
-    "displayName": "Polar",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "postcss",
     "scopeName": "source.css.postcss",
     "assetFile": "postcss.fkgram",
     "displayName": "PostCSS",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "powerquery",
-    "scopeName": "source.powerquery",
-    "assetFile": "powerquery.fkgram",
-    "displayName": "PowerQuery",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -2341,38 +928,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "prisma",
-    "scopeName": "source.prisma",
-    "assetFile": "prisma.fkgram",
-    "displayName": "Prisma",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "prolog",
-    "scopeName": "source.prolog",
-    "assetFile": "prolog.fkgram",
-    "displayName": "Prolog",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "proto",
-    "scopeName": "source.proto",
-    "assetFile": "proto.fkgram",
-    "displayName": "Protocol Buffer 3",
-    "aliases": [
-      "protobuf"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "pug",
     "scopeName": "text.pug",
     "assetFile": "pug.fkgram",
@@ -2387,30 +942,8 @@ export const languageCatalog = Object.freeze([
     ],
     "embeddedLangsLazy": [
       "sass",
-      "scss",
-      "stylus",
-      "coffee"
+      "scss"
     ],
-    "injectTo": []
-  },
-  {
-    "id": "puppet",
-    "scopeName": "source.puppet",
-    "assetFile": "puppet.fkgram",
-    "displayName": "Puppet",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "purescript",
-    "scopeName": "source.purescript",
-    "assetFile": "purescript.fkgram",
-    "displayName": "PureScript",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
@@ -2426,99 +959,10 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "qml",
-    "scopeName": "source.qml",
-    "assetFile": "qml.fkgram",
-    "displayName": "QML",
-    "aliases": [],
-    "embeddedLangs": [
-      "javascript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "qmldir",
-    "scopeName": "source.qmldir",
-    "assetFile": "qmldir.fkgram",
-    "displayName": "QML Directory",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "qss",
-    "scopeName": "source.qss",
-    "assetFile": "qss.fkgram",
-    "displayName": "Qt Style Sheets",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "r",
     "scopeName": "source.r",
     "assetFile": "r.fkgram",
     "displayName": "R",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "racket",
-    "scopeName": "source.racket",
-    "assetFile": "racket.fkgram",
-    "displayName": "Racket",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "raku",
-    "scopeName": "source.perl.6",
-    "assetFile": "raku.fkgram",
-    "displayName": "Raku",
-    "aliases": [
-      "perl6"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "razor",
-    "scopeName": "text.aspnetcorerazor",
-    "assetFile": "razor.fkgram",
-    "displayName": "ASP.NET Razor",
-    "aliases": [],
-    "embeddedLangs": [
-      "html",
-      "csharp"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "rbs",
-    "scopeName": "source.rbs",
-    "assetFile": "rbs.fkgram",
-    "displayName": "RBS",
-    "aliases": [
-      "ruby-signature"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "reg",
-    "scopeName": "source.reg",
-    "assetFile": "reg.fkgram",
-    "displayName": "Windows Registry Script",
     "aliases": [],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
@@ -2533,65 +977,6 @@ export const languageCatalog = Object.freeze([
       "regex"
     ],
     "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "rel",
-    "scopeName": "source.rel",
-    "assetFile": "rel.fkgram",
-    "displayName": "Rel",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "riscv",
-    "scopeName": "source.riscv",
-    "assetFile": "riscv.fkgram",
-    "displayName": "RISC-V",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ron",
-    "scopeName": "source.ron",
-    "assetFile": "ron.fkgram",
-    "displayName": "RON",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "rosmsg",
-    "scopeName": "source.rosmsg",
-    "assetFile": "rosmsg.fkgram",
-    "displayName": "ROS Interface",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "rst",
-    "scopeName": "source.rst",
-    "assetFile": "rst.fkgram",
-    "displayName": "reStructuredText",
-    "aliases": [],
-    "embeddedLangs": [
-      "html-derivative",
-      "cpp",
-      "python",
-      "javascript",
-      "shellscript",
-      "yaml",
-      "cmake",
-      "ruby"
-    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2633,24 +1018,28 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "sas",
-    "scopeName": "source.sas",
-    "assetFile": "sas.fkgram",
-    "displayName": "SAS",
-    "aliases": [],
-    "embeddedLangs": [
-      "sql"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "sass",
     "scopeName": "source.sass",
     "assetFile": "sass.fkgram",
     "displayName": "Sass",
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "css",
+      "sassdoc"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "sassdoc",
+    "scopeName": "source.sassdoc",
+    "assetFile": "sassdoc.fkgram",
+    "displayName": null,
+    "aliases": [],
+    "embeddedLangs": [
+      "javascript",
+      "scss"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2665,49 +1054,14 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "scheme",
-    "scopeName": "source.scheme",
-    "assetFile": "scheme.fkgram",
-    "displayName": "Scheme",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "scss",
     "scopeName": "source.css.scss",
     "assetFile": "scss.fkgram",
     "displayName": "SCSS",
     "aliases": [],
     "embeddedLangs": [
-      "css"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "sdbl",
-    "scopeName": "source.sdbl",
-    "assetFile": "sdbl.fkgram",
-    "displayName": "1C (Query)",
-    "aliases": [
-      "1c-query"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "shaderlab",
-    "scopeName": "source.shaderlab",
-    "assetFile": "shaderlab.fkgram",
-    "displayName": "ShaderLab",
-    "aliases": [
-      "shader"
-    ],
-    "embeddedLangs": [
-      "hlsl"
+      "css",
+      "sassdoc"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -2728,142 +1082,12 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "shellsession",
-    "scopeName": "text.shell-session",
-    "assetFile": "shellsession.fkgram",
-    "displayName": "Shell Session",
-    "aliases": [
-      "console"
-    ],
-    "embeddedLangs": [
-      "shellscript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "smalltalk",
-    "scopeName": "source.smalltalk.gnu",
-    "assetFile": "smalltalk.fkgram",
-    "displayName": "GNU Smalltalk",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "smithy",
-    "scopeName": "source.smithy",
-    "assetFile": "smithy.fkgram",
-    "displayName": "Smithy",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "solidity",
-    "scopeName": "source.solidity",
-    "assetFile": "solidity.fkgram",
-    "displayName": "Solidity",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "soy",
-    "scopeName": "text.html.soy",
-    "assetFile": "soy.fkgram",
-    "displayName": "Closure Templates",
-    "aliases": [
-      "closure-templates"
-    ],
-    "embeddedLangs": [
-      "html"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "sparql",
-    "scopeName": "source.sparql",
-    "assetFile": "sparql.fkgram",
-    "displayName": "SPARQL",
-    "aliases": [],
-    "embeddedLangs": [
-      "turtle"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "splunk",
-    "scopeName": "source.splunk_search",
-    "assetFile": "splunk.fkgram",
-    "displayName": "Splunk Query Language",
-    "aliases": [
-      "spl"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "sql",
     "scopeName": "source.sql",
     "assetFile": "sql.fkgram",
     "displayName": "SQL",
     "aliases": [],
     "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "ssh-config",
-    "scopeName": "source.ssh-config",
-    "assetFile": "ssh-config.fkgram",
-    "displayName": "SSH Config",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "stata",
-    "scopeName": "source.stata",
-    "assetFile": "stata.fkgram",
-    "displayName": "Stata",
-    "aliases": [],
-    "embeddedLangs": [
-      "sql"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "stylus",
-    "scopeName": "source.stylus",
-    "assetFile": "stylus.fkgram",
-    "displayName": "Stylus",
-    "aliases": [
-      "styl"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "surrealql",
-    "scopeName": "source.surrealql",
-    "assetFile": "surrealql.fkgram",
-    "displayName": "SurrealQL",
-    "aliases": [
-      "surql"
-    ],
-    "embeddedLangs": [
-      "javascript"
-    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -2880,8 +1104,6 @@ export const languageCatalog = Object.freeze([
       "postcss"
     ],
     "embeddedLangsLazy": [
-      "coffee",
-      "stylus",
       "sass",
       "scss",
       "less",
@@ -2901,72 +1123,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "system-verilog",
-    "scopeName": "source.systemverilog",
-    "assetFile": "system-verilog.fkgram",
-    "displayName": "SystemVerilog",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "systemd",
-    "scopeName": "source.systemd",
-    "assetFile": "systemd.fkgram",
-    "displayName": "Systemd Units",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "talonscript",
-    "scopeName": "source.talon",
-    "assetFile": "talonscript.fkgram",
-    "displayName": "TalonScript",
-    "aliases": [
-      "talon"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "tasl",
-    "scopeName": "source.tasl",
-    "assetFile": "tasl.fkgram",
-    "displayName": "Tasl",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "tcl",
-    "scopeName": "source.tcl",
-    "assetFile": "tcl.fkgram",
-    "displayName": "Tcl",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "templ",
-    "scopeName": "source.templ",
-    "assetFile": "templ.fkgram",
-    "displayName": "Templ",
-    "aliases": [],
-    "embeddedLangs": [
-      "go",
-      "javascript",
-      "css"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "terraform",
     "scopeName": "source.hcl.terraform",
     "assetFile": "terraform.fkgram",
@@ -2976,18 +1132,6 @@ export const languageCatalog = Object.freeze([
       "tfvars"
     ],
     "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "tex",
-    "scopeName": "text.tex",
-    "assetFile": "tex.fkgram",
-    "displayName": "TeX",
-    "aliases": [],
-    "embeddedLangs": [
-      "r"
-    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -3002,67 +1146,14 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "ts-tags",
-    "scopeName": "source.ts.tags",
-    "assetFile": "ts-tags.fkgram",
-    "displayName": "TypeScript with Tags",
-    "aliases": [
-      "lit"
-    ],
-    "embeddedLangs": [
-      "typescript",
-      "es-tag-css",
-      "es-tag-glsl",
-      "es-tag-html",
-      "es-tag-sql",
-      "es-tag-xml"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "tsv",
-    "scopeName": "text.tsv",
-    "assetFile": "tsv.fkgram",
-    "displayName": "TSV",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "tsx",
     "scopeName": "source.tsx",
     "assetFile": "tsx.fkgram",
     "displayName": "TSX",
     "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "turtle",
-    "scopeName": "source.turtle",
-    "assetFile": "turtle.fkgram",
-    "displayName": "Turtle",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "twig",
-    "scopeName": "text.html.twig",
-    "assetFile": "twig.fkgram",
-    "displayName": "Twig",
-    "aliases": [],
     "embeddedLangs": [
-      "css",
-      "javascript",
-      "scss",
-      "php",
-      "python",
-      "ruby"
+      "es-tag-css",
+      "es-tag-html"
     ],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -3077,152 +1168,10 @@ export const languageCatalog = Object.freeze([
       "cts",
       "mts"
     ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "typespec",
-    "scopeName": "source.tsp",
-    "assetFile": "typespec.fkgram",
-    "displayName": "TypeSpec",
-    "aliases": [
-      "tsp"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "typst",
-    "scopeName": "source.typst",
-    "assetFile": "typst.fkgram",
-    "displayName": "Typst",
-    "aliases": [
-      "typ"
-    ],
     "embeddedLangs": [
-      "bat",
-      "bibtex",
-      "c",
-      "clojure",
-      "coffee",
-      "cpp",
-      "css",
-      "csharp",
-      "dart",
-      "diff",
-      "docker",
-      "elixir",
-      "erlang",
-      "fsharp",
-      "git-commit",
-      "git-rebase",
-      "go",
-      "groovy",
-      "handlebars",
-      "html",
-      "ini",
-      "java",
-      "javascript",
-      "jsonc",
-      "json",
-      "julia",
-      "latex",
-      "less",
-      "log",
-      "lua",
-      "make",
-      "markdown",
-      "objective-c",
-      "perl",
-      "raku",
-      "php",
-      "powershell",
-      "pug",
-      "r",
-      "regexp",
-      "ruby",
-      "scss",
-      "sql",
-      "swift",
-      "xml",
-      "xsl",
-      "yaml",
-      "python",
-      "rust",
-      "scala",
-      "shellscript",
-      "typescript",
-      "tsx",
-      "twig",
-      "verilog",
-      "system-verilog",
-      "vb"
+      "es-tag-css",
+      "es-tag-html"
     ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "v",
-    "scopeName": "source.v",
-    "assetFile": "v.fkgram",
-    "displayName": "V",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "vala",
-    "scopeName": "source.vala",
-    "assetFile": "vala.fkgram",
-    "displayName": "Vala",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "vb",
-    "scopeName": "source.asp.vb.net",
-    "assetFile": "vb.fkgram",
-    "displayName": "Visual Basic",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "verilog",
-    "scopeName": "source.verilog",
-    "assetFile": "verilog.fkgram",
-    "displayName": "Verilog",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "vhdl",
-    "scopeName": "source.vhdl",
-    "assetFile": "vhdl.fkgram",
-    "displayName": "VHDL",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "viml",
-    "scopeName": "source.viml",
-    "assetFile": "viml.fkgram",
-    "displayName": "Vim Script",
-    "aliases": [
-      "vim",
-      "vimscript"
-    ],
-    "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
@@ -3247,13 +1196,11 @@ export const languageCatalog = Object.freeze([
     "embeddedLangsLazy": [
       "markdown",
       "pug",
-      "stylus",
       "sass",
       "scss",
       "less",
       "jsx",
       "tsx",
-      "coffee",
       "jsonc",
       "json5",
       "yaml",
@@ -3268,7 +1215,9 @@ export const languageCatalog = Object.freeze([
     "assetFile": "vue-directives.fkgram",
     "displayName": null,
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "vue"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": [
       "source.vue",
@@ -3278,24 +1227,14 @@ export const languageCatalog = Object.freeze([
     ]
   },
   {
-    "id": "vue-html",
-    "scopeName": "text.html.vue-html",
-    "assetFile": "vue-html.fkgram",
-    "displayName": "Vue HTML",
-    "aliases": [],
-    "embeddedLangs": [
-      "javascript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "vue-interpolations",
     "scopeName": "vue.interpolations",
     "assetFile": "vue-interpolations.fkgram",
     "displayName": null,
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "vue"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": [
       "source.vue",
@@ -3319,35 +1258,6 @@ export const languageCatalog = Object.freeze([
     ]
   },
   {
-    "id": "vue-vine",
-    "scopeName": "source.vue-vine",
-    "assetFile": "vue-vine.fkgram",
-    "displayName": "Vue Vine",
-    "aliases": [],
-    "embeddedLangs": [
-      "css",
-      "scss",
-      "less",
-      "stylus",
-      "postcss",
-      "javascript"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "vyper",
-    "scopeName": "source.vyper",
-    "assetFile": "vyper.fkgram",
-    "displayName": "Vyper",
-    "aliases": [
-      "vy"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "wasm",
     "scopeName": "source.wat",
     "assetFile": "wasm.fkgram",
@@ -3358,108 +1268,11 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "wenyan",
-    "scopeName": "source.wenyan",
-    "assetFile": "wenyan.fkgram",
-    "displayName": "Wenyan",
-    "aliases": [
-      "文言"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "wgsl",
     "scopeName": "source.wgsl",
     "assetFile": "wgsl.fkgram",
     "displayName": "WGSL",
     "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "wikitext",
-    "scopeName": "source.wikitext",
-    "assetFile": "wikitext.fkgram",
-    "displayName": "Wikitext",
-    "aliases": [
-      "mediawiki",
-      "wiki"
-    ],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [
-      "html",
-      "css",
-      "ini",
-      "java",
-      "lua",
-      "make",
-      "perl",
-      "r",
-      "ruby",
-      "php",
-      "sql",
-      "vb",
-      "xml",
-      "xsl",
-      "yaml",
-      "bat",
-      "clojure",
-      "coffee",
-      "c",
-      "cpp",
-      "diff",
-      "docker",
-      "go",
-      "groovy",
-      "pug",
-      "javascript",
-      "jsonc",
-      "less",
-      "objective-c",
-      "swift",
-      "scss",
-      "raku",
-      "powershell",
-      "python",
-      "julia",
-      "rust",
-      "scala",
-      "shellscript",
-      "typescript",
-      "csharp",
-      "fsharp",
-      "dart",
-      "handlebars",
-      "markdown",
-      "erlang",
-      "elixir",
-      "latex",
-      "bibtex",
-      "json"
-    ],
-    "injectTo": []
-  },
-  {
-    "id": "wit",
-    "scopeName": "source.wit",
-    "assetFile": "wit.fkgram",
-    "displayName": "WebAssembly Interface Types",
-    "aliases": [],
-    "embeddedLangs": [],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
-    "id": "wolfram",
-    "scopeName": "source.wolfram",
-    "assetFile": "wolfram.fkgram",
-    "displayName": "Wolfram",
-    "aliases": [
-      "wl"
-    ],
     "embeddedLangs": [],
     "embeddedLangsLazy": [],
     "injectTo": []
@@ -3477,18 +1290,6 @@ export const languageCatalog = Object.freeze([
     "injectTo": []
   },
   {
-    "id": "xsl",
-    "scopeName": "text.xml.xsl",
-    "assetFile": "xsl.fkgram",
-    "displayName": "XSL",
-    "aliases": [],
-    "embeddedLangs": [
-      "xml"
-    ],
-    "embeddedLangsLazy": [],
-    "injectTo": []
-  },
-  {
     "id": "yaml",
     "scopeName": "source.yaml",
     "assetFile": "yaml.fkgram",
@@ -3496,17 +1297,81 @@ export const languageCatalog = Object.freeze([
     "aliases": [
       "yml"
     ],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "yaml-1-2",
+      "yaml-embedded"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },
   {
-    "id": "zenscript",
-    "scopeName": "source.zenscript",
-    "assetFile": "zenscript.fkgram",
-    "displayName": "ZenScript",
+    "id": "yaml-1-0",
+    "scopeName": "source.yaml.1.0",
+    "assetFile": "yaml-1-0.fkgram",
+    "displayName": null,
     "aliases": [],
-    "embeddedLangs": [],
+    "embeddedLangs": [
+      "yaml",
+      "yaml-1-1",
+      "yaml-1-2",
+      "yaml-1-3"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "yaml-1-1",
+    "scopeName": "source.yaml.1.1",
+    "assetFile": "yaml-1-1.fkgram",
+    "displayName": null,
+    "aliases": [],
+    "embeddedLangs": [
+      "yaml",
+      "yaml-1-0",
+      "yaml-1-2",
+      "yaml-1-3"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "yaml-1-2",
+    "scopeName": "source.yaml.1.2",
+    "assetFile": "yaml-1-2.fkgram",
+    "displayName": null,
+    "aliases": [],
+    "embeddedLangs": [
+      "yaml",
+      "yaml-1-0",
+      "yaml-1-1",
+      "yaml-1-3"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "yaml-1-3",
+    "scopeName": "source.yaml.1.3",
+    "assetFile": "yaml-1-3.fkgram",
+    "displayName": null,
+    "aliases": [],
+    "embeddedLangs": [
+      "yaml",
+      "yaml-1-2"
+    ],
+    "embeddedLangsLazy": [],
+    "injectTo": []
+  },
+  {
+    "id": "yaml-embedded",
+    "scopeName": "source.yaml.embedded",
+    "assetFile": "yaml-embedded.fkgram",
+    "displayName": null,
+    "aliases": [],
+    "embeddedLangs": [
+      "yaml",
+      "yaml-1-2"
+    ],
     "embeddedLangsLazy": [],
     "injectTo": []
   },

@@ -11,9 +11,10 @@
 <!-- mdtheme:badges:end -->
 
 Ferriki is a native syntax highlighter for Node.js and Rust. Shiki brought
-editor-grade highlighting to the web; Ferriki keeps its HTML API, grammars and
-themes and runs them on a Rust port of VS Code's TextMate tokenizer, so Rust
-programs, Node.js and Vite builds share one engine. Ferriki is in beta: until
+editor-grade highlighting to the web; Ferriki keeps its HTML API shape, owns a
+curated grammar catalog, and runs TextMate grammars and themes on a Rust port
+of VS Code's TextMate tokenizer, so Rust programs, Node.js and Vite builds
+share one engine. Ferriki is in beta: until
 1.0, a minor release can change the API, and the
 [changelog](node/ferriki/CHANGELOG.md) lists each change.
 
@@ -112,8 +113,8 @@ The first use of a language or theme downloads it, verifies it and caches it;
 | Class-based CSS output | `styleMode: "classes"`, or `codeToHtmlWithCss` for `{ html, css }` |
 | Single and multi-theme | `theme`, or a `themes` map switched by CSS variables or `data-ferriki-theme` |
 | Transformers | Shiki's hooks and decorations, including the `@shikijs/transformers` notation |
-| 260 grammars, 65 themes | Loaded on demand and cached; a mirror or warm cache serves offline builds |
-| Custom grammars and themes | TextMate JSON with aliases and injections, validated before use |
+| Curated grammars, 65 themes | Commit-pinned sources; loaded on demand and cached; a mirror or warm cache serves offline builds |
+| Custom grammars and themes | TextMate JSON with aliases and injections; import external sources with `ferriki grammar fetch` ([guide](docs/grammars.md)) |
 | Rust crate and Ferromark | [`ferriki`](https://docs.rs/ferriki): tokens, line HTML, class HTML; Ferromark's `ferriki` feature |
 | Vite build-time macros | [`@ferriki/vite`](node/vite/README.md): `code()` and `<Code />` on Vite 8 |
 | Platforms | Node.js 22.13.0 or newer, ESM-only; Linux x64/arm64 (glibc, musl), macOS arm64, Windows x64/arm64 |

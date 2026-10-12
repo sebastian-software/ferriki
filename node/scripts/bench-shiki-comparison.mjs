@@ -13,9 +13,13 @@ import {
 } from "./phiki-benchmark.mjs";
 import { compareHighlightedHtml, phikiStyleCriteria } from "./phiki-html-agreement.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
+import { standardGrammarRegistrations } from "./standard-grammar-reference.mjs";
+import { engineUnsupportedReason } from "./tiobe-benchmark.mjs";
 // Measures Ferriki, Shiki with two regex engines, and optional Phiki on the
 // same repository corpus. Ferriki and both Shiki engines must produce the
-// same serialized HTML. Phiki is compared by visible source text and
+// same serialized HTML for supported grammars. A known JavaScript converter
+// limitation is explicit and excludes that engine's full-corpus totals.
+// Phiki is compared by visible source text and
 // per-character styles because it produces HTML with different wrappers.
 //
 // Warm Phiki timing forces PendingHtmlOutput::toString() and uses one
@@ -48,17 +52,21 @@ if (!["on", "off"].includes(prefilter)) throw new Error("--regex-prefilter must 
 const regexPrefilter = prefilter === "on";
 const keepSamples = process.argv.includes("--raw-samples");
 
-async function createEngine(id) {
+async function createEngine(id, selectedLangs = langs) {
   if (id === "ferriki") {
     const ferriki = await import("../ferriki/index.mjs");
-    return ferriki.createHighlighter({ langs, themes: [theme], regexPrefilter });
+    return ferriki.createHighlighter({ langs: selectedLangs, themes: [theme], regexPrefilter });
   }
   const shiki = await import("shiki");
   const engine =
     id === "shiki-wasm"
       ? shiki.createOnigurumaEngine(import("shiki/wasm"))
       : shiki.createJavaScriptRegexEngine();
-  return shiki.createHighlighter({ langs, themes: [theme], engine });
+  return shiki.createHighlighter({
+    langs: standardGrammarRegistrations(selectedLangs),
+    themes: [theme],
+    engine,
+  });
 }
 
 function loadCorpus(selectedPaths) {
@@ -82,9 +90,12 @@ function loadCorpus(selectedPaths) {
 // the clock, and the timer starts before its engine-specific imports/autoload.
 if (process.argv[2] === "--cold") {
   const started = performance.now();
-  const highlighter = await createEngine(process.argv[3]);
   const selectedPaths = process.argv[4] ? JSON.parse(process.argv[4]) : undefined;
-  for (const doc of loadCorpus(selectedPaths)) {
+  const selectedDocs = loadCorpus(selectedPaths);
+  const highlighter = await createEngine(process.argv[3], [
+    ...new Set(selectedDocs.map((doc) => doc.lang)),
+  ]);
+  for (const doc of selectedDocs) {
     highlighter.codeToHtml(doc.code, { lang: doc.lang, theme });
   }
   process.stdout.write(String(performance.now() - started));
@@ -105,9 +116,23 @@ const packageVersion = (path) =>
   JSON.parse(readFileSync(join(nodeRoot, path, "package.json"), "utf8")).version;
 
 const docs = loadCorpus();
-const highlighters = Object.fromEntries(
-  await Promise.all(nodeEngines.map(async (id) => [id, await createEngine(id)])),
-);
+const unsupported = new Map(docs.map((doc) => [doc.path, {}]));
+const highlighters = {};
+for (const id of nodeEngines) {
+  try {
+    highlighters[id] = await createEngine(id);
+  } catch (error) {
+    const reason =
+      langs.includes("yaml") && engineUnsupportedReason(id, { textmate: "yaml" }, error);
+    if (!reason) throw error;
+    for (const doc of docs.filter((doc) => doc.lang === "yaml"))
+      unsupported.get(doc.path)[id] = reason;
+    highlighters[id] = await createEngine(
+      id,
+      langs.filter((lang) => lang !== "yaml"),
+    );
+  }
+}
 
 // Keep the strict output gate across all three Node engines: serialized HTML
 // must match Shiki + Oniguruma for every document before its timing is counted.
@@ -118,8 +143,21 @@ for (const doc of docs) {
   const reference = highlighters["shiki-wasm"][htmlApi](doc.code, options);
   wasmHtml.set(doc.path, reference);
   for (const id of nodeEngines) {
-    const same = highlighters[id][htmlApi](doc.code, options) === reference;
-    if (same) nodeAgreement[id].push(doc.path);
+    if (unsupported.get(doc.path)[id]) continue;
+    try {
+      const same = highlighters[id][htmlApi](doc.code, options) === reference;
+      if (same) nodeAgreement[id].push(doc.path);
+    } catch (error) {
+      const reason = engineUnsupportedReason(id, { textmate: doc.lang }, error);
+      if (!reason) throw error;
+      unsupported.get(doc.path)[id] = reason;
+      // Restart after a failed conversion so later comparisons use a clean engine.
+      highlighters[id].dispose();
+      highlighters[id] = await createEngine(
+        id,
+        langs.filter((lang) => lang !== doc.lang),
+      );
+    }
   }
 }
 
@@ -257,6 +295,9 @@ async function measure(doc, documentIndex) {
     samples: samples[timed[0]].length,
     sha256: doc.sha256,
     ...(keepSamples ? { samplesMs: samples } : {}),
+    ...(Object.keys(unsupported.get(doc.path)).length
+      ? { unsupported: unsupported.get(doc.path) }
+      : {}),
     ...(phikiWorker ? { phikiAgreement: phikiAgreement.get(doc.path)?.status ?? "error" } : {}),
   };
 }
@@ -309,6 +350,15 @@ function runNodeCold(id, selectedPaths) {
 
 const cold = Object.fromEntries(
   nodeEngines.map((id) => {
+    if (docs.some((doc) => unsupported.get(doc.path)[id]))
+      return [
+        id,
+        {
+          status: "unsupported",
+          reason: "Full-corpus cold timing requires every grammar to be supported",
+          paths: docs.filter((doc) => unsupported.get(doc.path)[id]).map((doc) => doc.path),
+        },
+      ];
     const runs = [];
     for (let run = 0; run < coldRuns; run++) runs.push(runNodeCold(id));
     return [

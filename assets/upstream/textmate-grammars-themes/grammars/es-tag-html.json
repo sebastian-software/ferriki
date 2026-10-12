@@ -10,11 +10,7 @@
     "php",
     "res"
   ],
-  "injectTo": [
-    "source.ts",
-    "source.js"
-  ],
-  "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string",
+  "injectionSelector": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string, L:source string.quoted.double.html, L:source string.quoted.single.html",
   "injections": {
     "L:source": {
       "patterns": [
@@ -25,10 +21,9 @@
       ]
     }
   },
-  "name": "es-tag-html",
   "patterns": [
     {
-      "begin": "(?i)(\\s?/\\*\\s?(html|template|inline-html|inline-template)\\s?\\*/\\s?)(`)",
+      "begin": "(?i)(\\s?\\/\\*\\s?(html|svg|template|inline-html|inline-template)\\s?\\*\\/\\s?)(`)",
       "beginCaptures": {
         "1": {
           "name": "comment.block"
@@ -48,7 +43,7 @@
       ]
     },
     {
-      "begin": "(?i)(\\s*(html|template|inline-html|inline-template))(`)",
+      "begin": "(?i)(\\s*(html|svg|template|inline-html|inline-template))(`)",
       "beginCaptures": {
         "1": {
           "name": "comment.block"
@@ -71,7 +66,7 @@
       ]
     },
     {
-      "begin": "(?i)(?<=[(,:=\\s]|\\$\\()\\s*(((/\\*)|(//))\\s?(html|template|inline-html|inline-template) {0,1000}\\*?/?) {0,1000}$",
+      "begin": "(?i)(?<=\\s|\\,|\\=|\\:|\\(|\\$\\()\\s{0,}(((\\/\\*)|(\\/\\/))\\s?(html|svg|template|inline-html|inline-template)[ ]{0,1000}\\*?\\/?)[ ]{0,1000}$",
       "beginCaptures": {
         "1": {
           "name": "comment.line"
@@ -80,7 +75,7 @@
       "end": "(`).*",
       "patterns": [
         {
-          "begin": "\\G()",
+          "begin": "(\\G)",
           "end": "(`)"
         },
         {
@@ -92,13 +87,13 @@
       ]
     },
     {
-      "begin": "(\\$\\{)",
+      "begin": "(\\${)",
+      "end": "(})",
       "beginCaptures": {
         "1": {
           "name": "entity.name.tag"
         }
       },
-      "end": "(})",
       "endCaptures": {
         "1": {
           "name": "entity.name.tag"
@@ -115,12 +110,12 @@
     },
     {
       "begin": "(\\$\\(`)",
+      "end": "(`\\))",
       "beginCaptures": {
         "1": {
           "name": "entity.name.tag"
         }
       },
-      "end": "(`\\))",
       "endCaptures": {
         "1": {
           "name": "entity.name.tag"
@@ -137,9 +132,27 @@
     }
   ],
   "scopeName": "inline.es6-html",
+  "name": "es-tag-html",
+  "displayName": "HTML and SVG tagged templates",
+  "aliases": [],
   "embeddedLangs": [
     "typescript",
-    "html",
-    "javascript"
+    "html"
+  ],
+  "embeddedLangsLazy": [],
+  "injectTo": [
+    "source.js",
+    "source.js.jsx",
+    "source.ts",
+    "source.tsx",
+    "source.ts.ng",
+    "source.gjs",
+    "source.gts",
+    "text.html.vue",
+    "source.svelte",
+    "source.astro",
+    "text.html.basic",
+    "text.html.handlebars",
+    "text.html.liquid"
   ]
 }

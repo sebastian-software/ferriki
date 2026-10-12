@@ -1,19 +1,18 @@
 {
-  "injectTo": [
-    "text.html.derivative",
-    "text.html.derivative.ng",
-    "source.ts.ng"
-  ],
+  "scopeName": "template.blocks.ng",
   "injectionSelector": "L:text.html -comment -expression.ng -meta.tag -source.css -source.js",
-  "name": "angular-template-blocks",
   "patterns": [
     {
       "include": "#block"
     }
   ],
   "repository": {
+    "transition": {
+      "match": "@",
+      "name": "keyword.control.block.transition.ng"
+    },
     "block": {
-      "begin": "(@)(if|else if|else|defer|placeholder|loading|error|switch|case|default|for|empty)\\s*",
+      "begin": "(@)(if|else if|else|defer|placeholder|loading|error|switch|case|default|for|empty)(?:\\s*)",
       "beginCaptures": {
         "1": {
           "patterns": [
@@ -26,8 +25,6 @@
           "name": "keyword.control.block.kind.ng"
         }
       },
-      "end": "(?<=})",
-      "name": "control.block.ng",
       "patterns": [
         {
           "include": "#blockExpression"
@@ -35,30 +32,9 @@
         {
           "include": "#blockBody"
         }
-      ]
-    },
-    "blockBody": {
-      "begin": "\\{",
-      "beginCaptures": {
-        "0": {
-          "name": "punctuation.definition.block.ts"
-        }
-      },
-      "contentName": "control.block.body.ng",
-      "end": "}",
-      "endCaptures": {
-        "0": {
-          "name": "punctuation.definition.block.ts"
-        }
-      },
-      "patterns": [
-        {
-          "include": "text.html.derivative.ng"
-        },
-        {
-          "include": "template.ng"
-        }
-      ]
+      ],
+      "name": "control.block.ng",
+      "end": "(?<=\\})"
     },
     "blockExpression": {
       "begin": "\\(",
@@ -68,12 +44,6 @@
         }
       },
       "contentName": "control.block.expression.ng",
-      "end": "\\)",
-      "endCaptures": {
-        "0": {
-          "name": "meta.brace.round.ts"
-        }
-      },
       "patterns": [
         {
           "include": "#blockExpressionOfClause"
@@ -87,13 +57,22 @@
         {
           "include": "expression.ng"
         }
-      ]
-    },
-    "blockExpressionLetBinding": {
-      "begin": "\\blet\\b",
-      "beginCaptures": {
+      ],
+      "end": "\\)",
+      "endCaptures": {
         "0": {
-          "name": "storage.type.ng"
+          "name": "meta.brace.round.ts"
+        }
+      }
+    },
+    "blockExpressionOfClause": {
+      "begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s+(of)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "variable.other.constant.ng"
+        },
+        "2": {
+          "name": "keyword.operator.expression.of.ng"
         }
       },
       "end": "(?=[$)])|(?<=;)",
@@ -103,14 +82,11 @@
         }
       ]
     },
-    "blockExpressionOfClause": {
-      "begin": "([$_[:alpha:]][$_[:alnum:]]*)\\s+(of)\\b",
+    "blockExpressionLetBinding": {
+      "begin": "\\blet\\b",
       "beginCaptures": {
-        "1": {
-          "name": "variable.other.constant.ng"
-        },
-        "2": {
-          "name": "keyword.operator.expression.of.ng"
+        "0": {
+          "name": "storage.type.ng"
         }
       },
       "end": "(?=[$)])|(?<=;)",
@@ -134,14 +110,41 @@
         }
       ]
     },
-    "transition": {
-      "match": "@",
-      "name": "keyword.control.block.transition.ng"
+    "blockBody": {
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.block.ts"
+        }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.block.ts"
+        }
+      },
+      "contentName": "control.block.body.ng",
+      "patterns": [
+        {
+          "include": "text.html.derivative.ng"
+        },
+        {
+          "include": "template.ng"
+        }
+      ]
     }
   },
-  "scopeName": "template.blocks.ng",
+  "name": "angular-template-blocks",
+  "displayName": null,
+  "aliases": [],
   "embeddedLangs": [
     "angular-expression",
     "angular-template"
+  ],
+  "embeddedLangsLazy": [],
+  "injectTo": [
+    "text.html.derivative",
+    "text.html.derivative.ng",
+    "source.ts.ng"
   ]
 }

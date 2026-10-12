@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 // workflow stamps the release commit into the packaged release manifest.
 const PACKAGED_FILES = [
   "catalog.mjs",
+  "GRAMMAR-NOTICES.md",
   "release-manifest.json",
   "languages/manifest.fkindex",
   "themes/manifest.fkindex",

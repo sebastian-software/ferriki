@@ -5,8 +5,8 @@
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
 Ferriki is native syntax highlighting with HTML and CSS-class output for
-Node.js: Shiki's HTML API, grammars and themes on a Rust engine. Shiki brought
-editor-grade highlighting to the web; Ferriki runs the same TextMate grammars
+Node.js: Shiki-shaped HTML APIs and an owned grammar catalog on a Rust engine. Shiki brought
+editor-grade highlighting to the web; Ferriki runs TextMate grammars
 on a Rust port of VS Code's tokenizer and [Ferroni](https://ferroni.dev),
 Oniguruma in Rust, without WebAssembly or regex translation. Ferriki is in
 beta: until 1.0, a minor release can change the API.
@@ -79,6 +79,13 @@ registration shapes in `langs` and `themes` and are validated before they reach
 the native engine. Languages embedded by a grammar load with it; lazy
 embeddings load after an explicit `loadLanguage`. The synchronous factories
 accept already-resolved names and registrations only.
+
+Ferriki maintains a curated set of standard grammars, including embedded dependencies, and
+65 themes. Use `bundledLanguages` to discover the available IDs and aliases.
+Import other JSON TextMate grammars with `pnpm exec ferriki grammar fetch
+./grammar.tmLanguage.json --name example --output ./example.ferriki.json`, then
+pass the resulting JSON to `langs` or `loadLanguage`. URLs and commit-pinned
+GitHub sources are supported too; see the [grammar guide](https://github.com/sebastian-software/ferriki/blob/main/docs/grammars.md).
 
 Keep the default regex prefilter for repeated work. For a short-lived
 highlighter, pass `regexPrefilter: false` to `createHighlighter()` to skip

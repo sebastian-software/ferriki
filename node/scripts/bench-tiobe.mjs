@@ -11,6 +11,7 @@ import { resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
 import {
   createEngine,
   engines,
+  engineUnsupportedReason,
   loadCases,
   loadCorpus,
   plain,
@@ -89,7 +90,10 @@ async function worker(language) {
       highlighters[id] = await createEngine(id, language, method);
       setup[id] = { status: "ok", importAndSetupMs: performance.now() - start };
     } catch (error) {
-      setup[id] = { status: "error", error: String(error) };
+      const unsupported = engineUnsupportedReason(id, language, error);
+      setup[id] = unsupported
+        ? { status: "unsupported", reason: unsupported }
+        : { status: "error", error: String(error) };
     }
   }
   const cases = [];
@@ -110,7 +114,15 @@ async function worker(language) {
           const html = highlighters[id].html(code);
           results[id].validation = validateOutput(id, code, html, reference);
         } catch (error) {
-          results[id] = { status: "error", error: String(error) };
+          const unsupported = engineUnsupportedReason(id, language, error);
+          results[id] = unsupported
+            ? { status: "unsupported", reason: unsupported }
+            : { status: "error", error: String(error) };
+          if (unsupported) {
+            setup[id] = results[id];
+            highlighters[id].dispose();
+            delete highlighters[id];
+          }
         }
       }
       const timed = engines.filter((id) => results[id].status === "ok");

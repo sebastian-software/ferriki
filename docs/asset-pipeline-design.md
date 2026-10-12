@@ -1,148 +1,75 @@
 # Ferriki Asset Pipeline Design
 
-Date: 2026-03-09
-Status: implemented as of 2026-09-05 (see [`plans/ferriki-asset-pipeline-implementation-plan.md`](../plans/ferriki-asset-pipeline-implementation-plan.md)); packed-artifact follow-up work is tracked in #53.
+Last updated: 2026-10-12
 
-## Goal
+Ferriki owns its standard grammar selection, metadata, pinned original sources,
+and generated binary catalogs. The native TextMate tokenizer and asset loaders
+serve both standard and user-provided grammars. Shiki remains a compatibility
+test reference; grammar sync does not read its generated modules.
 
-Replace the transitional Shiki-JS bundle assets under
-[`node/ferriki/dist`](../../node/ferriki/dist)
-with a Ferriki-owned asset pipeline that is:
+The durable decisions are [ADR 0006](../adr/0006-lazy-shiki-asset-loading.md),
+[ADR 0013](../adr/0013-cdn-loaded-standard-assets.md),
+[ADR 0015](../adr/0015-postcard-asset-codec.md), and
+[ADR 0020](../adr/0020-curated-grammar-sources.md).
 
-- Rust-first
-- lazy-loading
-- compatible with Shiki-derived standard data
-- equally capable of handling shipped assets and user-registered assets
+## Sources and generation
 
-## Decision Summary
+1. `assets/grammars/repositories.json` configures two maintained collections
+   and five justified exceptions. `catalog.json` owns language selectors, stable
+   IDs and aliases, scope variants, embedding policy, and scope patches.
+2. `prepare-grammar-update.mjs` resolves each repository ref once, discovers
+   TextMate grammars through editor manifests or Linguist's pinned modules,
+   converts JSON/YAML/XML PLIST/data-only CSON, and writes a separate candidate
+   plus report. `sources.json` is the generated repository/file lock. Regex
+   expressions remain as authored. Required supported dependencies are included
+   transitively; newly discovered primary languages are reported for selection.
+3. The normalized JSON lives under
+   `assets/upstream/textmate-grammars-themes/`. This historical directory also
+   retains the existing theme snapshots. Neither is JavaScript runtime code.
+4. `ferriki-asset-gen` writes the two versioned binary catalogs and the release
+   manifest under `assets/shiki/`. That historical path remains stable for
+   released CDN URLs. `scripts/generate-ferriki-catalog.mjs` derives enumerable
+   Node metadata from the binary manifests without including payloads.
+5. `scripts/sync-grammars.mjs --check` verifies committed sources, dependency
+   metadata, and grammar notices without network access. The compatibility
+   gate exercises all standard grammars through native compilation and checks
+   external imports.
 
-Ferriki will not use mirrored Shiki JavaScript chunks as its product runtime
-truth.
+Native candidate validation precedes `apply-grammar-update.mjs`. Preparation
+with `--locked` reproduces accepted repository snapshots. The weekly/manual
+Grammar updates workflow validates the candidate and compatibility gate before
+opening a draft PR; failures retain the candidate and diagnostic artifacts.
 
-Instead:
+The old Shiki bootstrap and `textmate-grammars-themes` sync scripts target
+`assets/compat/` by default and are compatibility-reference tools.
 
-- `textmate-grammars-themes` becomes the primary upstream source for raw
-  grammar and theme data.
-- Shiki remains the upstream source for compatibility tests and curated
-  metadata such as aliases, embedded-language metadata, and the supported
-  standard catalog shape.
-- Ferriki converts those upstream inputs into its own asset format.
-- The converted assets live under
-  [`assets/shiki/`](../../assets/shiki).
-- The Rust core loads those assets lazily and caches compiled results.
-- External themes and grammars remain first-class via `registerTheme(...)` and
-  `registerGrammar(...)`, including through the Node binding.
+## Runtime and distribution
 
-## Asset Model
+The catalogs contain one `.fkgram` or `.fktheme` per item, one `.fkindex` manifest
+per kind, a metadata-only `catalog.mjs`, and a `release-manifest.json` pinning
+payload digest, size, and format version. `GRAMMAR-NOTICES.md` contains the
+original source links and archived grammar license notices.
 
-Ferriki uses one shared asset infrastructure with two separate catalogs:
+Published packages contain catalog metadata and notices. Payloads are fetched
+asynchronously from the release-pinned CDN, verified by digest, and cached.
+Rust can also use directory or embedded sources and has an optional `remote`
+feature. Asset decoding and native compilation happen only when needed.
 
-- `assets/shiki/languages/`
-- `assets/shiki/themes/`
+Required embedded languages load with their host. Lazy embeddings use languages
+that the application loads explicitly. The standard catalog has a deliberate
+scope; unsupported external scopes do not trigger arbitrary downloads.
 
-Each catalog contains:
+## External grammars
 
-- many small per-item binary files
-- a small manifest describing the available items
+The npm package's `ferriki grammar fetch` command accepts JSON TextMate data
+from a file, URL, or commit-pinned GitHub file. It produces a native-validated
+registration plus a source lock. Existing `langs` and `loadLanguage` APIs
+consume the registration. Rust callers can use `register_language_json` or a
+typed `LanguageRegistration`. Themes use the existing registration APIs.
 
-This avoids eager loading of a large standard catalog while keeping the shipped
-data self-contained and platform-robust.
+The importer executes no downloaded extension code. Users register external
+embedded languages and injections explicitly. It does not discover VS Code
+extensions, convert CSON, or promise exhaustive static backtracking analysis.
 
-The standard use case is expected to touch only a few languages and themes in a
-given process. The asset model therefore optimizes for:
-
-- small baseline memory usage
-- fast lookup by id/alias
-- lazy decode and compile
-- stable caching after first load
-
-## Data Flow
-
-1. `textmate-grammars-themes` is mirrored into
-   [`assets/upstream/`](../../assets/upstream)
-   as Ferriki's raw asset source.
-2. Shiki is mirrored into
-   [`node/compat/upstream/shiki`](../../node/compat/upstream/shiki)
-   as the compatibility and metadata reference.
-3. A Rust generator crate reads the mirrored grammar/theme data plus the
-   curated metadata it needs.
-4. The generator emits Ferriki-owned assets under
-   [`assets/shiki/`](../../assets/shiki).
-5. The Node catalog generator derives `assets/shiki/catalog.mjs` from those
-   manifests. It contains only enumerable IDs and loader metadata, never the
-   grammar or theme payloads.
-6. [`crates/ferriki-core`](../../crates/ferriki-core)
-   uses manifests plus embedded bytes to lazy-load and compile requested
-   grammars and themes.
-7. The Node package exposes Ferriki's supported Shiki-shaped HTML API and
-   enumerable catalogs, but no longer depends on Shiki chunk files as the
-   catalog source of truth. Its public contract intentionally omits standalone
-   Node HAST and token output methods (ADR 0017).
-
-## Runtime Behavior
-
-### Standard assets
-
-Standard assets are shipped with Ferriki but are not eagerly activated.
-
-- Manifests and asset bytes belong to the product.
-- Decoding happens only when a language or theme is requested.
-- Compiled runtime structures stay in Rust caches after first use.
-- `bundledLanguages` and `bundledThemes` enumerate the generated catalog
-  without decoding any payload. Language aliases are enumerable loader keys;
-  `bundledLanguagesAlias` maps each alias to its canonical ID.
-
-### External assets
-
-External assets are not second-class.
-
-- User themes are supported through the same conceptual path as shipped themes.
-- User grammars are supported through the same conceptual path as shipped
-  grammars.
-- The public extension points remain `registerTheme(...)` and
-  `registerGrammar(...)`.
-
-## Packaging Direction
-
-Ferriki should prefer Rust-native packaging over filesystem-dependent runtime
-lookups.
-
-That means:
-
-- shipped manifests and per-item asset bytes are part of the Rust-side product
-- assets are decoded lazily, not eagerly loaded into runtime structures
-- cross-platform behavior does not depend on fragile install-time file layout
-
-## Non-Goals
-
-This design does not require:
-
-- embedding every standard grammar/theme into eager runtime state
-- keeping the old `dist/chunks/*.mjs` layout alive as a long-term catalog
-- treating built-in themes as conceptually different from user themes
-- keeping JS regex, WASM, or bundle-era runtime paths for product behavior
-
-## Testing Requirements
-
-The asset pipeline must be covered by dedicated tests:
-
-- generator determinism tests
-- Node catalog/asset parity checks
-- binary roundtrip tests
-- decode stability tests
-- semantic parity tests ensuring the same asset yields the same usable runtime
-  data after repeated read/decode cycles
-- existing core compatibility tests
-
-## Migration Shape
-
-1. Introduce a Rust asset generator crate.
-2. Mirror raw grammar and theme data from `textmate-grammars-themes` under
-   `assets/upstream/`.
-3. Generate Ferriki-owned theme and language assets from that upstream plus
-   selected Shiki metadata.
-4. Add lazy Rust loaders and caches for both catalogs.
-5. Pointed the Node-facing standard catalog at Ferriki assets; no
-   `node/ferriki/dist/chunks` path is shipped or loaded.
-6. Removed transitional JS bundle assets; packed-artifact verification remains
-   tracked by #53.
+See [the grammar guide](grammars.md) for the standard coverage, source
+maintenance commands, importer options, and migration from the former catalog.

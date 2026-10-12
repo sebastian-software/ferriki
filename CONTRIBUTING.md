@@ -54,14 +54,14 @@ upstream compatibility machinery lives under `node/`.
 
 ## Test lanes
 
-| Lane | Command | Purpose |
-| --- | --- | --- |
-| TextMate inner oracle | `cargo test -p ferriki-textmate` (repository root) | Exact vscode-textmate v9.3.2 grammar semantics |
-| Native structural compat | `pnpm run test:ferriki-compat:textmate` (from `node/`) | Issue #30 gate against unchanged Shiki v4.4.3 tests (baseline pinned in `node/compat/upstream/shiki/.source.json`) |
-| Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`) | Honest mandatory lane; resolver sentinel plus supported contracts |
-| Full core audit | `pnpm run test:ferriki-compat:core:full` (from `node/`) | Diagnostic issue #31 parity run; deferred failures are expected and classified |
-| Adapter compat | `pnpm run test:ferriki-compat:adapters` (from `node/`) | Optional adapter behavior outside the core product boundary |
-| Colorized brackets | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check |
+| Lane                       | Command                                                          | Purpose                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| TextMate inner oracle      | `cargo test -p ferriki-textmate` (repository root)               | Exact vscode-textmate v9.3.2 grammar semantics                                                                     |
+| Native structural compat   | `pnpm run test:ferriki-compat:textmate` (from `node/`)           | Issue #30 gate against unchanged Shiki v4.4.3 tests (baseline pinned in `node/compat/upstream/shiki/.source.json`) |
+| Full supported core facade | `pnpm run test:ferriki-compat:core` (from `node/`)               | Honest mandatory lane; resolver sentinel plus supported contracts                                                  |
+| Full core audit            | `pnpm run test:ferriki-compat:core:full` (from `node/`)          | Diagnostic issue #31 parity run; deferred failures are expected and classified                                     |
+| Adapter compat             | `pnpm run test:ferriki-compat:adapters` (from `node/`)           | Optional adapter behavior outside the core product boundary                                                        |
+| Colorized brackets         | `pnpm run test:ferriki-compat:colorized-brackets` (from `node/`) | Manual optional-package check                                                                                      |
 
 The TextMate structural lane sets `FERRIKI_HONEST_ALIAS=1`, which routes the
 mirrored tests' remaining upstream imports through Ferriki as well. Its
@@ -98,6 +98,25 @@ come from the [checksummed measurement archive](docs/benchmarks/blacksmith/2026-
 Run `node scripts/publish-blacksmith-evidence.mjs --check` before publishing
 benchmark changes; the homepage build also runs this check. It validates all
 twelve reports and the compact website data against the preserved originals.
+
+## Update the standard grammars
+
+The [grammar maintenance guide](docs/grammars.md#maintain-the-standard-catalog)
+documents the source configuration, local update commands, locked replay,
+and how to review a candidate. Edit source selectors and reviewed patches;
+the sync pipeline generates repository pins, file hashes, notices, and assets.
+
+The [Grammar updates workflow](.github/workflows/grammar-updates.yml) runs every
+Monday at 06:00 UTC and supports a manual run from GitHub Actions. It validates
+the candidate with the native engine, mandatory core compatibility gate, and
+both correctness corpora, then creates or updates one draft PR on
+`codex/grammar-updates`. Merge it after review to include the assets in the next
+regular release. The workflow becomes available after it reaches the default
+branch; unchanged snapshots create no PR.
+
+Keep the bot branch for generated updates. Make selection or patch changes in
+a separate PR against the default branch. A manual commit on the bot branch
+stops automatic replacement so the workflow does not discard that work.
 
 ## Coverage
 

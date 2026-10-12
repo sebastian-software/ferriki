@@ -1,4 +1,8 @@
-* text=auto eol=lf
-docs/* linguist-documentation
-**/test/out/** linguist-generated
-**/test/fixtures/** linguist-generated
+# Preserve the bytes covered by grammar and license hashes on every platform.
+assets/grammars/*.json text eol=lf
+assets/grammars/patches/*.json text eol=lf
+assets/upstream/textmate-grammars-themes/grammars/*.json text eol=lf
+
+# Upstream license text is archived and aggregated verbatim.
+assets/grammars/licenses/*.txt -text -whitespace
+assets/shiki/GRAMMAR-NOTICES.md -text -whitespace

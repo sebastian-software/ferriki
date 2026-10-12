@@ -1,10 +1,7 @@
 {
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "fileTypes": [],
-  "injectTo": [
-    "source.vue"
-  ],
   "injectionSelector": "L:source.css -comment, L:source.postcss -comment, L:source.sass -comment, L:source.stylus -comment",
-  "name": "vue-sfc-style-variable-injection",
   "patterns": [
     {
       "include": "#vue-sfc-style-variable-injection"
@@ -13,16 +10,16 @@
   "repository": {
     "vue-sfc-style-variable-injection": {
       "begin": "\\b(v-bind)\\s*\\(",
+      "name": "vue.sfc.style.variable.injection.v-bind",
+      "end": "\\)",
       "beginCaptures": {
         "1": {
           "name": "entity.name.function"
         }
       },
-      "end": "\\)",
-      "name": "vue.sfc.style.variable.injection.v-bind",
       "patterns": [
         {
-          "begin": "([\"'])",
+          "begin": "('|\")",
           "beginCaptures": {
             "1": {
               "name": "punctuation.definition.tag.begin.html"
@@ -48,7 +45,14 @@
     }
   },
   "scopeName": "vue.sfc.style.variable.injection",
+  "name": "vue-sfc-style-variable-injection",
+  "displayName": null,
+  "aliases": [],
   "embeddedLangs": [
     "javascript"
+  ],
+  "embeddedLangsLazy": [],
+  "injectTo": [
+    "source.vue"
   ]
 }

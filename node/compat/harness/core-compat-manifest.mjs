@@ -4,7 +4,6 @@ export const coreCompatSupportedTests = [
   "compat/upstream/shiki/packages/core/test/get-singleton.test.ts",
   "compat/upstream/shiki/packages/shiki/test/alias.test.ts",
   "compat/upstream/shiki/packages/shiki/test/astro.test.ts",
-  "compat/upstream/shiki/packages/shiki/test/bundle.test.ts",
   "compat/upstream/shiki/packages/shiki/test/get-highlighter.test.ts",
   "compat/upstream/shiki/packages/shiki/test/general.test.ts",
   "compat/upstream/shiki/packages/shiki/test/injections.test.ts",
@@ -91,6 +90,12 @@ export const coreCompatSupportedHtmlTests = [
 ];
 
 export const coreCompatExcludedTests = [
+  {
+    path: "compat/upstream/shiki/packages/shiki/test/bundle.test.ts",
+    reason:
+      "Shiki's full/web catalog sizes do not describe Ferriki's curated catalog; catalog discovery, dependency coverage, and native compilation run in dedicated checks",
+    issue: 152,
+  },
   {
     path: "compat/upstream/shiki/packages/core/test/tokens.test.ts",
     reason:

@@ -13,15 +13,18 @@ Catalogs:
   grammar or theme payloads
 - `release-manifest.json` — SHA-256, size and format version of every payload,
   for verified CDN loading (ADR 0013)
+- `GRAMMAR-NOTICES.md` — original grammar sources and their archived license notices
 
 These files are the product-side asset format consumed by Ferriki, not the raw
 upstream source format. The Node package copies them during `build:native` via
 `node/ferriki/scripts/sync-standard-assets.mjs`.
 
-They are generated from the normalized upstream mirror with:
+The historical `shiki` directory name remains the release CDN path. Grammar
+selection and sources belong to Ferriki (ADR 0019). They are generated from
+the normalized, pinned sources with:
 
 - [`scripts/generate-ferriki-assets.mjs`](../../scripts/generate-ferriki-assets.mjs)
 - [`scripts/generate-ferriki-catalog.mjs`](../../scripts/generate-ferriki-catalog.mjs)
-- or the bootstrap helper
-  [`scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs`](../../scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs)
-  when only the checked-in Shiki mirror is available
+- [`scripts/prepare-grammar-update.mjs`](../../scripts/prepare-grammar-update.mjs)
+  prepares grouped updates from configured repositories; `sync-grammars.mjs`
+  reproduces the accepted pins independently of Shiki

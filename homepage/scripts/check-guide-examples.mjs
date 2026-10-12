@@ -38,6 +38,8 @@ const expectedSamples = new Map([
   ["reusable", "guide/getting-started.mdx"],
   ["catalogs", "guide/languages-and-themes.mdx"],
   ["theme-map", "guide/languages-and-themes.mdx"],
+  ["mdx", "guide/languages-and-themes.mdx"],
+  ["frontend", "guide/languages-and-themes.mdx"],
   ["class-output", "guide/class-highlighting.mdx"],
 ]);
 const assertions = {
@@ -45,6 +47,8 @@ const assertions = {
   reusable: `assert.match(html, /<pre\\b/);\nassert.match(html, /answer/);`,
   catalogs: `assert.equal(bundledLanguagesAlias.ts, "typescript");\nassert.match(html, /<pre\\b/);\nassert.match(html, /answer/);`,
   "theme-map": `assert.match(html, /<pre\\b/);\nassert.match(html, /answer/);\nassert.match(html, /github-(light|dark)/);`,
+  mdx: `assert.match(html, /<pre\\b/);\nassert.match(html, /Greeting/);\nassert.match(html, /Ada/);`,
+  frontend: `assert.match(html, /<pre\\b/);\nassert.match(html, /Button/);\nassert.match(html, /circle/);`,
   "class-output": `assert.match(html, /tok-string/);\nassert.match(css, /\\.ferriki/);`,
 };
 const samples = new Map();

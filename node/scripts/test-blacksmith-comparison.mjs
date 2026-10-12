@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderSummary, validateReport } from "./run-blacksmith-comparison.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
-import { engines, loadCorpus } from "./tiobe-benchmark.mjs";
+import { engines, loadCorpus, yamlJavaScriptUnsupported } from "./tiobe-benchmark.mjs";
 
 function corpusReport(corpus) {
   return {
@@ -39,6 +39,22 @@ function corpusReport(corpus) {
 
 test("both complete corpora pass, including explicit unsupported grammars", () => {
   for (const corpus of ["curated", "tiobe"]) validateReport(corpusReport(corpus), corpus, true);
+});
+
+test("only the known YAML JavaScript converter limit may omit corpus timings", () => {
+  const report = corpusReport("curated");
+  const yaml = report.languages.find((language) => language.textmate === "yaml");
+  for (const entry of yaml.cases)
+    entry.results["shiki-js"] = {
+      status: "unsupported",
+      reason: yamlJavaScriptUnsupported,
+    };
+  validateReport(report, "curated", true);
+  yaml.cases[0].results["shiki-js"].reason = "Unexpected rendering failure";
+  assert.throws(() => validateReport(report, "curated", true));
+  yaml.cases[0].results["shiki-js"].reason = yamlJavaScriptUnsupported;
+  yaml.cases[0].results.ferriki = { status: "unsupported", reason: yamlJavaScriptUnsupported };
+  assert.throws(() => validateReport(report, "curated", true));
 });
 
 test("partial, timed-out, mismatching or invalid reports cannot produce a green job", () => {
@@ -83,7 +99,7 @@ test("repository reports require raw cold and warm samples and complete HTML agr
       codeToHtml: comparisonCorpus.map(([, path]) => ({
         path,
         sha256: "a".repeat(64),
-        samplesMs: samples,
+        samplesMs: structuredClone(samples),
       })),
     },
     agreement: Object.fromEntries(ids.map((id) => [id, { documents: comparisonCorpus.length }])),
@@ -93,6 +109,15 @@ test("repository reports require raw cold and warm samples and complete HTML agr
   const mismatch = structuredClone(report);
   mismatch.agreement.ferriki.documents--;
   assert.throws(() => validateReport(mismatch, "comparison", true), /HTML mismatch/);
+  const unsupported = structuredClone(report);
+  const yaml = unsupported.warm.codeToHtml.find((row) => row.path.endsWith("ci.yml"));
+  yaml.unsupported = { "shiki-js": yamlJavaScriptUnsupported };
+  delete yaml.samplesMs["shiki-js"];
+  unsupported.agreement["shiki-js"].documents--;
+  unsupported.cold["shiki-js"] = { status: "unsupported", paths: [yaml.path] };
+  validateReport(unsupported, "comparison", true);
+  yaml.unsupported.ferriki = yamlJavaScriptUnsupported;
+  assert.throws(() => validateReport(unsupported, "comparison", true));
   report.cold.ferriki.samplesMs = [];
   assert.throws(() => validateReport(report, "comparison", true), /Missing raw/);
 });

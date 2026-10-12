@@ -1,9 +1,6 @@
 {
-  "injectTo": [
-    "source.ts.ng"
-  ],
+  "scopeName": "inline-template.ng",
   "injectionSelector": "L:meta.decorator.ts -comment -text.html",
-  "name": "angular-inline-template",
   "patterns": [
     {
       "include": "#inlineTemplate"
@@ -20,36 +17,13 @@
           "name": "meta.object-literal.key.ts punctuation.separator.key-value.ts"
         }
       },
-      "end": "(?=[,}])",
+      "end": "(?=,|})",
       "patterns": [
         {
           "include": "#tsParenExpression"
         },
         {
           "include": "#ngTemplate"
-        }
-      ]
-    },
-    "ngTemplate": {
-      "begin": "\\G\\s*([\"'`|])",
-      "beginCaptures": {
-        "1": {
-          "name": "string"
-        }
-      },
-      "contentName": "text.html.derivative.ng",
-      "end": "\\1",
-      "endCaptures": {
-        "0": {
-          "name": "string"
-        }
-      },
-      "patterns": [
-        {
-          "include": "text.html.derivative.ng"
-        },
-        {
-          "include": "template.ng"
         }
       ]
     },
@@ -74,11 +48,40 @@
           "include": "#ngTemplate"
         }
       ]
+    },
+    "ngTemplate": {
+      "begin": "\\G\\s*([`|'|\"])",
+      "beginCaptures": {
+        "1": {
+          "name": "string"
+        }
+      },
+      "end": "\\1",
+      "endCaptures": {
+        "0": {
+          "name": "string"
+        }
+      },
+      "contentName": "text.html.derivative.ng",
+      "patterns": [
+        {
+          "include": "text.html.derivative.ng"
+        },
+        {
+          "include": "template.ng"
+        }
+      ]
     }
   },
-  "scopeName": "inline-template.ng",
+  "name": "angular-inline-template",
+  "displayName": null,
+  "aliases": [],
   "embeddedLangs": [
     "angular-html",
     "angular-template"
+  ],
+  "embeddedLangsLazy": [],
+  "injectTo": [
+    "source.ts.ng"
   ]
 }

@@ -3,8 +3,9 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const DEFAULT_SHIKI_ROOT = path.resolve('node/compat/upstream/shiki');
-const DEFAULT_UPSTREAM_DIR = path.resolve('assets/upstream/textmate-grammars-themes');
-const DEFAULT_OUTPUT_DIR = path.resolve('assets/shiki');
+// Compatibility reference data; the product catalog uses sync-grammars.mjs.
+const DEFAULT_UPSTREAM_DIR = path.resolve('assets/compat/upstream/textmate-grammars-themes');
+const DEFAULT_OUTPUT_DIR = path.resolve('assets/compat/shiki');
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
@@ -118,6 +119,8 @@ async function bootstrapFromShikiMirror({ shikiRoot, upstreamDir, outputDir, sou
       upstreamDir,
       '--output-dir',
       outputDir,
+      '--source-name',
+      'shiki-mirror-compatibility',
       '--source-version',
       sourceVersion,
       '--source-commit',

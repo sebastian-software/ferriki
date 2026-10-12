@@ -20,6 +20,7 @@ import {
   MacroSection,
 } from "../components/home-sections";
 import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
+import { grammarCount } from "../data/grammar-catalog";
 import sample from "../data/sample.json";
 import { version } from "../version";
 
@@ -29,10 +30,10 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="A native syntax highlighter for Node.js and Rust."
-      lede="Shiki's HTML API, grammars and themes on a native Rust engine. Load a highlighter once and reuse it across your CMS or site build. Vite macros prepare code examples before they reach the browser."
+      lede="Shiki's HTML API and editor-maintained grammars on a native Rust engine. Load a highlighter once and reuse it across your CMS or site build. Vite macros prepare code examples before they reach the browser."
       facts={[
         { label: "Succeeds", value: "Shiki" },
-        { label: "Grammars", value: "260" },
+        { label: "Grammars", value: String(grammarCount) },
         { label: "Release", value: `v${version}` },
       ]}
       actions={
@@ -59,7 +60,7 @@ function HeroSection() {
 const pillars = [
   {
     heading: "The grammars editors trust",
-    text: "TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki covers Shiki's catalog of 260 grammars and 65 themes, fetched on first use from the release-pinned asset service, verified and cached.",
+    text: `TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki maintains a curated catalog of ${grammarCount} language and support grammars and 65 themes, fetched on first use from the release-pinned asset service, verified and cached.`,
   },
   {
     heading: "Context, not keyword lists",
