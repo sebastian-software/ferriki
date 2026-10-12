@@ -304,6 +304,8 @@ test("browser registration uses local styles and a persistent shared stylesheet 
 
   let nextShadowRoot;
   let preUpgradeMaxLines;
+  let preUpgradeProperties;
+  let preUpgradeAttributes;
   const fakeCustomElements = {
     definitions: new Map(),
     get(name) {
@@ -335,7 +337,8 @@ test("browser registration uses local styles and a persistent shared stylesheet 
           this.ownerDocument = fakeDocument;
           this.shadowRoot = nextShadowRoot ?? new FakeShadowRoot();
           nextShadowRoot = undefined;
-          this.attributes = new Map();
+          this.attributes = new Map(Object.entries(preUpgradeAttributes ?? {}));
+          preUpgradeAttributes = undefined;
           const styleProperties = new Map();
           this.style = {
             setProperty(name, value) {
@@ -356,6 +359,9 @@ test("browser registration uses local styles and a persistent shared stylesheet 
             });
             preUpgradeMaxLines = undefined;
           }
+          for (const [name, value] of Object.entries(preUpgradeProperties ?? {}))
+            Object.defineProperty(this, name, { configurable: true, value, writable: true });
+          preUpgradeProperties = undefined;
         }
 
         getAttribute(name) {
@@ -530,6 +536,40 @@ test("browser registration uses local styles and a persistent shared stylesheet 
       upgradedHost.shadowRoot.querySelector("link[data-ferriki-code-css]").getAttribute("href"),
       "/client-code-v2.css",
     );
+
+    preUpgradeAttributes = { "code-ref": "second" };
+    preUpgradeProperties = { codeRef: "first" };
+    const reflectedHost = new constructor();
+    reflectedHost.attributeChangedCallback("code-ref", null, "second");
+    reflectedHost.connectedCallback();
+    assert.equal(reflectedHost.codeRef, "first");
+    assert.equal(reflectedHost.getAttribute("code-ref"), "first");
+    assert.equal(reflectedHost.shadowRoot.pre.markup, "<pre>one</pre>");
+
+    preUpgradeAttributes = { "code-ref": "second" };
+    preUpgradeProperties = { codeRef: "first" };
+    const disconnectedUpgrade = new constructor();
+    disconnectedUpgrade.attributeChangedCallback("code-ref", null, "second");
+    disconnectedUpgrade.setAttribute("code-ref", "late-ref");
+    disconnectedUpgrade.connectedCallback();
+    assert.equal(disconnectedUpgrade.codeRef, "late-ref");
+    assert.equal(disconnectedUpgrade.getAttribute("code-ref"), "late-ref");
+    assert.equal(disconnectedUpgrade.shadowRoot.pre.markup, "<pre>late</pre>");
+
+    for (const properties of [
+      { highlightedCode: "<pre>direct</pre>", codeRef: "first" },
+      { codeRef: "first", highlightedCode: "<pre>direct</pre>" },
+    ]) {
+      preUpgradeProperties = properties;
+      const mixedHost = new constructor();
+      mixedHost.connectedCallback();
+      assert.equal(mixedHost.getAttribute("code-ref"), "first");
+      assert.equal(mixedHost.highlightedCode, "<pre>direct</pre>");
+      assert.equal(mixedHost.shadowRoot.pre.markup, "<pre>direct</pre>");
+      mixedHost.codeRef = "second";
+      assert.equal(mixedHost.getAttribute("code-ref"), "second");
+      assert.equal(mixedHost.shadowRoot.pre.markup, "<pre>two</pre>");
+    }
 
     assert.throws(
       () => defineCodeElement({ blocks: { first: "<pre>changed</pre>" } }),

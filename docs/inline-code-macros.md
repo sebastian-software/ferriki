@@ -246,7 +246,8 @@ Default React roots each contain their small base-style element; classes mode
 uses one aggregated external asset linked from each root. `code()` and custom
 renderers keep their ordinary Vite CSS delivery. Custom transformer rules for
 the default component can be added as manual local CSS through
-`defineCodeElement({ css })`; there is no separate override CSS source option.
+`defineCodeElement({ css, themeAliases })` with the configured aliases (`[]`
+for a single theme); there is no separate override CSS source option.
 A custom renderer can instead keep ordinary HTML and its page stylesheet.
 
 ## Supported function inputs

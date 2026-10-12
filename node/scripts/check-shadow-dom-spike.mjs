@@ -219,7 +219,14 @@ async function writeElementProbe(project) {
     join(project, "src", "element-probe.js"),
     `import { defineCodeElement, FERRIKI_CODE_TAG } from "@ferriki/core/web-component";
 import { initialBlock } from "./snippets.jsx";
-export const FerrikiCodeElement = defineCodeElement({ css: initialBlock.css, themeAliases: ["light", "dark"] });
+export const FerrikiCodeElement = defineCodeElement({
+  css: initialBlock.css,
+  themeAliases: ["light", "dark"],
+  blocks: {
+    property_probe: initialBlock.html,
+    property_probe_alt: "<pre><code>changed before connection</code></pre>",
+  },
+});
 if (import.meta.hot) import.meta.hot.accept("./snippets.jsx", (module) => {
   if (module) defineCodeElement({ css: module.initialBlock.css, themeAliases: ["light", "dark"] });
 });
@@ -272,6 +279,20 @@ async function checkUpgradePaths(browser, baseUrl, styleMode, initialBlock) {
       preUpgrade.innerHTML = "<pre><code>property fallback</code></pre>";
       document.body.append(preUpgrade);
       window.__preUpgradeHost = preUpgrade;
+      const referenceUpgrade = document.createElement("ferriki-code");
+      referenceUpgrade.setAttribute("code-ref", "stale-attribute");
+      referenceUpgrade.codeRef = "property_probe";
+      document.body.append(referenceUpgrade);
+      window.__preUpgradeReference = referenceUpgrade;
+      const mixedUpgrade = document.createElement("ferriki-code");
+      mixedUpgrade.highlightedCode = "<pre><code>direct pre-definition HTML</code></pre>";
+      mixedUpgrade.codeRef = "property_probe";
+      document.body.append(mixedUpgrade);
+      window.__preUpgradeMixed = mixedUpgrade;
+      const disconnectedUpgrade = document.createElement("ferriki-code");
+      disconnectedUpgrade.setAttribute("code-ref", "stale-attribute");
+      disconnectedUpgrade.codeRef = "property_probe";
+      window.__disconnectedUpgrade = disconnectedUpgrade;
       return {
         defined: customElements.get("ferriki-code") !== undefined,
         hasDeclarativeRoot: Boolean(host.shadowRoot),
@@ -314,6 +335,10 @@ async function checkUpgradePaths(browser, baseUrl, styleMode, initialBlock) {
     assert.equal(lateBefore.preUpgradeOwnProperty, true);
     await latePage.evaluate(async () => {
       await import("/src/element-probe.js");
+      const disconnected = window.__disconnectedUpgrade;
+      customElements.upgrade(disconnected);
+      disconnected.setAttribute("code-ref", "property_probe_alt");
+      document.body.append(disconnected);
     });
     assert.deepEqual(
       await latePage.evaluate(() => {
@@ -344,6 +369,16 @@ async function checkUpgradePaths(browser, baseUrl, styleMode, initialBlock) {
           preUpgradeOwnProperty: Object.hasOwn(preUpgrade, "highlightedCode"),
           preUpgradeSource: preUpgrade.shadowRoot?.querySelector("pre code")?.textContent,
           preUpgradeFallback: preUpgrade.querySelector("pre code")?.textContent,
+          referenceUpgradeOwnProperty: Object.hasOwn(window.__preUpgradeReference, "codeRef"),
+          referenceUpgradeAttribute: window.__preUpgradeReference.getAttribute("code-ref"),
+          referenceUpgradeSource:
+            window.__preUpgradeReference.shadowRoot?.querySelector("pre code")?.textContent,
+          mixedUpgradeAttribute: window.__preUpgradeMixed.getAttribute("code-ref"),
+          mixedUpgradeSource:
+            window.__preUpgradeMixed.shadowRoot?.querySelector("pre code")?.textContent,
+          disconnectedUpgradeAttribute: window.__disconnectedUpgrade.getAttribute("code-ref"),
+          disconnectedUpgradeSource:
+            window.__disconnectedUpgrade.shadowRoot?.querySelector("pre code")?.textContent,
           propertyGetter: typeof propertyDescriptor?.get,
           propertySetter: typeof propertyDescriptor?.set,
         };
@@ -366,6 +401,13 @@ async function checkUpgradePaths(browser, baseUrl, styleMode, initialBlock) {
         preUpgradeOwnProperty: false,
         preUpgradeSource: initialBlock.code,
         preUpgradeFallback: "property fallback",
+        referenceUpgradeOwnProperty: false,
+        referenceUpgradeAttribute: "property_probe",
+        referenceUpgradeSource: initialBlock.code,
+        mixedUpgradeAttribute: "property_probe",
+        mixedUpgradeSource: "direct pre-definition HTML",
+        disconnectedUpgradeAttribute: "property_probe_alt",
+        disconnectedUpgradeSource: "changed before connection",
         propertyGetter: "function",
         propertySetter: "function",
       },

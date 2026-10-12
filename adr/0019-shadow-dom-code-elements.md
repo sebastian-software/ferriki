@@ -53,7 +53,11 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   hyphens. Identical ID/HTML registration is idempotent; conflicting HTML
   throws. A changed reference clears stale content even if its block has not
   arrived yet. Late registration updates connected hosts waiting for that ID.
-  The latest explicit property or observed attribute write selects the source.
+  After upgrade, the latest explicit property or observed attribute write
+  selects the source. Pre-definition own properties have no write history;
+  direct HTML takes precedence when both content properties are present at
+  upgrade. Replayed `codeRef` values reflect on connection without changing
+  the selected source.
 - Inline-mode colors remain in the prepared HTML's style attributes. Each root
   gets a small `<style data-ferriki-code-base>` element for layout, scrolling,
   line annotations, and multi-theme switching; it has no external CSS asset or
@@ -235,3 +239,6 @@ to own the synchronized package and crate version updates.
   instead of a constructed shared sheet; allows inline mode without a CSS URL
   or base restriction and documents inherited category color overrides and
   block-level foreground/background defaults (#263).
+- 2026-10-12: Clarifies automatic macro SSR versus manual reference hosts and
+  pre-definition property precedence; fixes replayed reference reflection and
+  removes saved class rules when HMR removes the last macro import (#263).

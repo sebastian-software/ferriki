@@ -40,7 +40,95 @@ import no React runtime, native binding, asset loader, or highlighter. Prepare
 the HTML at build time or on the server. The server helper remains available
 for manually authored reference hosts.
 
-## Use the custom element in React
+## React macro default
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+
+export function Example() {
+  return (
+    <Code
+      language="ts"
+      source={`export const answer = 42;`}
+      maxLines={12}
+      className="example-code"
+    />
+  );
+}
+```
+
+Configure the [Vite integration](inline-code-macros.md) once. `source` is plain
+text in a string literal or a template literal without interpolations; it is
+not highlighted JSX and is not passed as children. The macro prepares the
+custom element, registration, styles, and server template automatically.
+
+The transform highlights the source and replaces the macro call with a helper
+that passes a reference to the prepared block. Identical prepared blocks share
+a reference. The generated module holds the HTML and source-line sizing data;
+React never builds a tree of the code's individual tokens.
+
+The helper has two paths. On the server, it outputs the host with the prepared
+template inside. In the browser, it registers the HTML and returns an empty
+reference host. The component retains the parser-created contents during
+hydration and uses the registered HTML to fill new hosts on later navigation.
+The [SSR details](#react-ssr-and-declarative-shadow-dom) show the generated
+template and the server-only HTML serialization boundary.
+
+The default host also gets a module-level sizing style derived from the source
+line count. This reserves space for client-only mounts until registration fills
+the shadow root, while SSR also includes the prepared token markup in DSD.
+`maxLines` optionally caps the visible block at a positive safe integer number
+of lines; all highlighted code remains in the shadow root and longer blocks
+scroll vertically. Shorter blocks stay short. Omit `maxLines` or pass
+`undefined` for an unlimited block.
+
+`className`, `theme`, and `maxLines` are runtime props. `maxLines` must resolve
+to a positive safe integer when supplied. `source`, `language`, `meta`, and
+`lineNumbers` remain compile-time literals. `theme` names a key in the plugin's
+`themes` map; omitting it uses the first theme or the single configured theme.
+A custom `render` function still receives the complete prepared descriptor and
+uses ordinary Vite CSS delivery. It does not register the tag automatically.
+
+The `theme` prop chooses a configured palette. Public CSS variables can then
+override its block defaults or individual semantic categories. An unset
+category keeps its color from the selected theme. See the
+[color examples and reference](#public-color-overrides).
+
+### What exists at each step
+
+| When                             | What exists                                                                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| In your source module            | A `<Code />` call with plain code in `source`.                                                                                                                                                                                      |
+| After Vite transforms it         | A generated React helper call with a reference to the prepared block. The generated module holds highlighted HTML, sizing data, and the server template representation. Classes mode collects palette rules for a shared CSS asset. |
+| When React renders on the server | `<ferriki-code code-ref="…">` containing a `<template shadowrootmode="open">` with the prepared code, local base styles, and an optional class CSS link. No highlighting runs during this render.                                   |
+| When the browser reads that HTML | An open shadow root containing the template's code and styles. The parser consumes the template, so it is no longer a child of the host.                                                                                            |
+| When browser JavaScript runs     | The helper registers the prepared HTML. The component reuses the existing root, and React hydrates the host. For later client navigation, a new host resolves its reference from the registered HTML.                               |
+
+The reference identifies prepared content; it does not trigger a fetch for that
+HTML. Server HTML provides the first view, and the browser module carries the
+same prepared content for later client rendering. The native highlighter and
+build-time macro parser stay out of that browser module.
+
+### Where the CSS lives
+
+Every shadow root contains the small base rules for layout, scrolling, and line
+annotations. In inline mode, token colors remain in HTML style attributes, so
+there is no external component CSS file. In classes mode, roots link the shared
+palette asset; the browser loads it without needing JavaScript. The link stays
+after hydration. In both modes, public color variables inherit from page CSS
+and override the prepared theme fallbacks. Page selectors still cannot target
+the inner code nodes.
+
+The [detailed lifecycle diagrams](#react-ssr-and-declarative-shadow-dom) show
+the server and client paths and the final DOM structure.
+
+## Manual reference hosts
+
+Use this lower-level route when you want to register prepared HTML yourself.
+This example fills the host in the browser. Calling `defineCodeElement()` on
+the server is a no-op; manual SSR needs the
+[complete-HTML helper](#react-ssr-and-declarative-shadow-dom). The `<Code />`
+macro above already emits its server template and does not need that helper.
 
 ```tsx
 import { code } from "@ferriki/core/macro";
@@ -65,7 +153,9 @@ plugin. The type-only React macro import supplies the JSX tag declaration.
 A result from `codeToHtmlWithCss` can also supply the HTML and CSS, provided
 preparation runs outside the browser. For classes output, pass its generated
 CSS through `stylesheetHref`; `css` on `defineCodeElement` remains available
-for manual local stylesheet additions.
+for manual local stylesheet additions. `code()` retains ordinary HTML styles;
+the semantic color fallbacks described above are prepared by the React `Code`
+macro.
 
 `blocks` maps IDs to trusted HTML. IDs contain one or more ASCII letters,
 digits, underscores, or hyphens. Repeated registration with the same ID and
@@ -79,59 +169,8 @@ host. Its only content prop is a string ID. Theme and parent updates retain the
 shadow nodes. A changed reference replaces the content; repeating a reference
 does not parse it again. The optional `codeRef` property reflects `code-ref`.
 Use the `code-ref` attribute in server-rendered JSX; both browser upgrade and
-the DSD HTML stage resolve that attribute. The `codeRef` property is useful for
-imperative writes or client-only React rendering.
-
-## React macro default
-
-```tsx
-import { Code } from "@ferriki/core/react/macro";
-
-<Code
-  language="ts"
-  source={`export const answer = 42;`}
-  maxLines={12}
-  className="example-code"
-  theme={darkMode ? "dark" : "light"}
-/>;
-```
-
-The transform prepares each descriptor, assigns a content-derived ID, records
-its source-line count, and prepares a DSD template. Identical descriptors share
-an ID. The generated helper uses `import.meta.env.SSR` to select the server or
-browser result; local `window` or `globalThis` bindings cannot change that
-choice. On the server, it renders `<ferriki-code>` with the DSD template through
-a server-only `dangerouslySetInnerHTML` value. The highlighter already escaped
-the source, and custom
-transformer markup remains trusted application input. The helper does not
-convert tokens into React elements. In the browser, it registers prepared HTML
-and the optional class stylesheet URL outside React, then returns an empty
-`<ferriki-code code-ref="…" />`
-with runtime presentation props.
-
-The server template contains the matching reference marker, the highlighted
-HTML, and a local base-style element. In classes mode it also links the
-aggregated CSS asset. The document parser consumes the template and creates the
-open shadow root before JavaScript runs. When the
-element is defined, it reuses that root and preserves its token nodes; React
-hydrates the host without moving its children or suppressing hydration. Later
-client navigation creates empty reference hosts whose content comes from the
-client module registry.
-
-The default host also gets a module-level sizing style derived from the source
-line count. This reserves space for client-only mounts until registration fills
-the shadow root, while SSR also includes the prepared token markup in DSD.
-`maxLines` optionally caps the visible block at a positive safe integer number
-of lines; all highlighted code remains in the shadow root and longer blocks
-scroll vertically. Shorter blocks stay short. Omit `maxLines` or pass
-`undefined` for an unlimited block.
-
-`className`, `theme`, and `maxLines` are runtime props. `maxLines` must resolve
-to a positive safe integer when supplied. `source`, `language`, `meta`, and
-`lineNumbers` remain compile-time literals. `theme` names a key in the plugin's
-`themes` map; omitting it uses the first theme or the single configured theme.
-A custom `render` function still receives the complete prepared descriptor and
-uses ordinary Vite CSS delivery. It does not register the tag automatically.
+the manual HTML helper resolve that attribute. The `codeRef` property is useful
+for imperative writes or client-only React rendering.
 
 ## Migrate existing React macros
 
@@ -225,8 +264,8 @@ host has ordinary light-DOM attributes and a DSD template:
 
 ```html
 <ferriki-code class="example-code" code-ref="answer_v1">
-  <template shadowrootmode="open">
-    <!--ferriki-code:ENCODED_REFERENCE-->
+  <template shadowrootmode="open"
+    ><!--ferriki-code:ENCODED_REFERENCE-->
     <style data-ferriki-code-base>
       BASE_AND_THEME_SWITCH_RULES
     </style>
@@ -237,8 +276,10 @@ host has ordinary light-DOM attributes and a DSD template:
 </ferriki-code>
 ```
 
-`ENCODED_REFERENCE` matches the host's `code-ref`. Every root has a small local
-style block for layout, scrolling, line annotations, and inline theme switching.
+`ENCODED_REFERENCE` matches the host's `code-ref`. The generated template puts
+this marker first so upgrade can recognize the existing content. Every root
+has a small local style block for layout, scrolling, line annotations, and
+inline theme switching.
 `CLASS_CSS_URL` is present only in classes mode and points to the aggregated
 class rules. The template contains the prepared HTML, not a React tree of token
 elements. The macro's default SSR path needs no post-render HTML rewrite.
@@ -538,9 +579,14 @@ React 19 can also use `<ferriki-code highlightedCode={html} />`. Register before
 React creates the host so it recognizes the property. `highlighted-code` and
 the SSR-lowercased `highlightedcode` attribute provide the string interface too.
 The component parses this trusted HTML internally; strings used as ordinary
-React children would be escaped text. The latest explicit property or observed
-attribute write selects the content source. `null` or `undefined` clears the
-content and exposes an optional light-DOM fallback through a slot.
+React children would be escaped text. After upgrade, the latest explicit
+property or observed attribute write selects the content source. Before the
+element is defined, assign only one content property. If both `codeRef` and
+`highlightedCode` are already own properties at upgrade, direct HTML takes
+precedence; ordinary properties do not record the history of earlier writes.
+`codeRef` still reflects its attribute without changing that selection.
+`null` or `undefined` clears the content and exposes an optional light-DOM
+fallback through a slot.
 
 Property-mode React SSR serializes HTML as an escaped attribute. It can retain
 a caller-supplied plain-source child for no-JavaScript output, but has extra

@@ -173,8 +173,10 @@ export function defineCodeElement(options = {}) {
 
   class FerrikiCodeElement extends HTMLElementConstructor {
     #initialized = false;
-    #preserveUpgradeProperty = false;
+    #upgradeAttributes;
     #replayingUpgradeProperty = false;
+    #reflectingCodeRef = false;
+    #pendingCodeRefReflection;
     #connected = false;
     #mode = "none";
     #value;
@@ -203,8 +205,14 @@ export function defineCodeElement(options = {}) {
       const hasCodeRef = Object.prototype.hasOwnProperty.call(this, "codeRef");
       const hasMaxLines = Object.prototype.hasOwnProperty.call(this, "maxLines");
       if (hasHighlightedCode || hasCodeRef || hasMaxLines) {
-        this.#preserveUpgradeProperty = true;
+        this.#upgradeAttributes = new Map(
+          FerrikiCodeElement.observedAttributes
+            .map((name) => [name, this.getAttribute(name)])
+            .filter(([, value]) => value !== null),
+        );
         this.#replayingUpgradeProperty = true;
+        // Pre-definition own properties carry no assignment history. Prefer
+        // direct HTML when both content interfaces are supplied before upgrade.
         if (hasCodeRef) this.#upgradeProperty("codeRef");
         if (hasHighlightedCode) this.#upgradeProperty("highlightedCode");
         if (hasMaxLines) this.#upgradeProperty("maxLines");
@@ -215,11 +223,15 @@ export function defineCodeElement(options = {}) {
     connectedCallback() {
       this.#connected = true;
       connectedElements.add(this);
-      this.#preserveUpgradeProperty = false;
+      this.#upgradeAttributes = undefined;
       if (!this.shadowRoot) this.attachShadow({ mode: "open" });
       this.#installStyles();
       if (!this.#initialized) this.#readAttributes();
       else this.#render();
+      if (this.#pendingCodeRefReflection) {
+        const { value } = this.#pendingCodeRefReflection;
+        this.#reflectCodeRef(value);
+      }
       if (!this.#maxLinesInitialized) {
         const maxLinesAttribute = this.#readMaxLinesAttribute();
         if (maxLinesAttribute.present) this.#setMaxLines(maxLinesAttribute.value, false);
@@ -246,8 +258,12 @@ export function defineCodeElement(options = {}) {
       this.#render();
     }
 
-    attributeChangedCallback(name, _oldValue, newValue) {
-      if (this.#preserveUpgradeProperty) return;
+    attributeChangedCallback(name, oldValue, newValue) {
+      if (this.#upgradeAttributes?.has(name)) {
+        const originalValue = this.#upgradeAttributes.get(name);
+        this.#upgradeAttributes.delete(name);
+        if (oldValue === null && newValue === originalValue) return;
+      }
       if (name === "max-lines" || name === "maxlines") {
         if (this.#reflectingMaxLines) return;
         const maxLinesAttribute = this.#readMaxLinesAttribute();
@@ -255,6 +271,8 @@ export function defineCodeElement(options = {}) {
         return;
       }
       if (name === "code-ref") {
+        if (this.#reflectingCodeRef) return;
+        this.#pendingCodeRefReflection = undefined;
         this.#setReference(newValue === null ? undefined : newValue);
         return;
       }
@@ -295,10 +313,8 @@ export function defineCodeElement(options = {}) {
         throw new TypeError("<ferriki-code>.codeRef must be a string, null, or undefined");
       const reference = value == null ? undefined : value;
       this.#setReference(reference);
-      if (!this.#replayingUpgradeProperty) {
-        if (reference === undefined) this.removeAttribute("code-ref");
-        else this.setAttribute("code-ref", reference);
-      }
+      if (this.#replayingUpgradeProperty) this.#pendingCodeRefReflection = { value: reference };
+      else this.#reflectCodeRef(reference);
     }
 
     /** Maximum visible code lines, or undefined when the code pane is uncapped. */
@@ -339,6 +355,17 @@ export function defineCodeElement(options = {}) {
       const value = this[name];
       delete this[name];
       this[name] = value;
+    }
+
+    #reflectCodeRef(reference) {
+      this.#pendingCodeRefReflection = undefined;
+      this.#reflectingCodeRef = true;
+      try {
+        if (reference === undefined) this.removeAttribute("code-ref");
+        else this.setAttribute("code-ref", reference);
+      } finally {
+        this.#reflectingCodeRef = false;
+      }
     }
 
     #setExplicitValue(value) {

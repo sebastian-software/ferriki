@@ -213,8 +213,8 @@ export function Example() {
 ```
 
 The macro import is removed from the transformed module, so neither the
-marker nor a parser reaches the browser. Server rendering, hydration and
-client navigation use the prepared HTML. The default React path loads only the
+marker nor the build-time macro parser reaches the browser. Server rendering,
+hydration and client navigation use the prepared HTML. The default React path loads only the
 framework-free presentation module; `code()` alone has no presentation
 runtime. Each React shadow root contains its local base-style element; classes
 mode also links its aggregated external asset. `code()` and custom renderers

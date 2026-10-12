@@ -72,6 +72,29 @@ export function ferriki(options = {}) {
     return [...css].join("\n");
   }
 
+  function refreshReactCss(previousPalette) {
+    if (!devServer) return;
+    const palette = preparedReactCss();
+    if (palette !== previousPalette)
+      devServer.ws.send({
+        type: "custom",
+        event: "ferriki:code-element-css",
+        data: {
+          href: `${devServer.config.base}${DEV_CODE_STYLESHEET_PATH}?v=${createHash("sha256").update(palette).digest("hex")}`,
+        },
+      });
+  }
+
+  function removeReactModules(ids) {
+    const previousPalette = devServer ? preparedReactCss() : undefined;
+    for (const id of ids) reactModules.delete(id);
+    refreshReactCss(previousPalette);
+  }
+
+  function reactModuleIdsForFile(file) {
+    return [...reactModules.keys()].filter((id) => id.split("?", 1)[0] === file);
+  }
+
   function getHighlighter() {
     highlighterPromise ??= createHighlighter({ themes: themeNames, assets: options.assets });
     return highlighterPromise;
@@ -174,6 +197,25 @@ export function ferriki(options = {}) {
       });
     },
 
+    async hotUpdate({ type, file, read }) {
+      const ids = reactModuleIdsForFile(file);
+      if (!ids.length) return;
+      // The host's code filter skips transforms after the last macro import is
+      // removed, so clear its saved blocks here without parsing ordinary code.
+      if (type === "delete") {
+        removeReactModules(ids);
+        return;
+      }
+      if (type !== "update") return;
+      const source = await read();
+      if (!MACRO_MODULE_SPECIFIERS.some((specifier) => source.includes(specifier)))
+        removeReactModules(ids);
+    },
+
+    watchChange(file, { event }) {
+      if (event === "delete") removeReactModules(reactModuleIdsForFile(file));
+    },
+
     buildEnd(error) {
       if (
         error ||
@@ -263,8 +305,13 @@ export function ferriki(options = {}) {
 
       async handler(source, id, meta) {
         // Repeat the filter for hosts or callers that invoke the handler directly.
-        if (!(SCRIPT_ID.test(id) || include?.(id))) return null;
-        if (!MACRO_MODULE_SPECIFIERS.some((specifier) => source.includes(specifier))) return null;
+        if (
+          !(SCRIPT_ID.test(id) || include?.(id)) ||
+          !MACRO_MODULE_SPECIFIERS.some((specifier) => source.includes(specifier))
+        ) {
+          if (reactModules.has(id)) removeReactModules([id]);
+          return null;
+        }
 
         const path = id.split("?", 1)[0];
         const lang = parserLanguage(path);
@@ -282,7 +329,10 @@ export function ferriki(options = {}) {
           if (error instanceof MacroDiagnostic) return reportMacroError(this, id, source, error);
           throw error;
         }
-        if (scan.calls.length === 0 && scan.imports.length === 0) return null;
+        if (scan.calls.length === 0 && scan.imports.length === 0) {
+          if (reactModules.has(id)) removeReactModules([id]);
+          return null;
+        }
 
         const magic = new MagicString(source);
         const macroCss = new Set();
@@ -386,17 +436,7 @@ export function ferriki(options = {}) {
             ]),
           ),
         });
-        if (devServer) {
-          const palette = preparedReactCss();
-          if (palette !== previousPalette)
-            devServer.ws.send({
-              type: "custom",
-              event: "ferriki:code-element-css",
-              data: {
-                href: `${devServer.config.base}${DEV_CODE_STYLESHEET_PATH}?v=${createHash("sha256").update(palette).digest("hex")}`,
-              },
-            });
-        }
+        refreshReactCss(previousPalette);
 
         for (const item of scan.imports) {
           if (item.replacement) magic.overwrite(item.start, item.end, item.replacement);

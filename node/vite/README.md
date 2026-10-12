@@ -69,7 +69,8 @@ theme supplies the default colors. Aliases used by React macros must start with
 an ASCII letter or underscore and contain only letters, digits, underscores,
 and hyphens.
 
-The generated JSX passes only a content-derived `codeRef`. In a browser build,
+The generated JSX passes a reference derived from the prepared block as its
+content input, alongside runtime presentation props. In a browser build,
 the empty host's `code-ref` attribute selects prepared HTML registered outside
 React; the element owns its token nodes. During React SSR, the macro emits that
 HTML in Declarative Shadow DOM through a server-only HTML sink. The browser

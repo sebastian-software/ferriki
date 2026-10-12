@@ -1446,6 +1446,66 @@ const second = <Code source="const two = 'two'" language="js" render={({ code })
     expect(palette).toContain("--ferriki-string-color");
   });
 
+  it("removes saved blocks and palette rules when HMR removes the last macro import or file", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    const send = vi.fn();
+    vitePlugin.configureServer({
+      config: { base: "/" },
+      middlewares: { use() {} },
+      ws: { send },
+    });
+    await transformModule(
+      vitePlugin,
+      'import { Code } from "@ferriki/core/react/macro"; const block = <Code source="const stale = 1" language="js" />;',
+      "/src/stale.tsx?import",
+    );
+    await transformModule(
+      vitePlugin,
+      'import { Code } from "@ferriki/core/react/macro"; const block = <Code source="const fresh = \'fresh\'" language="js" />;',
+      "/src/fresh.tsx",
+    );
+    expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(2);
+    expect(vitePlugin.api.codeElementCss()).toContain("--ferriki-number-color");
+    send.mockClear();
+    parsedIds.length = 0;
+    await vitePlugin.hotUpdate({
+      type: "update",
+      file: "/src/stale.tsx",
+      read: () => "export const block = <p>ordinary JSX</p>;",
+    });
+    expect(parsedIds).toEqual([]);
+    expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(1);
+    expect(vitePlugin.api.codeElementCss()).not.toContain("--ferriki-number-color");
+    expect(vitePlugin.api.codeElementCss()).toContain("--ferriki-string-color");
+    expect(send).toHaveBeenCalledOnce();
+    expect(send.mock.calls[0][0].event).toBe("ferriki:code-element-css");
+    send.mockClear();
+    vitePlugin.watchChange("/src/fresh.tsx", { event: "delete" });
+    expect(vitePlugin.api.codeElementBlocks()).toEqual({});
+    expect(vitePlugin.api.codeElementCss()).toBe("");
+    expect(send).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    "export const block = <p>ordinary JSX</p>;",
+    'const mention = "@ferriki/core/react/macro"; export const block = <p>ordinary JSX</p>;',
+  ])(
+    "clears prior blocks when a direct transform no longer imports a macro: %s",
+    async (source) => {
+      const vitePlugin = plugin({ styleMode: "classes" });
+      const id = "/src/removed-macro.tsx";
+      await transformModule(
+        vitePlugin,
+        'import { Code } from "@ferriki/core/react/macro"; const block = <Code source="const stale = 1" language="js" />;',
+        id,
+      );
+      expect(Object.keys(vitePlugin.api.codeElementBlocks())).toHaveLength(1);
+      expect(await transformModule(vitePlugin, source, id)).toBeNull();
+      expect(vitePlugin.api.codeElementBlocks()).toEqual({});
+      expect(vitePlugin.api.codeElementCss()).toBe("");
+    },
+  );
+
   it("parses only modules that import a macro, in Vite build and dev", async () => {
     const root = await createProject({
       "index.html":
