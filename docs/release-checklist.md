@@ -1,9 +1,9 @@
 # Ferriki release checklist
 
-This checklist applies to every pre-1.0 release candidate and to the final
-1.0 go/no-go. A green Release workflow is not by itself evidence that npm was
-published: the release summary must say whether it created a release, skipped
-publication, or published successfully.
+This checklist applies to product releases; the pre-1.0 and final 1.0 steps
+below remain as a record of that release transition. A green Release workflow
+is not by itself evidence that npm was published: the release summary must say
+whether it created a release, skipped publication, or published successfully.
 
 ## Release authority
 
@@ -107,6 +107,16 @@ part of release verification.
 - [ ] The release PR is merged to `main` and the normal CI matrix is green for
       the merge commit that will become the release tag. PR checks on a
       different SHA do not qualify.
+- [ ] The `rust-semver` CI job passes on that exact SHA. It compares the three
+      published Rust crates with their latest non-yanked stable crates.io
+      baselines, with both default and all features (`remote` included for
+      `ferriki`). It does not check the private `ferriki-core` package. A
+      missing baseline or registry error is a failure, not a skipped check.
+      For ordinary unreleased work still at the last published version, the
+      gate assumes a minor update so additive changes remain possible.
+      Before the first release of a new major, review its breaking changes and
+      add `--allow-major <new-major>` to the CI command in the same release PR;
+      remove that opt-in after the first version of that major is published.
 - [ ] The package version, changelog, release-please manifest, and intended npm
       dist-tag agree.
 - [ ] The generated release PR updates the main package, every platform
@@ -135,11 +145,16 @@ part of release verification.
 - [ ] Run the normal publish workflow first. For an intentional retry or
       backfill of a release created with this gate, dispatch the workflow on
       its exact tag and pass the same tag as `release-tag`, for example
-      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=next`.
+      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=latest`.
       The tag, workflow event SHA, manifest, packages, and successful `main`
       CI run must all identify the same commit. A dispatch on a later `main`
-      commit is rejected even when it checks out an older tag. Use the `next`
-      dist-tag for a release candidate and record the manual go/no-go decision.
+      commit is rejected even when it checks out an older tag. Record the
+      version and dist-tag policy before publication. The normal workflow uses
+      `latest`; a stable pre-1.0 stabilization version can exercise that path.
+      Choose `next` only when deliberately using a non-default npm tag. A
+      dist-tag does not turn a stable npm or Rust version into a SemVer
+      prerelease, and 1.0.0 must never be consumed as a rehearsal. Record the
+      manual go/no-go decision before the deliberate 1.0 version change.
 - [ ] Confirm the `Verify exact release source` job reports the release tag,
       commit SHA, and successful CI run before either registry publisher starts.
 - [ ] Confirm every documented target build completes and every platform
@@ -179,10 +194,11 @@ artifacts. For a release tagged `v<version>`, run:
 
 ```sh
 gh workflow run publish.yml --ref v<version> \
-  -f force-publish=true -f release-tag=v<version> -f dist-tag=next
+  -f force-publish=true -f release-tag=v<version> -f dist-tag=latest
 ```
 
-Use `-f dist-tag=latest` for a stable release or deliberate promotion. The
+The example preserves `latest` for a stable release. Use `-f dist-tag=next`
+only when that was the original tag or when deliberately selecting it. The
 release-source gate checks that the workflow run, tag, manifest version and
 successful main CI belong to the same immutable commit. Recovery checks each
 public npm name/version, tarball digest and SLSA provenance source/workflow
