@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { fromHtml } from "hast-util-from-html";
+import { toString } from "hast-util-to-string";
 import { createHighlighter, createHighlighterCoreSync, ShikiError } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 
@@ -357,6 +359,150 @@ try {
   assert.match(multiTheme, /--shiki-dark:#55aaff/i);
 } finally {
   renderHighlighter.dispose();
+}
+
+// Context fields reflect construction stages; declaration guarantees must not
+// promise wrappers before they exist or a <pre> for inline output.
+const contextHighlighter = createHighlighterCoreSync({ themes: [renderTheme, renderDarkTheme] });
+try {
+  for (const structure of ["classic", "inline"])
+    for (const styleMode of ["inline", "classes"]) {
+      const calls = [];
+      let renderMeta;
+      let postprocessMeta;
+      let originalRoot;
+      const transformer = {
+        preprocess(source, options) {
+          calls.push("preprocess");
+          assert.equal(this.options, options);
+          this.meta.marker = "shared render metadata";
+          renderMeta = this.meta;
+          return `${source}!`;
+        },
+        tokens(tokens) {
+          calls.push("tokens");
+          assert.equal(this.source, "A😀<&!");
+          assert.equal(this.meta, renderMeta);
+          assert.equal(this.root, undefined);
+          return tokens;
+        },
+        span(node, line, column, lineElement, token) {
+          calls.push("span");
+          assert.equal(this.meta, renderMeta);
+          assert.equal(this.source, "A😀<&!");
+          assert.equal(this.pre, undefined);
+          assert.equal(this.code, undefined);
+          assert.equal(this.lines.length, 0);
+          assert.equal(line, 1);
+          assert.equal(this.tokens[0][column], token);
+          assert.equal(lineElement.tagName, "span");
+          originalRoot = this.root;
+          node.properties["data-mutated"] = "yes";
+          // An omitted return retains this in-place mutation.
+        },
+        line(node) {
+          calls.push("line");
+          assert.equal(this.pre, undefined);
+          assert.equal(this.code, undefined);
+          return { ...node, properties: { ...node.properties, "data-line": "replacement" } };
+        },
+        code(node) {
+          calls.push("code");
+          assert.equal(this.code, node);
+          assert.equal(this.lines.length, 1);
+          assert.equal(this.lines[0].properties["data-line"], "replacement");
+          assert.equal(this.pre?.tagName, structure === "classic" ? "pre" : undefined);
+        },
+        pre(node) {
+          calls.push("pre");
+          assert.equal(structure, "classic");
+          assert.equal(this.pre, node);
+          return { ...node, properties: { ...node.properties, "data-pre": "replacement" } };
+        },
+        root(node) {
+          calls.push("root");
+          assert.equal(this.root, originalRoot);
+          assert.equal(this.meta, renderMeta);
+          assert.equal(this.code.tagName, "code");
+          assert.equal(
+            this.pre?.properties["data-pre"],
+            structure === "classic" ? "replacement" : undefined,
+          );
+          assert.equal(JSON.stringify(node).includes('"marked"'), true);
+          return { ...node, children: [...node.children] };
+        },
+        postprocess(html, options) {
+          calls.push("postprocess");
+          assert.equal(this.options, options);
+          assert.notEqual(this.meta, renderMeta);
+          assert.deepEqual(this.meta, {});
+          assert.equal(this.root, undefined);
+          postprocessMeta = this.meta;
+          this.meta.marker = "shared postprocess metadata";
+          return `${html}<!-- first -->`;
+        },
+      };
+      const html = contextHighlighter.codeToHtml("A😀<&", {
+        lang: "text",
+        structure,
+        styleMode,
+        themes: { light: renderTheme.name, dark: renderDarkTheme.name },
+        decorations: [{ start: 1, end: 3, properties: { class: "marked" } }],
+        transformers: [
+          transformer,
+          {
+            postprocess(html) {
+              assert.equal(this.meta, postprocessMeta);
+              assert.equal(this.meta.marker, "shared postprocess metadata");
+              return `${html}<!-- second -->`;
+            },
+          },
+        ],
+      });
+      assert.match(html, /data-mutated="yes"/);
+      assert.equal(toString(fromHtml(html, { fragment: true })), "A😀<&!");
+      assert.match(html, /<!-- first --><!-- second -->$/);
+      assert.deepEqual(
+        calls.filter((call) => call !== "span"),
+        [
+          "preprocess",
+          "tokens",
+          "line",
+          "code",
+          ...(structure === "classic" ? ["pre"] : []),
+          "root",
+          "postprocess",
+        ],
+      );
+    }
+
+  const failure = new Error("callback contract failure");
+  let reachedRoot = false;
+  assert.throws(
+    () =>
+      contextHighlighter.codeToHtml("text", {
+        lang: "text",
+        theme: renderTheme.name,
+        transformers: [
+          {
+            tokens() {
+              throw failure;
+            },
+            root() {
+              reachedRoot = true;
+            },
+          },
+        ],
+      }),
+    (error) => error === failure,
+  );
+  assert.equal(reachedRoot, false);
+  assert.match(
+    contextHighlighter.codeToHtml("text", { lang: "text", theme: renderTheme.name }),
+    /text/,
+  );
+} finally {
+  contextHighlighter.dispose();
 }
 
 console.log("Ferriki transformer and decoration contract verified");

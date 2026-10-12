@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-04
+Last updated: 2026-10-11
 
 ## Context
 
@@ -25,9 +25,12 @@ import to gate on. The product boundary is an optional package, not runtime
 behavior inside `@ferriki/core`.
 
 These packages are not highlighting-runtime features. They are adapters around
-the HTML rendering and transformer hooks Ferriki provides. Treating them as
-Ferriki responsibilities would make the product boundary fuzzy again and
-would pull framework-specific concerns back into the repository's main scope.
+the HTML rendering and transformer hooks Ferriki provides. Ferriki may provide
+a small, framework-free browser presentation primitive for prepared output
+without taking ownership of framework-specific adapters or browser
+highlighting. Treating every integration as a Ferriki responsibility would
+make the product boundary fuzzy again and pull framework-specific concerns
+back into the repository's main scope.
 
 ## Decision
 
@@ -50,6 +53,16 @@ Ferriki remains responsible for the outputs those integrations build on:
 - `codeToHtmlWithCss`
 - HTML transformer and decoration behavior
 
+`@ferriki/core/web-component` is a narrow presentation entry for trusted,
+already-prepared HTML and CSS. Its `/server` subpath fills complete HTML with
+Declarative Shadow DOM from a prepared registry. Neither entry highlights code
+or loads native assets.
+The Vite adapter uses it for the default React `Code` presentation. During SSR,
+the macro emits DSD from the prepared HTML directly; its browser branch registers
+the same block for reference hosts. The separate `/server` helper remains for
+manually authored reference hosts. The framework-specific macro and its
+compile-time work remain in `@ferriki/vite`.
+
 Public Node HAST and token result methods, including the serializer helper, are
 removed before 1.0 under [ADR 0017](0017-node-html-output-priority.md). The
 internal hook pipeline still uses typed HAST nodes and token payloads.
@@ -62,10 +75,12 @@ a diagnostic. It does not rewrite HTML entry files or intrinsic `pre` markup. A
 Markdown compiler must expose the macro import and call before lowering; other
 adapters remain out of scope unless accepted in a future product decision.
 
-The macro contract is [ADR 0018](0018-inline-highlighting-macros.md). Macro
-recognition, source edits, CSS delivery and HMR belong to the Vite
-integration, not to `@ferriki/core` or the native addon. This does not add
-file/data evaluation or dynamic runtime highlighting.
+The macro contract is [ADR 0018](0018-inline-highlighting-macros.md), and the
+browser presentation boundary is [ADR 0019](0019-shadow-dom-code-elements.md).
+Macro recognition, source edits, Vite CSS delivery and HMR belong to the Vite
+integration, not to the native addon. The web-component entry only presents
+prepared HTML and CSS; this does not add file/data evaluation or dynamic
+runtime highlighting.
 
 ## Consequences
 
@@ -82,9 +97,9 @@ file/data evaluation or dynamic runtime highlighting.
   status for that work.
 - The Rust counterpart follows the same rule: the Ferromark adapter belongs to
   Ferromark ([ADR 0012](0012-publishable-rust-highlighter.md)).
-- If Ferriki later takes on a higher-level integration again, that should be a
-  fresh product decision, not an accidental inheritance from the old Shiki
-  workspace.
+- Future Markdown or framework-specific adapters still require a product
+  decision; the prepared-code web component does not make those integrations
+  part of the core product.
 
 ## History
 
@@ -96,3 +111,8 @@ file/data evaluation or dynamic runtime highlighting.
 - 2026-10-04: Records the inline macro build boundary and private native scanner (#211).
 - 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).
 - 2026-10-04: Narrows `@ferriki/vite` to the two inline macros on Vite 8; the opted-in HTML and static intrinsic JSX block paths are removed (#216).
+- 2026-10-11: Adds framework-free prepared-HTML presentation and complete-HTML
+  DSD entries while keeping highlighting native and framework-specific macro
+  recognition and SSR integration in the optional Vite adapter.
+- 2026-10-11: Records that the Vite macro emits DSD directly during React SSR;
+  the complete-HTML helper is retained for manually authored reference hosts.

@@ -28,6 +28,10 @@ individual files, hashes, and license notices.
 runtime. These names remain compatible with the existing API even though the
 package bundles metadata rather than grammar payloads.
 
+The curated catalog replaces the larger catalog shipped in Ferriki 1.0.
+Removing documented language IDs and aliases requires a major release.
+Applications using an ID outside this set must register an external grammar.
+
 ```js
 import { createHighlighter } from "@ferriki/core";
 

@@ -4,6 +4,7 @@ order: 2
 ---
 
 import { HighlightingFlows } from "../../components/highlighting-flows";
+import codeElementLifecycle from "../../../../docs/assets/code-element-lifecycle-v2.png";
 
 # Build-time macros
 
@@ -54,7 +55,7 @@ export default defineConfig({
 | -------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
 | `theme`        | `"github-dark-default"` | One theme for every block                                                                          |
 | `themes`       | none                    | A named theme map instead of `theme`; the first key supplies the default colors                    |
-| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and imports a generated stylesheet                                 |
+| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and matching generated CSS                                         |
 | `lineNumbers`  | `false`                 | The default for every macro; each macro can override it                                            |
 | `transformers` | none                    | Transformer callbacks applied to every prepared block                                              |
 | `assets`       | none                    | Asset source and cache settings, as for `createHighlighter`                                        |
@@ -112,6 +113,7 @@ export function Example() {
     <Code
       language="tsx"
       className="example-code"
+      maxLines={12}
       lineNumbers
       source={`function Hello() {
   return <h1>Hello</h1>;
@@ -124,13 +126,63 @@ export function Example() {
 The element is self-closing. `source` is a string literal or a template
 literal without interpolations; JSX children are not supported. `language` is
 required, and it, `meta` and `lineNumbers` are static, with the same meaning as
-for `code()`. `className` accepts any runtime expression. By default, the
-element becomes a `div` that holds the prepared HTML, with `className` on that
-`div`. Spreads, duplicate attributes and other attributes fail the build.
+for `code()`. By default, the element becomes a `<ferriki-code>` Web Component
+with the prepared HTML in an open shadow root and a local base-style element.
+`className` applies to that host and `theme` selects a configured alias. The optional `maxLines`
+runtime prop must resolve to a positive safe integer; omit it for an unlimited
+block. These presentation props accept runtime expressions.
+Spreads, duplicate attributes and other attributes fail the build.
 
-For a title, a copy button or tabs, pass a `render` function. It receives
-`{ code, className }`, where `code` is the `PreparedCodeBlock`, and runs during
-normal rendering, never at build time:
+<img
+  src={codeElementLifecycle}
+  width={1536}
+  height={1024}
+  loading="lazy"
+  alt="An unhighlighted JSX Code call passes its example through the source property as a string with braces and backticks. The code moves through build-time highlighting and server HTML to an isolated area in the browser. React manages the page and outer code element; the Web Component manages the text inside."
+/>
+
+React manages the page and the outer code element. The Web Component manages
+the code inside. Shadow DOM is the boundary between them: page CSS selectors
+do not reach the inner code, and React does not manage its individual tokens.
+The code stays real text that people can select and copy.
+
+For the first page load with server rendering, the server sends the actual
+highlighted HTML inside a template in the code element. The browser moves that
+template's contents into the isolated area before JavaScript runs. The
+template is gone, and the code is already visible. React attaches to the page
+and outer element while keeping the code inside in place. On later client
+navigation, the Web Component fills new code elements from prepared HTML in
+the browser modules; it does not run a highlighter.
+
+The macro reserves space from the source line count for client-only mounts.
+The optional `maxLines` prop caps the visible block while keeping all code
+available for vertical scrolling; shorter blocks stay short. The reservation
+uses the same cap, line height, and padding as the displayed code.
+
+### SSR and styles
+
+The server template includes a local base-style element so the code is styled
+before JavaScript. Register the component after document parsing so it reuses
+the existing code. Inline mode needs no external CSS asset or Vite base URL.
+Classes mode adds a link to one aggregated CSS asset, which remains after
+upgrade; Vite serves it during development and emits a hashed file in
+production. Deploy the SSR build's asset because the SSR and client build
+graphs can produce different filenames. Direct class-mode macro SSR requires
+an absolute Vite base path or URL. See the
+[Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
+for details. Page selectors do not reach inside the root, and ancestor theme
+attributes do not select its theme: pass
+`theme={darkMode ? "dark" : "light"}` explicitly. The first configured theme
+supplies the default colors. See the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
+for framework-free use, custom CSS, browser support, and CSP/Trusted Types limits.
+
+Titles, copy buttons, and tabs can wrap the default `<Code />` in ordinary React
+components and keep its isolated code presentation. For complete control over
+the result, pass a `render` function. This application-owned escape hatch
+replaces the default presentation; the example below opts into light-DOM HTML
+and its page CSS. It receives
+`{ code, className, theme, maxLines }`, where `code` is the `PreparedCodeBlock`,
+and runs during normal rendering, never at build time:
 
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
@@ -161,8 +213,12 @@ export function Example() {
 ```
 
 The macro import is removed from the transformed module, so neither the
-marker nor a parser reaches the browser. Server rendering, hydration and
-client navigation all use the same prepared HTML and CSS.
+marker nor the build-time macro parser reaches the browser. Server rendering,
+hydration and client navigation use the prepared HTML. The default React path loads only the
+framework-free presentation module; `code()` alone has no presentation
+runtime. Each React shadow root contains its local base-style element; classes
+mode also links its aggregated external asset. `code()` and custom renderers
+keep ordinary Vite stylesheet delivery.
 
 ## Annotate lines with Shiki's notation
 
@@ -246,13 +302,24 @@ the transform throws a configuration error that names the missing Vite setup.
 
 ## Themes and CSS
 
-With `styleMode: "classes"`, set `data-ferriki-theme="dark"` on a prepared
-block or one of its ancestors to switch to another configured theme; the
-switch is a CSS change. Each transformed module imports a
-content-addressed stylesheet, so editing an example replaces its CSS during
-hot module replacement. The surrounding presentation, such as titles and copy
-buttons, stays yours. See [Class-based output](/guide/class-highlighting) for
-the class contract.
+Inline output already carries its colors in the highlighted HTML. With
+`styleMode: "classes"`, resolved token and theme rules live in generated CSS.
+For `code()` and custom renderers, each transformed module imports a
+content-addressed stylesheet. Set `data-ferriki-theme="dark"` on the prepared
+block or an ancestor to switch themes in ordinary HTML.
+
+Each `<Code />` root has its own compact local style block for base
+presentation and inline theme switching. In classes mode, roots in a build link
+one aggregated external CSS asset. SSR and client builds can have different
+graphs and asset hashes, so deploy the SSR build's CSS with its markup; direct
+class-mode macro SSR requires an absolute Vite base. The runtime `theme` prop
+selects the host's theme; ancestor theme selectors do not cross that boundary.
+Public semantic color variables can still inherit from `:root`, a theme
+container, or the host.
+The surrounding presentation, such as titles and copy buttons, stays yours.
+See [Class-based output](/guide/class-highlighting) for the class contract and
+the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#public-color-overrides)
+for the component's semantic color variables.
 
 ## MDX and other compilers
 
@@ -272,8 +339,9 @@ highlights them.
 `codeToHtml()` returns an HTML string; `code()` prepares a descriptor with
 that string in its `html` field. React escapes a string in `{html}`, so it
 displays the tags as text. Use `dangerouslySetInnerHTML` to
-insert the prepared markup, or use `<Code />` to let the macro supply that
-container for you.
+insert the prepared markup in ordinary HTML. `<Code />` supplies a shadow
+host by default. The browser still parses prepared HTML; React manages only
+the opaque host and does not create elements for each highlighted token.
 
 Literal HTML cannot simply be pasted into JSX: attributes such as `class`
 and `style` have different representations, and escaped source text must be
@@ -284,5 +352,7 @@ ordinary `pre`, `code` and `span` elements.
 Ferriki escapes the original source. Custom transformers control their own
 markup; only insert HTML from your highlighting pipeline.
 
-Direct React-JSX rendering is proposed in
-[issue #221](https://github.com/sebastian-software/ferriki/issues/221).
+The direct JSX experiment from
+[issue #221](https://github.com/sebastian-software/ferriki/issues/221) was removed
+in favor of an isolated Web Component. The Node HTML API and `code()` descriptor
+remain unchanged.

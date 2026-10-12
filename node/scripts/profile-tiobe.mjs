@@ -1,6 +1,7 @@
 // Run one validated, warmed workload continuously for an external CPU profiler.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import inspector from "node:inspector";
 import { join } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
@@ -105,9 +106,22 @@ if (receipt) {
   assert.equal(sha256(readFileSync(loaded)), receipt.binarySha256, "Stale build receipt");
 }
 let consumed = 0;
+const cpuProfilePath = process.env.FERRIKI_CPU_PROFILE_PATH;
+let cpuProfiler;
+function postInspector(session, method) {
+  return new Promise((resolve, reject) =>
+    session.post(method, (error, result) => (error ? reject(error) : resolve(result))),
+  );
+}
 try {
   for (let i = 0; i < 5; i++) consumed += run().length;
   process.stderr.write(`[profile-tiobe] Warm workload ready; pid=${process.pid}\n`);
+  if (cpuProfilePath) {
+    cpuProfiler = new inspector.Session();
+    cpuProfiler.connect();
+    await postInspector(cpuProfiler, "Profiler.enable");
+    await postInspector(cpuProfiler, "Profiler.start");
+  }
   const started = performance.now();
   const samplesMs = [];
   while (performance.now() - started < seconds * 1000) {
@@ -115,6 +129,14 @@ try {
     const result = run();
     samplesMs.push(performance.now() - start);
     consumed += result.length;
+  }
+  let cpuProfile = null;
+  if (cpuProfiler) {
+    const stopped = await postInspector(cpuProfiler, "Profiler.stop");
+    cpuProfile = { path: cpuProfilePath, nodes: stopped.profile.nodes.length };
+    writeFileSync(cpuProfilePath, `${JSON.stringify(stopped.profile)}\n`);
+    cpuProfiler.disconnect();
+    cpuProfiler = null;
   }
   console.log(
     JSON.stringify({
@@ -126,9 +148,11 @@ try {
       measurementEndedAtMs: performance.now(),
       iterations: samplesMs.length,
       consumed,
+      cpuProfile,
       timing: statistics(samplesMs, workload.bytes),
     }),
   );
 } finally {
+  cpuProfiler?.disconnect();
   dispose();
 }

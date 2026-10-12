@@ -1,9 +1,9 @@
 # Ferriki release checklist
 
-This checklist applies to every pre-1.0 release candidate and to the final
-1.0 go/no-go. A green Release workflow is not by itself evidence that npm was
-published: the release summary must say whether it created a release, skipped
-publication, or published successfully.
+This checklist applies to product releases; the pre-1.0 and final 1.0 steps
+below remain as a record of that release transition. A green Release workflow
+is not by itself evidence that npm was published: the release summary must say
+whether it created a release, skipped publication, or published successfully.
 
 ## Release authority
 
@@ -19,7 +19,12 @@ crate versions in the separate `fuzz/Cargo.lock`; registry dependencies and
 the private fuzz package version stay pinned. Merging the release pull request
 tags `v<version>` and `publish.yml` publishes the npm packages and the crates
 `ferriki-textmate`, `ferriki-asset-gen` and `ferriki` from that release. Product releases use
-Trusted Publishing in both registries.
+Trusted Publishing in both registries. Before either publisher starts, the
+workflow resolves the tag to one commit, checks that the manifest and package
+versions agree, and requires a successful `CI` push run on `main` for that
+exact SHA. Its core compatibility, Rust, Node, and native smoke jobs must be
+present and successful. Failed, canceled, missing, or timed-out CI blocks
+publication. A normal push without a release skips the gate and builds.
 
 Before 1.0, `bump-minor-pre-major` keeps a breaking change on a minor bump
 (`0.4.0` → `0.5.0`) instead of cutting `1.0.0` implicitly. The 1.0 release is a
@@ -99,7 +104,19 @@ part of release verification.
 
 ## Before dispatch
 
-- [ ] The release PR is merged to `main` and the normal CI matrix is green.
+- [ ] The release PR is merged to `main` and the normal CI matrix is green for
+      the merge commit that will become the release tag. PR checks on a
+      different SHA do not qualify.
+- [ ] The `rust-semver` CI job passes on that exact SHA. It compares the three
+      published Rust crates with their latest non-yanked stable crates.io
+      baselines, with both default and all features (`remote` included for
+      `ferriki`). It does not check the private `ferriki-core` package. A
+      missing baseline or registry error is a failure, not a skipped check.
+      For ordinary unreleased work still at the last published version, the
+      gate assumes a minor update so additive changes remain possible.
+      Before the first release of a new major, review its breaking changes and
+      add `--allow-major <new-major>` to the CI command in the same release PR;
+      remove that opt-in after the first version of that major is published.
 - [ ] The package version, changelog, release-please manifest, and intended npm
       dist-tag agree.
 - [ ] The generated release PR updates the main package, every platform
@@ -116,18 +133,34 @@ part of release verification.
       target runners are available; each native matrix job has a timeout.
 - [ ] npm Trusted Publishing is enabled for Ferriki and `@ferriki/vite` after
       the one-time Vite bootstrap above.
+- [ ] Each of the nine npm product packages has `Allow npm dist-tag` enabled in its
+      Trusted Publisher settings before a dist-tag promotion. This is a
+      separate permission from direct publishing; the recovery job uses npm
+      11.21.0 only when the selected tag needs to move.
 - [ ] crates.io Trusted Publishing is configured for `ferriki-textmate`,
       `ferriki-asset-gen` and `ferriki` (after the one-time bootstrap above).
 
 ## Release-candidate run
 
-- [ ] Run the normal publish workflow first; use `force-publish` only for an
-      intentional backfill of the manifest version. Use the `next` dist-tag for
-      a release candidate and record the manual go/no-go decision.
+- [ ] Run the normal publish workflow first. For an intentional retry or
+      backfill of a release created with this gate, dispatch the workflow on
+      its exact tag and pass the same tag as `release-tag`, for example
+      `gh workflow run publish.yml --ref v<version> -f force-publish=true -f release-tag=v<version> -f dist-tag=latest`.
+      The tag, workflow event SHA, manifest, packages, and successful `main`
+      CI run must all identify the same commit. A dispatch on a later `main`
+      commit is rejected even when it checks out an older tag. Record the
+      version and dist-tag policy before publication. The normal workflow uses
+      `latest`; a stable pre-1.0 stabilization version can exercise that path.
+      Choose `next` only when deliberately using a non-default npm tag. A
+      dist-tag does not turn a stable npm or Rust version into a SemVer
+      prerelease, and 1.0.0 must never be consumed as a rehearsal. Record the
+      manual go/no-go decision before the deliberate 1.0 version change.
+- [ ] Confirm the `Verify exact release source` job reports the release tag,
+      commit SHA, and successful CI run before either registry publisher starts.
 - [ ] Confirm every documented target build completes and every platform
       package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from
-      “published” and records failed or skipped target jobs.
+      “published” and records failed or skipped npm, crates.io, and target jobs.
 - [ ] Compare the "Native addon sizes" table in the release summary with the
       previous release's table, or with the previous sidecars' unpacked size
       on npm where that release has none. Explain in the release discussion
@@ -147,6 +180,42 @@ part of release verification.
       Vite 8 release.
 - [ ] Verify npm provenance on the main package, Vite integration, and all
       platform packages.
+- [ ] Confirm the summary reports successful publication and public version
+      verification for all three Rust crates as well as npm verification.
+
+## Recover a partial publication
+
+Recover from the original release tag after the registry has accepted only
+some packages or after public verification failed. Keep the originally chosen
+`latest` or `next` tag, unless deliberately promoting a verified candidate.
+The tag must contain this recovery workflow and point at the release commit;
+running the workflow on a newer `main` would give new source identity to old
+artifacts. For a release tagged `v<version>`, run:
+
+```sh
+gh workflow run publish.yml --ref v<version> \
+  -f force-publish=true -f release-tag=v<version> -f dist-tag=latest
+```
+
+The example preserves `latest` for a stable release. Use `-f dist-tag=next`
+only when that was the original tag or when deliberately selecting it. The
+release-source gate checks that the workflow run, tag, manifest version and
+successful main CI belong to the same immutable commit. Recovery checks each
+public npm name/version, tarball digest and SLSA provenance source/workflow
+identity before skipping it; a 404 means the version is absent, while registry,
+authentication, or provenance errors stop the job. Existing versions whose
+selected tag already points at them are skipped without a registry write. A
+tag that points elsewhere is promoted with `npm dist-tag add`; missing
+versions publish in sidecar, core, then Vite order. Every package is packed
+by pnpm and published as a tarball by npm with OIDC.
+The public npm and crates.io verification jobs check the complete product set
+again, and the summary reports `PUBLISHED` only if both registries pass.
+
+The recovery check compares HTTPS npm registry responses with its canonical
+attestation endpoint. It does not independently validate Sigstore
+signatures; use `npm audit signatures` for that cryptographic check when
+reviewing an installed package. A tag created before this workflow existed
+cannot be recovered through this command.
 
 ## Go/no-go and rollback
 

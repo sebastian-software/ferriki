@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "timingSourceCommit": "3fefa7217026bcc63ffaadf7a778ffe06ba8713b",
+  "runtimeSourceCommit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+  "ordinaryBinarySha256": "3f10a1942a185db64423013dc034165deba6bea02776c332117e5c987d7c96ae",
+  "loadedAddon": "/WORKTREE/ferriki/node/platforms/darwin-arm64/ferriki.node",
+  "loadedAddonStillMatchesAfterTiming": true,
+  "receipt": {
+    "builtAt": "2026-10-10T11:25:32.103Z",
+    "binarySha256": "3f10a1942a185db64423013dc034165deba6bea02776c332117e5c987d7c96ae",
+    "ferriki": {
+      "commit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+      "status": ""
+    },
+    "rustSourceSha256": "71bfa7cef9d09f00d76ce8fee9d845da3b6320d21cbc923bf5c3622bc75d683f",
+    "ferroni": {
+      "version": "2.1.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "$CARGO_HOME/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter"
+      ]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/WORKTREE/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33",
+    "loadedAddon": "/WORKTREE/ferriki/node/platforms/darwin-arm64/ferriki.node"
+  },
+  "timingHarnessSha256": "fec20ae2fcf13e6509d37c7a606caebd1beac18dda3a28db4ba0af7581951d57",
+  "assetManifestSha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+  "matrixReports": [
+    {
+      "name": "curated-run-01.json",
+      "sha256": "04795d89e193e4363393c744a8457225b92853e32eabedd2df3607288ce6db23"
+    },
+    {
+      "name": "curated-run-02.json",
+      "sha256": "a7179a7bd03fc72cded58697e10c542739b57a019bd8b079fec7dba6a3959cc6"
+    }
+  ]
+}

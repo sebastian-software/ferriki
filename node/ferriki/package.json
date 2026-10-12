@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/core",
-  "version": "0.12.0",
+  "version": "1.0.0",
   "description": "native syntax highlighting with HTML and CSS-class output",
   "keywords": [
     "highlighter",
@@ -43,7 +43,11 @@
     "src/api.d.mts",
     "src/asset-download.mjs",
     "src/index.mjs",
-    "transformers.mjs"
+    "transformers.mjs",
+    "web-component-server.d.mts",
+    "web-component-server.mjs",
+    "web-component.d.mts",
+    "web-component.mjs"
   ],
   "type": "module",
   "sideEffects": false,
@@ -63,6 +67,14 @@
       "types": "./react-macro.d.mts",
       "default": "./react-macro.mjs"
     },
+    "./web-component": {
+      "types": "./web-component.d.mts",
+      "default": "./web-component.mjs"
+    },
+    "./web-component/server": {
+      "types": "./web-component-server.d.mts",
+      "default": "./web-component-server.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -74,13 +86,13 @@
     "@types/node": "catalog:types"
   },
   "optionalDependencies": {
-    "@ferriki/darwin-arm64": "0.12.0",
-    "@ferriki/linux-arm64-gnu": "0.12.0",
-    "@ferriki/linux-arm64-musl": "0.12.0",
-    "@ferriki/linux-x64-gnu": "0.12.0",
-    "@ferriki/linux-x64-musl": "0.12.0",
-    "@ferriki/win32-arm64-msvc": "0.12.0",
-    "@ferriki/win32-x64-msvc": "0.12.0"
+    "@ferriki/darwin-arm64": "1.0.0",
+    "@ferriki/linux-arm64-gnu": "1.0.0",
+    "@ferriki/linux-arm64-musl": "1.0.0",
+    "@ferriki/linux-x64-gnu": "1.0.0",
+    "@ferriki/linux-x64-musl": "1.0.0",
+    "@ferriki/win32-arm64-msvc": "1.0.0",
+    "@ferriki/win32-x64-msvc": "1.0.0"
   },
   "engines": {
     "node": ">=22.13.0"

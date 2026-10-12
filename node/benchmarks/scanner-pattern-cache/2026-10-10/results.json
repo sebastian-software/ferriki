@@ -1,0 +1,5202 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-10-10T11:57:27.566Z",
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "hostCpu": "Apple M1 Ultra",
+  "logicalCpuCount": 20,
+  "totalMemoryBytes": 68719476736,
+  "machine": null,
+  "rounds": 9,
+  "warmupCalls": 5,
+  "measuredWarmCalls": 30,
+  "memoryRounds": 5,
+  "memoryBoundary": "Fresh process, one highlighter/registry, one theme, then all five grammars loaded and highlighted in order; current RSS/heap/external snapshots after GC where available.",
+  "timingBoundary": "Fresh Node process per language/revision; timer starts before native addon require and stops after first HTML. Warm samples reuse the same highlighter and HTML fixture; process startup and filesystem reads are outside the timer.",
+  "baseCommit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+  "candidateCommit": "19a363a20927ad52c5222daa16d86796056ce2ce",
+  "candidateSourceDiff": {
+    "baseCommit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+    "sha256": "241f84426aa53ae23110cacacc59c1299fdd3f274f7ebf6db4bcfcfae2a516bb",
+    "bytes": 26437,
+    "paths": [
+      "adr/0010-mechanical-vscode-textmate-port.md",
+      "crates/ferriki-textmate/src/grammar.rs",
+      "crates/ferriki-textmate/src/regexp.rs",
+      "crates/ferriki-textmate/src/registry.rs",
+      "crates/ferriki-textmate/src/rule.rs",
+      "crates/ferriki-textmate/src/rule_factory.rs"
+    ],
+    "rustSourceSha256": "e21019b165b1a6e5df22341233ea61b91b8a8461dd477b8389bd67b82dce6f71"
+  },
+  "ferroniVersion": "2.1.0",
+  "fixtureManifestSha256": "4c0c2f8bfa535d7f6fc3397a0585e3e6d66c1509d5341d7022ced20303cd175e",
+  "assetManifestSha256": "30ca207f07ee8616369ffb8e5c6456195abca74d56de6a106a87cf99cd83debf",
+  "buildReceipts": {
+    "base": {
+      "builtAt": "2026-10-10T11:39:00.590Z",
+      "binarySha256": "e7d8f43a405966627e6f7dbafd3777d082f3e4afe59ebc29f166df692bc62b15",
+      "ferriki": {
+        "commit": "6521b1be906e5a2711cddb15164e3ed2bd4a9af8",
+        "status": ""
+      },
+      "rustSourceSha256": "71bfa7cef9d09f00d76ce8fee9d845da3b6320d21cbc923bf5c3622bc75d683f",
+      "ferroni": {
+        "version": "2.1.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+        "revision": null,
+        "sourceSha256": null,
+        "features": ["default", "dfa-prefilter"]
+      },
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+      "cargoArgs": [
+        "build",
+        "--release",
+        "--manifest-path",
+        "/private/tmp/ferriki-issue230-baseline/crates/ferriki-core/Cargo.toml"
+      ],
+      "rustflags": null,
+      "encodedRustflags": null,
+      "targetRustflags": {},
+      "cargoProfileEnv": {},
+      "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33"
+    },
+    "candidate": {
+      "builtAt": "2026-10-10T11:54:33.466Z",
+      "binarySha256": "70481219b25aa0117c2e5e4d0abe17c4cb44c9563749aefdf3e608d25522cae3",
+      "ferriki": {
+        "commit": "19a363a20927ad52c5222daa16d86796056ce2ce",
+        "status": ""
+      },
+      "rustSourceSha256": "e21019b165b1a6e5df22341233ea61b91b8a8461dd477b8389bd67b82dce6f71",
+      "ferroni": {
+        "version": "2.1.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.1.0/Cargo.toml",
+        "revision": null,
+        "sourceSha256": null,
+        "features": ["default", "dfa-prefilter"]
+      },
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+      "cargoArgs": [
+        "build",
+        "--release",
+        "--manifest-path",
+        "/Users/sebastian/Workspace/.codex/issue-230-pattern-cache/ferriki/crates/ferriki-core/Cargo.toml"
+      ],
+      "rustflags": null,
+      "encodedRustflags": null,
+      "targetRustflags": {},
+      "cargoProfileEnv": {},
+      "cargoLockSha256": "c0fc5ff0f9698b0c9571f2ade9a68b87ba46976f36f7e391e523504197cf0e33"
+    }
+  },
+  "fixtures": {
+    "cpp": {
+      "path": "node/benchmarks/curated/fixtures/orders.cpp",
+      "bytes": 937,
+      "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f"
+    },
+    "typescript": {
+      "path": "node/benchmarks/curated/fixtures/orders.ts",
+      "bytes": 1203,
+      "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9"
+    },
+    "tsx": {
+      "path": "node/benchmarks/curated/fixtures/Orders.tsx",
+      "bytes": 1568,
+      "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5"
+    },
+    "json": {
+      "path": "node/benchmarks/curated/fixtures/orders.json",
+      "bytes": 761,
+      "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c"
+    },
+    "astro": {
+      "path": "node/benchmarks/curated/fixtures/Orders.astro",
+      "bytes": 1081,
+      "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62"
+    }
+  },
+  "samples": [
+    {
+      "round": 0,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.617750000000001,
+        "highlighterCreateMs": 0.8967499999999973,
+        "themeAndGrammarLoadMs": 8.684874999999998,
+        "htmlRenderMs": 410.925875,
+        "totalMs": 422.12525000000005
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          1.1108339999999544, 0.8927079999999705, 11.929333999999926, 0.8764169999999467,
+          12.063208000000031, 0.9287080000000287, 0.6478749999999991, 0.5882080000000087,
+          0.6271249999999782, 0.6107909999999492, 47.81554199999994, 1.0169590000000426,
+          0.9349579999999378, 1.0382079999999405, 0.9037910000000693, 0.7408329999999523,
+          0.7692910000000666, 0.849416999999903, 0.6380419999999276, 0.5689169999999422,
+          0.5633340000000544, 0.552791999999954, 0.567957999999976, 0.57487500000002,
+          0.566332999999986, 0.5755829999999378, 67.77570800000001, 0.8346669999999676,
+          0.6165839999999889, 0.5938750000000255
+        ],
+        "medianMs": 0.7550620000000094
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 168135296,
+          "heapUsedBytes": 5190776,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 267684552,
+          "heapUsedBytes": 5217032,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 104319688,
+          "heapUsedBytes": 5216808,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.6132500000000007,
+        "highlighterCreateMs": 0.9277079999999955,
+        "themeAndGrammarLoadMs": 8.612541999999998,
+        "htmlRenderMs": 409.24383300000005,
+        "totalMs": 420.397333
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          1.0121669999999767, 0.9268329999999878, 9.569291999999905, 0.69987500000002,
+          11.735709000000043, 0.9467920000000731, 0.7247499999999718, 0.7026250000000118,
+          0.7585829999999305, 0.6285000000000309, 45.766083000000094, 0.8966250000000855,
+          0.7094170000000304, 0.6503340000000435, 0.6497089999999162, 0.661707999999976,
+          0.6178330000000187, 0.5950410000000375, 0.5555839999999534, 0.5558330000000069,
+          0.8710839999999962, 0.647707999999966, 0.5354579999999487, 0.5273329999999987,
+          0.5654999999999291, 0.5782079999999041, 68.251666, 0.7421669999999949, 0.5491250000000036,
+          0.5195420000000013
+        ],
+        "medianMs": 0.680791499999998
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 164891264,
+          "heapUsedBytes": 5190616,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 260147912,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 94603976,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4658330000000035,
+        "highlighterCreateMs": 0.9191250000000011,
+        "themeAndGrammarLoadMs": 1.7177919999999958,
+        "htmlRenderMs": 37.896375,
+        "totalMs": 41.999125
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7253749999999997, 0.6398329999999959, 12.788792, 0.6329170000000204, 10.325500000000005,
+          0.7546250000000043, 0.5125830000000065, 0.48225000000002183, 0.5362909999999772,
+          0.47195899999999824, 10.760250000000013, 0.6799999999999784, 0.5549589999999966,
+          0.5281659999999988, 0.5099170000000015, 0.5100840000000062, 0.4976249999999993,
+          0.49687499999998863, 0.4996670000000165, 0.49362500000000864, 0.5013339999999857,
+          0.5162909999999954, 0.5177500000000066, 0.5025830000000155, 0.5100419999999986,
+          0.48962500000001796, 5.238124999999997, 0.5440000000000111, 0.520292000000012,
+          0.5114169999999945
+        ],
+        "medianMs": 0.517020500000001
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 40634912,
+          "heapUsedBytes": 5205808,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72780368,
+          "heapUsedBytes": 5242280,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72780368,
+          "heapUsedBytes": 5242104,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.6704579999999964,
+        "highlighterCreateMs": 0.9611250000000027,
+        "themeAndGrammarLoadMs": 1.8317089999999965,
+        "htmlRenderMs": 140.931083,
+        "totalMs": 145.394375
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          4.1760830000000055, 0.7212079999999901, 13.056166999999988, 0.6681669999999826,
+          9.326750000000004, 0.7157090000000039, 0.5039999999999907, 0.48887499999997885,
+          0.4982080000000053, 0.4782079999999951, 9.760917000000035, 0.5367909999999938,
+          0.45829200000002857, 0.444417000000044, 0.4377499999999941, 0.43524999999999636,
+          0.4354170000000295, 0.43445800000000645, 0.4330839999999512, 0.4357079999999769,
+          0.43316600000002836, 0.4332499999999868, 0.43341600000002245, 0.4331659999999715,
+          0.4318749999999909, 0.4359590000000253, 4.727582999999981, 0.46520799999996143,
+          0.6443330000000174, 0.5263340000000198
+        ],
+        "medianMs": 0.47170799999997826
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79399480,
+          "heapUsedBytes": 5204024,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 114838096,
+          "heapUsedBytes": 5241904,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36473424,
+          "heapUsedBytes": 5242000,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.534290999999996,
+        "highlighterCreateMs": 0.8859589999999997,
+        "themeAndGrammarLoadMs": 1.7179160000000024,
+        "htmlRenderMs": 117.42333399999998,
+        "totalMs": 121.5615
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7051250000000095, 0.6357919999999808, 6.4468330000000265, 0.7015829999999994,
+          0.6454590000000167, 0.6065000000000111, 0.6241669999999999, 0.6482910000000004,
+          0.7851660000000038, 0.7767499999999927, 11.757292000000007, 0.8168329999999742,
+          0.8221249999999998, 0.765166999999991, 0.7405840000000126, 0.5993749999999807,
+          0.5877499999999998, 0.5783340000000123, 0.5745410000000106, 0.571249999999992,
+          0.5717919999999879, 0.5722499999999968, 0.5667499999999848, 0.5456250000000011,
+          0.5444999999999993, 0.5459590000000105, 6.627959000000004, 0.6342919999999879,
+          0.5889159999999833, 0.5590409999999792
+        ],
+        "medianMs": 0.6292294999999939
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73206352,
+          "heapUsedBytes": 5210072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 102091344,
+          "heapUsedBytes": 5253280,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102091344,
+          "heapUsedBytes": 5253376,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5178750000000036,
+        "highlighterCreateMs": 0.9000419999999991,
+        "themeAndGrammarLoadMs": 1.7169170000000022,
+        "htmlRenderMs": 32.458332999999996,
+        "totalMs": 36.593167
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6573749999999876, 0.6019579999999962, 6.080832999999998, 0.6839999999999975,
+          0.6573750000000018, 0.6039999999999992, 0.5969999999999942, 0.5976670000000013,
+          0.6187089999999955, 0.6074160000000006, 10.824040999999994, 0.6585000000000036,
+          0.5717919999999879, 0.5548750000000098, 0.6092919999999822, 0.5671249999999759,
+          0.508499999999998, 0.505833000000024, 0.5302499999999952, 0.5054169999999942,
+          0.5159579999999835, 0.5245000000000175, 0.5339999999999918, 0.5331669999999917,
+          0.5176670000000172, 0.5198339999999746, 6.493334000000004, 0.7060839999999757,
+          0.6716669999999851, 0.6864170000000058
+        ],
+        "medianMs": 0.5998124999999987
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39012944,
+          "heapUsedBytes": 5210032,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 67406440,
+          "heapUsedBytes": 5253512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 67406440,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.479167000000004,
+        "highlighterCreateMs": 0.9480419999999938,
+        "themeAndGrammarLoadMs": 0.31320800000000304,
+        "htmlRenderMs": 0.7404170000000008,
+        "totalMs": 3.4808340000000015
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21641600000000238, 0.2184999999999988, 0.21600000000000108, 0.21487499999999926,
+          0.2232920000000007, 0.2184999999999988, 0.21433299999999633, 0.21441700000000452,
+          0.296875, 0.22400000000000375, 0.24766600000000238, 0.22220799999999485,
+          0.2224170000000001, 0.2220829999999978, 0.22212499999999835, 0.22195800000000077,
+          0.22229199999999594, 0.22212499999999835, 0.22304199999999952, 0.22375000000000256,
+          0.22400000000000375, 0.22491600000000034, 0.2242910000000009, 0.22212499999999835,
+          0.32758299999999707, 0.29812499999999886, 0.2661250000000024, 0.23779100000000142,
+          0.3324169999999995, 0.2359170000000006
+        ],
+        "medianMs": 0.2227294999999998
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20072920,
+          "heapUsedBytes": 5197056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20384240,
+          "heapUsedBytes": 5228496,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20384240,
+          "heapUsedBytes": 5228592,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5847499999999997,
+        "highlighterCreateMs": 0.9355410000000006,
+        "themeAndGrammarLoadMs": 0.3224170000000015,
+        "htmlRenderMs": 0.8449999999999989,
+        "totalMs": 3.6877080000000007
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.22141700000000242, 0.2307079999999999, 0.22204099999999727, 0.22104199999999707,
+          0.2599580000000046, 0.2539999999999978, 0.2558749999999961, 0.24995899999999693,
+          0.28608299999999787, 0.25720799999999855, 0.2751659999999987, 0.22683299999999917,
+          0.2411250000000038, 0.23912500000000136, 0.2322499999999934, 0.22987499999999983,
+          0.2232920000000007, 0.2232090000000042, 0.2224170000000001, 0.22254099999999966,
+          0.2197090000000017, 0.2191660000000013, 0.22104199999999707, 0.21995799999999832, 0.21875,
+          0.22041600000000017, 0.2202920000000006, 0.21908400000000228, 0.2204580000000007,
+          0.21962500000000063
+        ],
+        "medianMs": 0.22287500000000193
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20974064,
+          "heapUsedBytes": 5197368,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 21154336,
+          "heapUsedBytes": 5228952,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 21170720,
+          "heapUsedBytes": 5228728,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5537500000000009,
+        "highlighterCreateMs": 0.8728750000000005,
+        "themeAndGrammarLoadMs": 5.466374999999999,
+        "htmlRenderMs": 212.18566600000003,
+        "totalMs": 220.07866600000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          10.15074999999996, 1.730874999999969, 22.61983299999997, 1.45716699999997,
+          2.666417000000024, 1.4664580000000456, 1.4725420000000327, 1.440999999999974,
+          1.37337500000001, 1.2609169999999494, 24.720208000000014, 1.7407089999999812,
+          1.3621669999999995, 1.5510829999999487, 1.4144580000000246, 1.3290000000000077,
+          1.2307079999999928, 1.2387089999999716, 1.2050409999999943, 1.6429580000000215,
+          1.446833999999967, 1.338666000000046, 1.2822500000000332, 1.2496249999999804,
+          1.5489580000000274, 1.2300420000000258, 7.907834000000037, 1.4987919999999804,
+          1.4699999999999704, 1.155791000000022
+        ],
+        "medianMs": 1.4520004999999685
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103942688,
+          "heapUsedBytes": 5205072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 155290168,
+          "heapUsedBytes": 5243680,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 67373624,
+          "heapUsedBytes": 5243776,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 0,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.639249999999997,
+        "highlighterCreateMs": 0.9960410000000053,
+        "themeAndGrammarLoadMs": 5.8161249999999995,
+        "htmlRenderMs": 73.84204199999999,
+        "totalMs": 82.293458
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.5039580000000115, 1.7540419999999983, 21.996666000000005, 1.3695830000000058,
+          2.382083999999992, 1.2989169999999888, 1.2070839999999805, 1.2035829999999805,
+          1.2222920000000101, 1.1862500000000011, 15.371417000000008, 1.4168750000000045,
+          1.5273329999999987, 1.452791000000019, 1.296416999999991, 1.2609169999999779,
+          1.2395420000000001, 1.2182499999999834, 1.2067919999999788, 1.1687919999999963,
+          1.1727500000000077, 1.1564170000000047, 1.160665999999992, 1.1581669999999917,
+          1.3690000000000282, 1.2052499999999782, 5.321792000000016, 1.2353749999999764,
+          1.1914580000000115, 1.1719999999999686
+        ],
+        "medianMs": 1.2374584999999882
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50235960,
+          "heapUsedBytes": 5204912,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 96979632,
+          "heapUsedBytes": 5243520,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 96979632,
+          "heapUsedBytes": 5243664,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.480916999999998,
+        "highlighterCreateMs": 0.8844580000000022,
+        "themeAndGrammarLoadMs": 8.839999999999996,
+        "htmlRenderMs": 415.063417,
+        "totalMs": 426.268792
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          1.0899590000000217, 0.6348750000000791, 9.504791000000068, 0.7746670000000222,
+          12.756999999999948, 1.221290999999951, 0.8230419999999867, 0.7895409999999856,
+          1.0321670000000722, 0.750417000000084, 46.51137499999993, 0.8569579999999632,
+          0.6567499999999882, 0.6096659999999474, 0.5431250000000318, 0.589040999999952,
+          0.5753330000000005, 0.5777910000000475, 0.5590839999999844, 0.5577910000000657,
+          0.5471669999999449, 0.524791999999934, 0.6190839999999298, 0.7043340000000171,
+          0.6411249999999882, 0.7018749999999727, 69.47524999999996, 0.8851250000000164,
+          0.5830419999999776, 0.5416250000000673
+        ],
+        "medianMs": 0.6793124999999804
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 166464080,
+          "heapUsedBytes": 5190688,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 261180080,
+          "heapUsedBytes": 5216944,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 92555976,
+          "heapUsedBytes": 5216720,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.6023330000000016,
+        "highlighterCreateMs": 0.9400419999999983,
+        "themeAndGrammarLoadMs": 8.819874999999996,
+        "htmlRenderMs": 406.590667,
+        "totalMs": 417.95291699999996
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9730000000000132, 0.6989169999999945, 11.700917000000004, 0.7371669999999995,
+          12.187374999999975, 0.9210409999999456, 0.8594170000000076, 0.7997080000000096,
+          0.8186659999998938, 0.7985840000000053, 47.71687499999996, 0.8450000000000273,
+          0.6397500000000491, 0.5910840000000235, 0.5782500000000255, 0.5707499999999754,
+          0.5254999999999654, 0.5066669999999931, 0.5479579999999942, 0.6078330000000278,
+          0.6102079999999432, 0.6196250000000418, 0.5833749999999327, 0.5737920000000258,
+          0.5509999999999309, 0.6522089999999707, 69.22249999999997, 0.7939589999999725,
+          0.5463330000000042, 0.5529999999999973
+        ],
+        "medianMs": 0.6459795000000099
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 167447096,
+          "heapUsedBytes": 5190656,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 263965312,
+          "heapUsedBytes": 5216640,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 101124760,
+          "heapUsedBytes": 5216736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5698749999999961,
+        "highlighterCreateMs": 0.8786249999999995,
+        "themeAndGrammarLoadMs": 1.7002080000000035,
+        "htmlRenderMs": 139.42933299999999,
+        "totalMs": 143.57804099999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          4.055542000000003, 0.7955419999999833, 13.14916599999998, 0.680041999999986, 10.478375,
+          0.8425419999999804, 0.5337920000000054, 0.5085419999999772, 0.5224999999999795,
+          0.5180000000000007, 10.74641600000001, 0.7097909999999956, 0.5276250000000005,
+          0.4936660000000188, 0.48824999999999363, 0.47191600000002154, 0.46604200000001583,
+          0.46470900000002757, 0.4749580000000151, 0.4772090000000162, 0.4680410000000279,
+          0.47450000000003456, 0.4807079999999928, 0.48649999999997817, 0.4693749999999568,
+          0.4630000000000223, 5.317083000000025, 0.5826250000000073, 0.7182080000000042,
+          0.6374160000000302
+        ],
+        "medianMs": 0.5202499999999901
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 80087680,
+          "heapUsedBytes": 5203952,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 114166424,
+          "heapUsedBytes": 5242152,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 37292696,
+          "heapUsedBytes": 5241928,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.578208999999994,
+        "highlighterCreateMs": 0.9329160000000059,
+        "themeAndGrammarLoadMs": 1.7242499999999978,
+        "htmlRenderMs": 36.851958999999994,
+        "totalMs": 41.08733399999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.672458000000006, 0.5901659999999964, 13.17645800000001, 0.6385419999999726,
+          10.102834000000001, 0.756416999999999, 0.5369159999999908, 0.5173750000000155,
+          0.5288340000000176, 0.49774999999999636, 10.572708000000006, 0.6535000000000082,
+          0.5498749999999859, 0.5102909999999952, 0.6439169999999876, 0.5560419999999908,
+          0.5052499999999895, 0.4960829999999987, 0.4800419999999974, 0.47791700000001924,
+          0.4672920000000147, 0.4749170000000049, 0.4829169999999863, 0.4923750000000098,
+          0.4833329999999876, 0.4954170000000033, 5.20316600000001, 0.5390830000000051,
+          0.49604199999998855, 0.541499999999985
+        ],
+        "medianMs": 0.5328750000000042
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39225936,
+          "heapUsedBytes": 5204128,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72059520,
+          "heapUsedBytes": 5242280,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72059520,
+          "heapUsedBytes": 5242056,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5265419999999992,
+        "highlighterCreateMs": 0.900749999999995,
+        "themeAndGrammarLoadMs": 1.7409580000000062,
+        "htmlRenderMs": 32.26724999999999,
+        "totalMs": 36.43549999999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.656125000000003, 0.6061669999999992, 6.0822080000000085, 0.65570799999999,
+          0.8156669999999906, 0.7093330000000009, 0.5849580000000145, 0.5591249999999945,
+          0.5777920000000165, 0.5568329999999833, 11.023167, 0.6882079999999746, 0.5862500000000068,
+          0.5654580000000067, 0.5679589999999735, 0.5589580000000183, 0.5569169999999986,
+          0.5653340000000071, 0.5676670000000001, 0.5713749999999891, 0.5681249999999807,
+          0.5630000000000166, 0.5918330000000083, 0.5740000000000123, 0.5588329999999928,
+          0.5528750000000002, 6.322625000000016, 0.6324590000000114, 0.594458000000003,
+          0.7704160000000115
+        ],
+        "medianMs": 0.5813750000000155
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38406760,
+          "heapUsedBytes": 5210128,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 66849384,
+          "heapUsedBytes": 5253656,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 66849384,
+          "heapUsedBytes": 5253432,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5996659999999991,
+        "highlighterCreateMs": 0.920459000000001,
+        "themeAndGrammarLoadMs": 1.7836250000000007,
+        "htmlRenderMs": 116.454125,
+        "totalMs": 120.75787500000001
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7587080000000128, 0.7035419999999988, 6.65187499999999, 0.7084159999999997,
+          0.6234999999999786, 0.5854999999999961, 0.5786659999999983, 0.571708000000001,
+          0.6129579999999919, 0.5902920000000051, 11.241500000000002, 0.7242089999999735,
+          0.6179589999999848, 0.5851670000000126, 0.560167000000007, 0.5640830000000108,
+          0.5389999999999873, 0.5293330000000083, 0.5246250000000146, 0.5234159999999974,
+          0.5307500000000118, 0.5371250000000032, 0.5396669999999801, 0.534417000000019,
+          0.5420830000000194, 0.5494999999999948, 6.403416000000021, 0.6222080000000005,
+          0.5728750000000105, 0.5595830000000035
+        ],
+        "medianMs": 0.5757705000000044
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73746976,
+          "heapUsedBytes": 5210000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 101665312,
+          "heapUsedBytes": 5253208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 101665312,
+          "heapUsedBytes": 5253304,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.6362079999999963,
+        "highlighterCreateMs": 0.9022500000000022,
+        "themeAndGrammarLoadMs": 0.32337499999999864,
+        "htmlRenderMs": 0.8617080000000001,
+        "totalMs": 3.7235409999999973
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21416599999999875, 0.2184169999999952, 0.21908400000000228, 0.2182499999999976,
+          0.21974999999999767, 0.21799999999999642, 0.21779200000000287, 0.22141700000000242,
+          0.23441599999999596, 0.22220899999999943, 0.2502500000000012, 0.21937499999999943,
+          0.21950000000000358, 0.21895800000000065, 0.21891699999999759, 0.2191660000000013,
+          0.2185839999999999, 0.220125000000003, 0.21808300000000003, 0.21875, 0.21783300000000594,
+          0.21837500000000176, 0.21887500000000415, 0.21854199999999935, 0.21837500000000176,
+          0.21799999999999642, 0.217291000000003, 0.21841599999999772, 0.21983300000000128,
+          0.21854200000000645
+        ],
+        "medianMs": 0.21866699999999994
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20711944,
+          "heapUsedBytes": 5197072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20744712,
+          "heapUsedBytes": 5228512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20744712,
+          "heapUsedBytes": 5228608,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.554040999999998,
+        "highlighterCreateMs": 0.9316669999999974,
+        "themeAndGrammarLoadMs": 0.32329200000000213,
+        "htmlRenderMs": 0.8259159999999994,
+        "totalMs": 3.634915999999997
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21945900000000051, 0.2222500000000025, 0.2136250000000004, 0.21754200000000168,
+          0.21466599999999403, 0.21004100000000392, 0.2076670000000007, 0.20945799999999792,
+          0.23783299999999485, 0.21512500000000045, 0.24224999999999852, 0.21279100000000284,
+          0.21058399999999722, 0.2115000000000009, 0.21000000000000085, 0.22445900000000307,
+          0.22433300000000145, 0.2207080000000019, 0.217374999999997, 0.21633399999999625,
+          0.21479099999999818, 0.21604200000000162, 0.2206250000000054, 0.223791999999996,
+          0.21579200000000043, 0.21666700000000105, 0.21412500000000279, 0.21616699999999867,
+          0.21920800000000185, 0.2168750000000017
+        ],
+        "medianMs": 0.21625049999999746
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20318728,
+          "heapUsedBytes": 5197128,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20712016,
+          "heapUsedBytes": 5228568,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20744784,
+          "heapUsedBytes": 5228712,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.6137500000000031,
+        "highlighterCreateMs": 0.9122500000000002,
+        "themeAndGrammarLoadMs": 5.494124999999997,
+        "htmlRenderMs": 71.633,
+        "totalMs": 79.65312499999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.819417000000016, 1.9159580000000176, 22.148500000000013, 1.4016249999999957,
+          2.2258329999999944, 1.2884579999999914, 1.3488330000000133, 1.2315830000000005,
+          1.3238330000000076, 1.2954579999999964, 15.898583000000002, 1.3090420000000051,
+          1.3672500000000127, 1.3714169999999797, 1.4742090000000019, 1.4182080000000212,
+          1.216083999999995, 1.1391670000000147, 1.103749999999991, 1.1053750000000093,
+          1.5345419999999876, 1.2627919999999904, 1.2787079999999946, 1.5201249999999789,
+          1.2564589999999498, 1.1674580000000105, 5.5383750000000305, 1.4786660000000325,
+          1.525082999999995, 1.3240840000000276
+        ],
+        "medianMs": 1.358041500000013
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50629176,
+          "heapUsedBytes": 5204984,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 98077264,
+          "heapUsedBytes": 5243592,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 98077264,
+          "heapUsedBytes": 5243688,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.6114169999999959,
+        "highlighterCreateMs": 0.9250830000000008,
+        "themeAndGrammarLoadMs": 5.319417000000001,
+        "htmlRenderMs": 207.77804099999997,
+        "totalMs": 215.63395799999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          10.31899999999996, 1.8392499999999927, 23.22633300000001, 1.461416999999983,
+          2.191249999999968, 1.1628749999999854, 1.0634170000000154, 1.0375420000000304,
+          1.2363750000000095, 1.3389170000000377, 24.601584000000003, 1.4569159999999783,
+          1.099708000000021, 1.0963749999999663, 1.5373749999999973, 1.4085000000000036,
+          1.5964999999999918, 1.380457999999976, 1.2752079999999637, 1.2629999999999768,
+          1.337500000000034, 1.2452920000000063, 1.1830830000000105, 1.2644579999999905,
+          1.220124999999996, 1.3131670000000213, 8.027625, 1.4074170000000095, 1.5257499999999595,
+          1.1756249999999682
+        ],
+        "medianMs": 1.3382085000000359
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103828048,
+          "heapUsedBytes": 5204928,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 156404352,
+          "heapUsedBytes": 5243856,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 70126208,
+          "heapUsedBytes": 5243632,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.610709,
+        "highlighterCreateMs": 0.980832999999997,
+        "themeAndGrammarLoadMs": 8.612125000000006,
+        "htmlRenderMs": 416.03333299999997,
+        "totalMs": 427.23699999999997
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9586249999999836, 0.7157089999999471, 11.38237499999991, 0.7994999999999663,
+          11.897542000000044, 0.8461249999999154, 1.0275419999999258, 0.7180410000000848,
+          0.9270420000000286, 0.6687920000000531, 51.019000000000005, 0.8642919999999776,
+          0.5833749999999327, 0.5394999999999754, 0.5228749999999991, 0.5228749999999991,
+          0.5177499999999782, 0.5186670000000504, 0.49941599999999653, 0.4842079999999669,
+          0.48775000000000546, 0.4926669999999831, 0.518165999999951, 0.49691699999993943,
+          0.4995419999999058, 0.49566700000002584, 69.50700000000006, 0.7156250000000455,
+          0.5118750000000318, 0.4949579999999969
+        ],
+        "medianMs": 0.5614374999999541
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 168168088,
+          "heapUsedBytes": 5190656,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 264555232,
+          "heapUsedBytes": 5216960,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102271712,
+          "heapUsedBytes": 5216736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.6376249999999999,
+        "highlighterCreateMs": 0.9509589999999974,
+        "themeAndGrammarLoadMs": 9.459083,
+        "htmlRenderMs": 409.59512500000005,
+        "totalMs": 421.64279200000004
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9860419999999976, 0.8190829999999778, 9.526792, 0.8794169999999895, 11.990166999999929,
+          0.9558329999999842, 0.6831660000000284, 0.6701669999999922, 0.6997920000000022,
+          0.6781660000000329, 45.65599999999995, 0.8507080000000542, 0.649082999999905,
+          0.6762079999999742, 0.6425420000000486, 0.5805420000000368, 0.5664170000000013,
+          0.5462089999999762, 0.5611249999999472, 0.5694160000000466, 0.5755829999999378,
+          0.5764169999999922, 0.5825419999999895, 0.5589169999999513, 0.574292000000014,
+          0.5749580000000378, 69.37841700000001, 0.919083999999998, 0.7522500000000036,
+          0.7672919999999976
+        ],
+        "medianMs": 0.6771870000000035
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 163859096,
+          "heapUsedBytes": 5190616,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 258427640,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 91228920,
+          "heapUsedBytes": 5216696,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5206250000000026,
+        "highlighterCreateMs": 0.911875000000002,
+        "themeAndGrammarLoadMs": 1.7853329999999943,
+        "htmlRenderMs": 37.353167000000006,
+        "totalMs": 41.571000000000005
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7156669999999963, 0.6371670000000051, 12.806499999999986, 0.6317090000000007,
+          9.969124999999991, 0.7416249999999991, 0.5196660000000008, 0.49962500000000887,
+          0.5128750000000082, 0.49612500000000637, 10.671667000000014, 0.6490000000000009,
+          0.5155419999999822, 0.49850000000000705, 0.4881249999999966, 0.48349999999999227,
+          0.489750000000015, 0.48220900000001166, 0.48287500000000705, 0.47987500000002115,
+          0.48483299999998053, 0.48570799999998826, 0.4904170000000079, 0.4827499999999816,
+          0.47791700000001924, 0.48799999999999955, 5.160541999999992, 0.5315410000000043,
+          0.48879199999998946, 0.47970900000001393
+        ],
+        "medianMs": 0.4973125000000067
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39209528,
+          "heapUsedBytes": 5204112,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72272488,
+          "heapUsedBytes": 5242136,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72272488,
+          "heapUsedBytes": 5241912,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5467920000000035,
+        "highlighterCreateMs": 0.8958329999999961,
+        "themeAndGrammarLoadMs": 1.72025,
+        "htmlRenderMs": 138.84375,
+        "totalMs": 143.00662499999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.4861669999999947, 0.5725410000000011, 13.052415999999994, 0.6928329999999789,
+          10.491042000000022, 0.8133330000000001, 0.562041999999991, 0.539874999999995,
+          0.5545419999999979, 0.5354580000000055, 10.843207999999976, 0.6739169999999604,
+          0.5480830000000196, 0.5174580000000333, 0.5047079999999937, 0.5020829999999705,
+          0.5135419999999726, 0.5183749999999918, 0.49450000000001637, 0.482832999999971,
+          0.47158399999995027, 0.472959000000003, 0.4841660000000161, 0.484292000000039,
+          0.4787080000000401, 0.48866700000002083, 5.335041999999987, 0.5934159999999906,
+          0.6088340000000017, 0.5626669999999763
+        ],
+        "medianMs": 0.5439790000000073
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79235616,
+          "heapUsedBytes": 5203952,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 112708152,
+          "heapUsedBytes": 5241832,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36325944,
+          "heapUsedBytes": 5241928,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5053339999999977,
+        "highlighterCreateMs": 0.926833000000002,
+        "themeAndGrammarLoadMs": 1.6814170000000033,
+        "htmlRenderMs": 115.39020799999999,
+        "totalMs": 119.50379199999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7151670000000081, 0.6678750000000093, 6.318040999999994, 0.7363750000000095,
+          0.6970830000000205, 0.6606670000000179, 0.6592080000000067, 0.6489170000000115,
+          0.6399999999999864, 0.6162920000000156, 11.540166, 0.7115829999999903, 0.5739579999999762,
+          0.5557919999999967, 0.5477500000000077, 0.5504170000000101, 0.5446660000000065,
+          0.5406669999999849, 0.5405419999999879, 0.539749999999998, 0.5445829999999887,
+          0.5391250000000127, 0.5432089999999903, 0.5415419999999926, 0.5417500000000075,
+          0.5457500000000266, 6.366375000000005, 0.6472500000000139, 0.6184590000000014,
+          0.5886250000000075
+        ],
+        "medianMs": 0.6024585000000116
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 72780320,
+          "heapUsedBytes": 5210000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 100420152,
+          "heapUsedBytes": 5253208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 100420152,
+          "heapUsedBytes": 5253304,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.6638339999999943,
+        "highlighterCreateMs": 0.9503330000000005,
+        "themeAndGrammarLoadMs": 1.715042000000004,
+        "htmlRenderMs": 32.64424999999999,
+        "totalMs": 36.97345899999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6366670000000028, 0.592166000000006, 6.016583000000011, 0.6692500000000052,
+          0.6387500000000017, 0.609499999999997, 0.5948750000000018, 0.5989580000000103,
+          0.6079579999999964, 0.5652919999999995, 11.057375000000008, 0.6688749999999857,
+          0.5695420000000126, 0.5533749999999884, 0.5461250000000177, 0.548624999999987,
+          0.5560419999999908, 0.5434999999999945, 0.5434579999999869, 0.541166000000004,
+          0.5372079999999926, 0.538958000000008, 0.5406660000000159, 0.5458749999999952,
+          0.5404160000000218, 0.5410829999999862, 6.2019579999999905, 0.5947089999999946,
+          0.5620000000000118, 0.5517910000000086
+        ],
+        "medianMs": 0.5636460000000056
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 37980656,
+          "heapUsedBytes": 5210056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 67193328,
+          "heapUsedBytes": 5253264,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 67193328,
+          "heapUsedBytes": 5253360,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.4533750000000012,
+        "highlighterCreateMs": 0.8467909999999961,
+        "themeAndGrammarLoadMs": 0.2669169999999994,
+        "htmlRenderMs": 0.7237920000000031,
+        "totalMs": 3.2908749999999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21529200000000515, 0.22420899999999477, 0.2225000000000037, 0.22129199999999827,
+          0.22050000000000125, 0.22100000000000364, 0.21979200000000532, 0.22033299999999656,
+          0.2353339999999946, 0.22570900000000194, 0.25329200000000185, 0.22237499999999955,
+          0.2203749999999971, 0.22033300000000366, 0.2221669999999989, 0.2206249999999983,
+          0.22074999999999534, 0.2204580000000007, 0.22008300000000247, 0.2209580000000031,
+          0.21987500000000182, 0.22033399999999403, 0.2203749999999971, 0.21966700000000117,
+          0.22008300000000247, 0.22050000000000125, 0.22025000000000006, 0.2205409999999972,
+          0.2216669999999965, 0.220125000000003
+        ],
+        "medianMs": 0.22050000000000125
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 19974616,
+          "heapUsedBytes": 5197128,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20072920,
+          "heapUsedBytes": 5228568,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20089304,
+          "heapUsedBytes": 5228664,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5357500000000002,
+        "highlighterCreateMs": 0.8999590000000026,
+        "themeAndGrammarLoadMs": 0.2733750000000015,
+        "htmlRenderMs": 0.8615409999999954,
+        "totalMs": 3.5706249999999997
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21658399999999745, 0.2204580000000007, 0.21612499999999812, 0.21091700000000202,
+          0.20929100000000034, 0.20858400000000188, 0.2081670000000031, 0.2088329999999985,
+          0.26037499999999625, 0.21179200000000264, 0.2342089999999999, 0.20950000000000557,
+          0.20895800000000264, 0.208750000000002, 0.20991699999999724, 0.21029199999999548,
+          0.21062500000000028, 0.20862499999999784, 0.21358299999999986, 0.20920799999999673,
+          0.21074999999999733, 0.20816599999999852, 0.20958399999999955, 0.21062500000000028,
+          0.20991700000000435, 0.20916700000000077, 0.2097089999999966, 0.20862499999999784,
+          0.20845800000000025, 0.20812500000000256
+        ],
+        "medianMs": 0.20964649999999807
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20318752,
+          "heapUsedBytes": 5197248,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20449848,
+          "heapUsedBytes": 5228832,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20466232,
+          "heapUsedBytes": 5228608,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.4945000000000022,
+        "highlighterCreateMs": 0.8837079999999986,
+        "themeAndGrammarLoadMs": 5.218666999999996,
+        "htmlRenderMs": 206.514541,
+        "totalMs": 214.11141600000002
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          10.360792000000004, 1.8475830000000428, 23.184708999999998, 1.5307080000000042,
+          2.255207999999982, 1.1000420000000304, 1.053291999999999, 1.0383750000000305,
+          1.1211249999999495, 1.6223750000000337, 24.726584000000003, 1.4606660000000034,
+          1.2275829999999814, 1.1985420000000317, 1.2256250000000364, 1.1868749999999864,
+          1.1534580000000005, 1.164041999999995, 1.1671249999999986, 1.153874999999971,
+          1.1685829999999555, 1.238584000000003, 1.2084169999999972, 1.1779169999999795,
+          1.1347499999999968, 1.1271669999999858, 7.4707500000000095, 1.303124999999966,
+          1.1504170000000045, 1.1367079999999987
+        ],
+        "medianMs": 1.192708500000009
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 104401536,
+          "heapUsedBytes": 5204976,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 155273880,
+          "heapUsedBytes": 5243856,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 71142040,
+          "heapUsedBytes": 5243632,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.4719160000000002,
+        "highlighterCreateMs": 0.8845000000000027,
+        "themeAndGrammarLoadMs": 5.2464590000000015,
+        "htmlRenderMs": 70.4145,
+        "totalMs": 78.017375
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.416791999999987, 1.5896669999999915, 21.764666000000005, 1.3600000000000136,
+          2.2582920000000115, 1.2244579999999985, 1.1659999999999968, 1.1570409999999924,
+          1.1869579999999758, 1.181291999999985, 15.332833999999991, 1.2510000000000048,
+          1.151707999999985, 1.132833000000005, 1.1348750000000223, 1.1496669999999938,
+          1.1496250000000146, 1.168042000000014, 1.1253749999999911, 1.1221250000000111,
+          1.135167000000024, 1.1253750000000196, 1.129458999999997, 1.1409590000000094,
+          1.142832999999996, 1.1471659999999986, 5.127249999999975, 1.215332999999987,
+          1.151457999999991, 1.1741660000000138
+        ],
+        "medianMs": 1.1615204999999946
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50121224,
+          "heapUsedBytes": 5205056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 96307744,
+          "heapUsedBytes": 5243664,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 96307744,
+          "heapUsedBytes": 5243760,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5201250000000002,
+        "highlighterCreateMs": 0.9145839999999978,
+        "themeAndGrammarLoadMs": 8.616916000000003,
+        "htmlRenderMs": 393.02275000000003,
+        "totalMs": 404.07437500000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.8924999999999841, 0.6995420000000081, 9.228000000000009, 0.7595410000000129,
+          11.54600000000005, 0.8218749999999773, 0.5937920000000076, 0.5735419999999749,
+          0.6125420000000759, 0.5942499999999882, 44.46900000000005, 0.794334000000049,
+          0.5780829999999924, 0.5390409999999974, 0.5309999999999491, 0.5256249999999909,
+          0.512833999999998, 0.533292000000074, 0.5347920000000386, 0.5357079999999996,
+          0.5310420000000704, 0.5223340000000007, 0.5190829999999096, 0.5172079999999823,
+          0.5311670000000959, 0.5148329999999532, 66.48299999999995, 0.7103749999999991,
+          0.5519160000000056, 0.5402500000000146
+        ],
+        "medianMs": 0.5627289999999903
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 164170344,
+          "heapUsedBytes": 5190744,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 260278984,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 93686496,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5546250000000015,
+        "highlighterCreateMs": 0.9456249999999997,
+        "themeAndGrammarLoadMs": 8.929249999999996,
+        "htmlRenderMs": 407.24679100000003,
+        "totalMs": 418.676291
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9201659999999947, 0.7191249999999627, 11.188874999999939, 0.7800829999999905,
+          11.803999999999974, 0.9197500000000218, 0.6663330000000087, 0.6037499999999909,
+          0.6148749999999836, 0.5914999999999964, 47.58654100000001, 0.800083000000086,
+          0.5652919999999995, 0.5382499999999482, 0.5313340000000153, 0.5221669999999676,
+          0.5154170000000704, 0.5180409999999256, 0.5206670000000031, 0.5173749999999018,
+          0.5154999999999745, 0.5204169999999522, 0.5085410000000365, 0.5077079999999796,
+          0.5154169999999567, 0.5204590000000735, 67.147917, 0.7036670000001095, 0.5412079999999833,
+          0.5145420000000058
+        ],
+        "medianMs": 0.5532499999999914
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 167971432,
+          "heapUsedBytes": 5190584,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 262851248,
+          "heapUsedBytes": 5216568,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 100551368,
+          "heapUsedBytes": 5216664,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.502749999999999,
+        "highlighterCreateMs": 0.8551670000000016,
+        "themeAndGrammarLoadMs": 1.5939169999999976,
+        "htmlRenderMs": 137.70304099999998,
+        "totalMs": 141.654875
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.7092079999999896, 0.6792920000000038, 12.577208000000013, 0.6069999999999993,
+          10.065332999999981, 0.7428340000000162, 0.5105419999999867, 0.49150000000000205,
+          0.497208999999998, 0.4892499999999984, 10.365583999999984, 0.6242080000000101,
+          0.507665999999972, 0.48945800000001327, 0.4786250000000223, 0.4853750000000332,
+          0.7645840000000135, 0.5922089999999685, 0.5019580000000019, 0.4844590000000153,
+          0.46750000000002956, 0.4595830000000092, 0.46154200000000856, 0.46008299999999736,
+          0.4582499999999641, 0.4572079999999801, 4.766250000000014, 0.87175000000002,
+          0.5533330000000092, 0.5056250000000091
+        ],
+        "medianMs": 0.5066454999999905
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79743544,
+          "heapUsedBytes": 5204200,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 112954008,
+          "heapUsedBytes": 5242224,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36309656,
+          "heapUsedBytes": 5242000,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4538749999999965,
+        "highlighterCreateMs": 0.8889580000000024,
+        "themeAndGrammarLoadMs": 1.6923749999999984,
+        "htmlRenderMs": 36.234334,
+        "totalMs": 40.269541999999994
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6687090000000069, 0.5846250000000026, 12.626999999999995, 0.602833000000004,
+          10.127625000000023, 0.7533750000000055, 0.528125000000017, 0.4982080000000053,
+          0.4986250000000041, 0.4807910000000106, 10.357584000000003, 0.5933330000000012,
+          0.49262500000000387, 0.4767909999999915, 0.4692500000000166, 0.46812499999998636,
+          0.4664589999999862, 0.4668339999999773, 0.46712500000001, 0.46633299999999167,
+          0.4640410000000088, 0.47066599999999426, 0.46862500000000296, 0.46466599999999403,
+          0.4614170000000115, 0.4628749999999968, 5.051000000000016, 0.5161669999999958,
+          0.47683399999999665, 0.4727919999999983
+        ],
+        "medianMs": 0.47881250000000364
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39045688,
+          "heapUsedBytes": 5204112,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72256104,
+          "heapUsedBytes": 5242136,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72256104,
+          "heapUsedBytes": 5241912,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.458791000000005,
+        "highlighterCreateMs": 0.8947500000000019,
+        "themeAndGrammarLoadMs": 1.698291999999995,
+        "htmlRenderMs": 32.738667,
+        "totalMs": 36.7905
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.5804169999999971, 0.543959000000001, 6.1258749999999935, 0.7216250000000031,
+          0.6263330000000025, 0.5772910000000024, 0.5675839999999965, 0.5574170000000152,
+          0.5780409999999847, 0.5647089999999935, 10.908999999999992, 0.6763750000000073,
+          0.5838329999999985, 0.564832999999993, 0.5560419999999908, 0.5532920000000274,
+          0.5517089999999882, 0.5494170000000054, 0.5459999999999923, 0.5449999999999875,
+          0.538958000000008, 0.540458000000001, 0.5436669999999992, 0.5434580000000153,
+          0.5425830000000076, 0.5432079999999928, 6.18995799999999, 0.5939169999999763,
+          0.5499159999999961, 0.5459589999999821
+        ],
+        "medianMs": 0.556729500000003
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38357584,
+          "heapUsedBytes": 5210032,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 66849384,
+          "heapUsedBytes": 5253512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 66849384,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5352910000000008,
+        "highlighterCreateMs": 0.9032090000000039,
+        "themeAndGrammarLoadMs": 1.7417079999999956,
+        "htmlRenderMs": 116.348625,
+        "totalMs": 120.528833
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6881249999999852, 0.602833000000004, 6.1086659999999995, 0.6854590000000087,
+          0.6931250000000091, 0.6582500000000095, 0.6853339999999832, 0.8082089999999766,
+          0.6881250000000136, 0.6052920000000199, 10.776792, 0.7079999999999984, 0.6190829999999892,
+          0.6747919999999965, 0.6393750000000011, 0.5869590000000073, 0.5704170000000204,
+          0.6704579999999964, 0.5817499999999995, 0.571708000000001, 0.6434580000000096,
+          0.6085830000000101, 0.5681250000000091, 0.5586669999999856, 0.5524589999999989,
+          0.5531249999999943, 6.423500000000018, 0.6130419999999788, 0.5767079999999964,
+          0.8114579999999876
+        ],
+        "medianMs": 0.6414165000000054
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73812464,
+          "heapUsedBytes": 5210000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 101943816,
+          "heapUsedBytes": 5253208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 101943816,
+          "heapUsedBytes": 5253304,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5599160000000012,
+        "highlighterCreateMs": 0.8798749999999984,
+        "themeAndGrammarLoadMs": 0.27512500000000273,
+        "htmlRenderMs": 0.8222499999999968,
+        "totalMs": 3.537165999999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.2232920000000007, 0.22475000000000023, 0.2204580000000007, 0.21908400000000228,
+          0.2221669999999989, 0.21991700000000236, 0.21949999999999648, 0.2186670000000035,
+          0.2442919999999944, 0.21833300000000122, 0.24374999999999858, 0.21904199999999463,
+          0.21941699999999997, 0.2857920000000007, 0.2687080000000037, 0.23745800000000372,
+          0.26824999999999477, 0.28666599999999676, 0.23199999999999932, 0.22408300000000025,
+          0.22170900000000415, 0.22358400000000245, 0.22229099999999846, 0.2207909999999984,
+          0.21920800000000185, 0.21895899999999813, 0.21949999999999648, 0.2203750000000042,
+          0.2190829999999977, 0.21924999999999528
+        ],
+        "medianMs": 0.22125000000000128
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20204064,
+          "heapUsedBytes": 5197320,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20318800,
+          "heapUsedBytes": 5228904,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20335184,
+          "heapUsedBytes": 5228680,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.6084999999999994,
+        "highlighterCreateMs": 0.9294590000000014,
+        "themeAndGrammarLoadMs": 0.28999999999999915,
+        "htmlRenderMs": 0.7384160000000008,
+        "totalMs": 3.5663750000000007
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21666600000000358, 0.21983300000000128, 0.21720899999999688, 0.2083330000000032,
+          0.20904099999999914, 0.20870799999999434, 0.20762500000000017, 0.20908400000000427,
+          0.3015839999999983, 0.21308300000000457, 0.23483299999999474, 0.2102920000000026,
+          0.20958399999999955, 0.20958399999999955, 0.2098750000000038, 0.20879199999999543,
+          0.20916700000000077, 0.2084169999999972, 0.20854199999999423, 0.20983400000000074,
+          0.20895800000000264, 0.20820900000000364, 0.20804199999999895, 0.20795900000000245,
+          0.20762500000000017, 0.20774999999999721, 0.20804100000000147, 0.20791599999999733,
+          0.2084170000000043, 0.20879200000000253
+        ],
+        "medianMs": 0.2088750000000026
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20679224,
+          "heapUsedBytes": 5197056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 21072488,
+          "heapUsedBytes": 5228496,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 21072488,
+          "heapUsedBytes": 5228640,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5515830000000008,
+        "highlighterCreateMs": 0.9352080000000029,
+        "themeAndGrammarLoadMs": 5.622959000000002,
+        "htmlRenderMs": 72.259875,
+        "totalMs": 80.369625
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.492957999999987, 1.6746669999999995, 20.988624999999985, 1.3392500000000211,
+          2.190624999999983, 1.2008330000000171, 1.126749999999987, 1.1757499999999936,
+          1.1791669999999783, 1.1405420000000106, 14.97037499999999, 1.2771669999999915,
+          1.130500000000012, 1.1226669999999785, 1.1231669999999951, 1.1031250000000057,
+          1.1060410000000047, 1.1555830000000071, 1.148791999999986, 1.1121249999999918,
+          1.1145840000000078, 1.1170419999999979, 1.0618750000000148, 1.038375000000002,
+          1.0409579999999892, 1.077083999999985, 4.866582999999991, 1.1693329999999946,
+          1.1370840000000157, 1.1356250000000045
+        ],
+        "medianMs": 1.1388130000000132
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 51006008,
+          "heapUsedBytes": 5205232,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 97864344,
+          "heapUsedBytes": 5243984,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 97864344,
+          "heapUsedBytes": 5243760,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5333749999999995,
+        "highlighterCreateMs": 0.899249999999995,
+        "themeAndGrammarLoadMs": 5.324791000000005,
+        "htmlRenderMs": 200.43404199999998,
+        "totalMs": 208.19145799999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          9.553249999999991, 1.6232080000000337, 21.83358400000003, 1.3896660000000338,
+          2.624499999999955, 1.3044160000000034, 1.1523339999999962, 1.0948750000000018,
+          1.1049999999999613, 1.0797910000000002, 24.20079199999998, 1.4305840000000103,
+          1.2127920000000358, 1.1739159999999629, 1.1455000000000268, 1.112374999999986,
+          1.1299589999999853, 1.1404590000000212, 1.1164590000000203, 1.1357079999999655,
+          1.1134999999999877, 1.1215840000000412, 1.1487500000000068, 1.1097500000000196,
+          1.1154580000000465, 1.1173339999999712, 7.627124999999978, 1.2980419999999526,
+          1.1614999999999895, 1.1532080000000065
+        ],
+        "medianMs": 1.1505420000000015
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103926400,
+          "heapUsedBytes": 5206728,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 156027568,
+          "heapUsedBytes": 5243928,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 68717232,
+          "heapUsedBytes": 5243704,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.519833999999996,
+        "highlighterCreateMs": 0.8760000000000048,
+        "themeAndGrammarLoadMs": 8.718249999999998,
+        "htmlRenderMs": 401.84516599999995,
+        "totalMs": 412.95925
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9042919999999981, 0.6888339999999857, 11.076665999999989, 0.7675420000000486,
+          11.760833999999932, 0.8612919999999349, 0.5798340000000053, 0.5499579999999469,
+          0.5827500000000327, 0.5546249999999873, 47.080125000000066, 0.7934589999999844,
+          0.5786669999999958, 0.5546669999999949, 0.5438329999999496, 0.5220419999999422,
+          0.5116659999999911, 0.5081670000000713, 0.506249999999909, 0.502791000000002,
+          0.5053749999999582, 0.5056670000000167, 0.5086659999999483, 0.5144999999999982,
+          0.5123340000000098, 0.5122920000000022, 66.97649999999999, 0.7106670000000577,
+          0.5352499999999054, 0.5158330000000433
+        ],
+        "medianMs": 0.5522914999999671
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 169757336,
+          "heapUsedBytes": 5190584,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 264997600,
+          "heapUsedBytes": 5216888,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102091488,
+          "heapUsedBytes": 5216664,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.475958999999996,
+        "highlighterCreateMs": 0.9081249999999983,
+        "themeAndGrammarLoadMs": 8.612625000000001,
+        "htmlRenderMs": 396.985583,
+        "totalMs": 407.98229200000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.8972499999999854, 0.707458000000031, 9.145083, 0.7645829999999592, 11.504083999999978,
+          0.9014999999999418, 0.6450419999999895, 0.5896669999999631, 0.6132499999999936,
+          0.5922920000000431, 44.4375839999999, 0.7438329999999951, 0.5584999999999809,
+          0.5434589999999844, 0.5319580000000315, 0.5276250000000573, 0.5222919999999931,
+          0.533333999999968, 0.5442910000000438, 0.5283339999999725, 0.524208999999928,
+          0.5181249999999409, 0.5549579999999423, 0.5909580000000005, 0.5358750000000327,
+          0.5090420000000222, 65.98791600000004, 0.7220829999999978, 0.5352500000000191,
+          0.50487499999997
+        ],
+        "medianMs": 0.574083499999972
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 165186152,
+          "heapUsedBytes": 5190744,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 259394272,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 93702880,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4528340000000028,
+        "highlighterCreateMs": 0.8683749999999932,
+        "themeAndGrammarLoadMs": 1.744291000000004,
+        "htmlRenderMs": 36.78575,
+        "totalMs": 40.85125
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.5797910000000002, 0.5377909999999986, 12.820875000000001, 0.6254159999999871,
+          10.127958999999976, 0.7330420000000117, 0.5136669999999981, 0.49191599999997493,
+          0.49508299999999394, 0.48024999999998386, 10.305624999999992, 0.6043750000000045,
+          0.49491699999998673, 0.4778329999999755, 0.469333000000006, 0.46537500000002296,
+          0.464540999999997, 0.4627909999999815, 0.46154200000000856, 0.46295800000001464,
+          0.46487500000000637, 0.4619999999999891, 0.46316699999999855, 0.46779200000000287,
+          0.46404199999997786, 0.4656660000000272, 5.018833000000001, 0.5122920000000022,
+          0.4833329999999876, 0.47366700000000606
+        ],
+        "medianMs": 0.4817914999999857
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39340552,
+          "heapUsedBytes": 5204112,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 71879248,
+          "heapUsedBytes": 5242136,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 71879248,
+          "heapUsedBytes": 5241912,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5344580000000008,
+        "highlighterCreateMs": 0.8640839999999983,
+        "themeAndGrammarLoadMs": 1.6755830000000032,
+        "htmlRenderMs": 138.42237500000002,
+        "totalMs": 142.49650000000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.766750000000002, 0.6573750000000018, 12.347415999999981, 0.6070840000000146,
+          10.210834000000006, 0.7329589999999939, 0.47179200000002197, 0.4586670000000197,
+          0.46258399999999256, 0.4440840000000037, 10.544416999999981, 0.6671249999999986,
+          0.5110419999999749, 0.48329200000000583, 0.4768750000000068, 0.48075000000000045,
+          0.47158300000000963, 0.47091599999998834, 0.4765830000000051, 0.46783300000004147,
+          0.4696670000000154, 0.4715840000000071, 0.47066599999999426, 0.46891699999997627,
+          0.4685000000000059, 0.4657919999999649, 5.185208000000046, 0.5153329999999983,
+          0.487542000000019, 0.4725419999999758
+        ],
+        "medianMs": 0.47672900000000595
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79825512,
+          "heapUsedBytes": 5203952,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 113838720,
+          "heapUsedBytes": 5242152,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36899456,
+          "heapUsedBytes": 5241928,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.531290999999996,
+        "highlighterCreateMs": 0.8758750000000006,
+        "themeAndGrammarLoadMs": 1.6750000000000043,
+        "htmlRenderMs": 114.93362499999998,
+        "totalMs": 119.01579099999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6591670000000249, 0.6087499999999864, 6.088999999999999, 0.6456250000000239,
+          0.5990830000000074, 0.5631250000000136, 0.5541249999999991, 0.5551250000000039,
+          0.571124999999995, 0.5575420000000122, 10.914333, 0.6842499999999916, 0.5726659999999981,
+          0.5519580000000133, 0.5445840000000146, 0.5496669999999995, 0.5407089999999926,
+          0.5378340000000037, 0.5481249999999989, 0.547791999999987, 0.5435839999999814,
+          0.5406670000000133, 0.5396659999999827, 0.545375000000007, 0.5423750000000211,
+          0.5461249999999893, 6.34212500000001, 0.5936660000000131, 0.5522499999999866,
+          0.5446249999999964
+        ],
+        "medianMs": 0.5531874999999928
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73861712,
+          "heapUsedBytes": 5210000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 102320744,
+          "heapUsedBytes": 5253528,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102320744,
+          "heapUsedBytes": 5253304,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.4595839999999995,
+        "highlighterCreateMs": 0.8997499999999974,
+        "themeAndGrammarLoadMs": 1.7117080000000016,
+        "htmlRenderMs": 32.573833,
+        "totalMs": 36.644875
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6424580000000049, 0.5907920000000075, 5.987791999999999, 0.6232499999999987,
+          0.6060409999999905, 0.5655000000000001, 0.5509589999999918, 0.5502920000000131,
+          0.5634579999999971, 0.5519160000000056, 10.857082999999989, 0.6518329999999821,
+          0.5541670000000067, 0.5350409999999783, 0.5322920000000124, 0.5519580000000133,
+          0.5445419999999785, 0.5443329999999946, 0.5430830000000242, 0.5374170000000049,
+          0.5499590000000012, 0.5381249999999795, 0.538125000000008, 0.536167000000006,
+          0.5384999999999991, 0.5439169999999933, 6.159416999999991, 0.596792000000022,
+          0.5586250000000064, 0.5533750000000168
+        ],
+        "medianMs": 0.5519370000000094
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38472320,
+          "heapUsedBytes": 5210032,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 66177664,
+          "heapUsedBytes": 5253512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 66194048,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5018340000000023,
+        "highlighterCreateMs": 0.8842500000000015,
+        "themeAndGrammarLoadMs": 0.2744159999999951,
+        "htmlRenderMs": 0.7562500000000014,
+        "totalMs": 3.4167500000000004
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.2155830000000023, 0.21720900000000398, 0.21870799999999946, 0.220208999999997,
+          0.22212499999999835, 0.21950000000000358, 0.21924999999999528, 0.21887500000000415,
+          0.24329199999999673, 0.22804200000000208, 0.2569999999999979, 0.22262500000000074,
+          0.21999999999999886, 0.21974999999999767, 0.22008300000000247, 0.21875,
+          0.21870799999999946, 0.21945800000000304, 0.2188330000000036, 0.21937499999999943,
+          0.2188330000000036, 0.21987500000000182, 0.21916699999999878, 0.2184170000000023,
+          0.21887500000000415, 0.21808300000000003, 0.2196659999999966, 0.21862500000000296,
+          0.21866599999999892, 0.21837499999999466
+        ],
+        "medianMs": 0.21920849999999703
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20269552,
+          "heapUsedBytes": 5197056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20351472,
+          "heapUsedBytes": 5228496,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20367856,
+          "heapUsedBytes": 5228592,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5330410000000043,
+        "highlighterCreateMs": 0.9022919999999957,
+        "themeAndGrammarLoadMs": 0.2720830000000021,
+        "htmlRenderMs": 0.8570840000000004,
+        "totalMs": 3.5645000000000024
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21608299999999758, 0.2204579999999936, 0.2164590000000004, 0.21487499999999926,
+          0.20829100000000267, 0.20674999999999955, 0.2061250000000001, 0.20629100000000022,
+          0.27029199999999776, 0.21049999999999613, 0.2355839999999958, 0.20937500000000142,
+          0.20770800000000378, 0.2079999999999984, 0.20820800000000617, 0.20775000000000432,
+          0.20870800000000145, 0.2082499999999996, 0.20795900000000245, 0.20829200000000014,
+          0.20795800000000497, 0.20745799999999548, 0.20812500000000256, 0.20695899999999767,
+          0.20754199999999656, 0.20745799999999548, 0.20754200000000367, 0.20754200000000367,
+          0.2081670000000031, 0.20708299999999724
+        ],
+        "medianMs": 0.20806250000000048
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20335112,
+          "heapUsedBytes": 5197248,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20531768,
+          "heapUsedBytes": 5228832,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20548152,
+          "heapUsedBytes": 5228608,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5091249999999974,
+        "highlighterCreateMs": 0.8773750000000007,
+        "themeAndGrammarLoadMs": 5.130499999999998,
+        "htmlRenderMs": 199.747958,
+        "totalMs": 207.264958
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          9.738292000000001, 1.6339169999999967, 21.58941699999997, 1.337582999999995,
+          2.2258750000000305, 1.2124999999999773, 1.1781669999999735, 1.1279589999999757,
+          1.1543340000000057, 1.119041999999979, 23.607124999999996, 1.3237920000000258,
+          1.156833000000006, 1.1329999999999814, 1.1103339999999662, 1.109624999999994,
+          1.1246249999999804, 1.1109159999999747, 1.100999999999999, 1.1062089999999785,
+          1.1156250000000227, 1.1163339999999948, 1.0860000000000127, 1.0822919999999954,
+          1.0862079999999992, 1.085833999999977, 7.519582999999955, 1.265374999999949,
+          1.1648339999999848, 1.129624999999976
+        ],
+        "medianMs": 1.1313124999999786
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103352864,
+          "heapUsedBytes": 5205000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 154683984,
+          "heapUsedBytes": 5243608,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 69388880,
+          "heapUsedBytes": 5243704,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5067500000000038,
+        "highlighterCreateMs": 0.9234999999999971,
+        "themeAndGrammarLoadMs": 5.253542000000003,
+        "htmlRenderMs": 70.52933300000001,
+        "totalMs": 78.213125
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.398207999999983, 1.5656659999999931, 21.675999999999988, 1.3332079999999848,
+          2.2427920000000086, 1.2145830000000046, 1.1474170000000186, 1.1396249999999952,
+          1.1742920000000083, 1.1287499999999966, 15.256249999999994, 1.2530000000000143,
+          1.1150829999999985, 1.1450000000000102, 1.1582089999999994, 1.126874999999984,
+          1.1255419999999958, 1.140874999999994, 1.1374589999999785, 1.1218330000000094,
+          1.163125000000008, 1.132833000000005, 1.1093330000000208, 1.105041, 1.1530839999999785,
+          1.1271249999999782, 5.0724170000000015, 1.1990000000000123, 1.1709579999999846,
+          1.1460840000000303
+        ],
+        "medianMs": 1.1502504999999985
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50022896,
+          "heapUsedBytes": 5204960,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 96356872,
+          "heapUsedBytes": 5243840,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 96356872,
+          "heapUsedBytes": 5243616,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.9054160000000024,
+        "highlighterCreateMs": 0.9482089999999985,
+        "themeAndGrammarLoadMs": 8.448958000000005,
+        "htmlRenderMs": 397.895083,
+        "totalMs": 409.197666
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.921875, 0.7383749999999623, 9.213999999999999, 0.7498330000000237, 11.933750000000032,
+          0.9111669999999776, 0.7066669999999249, 0.6682499999999436, 0.6643339999999398,
+          0.6048749999999927, 44.67154100000005, 0.7805419999999685, 0.6372499999999945,
+          0.6270829999999705, 0.5927090000000135, 0.6457910000000311, 0.7810420000000704,
+          0.58299999999997, 0.5400839999999789, 0.5200829999999996, 0.5347499999999172,
+          0.5359169999999267, 0.6612079999999878, 0.7354579999999942, 0.5867080000000442,
+          0.5233749999999873, 66.56087500000001, 0.730792000000065, 0.5681250000000091,
+          0.5136670000000549
+        ],
+        "medianMs": 0.6627709999999638
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 168725048,
+          "heapUsedBytes": 5192368,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 261638784,
+          "heapUsedBytes": 5216944,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 90639000,
+          "heapUsedBytes": 5216720,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5059579999999997,
+        "highlighterCreateMs": 0.8690420000000003,
+        "themeAndGrammarLoadMs": 8.491500000000002,
+        "htmlRenderMs": 399.71999999999997,
+        "totalMs": 410.5865
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9879999999999995, 0.8050830000000246, 11.149208000000044, 0.8133340000000544,
+          11.69383300000004, 0.8941670000000386, 0.6177500000000009, 0.6024999999999636,
+          0.6340420000000222, 0.5982079999999996, 46.756665999999996, 0.8971250000000737,
+          0.604750000000081, 0.5399589999999534, 0.5339589999999816, 0.510167000000024,
+          0.5109579999999596, 0.5171659999999747, 0.5131249999999454, 0.5178750000000036,
+          0.6017089999999143, 0.5317079999999805, 0.5165419999999585, 0.5236660000000484,
+          0.6017079999999169, 0.5192500000000564, 66.51287500000001, 0.8081670000000258,
+          0.5740419999999631, 0.5364999999999327
+        ],
+        "medianMs": 0.6017084999999156
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 168217288,
+          "heapUsedBytes": 5192384,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 264981240,
+          "heapUsedBytes": 5216960,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102009592,
+          "heapUsedBytes": 5216736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5535420000000002,
+        "highlighterCreateMs": 0.8701250000000016,
+        "themeAndGrammarLoadMs": 1.6935000000000002,
+        "htmlRenderMs": 137.82683300000002,
+        "totalMs": 141.94400000000002
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.7483330000000024, 0.651709000000011, 12.647208000000006, 0.607167000000004,
+          9.99199999999999, 0.7628750000000082, 0.5076249999999902, 0.4899169999999913,
+          0.5078329999999767, 0.4846249999999941, 10.284250000000014, 0.6170410000000288,
+          0.497792000000004, 0.49070800000004056, 0.4737089999999853, 0.4668750000000159,
+          0.46962500000000773, 0.4686669999999822, 0.476333000000011, 0.4711250000000291,
+          0.4669169999999667, 0.46520900000001575, 0.5518329999999878, 0.5419999999999732,
+          0.48050000000000637, 0.4672080000000278, 5.11304199999995, 0.5160000000000196,
+          0.4836670000000254, 0.48245800000000827
+        ],
+        "medianMs": 0.4942500000000223
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79366616,
+          "heapUsedBytes": 5204024,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 113215984,
+          "heapUsedBytes": 5241904,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36571632,
+          "heapUsedBytes": 5242000,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4784170000000003,
+        "highlighterCreateMs": 0.9238749999999953,
+        "themeAndGrammarLoadMs": 1.7320419999999999,
+        "htmlRenderMs": 37.91091600000001,
+        "totalMs": 42.04525
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6597500000000025, 0.5822500000000019, 12.701208000000008, 0.6076660000000231, 10.0505,
+          0.7227919999999983, 0.5082079999999962, 0.4958750000000123, 0.4988749999999982,
+          0.48962500000001796, 10.26845800000001, 0.6081670000000088, 0.5045829999999967,
+          0.484958000000006, 0.4862500000000125, 0.4940409999999815, 0.4758340000000203,
+          0.4705419999999947, 0.47237499999999955, 0.4704590000000053, 0.47137499999999477,
+          0.4727919999999983, 0.47458400000002143, 0.4721670000000131, 0.4724999999999966,
+          0.47295800000000554, 5.009125000000012, 0.5102080000000058, 0.48595799999998235,
+          0.4780410000000188
+        ],
+        "medianMs": 0.49183299999999974
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39537184,
+          "heapUsedBytes": 5204056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 71617080,
+          "heapUsedBytes": 5242208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 71617080,
+          "heapUsedBytes": 5241984,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5181249999999977,
+        "highlighterCreateMs": 0.9263329999999996,
+        "themeAndGrammarLoadMs": 1.8036249999999967,
+        "htmlRenderMs": 32.67916700000001,
+        "totalMs": 36.92725
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6422079999999966, 0.5870410000000135, 5.93720900000001, 0.625458000000009,
+          0.6000409999999903, 0.5612079999999935, 0.5528750000000002, 0.5485000000000042,
+          0.560750000000013, 0.5461249999999893, 10.76187499999999, 0.6591669999999965,
+          0.5776249999999834, 0.5561659999999904, 0.5478329999999971, 0.5578750000000241,
+          0.5440830000000005, 0.5432079999999928, 0.553167000000002, 0.555958000000004,
+          0.5448749999999905, 0.5362079999999878, 0.5442499999999768, 0.5389999999999873,
+          0.5386670000000038, 0.5447079999999858, 6.200250000000011, 0.5807080000000155,
+          0.5488750000000095, 0.5434580000000153
+        ],
+        "medianMs": 0.554562500000003
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 37882424,
+          "heapUsedBytes": 5209984,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 65456696,
+          "heapUsedBytes": 5253192,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 65456696,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5307919999999982,
+        "highlighterCreateMs": 0.8773750000000007,
+        "themeAndGrammarLoadMs": 1.7324160000000006,
+        "htmlRenderMs": 116.71237500000001,
+        "totalMs": 120.852958
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6573750000000018, 0.6014169999999979, 6.071624999999983, 0.6885420000000124,
+          0.6586670000000083, 0.6027500000000146, 0.5607080000000053, 0.5500419999999906,
+          0.5651670000000024, 0.5500419999999906, 10.996959000000004, 0.676792000000006,
+          0.5831249999999955, 0.5600840000000176, 0.5510409999999979, 0.5492500000000007,
+          0.546750000000003, 0.5384999999999991, 0.5414169999999956, 0.5454579999999964,
+          0.5478339999999946, 0.5392499999999814, 0.544667000000004, 0.554000000000002,
+          0.5517499999999984, 0.5425409999999999, 6.224500000000006, 0.5925000000000011,
+          0.5600000000000023, 0.5447500000000218
+        ],
+        "medianMs": 0.5570000000000022
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73599544,
+          "heapUsedBytes": 5210000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 103746128,
+          "heapUsedBytes": 5253208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 103746128,
+          "heapUsedBytes": 5253304,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.553291999999999,
+        "highlighterCreateMs": 0.9414580000000043,
+        "themeAndGrammarLoadMs": 0.2906669999999991,
+        "htmlRenderMs": 0.8487499999999955,
+        "totalMs": 3.634166999999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21333299999999866, 0.21533399999999858, 0.21350000000000335, 0.22724999999999795,
+          0.22133300000000133, 0.21812500000000057, 0.2184170000000023, 0.21875,
+          0.23537499999999767, 0.2222500000000025, 0.2474589999999992, 0.22066699999999884,
+          0.21908400000000228, 0.21862499999999585, 0.21945799999999593, 0.2180839999999975,
+          0.21820800000000418, 0.21791699999999992, 0.21758299999999764, 0.21870799999999946,
+          0.21754200000000168, 0.21854099999999477, 0.2185839999999999, 0.21875,
+          0.21766599999999414, 0.21887500000000415, 0.21829100000000068, 0.21791699999999992,
+          0.2113340000000008, 0.21120899999999665
+        ],
+        "medianMs": 0.21847899999999854
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20384216,
+          "heapUsedBytes": 5197320,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20515336,
+          "heapUsedBytes": 5228904,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20531720,
+          "heapUsedBytes": 5228680,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.548499999999997,
+        "highlighterCreateMs": 0.9192090000000022,
+        "themeAndGrammarLoadMs": 0.27966599999999886,
+        "htmlRenderMs": 0.7292090000000044,
+        "totalMs": 3.4765840000000026
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.2113340000000008, 0.21408300000000224, 0.21145800000000037, 0.2100420000000014,
+          0.2100409999999968, 0.20983299999999616, 0.21708399999999983, 0.20970799999999912,
+          0.24075000000000557, 0.23358400000000046, 0.2560000000000002, 0.23254200000000225,
+          0.22508299999999792, 0.22350000000000136, 0.22391600000000267, 0.2238749999999996,
+          0.22283299999999429, 0.2341249999999988, 0.22483299999999673, 0.2236249999999984,
+          0.22325000000000017, 0.22312500000000313, 0.22525000000000261, 0.22358400000000245,
+          0.22274999999999778, 0.22279200000000543, 0.22312499999999602, 0.22304100000000204,
+          0.23083299999999696, 0.22366599999999437
+        ],
+        "medianMs": 0.22337500000000077
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20253216,
+          "heapUsedBytes": 5197056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20335136,
+          "heapUsedBytes": 5228496,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20335136,
+          "heapUsedBytes": 5228592,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5004580000000018,
+        "highlighterCreateMs": 0.890500000000003,
+        "themeAndGrammarLoadMs": 5.225791999999998,
+        "htmlRenderMs": 71.313625,
+        "totalMs": 78.930375
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.375416000000001, 1.5865829999999903, 21.776667000000003, 1.4630829999999833,
+          2.2565409999999986, 1.240791999999999, 1.1049580000000105, 1.1206250000000182,
+          1.1611249999999984, 1.1334579999999903, 15.239292000000006, 1.3204999999999814,
+          1.2240830000000074, 1.0889999999999986, 1.1389589999999998, 1.2357920000000036,
+          1.2049580000000049, 1.140041999999994, 1.20637499999998, 1.2262499999999932,
+          1.2079169999999806, 1.1113750000000095, 1.0729169999999897, 1.0873750000000086,
+          1.0927500000000236, 1.1599590000000148, 5.135499999999979, 1.2629170000000158,
+          1.2081249999999955, 1.199666000000036
+        ],
+        "medianMs": 1.2071459999999803
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50563640,
+          "heapUsedBytes": 5206712,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 98552448,
+          "heapUsedBytes": 5243912,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 98552448,
+          "heapUsedBytes": 5243736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 5,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.6418329999999983,
+        "highlighterCreateMs": 0.9342500000000058,
+        "themeAndGrammarLoadMs": 5.390875000000001,
+        "htmlRenderMs": 201.68241700000002,
+        "totalMs": 209.64937500000002
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          9.645083, 1.6359160000000088, 21.701999999999998, 1.3505420000000186, 2.284917000000007,
+          1.2565000000000168, 1.193667000000005, 1.1475419999999872, 1.1784999999999854,
+          1.1432920000000308, 23.911291000000006, 1.3830420000000458, 1.219583, 1.1795000000000186,
+          1.1496670000000222, 1.1332499999999754, 1.1516249999999673, 1.1697080000000142,
+          1.1170419999999694, 1.1256670000000213, 1.1411669999999958, 1.1484170000000518,
+          1.1458749999999895, 1.1465000000000032, 1.1056669999999826, 1.1316249999999854,
+          7.536500000000046, 1.2557499999999777, 1.1062499999999886, 1.1232499999999845
+        ],
+        "medianMs": 1.1606664999999907
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103746104,
+          "heapUsedBytes": 5205000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 153913960,
+          "heapUsedBytes": 5243608,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 68930152,
+          "heapUsedBytes": 5243704,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5012499999999989,
+        "highlighterCreateMs": 0.9110000000000014,
+        "themeAndGrammarLoadMs": 8.984000000000002,
+        "htmlRenderMs": 405.302292,
+        "totalMs": 416.69854200000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.8865000000000123, 0.6740419999999858, 11.05420799999996, 0.8112919999999804,
+          11.581750000000056, 0.9528750000000628, 0.6802500000000009, 0.7082500000000209,
+          0.8424579999999651, 0.8289999999999509, 47.683415999999966, 0.9610000000000127,
+          0.7077080000000251, 0.62662499999999, 0.6002079999999523, 0.5975419999999758,
+          0.6515419999999494, 0.6368750000000318, 0.5141249999999218, 0.4868749999999409,
+          0.48291699999992943, 0.4851249999999254, 0.49641699999995126, 0.5076669999999694,
+          0.5124170000000277, 0.545833000000016, 67.45825000000002, 0.8029589999999871,
+          0.6014999999999873, 0.5631670000000213
+        ],
+        "medianMs": 0.6627919999999676
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 168905392,
+          "heapUsedBytes": 5190656,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 263375608,
+          "heapUsedBytes": 5216960,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102025976,
+          "heapUsedBytes": 5216736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5984580000000008,
+        "highlighterCreateMs": 0.9347500000000011,
+        "themeAndGrammarLoadMs": 8.819582999999994,
+        "htmlRenderMs": 395.12258399999996,
+        "totalMs": 406.475375
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.8807499999999777, 0.6683339999999589, 9.064208000000008, 0.7263749999999618,
+          11.802458000000001, 0.8544170000000122, 0.595209000000068, 0.5568749999999909,
+          0.5880000000000791, 0.5708339999999907, 44.068874999999935, 0.7591670000000477,
+          0.6003329999999778, 0.5433329999999614, 0.5154999999999745, 0.508792000000085,
+          0.5024999999999409, 0.4954999999999927, 0.4902080000000524, 0.49545899999998255,
+          0.5044169999999895, 0.5023750000000291, 0.4960000000000946, 0.4933330000000069,
+          0.4875419999999622, 0.49387500000000273, 67.35458400000005, 0.779459000000088,
+          0.5612500000000864, 0.5064160000000584
+        ],
+        "medianMs": 0.5590625000000387
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 165186104,
+          "heapUsedBytes": 5190744,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 261278384,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 90573488,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4727090000000018,
+        "highlighterCreateMs": 0.8777079999999984,
+        "themeAndGrammarLoadMs": 1.6916670000000025,
+        "htmlRenderMs": 36.718916,
+        "totalMs": 40.761
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6408750000000083, 0.5751249999999999, 12.505250000000018, 0.5823750000000132,
+          9.852167000000009, 0.7044579999999883, 0.4943749999999909, 0.4852080000000001,
+          0.49408299999998917, 0.4819169999999815, 10.222166999999985, 0.5997079999999926,
+          0.4798749999999927, 0.470957999999996, 0.4720000000000084, 0.4684580000000267,
+          0.46887499999999704, 0.46791600000000244, 0.4690830000000119, 0.4660000000000082,
+          0.46583400000000097, 0.46595800000000054, 0.47199999999998, 0.4698750000000018,
+          0.47304099999999494, 0.4852080000000001, 5.184083000000015, 0.5099580000000117,
+          0.46716699999998923, 0.46604099999998994
+        ],
+        "medianMs": 0.4808959999999871
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39619128,
+          "heapUsedBytes": 5205736,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72452712,
+          "heapUsedBytes": 5242208,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72452712,
+          "heapUsedBytes": 5242032,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4718329999999966,
+        "highlighterCreateMs": 0.9927089999999978,
+        "themeAndGrammarLoadMs": 1.7595000000000027,
+        "htmlRenderMs": 137.016583,
+        "totalMs": 141.240625
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.7539999999999907, 0.6587080000000185, 12.643875000000008, 0.6065000000000111,
+          10.147541000000018, 0.7514170000000036, 0.5195410000000038, 0.4940420000000074,
+          0.5067080000000033, 0.4886250000000132, 10.456292000000019, 0.6302079999999819,
+          0.521000000000015, 0.48520899999999756, 0.4768750000000068, 0.47229200000003857,
+          0.46962500000000773, 0.472500000000025, 0.4740419999999972, 0.4685000000000059,
+          0.4674590000000194, 0.46875, 0.4700000000000273, 0.46999999999997044, 0.47037499999999,
+          0.4657079999999496, 5.184542000000022, 0.5200829999999996, 0.48237499999999045,
+          0.47362500000002683
+        ],
+        "medianMs": 0.4869170000000054
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79809080,
+          "heapUsedBytes": 5204000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 113674832,
+          "heapUsedBytes": 5242152,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 37014096,
+          "heapUsedBytes": 5241928,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.4934589999999943,
+        "highlighterCreateMs": 0.8750410000000031,
+        "themeAndGrammarLoadMs": 1.6948340000000002,
+        "htmlRenderMs": 114.06141600000001,
+        "totalMs": 118.12475
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6505829999999833, 0.5872920000000192, 5.942833000000007, 0.6216660000000047,
+          0.5800830000000019, 0.5426249999999868, 0.5315410000000043, 0.52800000000002,
+          0.5775409999999965, 0.5615420000000029, 10.770332999999994, 0.6687080000000094,
+          0.5674999999999955, 0.549207999999993, 0.5454580000000249, 0.5433329999999899,
+          0.5433750000000259, 0.5392909999999915, 0.5355419999999924, 0.5338329999999871,
+          0.5326249999999959, 0.5395829999999933, 0.536958999999996, 0.5346250000000055,
+          0.5342089999999757, 0.5364580000000103, 6.082499999999982, 0.5831670000000031,
+          0.552708999999993, 0.5598340000000235
+        ],
+        "medianMs": 0.547333000000009
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 73288248,
+          "heapUsedBytes": 5210368,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 102025856,
+          "heapUsedBytes": 5253720,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102025856,
+          "heapUsedBytes": 5253496,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5010000000000048,
+        "highlighterCreateMs": 0.8987079999999992,
+        "themeAndGrammarLoadMs": 1.730916999999998,
+        "htmlRenderMs": 32.379208000000006,
+        "totalMs": 36.50983300000001
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6322079999999914, 0.587292000000005, 5.8779169999999965, 0.6311659999999932,
+          0.5904160000000047, 0.5635000000000048, 0.5514590000000084, 0.5481249999999989,
+          0.5715000000000003, 0.5555410000000052, 10.684750000000008, 0.6570419999999899,
+          0.5686669999999765, 0.5524160000000222, 0.5451669999999922, 0.5410830000000146,
+          0.5378749999999854, 0.5388340000000085, 0.5423749999999927, 0.5358750000000043,
+          0.5352910000000008, 0.5349170000000072, 0.5354999999999848, 0.5367090000000019,
+          0.5338329999999871, 0.5369169999999883, 6.125874999999979, 0.5781670000000076,
+          0.5496249999999918, 0.541957999999994
+        ],
+        "medianMs": 0.5505420000000001
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38423144,
+          "heapUsedBytes": 5209984,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 65866344,
+          "heapUsedBytes": 5253512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 65866344,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5066670000000002,
+        "highlighterCreateMs": 0.909832999999999,
+        "themeAndGrammarLoadMs": 0.28950000000000387,
+        "htmlRenderMs": 0.767792,
+        "totalMs": 3.473792000000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.2143340000000009, 0.21625000000000227, 0.21354099999999931, 0.21274999999999977,
+          0.21270800000000634, 0.2172079999999994, 0.21908400000000228, 0.22079200000000299,
+          0.23595900000000114, 0.22462500000000318, 0.255041999999996, 0.22295799999999844,
+          0.22304100000000204, 0.22008399999999995, 0.2200419999999994, 0.22283400000000597,
+          0.2197090000000017, 0.22058299999999775, 0.21837500000000176, 0.22075000000000244,
+          0.21895899999999813, 0.22083299999999895, 0.21945800000000304, 0.2222500000000025,
+          0.2188329999999965, 0.22033400000000114, 0.2200419999999994, 0.22341699999999776,
+          0.21795900000000046, 0.22295799999999844
+        ],
+        "medianMs": 0.22006299999999968
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20384288,
+          "heapUsedBytes": 5197056,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20515360,
+          "heapUsedBytes": 5228496,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20515360,
+          "heapUsedBytes": 5228592,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.493583000000001,
+        "highlighterCreateMs": 0.8670830000000009,
+        "themeAndGrammarLoadMs": 0.28729200000000077,
+        "htmlRenderMs": 0.8395829999999975,
+        "totalMs": 3.4875410000000002
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.22170799999999957, 0.22274999999999778, 0.22041699999999764, 0.22350000000000136,
+          0.2188329999999965, 0.21904200000000174, 0.21870799999999946, 0.21879200000000054,
+          0.2363329999999948, 0.22050000000000125, 0.24399999999999977, 0.22104199999999707,
+          0.21895800000000065, 0.21929200000000293, 0.21912499999999824, 0.21908399999999517,
+          0.2196660000000037, 0.21966700000000117, 0.21962500000000063, 0.2190000000000012,
+          0.23408399999999574, 0.21970800000000423, 0.22204099999999727, 0.2190000000000012,
+          0.21895800000000065, 0.22004100000000193, 0.21787499999999937, 0.2202920000000006,
+          0.21791599999999534, 0.21800000000000352
+        ],
+        "medianMs": 0.21964550000000216
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20335136,
+          "heapUsedBytes": 5197072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20466208,
+          "heapUsedBytes": 5228512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20466208,
+          "heapUsedBytes": 5228608,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5308339999999987,
+        "highlighterCreateMs": 0.8851250000000022,
+        "themeAndGrammarLoadMs": 5.2037910000000025,
+        "htmlRenderMs": 201.91649999999998,
+        "totalMs": 209.53625
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          9.65508299999999, 1.6212089999999648, 21.80762500000003, 1.336917000000028,
+          2.2164999999999964, 1.2022910000000024, 1.131083999999987, 1.1241249999999923,
+          1.1429170000000113, 1.1213750000000005, 23.727833000000032, 1.3648749999999836,
+          1.1539579999999887, 1.1166670000000067, 1.1035830000000146, 1.1044579999999655,
+          1.097665999999947, 1.1130830000000174, 1.1165409999999838, 1.1122909999999706,
+          1.1131249999999682, 1.1210419999999885, 1.1242920000000254, 1.113207999999986,
+          1.1244159999999965, 1.1199159999999893, 7.4823749999999905, 1.2818750000000136,
+          1.1408330000000433, 1.1310000000000286
+        ],
+        "medianMs": 1.1277080000000126
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103975552,
+          "heapUsedBytes": 5205048,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 154618520,
+          "heapUsedBytes": 5243928,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 69356184,
+          "heapUsedBytes": 5243704,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 6,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5537920000000014,
+        "highlighterCreateMs": 0.9109169999999978,
+        "themeAndGrammarLoadMs": 5.253208000000001,
+        "htmlRenderMs": 70.978917,
+        "totalMs": 78.696834
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.435457999999983, 1.5956250000000125, 21.402582999999993, 1.3480419999999924,
+          2.2310830000000124, 1.2093749999999943, 1.1347499999999968, 1.1142089999999882,
+          1.1474580000000003, 1.1137919999999895, 15.285207999999983, 1.237415999999996,
+          1.1389589999999998, 1.1056659999999852, 1.0637080000000196, 1.0591670000000022,
+          1.0719160000000159, 1.0930830000000071, 1.0974160000000097, 1.1016250000000127,
+          1.1019579999999962, 1.0990409999999997, 1.1005830000000003, 1.0890839999999855,
+          1.1014169999999979, 1.0909169999999904, 4.945458000000002, 1.179458000000011,
+          1.131750000000011, 1.1180830000000128
+        ],
+        "medianMs": 1.1161460000000005
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50629176,
+          "heapUsedBytes": 5205088,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 96897664,
+          "heapUsedBytes": 5243840,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 96897664,
+          "heapUsedBytes": 5243616,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.4752909999999986,
+        "highlighterCreateMs": 0.8762919999999994,
+        "themeAndGrammarLoadMs": 8.601917,
+        "htmlRenderMs": 392.512083,
+        "totalMs": 403.465583
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.8979170000000067, 0.6477090000000203, 9.118042000000003, 0.7580409999999915,
+          11.482459000000006, 0.8393750000000182, 0.59112499999992, 0.5613340000001017,
+          0.5960410000000138, 0.5627079999999296, 44.16624999999999, 0.7267499999999245,
+          0.5443749999999454, 0.5204589999999598, 0.5121659999999792, 0.5062500000000227,
+          0.50162499999999, 0.49841700000001765, 0.4982909999999947, 0.4934579999999187,
+          0.49958300000002964, 0.5037919999999758, 0.5037919999999758, 0.50812499999995,
+          0.49841700000001765, 0.4965420000000904, 66.818084, 0.7295830000000478,
+          0.5335420000000113, 0.5084160000000111
+        ],
+        "medianMs": 0.5389584999999784
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 166120136,
+          "heapUsedBytes": 5190616,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 260819728,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 91786000,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.6622089999999972,
+        "highlighterCreateMs": 0.9196250000000035,
+        "themeAndGrammarLoadMs": 8.650041000000002,
+        "htmlRenderMs": 407.29616699999997,
+        "totalMs": 418.52804199999997
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9874590000000012, 0.6957909999999856, 11.175250000000005, 0.7726250000000618,
+          11.77166699999998, 1.033708000000047, 0.6720419999999194, 0.6095000000000255,
+          0.6050829999999223, 0.5917080000000396, 46.737625000000094, 0.8039169999999558,
+          0.5640829999999823, 0.5272079999999733, 0.5127919999999904, 0.5132089999999607,
+          0.5083329999999933, 0.5105419999999867, 0.5313750000000255, 0.5128330000000005,
+          0.5058749999999463, 0.5048340000000735, 0.5299999999999727, 0.5157500000000255,
+          0.4999169999999822, 0.49754200000006676, 66.55016699999999, 0.6678749999999809,
+          0.51887499999998, 0.49795800000003965
+        ],
+        "medianMs": 0.5477290000000039
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 167053928,
+          "heapUsedBytes": 5190704,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 265128624,
+          "heapUsedBytes": 5216960,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 103140016,
+          "heapUsedBytes": 5216736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5057919999999996,
+        "highlighterCreateMs": 0.9045410000000018,
+        "themeAndGrammarLoadMs": 1.7593749999999986,
+        "htmlRenderMs": 136.472459,
+        "totalMs": 140.64216699999997
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.716165999999987, 0.6529170000000022, 12.41941700000001, 0.6067500000000052,
+          10.050708999999983, 0.7392080000000192, 0.5174590000000023, 0.4960829999999987,
+          0.5027499999999918, 0.4844579999999894, 10.316833000000003, 0.6368750000000034,
+          0.5020000000000095, 0.48270800000000236, 0.47470899999996163, 0.48129100000005565,
+          0.46974999999997635, 0.47008399999998574, 0.47783400000002985, 0.5812500000000114,
+          0.4985419999999863, 0.4871249999999918, 0.47695800000002464, 0.4777080000000069,
+          0.49937499999998636, 0.5040000000000191, 5.098375000000033, 0.5099170000000299,
+          0.481708000000026, 0.478334000000018
+        ],
+        "medianMs": 0.500687499999998
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 79563368,
+          "heapUsedBytes": 5204072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 112986752,
+          "heapUsedBytes": 5242224,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 36702848,
+          "heapUsedBytes": 5242000,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.496582999999994,
+        "highlighterCreateMs": 0.8945420000000013,
+        "themeAndGrammarLoadMs": 1.707374999999999,
+        "htmlRenderMs": 36.187083,
+        "totalMs": 40.285582999999995
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6580840000000023, 0.5880829999999975, 12.434125000000009, 0.5931249999999864,
+          9.920083000000005, 0.709666999999996, 0.5002079999999864, 0.48666699999998286,
+          0.5164580000000001, 0.4916669999999783, 10.27166699999998, 0.5939160000000072,
+          0.49774999999999636, 0.4765000000000157, 0.46875, 0.4639590000000169, 0.46358299999999986,
+          0.4627499999999998, 0.4626659999999845, 0.46204199999999673, 0.46162499999999795,
+          0.4616669999999772, 0.4696249999999793, 0.46187499999999204, 0.46158300000001873,
+          0.4737920000000031, 4.987209000000007, 0.508958999999976, 0.4769579999999962,
+          0.46937500000001364
+        ],
+        "medianMs": 0.48181249999998954
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38980056,
+          "heapUsedBytes": 5203936,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 72255984,
+          "heapUsedBytes": 5241816,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 72255984,
+          "heapUsedBytes": 5241912,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.4946660000000023,
+        "highlighterCreateMs": 0.900749999999995,
+        "themeAndGrammarLoadMs": 1.6982090000000056,
+        "htmlRenderMs": 32.57270799999999,
+        "totalMs": 36.666332999999995
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6383340000000004, 0.590834000000001, 5.909499999999994, 0.6372920000000022,
+          0.6083330000000018, 0.5635839999999916, 0.5546250000000157, 0.5478750000000048,
+          0.5632500000000107, 0.5557919999999967, 10.748667000000012, 0.6511669999999867,
+          0.5716250000000116, 0.5586660000000165, 0.5477080000000001, 0.5500419999999906,
+          0.5400419999999997, 0.5395000000000039, 0.5397920000000056, 0.5441249999999798,
+          0.5390419999999949, 0.536625000000015, 0.5392080000000021, 0.5338330000000155,
+          0.5366249999999866, 0.5466250000000059, 6.131333000000012, 0.5985830000000192,
+          0.5529170000000079, 0.547583000000003
+        ],
+        "medianMs": 0.5537710000000118
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38275664,
+          "heapUsedBytes": 5210032,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 67062352,
+          "heapUsedBytes": 5253512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 67062352,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.6051670000000016,
+        "highlighterCreateMs": 0.8995829999999998,
+        "themeAndGrammarLoadMs": 1.755583999999999,
+        "htmlRenderMs": 114.228583,
+        "totalMs": 118.488917
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.5770000000000266, 0.5431250000000034, 6.245083999999991, 0.6872089999999957,
+          0.6115419999999858, 0.5716250000000116, 0.562624999999997, 0.5564160000000129,
+          0.5773749999999893, 0.5719579999999951, 10.92308300000002, 0.671541000000019,
+          0.5784160000000043, 0.5725419999999986, 0.5779579999999953, 0.5815000000000055,
+          0.5557919999999967, 0.5527909999999849, 0.5464589999999987, 0.5520839999999794,
+          0.5722079999999892, 0.5563329999999951, 0.5492500000000007, 0.5437499999999886,
+          0.5426250000000152, 0.555166000000014, 6.29412499999998, 0.596082999999993,
+          0.5570830000000058, 0.5494170000000054
+        ],
+        "medianMs": 0.5717915000000033
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 72976928,
+          "heapUsedBytes": 5210072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 101878328,
+          "heapUsedBytes": 5253280,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 101878328,
+          "heapUsedBytes": 5253376,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5401249999999962,
+        "highlighterCreateMs": 0.8722500000000011,
+        "themeAndGrammarLoadMs": 0.3026669999999996,
+        "htmlRenderMs": 0.8624579999999966,
+        "totalMs": 3.5774999999999935
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21224999999999739, 0.20941700000000196, 0.20666599999999846, 0.21083300000000094,
+          0.21145800000000037, 0.21437500000000398, 0.2184170000000023, 0.21845800000000537,
+          0.2376250000000013, 0.22475000000000023, 0.24683399999999978, 0.220125000000003,
+          0.21887500000000415, 0.21875, 0.21854100000000187, 0.21920899999999932,
+          0.21858300000000241, 0.21808300000000003, 0.21816599999999653, 0.21829200000000526,
+          0.21800000000000352, 0.21791699999999992, 0.21795800000000298, 0.21845899999999574,
+          0.2173750000000041, 0.21754200000000168, 0.21791699999999992, 0.2272079999999974,
+          0.21795900000000046, 0.2175410000000042
+        ],
+        "medianMs": 0.21812449999999828
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20138480,
+          "heapUsedBytes": 5197072,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20204016,
+          "heapUsedBytes": 5228512,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20204016,
+          "heapUsedBytes": 5228608,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5479580000000013,
+        "highlighterCreateMs": 0.9308329999999998,
+        "themeAndGrammarLoadMs": 0.29404199999999747,
+        "htmlRenderMs": 0.744250000000001,
+        "totalMs": 3.5170829999999995
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.21404200000000628, 0.21683300000000116, 0.2146669999999986, 0.21408300000000224,
+          0.21462499999999807, 0.21733299999999645, 0.2202920000000006, 0.22283299999999429,
+          0.23149999999999693, 0.22083299999999895, 0.24454100000000523, 0.21875,
+          0.21820799999999707, 0.21895800000000065, 0.21904099999999715, 0.21912499999999824,
+          0.21800000000000352, 0.21837500000000176, 0.21825000000000472, 0.2188330000000036,
+          0.21787499999999937, 0.21862500000000296, 0.22025000000000006, 0.21825000000000472,
+          0.21791699999999992, 0.21862500000000296, 0.21799999999999642, 0.2178339999999963,
+          0.21845799999999826, 0.21854199999999935
+        ],
+        "medianMs": 0.2184165
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20646432,
+          "heapUsedBytes": 5197232,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20777552,
+          "heapUsedBytes": 5228816,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20810320,
+          "heapUsedBytes": 5228592,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.4665409999999994,
+        "highlighterCreateMs": 0.8524590000000032,
+        "themeAndGrammarLoadMs": 5.317957999999997,
+        "htmlRenderMs": 70.23220800000001,
+        "totalMs": 77.869166
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.47204099999999, 1.5941660000000013, 22.018624999999986, 1.476208000000014,
+          2.259416999999985, 1.250333000000012, 1.195083000000011, 1.14658399999999,
+          1.1967919999999879, 1.1783749999999884, 15.306542000000007, 1.241250000000008,
+          1.1449580000000026, 1.147166999999996, 1.140041999999994, 1.1186670000000163,
+          1.1351669999999956, 1.144709000000006, 1.134999999999991, 1.1234169999999892,
+          1.1379169999999874, 1.1325829999999826, 1.1439169999999876, 1.209916000000021,
+          1.3817920000000186, 1.2239999999999895, 5.069166999999993, 1.1757499999999936,
+          1.2953750000000355, 1.184665999999993
+        ],
+        "medianMs": 1.189874500000002
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50203192,
+          "heapUsedBytes": 5205160,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 98863744,
+          "heapUsedBytes": 5243912,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 98863744,
+          "heapUsedBytes": 5243688,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 7,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5423749999999998,
+        "highlighterCreateMs": 0.9082079999999948,
+        "themeAndGrammarLoadMs": 5.369667,
+        "htmlRenderMs": 202.86854200000002,
+        "totalMs": 210.688792
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          10.006665999999996, 1.6115409999999883, 21.47191700000002, 1.3465419999999995,
+          2.2105000000000246, 1.2356660000000375, 1.1460419999999658, 1.1465840000000185,
+          1.2059579999999528, 1.0964999999999918, 23.86966700000005, 1.352374999999995,
+          1.1800419999999576, 1.1708340000000135, 1.183499999999981, 1.2595830000000205,
+          1.481916999999953, 1.285250000000019, 1.1244579999999473, 1.1531669999999963,
+          1.5906250000000455, 1.4231660000000375, 1.5277080000000183, 1.350999999999999,
+          1.1884589999999662, 1.1847080000000005, 8.186041999999986, 1.3770420000000172,
+          1.1130830000000174, 1.080250000000035
+        ],
+        "medianMs": 1.2724165000000198
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103942712,
+          "heapUsedBytes": 5206656,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 155011688,
+          "heapUsedBytes": 5243856,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 70077032,
+          "heapUsedBytes": 5243680,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "base",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.5073329999999956,
+        "highlighterCreateMs": 0.8788750000000007,
+        "themeAndGrammarLoadMs": 8.732792000000003,
+        "htmlRenderMs": 400.51037499999995,
+        "totalMs": 411.629375
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9171250000000555, 0.730041999999969, 11.018750000000011, 0.7579170000000204,
+          11.614749999999958, 0.9051249999999982, 0.6235000000000355, 0.5976670000000013,
+          0.6197499999999536, 0.5988750000000209, 46.88820799999996, 0.7805409999999711,
+          0.5686249999999973, 0.5461669999999685, 0.5337499999999409, 0.5345839999999953,
+          0.5214580000000524, 0.5049169999999776, 0.5091670000000477, 0.5040839999999207,
+          0.5119999999999436, 0.514583000000016, 0.512833999999998, 0.5213340000000244,
+          0.5011250000000018, 0.5011670000000095, 66.341541, 0.7136659999999893, 0.5303330000000415,
+          0.5082089999999653
+        ],
+        "medianMs": 0.5573959999999829
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 167758488,
+          "heapUsedBytes": 5190584,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 262834912,
+          "heapUsedBytes": 5216888,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 101550816,
+          "heapUsedBytes": 5216664,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "candidate",
+      "language": "cpp",
+      "fixture": "orders.cpp",
+      "fixtureBytes": 937,
+      "outputBytes": 7548,
+      "htmlSha256": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+      "firstUse": {
+        "addonLoadMs": 1.487792000000006,
+        "highlighterCreateMs": 0.871457999999997,
+        "themeAndGrammarLoadMs": 8.532417000000002,
+        "htmlRenderMs": 392.36175,
+        "totalMs": 403.253417
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.9004999999999654, 0.6803340000000162, 9.358374999999967, 0.7797090000000253,
+          11.738083000000074, 0.9223749999999882, 0.6587080000000469, 0.6697919999999158,
+          0.7690420000000131, 0.7650409999999965, 45.258249999999975, 0.78550000000007,
+          0.5528329999999642, 0.5227919999999813, 0.5121669999999767, 0.5153330000000551,
+          0.5091660000000502, 0.4939169999998967, 0.4862920000000486, 0.48129099999994196,
+          0.49025000000006, 0.4836249999999609, 0.4813329999999496, 0.48329200000000583,
+          0.48154199999999037, 0.5014999999999645, 66.70216700000003, 0.7011659999999438,
+          0.5161669999999958, 0.49579099999994014
+        ],
+        "medianMs": 0.5378124999999727
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 163777152,
+          "heapUsedBytes": 5190744,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 258149088,
+          "heapUsedBytes": 5216872,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 93244152,
+          "heapUsedBytes": 5216648,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "candidate",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.4633749999999992,
+        "highlighterCreateMs": 0.8632920000000013,
+        "themeAndGrammarLoadMs": 1.703125,
+        "htmlRenderMs": 36.034416,
+        "totalMs": 40.064208
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.6523339999999962, 0.5763330000000053, 12.828500000000005, 0.8599999999999852,
+          9.907166999999987, 0.6815830000000176, 0.46683300000000827, 0.46000000000000796,
+          0.4712079999999901, 0.4579580000000192, 11.075417000000016, 0.6918330000000026,
+          0.5209169999999972, 0.5121660000000077, 0.4970829999999751, 0.4910420000000215,
+          0.4797499999999957, 0.48212499999999636, 0.478792000000027, 0.48154199999999037,
+          0.4850409999999954, 0.4801670000000229, 0.5264999999999986, 0.5031250000000114,
+          0.48075000000000045, 0.46845899999999574, 5.1428339999999935, 0.5439159999999958,
+          0.5097500000000252, 0.4970000000000141
+        ],
+        "medianMs": 0.5001039999999932
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 39340552,
+          "heapUsedBytes": 5204112,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 73828920,
+          "heapUsedBytes": 5242136,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 73845304,
+          "heapUsedBytes": 5241912,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "base",
+      "language": "typescript",
+      "fixture": "orders.ts",
+      "fixtureBytes": 1203,
+      "outputBytes": 9727,
+      "htmlSha256": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+      "firstUse": {
+        "addonLoadMs": 1.5571249999999992,
+        "highlighterCreateMs": 0.8978749999999991,
+        "themeAndGrammarLoadMs": 1.703209000000001,
+        "htmlRenderMs": 141.191666,
+        "totalMs": 145.349875
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.8769159999999943, 0.7590000000000146, 12.80612499999998, 0.6558749999999804,
+          10.590750000000014, 1.0167500000000018, 0.6075409999999977, 0.5159579999999835,
+          0.9157500000000027, 0.6397499999999923, 10.929167000000007, 0.6741250000000036,
+          0.5271249999999554, 0.49908400000003894, 0.48670800000002146, 0.7632919999999785,
+          0.6084999999999923, 0.5226670000000126, 0.4956659999999715, 0.4925829999999678,
+          0.5073330000000169, 0.5132499999999709, 0.49329099999999926, 0.49458299999997735,
+          0.5048750000000268, 0.5115829999999733, 5.25954200000001, 0.5391250000000127,
+          0.4984999999999786, 0.4836249999999609
+        ],
+        "medianMs": 0.5331249999999841
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 80710296,
+          "heapUsedBytes": 5204000,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 114051760,
+          "heapUsedBytes": 5242152,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 37341872,
+          "heapUsedBytes": 5241928,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "base",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5257080000000016,
+        "highlighterCreateMs": 0.9407079999999937,
+        "themeAndGrammarLoadMs": 1.8473340000000036,
+        "htmlRenderMs": 118.082833,
+        "totalMs": 122.39658299999999
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          3.0890839999999855, 0.8225840000000062, 6.113624999999985, 0.692875000000015,
+          0.6935000000000002, 0.6344159999999874, 0.6080420000000117, 0.598417000000012,
+          0.6019170000000145, 0.5689580000000092, 11.05533299999999, 0.7075000000000102,
+          0.6228330000000142, 0.5934169999999881, 0.5859580000000051, 0.5849170000000186,
+          0.5841250000000002, 0.5909170000000188, 0.57650000000001, 0.5627920000000017,
+          0.5669169999999895, 0.5570830000000058, 0.5747080000000153, 0.555958000000004,
+          0.5541249999999991, 0.5647909999999854, 6.211833000000013, 0.6047079999999596,
+          0.5671670000000404, 0.5497500000000173
+        ],
+        "medianMs": 0.5921670000000034
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 74140216,
+          "heapUsedBytes": 5210248,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 102337152,
+          "heapUsedBytes": 5253600,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 102337152,
+          "heapUsedBytes": 5253376,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "candidate",
+      "language": "tsx",
+      "fixture": "Orders.tsx",
+      "fixtureBytes": 1568,
+      "outputBytes": 12390,
+      "htmlSha256": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+      "firstUse": {
+        "addonLoadMs": 1.5883329999999987,
+        "highlighterCreateMs": 0.9436669999999978,
+        "themeAndGrammarLoadMs": 1.743000000000002,
+        "htmlRenderMs": 32.780916,
+        "totalMs": 37.055915999999996
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.7088749999999919, 0.6660830000000004, 6.047291000000001, 0.6349170000000015,
+          0.605000000000004, 0.570791000000014, 0.5568330000000117, 0.5498329999999783,
+          0.56087500000001, 0.5496669999999995, 10.820999999999998, 0.6682089999999903,
+          0.5745420000000081, 0.5554590000000132, 0.5479170000000124, 0.5494160000000079,
+          0.5456659999999829, 0.5488750000000095, 0.541499999999985, 0.5621250000000089,
+          0.54525000000001, 0.5416669999999897, 0.552250000000015, 0.554333000000014,
+          0.5438750000000141, 0.8536250000000223, 6.8472500000000025, 0.5908329999999751,
+          0.5477499999999793, 0.5495420000000024
+        ],
+        "medianMs": 0.5561460000000125
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 38144544,
+          "heapUsedBytes": 5209984,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 67357240,
+          "heapUsedBytes": 5253192,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 67357240,
+          "heapUsedBytes": 5253288,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "candidate",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.520458000000005,
+        "highlighterCreateMs": 0.861542,
+        "themeAndGrammarLoadMs": 0.2686250000000001,
+        "htmlRenderMs": 0.759332999999998,
+        "totalMs": 3.409958000000003
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.2203749999999971, 0.2181670000000011, 0.21454199999999446, 0.21283299999999628,
+          0.21254100000000165, 0.21270799999999923, 0.2124159999999975, 0.21241700000000208,
+          0.267832999999996, 0.21945799999999593, 0.2484580000000065, 0.2139579999999981,
+          0.2124589999999955, 0.21291599999999988, 0.21349999999999625, 0.21304099999999693,
+          0.21358299999999986, 0.21279099999999573, 0.21437500000000398, 0.21262499999999562,
+          0.2076670000000007, 0.20575000000000188, 0.20712499999999778, 0.207291000000005,
+          0.20541699999999707, 0.20579200000000242, 0.20616700000000066, 0.2061250000000001,
+          0.20516700000000299, 0.2067920000000001
+        ],
+        "medianMs": 0.21266649999999743
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20498952,
+          "heapUsedBytes": 5197376,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20646456,
+          "heapUsedBytes": 5228960,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20662840,
+          "heapUsedBytes": 5228736,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "base",
+      "language": "json",
+      "fixture": "orders.json",
+      "fixtureBytes": 761,
+      "outputBytes": 6509,
+      "htmlSha256": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+      "firstUse": {
+        "addonLoadMs": 1.5326670000000036,
+        "highlighterCreateMs": 0.8956249999999955,
+        "themeAndGrammarLoadMs": 0.2745000000000033,
+        "htmlRenderMs": 0.8501249999999985,
+        "totalMs": 3.5529170000000008
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          0.22050000000000125, 0.22500000000000142, 0.2204580000000007, 0.21829100000000068,
+          0.21875, 0.257957999999995, 0.23837499999999778, 0.2259999999999991, 0.24329199999999673,
+          0.24249999999999972, 0.25499999999999545, 0.2145410000000041, 0.2174580000000006,
+          0.2152499999999975, 0.21779200000000287, 0.21916699999999878, 0.21783300000000594,
+          0.21995799999999832, 0.2185000000000059, 0.2183339999999987, 0.22016699999999645,
+          0.21779200000000287, 0.22083399999999642, 0.21841599999999772, 0.21837499999999466,
+          0.21941699999999997, 0.21883399999999398, 0.21845900000000285, 0.21979100000000074,
+          0.21833300000000122
+        ],
+        "medianMs": 0.21900049999999638
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 20318704,
+          "heapUsedBytes": 5197216,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 20367856,
+          "heapUsedBytes": 5228656,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 20367856,
+          "heapUsedBytes": 5228752,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "base",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.5017080000000007,
+        "highlighterCreateMs": 0.8550419999999974,
+        "themeAndGrammarLoadMs": 5.136040999999999,
+        "htmlRenderMs": 200.733125,
+        "totalMs": 208.22591599999998
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          9.65341699999999, 1.6235829999999964, 21.84745799999996, 1.416749999999979,
+          2.2981249999999704, 1.3133750000000077, 1.2182090000000017, 1.1999170000000277,
+          1.1790000000000305, 1.156499999999994, 24.195583, 1.3784159999999588, 1.1532499999999573,
+          1.0915840000000117, 1.0625420000000076, 1.0911250000000337, 1.1167500000000246,
+          1.1587499999999977, 1.1308750000000032, 1.127375000000029, 1.122000000000014,
+          1.1074580000000083, 1.1139160000000174, 1.118832999999995, 1.1114999999999782,
+          1.1099590000000035, 7.611666000000014, 1.298249999999996, 1.1780410000000074,
+          1.1537910000000124
+        ],
+        "medianMs": 1.157624999999996
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 103631512,
+          "heapUsedBytes": 5205120,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 154651312,
+          "heapUsedBytes": 5244000,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 69241520,
+          "heapUsedBytes": 5243776,
+          "externalBytes": 2543935
+        }
+      }
+    },
+    {
+      "round": 8,
+      "variant": "candidate",
+      "language": "astro",
+      "fixture": "Orders.astro",
+      "fixtureBytes": 1081,
+      "outputBytes": 10093,
+      "htmlSha256": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66",
+      "firstUse": {
+        "addonLoadMs": 1.4862919999999988,
+        "highlighterCreateMs": 0.8852499999999992,
+        "themeAndGrammarLoadMs": 5.312125000000002,
+        "htmlRenderMs": 70.40825,
+        "totalMs": 78.091917
+      },
+      "warm": {
+        "warmupCalls": 5,
+        "measuredCalls": 30,
+        "sampleMs": [
+          6.400500000000022, 1.5676249999999925, 21.377207999999996, 1.385832999999991, 2.311667,
+          1.584333000000015, 1.3672500000000127, 1.1537499999999739, 1.111124999999987,
+          1.0784999999999911, 15.496458000000018, 1.2301249999999868, 1.1412500000000136,
+          1.1197090000000003, 1.1296669999999835, 1.1054590000000246, 1.0928749999999923,
+          1.0990830000000074, 1.088832999999994, 1.0927920000000029, 1.1022080000000187,
+          1.119957999999997, 1.1047920000000033, 1.0912079999999946, 1.0949999999999989,
+          1.085374999999999, 5.0740419999999915, 1.152832999999987, 1.1040419999999926,
+          1.1040419999999926
+        ],
+        "medianMs": 1.1198334999999986
+      },
+      "memory": {
+        "afterGrammarAndFirstHtml": {
+          "rssBytes": 50317880,
+          "heapUsedBytes": 5205104,
+          "externalBytes": 2543931
+        },
+        "afterWarmCalls": {
+          "rssBytes": 96979536,
+          "heapUsedBytes": 5243712,
+          "externalBytes": 2543935
+        },
+        "afterDispose": {
+          "rssBytes": 96979536,
+          "heapUsedBytes": 5243808,
+          "externalBytes": 2543935
+        }
+      }
+    }
+  ],
+  "memorySamples": [
+    {
+      "round": 0,
+      "variant": "candidate",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19745288,
+            "heapUsedBytes": 5176576,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 163859096,
+            "heapUsedBytes": 5179680,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 62786200,
+            "heapUsedBytes": 5181472,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 64391832,
+            "heapUsedBytes": 5189936,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 64408216,
+            "heapUsedBytes": 5189088,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 70961816,
+            "heapUsedBytes": 5190544,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 70961816,
+        "heapUsedBytes": 5192056,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 0,
+      "variant": "base",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19925536,
+            "heapUsedBytes": 5176488,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 168364672,
+            "heapUsedBytes": 5179720,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 91409024,
+            "heapUsedBytes": 5181512,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 93276800,
+            "heapUsedBytes": 5189976,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 93309568,
+            "heapUsedBytes": 5189128,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 106711728,
+            "heapUsedBytes": 5190584,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 106711728,
+        "heapUsedBytes": 5192096,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 1,
+      "variant": "base",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19728904,
+            "heapUsedBytes": 5176616,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 168528560,
+            "heapUsedBytes": 5179720,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 91818696,
+            "heapUsedBytes": 5181512,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 93866696,
+            "heapUsedBytes": 5189976,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 93866696,
+            "heapUsedBytes": 5189128,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 107137736,
+            "heapUsedBytes": 5190584,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 107137736,
+        "heapUsedBytes": 5192096,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 1,
+      "variant": "candidate",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 20007408,
+            "heapUsedBytes": 5176576,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 165513856,
+            "heapUsedBytes": 5179680,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 62081688,
+            "heapUsedBytes": 5181472,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 64719512,
+            "heapUsedBytes": 5189936,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 64752280,
+            "heapUsedBytes": 5189088,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 70863512,
+            "heapUsedBytes": 5190544,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 70863512,
+        "heapUsedBytes": 5192056,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 2,
+      "variant": "candidate",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19925560,
+            "heapUsedBytes": 5176520,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 165104304,
+            "heapUsedBytes": 5179752,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 64719536,
+            "heapUsedBytes": 5181544,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 66964144,
+            "heapUsedBytes": 5190008,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 66980528,
+            "heapUsedBytes": 5189160,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 73009840,
+            "heapUsedBytes": 5190616,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 73009840,
+        "heapUsedBytes": 5192128,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 2,
+      "variant": "base",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19859976,
+            "heapUsedBytes": 5176688,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 169003696,
+            "heapUsedBytes": 5179792,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 92768968,
+            "heapUsedBytes": 5181584,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 94800584,
+            "heapUsedBytes": 5190048,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 94800584,
+            "heapUsedBytes": 5189200,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 108333768,
+            "heapUsedBytes": 5190656,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 108333768,
+        "heapUsedBytes": 5192168,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 3,
+      "variant": "base",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19876336,
+            "heapUsedBytes": 5176616,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 169282176,
+            "heapUsedBytes": 5179720,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 93850264,
+            "heapUsedBytes": 5181512,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 95718040,
+            "heapUsedBytes": 5189976,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 95718040,
+            "heapUsedBytes": 5189128,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 110185112,
+            "heapUsedBytes": 5190584,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 110185112,
+        "heapUsedBytes": 5192096,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 3,
+      "variant": "candidate",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19909152,
+            "heapUsedBytes": 5176576,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 165530288,
+            "heapUsedBytes": 5179680,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 62245552,
+            "heapUsedBytes": 5181472,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 63720112,
+            "heapUsedBytes": 5189936,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 63736496,
+            "heapUsedBytes": 5189088,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 69782192,
+            "heapUsedBytes": 5190544,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 69782192,
+        "heapUsedBytes": 5192056,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 4,
+      "variant": "candidate",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19564992,
+            "heapUsedBytes": 5176472,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 164956728,
+            "heapUsedBytes": 5179368,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 62360120,
+            "heapUsedBytes": 5181544,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 63867448,
+            "heapUsedBytes": 5190008,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 63900216,
+            "heapUsedBytes": 5189160,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 69847608,
+            "heapUsedBytes": 5190616,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 69847608,
+        "heapUsedBytes": 5192128,
+        "externalBytes": 2543935
+      }
+    },
+    {
+      "round": 4,
+      "variant": "base",
+      "languages": ["cpp", "typescript", "tsx", "json", "astro"],
+      "htmlSha256": {
+        "cpp": "b0c26f33423ff055591ec3fdfa8254e1245e39bcd07827ef9705bbd293820927",
+        "typescript": "39f797e0b0f177d02d8b38542ad5683a00e78b4113d71ac29829e6e05215c750",
+        "tsx": "0a23657ec6b1f0f03fbb2cc90efe4520a65e18f8b8e76ceef54d4bd1ed123faf",
+        "json": "6ae9213b048b1c4c27993155f91d01e67845eec3c5c4145af5b068eaa7bac55a",
+        "astro": "03f988d2fe1439540c9b0562d8c137de4c40ee664e573daf32baa1589e332a66"
+      },
+      "checkpoints": [
+        {
+          "loadedLanguages": [],
+          "memory": {
+            "rssBytes": 19974664,
+            "heapUsedBytes": 5176440,
+            "externalBytes": 2543931
+          }
+        },
+        {
+          "loadedLanguages": ["cpp"],
+          "memory": {
+            "rssBytes": 167807616,
+            "heapUsedBytes": 5179336,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript"],
+          "memory": {
+            "rssBytes": 91736704,
+            "heapUsedBytes": 5181512,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx"],
+          "memory": {
+            "rssBytes": 94128768,
+            "heapUsedBytes": 5189976,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json"],
+          "memory": {
+            "rssBytes": 94128768,
+            "heapUsedBytes": 5189128,
+            "externalBytes": 2543935
+          }
+        },
+        {
+          "loadedLanguages": ["cpp", "typescript", "tsx", "json", "astro"],
+          "memory": {
+            "rssBytes": 107416216,
+            "heapUsedBytes": 5190584,
+            "externalBytes": 2543935
+          }
+        }
+      ],
+      "afterDispose": {
+        "rssBytes": 107416216,
+        "heapUsedBytes": 5192096,
+        "externalBytes": 2543935
+      }
+    }
+  ],
+  "timingSummary": {
+    "cpp": {
+      "base": {
+        "firstUseMedianMs": 417.95291699999996,
+        "warmHtmlMedianMs": 0.5614374999999541,
+        "rssAfterFirstHtmlMedianBytes": 168135296,
+        "rssAfterWarmMedianBytes": 264555232
+      },
+      "candidate": {
+        "firstUseMedianMs": 407.98229200000003,
+        "warmHtmlMedianMs": 0.574083499999972,
+        "rssAfterFirstHtmlMedianBytes": 165186104,
+        "rssAfterWarmMedianBytes": 260278984
+      }
+    },
+    "typescript": {
+      "base": {
+        "firstUseMedianMs": 142.49650000000003,
+        "warmHtmlMedianMs": 0.500687499999998,
+        "rssAfterFirstHtmlMedianBytes": 79743544,
+        "rssAfterWarmMedianBytes": 113674832
+      },
+      "candidate": {
+        "firstUseMedianMs": 40.85125,
+        "warmHtmlMedianMs": 0.49183299999999974,
+        "rssAfterFirstHtmlMedianBytes": 39340552,
+        "rssAfterWarmMedianBytes": 72256104
+      }
+    },
+    "tsx": {
+      "base": {
+        "firstUseMedianMs": 120.528833,
+        "warmHtmlMedianMs": 0.5757705000000044,
+        "rssAfterFirstHtmlMedianBytes": 73599544,
+        "rssAfterWarmMedianBytes": 102025856
+      },
+      "candidate": {
+        "firstUseMedianMs": 36.666332999999995,
+        "warmHtmlMedianMs": 0.5561460000000125,
+        "rssAfterFirstHtmlMedianBytes": 38357584,
+        "rssAfterWarmMedianBytes": 66849384
+      }
+    },
+    "json": {
+      "base": {
+        "firstUseMedianMs": 3.5706249999999997,
+        "warmHtmlMedianMs": 0.21866699999999994,
+        "rssAfterFirstHtmlMedianBytes": 20335112,
+        "rssAfterWarmMedianBytes": 20466208
+      },
+      "candidate": {
+        "firstUseMedianMs": 3.4765840000000026,
+        "warmHtmlMedianMs": 0.21920849999999703,
+        "rssAfterFirstHtmlMedianBytes": 20318728,
+        "rssAfterWarmMedianBytes": 20515360
+      }
+    },
+    "astro": {
+      "base": {
+        "firstUseMedianMs": 209.64937500000002,
+        "warmHtmlMedianMs": 1.1606664999999907,
+        "rssAfterFirstHtmlMedianBytes": 103926400,
+        "rssAfterWarmMedianBytes": 155011688
+      },
+      "candidate": {
+        "firstUseMedianMs": 78.696834,
+        "warmHtmlMedianMs": 1.1615204999999946,
+        "rssAfterFirstHtmlMedianBytes": 50317880,
+        "rssAfterWarmMedianBytes": 96979632
+      }
+    }
+  },
+  "memorySummary": {
+    "base": {
+      "rssAfterFirstGrammarMedianBytes": 168528560,
+      "rssAfterFiveGrammarsMedianBytes": 107416216,
+      "rssAfterDisposeMedianBytes": 107416216,
+      "externalAfterFiveGrammarsMedianBytes": 2543935
+    },
+    "candidate": {
+      "rssAfterFirstGrammarMedianBytes": 165104304,
+      "rssAfterFiveGrammarsMedianBytes": 70863512,
+      "rssAfterDisposeMedianBytes": 70863512,
+      "externalAfterFiveGrammarsMedianBytes": 2543935
+    }
+  }
+}

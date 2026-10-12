@@ -196,6 +196,24 @@ const transformerCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-t
 });
 if (transformerCheck.status !== 0) process.exit(transformerCheck.status || 1);
 
+const decorationCheck = spawnSync(process.execPath, ["./scripts/check-native-decorations.mjs"], {
+  cwd: nodeRoot,
+  env: { ...process.env, FERRIKI_HONEST_ALIAS: "1" },
+  stdio: "inherit",
+});
+if (decorationCheck.status !== 0) process.exit(decorationCheck.status || 1);
+
+const declarativeRenderCheck = spawnSync(
+  process.execPath,
+  ["./scripts/check-native-declarative-render.mjs"],
+  {
+    cwd: nodeRoot,
+    env: { ...process.env, FERRIKI_HONEST_ALIAS: "1" },
+    stdio: "inherit",
+  },
+);
+if (declarativeRenderCheck.status !== 0) process.exit(declarativeRenderCheck.status || 1);
+
 const classCheck = spawnSync(process.execPath, ["./scripts/check-class-highlighting.mjs"], {
   cwd: nodeRoot,
   env: { ...process.env, FERRIKI_HONEST_ALIAS: "1" },

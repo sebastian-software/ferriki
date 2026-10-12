@@ -11,6 +11,12 @@ export declare class FerrikiHighlighter {
   getHtmlRenderData(code: string, options: NativeTokenOptions): HtmlRenderData;
   getHtmlRenderDataWithThemes(code: string, options: NativeTokenOptions): HtmlRenderDataWithThemes;
   codeToHtml(code: string, options: NativeHighlightOptions): string;
+  /** Highlight and decorate without transporting tokens or a tree to JS. */
+  codeToHtmlWithDecorations(
+    code: string,
+    options: NativeHighlightOptions,
+    decorations: Array<NativeHtmlDecoration>,
+  ): string | null;
   /** Plans missing standard payloads for Node to fetch and install. */
   planAssets(languages: Array<string>, themes: Array<string>): Promise<Array<AssetPlanEntry>>;
   assetCacheDir(): string | null;
@@ -25,6 +31,11 @@ export interface AssetPlanEntry {
 }
 
 export declare function createHighlighter(options: NativeHighlighterOptions): FerrikiHighlighter;
+
+export declare function decorationSections(
+  source: string,
+  input: Array<NativeDecorationRange>,
+): NativeDecorationPreparation;
 
 export declare function ferrikiVersion(): string;
 
@@ -63,6 +74,61 @@ export interface NativeAssetOptions {
   cacheDir?: string;
 }
 
+export interface NativeDecorationContinuation {
+  section: NativeDecorationSection;
+  cursor: NativeDecorationCursor;
+}
+
+export interface NativeDecorationCursor {
+  /** 0 = start, 1 = after start, 2 = middle, 3 = done. */
+  phase: number;
+  line: number;
+}
+
+export interface NativeDecorationMutation {
+  decoration: number;
+  node: number;
+  line: number;
+  start: number;
+  count: number;
+  target: string;
+}
+
+export interface NativeDecorationPlan {
+  mutations: Array<NativeDecorationMutation>;
+  error?: string;
+}
+
+export interface NativeDecorationPosition {
+  line: number;
+  character: number;
+  offset: number;
+}
+
+export interface NativeDecorationPreparation {
+  ranges: Array<NativeResolvedDecoration>;
+  sections: Array<NativeDecorationSection>;
+}
+
+export interface NativeDecorationRange {
+  startOffset?: number;
+  startLine?: number;
+  startCharacter?: number;
+  endOffset?: number;
+  endLine?: number;
+  endCharacter?: number;
+  alwaysWrap: boolean;
+}
+
+export interface NativeDecorationSection {
+  decoration: number;
+  line: number;
+  start: number;
+  end?: number;
+  wholeLine: boolean;
+  alwaysWrap: boolean;
+}
+
 export interface NativeHighlighterOptions {
   standardAssetRoot?: string;
   assets?: NativeAssetOptions;
@@ -80,7 +146,25 @@ export interface NativeHighlightOptions {
   rootStyle?: string | boolean;
   tabindex?: string | boolean;
   styleMode?: string;
+  preserveScopeBoundaries?: boolean;
   themeEntries?: Array<ThemeEntry>;
+}
+
+export interface NativeHtmlAttribute {
+  name: string;
+  value: string;
+}
+
+/** Private declarative render input. Attributes retain JS enumeration order. */
+export interface NativeHtmlDecoration {
+  range: NativeDecorationRange;
+  tagName: string;
+  properties: Array<NativeHtmlAttribute>;
+}
+
+export interface NativeResolvedDecoration {
+  start: NativeDecorationPosition;
+  end: NativeDecorationPosition;
 }
 
 export interface NativeTokenOptions {
@@ -90,8 +174,28 @@ export interface NativeTokenOptions {
   tokenizeTimeLimit?: number;
   tokenizeMaxLineLength?: number;
   styleMode?: string;
+  preserveScopeBoundaries?: boolean;
   themeEntries?: Array<ThemeEntry>;
 }
+
+export declare function nextDecorationSection(
+  range: NativeResolvedDecoration,
+  decoration: number,
+  alwaysWrap: boolean,
+  cursor: NativeDecorationCursor,
+): NativeDecorationContinuation | null;
+
+export declare function planDecorationMutations(
+  input: Float64Array,
+  lines: Array<number>,
+  sections: Array<NativeDecorationSection>,
+): NativeDecorationPlan;
+
+export declare function splitDecorationTokens(
+  source: string,
+  input: Array<NativeDecorationRange>,
+  lines: Array<Float64Array>,
+): Array<Uint32Array>;
 
 export interface ThemeEntry {
   color: string;

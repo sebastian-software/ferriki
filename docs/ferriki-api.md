@@ -102,13 +102,13 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option           | Type                                 | Meaning                                                                                      |
-| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                           |
-| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                              |
-| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                |
-| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                 |
-| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                     |
+| Option           | Type                                 | Meaning                                                                                                   |
+| ---------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                                        |
+| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                                           |
+| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                             |
+| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                              |
+| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                                  |
 | `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
@@ -259,6 +259,80 @@ Transformers run in this order: `preprocess`, `tokens`, `span`, `line`, `code`,
 `this.options.meta.__raw`. A `DecorationItem.transform` callback instead
 receives `(element, type)` and does not receive the transformer context.
 
+### Callback context and return values
+
+Hooks run synchronously. Within each stage, Ferriki runs the `pre` tier, the
+normal tier, and the `post` tier, preserving the supplied order inside each
+tier. `span` and `line` stages repeat as each line is assembled: all spans of a
+line run before that line's hook. `line` and `span` receive a one-based line
+number; `span` receives a zero-based token column, not a character offset.
+
+| Stage                 | Available context and behavior                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preprocess`          | `options` and a mutable `meta` object. The source argument is the current text after earlier preprocess hooks.                                                                                                                                                                                                                                                                                      |
+| `tokens`              | The same `options` and `meta`, plus `source` containing the preprocessed text. Tokens have not yet been split at decoration boundaries.                                                                                                                                                                                                                                                             |
+| `span`, `line`        | The render context adds `root`, split `tokens`, `lines`, `structure`, and `addClassToHast`. `lines` contains only completed lines; `pre` and `code` are still `undefined`. The root is still being assembled.                                                                                                                                                                                       |
+| `code`, `pre`, `root` | `code` is available. `pre` is available only for classic structure; inline output skips the `pre` hook. The getters follow replacement code/pre nodes. For inline structure, the code wrapper is detached: its properties and replacement do not enter the output, although mutations to shared line children do. `root` receives the decorated tree before final scope nesting and CSS extraction. |
+| `postprocess`         | `options` and a new `meta` object shared among postprocess hooks for that call. It does not share the earlier rendering stages' `meta` or expose the render tree.                                                                                                                                                                                                                                   |
+
+Token and HAST hooks may mutate their argument and return `undefined`, or
+return replacement tokens/nodes for the following hooks. Returning a nonempty
+string from `preprocess` or `postprocess` replaces the current text; an omitted
+return or empty string leaves it unchanged. Hooks are not awaited; async
+callbacks are outside this contract. A thrown callback error aborts rendering
+and propagates unchanged, without disposing the highlighter or rolling back
+mutations already visible to callbacks.
+
+Use the hook argument for its current node. `this.root` refers to the original
+root container; returning a different root passes that replacement onward but
+does not change `this.root`. Guard `this.pre` and `this.code` when accessing
+them through the shared `ShikiTransformerContext` type. Read fence metadata
+from `this.options.meta`; `this.meta` is callback scratch data, and
+`HighlightOptions.data` is separate metadata on the classic `<pre>` node.
+The full upstream Shiki context is not interchangeable with this contract.
+
+Decoration positions are finite integers: an absolute UTF-16 offset, or a
+zero-based `{ line, character }`. A negative character counts backward from
+that line's length, excluding a trailing carriage return. Nested, touching,
+and empty ranges are supported; crossing overlaps and reversed ranges throw
+`ERR_USAGE`. Source ranges use the preprocessed code. Decorations split tokens
+after token hooks and apply to the current tree after `pre` hooks, before
+`root`, scope nesting, and class extraction. A decoration callback receives
+`line`, `token`, or `wrapper` as its second argument; its `this` value is the
+resolved decoration, including `{ line, character, offset }` for both bounds.
+Later sections observe its mutations and returned replacement nodes.
+
+### Declarative line and range highlighting
+
+Pass decorations with the highlight request. For example, this marks displayed
+lines 4 through 10 in a source with at least ten lines; positions are zero-based and the end
+character is exclusive:
+
+```ts
+const lines = source.split("\n");
+const html = highlighter.codeToHtml(source, {
+  lang: "typescript",
+  theme: "nord",
+  decorations: [{
+    start: { line: 3, character: 0 },
+    end: { line: 9, character: lines[9].replace(/\r$/, "").length },
+    properties: { class: "line highlighted" },
+  }],
+});
+```
+
+With classic structure, a single theme, inline theme styles, and no transformers
+or decoration callbacks, plain decorations with string attributes render
+entirely in Rust. This includes partial ranges, nesting, `alwaysWrap`, tags,
+classes, and string attributes. No new option is required: Ferriki chooses the
+path automatically and returns the same HTML.
+
+Callbacks, class-based theme CSS, multi-theme output, inline structure, grammar
+state, block metadata, accessors/custom prototypes, proxies, and non-string properties
+use the existing host pipeline. String slices inside UTF-16 surrogate pairs and
+lone surrogate strings also keep that path. The stable public Rust API is
+unchanged; this renderer belongs to the private Node consumer bridge.
+
 ## Registrations and loaders
 
 `LanguageRegistration` and `ThemeRegistration` accept the JSON-shaped
@@ -360,8 +434,12 @@ making its implementation text part of the contract. Native loader messages
 remain actionable and start with the documented `[ferriki]` prefix.
 
 Ferriki exposes `transformers` and `decorations` through its JavaScript facade.
-Transformer callbacks and decoration processing stay in JavaScript; callback
-objects do not cross the native boundary. Public Node rendering returns HTML
+Transformer and decoration callbacks stay in JavaScript. Rust resolves decoration
+ranges, splits token boundaries, and plans tree edits; the facade applies those
+edits to the existing objects in the host pipeline. Plain declarative HTML
+uses the complete native renderer described above, with ordered string
+attributes. Callback payloads and opaque properties do not cross the native
+boundary. Public Node rendering returns HTML
 only. Ferriki does not export Shiki's JavaScript/Oniguruma engine factories or
 WASM loading. Markdown adapters such as `rehype` and `markdown-it`, and the
 optional Vite integration, are separate packages rather than `@ferriki/core`
@@ -381,10 +459,38 @@ returns `undefined` when no supported binary is installed.
 
 `@ferriki/core/macro` exposes the browser-safe `code` marker and
 `PreparedCodeBlock` type. `@ferriki/core/react/macro` exposes the optional React
-`Code` JSX marker with a literal `source` attribute, optional runtime `className`
-and an explicit `render` function receiving `CodeRenderProps`. Both are erased
+`Code` JSX marker with a literal `source` attribute, optional runtime `className`,
+`theme`, and `maxLines`, and an explicit `render` function receiving
+`CodeRenderProps`. Both are erased
 during the build; the React marker adds no React runtime import to the core package.
 `@ferriki/vite` recognizes the markers; `@ferriki/core` ships no macro scanner,
 and these entries are separate from the root highlighter exports. See
 [Inline code macros](inline-code-macros.md) for the literal-only contract, Vite
 setup and prepared HTML/CSS.
+
+## Present prepared HTML in a Web Component
+
+`@ferriki/core/web-component` is a separate framework-free presentation entry.
+It exports `FERRIKI_CODE_TAG`, `defineCodeElement`, `codeElementStyles`, and
+`codeElementSizing`.
+`defineCodeElement({ css, stylesheetHref, themeAliases, blocks })` registers
+trusted HTML by ID. Each root gets a local base-style element; `stylesheetHref`
+loads the aggregated class-mode CSS asset, while optional `css` adds manual
+local stylesheet rules. Elements resolve `code-ref` IDs; the direct
+`highlightedCode` property and `highlighted-code` attribute also remain available. The optional `maxLines`
+property or `max-lines` attribute caps visible lines and keeps longer code
+scrollable; `codeElementSizing(lineCount, maxLines?)` reserves matching height
+before JavaScript. The React `Code` macro applies that reservation automatically.
+During SSR it emits prepared HTML as Declarative Shadow DOM with local base
+styles and, in classes mode, a stylesheet link. In the browser it emits an
+empty reference host and registers blocks for hydration and later client-side
+navigation. The browser parser creates the server shadow root before upgrade,
+and hydration retains its nodes. Inline mode needs no external CSS asset or
+stylesheet URL. The separate
+`@ferriki/core/web-component/server` entry exports `renderCodeElementShadows`
+for manually authored reference hosts in complete server HTML; pass
+`themeAliases` so it emits matching local base styles and `stylesheetHref` for
+the optional classes asset. Both entries
+import no native loader or browser highlighter. The root HTML API and `code()`
+descriptor remain unchanged. See [Shadow code elements](shadow-code-elements.md)
+for registration, the full lifecycle, CSS delivery, and policy limits.

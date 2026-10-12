@@ -182,8 +182,10 @@ export interface ShikiTransformerContext extends ShikiTransformerContextCommon {
   readonly source: string;
   readonly tokens: ThemedToken[][];
   readonly root: HastRoot;
-  readonly pre: HastElement;
-  readonly code: HastElement;
+  /** Unavailable during span/line hooks and for inline structure. */
+  readonly pre: HastElement | undefined;
+  /** Unavailable until the code hook stage. */
+  readonly code: HastElement | undefined;
   readonly lines: HastElement[];
   readonly structure: HighlightOptions["structure"];
   addClassToHast: (hast: HastElement, className: string | string[]) => HastElement;

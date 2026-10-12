@@ -1,0 +1,610 @@
+{
+  "ablation": {
+    "scope-only/baseline": {
+      "example/classes": {
+        "medianChangePercent": -58.39645193526772,
+        "processRangePercent": [
+          -59.261200772311405,
+          -57.395147969223316
+        ],
+        "perProcessChangePercent": [
+          -57.395147969223316,
+          -58.01806503233823,
+          -59.261200772311405,
+          -58.774838838197205
+        ]
+      },
+      "example/classes-multi": {
+        "medianChangePercent": -50.82013228615937,
+        "processRangePercent": [
+          -51.820405755525414,
+          -49.9705817830965
+        ],
+        "perProcessChangePercent": [
+          -49.9705817830965,
+          -50.54702030578323,
+          -51.820405755525414,
+          -51.09324426653551
+        ]
+      },
+      "example/inline": {
+        "medianChangePercent": -0.2937619925128476,
+        "processRangePercent": [
+          -1.4256977043127894,
+          1.3726629771221077
+        ],
+        "perProcessChangePercent": [
+          0.3428402168931699,
+          1.3726629771221077,
+          -0.9303642019188652,
+          -1.4256977043127894
+        ]
+      },
+      "example/inline-transformer": {
+        "medianChangePercent": 0.3010613296152709,
+        "processRangePercent": [
+          0.006060437740917912,
+          0.5676617138461904
+        ],
+        "perProcessChangePercent": [
+          0.5676617138461904,
+          0.5393698111608947,
+          0.006060437740917912,
+          0.0627528480696471
+        ]
+      },
+      "large/classes": {
+        "medianChangePercent": -66.62300141976772,
+        "processRangePercent": [
+          -66.68547942871771,
+          -66.46429698712129
+        ],
+        "perProcessChangePercent": [
+          -66.66286579623244,
+          -66.58313704330301,
+          -66.68547942871771,
+          -66.46429698712129
+        ]
+      },
+      "large/classes-multi": {
+        "medianChangePercent": -58.57794876068492,
+        "processRangePercent": [
+          -58.91477721872479,
+          -58.12142044804196
+        ],
+        "perProcessChangePercent": [
+          -58.12142044804196,
+          -58.74194437500887,
+          -58.91477721872479,
+          -58.413953146360974
+        ]
+      },
+      "large/inline": {
+        "medianChangePercent": 0.24189426648090206,
+        "processRangePercent": [
+          -0.8548353975715184,
+          0.9299228639967572
+        ],
+        "perProcessChangePercent": [
+          0.9299228639967572,
+          0.38536439418213053,
+          -0.8548353975715184,
+          0.0984241387796736
+        ]
+      },
+      "large/inline-transformer": {
+        "medianChangePercent": -0.09809568575119276,
+        "processRangePercent": [
+          -0.824134770761531,
+          0.10249010820597704
+        ],
+        "perProcessChangePercent": [
+          -0.824134770761531,
+          -0.19310518932689202,
+          -0.0030861821754935015,
+          0.10249010820597704
+        ]
+      }
+    },
+    "style-only/baseline": {
+      "example/classes": {
+        "medianChangePercent": -2.7509250004584596,
+        "processRangePercent": [
+          -5.978526667375061,
+          2.361811356396659
+        ],
+        "perProcessChangePercent": [
+          2.361811356396659,
+          -2.0773699030057546,
+          -3.4244800979111645,
+          -5.978526667375061
+        ]
+      },
+      "example/classes-multi": {
+        "medianChangePercent": -1.9926800094125674,
+        "processRangePercent": [
+          -4.159393759620156,
+          -1.550363204767835
+        ],
+        "perProcessChangePercent": [
+          -1.9933206840642814,
+          -1.9920393347608534,
+          -1.550363204767835,
+          -4.159393759620156
+        ]
+      },
+      "example/inline": {
+        "medianChangePercent": -0.8986705844935772,
+        "processRangePercent": [
+          -2.082456406196287,
+          0.30628426791579066
+        ],
+        "perProcessChangePercent": [
+          0.30628426791579066,
+          0.24164699381259425,
+          -2.082456406196287,
+          -2.0389881627997486
+        ]
+      },
+      "example/inline-transformer": {
+        "medianChangePercent": 0.2121507588458027,
+        "processRangePercent": [
+          -0.8343247780307483,
+          1.462767085689376
+        ],
+        "perProcessChangePercent": [
+          1.462767085689376,
+          1.1105866319834012,
+          -0.6862851142917958,
+          -0.8343247780307483
+        ]
+      },
+      "large/classes": {
+        "medianChangePercent": -2.3522157117988716,
+        "processRangePercent": [
+          -2.99364366391488,
+          -1.902648015690156
+        ],
+        "perProcessChangePercent": [
+          -2.587181051056031,
+          -2.1172503725417124,
+          -1.902648015690156,
+          -2.99364366391488
+        ]
+      },
+      "large/classes-multi": {
+        "medianChangePercent": -2.059458272097525,
+        "processRangePercent": [
+          -2.2491403082088968,
+          -1.8509661636412988
+        ],
+        "perProcessChangePercent": [
+          -1.8509661636412988,
+          -1.8844171734239468,
+          -2.2344993707711036,
+          -2.2491403082088968
+        ]
+      },
+      "large/inline": {
+        "medianChangePercent": 0.14788584335802546,
+        "processRangePercent": [
+          -0.7815502248441741,
+          0.5520087411804875
+        ],
+        "perProcessChangePercent": [
+          0.5520087411804875,
+          0.4458865703829584,
+          -0.7815502248441741,
+          -0.1501148836669075
+        ]
+      },
+      "large/inline-transformer": {
+        "medianChangePercent": 0.36509891083553736,
+        "processRangePercent": [
+          -1.4513009976407365,
+          0.8645143183259707
+        ],
+        "perProcessChangePercent": [
+          -1.4513009976407365,
+          0.5332498943906749,
+          0.19694792728039978,
+          0.8645143183259707
+        ]
+      }
+    },
+    "candidate/baseline": {
+      "example/classes": {
+        "medianChangePercent": -60.7472141558565,
+        "processRangePercent": [
+          -61.670674888371416,
+          -59.80116665004181
+        ],
+        "perProcessChangePercent": [
+          -59.80116665004181,
+          -59.93327404040394,
+          -61.56115427130906,
+          -61.670674888371416
+        ]
+      },
+      "example/classes-multi": {
+        "medianChangePercent": -52.89902851069195,
+        "processRangePercent": [
+          -53.595379276680944,
+          -52.08154385958012
+        ],
+        "perProcessChangePercent": [
+          -52.08154385958012,
+          -52.797825153100106,
+          -53.595379276680944,
+          -53.00023186828378
+        ]
+      },
+      "example/inline": {
+        "medianChangePercent": -0.666849645648182,
+        "processRangePercent": [
+          -2.193723913981127,
+          1.6691672399385071
+        ],
+        "perProcessChangePercent": [
+          -0.9470812821844254,
+          1.6691672399385071,
+          -2.193723913981127,
+          -0.38661800911193867
+        ]
+      },
+      "example/inline-transformer": {
+        "medianChangePercent": 0.34509669366346585,
+        "processRangePercent": [
+          -1.0705621371537188,
+          1.024024098234766
+        ],
+        "perProcessChangePercent": [
+          -0.2921371365731118,
+          1.024024098234766,
+          -1.0705621371537188,
+          0.9823305239000435
+        ]
+      },
+      "large/classes": {
+        "medianChangePercent": -69.43000493398877,
+        "processRangePercent": [
+          -69.6754846380905,
+          -69.21261741335519
+        ],
+        "perProcessChangePercent": [
+          -69.21261741335519,
+          -69.27933002063119,
+          -69.58067984734636,
+          -69.6754846380905
+        ]
+      },
+      "large/classes-multi": {
+        "medianChangePercent": -60.62461359414599,
+        "processRangePercent": [
+          -60.98647981086638,
+          -60.36627104897667
+        ],
+        "perProcessChangePercent": [
+          -60.83481564986044,
+          -60.36627104897667,
+          -60.98647981086638,
+          -60.414411538431544
+        ]
+      },
+      "large/inline": {
+        "medianChangePercent": -0.09850656123552848,
+        "processRangePercent": [
+          -0.5689922031295369,
+          2.139630202501741
+        ],
+        "perProcessChangePercent": [
+          -0.13576707887302808,
+          2.139630202501741,
+          -0.5689922031295369,
+          -0.061246043598028876
+        ]
+      },
+      "large/inline-transformer": {
+        "medianChangePercent": -0.42905094658471365,
+        "processRangePercent": [
+          -0.5560229552500906,
+          0.31113224666123873
+        ],
+        "perProcessChangePercent": [
+          -0.5560229552500906,
+          -0.3839460696432706,
+          0.31113224666123873,
+          -0.4741558235261567
+        ]
+      }
+    },
+    "candidate/scope-only": {
+      "example/classes": {
+        "medianChangePercent": -5.646448706984009,
+        "processRangePercent": [
+          -7.024438397726252,
+          -4.561983647349699
+        ],
+        "perProcessChangePercent": [
+          -5.647287964010395,
+          -4.561983647349699,
+          -5.645609449957623,
+          -7.024438397726252
+        ]
+      },
+      "example/classes-multi": {
+        "medianChangePercent": -4.059336518043338,
+        "processRangePercent": [
+          -4.551403901714945,
+          -3.684077354717652
+        ],
+        "perProcessChangePercent": [
+          -4.219441584012628,
+          -4.551403901714945,
+          -3.684077354717652,
+          -3.899231452074048
+        ]
+      },
+      "example/inline": {
+        "medianChangePercent": -0.4913672847784767,
+        "processRangePercent": [
+          -1.2855142392714791,
+          1.0541080900415611
+        ],
+        "perProcessChangePercent": [
+          -1.2855142392714791,
+          0.29248936952885884,
+          -1.2752239390858122,
+          1.0541080900415611
+        ]
+      },
+      "example/inline-transformer": {
+        "medianChangePercent": -0.1864457096050709,
+        "processRangePercent": [
+          -1.076557330807848,
+          0.9190009765438267
+        ],
+        "perProcessChangePercent": [
+          -0.8549456512827791,
+          0.4820542320726373,
+          -1.076557330807848,
+          0.9190009765438267
+        ]
+      },
+      "large/classes": {
+        "medianChangePercent": -8.379433273536407,
+        "processRangePercent": [
+          -9.575429653990074,
+          -7.648382736013948
+        ],
+        "perProcessChangePercent": [
+          -7.648382736013948,
+          -8.068360518526319,
+          -8.690506028546496,
+          -9.575429653990074
+        ]
+      },
+      "large/classes-multi": {
+        "medianChangePercent": -4.926429784885849,
+        "processRangePercent": [
+          -6.47919588211443,
+          -3.936992786892013
+        ],
+        "perProcessChangePercent": [
+          -6.47919588211443,
+          -3.936992786892013,
+          -5.042451888774446,
+          -4.810407680997253
+        ]
+      },
+      "large/inline": {
+        "medianChangePercent": 0.06439728412579449,
+        "processRangePercent": [
+          -1.0558711555796907,
+          1.7475314443559098
+        ],
+        "perProcessChangePercent": [
+          -1.0558711555796907,
+          1.7475314443559098,
+          0.2883077511527832,
+          -0.1595131829011942
+        ]
+      },
+      "large/inline-transformer": {
+        "medianChangePercent": 0.03956483132992461,
+        "processRangePercent": [
+          -0.5760555317942728,
+          0.31422812648917997
+        ],
+        "perProcessChangePercent": [
+          0.27033977963462075,
+          -0.19121011697477153,
+          0.31422812648917997,
+          -0.5760555317942728
+        ]
+      }
+    }
+  },
+  "repeat": {
+    "candidate/baseline": {
+      "example/classes": {
+        "medianChangePercent": -59.99320942258307,
+        "processRangePercent": [
+          -61.18705443594135,
+          -58.55326100320851
+        ],
+        "perProcessChangePercent": [
+          -58.55326100320851,
+          -59.872934013041615,
+          -61.18705443594135,
+          -60.11348483212453
+        ]
+      },
+      "example/classes-multi": {
+        "medianChangePercent": -52.176408244352714,
+        "processRangePercent": [
+          -52.308964783101054,
+          -51.99386814514257
+        ],
+        "perProcessChangePercent": [
+          -51.99386814514257,
+          -52.308964783101054,
+          -52.112710466112986,
+          -52.240106022592435
+        ]
+      },
+      "example/inline": {
+        "medianChangePercent": 0.05040889385694025,
+        "processRangePercent": [
+          -1.2152652356833604,
+          2.3024173521099645
+        ],
+        "perProcessChangePercent": [
+          -1.2152652356833604,
+          0.7616642800685636,
+          2.3024173521099645,
+          -0.6608464923546831
+        ]
+      },
+      "example/inline-transformer": {
+        "medianChangePercent": 0.008441011679460875,
+        "processRangePercent": [
+          -2.6925011365353857,
+          1.148802979259922
+        ],
+        "perProcessChangePercent": [
+          0.7097559166590939,
+          1.148802979259922,
+          -0.6928738933001721,
+          -2.6925011365353857
+        ]
+      },
+      "large/classes": {
+        "medianChangePercent": -69.25060624268185,
+        "processRangePercent": [
+          -69.38692465486915,
+          -69.02753275842102
+        ],
+        "perProcessChangePercent": [
+          -69.02753275842102,
+          -69.1997097185356,
+          -69.30150276682811,
+          -69.38692465486915
+        ]
+      },
+      "large/classes-multi": {
+        "medianChangePercent": -60.16394053893153,
+        "processRangePercent": [
+          -60.64412888471031,
+          -60.09669579969433
+        ],
+        "perProcessChangePercent": [
+          -60.14122630934617,
+          -60.09669579969433,
+          -60.64412888471031,
+          -60.18665476851689
+        ]
+      },
+      "large/inline": {
+        "medianChangePercent": -0.08759637640238793,
+        "processRangePercent": [
+          -0.7123009828082005,
+          1.681590620014517
+        ],
+        "perProcessChangePercent": [
+          -0.7123009828082005,
+          1.681590620014517,
+          -0.07153557014922818,
+          -0.10365718265554769
+        ]
+      },
+      "large/inline-transformer": {
+        "medianChangePercent": -0.12759911493651077,
+        "processRangePercent": [
+          -1.3018385514265152,
+          0.41255093969119194
+        ],
+        "perProcessChangePercent": [
+          -0.47830406228658306,
+          -1.3018385514265152,
+          0.41255093969119194,
+          0.22310583241356152
+        ]
+      }
+    }
+  },
+  "memory": [
+    {
+      "id": "typescript/example",
+      "constructionMedianMs": 0.7378329999999949,
+      "scopeCacheMedianHeapBytes": 96009.84,
+      "styleLookupMapMedianHeapBytes": 304
+    },
+    {
+      "id": "typescript/large",
+      "constructionMedianMs": 0.6103749999999764,
+      "scopeCacheMedianHeapBytes": 96008,
+      "styleLookupMapMedianHeapBytes": 304
+    },
+    {
+      "id": "tsx/example",
+      "constructionMedianMs": 0.5295620000000554,
+      "scopeCacheMedianHeapBytes": 84936,
+      "styleLookupMapMedianHeapBytes": 528
+    },
+    {
+      "id": "tsx/large",
+      "constructionMedianMs": 0.536521000000107,
+      "scopeCacheMedianHeapBytes": 84936,
+      "styleLookupMapMedianHeapBytes": 528
+    },
+    {
+      "id": "html/example",
+      "constructionMedianMs": 1.3770419999999604,
+      "scopeCacheMedianHeapBytes": 201752.48,
+      "styleLookupMapMedianHeapBytes": 528
+    },
+    {
+      "id": "html/large",
+      "constructionMedianMs": 1.3848954999998568,
+      "scopeCacheMedianHeapBytes": 201752.48,
+      "styleLookupMapMedianHeapBytes": 528
+    },
+    {
+      "id": "cpp/example",
+      "constructionMedianMs": 1.3029380000000401,
+      "scopeCacheMedianHeapBytes": 191304,
+      "styleLookupMapMedianHeapBytes": 304
+    },
+    {
+      "id": "cpp/large",
+      "constructionMedianMs": 1.291937500000131,
+      "scopeCacheMedianHeapBytes": 191304,
+      "styleLookupMapMedianHeapBytes": 304
+    },
+    {
+      "id": "json/example",
+      "constructionMedianMs": 0.15625,
+      "scopeCacheMedianHeapBytes": 26960,
+      "styleLookupMapMedianHeapBytes": 192
+    },
+    {
+      "id": "json/large",
+      "constructionMedianMs": 0.16108349999967686,
+      "scopeCacheMedianHeapBytes": 26960,
+      "styleLookupMapMedianHeapBytes": 192
+    },
+    {
+      "id": "astro/example",
+      "constructionMedianMs": 1.2359995000001618,
+      "scopeCacheMedianHeapBytes": 191328,
+      "styleLookupMapMedianHeapBytes": 528
+    },
+    {
+      "id": "astro/large",
+      "constructionMedianMs": 1.268208500000128,
+      "scopeCacheMedianHeapBytes": 196560,
+      "styleLookupMapMedianHeapBytes": 528
+    }
+  ]
+}

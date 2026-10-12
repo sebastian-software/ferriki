@@ -783,12 +783,14 @@ class MacroScanner {
         }
         case "render":
         case "className":
+        case "theme":
+        case "maxLines":
           presentation.push(jsxPresentationProp(attribute, name));
           break;
         default:
           throw new MacroDiagnostic(
             attribute.start,
-            `unknown React \`Code\` prop \`${name}\`; supported props are \`source\`, \`language\`, \`meta\`, \`lineNumbers\`, \`render\`, and \`className\`; \`key\`, \`ref\`, and \`children\` are unsupported`,
+            `unknown React \`Code\` prop \`${name}\`; supported props are \`source\`, \`language\`, \`meta\`, \`lineNumbers\`, \`render\`, \`className\`, \`theme\`, and \`maxLines\`; \`key\`, \`ref\`, and \`children\` are unsupported`,
           );
       }
     }
@@ -933,8 +935,13 @@ function jsxPresentationProp(attribute, name) {
       attribute.start,
       `React \`Code\` \`${name}\` must have a nonempty value`,
     );
-  if (name === "className" && isStringLiteral(value)) {
-    const label = "React `Code` `className`";
+  if (name === "maxLines" && isStringLiteral(value))
+    throw new MacroDiagnostic(
+      value.start,
+      "React `Code` `maxLines` must be a positive safe integer expression, not a string",
+    );
+  if (name !== "render" && isStringLiteral(value)) {
+    const label = `React \`Code\` \`${name}\``;
     return {
       name,
       start: value.start,
@@ -947,6 +954,15 @@ function jsxPresentationProp(attribute, name) {
     throw new MacroDiagnostic(
       attribute.start,
       `React \`Code\` \`${name}\` must be a nonempty JSX expression`,
+    );
+  if (
+    name === "maxLines" &&
+    expression.type === "Literal" &&
+    (!Number.isSafeInteger(expression.value) || expression.value <= 0)
+  )
+    throw new MacroDiagnostic(
+      expression.start,
+      "React `Code` `maxLines` must be a positive safe integer",
     );
   if (name === "render" && isObviouslyNonFunction(expression))
     throw new MacroDiagnostic(

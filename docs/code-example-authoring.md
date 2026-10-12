@@ -101,9 +101,19 @@ The transformers add classes but no presentation: `has-focused`, `has-highlighte
 }
 ```
 
+These page selectors apply to ordinary HTML from `code()` or a custom React
+renderer. The default `<Code />` macro uses a shadow root, so page CSS cannot
+reach its lines or tokens. Register additional local rules through
+`defineCodeElement({ css, themeAliases })` with the Vite plugin's aliases
+(`[]` for a single theme); the `Code` macro has no separate override CSS source
+option. Theme token colors can use the documented semantic custom properties,
+while nested scope rules still need ordinary class selectors. A custom renderer
+can keep ordinary HTML and page
+CSS. See [Shadow code elements](shadow-code-elements.md#css-migration-and-custom-transformers).
+
 Keep surrounding context at full text contrast and use a clear leading border and background to focus the relevant lines. Highlight, focus, and diff styles can appear together. Solid and dashed borders distinguish additions from removals without relying on color alone. Highlighted output gives each `<pre>` `tabindex="0"`, so a horizontally scrollable block is reachable from the keyboard; make `:focus-visible` clear. A `<summary>` toggles with Enter or Space, and a copy button uses its native keyboard behavior.
 
-Ferriki does not install a copy handler. The descriptor's `code` is the exact authored source, including notation comments and removed lines. A "Copy final code" action that should omit them reads the rendered lines instead: keep every `.line` element without the `remove` class, take its text content (including whitespace) in order, and join the lines with LF. Selecting the rendered diff copies its code text, including removed lines, but not comment annotations or line-number CSS.
+Ferriki does not install a copy handler. The descriptor's `code` is the exact authored source, including notation comments and removed lines. A "Copy final code" action that should omit them reads the rendered lines instead (query `element.shadowRoot` for a shadow element): keep every `.line` element without the `remove` class, take its text content (including whitespace) in order, and join the lines with LF. Selecting the rendered diff copies its code text, including removed lines, but not comment annotations or line-number CSS.
 
 ## Verify the behavior
 
@@ -129,3 +139,18 @@ TypeScript options.
 In a Vite/MDX pipeline, a macro is prepared only if its import and call are still visible to the plugin before the compiler lowers the module. Use a compiler mode that exposes that intermediate output, then configure `include(id)` only if the exposed module ID needs to be added.
 
 The callback boundary and renderer split are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md) and [ADR 0012](../adr/0012-publishable-rust-highlighter.md). See [the Ferromark adapter contract](rust-api.md#ferromark-adapter-contract) for the Rust path.
+
+## Custom transformer callbacks
+
+Type custom hooks as Ferriki's `ShikiTransformer` and follow the
+[callback context and return contract](ferriki-api.md#callback-context-and-return-values).
+Callbacks stay in JavaScript even when Rust plans decoration ranges and tree
+edits. Token hooks see tokens before decoration splitting; node hooks see the
+resulting pieces, and the root hook sees applied decorations. In inline output
+there is no `pre` hook. Use each hook's node argument and guard wrapper fields
+that do not exist yet at earlier stages.
+
+The same configured hooks run during Vite macro preparation. Highlighter
+constructor defaults can be replaced per render call, including `[]` to disable
+defaults. Public outputs remain HTML and CSS; callback token/HAST structures
+do not add standalone structured-output APIs.

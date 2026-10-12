@@ -4,11 +4,11 @@ import type { Plugin } from "vite";
 export type FerrikiViteOptions = {
   /** Theme name for inline output. Defaults to `github-dark-default`. */
   theme?: string;
-  /** Named theme map for light/dark or other theme-variable output. */
+  /** Named theme map; React code elements require CSS-safe ASCII alias keys. */
   themes?: Readonly<Record<string, string>>;
   /** Asset source and cache settings passed to the native highlighter. */
   assets?: AssetOptions;
-  /** Inline styles by default; `classes` emits a CSS virtual module. */
+  /** Inline colors by default; `classes` emits one shared palette CSS file for React roots. */
   styleMode?: "inline" | "classes";
   /** Default line numbers for macro calls and `Code` elements; each one can override this. */
   lineNumbers?: boolean;
@@ -21,8 +21,27 @@ export type FerrikiViteOptions = {
   include?: (id: string) => boolean;
 };
 
+export type FerrikiViteApi = {
+  /** Snapshot of prepared React HTML, suitable for a saved server-side registry. */
+  codeElementBlocks(): Readonly<Record<string, string>>;
+  /**
+   * Fill manually authored empty `ferriki-code` hosts in complete SSR HTML with
+   * Declarative Shadow DOM. React Code macros already emit their own templates.
+   * Call after rendering; this does not process a stream.
+   */
+  renderCodeElements(markup: string, options?: { stylesheetHref?: string }): string;
+  /**
+   * Shared class-palette CSS for transformed React macros, or empty in inline mode.
+   * The plugin serves/emits it automatically; manual consumers can use this
+   * snapshot for their own stylesheet endpoint or asset. Base rules stay local.
+   */
+  codeElementCss(): string;
+};
+
+export type FerrikiVitePlugin = Plugin & { api: FerrikiViteApi };
+
 /**
  * Prepare `code()` calls from `@ferriki/core/macro` and `<Code />` elements from
  * `@ferriki/core/react/macro` as highlighted HTML and CSS during Vite transforms.
  */
-export declare function ferriki(options?: FerrikiViteOptions): Plugin;
+export declare function ferriki(options?: FerrikiViteOptions): FerrikiVitePlugin;

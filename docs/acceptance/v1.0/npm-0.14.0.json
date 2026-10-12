@@ -1,0 +1,96 @@
+{
+  "version": "0.14.0",
+  "releaseCommit": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+  "node": "24.21.0",
+  "npm": "11.19.0",
+  "platform": "darwin-arm64",
+  "regressions": [
+    {
+      "scenario": "cold",
+      "version": "0.14.0",
+      "source": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "requests": [
+        "https://assets.ferriki.dev/1e8d363ee01c8c60af42d78e8129b74ed22fd362/assets/shiki/languages/json.fkgram",
+        "https://assets.ferriki.dev/1e8d363ee01c8c60af42d78e8129b74ed22fd362/assets/shiki/themes/nord.fktheme"
+      ],
+      "htmlBytes": 8688,
+      "cssBytes": 614
+    },
+    {
+      "scenario": "offline",
+      "version": "0.14.0",
+      "source": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "requests": [],
+      "htmlBytes": 8688,
+      "cssBytes": 614
+    },
+    {
+      "scenario": "retry",
+      "version": "0.14.0",
+      "source": "1e8d363ee01c8c60af42d78e8129b74ed22fd362",
+      "requests": [
+        "https://assets.ferriki.dev/1e8d363ee01c8c60af42d78e8129b74ed22fd362/assets/shiki/languages/json.fkgram",
+        "https://assets.ferriki.dev/1e8d363ee01c8c60af42d78e8129b74ed22fd362/assets/shiki/themes/nord.fktheme"
+      ],
+      "htmlBytes": 8688,
+      "cssBytes": 614
+    }
+  ],
+  "signatureAudit": {
+    "command": "npm audit signatures --json --include-attestations",
+    "invalid": [],
+    "missing": [],
+    "verifiedProductAttestations": [
+      {
+        "name": "@ferriki/core",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/darwin-arm64",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/linux-arm64-gnu",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/linux-arm64-musl",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/linux-x64-gnu",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/linux-x64-musl",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/vite",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/win32-arm64-msvc",
+        "version": "0.14.0"
+      },
+      {
+        "name": "@ferriki/win32-x64-msvc",
+        "version": "0.14.0"
+      }
+    ]
+  },
+  "publicVite": {
+    "versions": ["8.0.0", "8.3.2", "8.3.4"],
+    "checks": [
+      "dev transform",
+      "React SSR",
+      "source and metadata preservation",
+      "generated classes/CSS",
+      "transformer and native decoration hooks",
+      "invalid macro diagnostics",
+      "production build",
+      "TypeScript contract"
+    ],
+    "result": "passed"
+  }
+}

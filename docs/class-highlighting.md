@@ -148,6 +148,20 @@ must start with `--` and use the same identifier characters.
 Your own CSS themes can switch through the site's classes or attributes directly:
 no TextMate theme registration is required. Use `theme: "none"` for that route.
 
+The default React `<Code />` presentation also accepts semantic color custom
+properties inherited from page CSS. Category-specific variables recolor only
+their category and any child categories that fall back through them. When
+category variables are unset, semantic tokens keep their resolved theme
+colors. `--ferriki-foreground` sets the code block's default text color, while
+`--ferriki-background-color` controls its background; the foreground variable
+does not flatten themed token colors. The Vite macro retains native scope
+boundaries during inline build-time preparation to classify semantic tokens.
+This does not change the general inline `codeToHtml()` output contract. Use
+this guide's scope classes when a rule depends on nested TextMate context; the
+semantic palette cannot replace arbitrary scope selectors. See [Shadow code
+elements](shadow-code-elements.md#public-color-overrides) for the variable
+reference and CSS examples.
+
 ## Integration contract
 
 - Classes mode uses `.ferriki` instead of `.shiki` on its root so

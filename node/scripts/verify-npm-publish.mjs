@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -22,6 +22,135 @@ export const REQUEST_TIMEOUT_MS = 10_000;
 
 export const ASSETS_BASE_URL = "https://assets.ferriki.dev";
 const CDN_CONCURRENCY = 8;
+const NPM_OUTPUT_TAIL_BYTES = 64 * 1024;
+const NPM_DIAGNOSTIC_TAIL_CHARS = 2048;
+
+function outputTail() {
+  let bytes = Buffer.alloc(0);
+  let truncated = false;
+  return {
+    add(chunk) {
+      const incoming = Buffer.from(chunk);
+      if (incoming.length >= NPM_OUTPUT_TAIL_BYTES) {
+        bytes = Buffer.from(incoming.subarray(-NPM_OUTPUT_TAIL_BYTES));
+        truncated = true;
+      } else if (bytes.length + incoming.length > NPM_OUTPUT_TAIL_BYTES) {
+        bytes = Buffer.concat([
+          bytes.subarray(bytes.length + incoming.length - NPM_OUTPUT_TAIL_BYTES),
+          incoming,
+        ]);
+        truncated = true;
+      } else {
+        bytes = Buffer.concat([bytes, incoming]);
+      }
+    },
+    get text() {
+      return bytes.toString("utf8");
+    },
+    get truncated() {
+      return truncated;
+    },
+  };
+}
+
+function afterFirstLine(value) {
+  const newline = value.indexOf("\n");
+  return newline < 0 ? "" : value.slice(newline + 1);
+}
+
+function safeDiagnosticTail(value, truncated = false) {
+  let output = [...String(value ?? "")]
+    .map((character) => {
+      const code = character.codePointAt(0);
+      if (code === 13) return "\n";
+      return (code < 32 && code !== 9 && code !== 10) || code === 127 ? "?" : character;
+    })
+    .join("");
+  // A cut may have discarded a credential key while retaining its value.
+  // Never display the first line after either the byte or character cut.
+  if (truncated) output = afterFirstLine(output);
+  const redacted = output
+    .replace(/\bBearer\s+[^\s"']+/gi, "Bearer [redacted]")
+    .replace(/(https?:\/\/)[^\s/@]+@/gi, "$1[redacted]@")
+    .replace(/([?&](?:token|auth|key|password)=)[^&#\s]+/gi, "$1[redacted]")
+    .replace(
+      /^.*(?:_authToken|_auth\s*[=:]|Authorization\s*:|npm_token|NODE_AUTH_TOKEN|password\s*[=:]).*$/gim,
+      "[redacted credential line]",
+    );
+  if (!redacted) return truncated ? "[earlier output and partial line omitted]" : "(empty)";
+  if (redacted.length <= NPM_DIAGNOSTIC_TAIL_CHARS)
+    return `${truncated ? "[earlier output omitted]\n" : ""}${redacted}`;
+  const clipped = redacted.slice(-NPM_DIAGNOSTIC_TAIL_CHARS);
+  const completeLines = afterFirstLine(clipped);
+  return `[earlier output omitted]\n${completeLines || "[partial line omitted]"}`;
+}
+
+function captureCommand(spawnImpl, command, args, options) {
+  return new Promise((resolve) => {
+    const stdout = outputTail();
+    const stderr = outputTail();
+    let child;
+    try {
+      child = spawnImpl(command, args, options);
+    } catch (error) {
+      resolve({ status: null, signal: null, error, stdout, stderr });
+      return;
+    }
+    let spawnError = null;
+    child.stdout?.on("data", (chunk) => stdout.add(chunk));
+    child.stderr?.on("data", (chunk) => stderr.add(chunk));
+    child.on("error", (error) => {
+      spawnError = error;
+    });
+    child.on("close", (status, signal) => {
+      resolve({ status, signal, error: spawnError, stdout, stderr });
+    });
+  });
+}
+
+/** Install an exact public package and retain bounded diagnostics only on failure. */
+export async function runPublicNpmInstall({
+  packageName,
+  version,
+  cwd,
+  npmCommand = process.platform === "win32" ? "npm.cmd" : "npm",
+  spawnImpl = spawn,
+  nodeVersion = process.version,
+}) {
+  const options = {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    shell: process.platform === "win32",
+  };
+  const args = [
+    "install",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund",
+    `${packageName}@${version}`,
+  ];
+  const result = await captureCommand(spawnImpl, npmCommand, args, options);
+  if (result.status === 0 && !result.error && !result.signal) return;
+
+  let npmVersion = "unavailable";
+  const probe = await captureCommand(spawnImpl, npmCommand, ["--version"], options);
+  const output = probe.stdout.text.trim();
+  if (
+    probe.status === 0 &&
+    !probe.stdout.truncated &&
+    /^\d+\.\d+\.\d+(?:[-+][0-9a-z.-]+)?$/i.test(output)
+  )
+    npmVersion = output;
+
+  const spawnError = result.error
+    ? safeDiagnosticTail(`${result.error.code ?? result.error.name}: ${result.error.message}`)
+    : "none";
+  throw new Error(
+    `public npm install failed for ${packageName}@${version} (Node ${nodeVersion}, npm ${npmVersion}; exit status ${result.status ?? "none"}; signal ${result.signal ?? "none"}; spawn error ${spawnError})\n` +
+      `stdout tail:\n${safeDiagnosticTail(result.stdout.text, result.stdout.truncated)}\n` +
+      `stderr tail:\n${safeDiagnosticTail(result.stderr.text, result.stderr.truncated)}`,
+  );
+}
 
 export function registryVersionUrl(packageName, version) {
   return `https://registry.npmjs.org/${encodeURIComponent(packageName)}/${encodeURIComponent(version)}`;
@@ -142,9 +271,7 @@ async function verifyPublicInstall(packageName, version) {
 
   try {
     run(["init", "--yes"], { stdio: "ignore" });
-    run(["install", "--ignore-scripts", "--no-audit", "--no-fund", `${packageName}@${version}`], {
-      stdio: "ignore",
-    });
+    await runPublicNpmInstall({ packageName, version, cwd: tempRoot, npmCommand: npm });
     const releaseManifest = JSON.parse(
       await readFile(
         join(
@@ -226,9 +353,7 @@ async function verifyPublicViteInstall(packageName, version) {
 
   try {
     run(["init", "--yes"], { stdio: "ignore" });
-    run(["install", "--ignore-scripts", "--no-audit", "--no-fund", `${packageName}@${version}`], {
-      stdio: "ignore",
-    });
+    await runPublicNpmInstall({ packageName, version, cwd: tempRoot, npmCommand: npm });
     const probe = join(tempRoot, "probe.mjs");
     await writeFile(
       probe,

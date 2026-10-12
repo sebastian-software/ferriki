@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Context
 
@@ -127,3 +127,6 @@ language coverage.
 - 2026-10-12: Documented maintainer activation, local updates, and review. The
   scheduled workflow refreshes one draft PR, preserves manual branch changes,
   and validates the complete candidate before publishing an update.
+- 2026-10-13: Integrated with the released 1.0 baseline. Renumbered this record
+  to 0020 because 0019 records Shadow DOM presentation, and classified the
+  removal of standard IDs and aliases as a major-version transition.

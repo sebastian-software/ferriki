@@ -52,6 +52,11 @@ retains the final two independent trials on Ferriki 0.8.1 / Ferroni 1.8.0,
 including the accepted borrowed escaping path, rejected style buffer, verified
 CPU profiles and all eight complete comparison reports.
 
+The [Prism quality and profiling investigation](results/prism-investigation/README.md)
+records current repeated Prism/Ferriki/Shiki comparisons, committed quality
+fixtures, output-mode costs, and diagnostic profiles for representative
+languages.
+
 Those archived experiment reports were collected before removal of the public
 Node token APIs. Their token figures describe the recorded historical source
 revisions and are not current API or performance claims.

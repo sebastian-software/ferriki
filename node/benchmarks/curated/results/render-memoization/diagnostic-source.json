@@ -1,0 +1,8 @@
+{
+  "classes.mjs": "25ae298c3031a92ad6dff1b27f250c3cbb3f444d14159623dc025a32e81e1dfb",
+  "transformers.mjs": "23bdfeae0ea7031bab26f097c496ba171922f268519f499f6cff7f119424c5a0",
+  "src/index.mjs": "edc9dea3694e61815943550c144b10cd96c29756467f2bcae6fa84ec74f4664a",
+  "src/asset-download.mjs": "9e756c7f474169c9aac5c3e0c9da8110db2bbc0e6ce1e3a3db29f274b3580236",
+  "native.mjs": "5aff964ac897b22efa97d9f924c4a22cfeb7ccdcf88a110c15046d5261a85ebf",
+  "platforms.mjs": "511a9fa9e1c6f45c128c9c921ecb9f3a094d1b7529cbd66c22ad57b256378657"
+}

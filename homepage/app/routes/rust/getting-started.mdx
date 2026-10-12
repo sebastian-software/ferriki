@@ -131,3 +131,8 @@ impl HtmlRenderHooks for FerrikiHook<'_> {
 Returning `None` makes Ferromark render escaped plain code. The full contract
 is in [docs/rust-api.md](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md); the API itself is on
 [docs.rs/ferriki](https://docs.rs/ferriki).
+
+If you are comparing Rust HTML highlighters, see [Ferriki and syntect](/guide/ferriki-and-syntect).
+That comparison covers grammar and theme inputs, assets, language detection, output formats, and
+the limits of the current timing evidence. Ferriki currently renders HTML; it has no ANSI
+renderer.

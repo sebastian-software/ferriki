@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Context
 
@@ -26,8 +26,13 @@ native scanner's automatic warm-up policy. `false` disables prefilter
 construction for all grammars in that highlighter. It changes performance
 policy without exposing Ferroni types or changing highlighting semantics.
 
+`colorReplacements` is a non-goal for the current contract (#190). Themes and
+CSS-class styling cover current presentation needs. The option stays outside
+the public types and is rejected with `ERR_UNSUPPORTED`; a future proposal
+requires a concrete consumer need beyond the supported theming path.
+
 The contract prioritizes the synchronous reusable HTML-rendering path, keeps
-transformers/decorations in the JavaScript layer, and keeps ecosystem adapters
+transformer callbacks in JavaScript and decoration policy in Rust, and keeps ecosystem adapters
 outside the public Ferriki package. Before 1.0, public Node HAST and token
 output methods are removed; the internal callback pipeline retains typed token
 and HAST data, and the public Rust token APIs remain available. The npm package
@@ -40,6 +45,14 @@ sync/async download boundary of
 hand-written declarations against mirrored Shiki types; the API contract
 documents the intentional native-state, structured-output, and
 transformer-context boundaries (#158, #207).
+
+The initial React `Code` macro presentation transition targets 1.1.0 as the
+one-time early-1.x exception recorded in
+[ADR 0019](0019-shadow-dom-code-elements.md#release-scope). Its DOM and CSS
+scoping changes require migration for consumers of the previous presentation;
+the existing call syntax, HTML API, prepared descriptor, and custom renderer
+retain their contracts. This exception does not relax other Stable rows or
+future semver guarantees.
 
 The contract is the decision point for the API work tracked in issues: #10
 generates the typed surface, #43–#51 cover the retained highlighting behavior,
@@ -71,3 +84,7 @@ being mistaken for parity.
 - 2026-10-03: Removes public Node HAST and token output methods before 1.0 while retaining transformer callback data and Rust token APIs (#207).
 - 2026-10-04: Takes over the mapping of child issues to the contract, which now states only the contract itself.
 - 2026-10-10: Adds the factory-only regex prefilter switch for one-shot workloads.
+- 2026-10-10: Classifies native color replacements as a non-goal after closing #190 as not planned; preserves explicit rejection and requires a concrete consumer need for any future proposal.
+
+- 2026-10-10: Clarifies native decoration ownership without changing public Node output methods (#122).
+- 2026-10-11: Records the one-time 1.1.0 React macro presentation transition while preserving other stable contracts (#263).

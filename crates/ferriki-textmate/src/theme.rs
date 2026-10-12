@@ -209,6 +209,18 @@ impl ScopeStack {
     }
 
     #[must_use]
+    pub(crate) fn get_borrowed_segments(&self) -> Vec<&str> {
+        let mut item = Some(self);
+        let mut result = Vec::new();
+        while let Some(scope) = item {
+            result.push(scope.scope_name.as_str());
+            item = scope.parent.as_deref();
+        }
+        result.reverse();
+        result
+    }
+
+    #[must_use]
     #[allow(
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"
@@ -363,7 +375,7 @@ pub struct Theme {
     color_map: ColorMap,
     defaults: StyleAttributes,
     root: ThemeTrieElement,
-    cached_match_root: RwLock<HashMap<String, Vec<ThemeTrieElementRule>>>,
+    cached_match_root: RwLock<HashMap<String, Arc<[ThemeTrieElementRule]>>>,
 }
 
 impl Theme {
@@ -405,11 +417,11 @@ impl Theme {
             .get(scope_name)
             .cloned();
         let matching_trie_elements = cached_rules.unwrap_or_else(|| {
-            let rules = self.root.match_scope(scope_name);
+            let rules: Arc<[ThemeTrieElementRule]> = self.root.match_scope(scope_name).into();
             self.cached_match_root
                 .write()
                 .expect("theme match cache lock poisoned")
-                .insert(scope_name.clone(), rules.clone());
+                .insert(scope_name.clone(), Arc::clone(&rules));
             rules
         });
 

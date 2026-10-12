@@ -13,7 +13,16 @@ export default antfu(
       "**/dist/**",
       "**/*.d.mts",
       "compat/upstream/**",
+      // Keep the measured benchmark inputs byte-identical to the saved run.
+      "benchmarks/shadow-dom-spike/fixtures/**",
       "pnpm-workspace.yaml",
+      // These committed syntax samples are exact benchmark inputs, not code
+      // maintained as executable Node fixtures.
+      "benchmarks/curated/results/prism-investigation/fixtures/**",
+      // Measurement-time source snapshots must remain byte-identical to the
+      // scripts that produced their retained output.
+      "benchmarks/curated/results/prism-investigation/**/harness/*.measured.mjs",
+      "benchmarks/curated/results/render-memoization/harness/*.measured.mjs",
     ],
   },
   {

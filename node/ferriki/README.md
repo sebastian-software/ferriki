@@ -130,8 +130,11 @@ covers the class names, custom CSS and theme switching.
 
 ## Transformers
 
-Shiki transformers and decorations run in JavaScript while Ferriki renders
-HTML, and their callbacks receive typed token and HAST data. The notation
+Transformer and decoration callbacks run in JavaScript and receive typed
+token and HAST data. Rust handles decoration ranges, token boundaries, and
+wrapping. Plain declarative ranges with string attributes render directly in Rust
+for classic single-theme HTML with inline theme styles; callbacks and other
+render modes retain the host pipeline and existing objects. The notation
 helpers from `@shikijs/transformers` for focus, highlights, diffs and word
 highlights work with them.
 
@@ -146,6 +149,26 @@ with the same version as this package:
 ```sh
 npm install @ferriki/core @ferriki/vite
 ```
+
+React `<Code />` uses `<ferriki-code>` as its built-in presentation. React SSR
+includes Declarative Shadow DOM with the prepared highlighted code, while the
+browser render uses an empty reference host and registers its prepared blocks
+for hydration and later client-rendered navigation. The parser creates the
+server shadow root before the component upgrades; upgrade and hydration retain
+its nodes. Each root gets a small local style block for layout, scrolling, line
+annotations, and inline theme switching. Classes mode also links one aggregated
+external CSS asset per build output, and its link stays after upgrade. SSR and
+client builds can emit different assets when their graphs differ; deploy the
+SSR build's CSS with its markup. Inline mode needs no CSS asset or Vite base URL.
+Pass `maxLines={12}` to cap the visible height; longer
+blocks retain all code and scroll vertically, while shorter blocks stay short.
+Omit it for an unlimited block. The macro adjusts its pre-JavaScript
+reservation automatically.
+`@ferriki/core/web-component` also presents prepared HTML/CSS without React,
+and `@ferriki/core/web-component/server` fills manually authored server-rendered
+reference hosts. The direct `highlightedCode` property remains available. See the
+[Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
+for SSR, registration, theme switching, CSS migration, and policy limits.
 
 See the [inline code macros guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md).
 
