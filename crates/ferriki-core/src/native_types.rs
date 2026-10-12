@@ -235,3 +235,17 @@ impl FromIterator<(String, ThemeTokenStyle)> for ThemeVariants {
         Self(entries.into_iter().collect())
     }
 }
+
+/// Private declarative render input. Attributes retain JS enumeration order.
+#[napi(object, object_to_js = false)]
+pub struct NativeHtmlDecoration {
+    pub range: crate::decorations::NativeDecorationRange,
+    pub tag_name: String,
+    pub properties: Vec<NativeHtmlAttribute>,
+}
+
+#[napi(object, object_to_js = false)]
+pub struct NativeHtmlAttribute {
+    pub name: String,
+    pub value: String,
+}

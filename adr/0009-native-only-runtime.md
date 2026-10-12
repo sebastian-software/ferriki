@@ -33,7 +33,8 @@ exclusively in the Rust core.
 
 - JavaScript remains a thin host: addon loading, public API wiring, standard
   asset transport through Node's built-in `fetch` (ADR 0013), hast-level
-  callback dispatch and decoration edit replay (native policy per ADR 0008), the catalog
+  callback dispatch and decoration edit replay for the host pipeline
+  (eligible declarative calls render entirely in Rust per ADR 0008), the catalog
   projection, and the type surface.
 - The bundled JS engine and `FERRIKI_BACKEND=js` are removed. The
   native-boundary check in the core gate forbids the removed runtime paths from
@@ -164,3 +165,5 @@ internal.
 - 2026-10-05: Records the optimized token-result writer, the `profiling` feature and per-target size and cold-load reporting in CI (#225).
 
 - 2026-10-10: Records typed native decoration plans while JS retains opaque objects and callbacks (#122).
+
+- 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.

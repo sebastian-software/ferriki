@@ -115,6 +115,38 @@ impl FerrikiHighlighter {
         Ok(render_html(&tokens, &options.render))
     }
 
+    /// Highlight and decorate without transporting tokens or a tree to JS.
+    #[napi(js_name = "codeToHtmlWithDecorations")]
+    pub fn code_to_html_with_decorations(
+        &self,
+        code: String,
+        options: NativeHighlightOptions,
+        decorations: Vec<NativeHtmlDecoration>,
+    ) -> Result<Option<String>> {
+        let mut inputs = Vec::with_capacity(decorations.len());
+        for decoration in decorations {
+            let range = crate::decorations::range_input(decoration.range)?;
+            inputs.push(ferriki::__private::HtmlDecoration {
+                range,
+                tag_name: decoration.tag_name,
+                properties: decoration
+                    .properties
+                    .into_iter()
+                    .map(|property| (property.name, property.value))
+                    .collect(),
+            });
+        }
+        let options = HighlightOptions::from(options);
+        let tokens = native(self.core.borrow_mut().tokenize(
+            &code,
+            &options.language,
+            &options.theme,
+            &options.tokenize,
+        ))?;
+        ferriki::__private::render_html_with_decorations(&code, &tokens, &options.render, &inputs)
+            .map_err(|reason| Error::new(napi::Status::InvalidArg, reason))
+    }
+
     /// Plans missing standard payloads for Node to fetch and install.
     #[napi(
         js_name = "planAssets",
@@ -328,6 +360,47 @@ pub(crate) mod tests {
         assert_eq!(tokens.theme_name, "nord");
         assert!(tokens.tokens[0][0].token_type.is_some());
         assert!(html.starts_with("<pre class=\"shiki nord\""));
+    }
+
+    #[test]
+    fn declarative_render_returns_html_and_preserves_utf16_fallback_and_usage_errors() {
+        let highlighter = standard_highlighter();
+        let options = NativeHighlightOptions {
+            lang: "text".into(),
+            theme: "nord".into(),
+            ..Default::default()
+        };
+        let item = |start, end| NativeHtmlDecoration {
+            range: crate::decorations::NativeDecorationRange {
+                start_offset: Some(start),
+                start_line: None,
+                start_character: None,
+                end_offset: Some(end),
+                end_line: None,
+                end_character: None,
+                always_wrap: false,
+            },
+            tag_name: "span".into(),
+            properties: vec![NativeHtmlAttribute {
+                name: "class".into(),
+                value: "mark".into(),
+            }],
+        };
+        let html = highlighter
+            .code_to_html_with_decorations("alpha".into(), options.clone(), vec![item(1.0, 4.0)])
+            .unwrap()
+            .unwrap();
+        assert!(html.contains("<span class=\"mark\">lph</span>"));
+        assert!(
+            highlighter
+                .code_to_html_with_decorations("a😀z".into(), options.clone(), vec![item(2.0, 3.0)])
+                .unwrap()
+                .is_none()
+        );
+        let error = highlighter
+            .code_to_html_with_decorations("alpha".into(), options, vec![item(4.0, 1.0)])
+            .unwrap_err();
+        assert_eq!(error.status, napi::Status::InvalidArg);
     }
 
     #[test]

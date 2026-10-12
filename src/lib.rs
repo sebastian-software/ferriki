@@ -6,6 +6,7 @@
 mod asset_catalog;
 mod asset_settings;
 mod asset_source;
+mod decorated_render;
 mod decorations;
 mod error;
 mod highlighter;
@@ -29,6 +30,7 @@ pub use ferriki_textmate::{
 /// Implementation bridge for Ferriki's N-API host, exempt from semver guarantees.
 #[doc(hidden)]
 pub mod __private {
+    pub use crate::decorated_render::{HtmlDecoration, render_html_with_decorations};
     pub use crate::decorations::{
         DecorationBoundaries, DecorationCursor, DecorationMutation, DecorationNode, DecorationPlan,
         DecorationPosition, DecorationRange, DecorationSection, DecorationSlice, DecorationSource,
