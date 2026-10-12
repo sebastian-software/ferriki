@@ -1,7 +1,8 @@
-# Preserve the bytes covered by grammar and license hashes on every platform.
-assets/grammars/*.json text eol=lf
-assets/grammars/patches/*.json text eol=lf
-assets/upstream/textmate-grammars-themes/grammars/*.json text eol=lf
+# Preserve the bytes covered by source and release hashes on every platform.
+assets/**/*.json text eol=lf
+assets/shiki/**/*.fkgram binary
+assets/shiki/**/*.fktheme binary
+assets/shiki/**/*.fkindex binary
 
 # Upstream license text is archived and aggregated verbatim.
 assets/grammars/licenses/*.txt -text -whitespace

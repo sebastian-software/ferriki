@@ -84,9 +84,10 @@ language coverage.
   aliases and required embedded grammars. First use still needs network access
   or a prepared cache (ADR 0013).
 - Languages removed from the former catalog need external registration.
-  The transition from the released 1.0 catalog removes documented standard
-  IDs and aliases, so it requires a major release. Removed IDs remain usable
-  through external registration; adding standard languages is additive.
+  The initial catalog transition ships in 1.1.0 under the one-time exception
+  below. Removed IDs remain usable through external registration; adding
+  standard languages is additive. Future removals of documented standard IDs
+  or aliases require the normal major-release process.
 - Shiki's full/web bundle-count snapshots no longer describe the product.
   They are explicitly excluded in the compatibility manifest. The release
   gate instead checks source hashes, catalog coverage, native compilation of
@@ -111,6 +112,24 @@ language coverage.
   before importing. Repository discovery and format conversion are provided by
   the maintainer pipeline.
 
+## Release scope
+
+Ship this initial catalog transition as Ferriki 1.1.0. This is a one-time
+exception during the initial 1.x adoption period, limited to the standard
+grammar selection and its IDs and aliases. It establishes the owned catalog
+now rather than retaining the Shiki-derived selection through another major
+cycle. Applications using a removed ID must register that grammar externally;
+the [grammar guide](../docs/grammars.md) documents this migration. Existing
+loading and rendering APIs and the theme catalog retain their contracts.
+Future catalog removals and changes to other stable APIs follow the normal
+semver policy; the published Rust semver gate remains in force.
+
+The follow-up commit carries `Release-As: 1.1.0`; the PR's commit override
+carries the same target for squash merges. This overrides the earlier major
+marker for this transition without rewriting branch history or changing
+global Release Please versioning. Release Please owns the synchronized
+package and crate version updates.
+
 ## History
 
 - 2026-10-12: Accepted and implemented for #152: repository snapshots from two
@@ -130,3 +149,6 @@ language coverage.
 - 2026-10-13: Integrated with the released 1.0 baseline. Renumbered this record
   to 0020 because 0019 records Shadow DOM presentation, and classified the
   removal of standard IDs and aliases as a major-version transition.
+- 2026-10-13: Targets 1.1.0 with a one-time exception for the initial standard
+  catalog transition. Retains external-registration migration guidance and
+  the normal guarantees for future catalog changes, stable APIs, and Rust.

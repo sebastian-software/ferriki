@@ -29,8 +29,11 @@ runtime. These names remain compatible with the existing API even though the
 package bundles metadata rather than grammar payloads.
 
 The curated catalog replaces the larger catalog shipped in Ferriki 1.0.
-Removing documented language IDs and aliases requires a major release.
+This initial transition ships in 1.1.0 as the one-time exception documented in
+[ADR 0020](../adr/0020-curated-grammar-sources.md#release-scope).
 Applications using an ID outside this set must register an external grammar.
+Future removals of documented standard IDs or aliases follow the normal
+major-release policy.
 
 ```js
 import { createHighlighter } from "@ferriki/core";

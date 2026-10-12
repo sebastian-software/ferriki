@@ -44,8 +44,10 @@ Ferriki maintains its standard language catalog and required embedding
 dependencies. It does not mirror every Shiki language. Check your IDs in
 `bundledLanguages` and use the [external grammar importer](../grammars.md) for
 languages outside the set. The existing 65-theme catalog remains available.
-Replacing Ferriki 1.0's larger catalog with this selection is a major-version
-change because it removes documented standard IDs and aliases.
+This initial catalog replacement ships in Ferriki 1.1.0 as the one-time
+exception in [ADR 0020](../../adr/0020-curated-grammar-sources.md#release-scope).
+Applications using a removed standard ID or alias must register that grammar
+externally. Future catalog removals follow the normal major-release policy.
 
 The asynchronous factory and loading methods download standard grammar and
 theme payloads by default, then verify and cache them. Highlighting on a loaded
