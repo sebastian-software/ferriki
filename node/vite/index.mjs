@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
+import { posix } from "node:path";
 import { createHighlighter, ShikiError } from "@ferriki/core";
 import { codeElementStyles } from "@ferriki/core/web-component";
 import { renderCodeElementShadows } from "@ferriki/core/web-component/server";
 import MagicString from "magic-string";
 import { parseAst } from "vite";
 
+import { createCodeElementColorTransformer } from "./code-element-colors.mjs";
 import { MACRO_MODULE_SPECIFIERS, MacroDiagnostic, scanInlineCodeMacros } from "./macro-scan.mjs";
 
 const VIRTUAL_CSS_PREFIX = "virtual:ferriki-vite/";
@@ -49,6 +51,7 @@ export function ferriki(options = {}) {
   const reactModules = new Map();
   let resolvedConfig;
   let configuredBase;
+  let devServer;
   const buildStylesheets = new WeakMap();
 
   function preparedReactBlocks() {
@@ -60,11 +63,13 @@ export function ferriki(options = {}) {
   }
 
   function preparedReactCss() {
+    if (styleMode !== "classes") return "";
     const css = new Set();
     for (const { blocks } of reactModules.values()) {
-      for (const block of blocks.values()) if (block.css) css.add(block.css);
+      for (const block of blocks.values())
+        if (block.css) for (const rule of cssRules(block.css)) css.add(rule);
     }
-    return [codeElementStyles(themes ? Object.keys(themes) : []), ...css].join("\n");
+    return [...css].join("\n");
   }
 
   function getHighlighter() {
@@ -81,7 +86,7 @@ export function ferriki(options = {}) {
     );
   }
 
-  async function highlight(context, id, code, language, meta, effectiveLineNumbers) {
+  async function highlight(context, id, code, language, meta, effectiveLineNumbers, codeElement) {
     const highlighter = await getHighlighter();
     let loading = languageLoads.get(language);
     if (!loading) {
@@ -104,7 +109,14 @@ export function ferriki(options = {}) {
       lang: language,
       ...(themes ? { themes, defaultColor: Object.keys(themes)[0] } : { theme }),
       styleMode,
-      transformers: [...transformers, transformer],
+      ...(codeElement
+        ? { includeExplanation: "scopeName", mergeWhitespaces: false, mergeSameStyleTokens: false }
+        : {}),
+      transformers: [
+        ...transformers,
+        transformer,
+        ...(codeElement ? [createCodeElementColorTransformer()] : []),
+      ],
     };
     try {
       if (styleMode === "classes") return highlighter.codeToHtmlWithCss(code, highlightOptions);
@@ -131,6 +143,7 @@ export function ferriki(options = {}) {
       codeElementBlocks: preparedReactBlocks,
       renderCodeElements(markup, options = {}) {
         return renderCodeElementShadows(markup, {
+          themeAliases: themes ? Object.keys(themes) : [],
           ...options,
           blocks: preparedReactBlocks(),
         });
@@ -150,6 +163,8 @@ export function ferriki(options = {}) {
     },
 
     configureServer(server) {
+      if (styleMode !== "classes") return;
+      devServer = server;
       const pathname = `${server.config.base}${DEV_CODE_STYLESHEET_PATH}`;
       server.middlewares.use((request, response, next) => {
         if ((request.url ?? "").split("?", 1)[0] !== pathname) return next();
@@ -162,6 +177,7 @@ export function ferriki(options = {}) {
     buildEnd(error) {
       if (
         error ||
+        styleMode !== "classes" ||
         resolvedConfig?.command !== "build" ||
         !Object.keys(preparedReactBlocks()).length
       )
@@ -171,7 +187,7 @@ export function ferriki(options = {}) {
       buildStylesheets.set(this.environment, { reference, source });
     },
 
-    renderChunk(code) {
+    renderChunk(code, chunk) {
       const expression = `import.meta.${CODE_STYLESHEET_META}`;
       if (!code.includes(expression)) return null;
       const stylesheet = buildStylesheets.get(this.environment);
@@ -186,8 +202,15 @@ export function ferriki(options = {}) {
         .split("/")
         .map(encodeURIComponent)
         .join("/");
+      const relativeBase = base === "./" || base === "";
+      const relativeFilename = relativeBase
+        ? posix.relative(posix.dirname(chunk.fileName), filename)
+        : undefined;
+      const stylesheetUrl = relativeBase
+        ? `new URL(${safeJsLiteral(relativeFilename)}, import.meta.url).href`
+        : safeJsLiteral(`${base.replace(/\/+$/u, "")}/${filename}`);
       const magic = new MagicString(code);
-      magic.replaceAll(expression, safeJsLiteral(`${base.replace(/\/+$/u, "")}/${filename}`));
+      magic.replaceAll(expression, stylesheetUrl);
       return {
         code: magic.toString(),
         map: resolvedConfig.build.sourcemap ? magic.generateMap({ hires: true }) : null,
@@ -214,14 +237,16 @@ export function ferriki(options = {}) {
     },
 
     load(id) {
-      if (id === `\0${CODE_STYLESHEET_MODULE}`)
+      if (id === `\0${CODE_STYLESHEET_MODULE}`) {
+        const devHref = `${resolvedConfig?.base ?? "/"}${DEV_CODE_STYLESHEET_PATH}`;
         return {
           code:
             resolvedConfig?.command === "build"
               ? `export default import.meta.${CODE_STYLESHEET_META};`
-              : `export default ${safeJsLiteral(`${resolvedConfig?.base ?? "/"}${DEV_CODE_STYLESHEET_PATH}`)};`,
-          moduleSideEffects: false,
+              : `import { defineCodeElement } from "@ferriki/core/web-component";\nlet stylesheetHref = ${safeJsLiteral(devHref)};\nexport { stylesheetHref as default };\nif (import.meta.hot) import.meta.hot.on("ferriki:code-element-css", ({ href }) => {\n  stylesheetHref = href;\n  if (globalThis.customElements?.get("ferriki-code")?.[Symbol.for("ferriki.code-element.definition.v1")] === true)\n    defineCodeElement({ stylesheetHref, themeAliases: ${safeJsLiteral(themes ? Object.keys(themes) : [])} });\n});`,
+          moduleSideEffects: resolvedConfig?.command !== "build",
         };
+      }
       if (id.startsWith("\0")) return virtualCss.get(id.slice(1)) ?? null;
       return null;
     },
@@ -261,8 +286,9 @@ export function ferriki(options = {}) {
 
         const magic = new MagicString(source);
         const macroCss = new Set();
-        const reactCss = new Set();
+        const renderedReactCss = new Map();
         const reactBlocks = new Map();
+        const customRendererRefs = new Set();
         const needsRenderHelper = scan.calls.some((call) => call.kind === "react");
         if (needsRenderHelper && themes) codeElementStyles(Object.keys(themes));
         const renderHelperName = needsRenderHelper
@@ -286,14 +312,19 @@ export function ferriki(options = {}) {
         const codeElementRegisteredName = needsRenderHelper
           ? uniqueIdentifierName(scan.names, "FerrikiCodeElementRegistered")
           : undefined;
-        const stylesheetName = needsRenderHelper
-          ? uniqueIdentifierName(scan.names, "FerrikiCodeStylesheetUrl")
-          : undefined;
-        const stylesheetHrefName = needsRenderHelper
-          ? uniqueIdentifierName(scan.names, "FerrikiCodeStylesheetHref")
-          : undefined;
+        const stylesheetName =
+          needsRenderHelper && styleMode === "classes"
+            ? uniqueIdentifierName(scan.names, "FerrikiCodeStylesheetUrl")
+            : undefined;
+        const stylesheetHrefName =
+          needsRenderHelper && styleMode === "classes"
+            ? uniqueIdentifierName(scan.names, "FerrikiCodeStylesheetHref")
+            : undefined;
         const serverHtmlName = needsRenderHelper
           ? uniqueIdentifierName(scan.names, "FerrikiCodeServerHtml")
+          : undefined;
+        const serverStylesName = needsRenderHelper
+          ? uniqueIdentifierName(scan.names, "FerrikiCodeServerStyles")
           : undefined;
         // Lower the innermost calls first; an enclosing React element only
         // rewrites the text around its presentation expressions.
@@ -313,6 +344,7 @@ export function ferriki(options = {}) {
             call.language,
             parsedMeta,
             effectiveLineNumbers,
+            call.kind === "react",
           );
           const descriptorCss = [
             rendered.css,
@@ -332,17 +364,39 @@ export function ferriki(options = {}) {
             call.kind === "react"
               ? `ferriki-${createHash("sha256").update(JSON.stringify(descriptor)).digest("hex")}`
               : undefined;
-          if (codeRef) reactBlocks.set(codeRef, descriptor);
+          if (codeRef) {
+            reactBlocks.set(codeRef, descriptor);
+            renderedReactCss.set(codeRef, rendered.css);
+          }
           lowerMacroCall(magic, call, descriptor, renderHelperName, codeRef);
           const hasCustomRenderProp =
             call.kind === "react" && call.presentation.some((item) => item.name === "render");
-          if (call.kind === "react" && descriptorCss) reactCss.add(descriptorCss);
+          if (hasCustomRenderProp) customRendererRefs.add(codeRef);
           // Default React hosts share styles through the element definition.
           // Descriptor consumers and syntactic custom renderers keep ordinary CSS delivery.
           if (descriptorCss && (call.kind !== "react" || hasCustomRenderProp))
             macroCss.add(descriptorCss);
         }
-        reactModules.set(id, { blocks: reactBlocks });
+        const previousPalette = devServer ? preparedReactCss() : undefined;
+        reactModules.set(id, {
+          blocks: new Map(
+            [...reactBlocks].map(([ref, block]) => [
+              ref,
+              { html: block.html, css: renderedReactCss.get(ref) },
+            ]),
+          ),
+        });
+        if (devServer) {
+          const palette = preparedReactCss();
+          if (palette !== previousPalette)
+            devServer.ws.send({
+              type: "custom",
+              event: "ferriki:code-element-css",
+              data: {
+                href: `${devServer.config.base}${DEV_CODE_STYLESHEET_PATH}?v=${createHash("sha256").update(palette).digest("hex")}`,
+              },
+            });
+        }
 
         for (const item of scan.imports) {
           if (item.replacement) magic.overwrite(item.start, item.end, item.replacement);
@@ -365,15 +419,55 @@ export function ferriki(options = {}) {
               return `${JSON.stringify(ref)}: { lineCount: ${lineCount}, style: ${sizingName}(${lineCount}) }`;
             })
             .join(", ");
+          const preparedBlocks = Object.fromEntries(
+            [...reactBlocks].map(([ref, block]) => [
+              ref,
+              customRendererRefs.has(ref) ? block : { ...block, css: "" },
+            ]),
+          );
+          const aliases = themes ? Object.keys(themes) : [];
+          const serverStyles = `<style data-ferriki-code-base>${codeElementStyles(aliases)}</style>`;
+          const stylesheetImport = stylesheetName
+            ? `import ${stylesheetName} from ${JSON.stringify(CODE_STYLESHEET_MODULE)};`
+            : "";
+          const stylesheetConfig = stylesheetName ? `, stylesheetHref: ${stylesheetName}` : "";
+          const escapedStylesheetHref = stylesheetName
+            ? `const ${stylesheetHrefName} = import.meta.env.SSR ? ${stylesheetName}.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") : undefined;`
+            : "";
           const serverHtmlSource = [...reactBlocks.keys()]
             .map((ref) => {
               const marker = encodeURIComponent(ref).replaceAll("-", "%2D");
-              return `${JSON.stringify(ref)}: { __html: ${safeJsLiteral(`<template shadowrootmode="open"><!--ferriki-code:${marker}--><link rel="stylesheet" href="`)} + ${stylesheetHrefName} + ${safeJsLiteral('" data-ferriki-code-css>')} + ${codeBlocksName}[${JSON.stringify(ref)}].html + "</template>" }`;
+              const link = stylesheetName
+                ? ` + ${safeJsLiteral('<link rel="stylesheet" href="')} + ${stylesheetHrefName} + ${safeJsLiteral('" data-ferriki-code-css>')}`
+                : "";
+              return `${JSON.stringify(ref)}: { __html: ${safeJsLiteral(`<template shadowrootmode="open"><!--ferriki-code:${marker}-->`)} + ${serverStylesName}${link} + ${codeBlocksName}[${JSON.stringify(ref)}].html + "</template>" }`;
             })
             .join(", ");
           magic.appendLeft(
             helperOffset,
-            `\nimport { defineCodeElement as ${registrationName} } from "@ferriki/core/web-component";\nimport { codeElementSizing as ${sizingName} } from "@ferriki/core/web-component";\nimport ${stylesheetName} from ${JSON.stringify(CODE_STYLESHEET_MODULE)};\nconst ${codeBlocksName} = ${safeJsLiteral(Object.fromEntries(reactBlocks))};\nconst ${codeSizesName} = { ${sizingSource} };\nconst ${codeElementConfigName} = { ...${safeJsLiteral({ css: [...reactCss].join("\n"), themeAliases: themes ? Object.keys(themes) : [] })}, blocks: { ${registrySource} } };\nconst ${stylesheetHrefName} = import.meta.env.SSR ? ${stylesheetName}.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") : undefined;\nconst ${serverHtmlName} = import.meta.env.SSR ? { ${serverHtmlSource} } : undefined;\nlet ${codeElementRegisteredName} = false;\n${renderHelperSource(renderHelperName, registrationName, codeElementConfigName, codeBlocksName, codeElementRegisteredName, codeSizesName, sizingName, serverHtmlName)}\n`,
+            [
+              `\nimport { defineCodeElement as ${registrationName} } from "@ferriki/core/web-component";`,
+              `import { codeElementSizing as ${sizingName} } from "@ferriki/core/web-component";`,
+              stylesheetImport,
+              `const ${codeBlocksName} = ${safeJsLiteral(preparedBlocks)};`,
+              `const ${codeSizesName} = { ${sizingSource} };`,
+              `const ${codeElementConfigName} = { ...${safeJsLiteral({ themeAliases: aliases })}${stylesheetConfig}, blocks: { ${registrySource} } };`,
+              escapedStylesheetHref,
+              `const ${serverStylesName} = import.meta.env.SSR ? ${safeJsLiteral(serverStyles)} : undefined;`,
+              `const ${serverHtmlName} = import.meta.env.SSR ? { ${serverHtmlSource} } : undefined;`,
+              `let ${codeElementRegisteredName} = false;`,
+              renderHelperSource(
+                renderHelperName,
+                registrationName,
+                codeElementConfigName,
+                codeBlocksName,
+                codeElementRegisteredName,
+                codeSizesName,
+                sizingName,
+                serverHtmlName,
+              ),
+              "",
+            ].join("\n"),
           );
         }
         const css = [...macroCss].join("\n");
@@ -567,6 +661,52 @@ function uniqueIdentifierName(used, base) {
   let suffix = 1;
   while (used.has(candidate)) candidate = `${base}${suffix++}`;
   return candidate;
+}
+
+// Deduplicate complete generated rules, keeping nested at-rules and quoted
+// declaration values intact. Splitting on lines would break media blocks.
+function cssRules(css) {
+  const rules = [];
+  let start = 0;
+  let braces = 0;
+  let parentheses = 0;
+  let quote;
+  let comment = false;
+  for (let index = 0; index < css.length; index++) {
+    const character = css[index];
+    if (comment) {
+      if (character === "*" && css[index + 1] === "/") {
+        comment = false;
+        index++;
+      }
+      continue;
+    }
+    if (character === "\\") {
+      index++;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'") quote = character;
+    else if (character === "/" && css[index + 1] === "*") {
+      comment = true;
+      index++;
+    } else if (character === "(") parentheses++;
+    else if (character === ")") parentheses--;
+    else if (parentheses === 0) {
+      if (character === "{") braces++;
+      else if (character === "}") braces--;
+      if (braces === 0 && (character === "}" || character === ";")) {
+        rules.push(css.slice(start, index + 1).trim());
+        start = index + 1;
+      }
+    }
+  }
+  const trailing = css.slice(start).trim();
+  if (trailing) rules.push(trailing);
+  return rules;
 }
 
 function renderHelperSource(

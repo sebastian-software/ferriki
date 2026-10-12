@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { renderCodeElementShadows } from "../ferriki/web-component-server.mjs";
+import { codeElementStyles } from "../ferriki/web-component.mjs";
 
 test("reference hosts receive the exact DSD protocol and escaped shared stylesheet URL", () => {
   const markup = '<main><ferriki-code class="sample" code-ref="Block-1"></ferriki-code></main>';
@@ -12,7 +13,7 @@ test("reference hosts receive the exact DSD protocol and escaped shared styleshe
 
   assert.equal(
     result,
-    '<main><ferriki-code class="sample" code-ref="Block-1"><template shadowrootmode="open"><!--ferriki-code:Block%2D1--><link rel="stylesheet" href="/assets/code.css?theme=&quot;light&quot;&amp;v=1" data-ferriki-code-css><pre><code>const x = 1;</code></pre></template></ferriki-code></main>',
+    `<main><ferriki-code class="sample" code-ref="Block-1"><template shadowrootmode="open"><!--ferriki-code:Block%2D1--><style data-ferriki-code-base>${codeElementStyles()}</style><link rel="stylesheet" href="/assets/code.css?theme=&quot;light&quot;&amp;v=1" data-ferriki-code-css><pre><code>const x = 1;</code></pre></template></ferriki-code></main>`,
   );
 });
 
@@ -20,7 +21,7 @@ test("whitespace-only hosts are eligible and the stylesheet link is optional", (
   const markup = '<ferriki-code code-ref="one">\n \t</ferriki-code>';
   assert.equal(
     renderCodeElementShadows(markup, { blocks: { one: "<pre>one</pre>" } }),
-    '<ferriki-code code-ref="one"><template shadowrootmode="open"><!--ferriki-code:one--><pre>one</pre></template></ferriki-code>',
+    `<ferriki-code code-ref="one"><template shadowrootmode="open"><!--ferriki-code:one--><style data-ferriki-code-base>${codeElementStyles()}</style><pre>one</pre></template></ferriki-code>`,
   );
 });
 
@@ -29,8 +30,20 @@ test("leading hyphens are valid code-ref characters and are encoded in the marke
     renderCodeElementShadows('<ferriki-code code-ref="-leading"></ferriki-code>', {
       blocks: { "-leading": "<pre>ok</pre>" },
     }),
-    '<ferriki-code code-ref="-leading"><template shadowrootmode="open"><!--ferriki-code:%2Dleading--><pre>ok</pre></template></ferriki-code>',
+    `<ferriki-code code-ref="-leading"><template shadowrootmode="open"><!--ferriki-code:%2Dleading--><style data-ferriki-code-base>${codeElementStyles()}</style><pre>ok</pre></template></ferriki-code>`,
   );
+});
+
+test("SSR uses the supplied aliases for the embedded base style", () => {
+  const markup = '<ferriki-code code-ref="one"></ferriki-code>';
+  const result = renderCodeElementShadows(markup, {
+    blocks: { one: "<pre>one</pre>" },
+    themeAliases: ["day", "night"],
+  });
+
+  assert.match(result, /data-ferriki-code-base>[\s\S]*data-ferriki-theme="day"/);
+  assert.match(result, /data-ferriki-theme="night"/);
+  assert.doesNotMatch(result, /data-ferriki-theme="light"/);
 });
 
 test("manual, nonempty, property-backed, and non-reference hosts are preserved", () => {
@@ -66,7 +79,7 @@ test("scanner ignores comments, declarations, raw text, RCDATA, quoted attribute
   const untouched = markup.slice(0, markup.lastIndexOf('<ferriki-code data-label="a > b"'));
   assert.equal(
     renderCodeElementShadows(markup, { blocks: { present: "<pre>ok</pre>" } }),
-    `${untouched}<ferriki-code data-label="a > b" code-ref="present"><template shadowrootmode="open"><!--ferriki-code:present--><pre>ok</pre></template></ferriki-code>`,
+    `${untouched}<ferriki-code data-label="a > b" code-ref="present"><template shadowrootmode="open"><!--ferriki-code:present--><style data-ferriki-code-base>${codeElementStyles()}</style><pre>ok</pre></template></ferriki-code>`,
   );
 });
 
@@ -110,7 +123,7 @@ test("unknown and malformed references fail only for empty reference hosts", () 
   );
 });
 
-test("inputs validate the complete block registry and stylesheet URL", () => {
+test("inputs validate the complete block registry, stylesheet URL, and theme aliases", () => {
   assert.throws(() => renderCodeElementShadows(null, { blocks: {} }), /`markup` must be a string/);
   assert.throws(() => renderCodeElementShadows("", null), /`options` must be an object/);
   assert.throws(() => renderCodeElementShadows("", {}), /`blocks` must be a record/);
@@ -142,5 +155,13 @@ test("inputs validate the complete block registry and stylesheet URL", () => {
   assert.throws(
     () => renderCodeElementShadows("", { blocks: {}, stylesheetHref: "/code.css\nunsafe" }),
     /control characters/,
+  );
+  assert.throws(
+    () => renderCodeElementShadows("", { blocks: {}, themeAliases: null }),
+    /themeAliases/,
+  );
+  assert.throws(
+    () => renderCodeElementShadows("", { blocks: {}, themeAliases: ["safe", "safe"] }),
+    /Duplicate theme alias/,
   );
 });

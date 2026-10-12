@@ -17,12 +17,20 @@ test("web component module imports in Node and registration is SSR-safe", () => 
 test("theme stylesheet supports generic aliases and an empty alias list", () => {
   const css = codeElementStyles(["primary", "contrast"]);
   assert.match(css, /:host\(\[data-ferriki-theme="primary"\]\) pre\.shiki-themes/);
-  assert.match(css, /--ferriki-color: var\(--shiki-contrast\)/);
-  assert.match(css, /--ferriki-background: var\(--shiki-contrast-bg\)/);
+  assert.match(css, /--_ferriki-token-theme-color: var\(--shiki-contrast, inherit\)/);
+  assert.match(css, /color: var\(--_ferriki-token-color, var\(--shiki-primary, inherit\)\)/);
+  assert.match(css, /span:not\(\.ferriki-color-authored\)/);
+  assert.match(css, /--ferriki-color: var\(--ferriki-foreground, var\(--shiki-contrast\)\)/);
+  assert.match(
+    css,
+    /--ferriki-background: var\(--ferriki-background-color, var\(--shiki-contrast-bg\)\)/,
+  );
   assert.match(css, /font-family: ui-monospace/);
   assert.match(css, /line-height: var\(--ferriki-code-line-height, 1\.3125rem\)/);
   assert.match(css, /padding-block: var\(--ferriki-code-padding-block, 0px\)/);
   assert.match(css, /max-block-size: var\(--ferriki-code-max-block-size, none\)/);
+  assert.match(css, /\.ferriki-highlight-line\[data-ln\]::before/);
+  assert.match(css, /\.ferriki-highlight-line\.highlighted/);
   assert.doesNotMatch(codeElementStyles([]), /data-ferriki-theme/);
 });
 
@@ -73,6 +81,11 @@ test("code element sizing reserves one shared line box and validates line counts
 test("registration validates CSS and theme aliases before browser access", () => {
   assert.throws(() => defineCodeElement(null), /options must be an object/);
   assert.throws(() => defineCodeElement({ css: 42 }), /`css` must be a string/);
+  assert.throws(() => defineCodeElement({ stylesheetHref: "" }), /nonempty string/);
+  assert.throws(
+    () => defineCodeElement({ stylesheetHref: "/code.css\nunsafe" }),
+    /control characters/,
+  );
   assert.throws(() => defineCodeElement({ themeAliases: ['safe"x'] }), /Unsupported theme alias/);
   assert.throws(
     () => defineCodeElement({ themeAliases: ["light", "light"] }),
@@ -100,53 +113,32 @@ test("block registry validates code-ref IDs and trusted HTML before SSR return",
   );
 });
 
-test("browser registration accumulates blocks and rejects conflicting IDs", () => {
+test("browser registration uses local styles and a persistent shared stylesheet link", () => {
   const globalDescriptors = new Map(
     ["customElements", "HTMLElement", "document"].map((name) => [
       name,
       Object.getOwnPropertyDescriptor(globalThis, name),
     ]),
   );
-  class FakeStyleSheet {
-    static instances = [];
 
-    cssRules = [];
-
-    constructor() {
-      FakeStyleSheet.instances.push(this);
-    }
-
-    replaceSync(css) {
-      this.cssRules = css.trim() === "" ? [] : [{ cssText: css.trim() }];
-    }
-
-    insertRule(cssText, index) {
-      if (cssText.startsWith("@namespace") && index > 0)
-        throw new DOMException("Namespace rules must precede style rules", "InvalidStateError");
-      this.cssRules.splice(index, 0, { cssText });
-      return index;
-    }
-  }
-  class FakeLink {
-    constructor(marked) {
-      this.nodeType = 1;
-      this.tagName = "LINK";
-      this.markedServerCss = marked;
+  class FakeNode {
+    constructor(tagName, nodeType = 1) {
+      this.nodeType = nodeType;
+      this.tagName = tagName;
       this.parentNode = undefined;
-    }
-
-    remove() {
-      if (!this.parentNode) return;
-      this.parentNode.childNodes = this.parentNode.childNodes.filter((node) => node !== this);
-      this.parentNode = undefined;
-    }
-  }
-  class FakePre {
-    constructor() {
-      this.nodeType = 1;
-      this.tagName = "PRE";
+      this.childNodes = [];
       this.attributes = new Map();
-      this.parentNode = undefined;
+      this.textContent = "";
+    }
+
+    get firstChild() {
+      return this.childNodes[0];
+    }
+
+    get nextSibling() {
+      if (!this.parentNode) return undefined;
+      const siblings = this.parentNode.childNodes;
+      return siblings[siblings.indexOf(this) + 1];
     }
 
     getAttribute(name) {
@@ -164,55 +156,172 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
     removeAttribute(name) {
       this.attributes.delete(name);
     }
+
+    remove() {
+      this.parentNode?.removeChild(this);
+    }
   }
-  class FakeShadowRoot {
+
+  class FakeComment extends FakeNode {
+    constructor(data) {
+      super(undefined, 8);
+      this.data = data;
+    }
+  }
+
+  class FakeFragment extends FakeNode {
     constructor() {
-      this.pre = new FakePre();
-      this.childNodes = [
-        { nodeType: 8, data: "ferriki-code:late%2Dref" },
-        new FakeLink(true),
-        new FakeLink(false),
-        { nodeType: 1, tagName: "CODE" },
-        this.pre,
-      ];
-      for (const node of this.childNodes) node.parentNode = this;
+      super(undefined, 11);
     }
 
-    get firstChild() {
-      return this.childNodes[0];
+    replaceChildren(...nodes) {
+      for (const child of [...this.childNodes]) this.removeChild(child);
+      for (const node of nodes) this.appendChild(node);
     }
 
-    querySelectorAll(selector) {
-      assert.equal(selector, "link[data-ferriki-code-css]");
-      return this.childNodes.filter((node) => node instanceof FakeLink && node.markedServerCss);
+    appendChild(node) {
+      node.parentNode?.removeChild(node);
+      this.childNodes.push(node);
+      node.parentNode = this;
+      return node;
+    }
+
+    removeChild(node) {
+      const index = this.childNodes.indexOf(node);
+      if (index === -1) throw new TypeError("The node is not in this fragment");
+      this.childNodes.splice(index, 1);
+      node.parentNode = undefined;
+      return node;
+    }
+  }
+
+  class FakePre extends FakeNode {
+    constructor(markup = "") {
+      super("PRE");
+      this.markup = markup;
+    }
+  }
+
+  class FakeShadowRoot extends FakeFragment {
+    constructor(children = []) {
+      super();
+      for (const child of children) this.appendChild(child);
+    }
+
+    get pre() {
+      return this.querySelector("pre");
+    }
+
+    insertBefore(node, reference) {
+      if (node.nodeType === 11) {
+        for (const child of [...node.childNodes]) this.insertBefore(child, reference);
+        return node;
+      }
+      if (node === reference) return node;
+      if (reference !== null && !this.childNodes.includes(reference))
+        throw new TypeError("The reference node is not a child of this shadow root");
+      node.parentNode?.removeChild(node);
+      const index =
+        reference === null ? this.childNodes.length : this.childNodes.indexOf(reference);
+      this.childNodes.splice(index, 0, node);
+      node.parentNode = this;
+      return node;
+    }
+
+    appendChild(node) {
+      return this.insertBefore(node, null);
+    }
+
+    removeChild(node) {
+      const index = this.childNodes.indexOf(node);
+      if (index === -1) throw new TypeError("The node is not a child of this shadow root");
+      this.childNodes.splice(index, 1);
+      node.parentNode = undefined;
+      return node;
+    }
+
+    replaceChildren(...nodes) {
+      for (const child of [...this.childNodes]) this.removeChild(child);
+      for (const node of nodes) this.appendChild(node);
     }
 
     querySelector(selector) {
-      assert.equal(selector, "pre");
-      return this.pre;
+      if (selector === "pre") return this.childNodes.find((node) => node.tagName === "PRE");
+      if (selector === "style[data-ferriki-code-base]")
+        return this.childNodes.find(
+          (node) => node.tagName === "STYLE" && node.hasAttribute("data-ferriki-code-base"),
+        );
+      if (selector === "link[data-ferriki-code-css]")
+        return this.childNodes.find(
+          (node) => node.tagName === "LINK" && node.hasAttribute("data-ferriki-code-css"),
+        );
+      throw new TypeError(`Unexpected selector: ${selector}`);
     }
 
-    get adoptedStyleSheets() {
-      return this._adoptedStyleSheets ?? [];
-    }
-
-    set adoptedStyleSheets(sheets) {
-      this._adoptedStyleSheets = sheets;
+    querySelectorAll(selector) {
+      if (selector === "link[data-ferriki-code-css]")
+        return this.childNodes.filter(
+          (node) => node.tagName === "LINK" && node.hasAttribute("data-ferriki-code-css"),
+        );
+      throw new TypeError(`Unexpected selector: ${selector}`);
     }
   }
+
+  class FakeLink extends FakeNode {
+    constructor(href, marked = false) {
+      super("LINK");
+      this.setAttribute("rel", "stylesheet");
+      if (href !== undefined) this.setAttribute("href", href);
+      if (marked) this.setAttribute("data-ferriki-code-css", "");
+    }
+  }
+
   const fakeDocument = {
-    defaultView: { CSSStyleSheet: FakeStyleSheet, ShadowRoot: FakeShadowRoot },
+    createElement(tagName) {
+      if (tagName === "template") {
+        const template = new FakeNode("TEMPLATE");
+        template.content = new FakeFragment();
+        Object.defineProperty(template, "innerHTML", {
+          get() {
+            return template._html;
+          },
+          set(markup) {
+            template._html = markup;
+            template.content.replaceChildren();
+            const node = /<pre(?:\s|>)/iu.test(markup) ? new FakePre(markup) : new FakeNode("SPAN");
+            node.markup = markup;
+            template.content.appendChild(node);
+          },
+        });
+        return template;
+      }
+      return tagName === "pre" ? new FakePre() : new FakeNode(tagName.toUpperCase());
+    },
+    createComment(data) {
+      return new FakeComment(data);
+    },
   };
-  const definitions = new Map();
+
+  let nextShadowRoot;
   let preUpgradeMaxLines;
   const fakeCustomElements = {
+    definitions: new Map(),
     get(name) {
-      return definitions.get(name);
+      return this.definitions.get(name);
     },
     define(name, constructor) {
-      definitions.set(name, constructor);
+      this.definitions.set(name, constructor);
     },
   };
+
+  const marker = new FakeComment("ferriki-code:late%2Dref");
+  const serverStyle = new FakeNode("STYLE");
+  serverStyle.setAttribute("data-ferriki-code-base", "");
+  serverStyle.textContent = codeElementStyles();
+  const serverLink = new FakeLink("/assets/code.8ad2.css", true);
+  const unrelatedLink = new FakeLink("/author.css");
+  const serverCode = new FakePre("<pre>late</pre>");
+  const root = new FakeShadowRoot([marker, serverStyle, serverLink, unrelatedLink, serverCode]);
 
   try {
     Object.defineProperty(globalThis, "customElements", {
@@ -224,7 +333,8 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
       value: class {
         constructor() {
           this.ownerDocument = fakeDocument;
-          this.shadowRoot = new FakeShadowRoot();
+          this.shadowRoot = nextShadowRoot ?? new FakeShadowRoot();
+          nextShadowRoot = undefined;
           this.attributes = new Map();
           const styleProperties = new Map();
           this.style = {
@@ -271,41 +381,113 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
     });
     Object.defineProperty(globalThis, "document", { configurable: true, value: fakeDocument });
 
-    const constructor = defineCodeElement({ blocks: { first: "<pre>one</pre>" } });
+    const constructor = defineCodeElement({
+      stylesheetHref: "/client-code.css",
+      blocks: { first: "<pre>one</pre>", second: "<pre>two</pre>" },
+    });
+
+    const matchingMarker = new FakeComment("ferriki-code:second");
+    const matchingStyle = new FakeNode("STYLE");
+    matchingStyle.setAttribute("data-ferriki-code-base", "");
+    matchingStyle.textContent = codeElementStyles();
+    const matchingLink = new FakeLink("/assets/ssr-code.css", true);
+    const matchingCode = new FakePre("<pre>two</pre>");
+    const matchingRoot = new FakeShadowRoot([
+      matchingMarker,
+      matchingStyle,
+      matchingLink,
+      matchingCode,
+    ]);
+    const matchingHost = new constructor();
+    matchingHost.shadowRoot = matchingRoot;
+    matchingHost.setAttribute("code-ref", "second");
+    matchingHost.connectedCallback();
+    assert.equal(matchingRoot.firstChild, matchingMarker);
+    assert.equal(matchingMarker.nextSibling, matchingStyle);
+    assert.equal(matchingRoot.querySelector("pre"), matchingCode);
+    assert.equal(matchingRoot.querySelector("link[data-ferriki-code-css]"), matchingLink);
+    assert.equal(matchingLink.getAttribute("href"), "/assets/ssr-code.css");
+
+    const configuredMarker = new FakeComment("ferriki-code:second");
+    const configuredStyle = new FakeNode("STYLE");
+    configuredStyle.setAttribute("data-ferriki-code-base", "");
+    configuredStyle.textContent = codeElementStyles();
+    const configuredLink = new FakeLink("/client-code.css", true);
+    const configuredCode = new FakePre("<pre>two</pre>");
+    const configuredRoot = new FakeShadowRoot([
+      configuredMarker,
+      configuredStyle,
+      configuredLink,
+      configuredCode,
+    ]);
+    const configuredHost = new constructor();
+    configuredHost.shadowRoot = configuredRoot;
+    configuredHost.setAttribute("code-ref", "second");
+    configuredHost.connectedCallback();
+    assert.equal(configuredRoot.querySelector("link[data-ferriki-code-css]"), configuredLink);
+    assert.equal(configuredLink.getAttribute("href"), "/client-code.css");
+
     const host = new constructor();
+    host.shadowRoot = root;
     host.setAttribute("code-ref", "late-ref");
     host.connectedCallback();
-    const [marker, markedLink, unmarkedLink, codeNode] = host.shadowRoot.childNodes;
-    const sharedSheet = FakeStyleSheet.instances[0];
-    assert.equal(host.shadowRoot.adoptedStyleSheets[0], sharedSheet);
-    assert.equal(host.shadowRoot.childNodes.includes(markedLink), true);
-    assert.equal(host.shadowRoot.childNodes.includes(codeNode), true);
 
-    assert.equal(defineCodeElement({ blocks: { second: "<pre>two</pre>" } }), constructor);
-    assert.equal(defineCodeElement({ blocks: { first: "<pre>one</pre>" } }), constructor);
-    assert.equal(host.shadowRoot.childNodes.includes(markedLink), true);
-
-    assert.throws(
-      () =>
-        defineCodeElement({
-          css: '@namespace svg url("http://www.w3.org/2000/svg");',
-          blocks: { "late-ref": "<pre>failed registration</pre>" },
-        }),
-      { name: "InvalidStateError" },
-    );
-    assert.equal(host.shadowRoot.childNodes.includes(markedLink), true);
+    assert.equal(root.firstChild, marker);
+    assert.equal(marker.nextSibling, serverStyle);
+    assert.equal(serverStyle.textContent, codeElementStyles());
+    assert.equal(root.querySelector("link[data-ferriki-code-css]"), serverLink);
+    assert.equal(serverLink.getAttribute("href"), "/assets/code.8ad2.css");
+    assert.equal(root.childNodes.includes(unrelatedLink), true);
+    assert.equal(root.childNodes.includes(serverCode), true);
 
     assert.equal(
-      defineCodeElement({ css: ".late-ref{color:red}", blocks: { "late-ref": "<pre>late</pre>" } }),
+      defineCodeElement({
+        css: ".late-ref{color:red}",
+        stylesheetHref: "/client-code-v2.css",
+        blocks: { "late-ref": "<pre>late</pre>" },
+      }),
       constructor,
     );
-    assert.equal(host.shadowRoot.childNodes.includes(marker), true);
-    assert.equal(host.shadowRoot.childNodes.includes(markedLink), false);
-    assert.equal(host.shadowRoot.childNodes.includes(unmarkedLink), true);
-    assert.equal(host.shadowRoot.childNodes.includes(codeNode), true);
-    assert.equal(host.shadowRoot.adoptedStyleSheets[0], sharedSheet);
+    assert.equal(root.firstChild, marker);
+    assert.equal(marker.nextSibling, serverStyle);
+    assert.equal(serverStyle.textContent.includes(".late-ref{color:red}"), true);
+    assert.equal(root.querySelector("link[data-ferriki-code-css]"), serverLink);
+    assert.equal(serverLink.getAttribute("href"), "/assets/code.8ad2.css");
+    assert.equal(root.childNodes.includes(unrelatedLink), true);
+    assert.equal(root.childNodes.includes(serverCode), true);
+    assert.equal(root.querySelector("pre"), serverCode);
+    assert.equal(root.querySelector("pre").markup, "<pre>late</pre>");
+    assert.equal(configuredRoot.firstChild, configuredMarker);
+    assert.equal(configuredMarker.nextSibling, configuredStyle);
+    assert.equal(configuredRoot.querySelector("pre"), configuredCode);
+    assert.equal(configuredRoot.querySelector("link[data-ferriki-code-css]"), configuredLink);
+    assert.equal(configuredLink.getAttribute("href"), "/client-code-v2.css");
+    assert.equal(matchingRoot.querySelector("link[data-ferriki-code-css]"), matchingLink);
+    assert.equal(matchingLink.getAttribute("href"), "/assets/ssr-code.css");
 
-    const pre = host.shadowRoot.pre;
+    host.setAttribute("code-ref", "second");
+    assert.equal(root.firstChild, serverStyle);
+    assert.equal(root.querySelector("link[data-ferriki-code-css]"), serverLink);
+    assert.equal(serverLink.getAttribute("href"), "/client-code-v2.css");
+    assert.equal(root.childNodes.includes(unrelatedLink), false);
+    assert.equal(root.childNodes.includes(marker), false);
+    assert.notEqual(root.querySelector("pre"), serverCode);
+    assert.equal(root.querySelector("pre").markup, "<pre>two</pre>");
+    host.setAttribute("code-ref", "late-ref");
+    assert.equal(root.firstChild, serverStyle);
+    assert.equal(root.querySelector("link[data-ferriki-code-css]"), serverLink);
+    assert.equal(root.querySelector("pre").markup, "<pre>late</pre>");
+
+    matchingHost.setAttribute("code-ref", "first");
+    assert.equal(matchingRoot.firstChild, matchingStyle);
+    assert.equal(matchingRoot.querySelector("pre").markup, "<pre>one</pre>");
+    assert.equal(matchingRoot.querySelector("link[data-ferriki-code-css]"), matchingLink);
+    assert.equal(matchingLink.getAttribute("href"), "/client-code-v2.css");
+    matchingHost.setAttribute("code-ref", "second");
+    assert.equal(matchingRoot.firstChild, matchingStyle);
+    assert.equal(matchingRoot.querySelector("pre").markup, "<pre>two</pre>");
+
+    const pre = root.querySelector("pre");
     host.maxLines = 3;
     assert.equal(host.getAttribute("max-lines"), "3");
     assert.equal(host.maxLines, 3);
@@ -316,8 +498,7 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
     assert.equal(pre.getAttribute("tabindex"), "0");
     host.maxLines = 5;
     assert.equal(host.getAttribute("max-lines"), "5");
-    assert.equal(host.shadowRoot.pre, pre);
-    assert.equal(host.shadowRoot.childNodes.includes(codeNode), true);
+    assert.equal(root.querySelector("pre"), pre);
     assert.throws(() => (host.maxLines = 0), /positive safe integer/);
     host.maxLines = null;
     assert.equal(host.getAttribute("max-lines"), null);
@@ -336,6 +517,7 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
     host.removeAttribute("maxlines");
     assert.equal(host.maxLines, undefined);
 
+    nextShadowRoot = new FakeShadowRoot();
     preUpgradeMaxLines = 4;
     const upgradedHost = new constructor();
     assert.equal(Object.hasOwn(upgradedHost, "maxLines"), false);
@@ -344,6 +526,10 @@ test("browser registration accumulates blocks and rejects conflicting IDs", () =
     assert.equal(upgradedHost.maxLines, 4);
     assert.equal(upgradedHost.getAttribute("max-lines"), "4");
     assert.equal(upgradedHost.shadowRoot.pre.getAttribute("tabindex"), "0");
+    assert.equal(
+      upgradedHost.shadowRoot.querySelector("link[data-ferriki-code-css]").getAttribute("href"),
+      "/client-code-v2.css",
+    );
 
     assert.throws(
       () => defineCodeElement({ blocks: { first: "<pre>changed</pre>" } }),

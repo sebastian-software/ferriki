@@ -1,6 +1,8 @@
 export interface CodeElementRegistrationOptions {
-  /** Register associated class-mode CSS with or before its blocks. */
+  /** Add custom CSS to the local style in each shadow root. */
   readonly css?: string;
+  /** Add the shared class-palette stylesheet to new shadow roots. */
+  readonly stylesheetHref?: string;
   readonly themeAliases?: readonly string[];
   /** Trusted HTML indexed by code-ref ID for browser resolution. */
   readonly blocks?: Readonly<Record<string, string>>;
@@ -30,12 +32,12 @@ export declare function codeElementSizing(
   maxLines?: number,
 ): CodeElementSizingStyle;
 
-/** Generate local base and theme CSS for the provided aliases. */
+/** Generate local base, line annotation, and theme-switch CSS for the provided aliases. */
 export declare function codeElementStyles(themeAliases?: readonly string[]): string;
 
 /**
- * Define `<ferriki-code>` and register generated CSS and trusted HTML blocks for
- * the current document. Returns `undefined` when called in an SSR environment.
+ * Define `<ferriki-code>` and register custom local CSS, an optional shared
+ * stylesheet URL, and trusted HTML blocks. Returns `undefined` in SSR.
  */
 export declare function defineCodeElement(
   options?: CodeElementRegistrationOptions,

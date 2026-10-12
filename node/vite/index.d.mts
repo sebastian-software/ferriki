@@ -8,7 +8,7 @@ export type FerrikiViteOptions = {
   themes?: Readonly<Record<string, string>>;
   /** Asset source and cache settings passed to the native highlighter. */
   assets?: AssetOptions;
-  /** Inline styles by default; `classes` emits CSS, shared by default React shadow roots. */
+  /** Inline colors by default; `classes` emits one shared palette CSS file for React roots. */
   styleMode?: "inline" | "classes";
   /** Default line numbers for macro calls and `Code` elements; each one can override this. */
   lineNumbers?: boolean;
@@ -31,9 +31,9 @@ export type FerrikiViteApi = {
    */
   renderCodeElements(markup: string, options?: { stylesheetHref?: string }): string;
   /**
-   * Shared shadow CSS for transformed React macros. The plugin serves/emits it
-   * automatically for Code macros; manual `renderCodeElements` consumers can use
-   * this snapshot for their own stylesheet endpoint or asset.
+   * Shared class-palette CSS for transformed React macros, or empty in inline mode.
+   * The plugin serves/emits it automatically; manual consumers can use this
+   * snapshot for their own stylesheet endpoint or asset. Base rules stay local.
    */
   codeElementCss(): string;
 };

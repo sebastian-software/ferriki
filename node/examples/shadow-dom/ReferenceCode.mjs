@@ -5,8 +5,8 @@ import React from "react";
  * Register trusted prepared blocks separately from React presentation props.
  * Call this before hydrating or mounting reference hosts.
  */
-export function registerCodeElementReferences({ css, themeAliases, blocks }) {
-  return defineCodeElement({ css, themeAliases, blocks });
+export function registerCodeElementReferences({ css, stylesheetHref, themeAliases, blocks }) {
+  return defineCodeElement({ css, stylesheetHref, themeAliases, blocks });
 }
 
 /** Render an empty host whose short reference is resolved by the browser registry. */

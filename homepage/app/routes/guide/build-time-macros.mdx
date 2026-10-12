@@ -55,7 +55,7 @@ export default defineConfig({
 | -------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
 | `theme`        | `"github-dark-default"` | One theme for every block                                                                          |
 | `themes`       | none                    | A named theme map instead of `theme`; the first key supplies the default colors                    |
-| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and imports a generated stylesheet                                 |
+| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and matching generated CSS                                         |
 | `lineNumbers`  | `false`                 | The default for every macro; each macro can override it                                            |
 | `transformers` | none                    | Transformer callbacks applied to every prepared block                                              |
 | `assets`       | none                    | Asset source and cache settings, as for `createHighlighter`                                        |
@@ -127,8 +127,8 @@ The element is self-closing. `source` is a string literal or a template
 literal without interpolations; JSX children are not supported. `language` is
 required, and it, `meta` and `lineNumbers` are static, with the same meaning as
 for `code()`. By default, the element becomes a `<ferriki-code>` Web Component
-with the prepared HTML and styles in an open shadow root. `className` applies
-to that host and `theme` selects a configured alias. The optional `maxLines`
+with the prepared HTML in an open shadow root and a local base-style element.
+`className` applies to that host and `theme` selects a configured alias. The optional `maxLines`
 runtime prop must resolve to a positive safe integer; omit it for an unlimited
 block. These presentation props accept runtime expressions.
 Spreads, duplicate attributes and other attributes fail the build.
@@ -161,17 +161,17 @@ uses the same cap, line height, and padding as the displayed code.
 
 ### SSR and styles
 
-The server template links the shared stylesheet so the code is styled before
-JavaScript. Register the component after document parsing so it reuses the
-existing code. After registration, all blocks share one constructed
-stylesheet.
-Vite serves its shared CSS automatically in development and emits one hashed
-stylesheet asset in production; deploy the SSR build's asset because the client
-and SSR filenames may differ. Direct macro SSR requires an absolute Vite base
-path or URL. See the
+The server template includes a local base-style element so the code is styled
+before JavaScript. Register the component after document parsing so it reuses
+the existing code. Inline mode needs no external CSS asset or Vite base URL.
+Classes mode adds a link to one aggregated CSS asset, which remains after
+upgrade; Vite serves it during development and emits a hashed file in
+production. Deploy the SSR build's asset because the SSR and client build
+graphs can produce different filenames. Direct class-mode macro SSR requires
+an absolute Vite base path or URL. See the
 [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
-for details. Page selectors do not reach
-inside the root, and ancestor theme attributes do not select its theme: pass
+for details. Page selectors do not reach inside the root, and ancestor theme
+attributes do not select its theme: pass
 `theme={darkMode ? "dark" : "light"}` explicitly. The first configured theme
 supplies the default colors. See the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
 for framework-free use, custom CSS, browser support, and CSP/Trusted Types limits.
@@ -214,10 +214,11 @@ export function Example() {
 
 The macro import is removed from the transformed module, so neither the
 marker nor a parser reaches the browser. Server rendering, hydration and
-client navigation all use the same prepared HTML and CSS. The default React
-path loads only the framework-free presentation module; `code()` alone has no
-presentation runtime. Default styles are shared by all shadow roots; `code()`
-and custom renderers keep ordinary Vite stylesheet delivery.
+client navigation use the prepared HTML. The default React path loads only the
+framework-free presentation module; `code()` alone has no presentation
+runtime. Each React shadow root contains its local base-style element; classes
+mode also links its aggregated external asset. `code()` and custom renderers
+keep ordinary Vite stylesheet delivery.
 
 ## Annotate lines with Shiki's notation
 
@@ -307,12 +308,18 @@ For `code()` and custom renderers, each transformed module imports a
 content-addressed stylesheet. Set `data-ferriki-theme="dark"` on the prepared
 block or an ancestor to switch themes in ordinary HTML.
 
-Default `<Code />` blocks share one stylesheet across their shadow roots.
-Their runtime `theme` prop selects the host's theme; ancestor theme selectors
-do not cross that boundary. Multiple inline themes also use shared switching
-rules for their CSS variables. The surrounding presentation, such as titles
-and copy buttons, stays yours. See [Class-based output](/guide/class-highlighting)
-for the class contract.
+Each `<Code />` root has its own compact local style block for base
+presentation and inline theme switching. In classes mode, roots in a build link
+one aggregated external CSS asset. SSR and client builds can have different
+graphs and asset hashes, so deploy the SSR build's CSS with its markup; direct
+class-mode macro SSR requires an absolute Vite base. The runtime `theme` prop
+selects the host's theme; ancestor theme selectors do not cross that boundary.
+Public semantic color variables can still inherit from `:root`, a theme
+container, or the host.
+The surrounding presentation, such as titles and copy buttons, stays yours.
+See [Class-based output](/guide/class-highlighting) for the class contract and
+the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#public-color-overrides)
+for the component's semantic color variables.
 
 ## MDX and other compilers
 

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Context
 
@@ -62,8 +62,9 @@ host's parser is right here.
   `import.meta.env.SSR` to select output. The server branch returns a
   `<ferriki-code>` host whose server-only `dangerouslySetInnerHTML` value
   contains Declarative Shadow DOM for the prepared block. The client branch
-  registers the module's HTML and CSS once and returns an empty reference host.
-  The element resolves client-created references inside its shadow root.
+  registers the module's HTML, theme aliases, and optional class stylesheet
+  URL once and returns an empty reference host. The element resolves
+  client-created references inside its shadow root.
   Registration occurs only inside this default branch, so a custom renderer
   does not reserve the custom-element name.
   `className` applies to the host and accepts a string or runtime expression.
@@ -87,18 +88,19 @@ host's parser is right here.
   macro does not serialize tokens as JSX or suppress hydration. This contract
   covers ordinary complete-page React `renderToString` hydration, not streaming
   SSR or React Server Components. Theme aliases from the Vite `themes` map must
-  be CSS-safe identifiers; the macro validates them during the build. Shared
-  CSS, lifecycle, diagrams, and trust limits are in ADR 0019 and the
+  be CSS-safe identifiers; the macro validates them during the build. Stylesheet
+  delivery, lifecycle, diagrams, and trust limits are in ADR 0019 and the
   [Shadow code elements guide](../docs/shadow-code-elements.md).
 - `code()` keeps its existing HTML-backed prepared descriptor. Its applicable
   CSS continues through normal Vite CSS delivery. React calls that declare a
   `render` prop retain the same descriptor, including `code.html`, and retain
-  normal CSS delivery for the custom renderer. Default-only React calls place
-  their prepared CSS and theme rules in one shared constructed stylesheet
-  adopted by all roots instead of adding them to the page stylesheet. Module
-  CSS chunks and overlapping rules are deduplicated. All instances use the same
-  theme alias configuration. No JSX serializer or alternate Node output mode
-  is retained.
+  normal CSS delivery for the custom renderer. Default React roots each receive
+  the small local base and theme-switching rules they need. Inline mode has no
+  external stylesheet asset. Classes mode loads the aggregated generated CSS
+  from an external asset linked in each root; the link stays after upgrade and
+  CSR roots add it too. No constructed or adopted stylesheet is required. All
+  instances use the same theme alias configuration. No JSX serializer or
+  alternate Node output mode is retained.
 - Code is a directly supplied string literal or cooked template literal with
   no interpolations. Options are an object literal with required `language`
   and optional `meta` and `lineNumbers` literals. Dynamic values, identifier or
@@ -191,16 +193,17 @@ host's parser is right here.
   Native failures and missing assets propagate; they are not silently turned
   into successful highlighting. Per-call `lineNumbers` overrides the plugin
   default; explicit `showLineNumbers` metadata also enables numbering.
-- Transformed server and client modules contain the same prepared code, HTML,
-  CSS and metadata. React server rendering emits a host with DSD directly; the
-  browser branch emits an empty reference host and registers prepared content
-  for hydration and navigation. The plugin API exposes the transformed HTML
-  registry and shared CSS. Its separate complete-HTML DSD helper remains for
-  manually authored reference hosts. Applications can save registry and CSS
-  assets after an SSR build. Registering after browser parsing retains matching
-  DSD nodes and adopts shared CSS. Hydration and navigation use prepared data
-  without native highlighting or browser asset downloads. Browser-side
-  highlighting remains unsupported ([ADR 0009](0009-native-only-runtime.md)).
+- `code()` keeps the same prepared code, HTML, CSS and metadata in its server
+  and browser modules. Default React output registers prepared HTML and theme
+  aliases; classes mode also registers its stylesheet URL. React server
+  rendering emits DSD directly with per-root base styles, and the browser branch
+  emits an empty reference host. The plugin API exposes the transformed HTML
+  registry and aggregated class CSS. Its separate complete-HTML DSD helper
+  remains for manually authored reference hosts. Applications can save the
+  registry and, in classes mode, the CSS asset after an SSR build. Registration
+  after browser parsing retains matching DSD nodes. Hydration and navigation use
+  prepared data without native highlighting. Browser-side highlighting remains
+  unsupported ([ADR 0009](0009-native-only-runtime.md)).
 - A Markdown/MDX host must expose the imported marker and call before lowering
   or hiding that module. `include(id)` adds such an exposed module ID; an
   included ID without a script extension is parsed as TSX. The macro does not
@@ -268,6 +271,8 @@ host's parser is right here.
 - 2026-10-11: Makes direct macro-generated DSD the default SSR output, keeps the
   client reference registry for hydration and later navigation, and leaves the
   complete-HTML DSD helper for manually authored reference hosts.
+- 2026-10-12: Uses per-root base styles and optional external CSS links for the
+  default component, removing the constructed stylesheet dependency (#263).
 
 - 2026-10-04: `@ferriki/vite` requires Vite 8, transforms only modules that import a macro and parses them once with Vite's parser; the imported macro name is reserved in its module instead of yielding to lexical shadowing; diagnostics use Vite's plugin error channel; the marked HTML and static intrinsic JSX paths are removed (#216).
 

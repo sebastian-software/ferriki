@@ -77,13 +77,12 @@ inside a container rather than nesting it in another `pre`. Ferriki escapes
 original source text. Custom transformer output is trusted caller code, as in
 the normal HTML API; do not treat arbitrary HTML as a prepared Ferriki result.
 
-The Vite plugin imports the generated stylesheet for the transformed module.
-The descriptor's `css` also carries generated theme CSS and adapter line presentation rules,
-for consumers that transfer the prepared descriptor outside that module's
-normal CSS delivery. Do not inject a second copy when Vite already delivers it.
-Select a configured class-output theme with `data-ferriki-theme="dark"` on the
-code block or an ancestor. Surrounding UI and custom transformer presentation
-styles remain your responsibility.
+The Vite plugin delivers generated CSS for `code()` and custom renderers as
+usual. The descriptor's `css` carries its generated CSS for consumers that move
+the prepared descriptor outside that module's delivery; do not inject a second
+copy when Vite already delivers it. Select a configured class-output theme with
+`data-ferriki-theme="dark"` on the code block or an ancestor. Surrounding UI
+and custom transformer presentation styles remain your responsibility.
 
 ## React JSX macro
 
@@ -125,14 +124,15 @@ normal JavaScript escape semantics.
 
 By default, the transform emits a `<ferriki-code>` Web Component. In React SSR,
 its host contains Declarative Shadow DOM with the complete prepared `pre`/`code`
-HTML and a link to the shared component stylesheet. The browser parser creates
-the open shadow root before custom-element upgrade; the component reuses it and
-keeps its token nodes through hydration. In the browser render, React receives
-an empty host with a stable content reference and the module registers prepared
-HTML for hydration and later client-rendered navigation. `className` applies to
-the host; page selectors such as `.example pre` cannot reach inside the root.
-`theme` selects a configured alias. These presentation props accept ordinary
-runtime expressions:
+HTML and a small local style block for base presentation. Classes mode adds a
+link to its aggregated CSS asset. The browser parser creates the open shadow
+root before custom-element upgrade; the component reuses it and keeps its token
+nodes through hydration. In the browser render, React receives an empty host
+with a stable content reference and the module registers prepared HTML and, in
+classes mode, the CSS asset URL for hydration and later client-rendered
+navigation. `className` applies to the host; page selectors such as `.example
+pre` cannot reach inside the root. `theme` selects a configured alias. These
+presentation props accept ordinary runtime expressions:
 
 ```tsx
 <Code
@@ -157,25 +157,28 @@ local `window` or `globalThis` bindings cannot change the branch. The server
 branch puts the prepared HTML in a server-only `dangerouslySetInnerHTML` value
 on the custom-element host; React serializes it as DSD with a matching reference
 marker. This is the default SSR path and needs no post-render rewrite. The
-browser branch registers the module's prepared content for client-created hosts.
-Both paths use the build-known source line count and optional `maxLines` cap for
-the host reservation. The component shares one stylesheet and one theme
-mapping. After parser creation, upgrade and hydration retain the server nodes;
-later theme and parent updates retain them too. Source/HMR updates use a new
-reference inside the existing root. The complete-HTML
-`plugin.api.renderCodeElements()` and `renderCodeElementShadows()` helpers remain
-available for manually authored reference hosts. See the [lifecycle diagram](shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
+browser branch registers the module's prepared content and theme aliases for
+client-created hosts. Classes mode also registers the stylesheet URL. Both
+paths use the build-known source line count and optional `maxLines` cap for the
+host reservation. Each root has a local base-style element, and classes mode
+keeps its external CSS link after upgrade. After parser creation, upgrade and
+hydration retain the server nodes; later theme and parent updates retain them
+too. Source/HMR updates use a new reference inside the existing root. The
+complete-HTML `plugin.api.renderCodeElements()` and
+`renderCodeElementShadows()` helpers remain available for manually authored
+reference hosts. See the [lifecycle diagram](shadow-code-elements.md#react-ssr-and-declarative-shadow-dom)
 and [ownership diagram](shadow-code-elements.md#dom-and-module-ownership), plus
-the guidance on saved production registries, direct property use, shared CSS,
-and the complete-HTML SSR boundary.
+the sections on saved production registries, direct property use, stylesheet
+delivery, and the complete-HTML SSR boundary.
 
-Vite serves the shared stylesheet in development at
-`${base}@ferriki/code-elements.css` and emits one aggregated, hashed
+Inline mode needs no external CSS asset or Vite `base` restriction. In classes
+mode, Vite serves the aggregated CSS during development at
+`${base}@ferriki/code-elements.css` and emits a hashed
 `assets/ferriki-code-*.css` file in production. Deploy the asset emitted by the
-SSR build with the application's public assets; SSR and client builds can have
-different hashes. Direct macro SSR supports the default `/` base and absolute
-path or CDN bases. It rejects relative `base: "./"` and `base: ""` values.
-See the [Vite guide](../node/vite/README.md) for deployment details.
+SSR build with the application's public assets; SSR and client build graphs can
+produce different hashes. Direct class-mode macro SSR requires an absolute path
+or URL base because relative URLs are ambiguous on nested routes. See the
+[Vite guide](../node/vite/README.md) for deployment details.
 
 Titles, copy buttons, and tabs can wrap the default `<Code />` in ordinary React
 components while its code remains isolated. For complete control over the
@@ -234,14 +237,17 @@ declaration with that name fails compilation. Using the imported marker as a
 function, passing it elsewhere or re-exporting it is rejected. An unprocessed
 marker throws an actionable integration error.
 
-Server rendering, hydration, navigation and HMR use the same prepared HTML/CSS
-data. Default React output loads `@ferriki/core/web-component` for presentation;
+Server rendering, hydration, navigation and HMR use the same prepared HTML.
+The `code()` descriptor and custom renderers retain their existing CSS data and
+delivery. Default React output loads `@ferriki/core/web-component` for presentation;
 `code()` alone adds no presentation runtime. Macro markers, native highlighting,
 asset transport, and the build-time parser stay out of browser bundles.
-Default React styles are shared between shadow roots; `code()` and custom
-renderers keep the Vite stylesheet delivery described above. Custom transformer
-presentation rules must be registered in the shared component stylesheet to
-style shadow contents, or used with a renderer that keeps ordinary HTML.
+Default React roots each contain their small base-style element; classes mode
+uses one aggregated external asset linked from each root. `code()` and custom
+renderers keep their ordinary Vite CSS delivery. Custom transformer rules for
+the default component can be added as manual local CSS through
+`defineCodeElement({ css })`; there is no separate override CSS source option.
+A custom renderer can instead keep ordinary HTML and its page stylesheet.
 
 ## Supported function inputs
 

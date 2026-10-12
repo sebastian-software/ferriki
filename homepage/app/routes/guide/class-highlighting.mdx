@@ -100,6 +100,20 @@ preference until you select a theme explicitly.
 For custom CSS themes, use `theme: "none"` and your site's normal classes,
 attributes, or media queries. There is no theme format to adopt.
 
+The default React `<Code />` presentation accepts semantic color custom
+properties inherited from normal page CSS. Category-specific variables recolor
+their category and any child categories that fall back through them. When
+category variables are unset, semantic tokens keep their resolved theme
+colors. `--ferriki-foreground` sets the code block's default text color, while
+`--ferriki-background-color` controls its background; the foreground variable
+does not flatten themed token colors. The Vite macro retains native scope
+boundaries during inline build-time preparation to classify semantic tokens.
+This does not change the general inline `codeToHtml()` output contract. Use
+nested scope classes when a rule depends on a token's grammar context; the
+semantic palette cannot express every nested rule.
+See the [Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md#public-color-overrides)
+for the variable reference and examples.
+
 ## Integration details
 
 Classes mode uses a `.ferriki` root instead of `.shiki` and preserves grammar

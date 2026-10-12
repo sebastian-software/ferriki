@@ -20,7 +20,7 @@ if (import.meta.hot) {
 }
 
 function LightCode({ code, theme }) {
-  const html = `<style>${code.css}\n${LIGHT_CODE_CSS}</style>${code.html}`;
+  const html = `<style>${LIGHT_CODE_CSS}\n${code.css}</style>${code.html}`;
   return React.createElement("div", {
     "data-code-host": "",
     "data-ferriki-theme": theme,

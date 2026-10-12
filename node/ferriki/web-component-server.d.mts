@@ -4,6 +4,8 @@ export interface CodeElementShadowsOptions {
   readonly blocks: Readonly<Record<string, string>>;
   /** Optional stylesheet URL shared by each emitted shadow root. */
   readonly stylesheetHref?: string;
+  /** Theme aliases used by the runtime's local theme-switching CSS. Defaults to `light` and `dark`. */
+  readonly themeAliases?: readonly string[];
 }
 
 /**

@@ -1,4 +1,7 @@
+import { codeElementStyles } from "./web-component.mjs";
+
 const CODE_REF_PATTERN = /^[\w-]+$/u;
+const DEFAULT_THEME_ALIASES = Object.freeze(["light", "dark"]);
 const HTML_WHITESPACE_PATTERN = /^[\t\n\f\r ]+$/u;
 const RAW_TEXT_ELEMENTS = new Set([
   "iframe",
@@ -27,12 +30,15 @@ const MANUAL_CONTENT_ATTRIBUTES = new Set([
  * host with a matching trusted block is changed.
  *
  * @param {string} markup Complete server-rendered HTML.
- * @param {{blocks: Readonly<Record<string, string>>, stylesheetHref?: string}} options
+ * @param {{blocks: Readonly<Record<string, string>>, stylesheetHref?: string, themeAliases?: readonly string[]}} options
  * @returns {string} HTML with declarative Shadow DOM for eligible reference hosts.
  */
 export function renderCodeElementShadows(markup, options) {
   if (typeof markup !== "string") throw new TypeError("`markup` must be a string");
   validateOptions(options);
+  const baseCss = codeElementStyles(
+    options.themeAliases === undefined ? DEFAULT_THEME_ALIASES : options.themeAliases,
+  );
 
   let outputCursor = 0;
   let scanCursor = 0;
@@ -120,7 +126,7 @@ export function renderCodeElementShadows(markup, options) {
       throw new Error(`No trusted HTML block was provided for code-ref ${JSON.stringify(id)}`);
 
     output.push(markup.slice(outputCursor, tag.end));
-    output.push(makeTemplate(id, options.blocks[id], options.stylesheetHref));
+    output.push(makeTemplate(id, options.blocks[id], options.stylesheetHref, baseCss));
     output.push(markup.slice(emptyClose.start, emptyClose.end));
     outputCursor = emptyClose.end;
     scanCursor = emptyClose.end;
@@ -172,13 +178,13 @@ function containsControlCharacters(value) {
   return false;
 }
 
-function makeTemplate(id, trustedHtml, stylesheetHref) {
+function makeTemplate(id, trustedHtml, stylesheetHref, baseCss) {
   const encodedId = encodeURIComponent(id).replaceAll("-", "%2D");
   const stylesheet =
     stylesheetHref === undefined
       ? ""
       : `<link rel="stylesheet" href="${escapeAttribute(stylesheetHref)}" data-ferriki-code-css>`;
-  return `<template shadowrootmode="open"><!--ferriki-code:${encodedId}-->${stylesheet}${trustedHtml}</template>`;
+  return `<template shadowrootmode="open"><!--ferriki-code:${encodedId}--><style data-ferriki-code-base>${baseCss}</style>${stylesheet}${trustedHtml}</template>`;
 }
 
 function escapeAttribute(value) {

@@ -642,8 +642,8 @@ const value = <Code source="const local = 1;" language="ts" lineNumbers classNam
     expect(host.props).not.toHaveProperty("dangerouslySetInnerHTML");
     expect(registrations).toHaveLength(1);
     expect(registrations[0].themeAliases).toEqual(["day", "night"]);
-    expect(registrations[0].css).toContain(".ferriki-highlight-line");
-    expect(registrations[0].css).toContain(".ferriki-style-");
+    expect(registrations[0]).not.toHaveProperty("css");
+    expect(registrations[0].stylesheetHref).toBeTruthy();
     expect(registrations[0].blocks[host.props["code-ref"]]).toContain("const");
   });
 
@@ -755,7 +755,7 @@ const second = <Code source="const shared = 1;" language="ts" meta='title="Share
     expect(rendered).toContain('href="/code.css?a=1&amp;b=2" data-ferriki-code-css');
     expect(rendered).toContain('data-title="Shared"');
     expect(rendered).not.toContain("highlightedCode=");
-    expect(vitePlugin.api.codeElementCss()).toContain(":host");
+    expect(vitePlugin.api.codeElementCss()).not.toContain(":host");
     expect(vitePlugin.api.codeElementCss()).toContain(".ferriki-style-");
     expect(vitePlugin.api.renderCodeElements(rendered)).toBe(rendered);
 
@@ -816,7 +816,8 @@ make;`,
       'href="/nested/code.css?query=&quot;&lt;&gt;&amp;" data-ferriki-code-css',
     );
     expect(html.__html).toContain(vitePlugin.api.codeElementBlocks()[ref]);
-    expect(html.__html).not.toContain("<style");
+    expect(html.__html).toContain("<style data-ferriki-code-base>");
+    expect(html.__html).toContain(".ferriki-highlight-line[data-ln]");
     expect(host.props).not.toHaveProperty("children");
     const second = make("day", undefined);
     expect(second.type(second.props).props.dangerouslySetInnerHTML).toBe(html);
@@ -824,7 +825,7 @@ make;`,
     expect(custom.type(custom.props)).toMatchObject({ theme: "night", maxLines: 2 });
   });
 
-  it("initializes shared CSS before eager rendering while preserving directives", async () => {
+  it("initializes registered content before eager rendering while preserving directives", async () => {
     const source = `"use client";
 "use strict";
 import { Code } from "@ferriki/core/react/macro";
@@ -854,7 +855,7 @@ eager;`;
     expect(eager.type).toBe("ferriki-code");
     expect(registrations[0].blocks[eager.props["code-ref"]]).toContain("const");
     expect(registrations).toHaveLength(1);
-    expect(registrations[0].css).toContain(".ferriki-highlight-line");
+    expect(registrations[0]).not.toHaveProperty("css");
   });
 
   it("forwards theme to custom renderers without changing their return value", async () => {
@@ -1203,9 +1204,9 @@ export const host = block.type(block.props);`,
       expect(stylesheets).toHaveLength(1);
       const stylesheet = stylesheets[0];
       expect(stylesheet.fileName).toMatch(/^assets\/ferriki-code-[\w-]+\.css$/);
-      expect(stylesheet.source).toContain(":host");
+      expect(stylesheet.source).not.toContain(":host");
       expect(stylesheet.source).toContain(".ferriki-style-");
-      expect(stylesheet.source).toContain(".ferriki-highlight-line[data-ln]");
+      expect(stylesheet.source).not.toContain(".ferriki-highlight-line[data-ln]");
       expect(await readFile(join(root, `ssr-${index}`, stylesheet.fileName), "utf8")).toBe(
         stylesheet.source,
       );
@@ -1219,7 +1220,9 @@ export const host = block.type(block.props);`,
         expect(host.props.dangerouslySetInnerHTML.__html).toContain(
           `href="${href}" data-ferriki-code-css`,
         );
-        expect(host.props.dangerouslySetInnerHTML.__html).not.toContain("<style");
+        expect(host.props.dangerouslySetInnerHTML.__html).toContain(
+          "<style data-ferriki-code-base>",
+        );
       }
       expect(hosts.second.props.style).toEqual(codeElementRuntime.codeElementSizing(3, 2));
       expect(
@@ -1238,7 +1241,7 @@ export const host = block.type(block.props);`,
     }
   });
 
-  it("rejects relative Vite bases for direct macro SSR", async () => {
+  it("rejects relative Vite bases for class-palette macro SSR", async () => {
     const root = await createProject({
       "src/main.tsx": `import { Code } from "@ferriki/core/react/macro";
 const h = (type, props) => ({ type, props });
@@ -1252,12 +1255,195 @@ export const host = block.type(block.props);`,
           root,
           base,
           logLevel: "silent",
-          plugins: [plugin()],
+          plugins: [plugin({ styleMode: "classes" })],
           oxc: { jsx: { runtime: "classic", pragma: "h" } },
           build: { ssr: join(root, "src/main.tsx"), write: false },
         }),
       ).rejects.toThrow(/SSR requires an absolute Vite `base`/);
     }
+  });
+
+  it("keeps inline SSR self-contained, including relative bases and semantic color fallbacks", async () => {
+    const root = await createProject({
+      "src/main.tsx": `import { Code } from "@ferriki/core/react/macro";
+const h = (type, props) => ({ type, props });
+const block = <Code source="obj.foo" language="js" lineNumbers maxLines={1} />;
+export const host = block.type(block.props);`,
+    });
+    for (const base of ["./", ""]) {
+      const vitePlugin = plugin();
+      const result = await build({
+        configFile: false,
+        root,
+        base,
+        logLevel: "silent",
+        plugins: [vitePlugin],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: { ssr: join(root, "src/main.tsx"), write: false, minify: false },
+      });
+      expect(
+        result.output.some((file) => file.type === "asset" && file.fileName.endsWith(".css")),
+      ).toBe(false);
+      expect(vitePlugin.api.codeElementCss()).toBe("");
+      const output = result.output
+        .filter((file) => file.type === "chunk")
+        .map((file) => file.code)
+        .join("\n");
+      expect(output).toContain("<style data-ferriki-code-base>");
+      expect(output).toContain("--ferriki-variable-color");
+      expect(output).toContain("--ferriki-property-color");
+      expect(output).not.toContain("data-ferriki-code-css");
+      expect(output).not.toContain("FERRIKI_CODE_STYLESHEET_URL");
+    }
+  });
+
+  it("resolves class CSS from client chunks when the Vite base is relative", async () => {
+    const root = await createProject({
+      "src/main.tsx": `import { Code } from "@ferriki/core/react/macro";
+export const block = <Code source="const relative = 42" language="js" />;`,
+    });
+    const result = await build({
+      configFile: false,
+      root,
+      base: "./",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      build: {
+        write: false,
+        minify: false,
+        rolldownOptions: { input: join(root, "src/main.tsx"), external: [/^react(?:\/|$)/] },
+      },
+    });
+    const stylesheet = result.output.find(
+      (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+    );
+    const chunks = result.output
+      .filter((file) => file.type === "chunk")
+      .map((file) => file.code)
+      .join("\n");
+    expect(stylesheet).toBeDefined();
+    expect(chunks).toContain(
+      `new URL("${stylesheet.fileName.split("/").at(-1)}", import.meta.url).href`,
+    );
+  });
+
+  it("keeps class palettes out of default browser registrations and refreshes their URL on CSS HMR", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    const send = vi.fn();
+    vitePlugin.configResolved({ command: "serve", base: "/app/" });
+    vitePlugin.configureServer({
+      config: { base: "/app/" },
+      middlewares: { use() {} },
+      ws: { send },
+    });
+    const source =
+      'import { Code } from "@ferriki/core/react/macro"; const block = <Code source="const x = 1" language="js" />; block;';
+    const result = await transformModule(vitePlugin, source, "/src/color-hmr.tsx");
+    const registrations = [];
+    const block = await evaluateJsx(result.code, "/src/color-hmr.tsx", {
+      codeElementRuntime: {
+        defineCodeElement(options) {
+          registrations.push(options);
+        },
+      },
+    });
+    block.type(block.props);
+    expect(registrations[0]).not.toHaveProperty("css");
+    expect(result.code).not.toContain('"css":":where(');
+    expect(vitePlugin.api.codeElementCss()).toContain("--ferriki-keyword-color");
+    send.mockClear();
+    await transformModule(
+      vitePlugin,
+      source.replace("const x = 1", "const x = 'changed'"),
+      "/src/color-hmr.tsx",
+    );
+    expect(send).toHaveBeenCalledOnce();
+    const event = send.mock.calls[0][0];
+    expect(event.event).toBe("ferriki:code-element-css");
+    expect(event.data.href).toMatch(/^\/app\/@ferriki\/code-elements\.css\?v=[a-f0-9]{64}$/);
+    const virtualModule = vitePlugin.load("\0virtual:ferriki-vite/code-element-stylesheet-url");
+    expect(virtualModule.code).toContain("stylesheetHref as default");
+    expect(virtualModule.code).toContain("ferriki:code-element-css");
+
+    let definition;
+    let refresh;
+    const defineCodeElement = vi.fn();
+    const currentHref = runInNewContext(
+      `${virtualModule.code
+        .replace(/^import .*;\n/, "")
+        .replace(/^export \{ stylesheetHref as default \};\n/m, "")
+        .replaceAll("import.meta.hot", "hot")}\n() => stylesheetHref;`,
+      {
+        defineCodeElement,
+        customElements: { get: () => definition },
+        hot: {
+          on(name, callback) {
+            expect(name).toBe(event.event);
+            refresh = callback;
+          },
+        },
+      },
+    );
+    refresh(event.data);
+    expect(currentHref()).toBe(event.data.href);
+    expect(defineCodeElement).not.toHaveBeenCalled();
+    definition = class ForeignCodeElement {};
+    refresh(event.data);
+    expect(defineCodeElement).not.toHaveBeenCalled();
+    definition = class FerrikiCodeElement {};
+    definition[Symbol.for("ferriki.code-element.definition.v1")] = true;
+    refresh(event.data);
+    expect(defineCodeElement).toHaveBeenCalledExactlyOnceWith({
+      stylesheetHref: event.data.href,
+      themeAliases: [],
+    });
+  });
+
+  it("deduplicates shared palette rules without splitting media blocks or quoted values", async () => {
+    const vitePlugin = plugin({
+      theme: undefined,
+      themes: { light: "github-light", dark: "github-dark" },
+      styleMode: "classes",
+      transformers: [
+        {
+          preprocess(source) {
+            this.options.defaultColor = "light-dark()";
+            return source;
+          },
+          pre(node) {
+            node.properties.style += ';--example-label:"} ; { \\"quoted\\""';
+          },
+        },
+      ],
+    });
+    const result = await transformModule(
+      vitePlugin,
+      `import { Code } from "@ferriki/core/react/macro";
+const first = <Code source="const one = 1" language="js" render={({ code }) => code} />;
+const second = <Code source="const two = 'two'" language="js" render={({ code }) => code} />;
+({ first, second });`,
+      "/src/shared-palette.tsx",
+    );
+    const { first, second } = await evaluateJsx(result.code, "/src/shared-palette.tsx");
+    const firstCss = first.type(first.props).css;
+    const secondCss = second.type(second.props).css;
+    expect(firstCss).not.toBe(secondCss);
+    const palette = vitePlugin.api.codeElementCss();
+    const styleSelectors = [...palette.matchAll(/:where\(\.ferriki-style-[a-f0-9]+\)/g)].map(
+      ([selector]) => selector,
+    );
+    expect(styleSelectors.length).toBeGreaterThan(1);
+    expect(new Set(styleSelectors).size).toBe(styleSelectors.length);
+    const quotedRule = firstCss.split("\n").find((rule) => rule.includes("--example-label:"));
+    expect(quotedRule).toBeDefined();
+    expect(palette).toContain(quotedRule);
+    expect(palette.match(/--example-label:/g)).toHaveLength(1);
+    const mediaRule = /@media[^\n]+\n[^\n]+/.exec(firstCss)?.[0];
+    expect(mediaRule).toBeDefined();
+    expect(palette).toContain(mediaRule);
+    expect(palette.match(/@media \(prefers-color-scheme:dark\)/g)).toHaveLength(1);
+    expect(palette).toContain("--ferriki-number-color");
+    expect(palette).toContain("--ferriki-string-color");
   });
 
   it("parses only modules that import a macro, in Vite build and dev", async () => {

@@ -4,10 +4,10 @@ This consumer fixture covers a light-DOM baseline, the existing
 `highlightedCode` property adapter, the default React `Code` macro, and a
 separate manual reference registry. The property lane remains useful for
 imperative consumers. The default macro renders a short `code-ref` host and,
-on the server, includes prepared code in Declarative Shadow DOM (DSD). Vite adds
-a shared stylesheet link directly to each DSD root, so the highlighted block
-and its styles are available before JavaScript runs. No postprocessing call is
-needed.
+on the server, includes prepared code in Declarative Shadow DOM (DSD). Each
+root has a local base-style element, so the highlighted block is styled before
+JavaScript runs. Classes mode also links one aggregated CSS asset. No
+postprocessing call is needed.
 
 `ReferenceCode.mjs` accepts only the short reference and presentation props.
 Trusted highlighted HTML stays in a separate registry:
@@ -20,21 +20,24 @@ import { Code } from "@ferriki/core/react/macro";
 
 The transformed `Code` macro has separate server and browser branches. The
 server branch embeds the prepared HTML inside DSD with a compact reference
-marker. During development, Vite serves the shared stylesheet at
-`/@ferriki/code-elements.css`; production builds emit one hashed
-`assets/ferriki-code-*.css` asset, and each shadow root links to that shared
-stylesheet. The browser branch registers the reference once per module and
-keeps the host itself empty, so parsing creates the DSD nodes before hydration
-and hydration can preserve them.
+marker and local base styles. In classes mode, Vite serves the aggregated CSS at
+`/@ferriki/code-elements.css` during development and emits one hashed
+`assets/ferriki-code-*.css` asset in production. Each root links to that asset,
+and the link remains after upgrade. Inline mode uses no external CSS asset.
+The browser branch registers the reference once per module and keeps the host
+itself empty, so parsing creates the DSD nodes before hydration and hydration
+can preserve them.
 
 For manual reference registries, `@ferriki/core/web-component/server` exports
-`renderCodeElementShadows(markup, { blocks, stylesheetHref })`. The reference
-fixture uses this lower-level helper separately from the default macro. In the
-browser, register `defineCodeElement({ css, themeAliases, blocks })` before
-hydrating. An unknown DSD reference keeps its server-rendered nodes and marked
-stylesheet link until its block and CSS are registered. A matching reference
-keeps its nodes when registration or hydration runs again. A changed reference
-replaces the rendered code inside the existing shadow root.
+`renderCodeElementShadows(markup, { blocks, themeAliases, stylesheetHref })`.
+The reference fixture uses this lower-level helper separately from the default
+macro. Pass the same aliases to the server helper and
+`defineCodeElement({ css, stylesheetHref, themeAliases, blocks })` so both paths
+use matching local base styles. In classes mode, a DSD root keeps its marked CSS
+link after upgrade. An unknown reference keeps its server-rendered nodes until
+its block is registered. A matching reference keeps its nodes when registration
+or hydration runs again. A changed reference replaces the rendered code inside
+the existing shadow root.
 
 The reference fixture also exercises the low-level `max-lines` host attribute.
 Its source-derived `codeElementSizing(lineCount, maxLines)` style reserves the
@@ -47,9 +50,9 @@ The property adapter remains available through
 `@ferriki/core/web-component`. Call
 `defineCodeElement({ css, themeAliases })`, then assign trusted Ferriki markup
 through the `highlightedCode` property. Its server output includes readable
-source fallback children; those children remain React-owned. Ferriki shares
-constructed stylesheets between matching elements in a document. The shadow
-tree isolates page selectors, but it is not a security boundary.
+source fallback children; those children remain React-owned. Each root has its
+own local base-style element and, in classes mode, an external CSS link. The
+shadow tree isolates page selectors, but it is not a security boundary.
 
 After the normal workspace install, run from `node/` with the pinned temporary
 dependencies:

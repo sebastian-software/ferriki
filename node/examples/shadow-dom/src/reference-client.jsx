@@ -13,13 +13,13 @@ if (import.meta.hot) {
 }
 
 const initialRegistration = {
-  css: initialBlock.css,
   themeAliases: ["light", "dark"],
+  ...(initialBlock.css ? { stylesheetHref: "/reference.css" } : {}),
   blocks: { "probe-initial": referenceBlocks["probe-initial"] },
 };
 const updatedRegistration = {
-  css: updatedBlock.css,
   themeAliases: ["light", "dark"],
+  ...(updatedBlock.css ? { stylesheetHref: "/reference.css" } : {}),
   blocks: { "probe-updated": referenceBlocks["probe-updated"] },
 };
 

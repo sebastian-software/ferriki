@@ -4,7 +4,8 @@
 transforms with Ferriki's native highlighter. It replaces `code()` calls from
 `@ferriki/core/macro` and `<Code />` elements from `@ferriki/core/react/macro`
 with highlighted HTML and CSS at build time. The default React output is a
-`<ferriki-code>` Web Component with an open shadow root and shared, scoped styles.
+`<ferriki-code>` Web Component with an open shadow root, local base styles, and
+an aggregated external CSS asset in classes mode.
 Ferriki adds its small, framework-free presentation module for that path;
 highlighting, grammars, assets, and the build-time parser stay out of the browser.
 It adds no React runtime dependency.
@@ -73,8 +74,11 @@ the empty host's `code-ref` attribute selects prepared HTML registered outside
 React; the element owns its token nodes. During React SSR, the macro emits that
 HTML in Declarative Shadow DOM through a server-only HTML sink. The browser
 parser creates the shadow root before upgrade, and hydration retains its nodes.
-Both paths use one constructed stylesheet and one theme configuration. The
-client registry also supplies blocks for later client-rendered navigation.
+Each root gets a local base-style element for layout, scrolling, line
+annotations, and inline theme switching. In classes mode, every root also links
+the aggregated class CSS asset, and that link stays after JavaScript upgrades
+the element. The client registry also supplies blocks for later client-rendered
+navigation.
 
 The default host reserves space from the build-known source line count. Its
 sizing style and shadow `pre` share line-height and padding variables, so a
@@ -87,23 +91,26 @@ macro matches the height reservation to the cap automatically. See the
 for manual hosts, custom dimensions, and the nonwrapping-line estimate.
 
 The default React SSR path already emits Declarative Shadow DOM; it does not
-need a post-render rewrite. Its template links the shared component stylesheet
-so highlighted output is styled before JavaScript. In development, Vite serves
-that stylesheet at `${base}@ferriki/code-elements.css`. A production build
-emits one aggregated, hashed `assets/ferriki-code-*.css` file. Deploy the CSS
-emitted by the SSR build with the application's public assets. The plugin
-re-emits this required stylesheet when Vite suppresses ordinary SSR assets;
-SSR and client builds can produce different hashes. The default `/` base and
-absolute path or CDN bases are supported. Direct macro SSR rejects `base: "./"`
-and `base: ""` because a relative stylesheet URL is ambiguous on nested routes.
+need a post-render rewrite. Each template has the local base-style element so
+highlighted output is styled before JavaScript. Inline mode needs no external
+CSS asset or Vite `base` restriction. In classes mode, Vite serves the
+aggregated CSS at `${base}@ferriki/code-elements.css` during development and
+emits one hashed `assets/ferriki-code-*.css` file in production. Deploy the CSS
+emitted by the SSR build with the application's public assets. SSR and client
+build graphs can produce different hashes, so the SSR markup uses the SSR
+asset. Direct class-mode macro SSR requires an absolute path or URL base because
+a relative stylesheet URL is ambiguous on nested routes.
 
 For manually authored empty reference hosts, the plugin API still provides
 `renderCodeElements()` and `codeElementCss()` for a complete-HTML server stage.
-Production applications can save `codeElementBlocks()` and the CSS after the
-SSR build, then call `renderCodeElementShadows()` from
-`@ferriki/core/web-component/server` with that registry. These APIs read modules
-already transformed by the same plugin instance. Streaming SSR and React
-Server Components are unsupported.
+The plugin supplies its theme aliases to `renderCodeElements()` automatically.
+Pass those same aliases to the standalone `renderCodeElementShadows()` helper.
+In classes mode, production applications can save `codeElementBlocks()` and
+the aggregated CSS after the SSR build, then call
+`renderCodeElementShadows()` from `@ferriki/core/web-component/server` with that
+registry and stylesheet URL. Inline mode needs no stylesheet URL. These APIs
+read modules already transformed by the same plugin instance. Streaming SSR
+and React Server Components are unsupported.
 
 Titles, copy buttons, and tabs can wrap the default `<Code />` without replacing
 its isolated code presentation. For complete control over the result, use the
@@ -153,11 +160,12 @@ plain code.
 `meta` supports `title="..."`, the first `[label]`, line selections such as
 `{2,4-5}`, and `showLineNumbers`. Line numbers are off by default and can be
 enabled globally with `lineNumbers: true`; a call's `lineNumbers` overrides that
-default. `code()` and custom React renderers import content-addressed CSS virtual modules
-when their blocks need CSS. Editing an example produces a new stylesheet ID
-that Vite replaces during HMR. Default React modules contribute their generated
-CSS to the stylesheet shared by every shadow root. Inline colors remain in the
-HTML; single-theme inline output needs no separate color stylesheet.
+default. `code()` and custom React renderers import content-addressed CSS
+virtual modules when their blocks need CSS. Editing an example produces a new
+stylesheet ID that Vite replaces during HMR. Default React roots each get their local base
+styles; in classes mode, modules contribute generated rules to one aggregated
+external CSS asset. Inline colors remain in the HTML and inline mode needs no
+external CSS asset.
 
 Pass optional Ferriki `transformers` callbacks to apply Shiki notation
 transformers to every prepared block. For example, install a compatible

@@ -2,6 +2,9 @@ const DEFAULT_THEME_ALIASES = Object.freeze(["light", "dark"]);
 const DEFINITION_BRAND = Symbol.for("ferriki.code-element.definition.v1");
 const CONFIGURE_STYLES = Symbol.for("ferriki.code-element.configure-styles.v1");
 const BLOCKS_CHANGED = Symbol.for("ferriki.code-element.blocks-changed.v1");
+const STYLES_CHANGED = Symbol.for("ferriki.code-element.styles-changed.v1");
+const BASE_STYLE_ATTRIBUTE = "data-ferriki-code-base";
+const CSS_LINK_ATTRIBUTE = "data-ferriki-code-css";
 
 const BASE_STYLES = `
 :host {
@@ -14,6 +17,11 @@ const BASE_STYLES = `
 :host *::before,
 :host *::after {
   box-sizing: border-box;
+}
+
+:where(pre) {
+  color: var(--ferriki-foreground, inherit);
+  background-color: var(--ferriki-background-color, transparent);
 }
 
 :host pre {
@@ -32,6 +40,20 @@ const BASE_STYLES = `
 
 :host pre > code {
   font: inherit;
+}
+
+.ferriki-highlight-line[data-ln]::before {
+  content: attr(data-ln);
+  display: inline-block;
+  min-width: 2.5em;
+  margin-right: 1.5em;
+  padding-right: 0.75em;
+  text-align: right;
+  opacity: 0.55;
+}
+
+.ferriki-highlight-line.highlighted {
+  background: color-mix(in srgb, currentColor 10%, transparent);
 }
 `;
 
@@ -78,15 +100,15 @@ export function codeElementStyles(themeAliases = DEFAULT_THEME_ALIASES) {
 }
 
 /**
- * Explicitly register `<ferriki-code>`, add generated block CSS to the shared
- * stylesheet, and register trusted HTML blocks by code-ref ID. Registration
- * during server rendering is safe and returns `undefined`.
+ * Explicitly register `<ferriki-code>`, add optional local CSS to each shadow
+ * root, and register trusted HTML blocks by code-ref ID. A `stylesheetHref`
+ * adds a shared external stylesheet link to each root. Registration during
+ * server rendering is safe and returns `undefined`.
  *
- * CSS rules are accumulated for the lifetime of the document. Class-mode rules
- * use content-derived class names, so rules from replaced or HMR-updated blocks
- * become unused; they are reclaimed when the document is reloaded.
+ * Explicit local `css` additions accumulate for the lifetime of the document.
+ * Updating `stylesheetHref` refreshes the linked palette in existing roots.
  *
- * @param {{css?: string, themeAliases?: readonly string[], blocks?: Readonly<Record<string, string>>}} [options]
+ * @param {{css?: string, stylesheetHref?: string, themeAliases?: readonly string[], blocks?: Readonly<Record<string, string>>}} [options]
  * @returns {(new () => FerrikiCodeElement) | undefined} The constructor, or `undefined` on the server.
  */
 export function defineCodeElement(options = {}) {
@@ -94,6 +116,7 @@ export function defineCodeElement(options = {}) {
   const css = options.css === undefined ? "" : options.css;
   if (typeof css !== "string")
     throw new TypeError("defineCodeElement `css` must be a string when provided");
+  const stylesheetHref = validateStylesheetHref(options.stylesheetHref);
   const aliases =
     options.themeAliases === undefined
       ? DEFAULT_THEME_ALIASES
@@ -116,15 +139,15 @@ export function defineCodeElement(options = {}) {
       throw new TypeError(
         `Cannot define <${FERRIKI_CODE_TAG}> because another custom element already uses that tag`,
       );
-    existing[CONFIGURE_STYLES](css, aliases, globalThis.document, blocks);
+    existing[CONFIGURE_STYLES](css, aliases, globalThis.document, blocks, stylesheetHref);
     return existing;
   }
 
-  const documentStates = new WeakMap();
   const cssChunks = new Set();
   const blockRegistry = new Map();
   const connectedElements = new Set();
   let configuredProfile;
+  let configuredStylesheetHref = stylesheetHref;
 
   function assertProfile(nextAliases) {
     const nextProfile = JSON.stringify(nextAliases);
@@ -135,61 +158,17 @@ export function defineCodeElement(options = {}) {
     configuredProfile = nextProfile;
   }
 
-  function registerDocumentStyles(doc) {
-    if (!doc) return undefined;
-    if (!doc.defaultView)
-      throw new TypeError("Cannot register Ferriki styles for a document without a window");
-
-    const view = doc.defaultView;
-    const Sheet = view.CSSStyleSheet;
-    if (
-      typeof Sheet !== "function" ||
-      typeof Sheet.prototype.replaceSync !== "function" ||
-      !view.ShadowRoot?.prototype ||
-      !("adoptedStyleSheets" in view.ShadowRoot.prototype)
-    )
-      throw new TypeError(
-        "<ferriki-code> requires constructed stylesheets and ShadowRoot.adoptedStyleSheets",
-      );
-
-    let state = documentStates.get(doc);
-    if (!state) {
-      const sheet = new Sheet();
-      state = { sheet, rules: new Set(), appliedChunks: new Set() };
-      documentStates.set(doc, state);
-      try {
-        insertCssText(state, sheet, codeElementStyles(aliases), Sheet);
-      } catch (error) {
-        documentStates.delete(doc);
-        throw error;
-      }
-    }
-
-    for (const chunk of cssChunks) {
-      if (state.appliedChunks.has(chunk)) continue;
-      insertCssText(state, state.sheet, chunk, Sheet);
-      state.appliedChunks.add(chunk);
-    }
-    return state;
-  }
-
-  function configureStyles(nextCss, nextAliases, doc, nextBlocks = new Map()) {
+  function configureStyles(nextCss, nextAliases, _doc, nextBlocks = new Map(), nextStylesheetHref) {
     assertProfile(nextAliases);
     assertBlocksCompatible(blockRegistry, nextBlocks);
-    const addedChunk = nextCss && !cssChunks.has(nextCss);
     if (nextCss) cssChunks.add(nextCss);
-    let state;
-    try {
-      state = registerDocumentStyles(doc);
-    } catch (error) {
-      if (addedChunk) cssChunks.delete(nextCss);
-      throw error;
-    }
+    const previousStylesheetHref = configuredStylesheetHref;
+    if (nextStylesheetHref !== undefined) configuredStylesheetHref = nextStylesheetHref;
+    for (const element of connectedElements) element[STYLES_CHANGED](previousStylesheetHref);
     const changedBlockIds = mergeBlocks(blockRegistry, nextBlocks);
     if (changedBlockIds.size > 0) {
       for (const element of connectedElements) element[BLOCKS_CHANGED](changedBlockIds);
     }
-    return state;
   }
 
   class FerrikiCodeElement extends HTMLElementConstructor {
@@ -439,11 +418,32 @@ export function defineCodeElement(options = {}) {
     }
 
     #installStyles() {
-      const state = registerDocumentStyles(this.ownerDocument);
-      if (!state) return;
-      const previous = this.shadowRoot.adoptedStyleSheets;
-      if (previous.length !== 1 || previous[0] !== state.sheet)
-        this.shadowRoot.adoptedStyleSheets = [state.sheet];
+      const root = this.shadowRoot;
+      const doc = this.ownerDocument;
+      if (!root || !doc) return;
+
+      let style = root.querySelector?.(`style[${BASE_STYLE_ATTRIBUTE}]`);
+      if (!style) {
+        style = doc.createElement("style");
+        style.setAttribute(BASE_STYLE_ATTRIBUTE, "");
+      }
+      const css = [codeElementStyles(aliases), ...cssChunks]
+        .filter((chunk) => chunk.trim())
+        .join("\n");
+      if (style.textContent !== css) style.textContent = css;
+
+      const marker = isServerMarkerNode(root.firstChild) ? root.firstChild : undefined;
+      const styleReference = marker ? marker.nextSibling : root.firstChild;
+      moveNodeBefore(root, style, styleReference);
+
+      let link = root.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
+      if (!link && configuredStylesheetHref !== undefined) {
+        link = doc.createElement("link");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("href", configuredStylesheetHref);
+        link.setAttribute(CSS_LINK_ATTRIBUTE, "");
+      }
+      if (link) moveNodeBefore(root, link, style.nextSibling);
       this.#installedDocument = this.ownerDocument;
     }
 
@@ -455,8 +455,7 @@ export function defineCodeElement(options = {}) {
       if (this.#mode === "reference" && this.#reference !== undefined) {
         const serverMarker = `ferriki-code:${encodeCodeReference(this.#reference)}`;
         const markerNode = this.shadowRoot.firstChild;
-        if (markerNode?.nodeType === 8 && markerNode.data === serverMarker) {
-          if (blockRegistry.has(this.#reference)) this.#removeServerStylesheetLinks();
+        if (isServerMarkerNode(markerNode) && markerNode.data === serverMarker) {
           this.#hasRendered = true;
           this.#renderedMode = "reference";
           this.#renderedReference = this.#reference;
@@ -489,7 +488,7 @@ export function defineCodeElement(options = {}) {
       this.#hasRendered = true;
 
       if (value === undefined) {
-        this.shadowRoot.replaceChildren(this.ownerDocument.createElement("slot"));
+        this.#replaceContent(undefined);
         this.#syncTabIndex();
         return;
       }
@@ -497,15 +496,41 @@ export function defineCodeElement(options = {}) {
       const template = this.ownerDocument.createElement("template");
       // This sink is limited to the trusted HTML emitted by Ferriki's generator.
       template.innerHTML = value;
-      this.shadowRoot.replaceChildren(template.content);
+      this.#replaceContent(template.content);
       this.#syncTabIndex();
     }
 
-    #removeServerStylesheetLinks() {
-      const state = registerDocumentStyles(this.ownerDocument);
-      if (!state || !Array.from(this.shadowRoot.adoptedStyleSheets).includes(state.sheet)) return;
-      for (const link of this.shadowRoot.querySelectorAll("link[data-ferriki-code-css]"))
-        link.remove();
+    #replaceContent(content) {
+      const root = this.shadowRoot;
+      const infrastructure = Array.from(root.childNodes).filter(isInfrastructureNode);
+      const stylesheetLink = root.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
+      if (
+        stylesheetLink &&
+        configuredStylesheetHref !== undefined &&
+        stylesheetLink.getAttribute("href") !== configuredStylesheetHref
+      )
+        stylesheetLink.setAttribute("href", configuredStylesheetHref);
+      for (const node of Array.from(root.childNodes))
+        if (!infrastructure.includes(node)) root.removeChild(node);
+      if (content === undefined) {
+        const slot = this.ownerDocument.createElement("slot");
+        root.appendChild(slot);
+      } else {
+        root.appendChild(content);
+      }
+    }
+
+    [STYLES_CHANGED](previousStylesheetHref) {
+      if (!this.#connected) return;
+      if (
+        previousStylesheetHref !== undefined &&
+        configuredStylesheetHref !== previousStylesheetHref
+      ) {
+        const link = this.shadowRoot?.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
+        if (link?.getAttribute("href") === previousStylesheetHref)
+          link.setAttribute("href", configuredStylesheetHref);
+      }
+      this.#installStyles();
     }
 
     [BLOCKS_CHANGED](changedBlockIds) {
@@ -525,31 +550,27 @@ export function defineCodeElement(options = {}) {
   assertProfile(aliases);
   if (css) cssChunks.add(css);
   mergeBlocks(blockRegistry, blocks);
-  registerDocumentStyles(globalThis.document);
   registry.define(FERRIKI_CODE_TAG, FerrikiCodeElement);
   return FerrikiCodeElement;
 }
 
-function insertCssText(state, target, css, Sheet) {
-  if (!css.trim()) return;
-  const parsed = new Sheet();
-  try {
-    parsed.replaceSync(css);
-  } catch (error) {
-    throw new TypeError(`Invalid CSS passed to defineCodeElement: ${error.message}`, {
-      cause: error,
-    });
-  }
-  insertRules(state, target, parsed.cssRules);
+function moveNodeBefore(root, node, reference) {
+  if (node === reference) return;
+  if (node.parentNode === root && node.nextSibling === reference) return;
+  root.insertBefore(node, reference ?? null);
 }
 
-function insertRules(state, target, rules) {
-  for (const rule of Array.from(rules)) {
-    const text = rule.cssText;
-    if (state.rules.has(text)) continue;
-    target.insertRule(text, target.cssRules.length);
-    state.rules.add(text);
-  }
+function isInfrastructureNode(node) {
+  return (
+    node.hasAttribute?.(BASE_STYLE_ATTRIBUTE) === true ||
+    node.hasAttribute?.(CSS_LINK_ATTRIBUTE) === true
+  );
+}
+
+function isServerMarkerNode(node) {
+  return (
+    node?.nodeType === 8 && typeof node.data === "string" && node.data.startsWith("ferriki-code:")
+  );
 }
 
 function themeAliasStyles(alias) {
@@ -559,12 +580,13 @@ function themeAliasStyles(alias) {
 
   return `
 ${inlineRoot} {
-  color: var(--shiki-${alias}, inherit) !important;
-  background-color: var(--shiki-${alias}-bg, inherit) !important;
+  color: var(--ferriki-foreground, var(--shiki-${alias}, inherit)) !important;
+  background-color: var(--ferriki-background-color, var(--shiki-${alias}-bg, inherit)) !important;
 }
 
-${inlineRoot} span {
-  color: var(--shiki-${alias}, inherit) !important;
+${inlineRoot} span:not(.ferriki-color-authored) {
+  --_ferriki-token-theme-color: var(--shiki-${alias}, inherit);
+  color: var(--_ferriki-token-color, var(--shiki-${alias}, inherit)) !important;
 }
 
 ${host} pre.shiki-themes span[style*="--shiki-${alias}-font-style"] {
@@ -580,12 +602,13 @@ ${host} pre.shiki-themes span[style*="--shiki-${alias}-text-decoration"] {
 }
 
 ${classesRoot} {
-  --ferriki-color: var(--shiki-${alias});
-  --ferriki-background: var(--shiki-${alias}-bg);
+  --ferriki-color: var(--ferriki-foreground, var(--shiki-${alias}));
+  --ferriki-background: var(--ferriki-background-color, var(--shiki-${alias}-bg));
 }
 
 ${classesRoot} .token {
   --ferriki-color: var(--shiki-${alias});
+  --_ferriki-token-theme-color: var(--shiki-${alias});
   --ferriki-font-style: var(--shiki-${alias}-font-style, normal);
   --ferriki-font-weight: var(--shiki-${alias}-font-weight, normal);
   --ferriki-text-decoration: var(--shiki-${alias}-text-decoration, none);
@@ -607,6 +630,18 @@ function validateThemeAliases(themeAliases) {
     seen.add(alias);
   }
   return [...themeAliases];
+}
+
+function validateStylesheetHref(stylesheetHref) {
+  if (stylesheetHref === undefined) return undefined;
+  if (typeof stylesheetHref !== "string" || stylesheetHref.length === 0)
+    throw new TypeError("`stylesheetHref` must be a nonempty string when provided");
+  for (const character of stylesheetHref) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint <= 0x1f || codePoint === 0x7f)
+      throw new TypeError("`stylesheetHref` cannot contain control characters");
+  }
+  return stylesheetHref;
 }
 
 function validateBlocks(blocks) {

@@ -140,6 +140,7 @@ export interface NativeHighlightOptions {
   rootStyle?: string | boolean;
   tabindex?: string | boolean;
   styleMode?: string;
+  preserveScopeBoundaries?: boolean;
   themeEntries?: Array<ThemeEntry>;
 }
 
@@ -155,6 +156,7 @@ export interface NativeTokenOptions {
   tokenizeTimeLimit?: number;
   tokenizeMaxLineLength?: number;
   styleMode?: string;
+  preserveScopeBoundaries?: boolean;
   themeEntries?: Array<ThemeEntry>;
 }
 

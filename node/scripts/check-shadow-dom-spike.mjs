@@ -252,7 +252,8 @@ export { defineCodeElement, initialBlock, updatedBlock };
   );
 }
 
-async function checkUpgradePaths(browser, baseUrl, initialBlock) {
+async function checkUpgradePaths(browser, baseUrl, styleMode, initialBlock) {
+  const expectedLinkCount = styleMode === "classes" ? 1 : 0;
   const context = await browser.newContext();
   try {
     const latePage = await context.newPage();
@@ -263,6 +264,8 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
       window.__lateUpgradeRoot = host.shadowRoot;
       window.__lateUpgradePre = host.shadowRoot?.querySelector("pre");
       window.__lateUpgradeToken = host.shadowRoot?.querySelector("code span");
+      window.__lateUpgradeStyle = host.shadowRoot?.querySelector("style[data-ferriki-code-base]");
+      window.__lateUpgradeLink = host.shadowRoot?.querySelector("link[data-ferriki-code-css]");
       const preUpgrade = document.createElement("ferriki-code");
       preUpgrade.highlightedCode = propertyHtml;
       preUpgrade.setAttribute("data-ferriki-theme", "light");
@@ -275,8 +278,12 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
         codeRef: host.getAttribute("code-ref"),
         source: host.shadowRoot?.querySelector("pre code")?.textContent,
         marker: host.shadowRoot?.firstChild?.data,
+        baseStyleCount: host.shadowRoot?.querySelectorAll("style[data-ferriki-code-base]").length,
         stylesheetLinkCount: host.shadowRoot?.querySelectorAll("link[data-ferriki-code-css]")
           .length,
+        infrastructureOrder:
+          host.shadowRoot?.firstChild?.nextSibling ===
+          host.shadowRoot?.querySelector("style[data-ferriki-code-base]"),
         fallback: host.querySelector("pre code")?.textContent,
         preUpgradeOwnProperty: Object.hasOwn(preUpgrade, "highlightedCode"),
       };
@@ -300,7 +307,9 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
       lateBefore.marker,
       `ferriki-code:${encodeURIComponent(lateBefore.codeRef).replaceAll("-", "%2D")}`,
     );
-    assert.equal(lateBefore.stylesheetLinkCount, 1);
+    assert.equal(lateBefore.baseStyleCount, 1);
+    assert.equal(lateBefore.stylesheetLinkCount, expectedLinkCount);
+    assert.equal(lateBefore.infrastructureOrder, true);
     assert.equal(lateBefore.fallback, undefined);
     assert.equal(lateBefore.preUpgradeOwnProperty, true);
     await latePage.evaluate(async () => {
@@ -324,6 +333,11 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
           rootPreserved: root === window.__lateUpgradeRoot,
           prePreserved: root?.querySelector("pre") === window.__lateUpgradePre,
           tokenPreserved: root?.querySelector("code span") === window.__lateUpgradeToken,
+          baseStylePreserved:
+            root?.querySelector("style[data-ferriki-code-base]") === window.__lateUpgradeStyle,
+          linkPreserved:
+            root?.querySelector("link[data-ferriki-code-css]") === window.__lateUpgradeLink,
+          baseStyleCount: root?.querySelectorAll("style[data-ferriki-code-base]").length,
           styleTags: root?.querySelectorAll("style").length,
           stylesheetLinkCount: root?.querySelectorAll("link[data-ferriki-code-css]").length,
           preUpgradeUpgraded: preUpgrade instanceof customElements.get("ferriki-code"),
@@ -343,8 +357,11 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
         rootPreserved: true,
         prePreserved: true,
         tokenPreserved: true,
-        styleTags: 0,
-        stylesheetLinkCount: 1,
+        baseStylePreserved: true,
+        linkPreserved: true,
+        baseStyleCount: 1,
+        styleTags: 1,
+        stylesheetLinkCount: expectedLinkCount,
         preUpgradeUpgraded: true,
         preUpgradeOwnProperty: false,
         preUpgradeSource: initialBlock.code,
@@ -352,7 +369,7 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
         propertyGetter: "function",
         propertySetter: "function",
       },
-      "late custom-element upgrade did not preserve declarative Shadow DOM and its unresolved code-ref stylesheet",
+      "late custom-element upgrade did not preserve declarative Shadow DOM and its base style or class stylesheet link",
     );
 
     const earlyPage = await context.newPage();
@@ -393,6 +410,7 @@ async function checkUpgradePaths(browser, baseUrl, initialBlock) {
 }
 
 async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, updatedBlock) {
+  const expectedLinkCount = initialBlock.css ? 1 : 0;
   if (styleMode === "classes") {
     assert(initialBlock.css.length > 0, "classes mode did not generate initial block CSS");
     assert(updatedBlock.css.length > 0, "classes mode did not generate updated block CSS");
@@ -412,7 +430,7 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         links: [...(host.shadowRoot?.querySelectorAll("link[data-ferriki-code-css]") ?? [])].map(
           (link) => link.href,
         ),
-        styles: host.shadowRoot?.querySelectorAll("style").length,
+        styles: host.shadowRoot?.querySelectorAll("style[data-ferriki-code-base]").length,
       })),
     }));
     assert.equal(
@@ -434,16 +452,16 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
       noJsEvidence.hosts.every(
         (host) =>
           host.visible &&
-          host.styles === 0 &&
-          host.links.length === 1 &&
-          new URL(host.links[0]).pathname === "/reference.css",
+          host.styles === 1 &&
+          host.links.length === expectedLinkCount &&
+          (host.links.length === 0 || new URL(host.links[0]).pathname === "/reference.css"),
       ),
-      `${styleMode}: DSD did not use one external stylesheet URL without inline styles`,
+      `${styleMode}: DSD did not use its local base style and expected shared class stylesheet`,
     );
     const noJsStyles = await page
       .locator('[data-reference-host="late-style"]')
       .evaluate(tokenStyles);
-    assert(noJsStyles.color, `${styleMode}: DSD external stylesheet did not style token text`);
+    assert(noJsStyles.color, `${styleMode}: DSD styles did not style token text`);
     assert.notEqual(noJsStyles.background, "rgba(0, 0, 0, 0)");
   } finally {
     await noJsContext.close();
@@ -471,6 +489,8 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
             pre: root?.querySelector("pre"),
             token: root?.querySelector("code span"),
             marker: root?.firstChild,
+            style: root?.querySelector("style[data-ferriki-code-base]"),
+            link: root?.querySelector("link[data-ferriki-code-css]"),
           };
           return [
             name,
@@ -478,6 +498,10 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
               reference: host.getAttribute("code-ref"),
               text: root?.querySelector("pre code")?.textContent,
               marker: root?.firstChild?.data,
+              baseStyleCount: root?.querySelectorAll("style[data-ferriki-code-base]").length,
+              infrastructureOrder:
+                root?.firstChild?.nextSibling ===
+                root?.querySelector("style[data-ferriki-code-base]"),
               links: root?.querySelectorAll("link[data-ferriki-code-css]").length,
             },
           ];
@@ -488,9 +512,13 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
     assert.equal(Object.keys(unregistered.hosts).length, 4);
     assert(
       Object.values(unregistered.hosts).every(
-        (host) => host.marker?.startsWith("ferriki-code:") && host.links === 1,
+        (host) =>
+          host.marker?.startsWith("ferriki-code:") &&
+          host.baseStyleCount === 1 &&
+          host.infrastructureOrder &&
+          host.links === expectedLinkCount,
       ),
-      `${styleMode}: unregistered DSD references were missing their markers or stylesheet links`,
+      `${styleMode}: unregistered DSD references were missing their markers, local base style, or shared class stylesheet`,
     );
 
     await page.evaluate(async () => import("/src/reference-register-empty.js"));
@@ -504,8 +532,10 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
           rootPreserved: root === before.root,
           prePreserved: root?.querySelector("pre") === before.pre,
           tokenPreserved: root?.querySelector("code span") === before.token,
+          baseStylePreserved: root?.querySelector("style[data-ferriki-code-base]") === before.style,
+          linkPreserved: root?.querySelector("link[data-ferriki-code-css]") === before.link,
+          baseStyleCount: root?.querySelectorAll("style[data-ferriki-code-base]").length,
           linkCount: root?.querySelectorAll("link[data-ferriki-code-css]").length,
-          sheetCount: root?.adoptedStyleSheets.length,
         };
       }),
     }));
@@ -513,9 +543,15 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
     assert(
       emptyRegistration.hosts.every(
         (host) =>
-          host.rootPreserved && host.prePreserved && host.tokenPreserved && host.linkCount === 1,
+          host.rootPreserved &&
+          host.prePreserved &&
+          host.tokenPreserved &&
+          host.baseStylePreserved &&
+          host.linkPreserved &&
+          host.baseStyleCount === 1 &&
+          host.linkCount === expectedLinkCount,
       ),
-      `${styleMode}: empty registration replaced DSD content or removed an unresolved stylesheet link`,
+      `${styleMode}: empty registration replaced DSD content or its local style/link nodes`,
     );
 
     const lateCssBefore = await page
@@ -532,7 +568,6 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
 
     const partiallyRegistered = await page.evaluate(() => {
       const hosts = [...document.querySelectorAll("[data-reference-host]")];
-      const firstSheet = hosts[0].shadowRoot.adoptedStyleSheets[0];
       return {
         hosts: hosts.map((host) => {
           const before = window.__referenceNodes[host.dataset.referenceHost];
@@ -543,12 +578,14 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
             rootPreserved: root === before.root,
             prePreserved: root?.querySelector("pre") === before.pre,
             tokenPreserved: root?.querySelector("code span") === before.token,
+            baseStylePreserved:
+              root?.querySelector("style[data-ferriki-code-base]") === before.style,
+            linkPreserved: root?.querySelector("link[data-ferriki-code-css]") === before.link,
+            baseStyleCount: root?.querySelectorAll("style[data-ferriki-code-base]").length,
             linkCount: root?.querySelectorAll("link[data-ferriki-code-css]").length,
-            sharedSheet:
-              root?.adoptedStyleSheets.length === 1 && root.adoptedStyleSheets[0] === firstSheet,
+            linkHref: root?.querySelector("link[data-ferriki-code-css]")?.getAttribute("href"),
           };
         }),
-        firstSheet,
       };
     });
     assert.deepEqual(
@@ -563,15 +600,25 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
     assert(
       partiallyRegistered.hosts.every(
         (host) =>
-          host.rootPreserved && host.prePreserved && host.tokenPreserved && host.sharedSheet,
+          host.rootPreserved &&
+          host.prePreserved &&
+          host.tokenPreserved &&
+          host.baseStylePreserved &&
+          host.linkPreserved &&
+          host.baseStyleCount === 1,
       ),
-      `${styleMode}: first reference registration or hydration replaced matching DSD nodes or sheets`,
+      `${styleMode}: first reference registration or hydration replaced matching DSD nodes or local style/link nodes`,
     );
     assert.deepEqual(
       partiallyRegistered.hosts.map((host) => host.linkCount),
-      [0, 0, 0, 1],
-      `${styleMode}: DSD stylesheet links did not track per-reference CSS registration`,
+      Array.from({ length: 4 }, () => expectedLinkCount),
+      `${styleMode}: DSD roots did not retain the configured shared class stylesheet links`,
     );
+    if (initialBlock.css)
+      assert(
+        partiallyRegistered.hosts.every((host) => host.linkHref === "/reference.css"),
+        "DSD roots did not retain their configured shared CSS URL",
+      );
     assert.deepEqual(
       await page.locator('[data-reference-host="late-style"]').evaluate(tokenStyles),
       lateCssBefore,
@@ -585,7 +632,8 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         root,
         pre: root.querySelector("pre"),
         token: root.querySelector("code span"),
-        sheet: root.adoptedStyleSheets[0],
+        style: root.querySelector("style[data-ferriki-code-base]"),
+        link: root.querySelector("link[data-ferriki-code-css]"),
       };
       return true;
     });
@@ -600,9 +648,11 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
           rootPreserved: root === before.root,
           prePreserved: root.querySelector("pre") === before.pre,
           tokenPreserved: root.querySelector("code span") === before.token,
-          sameSheet:
-            root.adoptedStyleSheets.length === 1 && root.adoptedStyleSheets[0] === before.sheet,
+          baseStylePreserved: root.querySelector("style[data-ferriki-code-base]") === before.style,
+          linkPreserved: root.querySelector("link[data-ferriki-code-css]") === before.link,
+          baseStyleCount: root.querySelectorAll("style[data-ferriki-code-base]").length,
           linkCount: root.querySelectorAll("link[data-ferriki-code-css]").length,
+          linkHref: root.querySelector("link[data-ferriki-code-css]")?.getAttribute("href"),
           text: root.querySelector("pre code")?.textContent,
         };
       });
@@ -610,27 +660,43 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
       rootPreserved: true,
       prePreserved: true,
       tokenPreserved: true,
-      sameSheet: true,
-      linkCount: 0,
+      baseStylePreserved: true,
+      linkPreserved: true,
+      baseStyleCount: 1,
+      linkCount: expectedLinkCount,
+      ...(initialBlock.css ? { linkHref: "/reference.css" } : {}),
       text: updatedBlock.code,
     });
 
     await page.evaluate(() => window.__registerInitialReferenceAgain());
     const rootsAfterRepeat = await page.evaluate(() =>
       [...document.querySelectorAll("[data-reference-host]")].map((host) => {
-        const before = window.__referenceNodes[host.dataset.referenceHost];
+        const name = host.dataset.referenceHost;
+        const infrastructure = window.__referenceNodes[name];
         return {
-          name: host.dataset.referenceHost,
-          root: host.shadowRoot === before.root,
-          pre: host.shadowRoot.querySelector("pre") === before.pre,
-          token: host.shadowRoot.querySelector("code span") === before.token,
+          name,
+          root: host.shadowRoot === infrastructure.root,
+          pre: host.shadowRoot.querySelector("pre") === infrastructure.pre,
+          token: host.shadowRoot.querySelector("code span") === infrastructure.token,
+          baseStyle:
+            host.shadowRoot.querySelector("style[data-ferriki-code-base]") === infrastructure.style,
+          link:
+            host.shadowRoot.querySelector("link[data-ferriki-code-css]") === infrastructure.link,
           links: host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]").length,
         };
       }),
     );
     assert(
-      rootsAfterRepeat.every((host) => host.root && host.pre && host.token && host.links === 0),
-      `${styleMode}: repeated registry calls replaced matching reference nodes or retained marked links`,
+      rootsAfterRepeat.every(
+        (host) =>
+          host.root &&
+          host.pre &&
+          host.token &&
+          host.baseStyle &&
+          host.link &&
+          host.links === expectedLinkCount,
+      ),
+      `${styleMode}: repeated registry calls replaced matching reference or style/link nodes`,
     );
 
     await page.locator("[data-reference-theme]").click();
@@ -664,20 +730,66 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
       .locator('[data-reference-host="changing"]')
       .evaluate((host) => {
         const before = window.__referenceNodes.changing;
+        const root = host.shadowRoot;
+        window.__referenceBNodes = {
+          pre: root.querySelector("pre"),
+          token: root.querySelector("code span"),
+        };
         return {
-          rootPreserved: host.shadowRoot === before.root,
-          preReplaced: host.shadowRoot.querySelector("pre") !== before.pre,
-          tokenReplaced: host.shadowRoot.querySelector("code span") !== before.token,
+          rootPreserved: root === before.root,
+          preReplaced: root.querySelector("pre") !== before.pre,
+          tokenReplaced: root.querySelector("code span") !== before.token,
+          baseStylePreserved: root.querySelector("style[data-ferriki-code-base]") === before.style,
+          linkPreserved: root.querySelector("link[data-ferriki-code-css]") === before.link,
+          linkHref: root.querySelector("link[data-ferriki-code-css]")?.getAttribute("href"),
+          markerRetained: root.firstChild?.nodeType === 8,
           reference: host.getAttribute("code-ref"),
-          text: host.shadowRoot.querySelector("pre code")?.textContent,
+          text: root.querySelector("pre code")?.textContent,
         };
       });
     assert.deepEqual(changedReference, {
       rootPreserved: true,
       preReplaced: true,
       tokenReplaced: true,
+      baseStylePreserved: true,
+      linkPreserved: true,
+      ...(initialBlock.css ? { linkHref: "/reference.css" } : {}),
+      markerRetained: false,
       reference: "probe-updated",
       text: updatedBlock.code,
+    });
+
+    await page.locator("[data-reference-source]").click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector('[data-reference-host="changing"]')?.getAttribute("code-ref") ===
+        "probe-initial",
+    );
+    const switchedBack = await page.locator('[data-reference-host="changing"]').evaluate((host) => {
+      const before = window.__referenceNodes.changing;
+      const root = host.shadowRoot;
+      return {
+        rootPreserved: root === before.root,
+        preReplaced: root.querySelector("pre") !== window.__referenceBNodes.pre,
+        tokenReplaced: root.querySelector("code span") !== window.__referenceBNodes.token,
+        baseStylePreserved: root.querySelector("style[data-ferriki-code-base]") === before.style,
+        linkPreserved: root.querySelector("link[data-ferriki-code-css]") === before.link,
+        linkHref: root.querySelector("link[data-ferriki-code-css]")?.getAttribute("href"),
+        markerRetained: root.firstChild?.nodeType === 8,
+        reference: host.getAttribute("code-ref"),
+        text: root.querySelector("pre code")?.textContent,
+      };
+    });
+    assert.deepEqual(switchedBack, {
+      rootPreserved: true,
+      preReplaced: true,
+      tokenReplaced: true,
+      baseStylePreserved: true,
+      linkPreserved: true,
+      ...(initialBlock.css ? { linkHref: "/reference.css" } : {}),
+      markerRetained: false,
+      reference: "probe-initial",
+      text: initialBlock.code,
     });
 
     const collision = await page.evaluate(() => {
@@ -713,12 +825,18 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         before,
         text: host.shadowRoot.querySelector("pre code")?.textContent,
         slot: Boolean(host.shadowRoot.querySelector("slot")),
+        baseStyleCount: host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length,
+        links: [...host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]")].map((link) =>
+          link.getAttribute("href"),
+        ),
       };
     });
     assert.deepEqual(lateRegistration, {
       before: { blank: true, slot: true },
       text: "late registry block",
       slot: false,
+      baseStyleCount: 1,
+      links: initialBlock.css ? ["/reference.css"] : [],
     });
 
     await page.evaluate(() => {
@@ -740,17 +858,27 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
           root: host.shadowRoot,
           pre: host.shadowRoot.querySelector("pre"),
           token: host.shadowRoot.querySelector("code span"),
+          style: host.shadowRoot.querySelector("style[data-ferriki-code-base]"),
+          link: host.shadowRoot.querySelector("link[data-ferriki-code-css]"),
         };
         return {
           reference: host.getAttribute("code-ref"),
           text: host.shadowRoot.querySelector("pre code")?.textContent,
           root: Boolean(host.shadowRoot),
+          baseStyleCount: host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length,
+          linkCount: host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]").length,
+          linkHref: host.shadowRoot
+            .querySelector("link[data-ferriki-code-css]")
+            ?.getAttribute("href"),
         };
       });
     assert.deepEqual(csrInitial, {
       reference: "probe-initial",
       text: initialBlock.code,
       root: true,
+      baseStyleCount: 1,
+      linkCount: expectedLinkCount,
+      ...(initialBlock.css ? { linkHref: "/reference.css" } : {}),
     });
     await page.evaluate(() =>
       window.__updateReferenceProbe(window.__referenceCsrRoot, "probe-initial"),
@@ -761,8 +889,20 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         root: host.shadowRoot === window.__referenceCsrNodes.root,
         pre: host.shadowRoot.querySelector("pre") === window.__referenceCsrNodes.pre,
         token: host.shadowRoot.querySelector("code span") === window.__referenceCsrNodes.token,
+        style:
+          host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+          window.__referenceCsrNodes.style,
+        link:
+          host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
+          window.__referenceCsrNodes.link,
       }));
-    assert.deepEqual(csrRepeated, { root: true, pre: true, token: true });
+    assert.deepEqual(csrRepeated, {
+      root: true,
+      pre: true,
+      token: true,
+      style: true,
+      link: true,
+    });
     await page.evaluate(() =>
       window.__updateReferenceProbe(window.__referenceCsrRoot, "probe-updated"),
     );
@@ -779,15 +919,29 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         preReplaced: host.shadowRoot.querySelector("pre") !== window.__referenceCsrNodes.pre,
         tokenReplaced:
           host.shadowRoot.querySelector("code span") !== window.__referenceCsrNodes.token,
+        style:
+          host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+          window.__referenceCsrNodes.style,
+        link:
+          host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
+          window.__referenceCsrNodes.link,
         reference: host.getAttribute("code-ref"),
         text: host.shadowRoot.querySelector("pre code")?.textContent,
+        linkCount: host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]").length,
+        linkHref: host.shadowRoot
+          .querySelector("link[data-ferriki-code-css]")
+          ?.getAttribute("href"),
       }));
     assert.deepEqual(csrUpdated, {
       root: true,
       preReplaced: true,
       tokenReplaced: true,
+      style: true,
+      link: true,
       reference: "probe-updated",
       text: updatedBlock.code,
+      linkCount: expectedLinkCount,
+      ...(initialBlock.css ? { linkHref: "/reference.css" } : {}),
     });
     assert.deepEqual(await page.evaluate(() => window.__referenceShadowErrors), []);
     assert.deepEqual(warnings, [], `${styleMode}: reference hydration or updates warned or failed`);
@@ -1024,8 +1178,9 @@ async function readMaxLinesGeometry(page) {
         prePaddingBlockEnd: preStyle?.paddingBlockEnd,
         preOverflowY: preStyle?.overflowY,
         preTabIndex: pre?.tabIndex,
+        baseStyleCount: root?.querySelectorAll("style[data-ferriki-code-base]").length,
         markedLinkCount: root?.querySelectorAll("link[data-ferriki-code-css]").length,
-        adoptedSheetCount: root?.adoptedStyleSheets?.length ?? 0,
+        markedLinkHref: root?.querySelector("link[data-ferriki-code-css]")?.getAttribute("href"),
       };
     }),
   );
@@ -1205,7 +1360,18 @@ async function checkReferenceMaxLines(browser, baseUrl, styleMode, initialBlock,
         hasShadowRoot: true,
         checkKeyboard: false,
       });
-      assert.equal(metric.markedLinkCount, 1, `DSD ${metric.name}: shared CSS URL is missing`);
+      assert.equal(metric.baseStyleCount, 1, `DSD ${metric.name}: local base style is missing`);
+      assert.equal(
+        metric.markedLinkCount,
+        initialBlock.css ? 1 : 0,
+        `DSD ${metric.name}: unexpected shared stylesheet count`,
+      );
+      if (initialBlock.css)
+        assert.equal(
+          metric.markedLinkHref,
+          "/reference.css",
+          `DSD ${metric.name}: shared stylesheet URL was not preserved`,
+        );
     }
     await assertLastCodeCharacterVisible(
       dsdPage,
@@ -1415,16 +1581,19 @@ async function checkReferenceMaxLines(browser, baseUrl, styleMode, initialBlock,
         label: "DSD before upgrade",
         hasShadowRoot: true,
       });
+      assert.equal(metric.baseStyleCount, 1, `DSD ${metric.name}: local base style is missing`);
       assert.equal(
         metric.markedLinkCount,
-        1,
-        `DSD ${metric.name}: expected its external stylesheet link`,
+        initialBlock.css ? 1 : 0,
+        `DSD ${metric.name}: unexpected shared stylesheet count`,
       );
       await dsdPage.locator(`[data-max-lines-host="${metric.name}"]`).evaluate((host) => {
         window[`__dsdIdentity_${host.dataset.maxLinesHost}`] = {
           root: host.shadowRoot,
           pre: host.shadowRoot.querySelector("pre"),
           code: host.shadowRoot.querySelector("pre code"),
+          style: host.shadowRoot.querySelector("style[data-ferriki-code-base]"),
+          link: host.shadowRoot.querySelector("link[data-ferriki-code-css]"),
         };
       });
     }
@@ -1440,16 +1609,18 @@ async function checkReferenceMaxLines(browser, baseUrl, styleMode, initialBlock,
         label: "DSD after upgrade",
         hasShadowRoot: true,
       });
+      assert.equal(metric.baseStyleCount, 1, `DSD ${metric.name}: local base style was removed`);
       assert.equal(
         metric.markedLinkCount,
-        0,
-        `DSD ${metric.name}: marked CSS link survived registration`,
+        initialBlock.css ? 1 : 0,
+        `DSD ${metric.name}: shared stylesheet link was not retained`,
       );
-      assert.equal(
-        metric.adoptedSheetCount,
-        1,
-        `DSD ${metric.name}: shared CSS sheet was not adopted`,
-      );
+      if (initialBlock.css)
+        assert.equal(
+          metric.markedLinkHref,
+          "/reference.css",
+          `DSD ${metric.name}: shared stylesheet URL changed during upgrade`,
+        );
       assert(
         Math.abs(metric.height - dsdBeforeUpgrade.find(({ name }) => name === metric.name).height) <
           1,
@@ -1465,12 +1636,14 @@ async function checkReferenceMaxLines(browser, baseUrl, styleMode, initialBlock,
             root: host.shadowRoot === before.root,
             pre: host.shadowRoot.querySelector("pre") === before.pre,
             code: host.shadowRoot.querySelector("pre code") === before.code,
+            style: host.shadowRoot.querySelector("style[data-ferriki-code-base]") === before.style,
+            link: host.shadowRoot.querySelector("link[data-ferriki-code-css]") === before.link,
           };
         }),
       ),
       [
-        { root: true, pre: true, code: true },
-        { root: true, pre: true, code: true },
+        { root: true, pre: true, code: true, style: true, link: true },
+        { root: true, pre: true, code: true, style: true, link: true },
       ],
       `${styleMode}: upgrading DSD cap hosts replaced the existing shadow nodes`,
     );
@@ -1516,6 +1689,21 @@ async function checkFontAliases(context, baseUrl, styleMode) {
           ),
         defaultColor,
       );
+      const baseStyle = await host.evaluate((element, color) => {
+        const root = element.shadowRoot;
+        window.__fontBaseStyles ??= new Map();
+        window.__fontBaseStyles.set(color, root.querySelector("style[data-ferriki-code-base]"));
+        return {
+          count: root.querySelectorAll("style[data-ferriki-code-base]").length,
+          links: root.querySelectorAll("link[data-ferriki-code-css]").length,
+        };
+      }, defaultColor);
+      assert.equal(baseStyle.count, 1, `${styleMode}/${defaultColor}: local base style is missing`);
+      assert.equal(
+        baseStyle.links,
+        0,
+        `${styleMode}/${defaultColor}: property CSS unexpectedly created a shared stylesheet link`,
+      );
       assert.deepEqual(
         await host.evaluate(fontFlags),
         expected[defaultColor],
@@ -1530,6 +1718,16 @@ async function checkFontAliases(context, baseUrl, styleMode) {
         await host.evaluate(fontFlags),
         expected[otherColor],
         `${styleMode}/${defaultColor}: changing theme aliases lost font flags`,
+      );
+      assert.equal(
+        await host.evaluate(
+          (element, color) =>
+            element.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+            window.__fontBaseStyles.get(color),
+          defaultColor,
+        ),
+        true,
+        `${styleMode}/${defaultColor}: theme change replaced the local base style`,
       );
     }
     assert.deepEqual(warnings, [], "font alias registration warned or failed");
@@ -1669,14 +1867,16 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
       latestWrite,
     ];
     const roots = hosts.map((host) => host.shadowRoot);
-    const sheets = roots.map((root) => Array.from(root.adoptedStyleSheets));
-    const firstSheet = sheets[0][0];
-    const rules = Array.from(firstSheet.cssRules, (rule) => rule.cssText);
+    const localStyles = roots.map((root) => root.querySelector("style[data-ferriki-code-base]"));
+    const registeredCss = window.__csrProbeModule.initialBlock.css;
     const definition = customElements.get("ferriki-code");
     const repeatedDefinition = window.__csrProbeModule.defineCodeElement({
       css: window.__csrProbeModule.initialBlock.css,
       themeAliases: ["light", "dark"],
     });
+    const registeredCssOccurrences = localStyles.map((style) =>
+      registeredCss ? style.textContent.split(registeredCss).length - 1 : 0,
+    );
     return {
       legacySource: legacy.shadowRoot.querySelector("pre code")?.textContent,
       ssrSource: ssr.shadowRoot.querySelector("pre code")?.textContent,
@@ -1687,8 +1887,12 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
         camelAttributeReturns,
         clearedToFallback,
       },
-      sharedSheet: sheets.every((list) => list.length === 1 && list[0] === firstSheet),
-      duplicateRules: rules.length - new Set(rules).size,
+      localBaseStyles: localStyles.every(Boolean),
+      distinctRootStyles: new Set(localStyles).size === localStyles.length,
+      registeredCssOccurrences,
+      localStylesPreserved: roots.every(
+        (root, index) => root.querySelector("style[data-ferriki-code-base]") === localStyles[index],
+      ),
       shadowStyleTags: roots.map((root) => root.querySelectorAll("style").length),
       idempotentRegistration: definition === repeatedDefinition,
     };
@@ -1705,12 +1909,14 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
         camelAttributeReturns: true,
         clearedToFallback: true,
       },
-      sharedSheet: true,
-      duplicateRules: 0,
-      shadowStyleTags: [0, 0, 0, 0, 0, 0],
+      localBaseStyles: true,
+      distinctRootStyles: true,
+      registeredCssOccurrences: Array.from({ length: 6 }, () => (initialBlock.css ? 1 : 0)),
+      localStylesPreserved: true,
+      shadowStyleTags: [1, 1, 1, 1, 1, 1],
       idempotentRegistration: true,
     },
-    "highlightedCode attributes, shared stylesheet reuse, or rule deduplication failed",
+    "highlightedCode attributes, per-root base styles, or local CSS registration failed",
   );
 }
 
@@ -1835,13 +2041,21 @@ async function check(styleMode, browserName) {
     assert(macroHost, "default Code macro SSR did not render a reference-backed custom element");
     assert.match(macroHost, /<template shadowrootmode="open">/);
     assert.match(macroHost, /<!--ferriki-code:ferriki%2D[0-9a-f]+-->/u);
+    assert.match(macroHost, /<style data-ferriki-code-base>/u);
     assert.match(macroHost, /<pre[^>]*>[\s\S]*?<code>/u);
-    assert.match(
-      macroHost,
-      /<link rel="stylesheet" href="\/@ferriki\/code-elements\.css" data-ferriki-code-css>/u,
-      "default Code macro SSR did not include the Vite-managed shared stylesheet URL",
-    );
-    await checkUpgradePaths(browser, baseUrl, initialBlock);
+    if (styleMode === "classes")
+      assert.match(
+        macroHost,
+        /<link rel="stylesheet" href="\/@ferriki\/code-elements\.css" data-ferriki-code-css>/u,
+        "class-mode default Code macro SSR did not include the Vite-managed shared stylesheet URL",
+      );
+    else
+      assert.doesNotMatch(
+        macroHost,
+        /<link[^>]+data-ferriki-code-css/u,
+        "inline-mode default Code macro SSR unexpectedly included a class stylesheet link",
+      );
+    await checkUpgradePaths(browser, baseUrl, styleMode, initialBlock);
     const referenceServer = await server.ssrLoadModule("/src/reference-server.jsx");
     const referenceMarkup = referenceServer.renderReferenceApp();
     assert.match(referenceMarkup, /<ferriki-code[^>]+code-ref="probe-initial"><\/ferriki-code>/);
@@ -1879,13 +2093,14 @@ async function check(styleMode, browserName) {
         "SSR did not preserve highlighted HTML in the custom property attribute",
       );
       const macroHostWithoutJs = page.locator('[data-panel="macro"] ferriki-code');
-      await page.waitForFunction(() =>
-        Boolean(
-          document
-            .querySelector('[data-panel="macro"] ferriki-code')
-            ?.shadowRoot?.querySelector("link[data-ferriki-code-css]")?.sheet,
-        ),
-      );
+      if (styleMode === "classes")
+        await page.waitForFunction(() =>
+          Boolean(
+            document
+              .querySelector('[data-panel="macro"] ferriki-code')
+              ?.shadowRoot?.querySelector("link[data-ferriki-code-css]")?.sheet,
+          ),
+        );
       assert.deepEqual(
         await macroHostWithoutJs.evaluate((host) => ({
           root: Boolean(host.shadowRoot),
@@ -1894,16 +2109,16 @@ async function check(styleMode, browserName) {
           links: [...(host.shadowRoot?.querySelectorAll("link[data-ferriki-code-css]") ?? [])].map(
             (link) => link.href,
           ),
-          inlineStyles: host.shadowRoot?.querySelectorAll("style").length,
+          inlineStyles: host.shadowRoot?.querySelectorAll("style[data-ferriki-code-base]").length,
         })),
         {
           root: true,
           visible: true,
           ref: await macroHostWithoutJs.getAttribute("code-ref"),
-          links: [`${baseUrl}/@ferriki/code-elements.css`],
-          inlineStyles: 0,
+          links: styleMode === "classes" ? [`${baseUrl}/@ferriki/code-elements.css`] : [],
+          inlineStyles: 1,
         },
-        "default Code macro SSR did not use declarative Shadow DOM and one external stylesheet URL",
+        "default Code macro SSR did not use a local base style and the expected class stylesheet URL",
       );
       assert.deepEqual(
         await macroHostWithoutJs.evaluate(tokenStyles),
@@ -1968,11 +2183,23 @@ async function check(styleMode, browserName) {
         window.__initialShadowRoot = host.shadowRoot;
         window.__initialShadowPre = host.shadowRoot.querySelector("pre");
         window.__initialShadowToken = host.shadowRoot.querySelector("code span");
+        window.__initialShadowStyle = host.shadowRoot.querySelector(
+          "style[data-ferriki-code-base]",
+        );
+        window.__initialShadowStylesheetLink = host.shadowRoot.querySelector(
+          "link[data-ferriki-code-css]",
+        );
         window.__initialShadowFallback = host.querySelector("pre");
         const macroHost = document.querySelector("[data-panel=macro] ferriki-code");
         window.__initialMacroRoot = macroHost.shadowRoot;
         window.__initialMacroPre = macroHost.shadowRoot.querySelector("pre");
         window.__initialMacroToken = macroHost.shadowRoot.querySelector("code span");
+        window.__initialMacroStyle = macroHost.shadowRoot.querySelector(
+          "style[data-ferriki-code-base]",
+        );
+        window.__initialMacroStylesheetLink = macroHost.shadowRoot.querySelector(
+          "link[data-ferriki-code-css]",
+        );
         window.__initialMacroFallback = macroHost.querySelector("pre");
         const descriptor = Object.getOwnPropertyDescriptor(
           customElements.get("ferriki-code").prototype,
@@ -2002,6 +2229,25 @@ async function check(styleMode, browserName) {
         await import("/src/client.jsx");
       });
       await page.waitForFunction(() => window.__ferrikiShadowHydrated === true);
+      const registeredShadowStylesheet = await page.evaluate(() => {
+        const host = document.querySelector(".shadow-code");
+        const root = host.shadowRoot;
+        const link = root.querySelector("link[data-ferriki-code-css]");
+        if (window.__initialShadowStylesheetLink === null)
+          window.__initialShadowStylesheetLink = link;
+        return {
+          count: root.querySelectorAll("link[data-ferriki-code-css]").length,
+          ...(link ? { href: link.getAttribute("href") } : {}),
+        };
+      });
+      assert.deepEqual(
+        registeredShadowStylesheet,
+        {
+          count: styleMode === "classes" ? 1 : 0,
+          ...(styleMode === "classes" ? { href: "/@ferriki/code-elements.css" } : {}),
+        },
+        "property host did not retain the expected local CSS and optional shared class stylesheet",
+      );
       assert.equal(
         await page.evaluate(() => window.__ferrikiCodeDefinedBeforeHydration),
         true,
@@ -2021,12 +2267,18 @@ async function check(styleMode, browserName) {
           rootPreserved: host.shadowRoot === window.__initialMacroRoot,
           prePreserved: host.shadowRoot.querySelector("pre") === window.__initialMacroPre,
           tokenPreserved: host.shadowRoot.querySelector("code span") === window.__initialMacroToken,
+          baseStylePreserved:
+            host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+            window.__initialMacroStyle,
+          stylesheetLinkPreserved:
+            host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
+            window.__initialMacroStylesheetLink,
           fallbackAbsent:
             host.querySelector("pre") === null && window.__initialMacroFallback === null,
           fallbackText: host.querySelector("pre code")?.textContent,
           codeRef: host.getAttribute("code-ref"),
           theme: host.getAttribute("data-ferriki-theme"),
-          styleTags: host.shadowRoot.querySelectorAll("style").length,
+          styleTags: host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length,
           markedStylesheets: host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]").length,
         })),
         {
@@ -2035,12 +2287,14 @@ async function check(styleMode, browserName) {
           rootPreserved: true,
           prePreserved: true,
           tokenPreserved: true,
+          baseStylePreserved: true,
+          stylesheetLinkPreserved: true,
           fallbackAbsent: true,
           fallbackText: undefined,
           codeRef: await page.locator("[data-panel=macro] ferriki-code").getAttribute("code-ref"),
           theme: "light",
-          styleTags: 0,
-          markedStylesheets: 0,
+          styleTags: 1,
+          markedStylesheets: styleMode === "classes" ? 1 : 0,
         },
         "default Code macro did not hydrate its reference host in place",
       );
@@ -2052,12 +2306,25 @@ async function check(styleMode, browserName) {
             root: host.shadowRoot === window.__initialShadowRoot,
             pre: host.shadowRoot.querySelector("pre") === window.__initialShadowPre,
             token: host.shadowRoot.querySelector("code span") === window.__initialShadowToken,
+            baseStyle:
+              host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+              window.__initialShadowStyle,
+            stylesheetLink:
+              host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
+              window.__initialShadowStylesheetLink,
             fallback: host.querySelector("pre") === window.__initialShadowFallback,
           };
         });
       assert.deepEqual(
         await sameNodes(),
-        { root: true, pre: true, token: true, fallback: true },
+        {
+          root: true,
+          pre: true,
+          token: true,
+          baseStyle: true,
+          stylesheetLink: true,
+          fallback: true,
+        },
         "hydration replaced SSR token nodes",
       );
 
@@ -2080,6 +2347,8 @@ async function check(styleMode, browserName) {
         root: true,
         pre: true,
         token: true,
+        baseStyle: true,
+        stylesheetLink: true,
         fallback: true,
       });
 
@@ -2099,7 +2368,14 @@ async function check(styleMode, browserName) {
       assert.deepEqual(dark, await light.evaluate(tokenStyles));
       assert.deepEqual(
         await sameNodes(),
-        { root: true, pre: true, token: true, fallback: true },
+        {
+          root: true,
+          pre: true,
+          token: true,
+          baseStyle: true,
+          stylesheetLink: true,
+          fallback: true,
+        },
         "theme change rebuilt the shadow content",
       );
 
@@ -2122,6 +2398,8 @@ async function check(styleMode, browserName) {
         root: true,
         pre: true,
         token: true,
+        baseStyle: true,
+        stylesheetLink: true,
         fallback: true,
       });
 

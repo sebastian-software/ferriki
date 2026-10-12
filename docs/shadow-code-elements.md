@@ -24,7 +24,9 @@ place. This path needs no extra HTML processing step after server rendering.
 
 On later client navigation, the Web Component fills new code elements from
 prepared HTML included in the browser modules. The highlighter still does not
-run in the browser. The blocks share their style rules; the
+run in the browser. Each shadow root gets small local rules for layout,
+scrolling, line annotations, and inline theme switching. Class output also
+uses one external CSS asset; the
 [style delivery details](#share-styles) appear later in this guide.
 
 This introductory illustration was generated with ImageGen; its
@@ -48,7 +50,6 @@ import type {} from "@ferriki/core/react/macro";
 const block = code(`export const answer = 42;`, { language: "ts" });
 const sizing = codeElementSizing(block.code.split(/\r\n|\r|\n/u).length);
 defineCodeElement({
-  css: block.css,
   themeAliases: [],
   blocks: { answer_v1: block.html },
 });
@@ -62,7 +63,9 @@ Configure the [Vite integration](inline-code-macros.md) for `code()`. This
 example uses a single theme; for multiple themes, pass the same aliases as the
 plugin. The type-only React macro import supplies the JSX tag declaration.
 A result from `codeToHtmlWithCss` can also supply the HTML and CSS, provided
-preparation runs outside the browser.
+preparation runs outside the browser. For classes output, pass its generated
+CSS through `stylesheetHref`; `css` on `defineCodeElement` remains available
+for manual local stylesheet additions.
 
 `blocks` maps IDs to trusted HTML. IDs contain one or more ASCII letters,
 digits, underscores, or hyphens. Repeated registration with the same ID and
@@ -102,12 +105,14 @@ a server-only `dangerouslySetInnerHTML` value. The highlighter already escaped
 the source, and custom
 transformer markup remains trusted application input. The helper does not
 convert tokens into React elements. In the browser, it registers prepared HTML
-and CSS outside React, then returns an empty `<ferriki-code code-ref="…" />`
+and the optional class stylesheet URL outside React, then returns an empty
+`<ferriki-code code-ref="…" />`
 with runtime presentation props.
 
 The server template contains the matching reference marker, the highlighted
-HTML, and a link to the shared stylesheet. The document parser consumes the
-template and creates the open shadow root before JavaScript runs. When the
+HTML, and a local base-style element. In classes mode it also links the
+aggregated CSS asset. The document parser consumes the template and creates the
+open shadow root before JavaScript runs. When the
 element is defined, it reuses that root and preserves its token nodes; React
 hydrates the host without moving its children or suppressing hydration. Later
 client navigation creates empty reference hosts whose content comes from the
@@ -139,9 +144,11 @@ for the release scope.
 Existing `<Code />` calls select the Web Component without an opt-in flag.
 The generated host changes from a `div` containing highlighted HTML to
 `<ferriki-code>` with shadow content. This changes observable markup and CSS
-scoping: keep surrounding layout styles on the host, register rules for inner
-code through the shared stylesheet, and select the theme on the host itself.
-Page selectors and ancestor theme attributes no longer style inner tokens.
+scoping: keep layout styles on the host, set supported public color variables
+in normal page CSS, and select the theme on the host itself. Page selectors and
+ancestor theme attributes do not target inner tokens; inherited custom
+properties, including the documented color overrides, can still cross the
+shadow boundary.
 
 SSR now includes highlighted output in DSD by default. A browser-only mount has
 an empty host until its module registers the content, while the host sizing
@@ -199,8 +206,8 @@ Customize the estimate and the actual shadow presentation together:
 ```
 
 Both variables must be lengths; use `1.5rem`, for example, rather than a unitless
-line-height value. The shared shadow stylesheet reads the same variables as
-the reservation. These small host sizing declarations do not duplicate theme
+line-height value. The local base-style element reads the same variables as the
+reservation. These small host sizing declarations do not duplicate theme
 palettes. Registration, hydration, and theme changes retain the reserved size
 in the browser fixture; changing references can change the source-line count
 and its reservation.
@@ -213,32 +220,36 @@ wrapping, and scrollbar geometry may require application-specific sizing.
 The React macro emits DSD directly during SSR. Its server branch uses
 `import.meta.env.SSR` and a server-only `dangerouslySetInnerHTML` value for the
 prepared template; the browser branch returns an empty reference host and
-registers the module's HTML and CSS. The SSR host has ordinary light-DOM
-attributes and a DSD template:
+registers its HTML, theme aliases, and optional class stylesheet URL. The SSR
+host has ordinary light-DOM attributes and a DSD template:
 
 ```html
 <ferriki-code class="example-code" code-ref="answer_v1">
   <template shadowrootmode="open">
     <!--ferriki-code:ENCODED_REFERENCE-->
-    <link rel="stylesheet" href="SHARED_CSS_URL" data-ferriki-code-css />
+    <style data-ferriki-code-base>
+      BASE_AND_THEME_SWITCH_RULES
+    </style>
+    <!-- Classes mode only: -->
+    <link rel="stylesheet" href="CLASS_CSS_URL" data-ferriki-code-css />
     <pre><code>...prepared highlighted HTML...</code></pre>
   </template>
 </ferriki-code>
 ```
 
-`ENCODED_REFERENCE` matches the host's `code-ref`; `SHARED_CSS_URL` stands for
-the single shared component stylesheet URL. The template contains the prepared
-HTML, not a React tree of token elements. The macro's default SSR path needs no
-post-render HTML rewrite.
+`ENCODED_REFERENCE` matches the host's `code-ref`. Every root has a small local
+style block for layout, scrolling, line annotations, and inline theme switching.
+`CLASS_CSS_URL` is present only in classes mode and points to the aggregated
+class rules. The template contains the prepared HTML, not a React tree of token
+elements. The macro's default SSR path needs no post-render HTML rewrite.
 
-The Vite plugin serves the stylesheet during development at
-`${base}@ferriki/code-elements.css`. A production build emits one aggregated,
-hashed `assets/ferriki-code-*.css` file. Deploy the CSS file emitted by the SSR
-build with the application's public assets. The plugin re-emits this required
-stylesheet when Vite suppresses ordinary SSR assets; the client and SSR builds
-can produce different hashes. The default `/` base and absolute path or CDN
-bases work. Direct macro SSR rejects `base: "./"` and `base: ""` because the
-stylesheet URL would be ambiguous on nested routes. See the
+Inline mode needs no external CSS asset or Vite `base` restriction. In classes
+mode, Vite serves the aggregated class CSS during development at
+`${base}@ferriki/code-elements.css` and emits a hashed
+`assets/ferriki-code-*.css` file in production. Deploy the CSS emitted by the
+SSR build with the application's public assets; client and SSR build graphs can
+produce different hashes. Direct class-mode macro SSR needs an absolute path or
+URL base because a relative asset URL is ambiguous on nested routes. See the
 [Vite guide](../node/vite/README.md) for the asset delivery contract.
 
 The document parser consumes the template and creates the open shadow root
@@ -246,9 +257,9 @@ before JavaScript runs. Load and register the component after complete document
 parsing and before React hydration. Do not define `<ferriki-code>` before the
 parser reaches the template; its constructor would create the shadow root too
 early for DSD. Upgrade reuses the parser-created root and preserves the
-matching reference's nodes. The module registers the HTML
-and CSS; React then hydrates the host without moving shadow nodes or disabling
-hydration checks. Theme and parent updates retain the nodes. A later
+matching reference's nodes. The module registers the HTML and, in classes mode,
+the stylesheet URL; React then hydrates the host without moving shadow nodes or
+disabling hydration checks. Theme and parent updates retain the nodes. A later
 client-rendered route uses the browser module's registry to populate new empty
 reference hosts. Client-only mounts also use that registry and the macro's
 source-line sizing reservation. The diagram below shows the separate SSR,
@@ -258,25 +269,27 @@ hydration, and later CSR paths.
 flowchart TD
   B["Vite build transform<br/>Prepare descriptors, IDs, line counts, and templates"]
   SSR["React SSR<br/>import.meta.env.SSR selects host plus DSD"]
-  CSS["One shared CSS asset<br/>Dev endpoint or hashed production file"]
-  HTML["Complete HTML<br/>Each code template links the shared stylesheet"]
+  BASECSS["Local base and theme-switch rules<br/>One style element per shadow root"]
+  CSS["Optional aggregated class CSS<br/>Dev endpoint or hashed production file"]
+  HTML["Complete HTML<br/>DSD has local rules; classes mode links class CSS"]
   PARSER["Browser parser<br/>Consumes DSD before JavaScript"]
   ROOT["Parser-created open shadow root<br/>Marker and highlighted HTML"]
-  CLIENT["Browser module<br/>Registers prepared HTML and shared CSS"]
-  UPGRADE["Custom-element upgrade<br/>Reuses the root and adopts shared styles"]
+  CLIENT["Browser module<br/>Registers HTML, aliases, and optional CSS URL"]
+  UPGRADE["Custom-element upgrade<br/>Reuses the root and preserves its styles"]
   HYDRATE["React hydration<br/>Updates the host; retains shadow nodes"]
   NAV["Later CSR navigation<br/>New references resolve from the module registry"]
   CSR["CSR-only mount<br/>Empty reference host resolves after registration"]
   B --> SSR --> HTML --> PARSER --> ROOT
-  B --> CSS
-  CSS -. "linked by each template" .-> HTML
+  B --> BASECSS --> HTML
+  B -. "classes mode only" .-> CSS
+  CSS -. "linked by each template in classes mode" .-> HTML
   B --> CLIENT
   ROOT --> UPGRADE
   CLIENT --> UPGRADE --> HYDRATE --> NAV
   CLIENT --> CSR
   classDef prepared fill:#e5efff,stroke:#3978c8,color:#102444
   classDef shadow fill:#e1f7f3,stroke:#129d91,color:#102444
-  class B,SSR,CSS,HTML,CLIENT prepared
+  class B,SSR,BASECSS,CSS,HTML,CLIENT prepared
   class ROOT,UPGRADE,NAV,CSR shadow
 ```
 
@@ -285,31 +298,34 @@ flowchart TD
 ```mermaid
 flowchart LR
   REACT["React tree<br/>Wrappers and host attributes"]
-  REGISTRY["Prepared browser module<br/>Reference → trusted HTML<br/>CSS and source-line sizing"]
-  SHEET["One constructed CSSStyleSheet<br/>Shared by all roots in the document"]
+  REGISTRY["Prepared browser module<br/>Reference → trusted HTML<br/>Aliases, optional CSS URL, and sizing"]
   subgraph DOM["Final DOM per code block"]
     HOST["ferriki-code host<br/>code-ref, theme, max-lines, sizing"]
     SHADOW["#shadow-root: open"]
     MARKER["Reference marker comment"]
+    BASE["Local base-style element"]
+    LINK["Optional class CSS link"]
     TOKENS["pre → code → syntax spans<br/>Real selectable text"]
     HOST --> SHADOW
     SHADOW --> MARKER
+    SHADOW --> BASE
+    SHADOW -. "classes mode" .-> LINK
     SHADOW --> TOKENS
   end
   REACT --> HOST
   REGISTRY -. "Web Component fills new CSR roots" .-> SHADOW
-  SHEET -. "adopted by" .-> SHADOW
   classDef react fill:#e5efff,stroke:#3978c8,color:#102444
   classDef shadow fill:#e1f7f3,stroke:#129d91,color:#102444
   class REACT,HOST react
-  class SHADOW,MARKER,TOKENS,SHEET shadow
+  class SHADOW,MARKER,BASE,LINK,TOKENS shadow
 ```
 
 Vite prepares both representations from the same trusted descriptor. React
 owns the custom-element host, its attributes, and surrounding controls. The
 HTML parser creates the SSR shadow root; after upgrade, `<ferriki-code>` owns
-its token nodes and adopted stylesheet. The application serves the shared CSS
-asset. The final DOM has no DSD template; the parser consumed it. A supplied
+its token nodes, local base-style element, and optional class CSS link. The
+application serves the class CSS asset when that mode is used. The final DOM
+has no DSD template; the parser consumed it. A supplied
 `render` callback replaces the built-in presentation and
 owns its own markup and CSS.
 
@@ -335,57 +351,145 @@ const html = codePlugin.api.renderCodeElements(reactHtml, {
 });
 ```
 
-Serve `codePlugin.api.codeElementCss()` at `sharedCssUrl`. These manual APIs
-read modules already transformed by the same plugin instance. These manual
-APIs do not install an application SSR hook or the `sharedCssUrl` endpoint. Production
-builds can save `codeElementBlocks()` and `codeElementCss()` for the standalone
-helper. Use identical highlighting options in client and server builds so
-content-derived IDs match. Streaming SSR and React Server Components are
-outside the verified contract.
+The plugin uses its configured theme aliases for this helper. In classes mode,
+serve `codePlugin.api.codeElementCss()` at `sharedCssUrl`.
+Inline mode needs no external stylesheet URL. These manual APIs read modules
+already transformed by the same plugin instance; they do not install an
+application SSR hook or serve the class CSS endpoint. Production builds can
+save `codeElementBlocks()` and `codeElementCss()` for the standalone helper.
+Pass the same theme aliases to `renderCodeElementShadows()` so it emits the
+matching base rules. Use identical highlighting options in client and server
+builds so content-derived IDs match. Streaming SSR and React Server Components
+are outside the verified contract.
 
 See [Declarative Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM#declaratively_with_html)
 and [React's custom-element contract](https://react.dev/reference/react-dom/components#custom-html-elements).
 
 ## Share styles
 
-In `styleMode: "inline"`, token and background colors are already style
-attributes in the highlighted HTML. Shared CSS covers typography, line
-annotations, and selectors for switching inline theme variables. There is no
-separate resolved inline color palette to duplicate.
+In `styleMode: "inline"`, token and background colors stay in the highlighted
+HTML. Each shadow root gets a compact `<style data-ferriki-code-base>` block
+for layout, scrolling, line annotations, and multi-theme switching. Inline
+mode needs no external CSS asset or stylesheet URL.
 
-In `styleMode: "classes"`, the HTML carries class names and descriptor `css`
-contains the token and theme rules. Include these rules in the shared CSS file
-used by DSD before JavaScript. The default macro template links this shared
-stylesheet. For manual hosts, `stylesheetHref` is optional, but class output
-needs its styles available before upgrade for correct no-JavaScript colors.
-
-DSD roots link to one CSS URL. This repeats a small link element, not the CSS
-declarations. After the matching block and its CSS are registered, all roots in
-a document adopt the exact same constructed `CSSStyleSheet`, and the component
-removes their DSD links marked `data-ferriki-code-css`. A root awaiting its
-block registration keeps that external stylesheet so partial or lazy
-registration preserves its styles. No root receives an inline `<style>` tag.
-Repeated registration and overlapping class rules are deduplicated; new rules
-reach existing roots.
-Browser-created link stylesheets before upgrade are not promised to share the
-same `CSSStyleSheet` object.
-See [shared constructed stylesheets](https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot/adoptedStyleSheets).
-
-When registering class-mode blocks, supply their associated `css` in the same
-call or register it before their `blocks`. The generated Vite helper registers
-both together; manual consumers must do so too.
+In `styleMode: "classes"`, the HTML carries scope classes and Vite combines
+the generated token and theme rules into one external CSS asset per build
+output. Each DSD root links its build's asset before JavaScript, and client-created
+roots link the client asset. SSR and client build graphs can produce different
+hashes, so deploy the SSR build's CSS with its markup. Class-mode macro SSR
+requires an absolute Vite base. The link stays in the shadow root after the
+component upgrades, so the browser can load the asset in both paths. Manual consumers pass the URL as
+`stylesheetHref` to `defineCodeElement` or the server helper. The optional
+`css` value on `defineCodeElement` remains for manual local stylesheet additions;
+it is not the delivery path for Vite's aggregated class rules. No constructed
+or adopted stylesheet is required, and browser modules do not carry generated
+palette CSS strings in modules that use only the built-in renderer. `code()` and
+explicit custom-render descriptors keep their portable `css` field.
 
 Use one theme alias profile per tag definition. Conflicting alias sets throw;
-additional CSS must use the same theme mapping and compatible rules. The
+manual local CSS must use the same theme mapping and compatible rules. The
 registration defaults are `["light", "dark"]`; use `[]` for a single theme.
 Aliases start with an ASCII letter or underscore and contain only ASCII letters,
 digits, underscores, and hyphens. Theme switching uses Ferriki's default
-`--shiki-` variable prefix. Add transformer presentation rules through the
-shared `css` option. `codeElementStyles(aliases)` returns base and theme rules
-for a manually prepared CSS asset.
+`--shiki-` variable prefix. Add manually authored local rules through the
+`css` option. `codeElementStyles(aliases)` returns the base and theme-switching
+rules used in each root's local style element.
 
-CSS and HTML registry additions last for the definition's lifetime. Hot updates
-can add new IDs and class rules; unused old entries remain until a page reload.
+## Public color overrides
+
+The component inherits public color custom properties from ordinary page CSS.
+The React `Code` macro prepares the matching `var()` fallbacks. HTML supplied
+directly through `highlightedCode` keeps its own declared styles; semantic
+overrides require prepared markup that reads these properties.
+Set them globally, on a theme container, or on one `<ferriki-code>` host. Ferriki
+does not assign defaults to these properties inside the shadow root, so inherited
+values remain available. `--ferriki-foreground` sets the code block's default
+text color, and `--ferriki-background-color` sets its background. Category
+properties override matching semantic tokens and their documented child
+categories; when no relevant category property is set, each token keeps its
+resolved theme color. The Vite macro retains native scope boundaries during
+inline build-time preparation so it can classify semantic tokens. This private
+preparation detail does not change general inline `codeToHtml()` output.
+
+```css
+:root {
+  --ferriki-foreground: #e6edf3;
+  --ferriki-background-color: #0d1117;
+  --ferriki-keyword-color: #ff7b72;
+  --ferriki-string-color: #a5d6ff;
+}
+
+.docs-theme {
+  --ferriki-background-color: #161b22;
+  --ferriki-comment-color: #8b949e;
+}
+
+.docs-theme ferriki-code.example-code {
+  --ferriki-function-color: #d2a8ff;
+}
+```
+
+The root properties control the block's default text color and background.
+Category properties control matching semantic tokens. An unset category uses
+that token's resolved theme color.
+
+| Property                     | Use                                                                 |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `--ferriki-foreground`       | Default code block text color; themed tokens keep their own colors. |
+| `--ferriki-background-color` | Code block background.                                              |
+
+Use the following category reference for more targeted palette adjustments:
+
+| Category         | Public property                  | Falls back through                             |
+| ---------------- | -------------------------------- | ---------------------------------------------- |
+| `keyword`        | `--ferriki-keyword-color`        | Resolved theme color                           |
+| `string`         | `--ferriki-string-color`         | Resolved theme color                           |
+| `comment`        | `--ferriki-comment-color`        | Resolved theme color                           |
+| `number`         | `--ferriki-number-color`         | Resolved theme color                           |
+| `boolean`        | `--ferriki-boolean-color`        | `constant` → resolved theme color              |
+| `constant`       | `--ferriki-constant-color`       | Resolved theme color                           |
+| `function`       | `--ferriki-function-color`       | Resolved theme color                           |
+| `type`           | `--ferriki-type-color`           | Resolved theme color                           |
+| `variable`       | `--ferriki-variable-color`       | Resolved theme color                           |
+| `parameter`      | `--ferriki-parameter-color`      | `variable` → resolved theme color              |
+| `property`       | `--ferriki-property-color`       | `variable` → resolved theme color              |
+| `operator`       | `--ferriki-operator-color`       | Resolved theme color                           |
+| `punctuation`    | `--ferriki-punctuation-color`    | Resolved theme color                           |
+| `tag`            | `--ferriki-tag-color`            | Resolved theme color                           |
+| `attribute`      | `--ferriki-attribute-color`      | Resolved theme color                           |
+| `regexp`         | `--ferriki-regexp-color`         | `string` → resolved theme color                |
+| `escape`         | `--ferriki-escape-color`         | `string` → resolved theme color                |
+| `builtin`        | `--ferriki-builtin-color`        | `function` → `variable` → resolved theme color |
+| `namespace`      | `--ferriki-namespace-color`      | Resolved theme color                           |
+| `class`          | `--ferriki-class-color`          | `type` → resolved theme color                  |
+| `interface`      | `--ferriki-interface-color`      | `type` → resolved theme color                  |
+| `enum`           | `--ferriki-enum-color`           | `type` → resolved theme color                  |
+| `struct`         | `--ferriki-struct-color`         | `type` → resolved theme color                  |
+| `type-parameter` | `--ferriki-type-parameter-color` | `type` → resolved theme color                  |
+| `method`         | `--ferriki-method-color`         | `function` → resolved theme color              |
+| `macro`          | `--ferriki-macro-color`          | Resolved theme color                           |
+| `decorator`      | `--ferriki-decorator-color`      | Resolved theme color                           |
+| `annotation`     | `--ferriki-annotation-color`     | Resolved theme color                           |
+| `label`          | `--ferriki-label-color`          | Resolved theme color                           |
+| `heading`        | `--ferriki-heading-color`        | `markup` → resolved theme color                |
+| `markup`         | `--ferriki-markup-color`         | Resolved theme color                           |
+| `inserted`       | `--ferriki-inserted-color`       | `markup` → resolved theme color                |
+| `deleted`        | `--ferriki-deleted-color`        | `markup` → resolved theme color                |
+| `invalid`        | `--ferriki-invalid-color`        | Resolved theme color                           |
+
+The final `resolved theme color` fallback is specific to each token when no
+matching category property is set. The finite category set cannot express every
+nested scope rule. For ordinary HTML output, use class output and its `tok-*`,
+`scope-*`, `leaf-*`, and `exact-*` selectors in your stylesheet. Page CSS cannot
+reach the default React macro's shadow tokens; use a custom renderer for ordinary
+HTML or add local rules through a direct `defineCodeElement({ css })` setup with
+the matching theme aliases. The React macro has no separate override CSS source
+option. `--ferriki-color` and `--ferriki-background` are internal per-token
+variables, not public overrides.
+
+HTML registry entries and manual local CSS additions last for the definition's
+lifetime. Palette changes refresh the shared development CSS URL; existing roots
+keep their style and link nodes. Unused registry entries remain until a reload.
 `code()` still uses ordinary Vite CSS delivery, so mixed light-DOM and shadow
 consumers can also have a page stylesheet. Page CSS does not style shadow tokens.
 
@@ -417,7 +521,8 @@ Keep application controls outside the root.
 The string interface remains available for imperative or dynamic consumers:
 
 ```js
-defineCodeElement({ css: preparedBlock.css, themeAliases: [] });
+defineCodeElement({ themeAliases: [] });
+// In classes mode, pass stylesheetHref: preparedClassCssUrl.
 const element = document.createElement("ferriki-code");
 element.highlightedCode = preparedBlock.html;
 element.maxLines = 12;
@@ -445,10 +550,9 @@ definition reports a conflict.
 
 ## Browser and trust boundary
 
-The browser runtime requires Custom Elements, Shadow DOM, and constructed
-stylesheets with `adoptedStyleSheets`. DSD also needs native declarative shadow
-parsing. The browser fixture checks Chromium, Firefox, and WebKit; WebKit tests
-do not certify every Safari version or device.
+The browser runtime requires Custom Elements and Shadow DOM. DSD also needs
+native declarative shadow parsing. The browser fixture checks Chromium,
+Firefox, and WebKit; WebKit tests do not certify every Safari version or device.
 
 Ferriki escapes original source; custom transformer markup is trusted caller
 code. Pass only HTML from that pipeline. Shadow DOM isolates selectors and DOM
@@ -470,8 +574,8 @@ the larger elapsed interval does not mean it processes the shadow tokens.
 
 Strict [`require-trusted-types-for 'script'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/require-trusted-types-for)
 can reject the component's string sink during CSR or content changes; no
-built-in Trusted Types policy or `TrustedHTML` hook is provided. Inline token
-output still needs CSP permission for style attributes; classes mode avoids
-token style attributes. The macro's SSR sizing hints are host style attributes
-in either mode, so the application's policy must permit those too. Allow the
-shared stylesheet asset in the application's stylesheet policy.
+built-in Trusted Types policy or `TrustedHTML` hook is provided. Both modes use
+a local style element for base presentation, so CSP must allow those rules.
+Inline token output also uses style attributes; the macro's SSR sizing hints
+use host style attributes in either mode. Classes mode needs the external CSS
+asset allowed by the application's stylesheet policy.

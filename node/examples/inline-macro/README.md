@@ -2,10 +2,10 @@
 
 This React fixture covers both the `code()` descriptor API and the `Code` JSX
 macro. The first route exercises the macro's built-in Declarative Shadow DOM
-SSR output and shared stylesheet; the lazy second
-route uses a render function that explicitly forwards the prepared descriptor
-and `className` to a custom component. Both
-routes render on the server, hydrate in the browser and exercise navigation,
+SSR output and local base styles; classes mode adds an aggregated CSS asset.
+The lazy second route uses a render function that explicitly forwards the
+prepared descriptor and `className` to a custom component. Both routes render
+on the server, hydrate in the browser and exercise navigation,
 copying original source and HMR for inline code. The custom component owns its
 copy control and renders the descriptor's `html`.
 

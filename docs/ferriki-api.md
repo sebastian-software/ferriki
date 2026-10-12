@@ -267,13 +267,13 @@ tier. `span` and `line` stages repeat as each line is assembled: all spans of a
 line run before that line's hook. `line` and `span` receive a one-based line
 number; `span` receives a zero-based token column, not a character offset.
 
-| Stage | Available context and behavior |
-| --- | --- |
-| `preprocess` | `options` and a mutable `meta` object. The source argument is the current text after earlier preprocess hooks. |
-| `tokens` | The same `options` and `meta`, plus `source` containing the preprocessed text. Tokens have not yet been split at decoration boundaries. |
-| `span`, `line` | The render context adds `root`, split `tokens`, `lines`, `structure`, and `addClassToHast`. `lines` contains only completed lines; `pre` and `code` are still `undefined`. The root is still being assembled. |
+| Stage                 | Available context and behavior                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preprocess`          | `options` and a mutable `meta` object. The source argument is the current text after earlier preprocess hooks.                                                                                                                                                                                                                                                                                      |
+| `tokens`              | The same `options` and `meta`, plus `source` containing the preprocessed text. Tokens have not yet been split at decoration boundaries.                                                                                                                                                                                                                                                             |
+| `span`, `line`        | The render context adds `root`, split `tokens`, `lines`, `structure`, and `addClassToHast`. `lines` contains only completed lines; `pre` and `code` are still `undefined`. The root is still being assembled.                                                                                                                                                                                       |
 | `code`, `pre`, `root` | `code` is available. `pre` is available only for classic structure; inline output skips the `pre` hook. The getters follow replacement code/pre nodes. For inline structure, the code wrapper is detached: its properties and replacement do not enter the output, although mutations to shared line children do. `root` receives the decorated tree before final scope nesting and CSS extraction. |
-| `postprocess` | `options` and a new `meta` object shared among postprocess hooks for that call. It does not share the earlier rendering stages' `meta` or expose the render tree. |
+| `postprocess`         | `options` and a new `meta` object shared among postprocess hooks for that call. It does not share the earlier rendering stages' `meta` or expose the render tree.                                                                                                                                                                                                                                   |
 
 Token and HAST hooks may mutate their argument and return `undefined`, or
 return replacement tokens/nodes for the following hooks. Returning a nonempty
@@ -436,19 +436,24 @@ setup and prepared HTML/CSS.
 `@ferriki/core/web-component` is a separate framework-free presentation entry.
 It exports `FERRIKI_CODE_TAG`, `defineCodeElement`, `codeElementStyles`, and
 `codeElementSizing`.
-`defineCodeElement({ css, themeAliases, blocks })` registers trusted HTML by ID
-and configures one stylesheet shared by all roots in a document. Elements
-resolve `code-ref` IDs; the direct `highlightedCode` property and
-`highlighted-code` attribute also remain available. The optional `maxLines`
+`defineCodeElement({ css, stylesheetHref, themeAliases, blocks })` registers
+trusted HTML by ID. Each root gets a local base-style element; `stylesheetHref`
+loads the aggregated class-mode CSS asset, while optional `css` adds manual
+local stylesheet rules. Elements resolve `code-ref` IDs; the direct
+`highlightedCode` property and `highlighted-code` attribute also remain available. The optional `maxLines`
 property or `max-lines` attribute caps visible lines and keeps longer code
 scrollable; `codeElementSizing(lineCount, maxLines?)` reserves matching height
 before JavaScript. The React `Code` macro applies that reservation automatically.
-During SSR it emits prepared HTML as Declarative Shadow DOM; in the browser it
-emits an empty reference host and registers blocks for hydration and later
-client-side navigation. The browser parser creates the server shadow root before
-upgrade, and hydration retains its nodes. The separate
+During SSR it emits prepared HTML as Declarative Shadow DOM with local base
+styles and, in classes mode, a stylesheet link. In the browser it emits an
+empty reference host and registers blocks for hydration and later client-side
+navigation. The browser parser creates the server shadow root before upgrade,
+and hydration retains its nodes. Inline mode needs no external CSS asset or
+stylesheet URL. The separate
 `@ferriki/core/web-component/server` entry exports `renderCodeElementShadows`
-for manually authored reference hosts in complete server HTML. Both entries
+for manually authored reference hosts in complete server HTML; pass
+`themeAliases` so it emits matching local base styles and `stylesheetHref` for
+the optional classes asset. Both entries
 import no native loader or browser highlighter. The root HTML API and `code()`
 descriptor remain unchanged. See [Shadow code elements](shadow-code-elements.md)
 for registration, the full lifecycle, CSS delivery, and policy limits.
