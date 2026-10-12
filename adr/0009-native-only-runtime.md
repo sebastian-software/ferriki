@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Context
 
@@ -33,7 +33,8 @@ exclusively in the Rust core.
 
 - JavaScript remains a thin host: addon loading, public API wiring, standard
   asset transport through Node's built-in `fetch` (ADR 0013), hast-level
-  callback dispatch and decoration edit replay (native policy per ADR 0008), the catalog
+  callback dispatch and decoration edit replay for the host pipeline
+  (eligible declarative calls render entirely in Rust per ADR 0008), the catalog
   projection, and the type surface.
 - The bundled JS engine and `FERRIKI_BACKEND=js` are removed. The
   native-boundary check in the core gate forbids the removed runtime paths from
@@ -171,8 +172,11 @@ native loader remains internal.
 - 2026-10-05: Records the optimized token-result writer, the `profiling` feature and per-target size and cold-load reporting in CI (#225).
 
 - 2026-10-10: Records typed native decoration plans while JS retains opaque objects and callbacks (#122).
+- 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
 - 2026-10-11: Clarifies that native-only applies to highlighting; separate
   framework-free browser and DSD server entries present prepared HTML/CSS
   without adding a browser highlighter or native dependency.
 - 2026-10-11: Records direct macro-generated DSD during React SSR; the
   framework-free server helper remains for manually authored reference hosts.
+- 2026-10-12: Keeps native declarative highlighting and framework-free
+  presentation as separate runtime paths (#257, #263).

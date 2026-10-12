@@ -171,24 +171,33 @@ const cases = [];
 try {
   for (const lines of [4, 80])
     for (const styleMode of ["inline", "classes"])
-      for (const mode of ["control", "declarative", "mixed"]) {
+      for (const mode of ["control", "declarative", "mixed", "line-range"]) {
         const text = 'const value = build("β😀 <&>"); // example';
         const source = Array.from({ length: lines }, () => text).join("\n");
-        const decorations = Array.from({ length: lines / 2 }, (_, i) => ({
-          start: i * 2 * (text.length + 1) + 6,
-          end: i * 2 * (text.length + 1) + 11,
-          alwaysWrap: i % 2 === 0,
-          tagName: i % 3 === 0 ? "strong" : "span",
-          properties: { class: "highlighted-word", "data-decoration": "yes" },
-          ...(mode === "mixed" && i % 5 === 0
-            ? {
-                transform(node) {
-                  node.properties["data-callback"] = "yes";
-                  return node;
+        const decorations =
+          mode === "line-range"
+            ? [
+                {
+                  start: { line: Math.min(3, lines - 1), character: 0 },
+                  end: { line: Math.min(9, lines - 1), character: text.length },
+                  properties: { class: "highlighted-lines", "data-decoration": "yes" },
                 },
-              }
-            : {}),
-        }));
+              ]
+            : Array.from({ length: lines / 2 }, (_, i) => ({
+                start: i * 2 * (text.length + 1) + 6,
+                end: i * 2 * (text.length + 1) + 11,
+                alwaysWrap: i % 2 === 0,
+                tagName: i % 3 === 0 ? "strong" : "span",
+                properties: { class: "highlighted-word", "data-decoration": "yes" },
+                ...(mode === "mixed" && i % 5 === 0
+                  ? {
+                      transform(node) {
+                        node.properties["data-callback"] = "yes";
+                        return node;
+                      },
+                    }
+                  : {}),
+              }));
         const options = {
           lang: "javascript",
           theme: "nord",
@@ -230,13 +239,21 @@ try {
         }
         const calls = [];
         const originals = [];
-        for (const [name, operation] of Object.entries(names))
-          if (native[name]) {
-            const original = native[name];
-            originals.push([name, original]);
-            native[name] = (...args) => {
+        const methods = [
+          ...Object.entries(names).map(([name, operation]) => [native, name, operation]),
+          ...[
+            ["codeToHtml", "html"],
+            ["getHtmlRenderData", "tokens"],
+            ["codeToHtmlWithDecorations", "render"],
+          ].map(([name, operation]) => [native.FerrikiHighlighter.prototype, name, operation]),
+        ];
+        for (const [target, name, operation] of methods)
+          if (target[name]) {
+            const original = target[name];
+            originals.push([target, name, original]);
+            target[name] = function (...args) {
               const start = performance.now();
-              const result = original(...args);
+              const result = original.apply(this, args);
               const ms = performance.now() - start;
               const input =
                 operation === "next"
@@ -245,7 +262,9 @@ try {
                     ? { source: args[0], ranges: args[1], lines: args[2] }
                     : operation === "prepare"
                       ? { source: args[0], ranges: args[1] }
-                      : { nodes: args[0], lines: args[1], sections: args[2] };
+                      : operation === "plan"
+                        ? { nodes: args[0], lines: args[1], sections: args[2] }
+                        : { source: args[0], options: args[1], ranges: args[2] };
               calls.push({ operation, input, ms });
               return result;
             };
@@ -253,10 +272,13 @@ try {
         try {
           render();
         } finally {
-          for (const [name, original] of originals) native[name] = original;
+          for (const [target, name, original] of originals) target[name] = original;
         }
+        // The existing profiler diagnoses the separate decoration bridge only.
+        // A complete render or tokenization call is not covered by its phases.
+        const policyCalls = calls.filter((call) => Object.values(names).includes(call.operation));
         const phases =
-          profiler && calls.length
+          profiler && policyCalls.length
             ? Array.from({ length: 9 }, () => {
                 const total = Object.fromEntries(
                   ["input", "policy", "output"].map((name) => [
@@ -264,7 +286,7 @@ try {
                     { ms: 0, allocations: 0, bytes: 0 },
                   ]),
                 );
-                for (const call of calls) {
+                for (const call of policyCalls) {
                   const result = profiler.profileDecorationBoundary(call.operation, call.input);
                   for (const phase of Object.keys(total))
                     for (const field of ["ms", "allocations", "bytes"])
@@ -297,6 +319,7 @@ try {
             })),
           },
           diagnosticPhases: phases,
+          diagnosticPhaseScope: "separate-decoration-bridge-only",
         });
       }
 } finally {
