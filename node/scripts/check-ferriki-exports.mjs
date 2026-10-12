@@ -26,6 +26,8 @@ assert.deepEqual(Object.keys(packageJson.exports).sort(), [
   "./macro",
   "./package.json",
   "./react/macro",
+  "./web-component",
+  "./web-component/server",
 ]);
 
 const macro = await import("../ferriki/macro.mjs");
@@ -42,6 +44,22 @@ assert.throws(
   () => reactMacro.Code({ source: "const answer = 42", language: "js" }),
   /@ferriki\/vite.*before your React plugin/,
   "an unprocessed React macro must explain its build integration and ordering",
+);
+
+const component = await import("../ferriki/web-component.mjs");
+assert.deepEqual(Object.keys(component).sort(), [
+  "FERRIKI_CODE_TAG",
+  "codeElementSizing",
+  "codeElementStyles",
+  "defineCodeElement",
+]);
+assert.equal(component.defineCodeElement(), undefined, "browser registration must be safe in Node");
+
+const componentServer = await import("../ferriki/web-component-server.mjs");
+assert.deepEqual(Object.keys(componentServer), ["renderCodeElementShadows"]);
+assert.equal(
+  componentServer.renderCodeElementShadows("<main></main>", { blocks: {} }),
+  "<main></main>",
 );
 
 console.log("Ferriki public export surface verified");

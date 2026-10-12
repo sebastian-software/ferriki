@@ -182,7 +182,7 @@ try {
         "}",
         "const customMacroElement = <Code language='ts' source={`const packedCustom = 'react';\\nconsole.log(packedCustom);`} meta='title=\"Custom macro\"' lineNumbers className={runtimeClassName} render={renderCustomCode} />",
         "export function DefaultCodeMacroExample() {",
-        "  return <Code language='ts' source={`const packedDefault = 'react';\\nconsole.log(packedDefault);`} meta='title=\"Default macro\"' lineNumbers className='default-packed-class' />",
+        "  return <Code language='ts' source={`const packedDefault = 'react';\\nconsole.log(packedDefault);`} meta='title=\"Default macro\"' lineNumbers className='default-packed-class' theme='dark' maxLines={1} />",
         "}",
         "export function CustomCodeMacroExample() {",
         "  return <article data-packed-wrapper='custom'>{customMacroElement}</article>",
@@ -239,17 +239,24 @@ try {
       probe,
       `
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { build, createServer } from 'vite'
 import { fromHtml } from 'hast-util-from-html'
 import { ferriki } from '@ferriki/vite'
 import { ferrikiVersion } from '@ferriki/core'
+import { codeElementSizing, defineCodeElement } from '@ferriki/core/web-component'
+import { renderCodeElementShadows } from '@ferriki/core/web-component/server'
 
 const project = ${JSON.stringify(project)}
 assert(ferrikiVersion(), 'packed Ferriki native binding did not load')
+assert.equal(defineCodeElement(), undefined, 'packed browser presentation entry must be SSR-safe')
+assert.equal(codeElementSizing(2).display, 'block', 'packed presentation entry omitted host sizing')
 const options = { theme: 'github-dark-default', styleMode: 'classes', lineNumbers: true, assets: { remote: false }, transformers: [{ name: 'packed-vite-check', preprocess(code) { this.options.decorations = [{ start: 0, end: Math.min(5, code.length), alwaysWrap: true, properties: { class: 'packed-decoration', 'data-native-decoration': 'yes' } }]; return code }, pre(node) { node.properties['data-packed-transformer'] = 'yes' } }] }
-function hastText(node) { return node.type === 'text' ? node.value : (node.children ?? []).map(hastText).join('') }
+function hastText(node) { return node.type === 'text' ? node.value : [...(node.children ?? []), ...(node.content ? [node.content] : [])].map(hastText).join('') }
 function hastProperty(node, name) { if (node.type === 'element' && node.properties?.[name] !== undefined) return node.properties[name]; for (const child of node.children ?? []) { const value = hastProperty(child, name); if (value !== undefined) return value } }
 const oxcConfig = { jsx: { runtime: 'automatic', development: false } }
 const plugin = ferriki(options)
@@ -280,9 +287,25 @@ try {
   assert.equal(ssrModule.renderCalls, 0, 'the packed render callback ran during module transformation')
   const defaultCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.DefaultCodeMacroExample))
   const defaultCodeTree = fromHtml(defaultCodeMarkup, { fragment: true })
-  assert(hastText(defaultCodeTree).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'the default React Code macro did not render source in SSR')
-  assert(defaultCodeMarkup.includes('data-title="Default macro"'), 'the default React Code macro omitted metadata in SSR')
-  assert.match(defaultCodeMarkup, /<div\\b[^>]*class="default-packed-class"/, 'the default React Code macro did not forward className to its div in SSR')
+  assert(hastText(defaultCodeTree).includes("const packedDefault = 'react';\\nconsole.log(packedDefault);"), 'direct macro SSR omitted the prepared code')
+  const codeRef = /code-ref="([^"]+)"/.exec(defaultCodeMarkup)?.[1]
+  assert.match(codeRef, /^ferriki-[a-f0-9]{64}$/, 'the default macro omitted its stable reference')
+  const highlightedHtml = plugin.api.codeElementBlocks()[codeRef]
+  assert.equal(typeof highlightedHtml, 'string', 'the plugin omitted the prepared HTML registry')
+  assert(highlightedHtml.includes('data-title="Default macro"'), 'the default React Code macro omitted metadata from prepared HTML')
+  assert.match(defaultCodeMarkup, /<ferriki-code\\b[^>]*class="default-packed-class"/, 'the default React Code macro did not forward className to its shadow host in SSR')
+  assert(defaultCodeMarkup.includes('data-ferriki-theme="dark"'), 'the default host omitted its runtime theme')
+  assert(!defaultCodeMarkup.includes('highlightedCode=') && defaultCodeMarkup.includes('<style data-ferriki-code-base>'), 'SSR omitted its local base stylesheet or transported HTML in a property')
+  assert(defaultCodeMarkup.includes('min-block-size:min(calc(') && defaultCodeMarkup.includes('--ferriki-code-line-height'), 'the empty SSR host did not reserve code-line space')
+  assert(defaultCodeMarkup.includes('max-lines="1"') && defaultCodeMarkup.includes('--ferriki-code-max-block-size:calc(1 *'), 'the default macro omitted its SSR line cap')
+  assert(defaultCodeMarkup.includes('<template shadowrootmode="open">') && defaultCodeMarkup.includes(highlightedHtml), 'the macro omitted direct Declarative Shadow DOM')
+  assert(defaultCodeMarkup.includes('href="/@ferriki/code-elements.css" data-ferriki-code-css'), 'the DSD root did not reference the automatic Vite stylesheet')
+  assert.equal(plugin.api.renderCodeElements(defaultCodeMarkup), defaultCodeMarkup, 'manual postprocessing changed a completed macro template')
+  const manualHost = '<ferriki-code code-ref="' + codeRef + '"></ferriki-code>'
+  const manualMarkup = plugin.api.renderCodeElements(manualHost, { stylesheetHref: '/code.css' })
+  assert.equal(manualMarkup, renderCodeElementShadows(manualHost, { blocks: plugin.api.codeElementBlocks(), themeAliases: [], stylesheetHref: '/code.css' }))
+  assert(manualMarkup.includes('href="/code.css" data-ferriki-code-css'), 'the manual helper omitted its explicit stylesheet')
+  assert(plugin.api.codeElementCss().includes('.ferriki-style-') && !plugin.api.codeElementCss().includes(':host'), 'the shared class palette is missing or repeats local base rules')
   const customCodeMarkup = renderToStaticMarkup(React.createElement(ssrModule.CustomCodeMacroExample))
   const customCodeTree = fromHtml(customCodeMarkup, { fragment: true })
   assert.match(customCodeMarkup, /<article data-packed-wrapper="custom"><section\\b/, 'the packed render callback did not return its React element inside a parent JSX child')
@@ -299,6 +322,16 @@ const output = await build({ configFile: false, root: project, plugins: [ferriki
 const outputs = Array.isArray(output) ? output.flatMap((item) => item.output) : output.output
 const text = outputs.map((item) => ('source' in item ? String(item.source) : item.code)).join('\\n')
 assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') && text.includes('no macro import'), 'packed Vite production build omitted the prepared macro or its CSS')
+const ssrBuild = await build({ configFile: false, root: project, base: '/nested/app/', plugins: [ferriki(options)], oxc: oxcConfig, build: { ssr: join(project, 'src/macro-ssr.jsx'), outDir: 'dist-ssr', minify: false, rolldownOptions: { output: { entryFileNames: 'entry.mjs' } } } })
+const ssrFiles = Array.isArray(ssrBuild) ? ssrBuild.flatMap((item) => item.output) : ssrBuild.output
+const codeStylesheet = ssrFiles.find((item) => item.type === 'asset' && /^assets\\/ferriki-code-[\\w-]+\\.css$/.test(item.fileName))
+assert(codeStylesheet, 'the packed SSR build did not retain its required hashed CSS asset')
+assert.equal(await readFile(join(project, 'dist-ssr', codeStylesheet.fileName), 'utf8'), codeStylesheet.source, 'the packed stylesheet asset was not written')
+assert(!codeStylesheet.source.includes(':host') && codeStylesheet.source.includes('.ferriki-style-'), 'the packed palette asset is missing or repeats local base rules')
+const builtModule = await import(pathToFileURL(join(project, 'dist-ssr/entry.mjs')).href)
+const builtMarkup = renderToStaticMarkup(React.createElement(builtModule.DefaultCodeMacroExample))
+assert(builtMarkup.includes('<template shadowrootmode="open">'), 'the production macro omitted its direct SSR template')
+assert(builtMarkup.includes('href="/nested/app/' + codeStylesheet.fileName + '" data-ferriki-code-css'), 'the production macro stylesheet URL did not respect Vite base')
 `,
     );
     run(process.execPath, [probe], {
@@ -315,15 +348,22 @@ assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') &
         "import { code } from '@ferriki/core/macro'",
         "import type { FerrikiCodeOptions, PreparedCodeBlock } from '@ferriki/core/macro'",
         "import { Code, type CodeRenderProps } from '@ferriki/core/react/macro'",
+        "import { FERRIKI_CODE_TAG, codeElementSizing, defineCodeElement, type FerrikiCodeElement } from '@ferriki/core/web-component'",
+        "import { renderCodeElementShadows } from '@ferriki/core/web-component/server'",
         "import type { Plugin } from 'vite'",
         "",
         "const transformer: ShikiTransformer = { line(node) { return node } }",
-        "const plugin: Plugin = ferriki({",
+        "const plugin = ferriki({",
         "  themes: { light: 'github-light-default', dark: 'github-dark-default' },",
         "  styleMode: 'classes',",
         "  include: id => id.endsWith('.mdx'),",
         "  transformers: [transformer],",
         "})",
+        "const vitePlugin: Plugin = plugin",
+        "const preparedRegistry = plugin.api.codeElementBlocks()",
+        "const preparedCss: string = plugin.api.codeElementCss()",
+        "const declarativeHtml: string = plugin.api.renderCodeElements('<main></main>', { stylesheetHref: '/code.css' })",
+        "const savedRegistryHtml: string = renderCodeElementShadows('<main></main>', { blocks: preparedRegistry, stylesheetHref: '/code.css' })",
         "const macroOptions: FerrikiCodeOptions = { language: 'ts', meta: 'title=Packed', lineNumbers: true }",
         "const prepared: PreparedCodeBlock = code('const packed = true', macroOptions)",
         "const runtimeTitle: string = 'typed closure title'",
@@ -331,7 +371,26 @@ assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') &
         "const invalidClassName: number = 42",
         "const CustomCodeBlock = ({ code, className, title }: { code: PreparedCodeBlock; className?: string | undefined; title: string }) => null",
         "const exportedRenderer = ({ code, className }: CodeRenderProps) => <CustomCodeBlock code={code} className={className} title={runtimeTitle} />",
-        "const defaultCodeElement = <Code language='ts' source={`const packedDefault = true`} meta='title=Default' lineNumbers className='default-typed-class' />",
+        "const defaultCodeElement = <Code language='ts' source={`const packedDefault = true`} meta='title=Default' lineNumbers className='default-typed-class' theme='dark' maxLines={12} />",
+        "const codeElementConstructor = defineCodeElement({ css: prepared.css, themeAliases: ['light', 'dark'], blocks: { example: prepared.html } })",
+        "const referenceCodeElement = <ferriki-code code-ref='example' data-ferriki-theme='dark' max-lines={12} style={codeElementSizing(2, 12)} />",
+        "const directCodeElement = <ferriki-code highlightedCode={prepared.html} data-ferriki-theme='dark'><pre><code>{prepared.code}</code></pre></ferriki-code>",
+        "const element = document.createElement(FERRIKI_CODE_TAG) as FerrikiCodeElement",
+        "element.highlightedCode = prepared.html",
+        "element.codeRef = 'example'",
+        "element.maxLines = 12",
+        "element.maxLines = undefined",
+        "const propertyLineCap = <ferriki-code maxLines={12} />",
+        "// @ts-expect-error maxLines must be numeric.",
+        "const invalidLineCap = <Code language='ts' source='text' maxLines='12' />",
+        "// @ts-expect-error the custom-element property must be numeric.",
+        "const invalidPropertyLineCap = <ferriki-code maxLines='12' />",
+        "const undefinedLineCap = <Code language='ts' source='text' maxLines={undefined} />",
+        "const renderedLineCap = <Code language='ts' source='text' maxLines={12} render={({ maxLines }) => { const cap: number | undefined = maxLines; return <pre data-cap={cap} /> }} />",
+        "// @ts-expect-error codeRef accepts a string.",
+        "const invalidReference = <ferriki-code codeRef={42} />",
+        "// @ts-expect-error highlightedCode accepts a string.",
+        "const invalidHighlightedCode = <ferriki-code highlightedCode={42} />",
         "const customCodeElement = <Code language='ts' source={`const packedCustom = true`} className={runtimeClassName} render={({ code, className }) => { const inferredCode: PreparedCodeBlock = code; const inferredClassName: string | undefined = className; return <CustomCodeBlock code={inferredCode} className={inferredClassName} title={runtimeTitle} /> }} />",
         "const exportedRenderTypeElement = <Code language='ts' source={`const exported = true`} className={undefined} render={exportedRenderer} />",
         "// @ts-expect-error React Code requires a source string.",
@@ -366,6 +425,7 @@ assert(text.includes('packedValue') && text.includes('ferriki-highlight-line') &
         "void undefinedRenderer",
         "void missingRendererProp",
         "void plugin",
+        "void [codeElementConstructor, directCodeElement, element, invalidHighlightedCode]",
         "",
       ].join("\n"),
     );

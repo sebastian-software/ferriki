@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-10-12
 
 ## Context
 
@@ -27,10 +27,19 @@ measurements.
 
 ## Decision
 
-- The Node API exposes HTML rendering as its only public output path. This
+- The Node runtime API exposes HTML rendering as its only public output path. This
   includes `codeToHtml` with its inline-style default, `styleMode: "classes"`
   for scope classes with consumer-provided CSS, and `codeToHtmlWithCss` for
   HTML plus resolved theme CSS.
+- The React `Code` macro's default presentation uses the framework-free
+  `@ferriki/core/web-component` entry to display prepared HTML and CSS in a
+  Shadow DOM. Its SSR branch emits Declarative Shadow DOM directly from the
+  prepared HTML; the `/server` entry remains available to place existing HTML
+  into manually authored reference hosts after SSR. This presentation layer
+  does not add a highlighter output renderer, structured Node output, or a Rust
+  rendering contract. `code()` continues to produce its HTML-backed prepared
+  descriptor, and `codeToHtml` remains the Node runtime's only rendered output
+  path.
 - Remove the public Node `codeToHast`, `codeToTokens`, `codeToTokensBase`,
   `codeToTokensWithThemes`, and `hastToHtml` methods before 1.0. Remove both
   the top-level shorthands and reusable-highlighter methods. Do not retain
@@ -64,10 +73,17 @@ measurements.
 - The decision changes the Node product boundary and Shiki migration guidance;
   it does not change Rust API commitments or remove the internal HAST
   transformation pipeline.
+- Shadow DOM is a browser presentation boundary around the existing HTML/CSS
+  result; it does not change the output priority recorded here or imply a
+  general performance advantage ([ADR 0019](0019-shadow-dom-code-elements.md)).
 
 ## History
 
 - 2026-10-01: Accepted the HTML and CSS priority; leaves pre-1.0 retention of public Node HAST and token exports open.
 - 2026-10-03: Resolves issue #207 by removing public Node HAST and token outputs before 1.0 while retaining HTML transformer data and Rust token APIs.
-
 - 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
+- 2026-10-11: Keeps HTML as the highlighter output contract while accepting
+  Web Component presentation and direct macro-generated DSD for React SSR;
+  neither adds a JSX serializer or public structured output.
+- 2026-10-12: Records native declarative rendering alongside isolated React
+  presentation; both preserve the HTML output contract (#257, #263).

@@ -246,6 +246,15 @@ export function createHighlighterCoreSync(options = {}) {
     prepared.lang = language;
     prepared.theme = theme;
     delete prepared.themes;
+    // The build-time code element transformer needs scope identity in inline
+    // output too. Keep this control private to the native presentation bridge.
+    if (
+      options.transformers?.some(
+        (transformer) => transformer?.[Symbol.for("ferriki.preserve-scope-boundaries.v1")] === true,
+      )
+    )
+      prepared.preserveScopeBoundaries = true;
+    else delete prepared.preserveScopeBoundaries;
     // Transformer callbacks and HAST-only options stay in the JS facade.
     delete prepared.transformers;
     delete prepared.decorations;

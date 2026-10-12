@@ -226,6 +226,13 @@ must be supported or added to the explicit boundary below.
 ### Release guarantees
 
 - The accepted Stable rows are the Ferriki 1.x compatibility promise.
+- The initial React `Code` macro presentation transition ships in 1.1.0 as
+  the one-time exception in [ADR 0019](../adr/0019-shadow-dom-code-elements.md#release-scope).
+  Its generated DOM and CSS scoping change; the existing call syntax, HTML API,
+  prepared descriptor, and custom renderer retain their contracts. Consumers
+  of the previous light-DOM presentation follow the
+  [migration guide](shadow-code-elements.md#migrate-existing-react-macros).
+  This exception does not extend to other Stable rows or future changes.
 - Shims are documented, covered by migration tests, and may emit a deprecation
   notice in a minor release. They are removed only in a planned major release
   or before 1.0 when this document marks them **Remove**.
@@ -250,11 +257,20 @@ guide](inline-code-macros.md). Root render outputs stay unchanged.
 `@ferriki/core/react/macro` adds the optional `Code` JSX marker. Its required
 `source` and `language` and optional `meta` and `lineNumbers` attributes are
 literal-only. Elements are self-closing and accept no children. An optional
-`render` function receives `{ code: PreparedCodeBlock, className?: string }`
+`render` function receives
+`{ code: PreparedCodeBlock, className?: string, theme?: string, maxLines?: number }`
 during application rendering, with explicit prop forwarding in ordinary JSX.
-`className` accepts a string or runtime expression and applies to the default
-`div`, or is passed to the renderer when supplied. An absent or `undefined`
-renderer uses the default prepared-HTML container; callback results are
-retained. The marker and import are erased before React's JSX transform. React
-is only required by consumers of this entry's type declarations and generated
-JSX, not by the core runtime.
+Runtime `className`, `theme`, and `maxLines` apply to the default `<ferriki-code>`
+host, or are passed to the renderer when supplied. `theme` selects a configured
+alias; `maxLines` is an optional positive safe integer visible-line cap with
+vertical scrolling. An absent or `undefined` renderer uses the single built-in
+Web Component presentation; callback results are retained. The element owns
+prepared HTML in its shadow root. React SSR emits it as Declarative Shadow DOM
+through a server-only HTML sink; the browser parser creates the root before
+upgrade, and hydration retains its nodes. The browser render emits an empty
+reference host and registers prepared blocks for hydration and later client
+navigation. The macro uses Vite's SSR mode flag to select the output. See
+[Shadow code elements](shadow-code-elements.md) for the lifecycle, styling,
+and migration details. The marker and import are erased before React's JSX
+transform. React is only required by consumers of this entry's type declarations
+and generated JSX, not by the core runtime.

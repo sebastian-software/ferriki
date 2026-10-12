@@ -287,7 +287,10 @@ impl From<NativeHighlightOptions> for HighlightOptions {
                 )
                 .with_include_token_type(include_token_type)
                 .with_include_scopes(include_scopes)
-                .with_preserve_scope_boundaries(options.style_mode.as_deref() == Some("classes")),
+                .with_preserve_scope_boundaries(
+                    options.style_mode.as_deref() == Some("classes")
+                        || options.preserve_scope_boundaries == Some(true),
+                ),
             render: RenderOptions::default()
                 .with_merge_whitespaces(options.merge_whitespaces.unwrap_or(true))
                 .with_merge_same_style_tokens(options.merge_same_style_tokens.unwrap_or(false))
@@ -483,6 +486,21 @@ pub(crate) mod tests {
             assert!(options.render.merge_same_style_tokens);
             assert_eq!(options.render.tabindex.as_deref(), Some("0"));
         }
+    }
+
+    #[test]
+    fn private_presentation_preparation_retains_inline_scope_boundaries() {
+        let options = HighlightOptions::from(NativeHighlightOptions {
+            lang: "text".into(),
+            theme: "test".into(),
+            style_mode: Some("inline".into()),
+            preserve_scope_boundaries: Some(true),
+            ..Default::default()
+        });
+        assert!(options.tokenize.preserve_scope_boundaries);
+
+        let ordinary = HighlightOptions::from(NativeHighlightOptions::default());
+        assert!(!ordinary.tokenize.preserve_scope_boundaries);
     }
 
     #[test]

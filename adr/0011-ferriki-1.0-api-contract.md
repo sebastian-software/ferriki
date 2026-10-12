@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Context
 
@@ -46,6 +46,14 @@ hand-written declarations against mirrored Shiki types; the API contract
 documents the intentional native-state, structured-output, and
 transformer-context boundaries (#158, #207).
 
+The initial React `Code` macro presentation transition targets 1.1.0 as the
+one-time early-1.x exception recorded in
+[ADR 0019](0019-shadow-dom-code-elements.md#release-scope). Its DOM and CSS
+scoping changes require migration for consumers of the previous presentation;
+the existing call syntax, HTML API, prepared descriptor, and custom renderer
+retain their contracts. This exception does not relax other Stable rows or
+future semver guarantees.
+
 The contract is the decision point for the API work tracked in issues: #10
 generates the typed surface, #43–#51 cover the retained highlighting behavior,
 #44 supplies catalog enumeration, and #53/#54/#52 prove the packaged platform
@@ -79,3 +87,4 @@ being mistaken for parity.
 - 2026-10-10: Classifies native color replacements as a non-goal after closing #190 as not planned; preserves explicit rejection and requires a concrete consumer need for any future proposal.
 
 - 2026-10-10: Clarifies native decoration ownership without changing public Node output methods (#122).
+- 2026-10-11: Records the one-time 1.1.0 React macro presentation transition while preserving other stable contracts (#263).

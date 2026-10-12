@@ -384,14 +384,24 @@ jobs:
       - name: Test the optional Vite adapter
         run: pnpm run test:vite
 
+      - name: Test the framework-free code element
+        run: pnpm run test:web-component
+
       - name: Verify packed Vite consumers
         run: pnpm run check:packed-vite
 
-      - name: Install Chromium for inline macro consumer checks
-        run: pnpm dlx playwright@1.63.0 install --with-deps chromium
+      - name: Install browsers for macro and code element checks
+        run: pnpm dlx playwright@1.63.0 install --with-deps chromium firefox webkit
 
       - name: Verify inline macro hydration, navigation and HMR
         run: pnpm run check:inline-macro
+
+      - name: Verify code element SSR, hydration and browser lifecycle
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ferriki-shadow-deps" --no-save --package-lock=false \
+            react@19.3.0 react-dom@19.3.0 scheduler@0.28.0 playwright@1.63.0
+          FERRIKI_SHADOW_BENCH_DEPS_ROOT="$RUNNER_TEMP/ferriki-shadow-deps" \
+            pnpm run check:shadow-dom --browsers chromium,firefox,webkit
 
       - name: Verify TIOBE benchmark outputs and comparison contracts
         run: pnpm run check:bench-tiobe

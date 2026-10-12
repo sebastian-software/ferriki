@@ -3,8 +3,12 @@
 `@ferriki/vite` prepares Ferriki's inline highlighting macros during Vite
 transforms with Ferriki's native highlighter. It replaces `code()` calls from
 `@ferriki/core/macro` and `<Code />` elements from `@ferriki/core/react/macro`
-with highlighted HTML and CSS at build time; it does not add a browser
-highlighter, a React runtime, or custom elements.
+with highlighted HTML and CSS at build time. The default React output is a
+`<ferriki-code>` Web Component with an open shadow root, local base styles, and
+an aggregated external CSS asset in classes mode.
+Ferriki adds its small, framework-free presentation module for that path;
+highlighting, grammars, assets, and the build-time parser stay out of the browser.
+It adds no React runtime dependency.
 
 Install it with the core package; `@ferriki/core`, its platform sidecar and
 `@ferriki/vite` must have the same version:
@@ -51,19 +55,80 @@ lists the supported forms.
 ```tsx
 import { Code } from "@ferriki/core/react/macro";
 
-<Code className="example-code" language="ts" source={`const answer = 42;`} />;
+<Code className="example-code" language="ts" maxLines={12} source={`const answer = 42;`} />;
 ```
 
 Place Ferriki before the React plugin. The self-closing marker requires literal
 `source` and `language`; optional `meta` and `lineNumbers` are also static.
-Optional `className` accepts a string or runtime expression and styles the
-default outer `div`. For custom presentation, use
-`render={(props) => <MyCodeBlock {...props} />}`. The callback receives the
-prepared descriptor as `code` and, when supplied, `className`; prop forwarding
-is explicit. It runs during application rendering, not compilation. An absent
-or `undefined` renderer keeps the default output. Children, spreads on `Code`,
-and other attributes are unsupported. The macro import and element are
-replaced before React lowers JSX.
+Optional `className` accepts a string or runtime expression and applies to
+`<ferriki-code>`. Page selectors cannot style its inner `pre`, `code`, or tokens.
+Runtime `theme` selects a configured theme alias on the host. Runtime
+`maxLines` accepts a positive safe integer and sets a scrollable visible-line
+cap. The first configured
+theme supplies the default colors. Aliases used by React macros must start with
+an ASCII letter or underscore and contain only letters, digits, underscores,
+and hyphens.
+
+The generated JSX passes a reference derived from the prepared block as its
+content input, alongside runtime presentation props. In a browser build,
+the empty host's `code-ref` attribute selects prepared HTML registered outside
+React; the element owns its token nodes. During React SSR, the macro emits that
+HTML in Declarative Shadow DOM through a server-only HTML sink. The browser
+parser creates the shadow root before upgrade, and hydration retains its nodes.
+Each root gets a local base-style element for layout, scrolling, line
+annotations, and inline theme switching. In classes mode, every root also links
+the aggregated class CSS asset, and that link stays after JavaScript upgrades
+the element. The client registry also supplies blocks for later client-rendered
+navigation.
+
+The default host reserves space from the build-known source line count. Its
+sizing style and shadow `pre` share line-height and padding variables, so a
+client-only mount retains the surrounding layout until registration fills the
+host. SSR includes the highlighted DSD markup as well. `maxLines` is an optional
+runtime positive safe integer; longer blocks keep all code and scroll vertically,
+while shorter blocks stay short. Omit it or pass `undefined` for no cap. The
+macro matches the height reservation to the cap automatically. See the
+[sizing guide](../../docs/shadow-code-elements.md#client-rendering-with-reserved-space)
+for manual hosts, custom dimensions, and the nonwrapping-line estimate.
+
+The default React SSR path already emits Declarative Shadow DOM; it does not
+need a post-render rewrite. Each template has the local base-style element so
+highlighted output is styled before JavaScript. Inline mode needs no external
+CSS asset or Vite `base` restriction. In classes mode, Vite serves the
+aggregated CSS at `${base}@ferriki/code-elements.css` during development and
+emits one hashed `assets/ferriki-code-*.css` file in production. Deploy the CSS
+emitted by the SSR build with the application's public assets. SSR and client
+build graphs can produce different hashes, so the SSR markup uses the SSR
+asset. Direct class-mode macro SSR requires an absolute path or URL base because
+a relative stylesheet URL is ambiguous on nested routes.
+
+For manually authored empty reference hosts, the plugin API still provides
+`renderCodeElements()` and `codeElementCss()` for a complete-HTML server stage.
+The plugin supplies its theme aliases to `renderCodeElements()` automatically.
+Pass those same aliases to the standalone `renderCodeElementShadows()` helper.
+In classes mode, production applications can save `codeElementBlocks()` and
+the aggregated CSS after the SSR build, then call
+`renderCodeElementShadows()` from `@ferriki/core/web-component/server` with that
+registry and stylesheet URL. Inline mode needs no stylesheet URL. These APIs
+read modules already transformed by the same plugin instance. Streaming SSR
+and React Server Components are unsupported.
+
+Titles, copy buttons, and tabs can wrap the default `<Code />` without replacing
+its isolated code presentation. For complete control over the result, use the
+application-owned escape hatch `render={(props) => <MyCodeBlock {...props} />}`.
+The callback receives the prepared descriptor as `code` and, when supplied,
+`className`, `theme`, and `maxLines`; prop forwarding is explicit. It runs during
+application rendering, not compilation. An absent or `undefined` renderer uses
+the default shadow host. A callback returning `null` or `undefined` keeps its
+result. A custom renderer can render `code.html` in regular HTML and take
+responsibility for page CSS, or compose the framework-free component. The Web
+Component is the only built-in React presentation; the highlighter's HTML API
+remains available independently. Children and spreads on `Code` are
+unsupported. The macro import and element are replaced before React lowers JSX.
+
+See the [Shadow DOM guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
+for framework-free use, CSS migration, browser support, and CSP/Trusted Types
+limits. Shadow DOM isolates selectors; it does not sanitize arbitrary HTML.
 
 ## Which modules are transformed
 
@@ -96,9 +161,12 @@ plain code.
 `meta` supports `title="..."`, the first `[label]`, line selections such as
 `{2,4-5}`, and `showLineNumbers`. Line numbers are off by default and can be
 enabled globally with `lineNumbers: true`; a call's `lineNumbers` overrides that
-default. With `styleMode: "classes"`, each transformed module imports a
-content-addressed CSS virtual module, so editing an example produces a new
-stylesheet ID that Vite's module graph replaces during HMR.
+default. `code()` and custom React renderers import content-addressed CSS
+virtual modules when their blocks need CSS. Editing an example produces a new
+stylesheet ID that Vite replaces during HMR. Default React roots each get their local base
+styles; in classes mode, modules contribute generated rules to one aggregated
+external CSS asset. Inline colors remain in the HTML and inline mode needs no
+external CSS asset.
 
 Pass optional Ferriki `transformers` callbacks to apply Shiki notation
 transformers to every prepared block. For example, install a compatible
@@ -106,7 +174,7 @@ transformers to every prepared block. For example, install a compatible
 `transformerNotationHighlight()`, `transformerNotationDiff()`, or
 `transformerNotationWordHighlight()` in that array. These are JavaScript
 callbacks; the Vite package does not add another annotation syntax or a browser
-runtime. See the [code example authoring guide](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
+highlighter. See the [code example authoring guide](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
 for feature ownership, CSS and copy behavior.
 
 For a Markdown/MDX compiler, the plugin must run while the compiler's output
@@ -124,5 +192,6 @@ release version and native asset settings. See the [Vite integration decision](h
 for its product boundary.
 
 For multiple themes, the first key in <code>themes</code> supplies the default colors.
-With class output, set <code>data-ferriki-theme="dark"</code> on a prepared
-<code>&lt;pre&gt;</code> or one of its ancestors to select another configured theme.
+For default React output, pass <code>theme="dark"</code> on <code>&lt;Code&gt;</code>.
+For ordinary class-output HTML, set <code>data-ferriki-theme="dark"</code> on the
+prepared <code>&lt;pre&gt;</code> or an ancestor.

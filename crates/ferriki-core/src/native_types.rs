@@ -39,6 +39,8 @@ pub struct NativeHighlightOptions {
     // The facade normalizes numbers to strings and null to false.
     pub tabindex: Option<Either<String, bool>>,
     pub style_mode: Option<String>,
+    // Internal presentation preparation can retain scopes without class output.
+    pub preserve_scope_boundaries: Option<bool>,
     pub theme_entries: Option<Vec<ThemeEntry>>,
 }
 
@@ -52,6 +54,7 @@ pub struct NativeTokenOptions {
     pub tokenize_time_limit: Option<f64>,
     pub tokenize_max_line_length: Option<f64>,
     pub style_mode: Option<String>,
+    pub preserve_scope_boundaries: Option<bool>,
     pub theme_entries: Option<Vec<ThemeEntry>>,
 }
 
@@ -64,6 +67,7 @@ impl From<NativeHighlightOptions> for NativeTokenOptions {
             tokenize_time_limit: options.tokenize_time_limit,
             tokenize_max_line_length: options.tokenize_max_line_length,
             style_mode: options.style_mode,
+            preserve_scope_boundaries: options.preserve_scope_boundaries,
             theme_entries: options.theme_entries,
         }
     }
@@ -78,6 +82,7 @@ impl From<NativeTokenOptions> for NativeHighlightOptions {
             tokenize_time_limit: options.tokenize_time_limit,
             tokenize_max_line_length: options.tokenize_max_line_length,
             style_mode: options.style_mode,
+            preserve_scope_boundaries: options.preserve_scope_boundaries,
             theme_entries: options.theme_entries,
             ..Default::default()
         }

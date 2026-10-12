@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-10-12
 
 ## Context
 
@@ -55,10 +55,11 @@ exclusively in the Rust core.
   musl host cannot load a glibc addon. Targets without a hosted CI runner, such
   as macOS on Intel, are not shipped.
 - The root highlighter entry on a platform without a binary fails at import
-  with an actionable error naming
-  the platform, architecture and libc. The intended answer for environments
-  the prebuild matrix cannot reach, including browsers, is a future `wasm32`
-  build of the Rust core, not a JS reimplementation.
+  with an actionable error naming the platform, architecture and libc. The
+  intended answer for browser highlighting and other environments the prebuild
+  matrix cannot reach is a future `wasm32` build of the Rust core, not a JS
+  reimplementation. Browsers can present HTML prepared elsewhere through the
+  separate `@ferriki/core/web-component` entry; that entry does not highlight.
 - The binding loader is internal. Consumers use the documented high-level
   runtime or build-tool entries; none exposes the loader directly.
 - `ferriki-core` uses NAPI-RS v3 with Node-API 8. Rust tests enable dynamic
@@ -123,11 +124,16 @@ the [cross-build reference](https://napi.rs/docs/cli/build), and the
 
 The browser-safe `@ferriki/core/macro` subpath contains only a marker that
 throws when it is not transformed. It imports no engine or native loader.
-`@ferriki/vite` recognizes the marker at build time, and prepared HTML/CSS is
-delivered to the browser; the addon contains no macro scanner. The marker
-provides no browser highlighting
-([ADR 0018](0018-inline-highlighting-macros.md)). The native loader remains
-internal.
+`@ferriki/vite` recognizes the marker at build time and prepares HTML/CSS with
+the native highlighter; the addon contains no macro scanner. The React macro's
+server branch emits that prepared HTML as Declarative Shadow DOM, and its
+browser branch registers blocks for reference hosts. Neither branch highlights
+in the browser ([ADR 0018](0018-inline-highlighting-macros.md)). The
+framework-free `@ferriki/core/web-component` subpath presents trusted prepared
+HTML/CSS and imports no engine or native loader ([ADR
+0019](0019-shadow-dom-code-elements.md)). Its `/server` subpath remains a
+complete-HTML helper for manually authored hosts; it does not highlight. The
+native loader remains internal.
 
 ## Consequences
 
@@ -141,8 +147,9 @@ internal.
   publication-verification gates required for 1.0.
 - Adding a target means a sidecar package, a release matrix entry and a row in
   `platforms.mjs`; removing one is a breaking change.
-- Environments outside the matrix, and browsers, have no supported runtime
-  until a `wasm32` build exists.
+- Environments outside the matrix have no highlighting runtime until a
+  supported native target or a `wasm32` build exists. Browsers can display
+  prepared output, but browser-side highlighting remains unsupported.
 
 ## History
 
@@ -165,5 +172,11 @@ internal.
 - 2026-10-05: Records the optimized token-result writer, the `profiling` feature and per-target size and cold-load reporting in CI (#225).
 
 - 2026-10-10: Records typed native decoration plans while JS retains opaque objects and callbacks (#122).
-
 - 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
+- 2026-10-11: Clarifies that native-only applies to highlighting; separate
+  framework-free browser and DSD server entries present prepared HTML/CSS
+  without adding a browser highlighter or native dependency.
+- 2026-10-11: Records direct macro-generated DSD during React SSR; the
+  framework-free server helper remains for manually authored reference hosts.
+- 2026-10-12: Keeps native declarative highlighting and framework-free
+  presentation as separate runtime paths (#257, #263).
