@@ -49,7 +49,17 @@ export async function cleanupBootstrap({ hostname, zone, accessKey, objects, fet
     }
     return true;
   }
-  const hasStaging = await inspectStaging(staging);
+  async function rootHasStaging() {
+    const response = await request("");
+    if (!response.ok) throw new Error(`Storage root lookup failed: HTTP ${response.status}`);
+    const entries = await response.json();
+    if (!Array.isArray(entries)) throw new Error("Invalid storage root listing");
+    const entry = entries.find((item) => item.ObjectName === staging.slice(0, -1));
+    if (entry && !entry.IsDirectory) throw new Error("Unexpected staging root object");
+    return Boolean(entry);
+  }
+  const hasStaging = await rootHasStaging();
+  if (hasStaging) await inspectStaging(staging);
   const candidates = [...old].flatMap(([key, bytes]) => [
     [key, bytes],
     [staging + key, bytes],
@@ -82,9 +92,14 @@ export async function cleanupBootstrap({ hostname, zone, accessKey, objects, fet
         const response = await request(key, "DELETE");
         await response.body?.cancel();
         if (!response.ok && response.status !== 404) throw new Error(`Cleanup failed: ${key}`);
-        const after = await request(key);
-        await after.body?.cancel();
-        if (after.status !== 404) throw new Error(`Cleanup deletion not confirmed: ${key}`);
+        if (key === staging) {
+          // Directory GET returns 200 with [] even when the directory is gone.
+          if (await rootHasStaging()) throw new Error(`Cleanup deletion not confirmed: ${key}`);
+        } else {
+          const after = await request(key);
+          await after.body?.cancel();
+          if (after.status !== 404) throw new Error(`Cleanup deletion not confirmed: ${key}`);
+        }
       }
     }),
   );

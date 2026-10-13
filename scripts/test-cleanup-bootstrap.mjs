@@ -31,8 +31,12 @@ test("migration cleanup only removes verified old objects and preserves short na
       } else store.delete(key);
       return new Response(null, { status: 200 });
     }
+    if (key === "")
+      return Response.json(
+        staged ? [{ ObjectName: "ferriki-bunny-assets", IsDirectory: true }] : [],
+      );
     if (key.endsWith("/")) {
-      if (!staged) return new Response(null, { status: 404 });
+      if (!staged) return Response.json([]);
       return Response.json(
         key === staging
           ? [{ ObjectName: "rust", IsDirectory: true }]
@@ -68,6 +72,8 @@ test("unexpected staging files or different existing bytes prevent every deletio
         deletes++;
         return new Response(null);
       }
+      if (new URL(url).pathname === "/fixture/")
+        return Response.json([{ ObjectName: "ferriki-bunny-assets", IsDirectory: true }]);
       if (url.endsWith("/"))
         return Response.json(unexpected ? [{ ObjectName: "unknown", IsDirectory: false }] : []);
       return new Response("foreign bytes");
