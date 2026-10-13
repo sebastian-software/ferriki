@@ -9,6 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { FERRIKI_PLATFORM_TARGETS } from "../ferriki/platforms.mjs";
+import { payloadPath } from "../ferriki/scripts/asset-path.mjs";
 
 // npm can take several minutes to serve a version it already accepted, most
 // visibly on a package's first real release: 0.4.0 of @ferriki/linux-x64-gnu
@@ -228,10 +229,9 @@ export async function verifyCdnPayloads(releaseManifest, { fetchImpl = fetch } =
   async function worker() {
     while (next < entries.length) {
       const [path, asset] = entries[next++];
-      const url =
-        releaseManifest.storageLayout === "language-hash-v1"
-          ? `${ASSETS_BASE_URL}/${path.startsWith("themes/") ? "themes/" : ""}${path.split("/")[1].replace(/\.(fkgram|fktheme)$/, "")}/${asset.sha256}`
-          : `${ASSETS_BASE_URL}/${commit}/assets/shiki/${path}`;
+      const url = ["language-hash-v1", "language-hash-v2"].includes(releaseManifest.storageLayout)
+        ? `${ASSETS_BASE_URL}/${payloadPath(path, asset, releaseManifest.storageLayout)}`
+        : `${ASSETS_BASE_URL}/${commit}/assets/shiki/${path}`;
       try {
         const response = await fetchImpl(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
         if (!response.ok) {

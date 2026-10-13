@@ -7,7 +7,7 @@ const lock = JSON.parse(await readFile(new URL("assets/catalog.json", root), "ut
 const sources = JSON.parse(await readFile(new URL("assets/grammars/sources.json", root), "utf8"));
 const expected = new Map();
 for (const [key, asset] of Object.entries(lock.release.assets))
-  expected.set(payloadPath(key, asset), asset);
+  expected.set(payloadPath(key, asset, lock.release.storageLayout), asset);
 for (const entry of sources.languages) {
   expected.set(objectPath("language", entry.id, entry.sha256), { sha256: entry.sha256 });
   expected.set(objectPath("language", entry.id, entry.upstream_sha256), {

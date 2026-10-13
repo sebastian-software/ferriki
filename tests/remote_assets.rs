@@ -14,7 +14,7 @@ use ferriki::{ErrorKind, Highlighter, RemoteAssets, StandardAssetCatalogs};
 
 const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
 
-/// Serves `assets/standard` below `/<COMMIT>/assets/standard/`, one request per
+/// Serves the local catalog at its immutable hash paths, one request per
 /// connection. Individual paths can be replaced to simulate a bad mirror.
 struct Mirror {
     url: String,
@@ -92,7 +92,17 @@ fn cdn_path(path: &str) -> String {
         &std::fs::read_to_string(catalog_dir().join("release-manifest.json")).unwrap(),
     )
     .unwrap();
-    let hash = &release.assets[path].sha256;
+    let digest = &release.assets[path].sha256;
+    let mut value = u64::from_str_radix(&digest[..16], 16).unwrap() % 62_u64.pow(8);
+    let mut chars = ['0'; 8];
+    for ch in chars.iter_mut().rev() {
+        *ch = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            .chars()
+            .nth((value % 62) as usize)
+            .unwrap();
+        value /= 62;
+    }
+    let hash: String = chars.into_iter().collect();
     if let Some(id) = path
         .strip_prefix("languages/")
         .and_then(|s| s.strip_suffix(".fkgram"))

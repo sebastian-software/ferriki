@@ -1,13 +1,23 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
-import { digest, encodeCatalog, objectPath, payloadPath } from "./asset-store.mjs";
+import { digest, encodeCatalog, objectPath, payloadPath, shortHash } from "./asset-store.mjs";
 import { uploadImmutable } from "./bunny-storage.mjs";
 
-test("canonical language and theme objects are named by their full digest", () => {
+test("short object names preserve full digest integrity and legacy full-hash paths", () => {
   const hash = digest(Buffer.from("payload"));
-  assert.equal(payloadPath("languages/rust.fkgram", { sha256: hash }), `rust/${hash}`);
-  assert.equal(payloadPath("themes/nord.fktheme", { sha256: hash }), `themes/nord/${hash}`);
+  assert.equal(payloadPath("languages/rust.fkgram", { sha256: hash }), `rust/${shortHash(hash)}`);
+  assert.equal(
+    payloadPath("themes/nord.fktheme", { sha256: hash }),
+    `themes/nord/${shortHash(hash)}`,
+  );
+  assert.equal(shortHash("0".repeat(64)), "00000000");
+  assert.equal(shortHash("a".repeat(64)), "Big46r2A");
+  assert.equal(shortHash("f".repeat(64)), "Ha16AHYF");
+  assert.equal(
+    payloadPath("languages/rust.fkgram", { sha256: hash }, "language-hash-v1"),
+    `rust/${hash}`,
+  );
   assert.throws(() => objectPath("language", "../rust", hash));
   assert.throws(() => objectPath("language", "rust", "short-hash"));
 });

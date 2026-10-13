@@ -3,6 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { digest, objectPath, payloadPath } from "./asset-store.mjs";
+import { cleanupBootstrap } from "./cleanup-bootstrap-assets.mjs";
 import { uploadImmutable } from "./bunny-storage.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -18,7 +19,12 @@ async function add(key, file, hash, size) {
   objects.set(key, bytes);
 }
 for (const [key, asset] of Object.entries(lock.release.assets))
-  await add(payloadPath(key, asset), `assets/standard/${key}`, asset.sha256, asset.size);
+  await add(
+    payloadPath(key, asset, lock.release.storageLayout),
+    `assets/standard/${key}`,
+    asset.sha256,
+    asset.size,
+  );
 for (const entry of sources.languages) {
   await add(
     objectPath("language", entry.id, entry.sha256),
@@ -37,18 +43,37 @@ for (const entry of lock.theme_sources)
     `assets/upstream/curated/themes/${entry.theme_file}`,
     entry.sha256,
   );
-if (process.argv.length > 3 || (process.argv.length === 3 && process.argv[2] !== "--check"))
-  throw new Error("Usage: node scripts/publish-assets.mjs [--check]");
+if (
+  process.argv.length > 3 ||
+  (process.argv.length === 3 && !["--check", "--cleanup-bootstrap"].includes(process.argv[2]))
+)
+  throw new Error("Usage: node scripts/publish-assets.mjs [--check|--cleanup-bootstrap]");
 if (process.argv[2] === "--check") {
   console.log(`Verified ${objects.size} immutable source/payload objects for publication.`);
+} else if (process.argv[2] === "--cleanup-bootstrap") {
+  if (lock.release.storageLayout !== "language-hash-v2")
+    throw new Error("Cleanup requires the short-hash catalog");
+  const result = await cleanupBootstrap({
+    hostname: process.env.BUNNY_STORAGE_HOSTNAME,
+    zone: process.env.BUNNY_STORAGE_ZONE,
+    accessKey: process.env.BUNNY_STORAGE_ACCESS_KEY,
+    objects,
+  });
+  console.log(
+    `Removed ${result.removedObjects} verified migration objects; staging directory removed: ${result.removedStaging}.`,
+  );
 } else {
   if (process.argv.length !== 2)
-    throw new Error("Usage: node scripts/publish-assets.mjs [--check]");
+    throw new Error("Usage: node scripts/publish-assets.mjs [--check|--cleanup-bootstrap]");
   const result = await uploadImmutable({
     hostname: process.env.BUNNY_STORAGE_HOSTNAME,
     zone: process.env.BUNNY_STORAGE_ZONE,
     accessKey: process.env.BUNNY_STORAGE_ACCESS_KEY,
     objects,
+    onProgress: ({ uploaded, skipped, total }) => {
+      if ((uploaded + skipped) % 50 === 0)
+        console.log(`Bunny Storage: ${uploaded + skipped}/${total} verified.`);
+    },
   });
   console.log(`Bunny Storage: ${result.uploaded} uploaded; ${result.skipped} unchanged.`);
 }

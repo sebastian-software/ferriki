@@ -21,8 +21,19 @@ assert.equal(
   "asset-only dispatch must skip release management and all dependent registry jobs",
 );
 const assetOnly = releaseWorkflow.jobs["publish-locked-assets"];
+assert.equal(
+  releaseWorkflow.jobs["release-summary"].if,
+  "${{ always() && !(github.event_name == 'workflow_dispatch' && inputs.assets-only) }}",
+  "asset-only dispatch must not report a skipped package release as a failure",
+);
 assert.equal(assetOnly.if, "${{ github.event_name == 'workflow_dispatch' && inputs.assets-only }}");
 assert.equal(assetOnly.steps[0].with["persist-credentials"], false);
+const cleanup = assetOnly.steps.find((step) => step.name === "Remove verified migration objects");
+assert.equal(cleanup.if, "inputs.cleanup-bootstrap-assets");
+assert(
+  assetOnly.steps.indexOf(cleanup) >
+    assetOnly.steps.findIndex((step) => step.name === "Verify public CDN objects"),
+);
 const assetCommands = assetOnly.steps.map((step) => step.run || "").join("\n");
 assert.doesNotMatch(assetCommands, /cargo publish|pnpm publish|publish-npm|release-please/);
 assert(assetCommands.indexOf("publish-assets.mjs") < assetCommands.indexOf("verify-assets.mjs"));

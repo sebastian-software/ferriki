@@ -2306,7 +2306,7 @@
         "formatVersion": 3
       }
     },
-    "storageLayout": "language-hash-v1"
+    "storageLayout": "language-hash-v2"
   },
   "theme_sources": [
     {

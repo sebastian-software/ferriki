@@ -53,12 +53,16 @@ normalized JSON, binary payloads, and generated catalog indexes are ignored
 local build artifacts, not committed repository data.
 
 - **Immutable objects.** Grammar objects use `<canonical-language-id>/<sha256>`;
-  themes use `themes/<theme-id>/<sha256>`. SHA-256 covers every byte of the
-  original source, normalized source, or compiled payload. Equal bytes reuse
+  themes use `themes/<theme-id>/<short-hash>`. SHA-256 covers every byte of the
+  original source, normalized source, or compiled payload. The URL uses eight
+  Base62 digits; the catalog keeps the complete SHA-256 for integrity. Equal bytes reuse
   an object. Changed bytes use a new name. Aliases resolve to the canonical ID.
 - **Pinned catalogs.** Each package/crate version carries its fixed catalog,
   payload digests, sizes, and binary format versions. The release manifest's
-  `storageLayout: "language-hash-v1"` selects digest URLs. Its optional `commit`
+  `storageLayout: "language-hash-v2"` selects short Base62 URLs; v1 retains
+  full SHA-256 names. Base62 encodes the first 64 digest bits modulo `62^8`,
+  using `0-9A-Za-z` and zero padding to eight characters. A colliding object
+  name stops publication without an overwrite. Its optional `commit`
   records release provenance and does not choose the new object's location.
   The absent layout retains legacy `<commit>/assets/shiki/<path>` URLs.
 - **Offline compilation.** Rust's build script encodes the reviewed catalog
@@ -88,7 +92,7 @@ local build artifacts, not committed repository data.
   size. Package/crate version updates remain owned by Release Please.
 - **Hosting and migration.** A Storage Zone origin override handles
   hash paths. The default GitHub origin keeps released commit-based URLs working. Access rules
-  permit only the legacy asset paths and canonical ID/full-hash paths; successful
+  permit only the legacy asset paths and canonical ID/eight-character Base62 paths; successful
   immutable responses have a one-year cache lifetime. The hostname stays
   `assets.ferriki.dev`, so the provider can change without changing clients.
 - **Caching and integrity.** Downloads are verified before decoding or caching.
@@ -139,5 +143,6 @@ local build artifacts, not committed repository data.
 - 2026-10-12: Clarifies that catalog curation (ADR 0020) preserves CDN-only payload delivery.
 
 - 2026-10-13: Moves sources and payloads out of Git into immutable Bunny Storage
-  objects keyed by canonical language/theme ID and full content hash. Retains
+  objects keyed by canonical language/theme ID and eight Base62 digits, with
+  full SHA-256 integrity checks. Retains
   reviewed metadata locks, offline crate compilation, and legacy release URLs (#152).

@@ -238,8 +238,8 @@ let mut highlighter = Highlighter::builder()
 
 - The crate compiles in both catalog manifests and the release manifest, so
   resolution, aliases and error messages work offline. Payloads are fetched
-  on first load from `<base_url>/<language-id>/<sha256>` or
-  `<base_url>/themes/<theme-id>/<sha256>`, verified
+  on first load from `<base_url>/<language-id>/<short-hash>` or
+  `<base_url>/themes/<theme-id>/<short-hash>`, verified
   against the release manifest, and cached as one file per SHA-256 digest.
   Later loads, and later releases with unchanged payloads, read the cache.
 - Settings left unset in `RemoteAssets` fall back to `FERRIKI_ASSETS_REMOTE`

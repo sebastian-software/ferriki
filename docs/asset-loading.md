@@ -24,8 +24,8 @@ either, Ferriki uses `node_modules/.cache/ferriki` under the nearest package
 root that has a `node_modules` directory, then falls back to the platform
 cache. The cache stores one file per SHA-256 digest and reuses unchanged
 payloads across releases. Set `FERRIKI_ASSETS_BASE_URL` or `assets.baseUrl` to
-the root of a mirror that serves `<language-id>/<sha256>` and
-`themes/<theme-id>/<sha256>`. The hash covers the complete compiled payload;
+the root of a mirror that serves `<language-id>/<short-hash>` and
+`themes/<theme-id>/<short-hash>`. The manifest verifies the complete compiled payload with SHA-256;
 IDs are canonical, so aliases use the same object. Each Ferriki version keeps
 its fixed catalog and hashes. Updates append new objects without changing
 payloads used by older releases. Legacy catalogs retain their

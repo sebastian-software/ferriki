@@ -28,7 +28,8 @@ pub struct ReleaseManifest {
     pub manifest_version: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
-    /// `language-hash-v1` serves immutable payloads by canonical ID and SHA-256.
+    /// `language-hash-v2` serves immutable payloads by ID and eight Base62 digits.
+    /// `language-hash-v1` retains full SHA-256 object names.
     /// Absent values retain the legacy release-commit URL layout.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage_layout: Option<String>,
@@ -98,7 +99,7 @@ impl ReleaseManifest {
         if manifest
             .storage_layout
             .as_deref()
-            .is_some_and(|layout| layout != "language-hash-v1")
+            .is_some_and(|layout| !matches!(layout, "language-hash-v1" | "language-hash-v2"))
         {
             return Err(serde::de::Error::custom("unsupported asset storage layout"));
         }

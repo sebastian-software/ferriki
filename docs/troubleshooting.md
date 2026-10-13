@@ -91,8 +91,8 @@ or platform sidecar. Inspect `npm pack --dry-run` from `node/ferriki`.
 ## `Ferriki could not download assets` or `… is not cached`
 
 Standard grammars and themes are not bundled; they are downloaded on first use
-from `https://assets.ferriki.dev/<language-id>/<sha256>` or
-`https://assets.ferriki.dev/themes/<theme-id>/<sha256>`, verified by
+from `https://assets.ferriki.dev/<language-id>/<short-hash>` or
+`https://assets.ferriki.dev/themes/<theme-id>/<short-hash>`, verified by
 SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 
 - **`Ferriki could not download assets: … HTTP 404` or a connection error**:
@@ -121,8 +121,8 @@ There is no offline package; use one of these instead:
   `FERRIKI_CACHE_DIR`) as a CI cache or container layer, and set
   `FERRIKI_ASSETS_REMOTE=0` for the offline runs. The cache holds one file per
   SHA-256 digest; entries never change and are reused across releases.
-- **Run a mirror.** Serve verified objects at `<language-id>/<sha256>` and
-  `themes/<theme-id>/<sha256>` and set
+- **Run a mirror.** Serve verified objects at `<language-id>/<short-hash>` and
+  `themes/<theme-id>/<short-hash>` and set
   `FERRIKI_ASSETS_BASE_URL` (or the `baseUrl` asset option) to its root. The exact hashes are
   recorded in `node_modules/@ferriki/core/assets/standard/release-manifest.json`.
 

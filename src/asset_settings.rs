@@ -10,7 +10,10 @@ pub(crate) fn asset_url(
     path: &str,
     digest: &str,
 ) -> Result<String> {
-    if storage_layout == Some("language-hash-v1") {
+    if matches!(
+        storage_layout,
+        Some("language-hash-v1" | "language-hash-v2")
+    ) {
         let (prefix, id) = if let Some(id) = path
             .strip_prefix("languages/")
             .and_then(|p| p.strip_suffix(".fkgram"))
@@ -37,7 +40,12 @@ pub(crate) fn asset_url(
                 "Invalid content-addressed asset ID.",
             ));
         }
-        return Ok(format!("{}/{prefix}{id}/{digest}", settings.base_url));
+        let object = if storage_layout == Some("language-hash-v2") {
+            short_hash(digest)?
+        } else {
+            digest.to_owned()
+        };
+        return Ok(format!("{}/{prefix}{id}/{object}", settings.base_url));
     }
     let commit = settings.commit.as_deref().ok_or_else(|| Error::new(
         ErrorKind::AssetUnavailable,
@@ -47,6 +55,26 @@ pub(crate) fn asset_url(
         "{}/{commit}/assets/shiki/{path}",
         settings.base_url
     ))
+}
+
+pub(crate) fn short_hash(digest: &str) -> Result<String> {
+    if digest.len() != 64
+        || !digest
+            .bytes()
+            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+    {
+        return Err(Error::new(ErrorKind::AssetFormat, "Invalid asset digest."));
+    }
+    let mut value = u64::from_str_radix(&digest[..16], 16)
+        .map_err(|_| Error::new(ErrorKind::AssetFormat, "Invalid asset digest."))?
+        % 62_u64.pow(8);
+    let alphabet = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    let mut encoded = [b'0'; 8];
+    for byte in encoded.iter_mut().rev() {
+        *byte = alphabet[(value % 62) as usize];
+        value /= 62;
+    }
+    Ok(encoded.into_iter().map(char::from).collect())
 }
 
 /// The default mirror of immutable payloads and legacy release assets.
@@ -153,6 +181,19 @@ mod url_tests {
             commit: None,
         };
         let hash = "a".repeat(64);
+        assert_eq!(short_hash(&"0".repeat(64)).unwrap(), "00000000");
+        assert_eq!(short_hash(&hash).unwrap(), "Big46r2A");
+        assert_eq!(short_hash(&"f".repeat(64)).unwrap(), "Ha16AHYF");
+        assert_eq!(
+            asset_url(
+                Some("language-hash-v2"),
+                &settings,
+                "languages/rust.fkgram",
+                &hash
+            )
+            .unwrap(),
+            "https://assets.example/rust/Big46r2A"
+        );
         assert_eq!(
             asset_url(
                 Some("language-hash-v1"),

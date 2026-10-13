@@ -10,6 +10,10 @@ on:
         description: Upload and verify the locked assets without publishing packages
         type: boolean
         default: false
+      cleanup-bootstrap-assets:
+        description: Remove verified full-hash migration objects and the temporary upload folder
+        type: boolean
+        default: false
       bootstrap-assets:
         description: Seed assets from the exact historical snapshot instead of the CDN
         type: boolean
@@ -70,6 +74,13 @@ jobs:
         run: node scripts/publish-assets.mjs
       - name: Verify public CDN objects
         run: node scripts/verify-assets.mjs
+      - name: Remove verified migration objects
+        if: inputs.cleanup-bootstrap-assets
+        env:
+          BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
+        run: node scripts/publish-assets.mjs --cleanup-bootstrap
 
   release-please:
     if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.assets-only) }}
@@ -507,7 +518,7 @@ jobs:
       - verify-npm-publish
       - publish-crates
       - verify-crates-publish
-    if: ${{ always() }}
+    if: ${{ always() && !(github.event_name == 'workflow_dispatch' && inputs.assets-only) }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
     permissions:

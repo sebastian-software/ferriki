@@ -5,7 +5,7 @@ import path from "node:path";
 export const DEFAULT_CDN = "https://assets.ferriki.dev";
 export const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
-export { objectPath, payloadPath } from "../node/ferriki/scripts/asset-path.mjs";
+export { objectPath, payloadPath, shortHash } from "../node/ferriki/scripts/asset-path.mjs";
 
 export async function verifiedRead(file, hash, size) {
   try {
@@ -95,7 +95,10 @@ export function encodeCatalog(catalog, kind) {
 }
 
 export async function writeMetadata(root, lock) {
-  if (lock.version !== 1 || lock.release.storageLayout !== "language-hash-v1")
+  if (
+    lock.version !== 1 ||
+    !["language-hash-v1", "language-hash-v2"].includes(lock.release.storageLayout)
+  )
     throw new Error("Unsupported asset catalog lock");
   const output = path.join(root, "assets/standard");
   for (const [kind, catalog] of [

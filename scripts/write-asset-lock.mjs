@@ -11,7 +11,7 @@ const { languageCatalog, themeCatalog } = await import(
 const release = JSON.parse(
   await readFile(path.join(root, "assets/standard/release-manifest.json"), "utf8"),
 );
-release.storageLayout = "language-hash-v1";
+release.storageLayout = "language-hash-v2";
 const entries = (rows) =>
   rows.map((row) =>
     Object.fromEntries(

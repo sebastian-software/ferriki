@@ -371,7 +371,10 @@ mod tests {
                 .unwrap();
             assert_eq!(
                 asset.url,
-                format!("https://mirror.example/{id}/{}", asset.digest)
+                format!(
+                    "https://mirror.example/{id}/{}",
+                    crate::asset_settings::short_hash(&asset.digest).unwrap()
+                )
             );
         }
 

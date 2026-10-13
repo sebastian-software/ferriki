@@ -29,7 +29,7 @@ const sources = [
   "build.rs",
   "src",
   "crates",
-  "assets/standard",
+  "assets/catalog.json",
   "node/ferriki",
 ];
 

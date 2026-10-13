@@ -190,7 +190,7 @@ cached fails with `ERR_ASSET` and names the remedies.
 
 Offline, air-gapped and network-less CI builds either reuse a cache populated
 by one online run, or point `FERRIKI_ASSETS_BASE_URL` at a mirror that serves
-the immutable `<language-id>/<sha256>` and `themes/<theme-id>/<sha256>` paths. See
+the immutable `<language-id>/<short-hash>` and `themes/<theme-id>/<short-hash>` paths. See
 [troubleshooting](./troubleshooting.md#offline-and-air-gapped-use).
 
 ## Highlighter methods

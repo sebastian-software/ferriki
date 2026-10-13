@@ -19,6 +19,7 @@ const materialize = spawnSync(
 if (materialize.status !== 0) process.exit(materialize.status ?? 1);
 for (const script of [
   "../scripts/test-asset-store.mjs",
+  "../scripts/test-cleanup-bootstrap.mjs",
   "../scripts/test-grammar-source.mjs",
   "../scripts/test-grammar-repositories.mjs",
   "../scripts/test-grammar-update-workflow.mjs",

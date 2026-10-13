@@ -256,3 +256,13 @@ await verifyCdnPayloads(
     },
   },
 );
+
+await verifyCdnPayloads(
+  { ...pinned, storageLayout: "language-hash-v2" },
+  {
+    fetchImpl: async (url) => {
+      assert.equal(url, "https://assets.ferriki.dev/themes/nord/HrW53YkZ");
+      return { ok: true, arrayBuffer: async () => payload.buffer };
+    },
+  },
+);

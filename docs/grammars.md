@@ -135,9 +135,11 @@ notices, and the small [`assets/catalog.json`](../assets/catalog.json) metadata
 lock. Original grammars, normalized JSON, theme snapshots, compiled payloads,
 and generated indexes are ignored local build data. The source pipeline reads upstream grammar data directly.
 
-Bunny Storage holds immutable objects at `assets.ferriki.dev/<language-id>/<sha256>`.
-Original, normalized, and compiled bytes each have their own full SHA-256;
-identical bytes share an object. Themes use `themes/<theme-id>/<sha256>`.
+Bunny Storage holds immutable objects at `assets.ferriki.dev/<language-id>/<short-hash>`.
+Original, normalized, and compiled bytes each have their own full SHA-256
+in the lock. Their URL names use eight Base62 digits derived from the first
+64 digest bits modulo `62^8`, with alphabet `0-9A-Za-z` and zero padding.
+Identical bytes share an object; a short-name collision stops publication. Themes use `themes/<theme-id>/<short-hash>`.
 A release ships its exact catalog and hashes. New uploads cannot change an
 older release's selection, and old objects are retained. Legacy
 `<commit>/assets/shiki/<path>` URLs continue to use the GitHub origin.
@@ -270,7 +272,13 @@ gh workflow run publish.yml --repo sebastian-software/ferriki \
   --ref <reviewed-ref> -f assets-only=true
 ```
 
-For the initial migration only, also pass `-f bootstrap-assets=true`. That
+For the initial migration only, also pass `-f bootstrap-assets=true`.
+The explicit `-f cleanup-bootstrap-assets=true` option removes verified
+full-hash migration objects and the temporary `ferriki-bunny-assets/` directory
+after short-name upload and public CDN verification succeed. Unexpected
+staging files or different bytes stop cleanup before any deletion. This option
+is never used by the schedule or ordinary releases. Purge the pull-zone cache
+after this one-time cleanup so old migration URLs no longer serve cached copies. That
 mode reconstructs verified bytes from pinned original URLs and the historical
 commit recorded in the catalog lock. Ordinary runs prefer Bunny and can
 reconstruct missing originals from their pinned sources. Every download must
@@ -278,12 +286,22 @@ match its locked hash; payload bootstrap never follows a moving branch.
 
 Keep `https://raw.githubusercontent.com/sebastian-software/ferriki` as the
 default pull-zone origin for legacy `<commit>/assets/shiki/<path>` URLs. Add
-an **Override Origin: Storage Zone** edge rule selecting `ferriki-assets` for
-`pattern:^https?://[^/]+/(?:themes/)?[a-z0-9-]+/[a-f0-9]{64}(?:\?.*)?$`,
-with no path prefix. The path allowlist must accept both legacy assets and
-full hash paths; apply
-`Cache-Control: public, max-age=31536000, immutable` only to successful asset
-responses. New publication adds objects without purging or replacing old ones.
+an **Override Origin: Storage Zone** rule selecting `ferriki-assets`, with no
+path prefix. Generate its **Match any** URL properties with:
+
+```sh
+node scripts/bunny-edge-patterns.mjs
+```
+
+Use `storageOriginMatchAny` for the origin override. Block requests matching
+none of `allowedAssetPaths`. For the response header, require both status
+`200` and a URL matching any allowed asset path. The generator also retains
+legacy release URLs. Hash paths have no query parameters.
+Bunny evaluates `pattern:` values as
+[Lua patterns](https://bunny.net/blog/introducing-pattern-matching-for-edge-rules/),
+so the generator expands exact character counts instead of using regex syntax.
+Set `Cache-Control: public, max-age=31536000, immutable` on successful responses.
+New publication adds objects without purging or replacing old ones.
 
 To verify all public originals, normalized sources, and runtime payloads:
 

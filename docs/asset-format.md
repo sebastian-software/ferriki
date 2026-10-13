@@ -3,7 +3,7 @@
 Ferriki stores generated standard language and theme catalogs in a compact
 binary format in the ignored local `assets/standard/` build directory.
 The reviewed metadata lock is [`assets/catalog.json`](../assets/catalog.json);
-payloads live on Bunny under language/theme IDs and full SHA-256 hashes.
+payloads live on Bunny under language/theme IDs and eight-character Base62 names.
 
 This format is currently an internal Ferriki implementation detail. It exists
 to decouple the runtime from upstream JS build artifacts and to give the Rust
@@ -172,7 +172,7 @@ next to the two catalogs:
 ```json
 {
   "manifestVersion": 1,
-  "storageLayout": "language-hash-v1",
+  "storageLayout": "language-hash-v2",
   "assets": {
     "languages/typescript.fkgram": {
       "sha256": "<lowercase hex>",
@@ -184,10 +184,13 @@ next to the two catalogs:
 ```
 
 - Keys identify language/theme files in a local materialized catalog. With
-  `storageLayout: "language-hash-v1"`, remote URLs use
-  `https://assets.ferriki.dev/<language-id>/<sha256>` or
-  `https://assets.ferriki.dev/themes/<theme-id>/<sha256>`. An absent layout
-  retains legacy `<commit>/assets/shiki/<key>` URLs.
+  `storageLayout: "language-hash-v2"`, remote URLs use
+  `https://assets.ferriki.dev/<language-id>/<short-hash>` or
+  `https://assets.ferriki.dev/themes/<theme-id>/<short-hash>`. An absent layout
+  retains legacy `<commit>/assets/shiki/<key>` URLs. `language-hash-v1` uses
+  full SHA-256 names; v2 encodes the first 64 digest bits modulo `62^8` in
+  `0-9A-Za-z`, padded to eight characters. The complete digest remains the
+  cache identity and integrity check.
 - `manifestVersion` versions this JSON layout, independently of the binary
   `FORMAT_VERSION`.
 - The reviewed metadata lives in `assets/catalog.json`; binary indexes and

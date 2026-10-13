@@ -136,7 +136,7 @@ if (flags.has("--payloads") || flags.size === 0) {
     const bytes =
       (bootstrap
         ? null
-        : await fetchBytes(`${cdn}/${payloadPath(key, asset)}`, {
+        : await fetchBytes(`${cdn}/${payloadPath(key, asset, lock.release.storageLayout)}`, {
             missing: true,
             limit: asset.size,
           })) ??

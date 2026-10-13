@@ -46,7 +46,7 @@ fn release_manifest_matches_the_committed_payloads() {
         {
             let mut generated =
                 ReleaseManifest::from_catalog_dir(&catalog_dir()).expect("hash catalog");
-            generated.storage_layout = Some("language-hash-v1".to_owned());
+            generated.storage_layout = Some("language-hash-v2".to_owned());
             generated
         },
         manifest,
