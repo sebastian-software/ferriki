@@ -25,6 +25,7 @@ changes the record first.
 | [0017](0017-node-html-output-priority.md)                 | Prioritize HTML output for Node consumers                         | Accepted |
 | [0018](0018-inline-highlighting-macros.md)                | Prepare inline highlighting macros at build time                  | Accepted |
 | [0019](0019-shadow-dom-code-elements.md)                  | Present prepared React code in a Shadow DOM element               | Accepted |
+| [0020](0020-curated-grammar-sources.md)                   | Own a curated standard grammar catalog                            | Accepted |
 
 Other decision records:
 

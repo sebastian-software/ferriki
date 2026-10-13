@@ -157,6 +157,9 @@ part of release verification.
       manual go/no-go decision before the deliberate 1.0 version change.
 - [ ] Confirm the `Verify exact release source` job reports the release tag,
       commit SHA, and successful CI run before either registry publisher starts.
+- [ ] Confirm the release source gate uploads missing immutable objects to
+      Bunny Storage and verifies all public hash URLs before registry publication.
+      See [CDN maintenance](grammars.md#seed-or-repair-the-cdn).
 - [ ] Confirm every documented target build completes and every platform
       package has the same version as the main package.
 - [ ] Confirm the workflow summary distinguishes “no release” from

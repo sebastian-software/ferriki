@@ -6,7 +6,14 @@ import os from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { compareReports, engines, loadCorpus, repoRoot } from "./tiobe-benchmark.mjs";
+import { validateReport } from "./run-blacksmith-comparison.mjs";
+import {
+  compareReports,
+  engines,
+  loadCorpus,
+  repoRoot,
+  yamlJavaScriptUnsupported,
+} from "./tiobe-benchmark.mjs";
 
 const expected = [
   "TypeScript",
@@ -64,6 +71,7 @@ try {
   );
   assert.equal(child.status, 0, child.stderr);
   const report = JSON.parse(readFileSync(path, "utf8"));
+  validateReport(report, "curated", true);
   assert.deepEqual(JSON.parse(child.stdout), report);
   assert.deepEqual(
     report.languages.map((row) => row.name),
@@ -80,6 +88,11 @@ try {
           assert.equal(result.status, "unsupported");
           assert.equal(result.reason, row.prismUnsupported);
           assert.equal(result.html, undefined, "Unsupported grammars cannot produce timings");
+          continue;
+        }
+        if (id === "shiki-js" && row.textmate === "yaml" && result.status === "unsupported") {
+          assert.equal(result.reason, yamlJavaScriptUnsupported);
+          assert.equal(result.html, undefined, "Unsupported conversion cannot produce timings");
           continue;
         }
         assert.equal(result.status, "ok", `${row.name}/${entry.size}/${id}: ${result.error}`);
@@ -142,7 +155,7 @@ try {
   assert.equal(profile.status, 0, profile.stderr);
   assert.deepEqual(JSON.parse(profile.stdout).validation.referenceParity, { html: true });
   console.log(
-    "[check-bench-curated] 20 formats × 2 sizes preserve source and exact TextMate HTML; 16 Prism components pass, 4 remain explicitly unsupported; corpus and native embedded-language profiling contracts pass.",
+    "[check-bench-curated] 20 formats × 2 sizes preserve source and exact native/WASM TextMate HTML; supported JavaScript/Prism comparators pass; unsupported conversions remain explicit; corpus and native embedded-language profiling contracts pass.",
   );
 } finally {
   rmSync(directory, { recursive: true, force: true });

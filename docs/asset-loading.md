@@ -24,7 +24,12 @@ either, Ferriki uses `node_modules/.cache/ferriki` under the nearest package
 root that has a `node_modules` directory, then falls back to the platform
 cache. The cache stores one file per SHA-256 digest and reuses unchanged
 payloads across releases. Set `FERRIKI_ASSETS_BASE_URL` or `assets.baseUrl` to
-the root of a mirror that serves the same `<commit>/assets/shiki/<path>` URLs.
+the root of a mirror that serves `<language-id>/<short-hash>` and
+`themes/<theme-id>/<short-hash>`. The manifest verifies the complete compiled payload with SHA-256;
+IDs are canonical, so aliases use the same object. Each Ferriki version keeps
+its fixed catalog and hashes. Updates append new objects without changing
+payloads used by older releases. Legacy catalogs retain their
+`<commit>/assets/shiki/<path>` URLs.
 
 Synchronous factories, loads and highlighting read only the cache. Load
 standard grammars and themes through the asynchronous API first, or prepopulate
@@ -38,13 +43,13 @@ the optional Rust `remote` feature, which uses `ureq` with the platform
 verifier. In particular, setting `HTTP_PROXY` or `HTTPS_PROXY` alone does not
 configure built-in fetch on Ferriki's minimum Node version.
 
-| Setting | Node support | Effect |
-| --- | --- | --- |
-| `NODE_USE_ENV_PROXY=1` | 22.21+ or 24.0+ | Makes built-in fetch use the environment proxy variables, including `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`. |
-| `--use-env-proxy` | 22.21+ or 24.5+ | Enables the same environment-proxy behavior from the Node command line. |
-| `NODE_EXTRA_CA_CERTS=/path/to/ca.pem` | Supported by the 22.13 floor | Adds the PEM certificates to Node's trusted roots. Node reads this variable when the process starts. |
-| `NODE_USE_SYSTEM_CA=1` | 22.19+ or 24.6+ | Adds system CA certificates to Node's trusted roots. |
-| `--use-system-ca` | 22.15+ or 24.0+ | Enables system CA loading from the Node command line. |
+| Setting                               | Node support                 | Effect                                                                                                          |
+| ------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `NODE_USE_ENV_PROXY=1`                | 22.21+ or 24.0+              | Makes built-in fetch use the environment proxy variables, including `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`. |
+| `--use-env-proxy`                     | 22.21+ or 24.5+              | Enables the same environment-proxy behavior from the Node command line.                                         |
+| `NODE_EXTRA_CA_CERTS=/path/to/ca.pem` | Supported by the 22.13 floor | Adds the PEM certificates to Node's trusted roots. Node reads this variable when the process starts.            |
+| `NODE_USE_SYSTEM_CA=1`                | 22.19+ or 24.6+              | Adds system CA certificates to Node's trusted roots.                                                            |
+| `--use-system-ca`                     | 22.15+ or 24.0+              | Enables system CA loading from the Node command line.                                                           |
 
 Configure these variables before starting the Node process. On the minimum
 Node 22.13 release, use `NODE_EXTRA_CA_CERTS` for a corporate certificate

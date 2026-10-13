@@ -11,6 +11,33 @@ import {
 import "./test-asset-env.mjs";
 
 const nodeRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const materialize = spawnSync(
+  process.execPath,
+  ["../scripts/materialize-assets.mjs", "--sources"],
+  { cwd: nodeRoot, env: process.env, stdio: "inherit" },
+);
+if (materialize.status !== 0) process.exit(materialize.status ?? 1);
+for (const script of [
+  "../scripts/test-asset-store.mjs",
+  "../scripts/test-cleanup-bootstrap.mjs",
+  "../scripts/test-grammar-source.mjs",
+  "../scripts/test-grammar-repositories.mjs",
+  "../scripts/test-grammar-update-workflow.mjs",
+  "../scripts/sync-grammars.mjs",
+  "./scripts/check-ferriki-grammars.mjs",
+  "./scripts/check-ferriki-frontend.mjs",
+]) {
+  const result = spawnSync(
+    process.execPath,
+    [script, ...(script.includes("sync-grammars") ? ["--check"] : [])],
+    {
+      cwd: nodeRoot,
+      env: process.env,
+      stdio: "inherit",
+    },
+  );
+  if (result.status !== 0) process.exit(result.status || 1);
+}
 const vitestArgs = ["exec", "vitest"];
 const testNamePattern =
   "^(?!.*should have correct offset)(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects|bundle-(full|web))";

@@ -233,6 +233,13 @@ must be supported or added to the explicit boundary below.
   of the previous light-DOM presentation follow the
   [migration guide](shadow-code-elements.md#migrate-existing-react-macros).
   This exception does not extend to other Stable rows or future changes.
+- The initial owned grammar catalog transition also ships in 1.1.0 under the
+  one-time exception in
+  [ADR 0020](../adr/0020-curated-grammar-sources.md#release-scope). It changes
+  standard language IDs and aliases; applications using a removed key must
+  [register an external grammar](grammars.md). The loading/rendering APIs and
+  theme catalog retain their contracts. Future catalog removals and changes
+  to other Stable rows follow the normal semver policy.
 - Shims are documented, covered by migration tests, and may emit a deprecation
   notice in a minor release. They are removed only in a planned major release
   or before 1.0 when this document marks them **Remove**.

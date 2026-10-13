@@ -3,14 +3,32 @@ title: Languages and themes
 order: 5
 ---
 
+import {
+  GrammarCoverageSummary,
+  StandardGrammarTables,
+  SupportGrammarTables,
+} from "../../components/grammar-tables";
+
 # Languages and themes
 
-Ferriki provides Shiki's catalog: **260 TextMate grammars** and **65 themes**.
+Ferriki maintains its own catalog: a curated set of TextMate grammars, including
+embedding dependencies, and **65 themes**.
 The package ships catalog metadata; grammar and theme payloads are downloaded
 and cached on first use by an asynchronous API call.
 
+<GrammarCoverageSummary />
+
 See [Ferriki vs Prism](/guide/ferriki-vs-prism) for real TypeScript, TSX, C++, Go, Rust,
 CSS, HTML, and Astro outputs, including the token distinctions available to themes.
+
+## Supported grammars
+
+JSON, JSONC, JSON5, Markdown, MDX, YAML, and TOML are all included, along with
+Handlebars, Liquid, and Glimmer's `.gjs` and `.gts` components. The tables
+group the current catalog by typical use. Each row shows the ID to pass as
+`lang`, followed by any interchangeable aliases.
+
+<StandardGrammarTables />
 
 ## Standard languages
 
@@ -31,9 +49,65 @@ const html = highlighter.codeToHtml("const answer = 42", {
 highlighter.dispose();
 ```
 
-Embedded languages load with their host: an HTML grammar brings the CSS and
-JavaScript grammars it hands `<style>` and `<script>` blocks to, and a
-Markdown grammar highlights fenced code in every language that is loaded.
+Required embedded languages load with their host: HTML brings CSS and
+JavaScript for `<style>` and `<script>` blocks. Markdown and MDX keep optional
+embeddings lazy. Load the languages used in your documents explicitly; code
+fences follow the host grammar's supported fence rules.
+
+JavaScript, TypeScript, JSX, and TSX also load HTML/SVG and CSS injections
+automatically. Lit's `html`, `svg`, and `css` templates, Styled Components,
+Emotion's tagged templates and CSS prop, and Styled JSX work with the host
+language alone. Object-based styles use the regular JavaScript/TypeScript rules.
+
+```js ferriki-check=frontend
+import { createHighlighter } from "@ferriki/core";
+
+const highlighter = await createHighlighter({
+  langs: ["tsx"],
+  themes: ["github-dark"],
+});
+let html;
+try {
+  html = highlighter.codeToHtml(
+    'const Button = styled.button`color: red;`;\nconst icon = svg`<circle cx="10" />`;',
+    { lang: "tsx", theme: "github-dark" },
+  );
+} finally {
+  highlighter.dispose();
+}
+```
+
+For MDX, load `tsx` to highlight JSX and expressions, and `yaml` or `toml`
+for frontmatter. For example:
+
+```js ferriki-check=mdx
+import { createHighlighter } from "@ferriki/core";
+
+const highlighter = await createHighlighter({
+  langs: ["mdx", "tsx", "yaml", "toml"],
+  themes: ["github-dark"],
+});
+let html;
+try {
+  html = highlighter.codeToHtml('---\ntitle: Hello\n---\n\n# Hello\n\n<Greeting name="Ada" />', {
+    lang: "mdx",
+    theme: "github-dark",
+  });
+} finally {
+  highlighter.dispose();
+}
+```
+
+## Included support grammars
+
+These grammars supply syntax rules used by other entries: component
+expressions, embedded templates, documentation comments, and YAML versions.
+Required dependencies load with their host. Optional embedded languages
+highlight when the application loads them, as with Markdown fences.
+They contribute to the total grammar count rather than representing
+additional independent programming languages.
+
+<SupportGrammarTables />
 
 ## Themes
 
@@ -66,6 +140,19 @@ For unchanged theme files with CSS classes instead of inline styles, see
 [Class-based output](/guide/class-highlighting).
 
 ## Your own grammars and themes
+
+The `ferriki grammar fetch` CLI imports external JSON TextMate grammars from
+files, URLs, and commit-pinned GitHub sources, validates them with the native
+engine, and records a source hash:
+
+```sh
+pnpm exec ferriki grammar fetch ./example.tmLanguage.json \
+  --name example --aliases example-syntax --output ./example.ferriki.json
+```
+
+Pass the generated registration to `langs` or `loadLanguage`. Convert YAML,
+PLIST, and CSON to JSON before using this importer. Load dependency grammars
+explicitly. Languages outside Ferriki's standard set use this same path.
 
 A custom grammar or theme is the same JSON-shaped TextMate structure Shiki
 accepts. Ferriki validates it before it reaches the native engine:

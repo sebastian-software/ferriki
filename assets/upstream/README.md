@@ -1,26 +1,11 @@
-# Upstream Asset Sources
+# Local source data
 
-This directory is reserved for upstream raw asset sources that Ferriki turns
-into its own asset catalogs.
+`curated/` contains ignored, materialized normalized grammar and theme sources.
+Git stores source selectors, pins, patches, license archives, and catalog
+metadata. Original sources and generated runtime data live in immutable Bunny
+Storage objects. They are verified by SHA-256 before local use.
 
-Primary upstream mirror:
-
-- `textmate-grammars-themes`
-
-These sources are not the product runtime format. Ferriki converts them into
-its own asset representation under `assets/shiki/`.
-
-Current mirror workflow:
-
-1. Sync a local `textmate-grammars-themes` checkout plus Shiki metadata into
-   `assets/upstream/textmate-grammars-themes/` with
-   [`scripts/sync-textmate-grammars-themes.mjs`](../../scripts/sync-textmate-grammars-themes.mjs).
-2. Generate Ferriki-owned binary catalogs from that normalized upstream layout
-   with `cargo run -p ferriki-asset-gen -- generate ...`.
-
-Bootstrap workflow:
-
-- When only the mirrored Shiki workspace is available, use
-  [`scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs`](../../scripts/bootstrap-ferriki-assets-from-shiki-mirror.mjs)
-  to derive a normalized upstream layout plus Ferriki binary catalogs from the
-  checked-in Shiki mirror.
+Run `node scripts/materialize-assets.mjs --sources --payloads` before source
+checks. See [the grammar guide](../../docs/grammars.md#maintain-the-standard-catalog)
+for updates, publication, and recovery. The compatibility-only bootstrap
+helpers use `assets/compat/`; they are separate from the standard catalog.

@@ -4,6 +4,7 @@
 import { ClosingAction, CodePanel, Ledger, Mark, Section } from "ferramenta-family";
 import { Link } from "react-router";
 
+import { grammarCount } from "../data/grammar-catalog";
 import macroSample from "../data/macro-sample.json";
 import { HighlightingFlows } from "./highlighting-flows";
 
@@ -148,10 +149,10 @@ const coverage = [
   },
   {
     name: "Standard grammars and themes",
-    status: "260 · 65",
+    status: `${grammarCount} · 65`,
     settled: true,
     detail:
-      "Shiki's catalog. Payloads download on first use from the release-pinned asset service, verified by SHA-256 and cached.",
+      "Curated language and support grammars. Payloads download on first use from the release-pinned asset service, verified by SHA-256 and cached.",
   },
   {
     name: "Custom TextMate grammars and themes",

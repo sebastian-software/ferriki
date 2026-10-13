@@ -170,8 +170,8 @@ export async function checkManifestVersions(root, version, sha) {
       );
   }
   const assetManifest = JSON.parse(
-    await readFile(join(root, "assets/shiki/release-manifest.json"), "utf8"),
-  );
+    await readFile(join(root, "assets/catalog.json"), "utf8"),
+  ).release;
   assert.equal(assetManifest.manifestVersion, 1, "release asset manifest version is unsupported");
   assert(Object.keys(assetManifest.assets ?? {}).length > 0, "release asset manifest is empty");
 }

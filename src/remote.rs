@@ -1,7 +1,7 @@
 //! Standard payloads from the release-pinned CDN mirror (ADR 0013).
 //!
 //! A payload is taken from the local cache when present and valid, otherwise
-//! downloaded from `<base_url>/<commit>/assets/shiki/<path>`. Downloaded bytes
+//! downloaded from immutable language/theme hash paths selected by the catalog. Downloaded bytes
 //! are verified against the release manifest before they are cached, and the
 //! cache holds one file per SHA-256 digest, so unchanged payloads are reused
 //! across releases. There is no retry policy.
@@ -47,7 +47,7 @@ impl RemoteAssets {
         self
     }
 
-    /// Sets the mirror that serves `<commit>/assets/shiki/<path>`.
+    /// Sets the mirror that serves immutable language/theme hash paths.
     #[must_use]
     pub fn with_base_url(mut self, value: Option<String>) -> Self {
         self.base_url = value;
@@ -93,6 +93,7 @@ impl RemoteAssets {
 pub(crate) struct RemoteAssetSource {
     payloads: HashMap<AssetDigest, (String, u64)>,
     settings: ResolvedAssetSettings,
+    storage_layout: Option<String>,
     agent: ureq::Agent,
     /// Rust's `remote()` downloads while it loads. Node plans downloads in Rust
     /// and lets the JavaScript host fetch and install bytes asynchronously.
@@ -127,6 +128,7 @@ impl RemoteAssetSource {
         Ok(Self {
             payloads,
             settings,
+            storage_layout: release.storage_layout.clone(),
             agent,
             download_on_read,
         })
@@ -183,17 +185,12 @@ impl RemoteAssetSource {
     }
 
     fn download(&self, digest: &AssetDigest, path: &str, size: u64) -> Result<Vec<u8>> {
-        let commit = self.settings.commit.as_deref().ok_or_else(|| {
-            Error::new(
-                ErrorKind::AssetUnavailable,
-                format!(
-                    "Asset {path} is not cached, and this build has no release commit to download it from. \
-                     Set RemoteAssets::with_commit, or pre-populate {}.",
-                    self.settings.cache_dir.display()
-                ),
-            )
-        })?;
-        let url = format!("{}/{commit}/assets/shiki/{path}", self.settings.base_url);
+        let url = crate::asset_settings::asset_url(
+            self.storage_layout.as_deref(),
+            &self.settings,
+            path,
+            digest.as_str(),
+        )?;
         let failed = |detail: String| {
             Error::new(
                 ErrorKind::AssetDownload,

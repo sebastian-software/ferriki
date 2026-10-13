@@ -125,7 +125,7 @@ if (!values.worker) {
     cpu: os.cpus()[0]?.model,
     harnessSha256: sha(readFileSync(script)),
     assetsManifestSha256: sha(
-      readFileSync(new URL("../ferriki/assets/shiki/release-manifest.json", import.meta.url)),
+      readFileSync(new URL("../ferriki/assets/standard/release-manifest.json", import.meta.url)),
     ),
     identities,
     profilingAddonSha256: values["profiling-addon"]

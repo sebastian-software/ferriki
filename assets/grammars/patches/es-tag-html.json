@@ -1,0 +1,26 @@
+[
+  {
+    "path": "/patterns/0/begin",
+    "before": "(?i)(\\s?\\/\\*\\s?(html|template|inline-html|inline-template)\\s?\\*\\/\\s?)(`)",
+    "after": "(?i)(\\s?\\/\\*\\s?(html|svg|template|inline-html|inline-template)\\s?\\*\\/\\s?)(`)",
+    "reason": "Highlight Lit svg tagged templates with the existing HTML markup rules."
+  },
+  {
+    "path": "/patterns/1/begin",
+    "before": "(?i)(\\s*(html|template|inline-html|inline-template))(`)",
+    "after": "(?i)(\\s*(html|svg|template|inline-html|inline-template))(`)",
+    "reason": "Highlight Lit svg tagged templates with the existing HTML markup rules."
+  },
+  {
+    "path": "/patterns/2/begin",
+    "before": "(?i)(?<=\\s|\\,|\\=|\\:|\\(|\\$\\()\\s{0,}(((\\/\\*)|(\\/\\/))\\s?(html|template|inline-html|inline-template)[ ]{0,1000}\\*?\\/?)[ ]{0,1000}$",
+    "after": "(?i)(?<=\\s|\\,|\\=|\\:|\\(|\\$\\()\\s{0,}(((\\/\\*)|(\\/\\/))\\s?(html|svg|template|inline-html|inline-template)[ ]{0,1000}\\*?\\/?)[ ]{0,1000}$",
+    "reason": "Highlight Lit svg tagged templates with the existing HTML markup rules."
+  },
+  {
+    "path": "/injectionSelector",
+    "before": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string",
+    "after": "L:source.js -comment -string, L:source.js -comment -string, L:source.jsx -comment -string,  L:source.js.jsx -comment -string, L:source.ts -comment -string, L:source.tsx -comment -string, L:source.rescript -comment -string, L:source string.quoted.double.html, L:source string.quoted.single.html",
+    "reason": "Keep JavaScript interpolation highlighted inside quoted Lit HTML and SVG attributes."
+  }
+]

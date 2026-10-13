@@ -1,0 +1,8 @@
+[
+  {
+    "path": "/repository/blockBody/patterns/0/include",
+    "before": "text.html.derivative",
+    "after": "text.html.derivative.ng",
+    "reason": "Keep Angular template scopes separate from the HTML derivative shared with Vue."
+  }
+]

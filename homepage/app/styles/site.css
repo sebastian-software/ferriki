@@ -227,6 +227,45 @@
   font-size: 0.85rem;
 }
 
+/* Two wrapping columns keep the full grammar catalog readable on phones. */
+.ferriki-grammar-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding-inline-start: 1.25rem;
+}
+.ferriki-grammar-coverage .ferriki-grammar-table {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.ferriki-grammar-table caption {
+  text-align: left;
+  font-size: 0.85rem;
+  margin-block-end: 0.5rem;
+}
+.ferriki-grammar-table th,
+.ferriki-grammar-table td {
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ferriki-grammar-table tbody th {
+  font-weight: 500;
+}
+.ferriki-grammar-table code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ferriki-grammar-aliases {
+  margin-block-start: 0.35rem;
+  font-size: 0.85rem;
+}
+.ferriki-grammar-coverage h3 {
+  scroll-margin-block-start: calc(var(--ardo-layout-headerHeight, 4rem) + 1rem);
+}
+
 /* The comparison keeps typography and panel ground equal across both renderers. */
 .prism-comparison {
   margin-block: 1.5rem 2rem;

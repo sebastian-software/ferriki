@@ -574,7 +574,7 @@ mod tests {
     use std::path::Path;
 
     fn javascript_tokens(code: &str) -> HighlightTokensResult {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard");
         HighlighterCore::with_standard_assets(&root)
             .expect("highlighter")
             .tokenize(
@@ -676,13 +676,13 @@ mod tests {
     #[test]
     fn direct_inline_html_matches_hast_for_benchmark_fixtures() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let corpus = root.join("node/benchmarks/tiobe");
+        let corpus = root.join("node/benchmarks/curated");
         let manifest: Value = serde_json::from_str(
             &std::fs::read_to_string(corpus.join("manifest.json")).expect("fixture manifest"),
         )
         .expect("fixture manifest JSON");
-        let mut highlighter =
-            HighlighterCore::with_standard_assets(&root.join("assets/shiki")).expect("highlighter");
+        let mut highlighter = HighlighterCore::with_standard_assets(&root.join("assets/standard"))
+            .expect("highlighter");
         for language in manifest["languages"].as_array().expect("fixture languages") {
             let Some(grammar) = language["textmate"].as_str() else {
                 continue;

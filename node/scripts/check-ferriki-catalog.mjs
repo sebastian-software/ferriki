@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { languageCatalog, themeCatalog } from "../ferriki/assets/shiki/catalog.mjs";
+import { languageCatalog, themeCatalog } from "../ferriki/assets/standard/catalog.mjs";
 
 import {
   bundledLanguages,
@@ -13,7 +13,7 @@ import {
 import "./test-asset-env.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const assetRoot = join(packageDir, "ferriki", "assets", "shiki");
+const assetRoot = join(packageDir, "ferriki", "assets", "standard");
 // The package pins every payload in its release manifest and ships none of
 // them; the runtime downloads and caches them (ADR 0013).
 const release = JSON.parse(await readFile(join(assetRoot, "release-manifest.json"), "utf8"));

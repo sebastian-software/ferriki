@@ -38,3 +38,11 @@ node/compat/upstream/shiki/packages/colorized-brackets/src/themes.ts
 node/compat/upstream/shiki/packages/shiki/src/langs
 node/compat/upstream/shiki/packages/shiki/src/themes
 node/compat/upstream/shiki/packages/shiki/src/*.json
+
+# Immutable asset sources and generated catalogs are materialized from locks.
+assets/upstream/textmate-grammars-themes/
+assets/grammar-raw/
+assets/shiki/
+
+assets/upstream/curated/
+assets/standard/

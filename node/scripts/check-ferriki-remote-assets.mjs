@@ -10,14 +10,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-
 import { createHighlighter, createHighlighterCoreSync } from "../ferriki/index.mjs";
+
 import { loadFerrikiNativeBinding } from "../ferriki/native.mjs";
+import { payloadPath } from "../ferriki/scripts/asset-path.mjs";
 import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
 
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
-const repoAssets = fileURLToPath(new URL("../../assets/shiki/", import.meta.url));
-const packageAssets = fileURLToPath(new URL("../ferriki/assets/shiki/", import.meta.url));
+const repoAssets = fileURLToPath(new URL("../../assets/standard/", import.meta.url));
+const packageAssets = fileURLToPath(new URL("../ferriki/assets/standard/", import.meta.url));
 const packageReleasePath = join(packageAssets, "release-manifest.json");
 const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-node-assets-check-"));
 const assetRoot = join(tempRoot, "assets");
@@ -30,6 +31,10 @@ const release = JSON.parse(originalPackageRelease);
 release.commit = COMMIT;
 await writeFile(join(assetRoot, "release-manifest.json"), JSON.stringify(release));
 
+const remotePaths = new Map(
+  Object.entries(release.assets).map(([key, asset]) => [`/${payloadPath(key, asset)}`, key]),
+);
+const remotePath = (key) => `/${payloadPath(key, release.assets[key])}`;
 const requests = [];
 const replaced = new Map();
 const missing = new Set();
@@ -39,7 +44,7 @@ const oversized = new Set();
 const interrupted = new Set();
 const server = createServer(async (request, response) => {
   requests.push(request.url);
-  const relative = /^\/[0-9a-f]{40}\/assets\/shiki\/(.+)$/u.exec(request.url)?.[1];
+  const relative = remotePaths.get(request.url);
   if (!relative || missing.has(relative)) {
     response.writeHead(404).end();
     return;
@@ -110,10 +115,10 @@ try {
   const firstDownload = download(["vue"], ["nord"]);
   assert(firstDownload instanceof Promise);
   await firstDownload;
-  assert(requests.some((url) => url.endsWith("/languages/vue.fkgram")));
-  assert(requests.some((url) => url.endsWith("/themes/nord.fktheme")));
+  assert(requests.includes(remotePath("languages/vue.fkgram")));
+  assert(requests.includes(remotePath("themes/nord.fktheme")));
   assert(
-    requests.some((url) => url.endsWith("/languages/typescript.fkgram")),
+    requests.includes(remotePath("languages/typescript.fkgram")),
     "embedded languages are planned with their host grammar",
   );
   const cached = await readdir(cacheDir);
@@ -221,7 +226,7 @@ try {
   ]);
   const concurrentRequests = requests.slice(requestOffset);
   assert.equal(
-    concurrentRequests.filter((url) => url.endsWith("/themes/nord.fktheme")).length,
+    concurrentRequests.filter((url) => url === remotePath("themes/nord.fktheme")).length,
     1,
     "overlapping asset loads share one in-process download per digest",
   );
@@ -237,7 +242,7 @@ try {
   await runOneShotProbe("css-single", singleCache);
   const singleRequests = requests.slice(singleOffset);
   assert.deepEqual(
-    new Set(singleRequests.map((url) => url.slice(url.indexOf("/assets/shiki/") + 14))),
+    new Set(singleRequests.map((url) => remotePaths.get(url))),
     new Set(["languages/json.fkgram", "themes/nord.fktheme"]),
   );
   assert.equal(singleRequests.length, 2, "warm CSS shorthand calls do not redownload assets");
@@ -253,7 +258,7 @@ try {
     "themes/nord.fktheme",
   ])
     assert(
-      embeddedRequests.some((url) => url.endsWith(path)),
+      embeddedRequests.includes(remotePath(path.replace(/^\//, ""))),
       `CSS shorthand did not fetch ${path}`,
     );
   assert.equal(

@@ -62,6 +62,17 @@ const syncAssetsScript = join(pkgDir, "scripts", "sync-standard-assets.mjs");
 // CRT must be linked dynamically: Rust links it statically by default, which
 // rules out a loadable cdylib.
 const isMusl = rustTarget?.endsWith("-musl") ?? false;
+const materialize = spawnSync(
+  process.execPath,
+  [join(repoRoot, "scripts/materialize-assets.mjs"), "--payloads"],
+  { cwd: repoRoot, stdio: "inherit" },
+);
+if (materialize.status !== 0) process.exit(materialize.status ?? 1);
+const notices = spawnSync(process.execPath, [join(repoRoot, "scripts/write-grammar-notices.mjs")], {
+  cwd: repoRoot,
+  stdio: "inherit",
+});
+if (notices.status !== 0) process.exit(notices.status ?? 1);
 const cargoArgs = [isMusl ? "zigbuild" : "build", "--release", "--manifest-path", manifestPath];
 // Benchmark one local Ferroni experiment without changing workspace dependencies.
 const cargoConfig = process.env.FERRIKI_FERRONI_PATH

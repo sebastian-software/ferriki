@@ -191,7 +191,7 @@ use std::path::Path;
 use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/standard"))?;
     let mut highlighter = Highlighter::builder().with_assets(assets).build()?;
     let output = highlighter.highlight_html_with_css(
         "const answer = 42;", "javascript", "nord", &RenderOptions::default(),

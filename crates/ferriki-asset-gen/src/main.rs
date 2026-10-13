@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 const USAGE: &str = "\
 Usage:
-  ferriki-asset-gen generate --upstream-dir <path> --output-dir <path> [--source-version <version>] [--source-commit <commit>]
+  ferriki-asset-gen generate --upstream-dir <path> --output-dir <path> [--source-name <name>] [--source-version <version>] [--source-commit <commit>]
 ";
 
 fn main() {
@@ -24,11 +24,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
     }
 
     let opts = parse_generate_args(&args[1..])?;
-    let source = AssetSourceRef::new(
-        "textmate-grammars-themes".to_owned(),
-        opts.source_version,
-        opts.source_commit,
-    );
+    let source = AssetSourceRef::new(opts.source_name, opts.source_version, opts.source_commit);
 
     generate_catalogs_from_upstream(&opts.upstream_dir, &opts.output_dir, source)
         .map_err(|err| format!("generation failed: {err}"))?;
@@ -40,6 +36,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
 struct GenerateOptions {
     upstream_dir: PathBuf,
     output_dir: PathBuf,
+    source_name: String,
     source_version: Option<String>,
     source_commit: Option<String>,
 }
@@ -47,6 +44,7 @@ struct GenerateOptions {
 fn parse_generate_args(args: &[String]) -> Result<GenerateOptions, String> {
     let mut upstream_dir = None;
     let mut output_dir = None;
+    let mut source_name = "textmate-grammars-themes".to_owned();
     let mut source_version = None;
     let mut source_commit = None;
 
@@ -60,6 +58,7 @@ fn parse_generate_args(args: &[String]) -> Result<GenerateOptions, String> {
         match flag {
             "--upstream-dir" => upstream_dir = Some(PathBuf::from(value)),
             "--output-dir" => output_dir = Some(PathBuf::from(value)),
+            "--source-name" => source_name = value.clone(),
             "--source-version" => source_version = Some(value.clone()),
             "--source-commit" => source_commit = Some(value.clone()),
             _ => return Err(format!("unknown flag: {flag}\n\n{USAGE}")),
@@ -71,6 +70,7 @@ fn parse_generate_args(args: &[String]) -> Result<GenerateOptions, String> {
     Ok(GenerateOptions {
         upstream_dir: upstream_dir.ok_or_else(|| format!("missing --upstream-dir\n\n{USAGE}"))?,
         output_dir: output_dir.ok_or_else(|| format!("missing --output-dir\n\n{USAGE}"))?,
+        source_name,
         source_version,
         source_commit,
     })
@@ -111,6 +111,8 @@ mod tests {
             output_dir.display().to_string(),
             "--source-version".to_owned(),
             "1.0.0".to_owned(),
+            "--source-name".to_owned(),
+            "ferriki-curated".to_owned(),
             "--source-commit".to_owned(),
             "abc123".to_owned(),
         ];
@@ -128,10 +130,7 @@ mod tests {
 
         assert_eq!(language_manifest.entries.len(), 1);
         assert_eq!(theme_manifest.entries.len(), 1);
-        assert_eq!(
-            language_manifest.source.upstream,
-            "textmate-grammars-themes"
-        );
+        assert_eq!(language_manifest.source.upstream, "ferriki-curated");
         assert_eq!(theme_manifest.source.commit.as_deref(), Some("abc123"));
 
         fs::remove_dir_all(output_dir).expect("cleanup");

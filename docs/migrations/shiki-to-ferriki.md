@@ -16,29 +16,38 @@ guide is for a Shiki **v4.4.3** consumer moving to `@ferriki/core`.
 
 ## Compatibility matrix
 
-| Shiki surface | Ferriki status | Migration |
-| --- | --- | --- |
-| `codeToHtml` | Supported | Keep the call shape and use a Ferriki theme/language ID. HTML is the only public Node render output. |
-| `codeToHast`, `codeToTokens`, `codeToTokensBase`, `codeToTokensWithThemes`, `hastToHtml` | Not in the Node API | Use `codeToHtml`/`codeToHtmlWithCss`; token and HAST values reach transformer callbacks during rendering. Rust consumers get tokens from the `ferriki` crate. |
-| Reusable highlighters and singleton | Supported | Keep the factory pattern and dispose long-lived instances explicitly. |
-| Standard language/theme loaders and aliases | Supported | Use `bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`. |
-| Custom TextMate grammar/theme registrations | Supported | Pass validated JSON-shaped registrations to the factory or load methods. |
-| Ordered `themes` map and `defaultColor: false` | Supported | Use for Ardo/Ferromark light/dark output. |
-| HAST serialization | Not in the Node API | Ferriki serializes HTML itself; change the tree through transformer hooks. |
-| `transformers` and `decorations` | Supported in the JavaScript facade | Hooks receive Ferriki-typed token/HAST callback data while rendering HTML; the transformer context has no nested `codeToHast` or `codeToTokens` helpers. |
-| Grammar-state continuation | Supported for HTML | Call `getLastGrammarState(code, options)` and pass its result to a later HTML call through `grammarState`; there are no token or HAST result overloads. |
-| Class-based HTML and generated CSS | Ferriki extension | Use `styleMode: 'classes'` or `codeToHtmlWithCss()`; inline styles remain the default. |
-| Standard grammar/theme assets | Downloaded asynchronously | `createHighlighter`, async loads and one-shot calls fetch missing release-pinned payloads. The package contains catalog metadata, not payloads. |
-| `rehype`, `markdown-it`, and other adapters | Separate packages | Keep Markdown integration in its adapter; Ferriki core does not include these packages. |
-| Vite integration | Separate optional package | Install `@ferriki/vite` with the same version as `@ferriki/core` for the build-time `code()` and `<Code />` macros on Vite 8; see [inline code macros](../inline-code-macros.md). |
-| JavaScript/Oniguruma engine injection | Not needed | Ferriki matches natively; remove `engine` options and engine factories. |
-| `loadWasm`/`wasmBinary` | Not needed | The platform's native addon installs as an optional dependency; remove WASM loading. |
-| `lang: 'ansi'` with escape sequences | Rejected | Strip or parse terminal control sequences first. |
-| Browser runtime | Unsupported | Run Ferriki in Node, prepare the HTML at build time with `@ferriki/vite`, or use a separate browser highlighter. |
+| Shiki surface                                                                            | Ferriki status                          | Migration                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `codeToHtml`                                                                             | Supported                               | Keep the call shape and use a Ferriki theme/language ID. HTML is the only public Node render output.                                                                              |
+| `codeToHast`, `codeToTokens`, `codeToTokensBase`, `codeToTokensWithThemes`, `hastToHtml` | Not in the Node API                     | Use `codeToHtml`/`codeToHtmlWithCss`; token and HAST values reach transformer callbacks during rendering. Rust consumers get tokens from the `ferriki` crate.                     |
+| Reusable highlighters and singleton                                                      | Supported                               | Keep the factory pattern and dispose long-lived instances explicitly.                                                                                                             |
+| Standard language/theme loaders and aliases                                              | Supported for Ferriki's curated catalog | Use `bundledLanguages`, `bundledThemes`, and `bundledLanguagesAlias`; import other grammars through the custom registration API.                                                  |
+| Custom TextMate grammar/theme registrations                                              | Supported                               | Pass validated JSON-shaped registrations to the factory or load methods.                                                                                                          |
+| Ordered `themes` map and `defaultColor: false`                                           | Supported                               | Use for Ardo/Ferromark light/dark output.                                                                                                                                         |
+| HAST serialization                                                                       | Not in the Node API                     | Ferriki serializes HTML itself; change the tree through transformer hooks.                                                                                                        |
+| `transformers` and `decorations`                                                         | Supported in the JavaScript facade      | Hooks receive Ferriki-typed token/HAST callback data while rendering HTML; the transformer context has no nested `codeToHast` or `codeToTokens` helpers.                          |
+| Grammar-state continuation                                                               | Supported for HTML                      | Call `getLastGrammarState(code, options)` and pass its result to a later HTML call through `grammarState`; there are no token or HAST result overloads.                           |
+| Class-based HTML and generated CSS                                                       | Ferriki extension                       | Use `styleMode: 'classes'` or `codeToHtmlWithCss()`; inline styles remain the default.                                                                                            |
+| Standard grammar/theme assets                                                            | Downloaded asynchronously               | `createHighlighter`, async loads and one-shot calls fetch missing release-pinned payloads. The package contains catalog metadata, not payloads.                                   |
+| `rehype`, `markdown-it`, and other adapters                                              | Separate packages                       | Keep Markdown integration in its adapter; Ferriki core does not include these packages.                                                                                           |
+| Vite integration                                                                         | Separate optional package               | Install `@ferriki/vite` with the same version as `@ferriki/core` for the build-time `code()` and `<Code />` macros on Vite 8; see [inline code macros](../inline-code-macros.md). |
+| JavaScript/Oniguruma engine injection                                                    | Not needed                              | Ferriki matches natively; remove `engine` options and engine factories.                                                                                                           |
+| `loadWasm`/`wasmBinary`                                                                  | Not needed                              | The platform's native addon installs as an optional dependency; remove WASM loading.                                                                                              |
+| `lang: 'ansi'` with escape sequences                                                     | Rejected                                | Strip or parse terminal control sequences first.                                                                                                                                  |
+| Browser runtime                                                                          | Unsupported                             | Run Ferriki in Node, prepare the HTML at build time with `@ferriki/vite`, or use a separate browser highlighter.                                                                  |
 
 The exact baseline and exclusions are machine-checked from the pinned Shiki
 mirror. “Shiki-compatible” means a tested subset, not that every Shiki package
 is a Ferriki feature.
+
+Ferriki maintains its standard language catalog and required embedding
+dependencies. It does not mirror every Shiki language. Check your IDs in
+`bundledLanguages` and use the [external grammar importer](../grammars.md) for
+languages outside the set. The existing 65-theme catalog remains available.
+This initial catalog replacement ships in Ferriki 1.1.0 as the one-time
+exception in [ADR 0020](../../adr/0020-curated-grammar-sources.md#release-scope).
+Applications using a removed standard ID or alias must register that grammar
+externally. Future catalog removals follow the normal major-release policy.
 
 The asynchronous factory and loading methods download standard grammar and
 theme payloads by default, then verify and cache them. Highlighting on a loaded

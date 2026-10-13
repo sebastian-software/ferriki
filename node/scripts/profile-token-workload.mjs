@@ -31,7 +31,7 @@ const native = values.addon
   ? createRequire(import.meta.url)(values.addon)
   : loadFerrikiNativeBinding();
 const highlighter = native.createHighlighter({
-  standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/shiki", import.meta.url)),
+  standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/standard", import.meta.url)),
   assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
 });
 highlighter.loadStandardTheme("github-dark");

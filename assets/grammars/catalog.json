@@ -1,0 +1,1900 @@
+{
+  "version": 1,
+  "languages": [
+    {
+      "id": "angular-expression",
+      "grammar_file": "angular-expression.json",
+      "scope_name": "expression.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/expression.json"
+      }
+    },
+    {
+      "id": "angular-html",
+      "grammar_file": "angular-html.json",
+      "scope_name": "text.html.derivative.ng",
+      "display_name": "Angular HTML",
+      "aliases": [],
+      "embedded_langs": [
+        "html",
+        "angular-expression",
+        "angular-let-declaration",
+        "angular-template",
+        "angular-template-blocks"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/html/syntaxes/html-derivative.tmLanguage.json"
+      }
+    },
+    {
+      "id": "angular-inline-style",
+      "grammar_file": "angular-inline-style.json",
+      "scope_name": "inline-styles.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "scss"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.ts.ng"
+      ],
+      "role": "dependency",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/inline-styles.json"
+      }
+    },
+    {
+      "id": "angular-inline-template",
+      "grammar_file": "angular-inline-template.json",
+      "scope_name": "inline-template.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "angular-html",
+        "angular-template"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.ts.ng"
+      ],
+      "role": "dependency",
+      "patch_file": "assets/grammars/patches/angular-inline-template.json",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/inline-template.json"
+      }
+    },
+    {
+      "id": "angular-let-declaration",
+      "grammar_file": "angular-let-declaration.json",
+      "scope_name": "template.let.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "angular-expression"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "text.html.derivative",
+        "text.html.derivative.ng",
+        "source.ts.ng"
+      ],
+      "role": "dependency",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/let-declaration.json"
+      }
+    },
+    {
+      "id": "angular-template",
+      "grammar_file": "angular-template.json",
+      "scope_name": "template.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "angular-expression"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "text.html.derivative",
+        "text.html.derivative.ng",
+        "source.ts.ng"
+      ],
+      "role": "dependency",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/template.json"
+      }
+    },
+    {
+      "id": "angular-template-blocks",
+      "grammar_file": "angular-template-blocks.json",
+      "scope_name": "template.blocks.ng",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "angular-expression",
+        "angular-template"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "text.html.derivative",
+        "text.html.derivative.ng",
+        "source.ts.ng"
+      ],
+      "role": "dependency",
+      "patch_file": "assets/grammars/patches/angular-template-blocks.json",
+      "repository_id": "angular",
+      "selector": {
+        "path": "syntaxes/template-blocks.json"
+      }
+    },
+    {
+      "id": "angular-ts",
+      "grammar_file": "angular-ts.json",
+      "scope_name": "source.ts.ng",
+      "display_name": "Angular TypeScript",
+      "aliases": [],
+      "embedded_langs": [
+        "angular-expression",
+        "angular-inline-style",
+        "angular-inline-template",
+        "angular-let-declaration",
+        "angular-template",
+        "angular-template-blocks",
+        "es-tag-css",
+        "es-tag-html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json"
+      }
+    },
+    {
+      "id": "annotation-liquidhaskell-haskell",
+      "grammar_file": "annotation-liquidhaskell-haskell.json",
+      "scope_name": "annotation.liquidhaskell.haskell",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-haskell",
+        "path": "grammars/liquid haskell.cson"
+      }
+    },
+    {
+      "id": "astro",
+      "grammar_file": "astro.json",
+      "scope_name": "source.astro",
+      "display_name": "Astro",
+      "aliases": [],
+      "embedded_langs": [
+        "json",
+        "javascript",
+        "typescript",
+        "css",
+        "postcss",
+        "tsx"
+      ],
+      "embedded_langs_lazy": [
+        "sass",
+        "scss",
+        "less"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "astro",
+      "selector": {
+        "path": "packages/vscode/syntaxes/astro.tmLanguage.src.yaml"
+      }
+    },
+    {
+      "id": "c",
+      "grammar_file": "c.json",
+      "scope_name": "source.c",
+      "display_name": "C",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/cpp/syntaxes/c.tmLanguage.json"
+      }
+    },
+    {
+      "id": "clojure",
+      "grammar_file": "clojure.json",
+      "scope_name": "source.clojure",
+      "display_name": "Clojure",
+      "aliases": [
+        "clj"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/clojure/syntaxes/clojure.tmLanguage.json"
+      }
+    },
+    {
+      "id": "cmake",
+      "grammar_file": "cmake.json",
+      "scope_name": "source.cmake",
+      "display_name": "CMake",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/vscode-cmake-tools",
+        "scope": "source.cmake"
+      }
+    },
+    {
+      "id": "cpp",
+      "grammar_file": "cpp.json",
+      "scope_name": "source.cpp",
+      "display_name": "C++",
+      "aliases": [
+        "c++"
+      ],
+      "embedded_langs": [
+        "cpp-macro",
+        "regexp"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "external_embedded_scopes": [
+        "source.glsl"
+      ],
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/cpp/syntaxes/cpp.tmLanguage.json"
+      }
+    },
+    {
+      "id": "cpp-macro",
+      "grammar_file": "cpp-macro.json",
+      "scope_name": "source.cpp.embedded.macro",
+      "display_name": "C++",
+      "aliases": [],
+      "embedded_langs": [
+        "regexp",
+        "cpp"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "external_embedded_scopes": [
+        "source.glsl"
+      ],
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/cpp/syntaxes/cpp.embedded.macro.tmLanguage.json"
+      }
+    },
+    {
+      "id": "csharp",
+      "grammar_file": "csharp.json",
+      "scope_name": "source.cs",
+      "display_name": "C#",
+      "aliases": [
+        "c#",
+        "cs"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/csharp/syntaxes/csharp.tmLanguage.json"
+      }
+    },
+    {
+      "id": "css",
+      "grammar_file": "css.json",
+      "scope_name": "source.css",
+      "display_name": "CSS",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/css/syntaxes/css.tmLanguage.json"
+      }
+    },
+    {
+      "id": "css-styled",
+      "grammar_file": "css-styled.json",
+      "scope_name": "source.css.styled",
+      "display_name": "CSS-in-JS declaration support",
+      "aliases": [],
+      "embedded_langs": [
+        "css",
+        "typescript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "styled-components",
+      "selector": {
+        "path": "syntaxes/css.styled.json"
+      }
+    },
+    {
+      "id": "dart",
+      "grammar_file": "dart.json",
+      "scope_name": "source.dart",
+      "display_name": "Dart",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/dart/syntaxes/dart.tmLanguage.json"
+      }
+    },
+    {
+      "id": "diff",
+      "grammar_file": "diff.json",
+      "scope_name": "source.diff",
+      "display_name": "Diff",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/diff/syntaxes/diff.tmLanguage.json"
+      }
+    },
+    {
+      "id": "docker",
+      "grammar_file": "docker.json",
+      "scope_name": "source.dockerfile",
+      "display_name": "Dockerfile",
+      "aliases": [
+        "dockerfile"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/docker/syntaxes/docker.tmLanguage.json"
+      }
+    },
+    {
+      "id": "eex",
+      "grammar_file": "eex.json",
+      "scope_name": "text.elixir",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/elixir-tmbundle",
+        "path": "Syntaxes/EEx.tmLanguage"
+      }
+    },
+    {
+      "id": "elixir",
+      "grammar_file": "elixir.json",
+      "scope_name": "source.elixir",
+      "display_name": "Elixir",
+      "aliases": [
+        "ex",
+        "exs"
+      ],
+      "embedded_langs": [
+        "eex",
+        "html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/elixir-tmbundle",
+        "path": "Syntaxes/Elixir.tmLanguage"
+      }
+    },
+    {
+      "id": "es-tag-css",
+      "grammar_file": "es-tag-css.json",
+      "scope_name": "inline.es6-css",
+      "display_name": "CSS-in-JS",
+      "aliases": [],
+      "embedded_langs": [
+        "typescript",
+        "css-styled"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.js",
+        "source.js.jsx",
+        "source.ts",
+        "source.tsx",
+        "source.ts.ng",
+        "source.gjs",
+        "source.gts",
+        "text.html.vue",
+        "source.svelte",
+        "source.astro",
+        "text.html.basic",
+        "text.html.handlebars",
+        "text.html.liquid"
+      ],
+      "role": "standard",
+      "repository_id": "styled-components",
+      "selector": {
+        "path": "syntaxes/styled-components.json"
+      },
+      "patch_file": "assets/grammars/patches/es-tag-css.json"
+    },
+    {
+      "id": "es-tag-html",
+      "grammar_file": "es-tag-html.json",
+      "scope_name": "inline.es6-html",
+      "display_name": "HTML and SVG tagged templates",
+      "aliases": [],
+      "embedded_langs": [
+        "typescript",
+        "html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.js",
+        "source.js.jsx",
+        "source.ts",
+        "source.tsx",
+        "source.ts.ng",
+        "source.gjs",
+        "source.gts",
+        "text.html.vue",
+        "source.svelte",
+        "source.astro",
+        "text.html.basic",
+        "text.html.handlebars",
+        "text.html.liquid"
+      ],
+      "role": "standard",
+      "repository_id": "template-tags",
+      "selector": {
+        "path": "syntaxes/es6-inline-html.json"
+      },
+      "patch_file": "assets/grammars/patches/es-tag-html.json"
+    },
+    {
+      "id": "gdscript",
+      "grammar_file": "gdscript.json",
+      "scope_name": "source.gdscript",
+      "display_name": "GDScript",
+      "aliases": [
+        "gd"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/godot-vscode-plugin",
+        "path": "syntaxes/GDScript.tmLanguage.json"
+      }
+    },
+    {
+      "id": "gleam",
+      "grammar_file": "gleam.json",
+      "scope_name": "source.gleam",
+      "display_name": "Gleam",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/vscode-gleam",
+        "path": "syntaxes/gleam.tmLanguage.json"
+      }
+    },
+    {
+      "id": "glimmer-js",
+      "grammar_file": "glimmer-js.json",
+      "scope_name": "source.gjs",
+      "display_name": "Glimmer JS",
+      "aliases": [
+        "gjs"
+      ],
+      "embedded_langs": [
+        "javascript",
+        "css",
+        "html",
+        "typescript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/vsc-ember-syntax",
+        "path": "syntaxes/source.gjs.json"
+      }
+    },
+    {
+      "id": "glimmer-ts",
+      "grammar_file": "glimmer-ts.json",
+      "scope_name": "source.gts",
+      "display_name": "Glimmer TS",
+      "aliases": [
+        "gts"
+      ],
+      "embedded_langs": [
+        "typescript",
+        "css",
+        "html",
+        "javascript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/vsc-ember-syntax",
+        "path": "syntaxes/source.gts.json"
+      }
+    },
+    {
+      "id": "go",
+      "grammar_file": "go.json",
+      "scope_name": "source.go",
+      "display_name": "Go",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/go/syntaxes/go.tmLanguage.json"
+      }
+    },
+    {
+      "id": "graphql",
+      "grammar_file": "graphql.json",
+      "scope_name": "source.graphql",
+      "display_name": "GraphQL",
+      "aliases": [
+        "gql"
+      ],
+      "embedded_langs": [
+        "javascript",
+        "typescript",
+        "jsx",
+        "tsx"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/graphiql",
+        "scope": "source.graphql"
+      }
+    },
+    {
+      "id": "haml",
+      "grammar_file": "haml.json",
+      "scope_name": "text.haml",
+      "display_name": "Ruby Haml",
+      "aliases": [],
+      "embedded_langs": [
+        "javascript",
+        "css"
+      ],
+      "embedded_langs_lazy": [
+        "ruby",
+        "sass",
+        "markdown"
+      ],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-haml",
+        "scope": "text.haml"
+      }
+    },
+    {
+      "id": "handlebars",
+      "grammar_file": "handlebars.json",
+      "scope_name": "text.html.handlebars",
+      "display_name": "Handlebars",
+      "aliases": [
+        "hbs",
+        "hjs"
+      ],
+      "embedded_langs": [
+        "html",
+        "css",
+        "javascript",
+        "yaml"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/handlebars/syntaxes/Handlebars.tmLanguage.json"
+      }
+    },
+    {
+      "id": "haskell",
+      "grammar_file": "haskell.json",
+      "scope_name": "source.haskell",
+      "display_name": "Haskell",
+      "aliases": [
+        "hs"
+      ],
+      "embedded_langs": [
+        "annotation-liquidhaskell-haskell"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-haskell",
+        "scope": "source.haskell"
+      }
+    },
+    {
+      "id": "hcl",
+      "grammar_file": "hcl.json",
+      "scope_name": "source.hcl",
+      "display_name": "HashiCorp HCL",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/syntax",
+        "scope": "source.hcl"
+      }
+    },
+    {
+      "id": "html",
+      "grammar_file": "html.json",
+      "scope_name": "text.html.basic",
+      "display_name": "HTML",
+      "aliases": [],
+      "embedded_langs": [
+        "javascript",
+        "css"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/html/syntaxes/html.tmLanguage.json"
+      }
+    },
+    {
+      "id": "html-derivative",
+      "grammar_file": "html-derivative.json",
+      "scope_name": "text.html.derivative",
+      "display_name": "HTML (Derivative)",
+      "aliases": [],
+      "embedded_langs": [
+        "html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/html/syntaxes/html-derivative.tmLanguage.json"
+      }
+    },
+    {
+      "id": "ini",
+      "grammar_file": "ini.json",
+      "scope_name": "source.ini",
+      "display_name": "INI",
+      "aliases": [
+        "properties"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/ini/syntaxes/ini.tmLanguage.json"
+      }
+    },
+    {
+      "id": "java",
+      "grammar_file": "java.json",
+      "scope_name": "source.java",
+      "display_name": "Java",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/java/syntaxes/java.tmLanguage.json"
+      }
+    },
+    {
+      "id": "javascript",
+      "grammar_file": "javascript.json",
+      "scope_name": "source.js",
+      "display_name": "JavaScript",
+      "aliases": [
+        "js",
+        "cjs",
+        "mjs"
+      ],
+      "embedded_langs": [
+        "es-tag-css",
+        "es-tag-html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/javascript/syntaxes/JavaScript.tmLanguage.json"
+      }
+    },
+    {
+      "id": "js-regexp",
+      "grammar_file": "js-regexp.json",
+      "scope_name": "source.js.regexp",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-javascript",
+        "path": "grammars/regular expressions (javascript).cson"
+      }
+    },
+    {
+      "id": "jsdoc",
+      "grammar_file": "jsdoc.json",
+      "scope_name": "source.jsdoc",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "javascript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-javascript",
+        "path": "grammars/jsdoc.cson"
+      }
+    },
+    {
+      "id": "json",
+      "grammar_file": "json.json",
+      "scope_name": "source.json",
+      "display_name": "JSON",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/json/syntaxes/JSON.tmLanguage.json"
+      }
+    },
+    {
+      "id": "json5",
+      "grammar_file": "json5.json",
+      "scope_name": "source.json5",
+      "display_name": "JSON5",
+      "aliases": [],
+      "embedded_langs": [
+        "graphql",
+        "html",
+        "js-regexp",
+        "jsdoc",
+        "sql"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-javascript",
+        "path": "grammars/javascript.cson",
+        "reason": "Linguist uses this JavaScript TextMate lexer for JSON5."
+      }
+    },
+    {
+      "id": "jsonc",
+      "grammar_file": "jsonc.json",
+      "scope_name": "source.json.comments",
+      "display_name": "JSON with Comments",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/json/syntaxes/JSONC.tmLanguage.json"
+      }
+    },
+    {
+      "id": "jsx",
+      "grammar_file": "jsx.json",
+      "scope_name": "source.js.jsx",
+      "display_name": "JSX",
+      "aliases": [],
+      "embedded_langs": [
+        "es-tag-css",
+        "es-tag-html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/javascript/syntaxes/JavaScriptReact.tmLanguage.json"
+      }
+    },
+    {
+      "id": "julia",
+      "grammar_file": "julia.json",
+      "scope_name": "source.julia",
+      "display_name": "Julia",
+      "aliases": [
+        "jl"
+      ],
+      "embedded_langs": [
+        "cpp",
+        "python",
+        "javascript",
+        "r",
+        "sql"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/julia/syntaxes/julia.tmLanguage.json"
+      }
+    },
+    {
+      "id": "kotlin",
+      "grammar_file": "kotlin.json",
+      "scope_name": "source.kotlin",
+      "display_name": "Kotlin",
+      "aliases": [
+        "kt",
+        "kts"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-kotlin",
+        "scope": "source.kotlin"
+      }
+    },
+    {
+      "id": "less",
+      "grammar_file": "less.json",
+      "scope_name": "source.css.less",
+      "display_name": "Less",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/less/syntaxes/less.tmLanguage.json"
+      }
+    },
+    {
+      "id": "liquid",
+      "grammar_file": "liquid.json",
+      "scope_name": "text.html.liquid",
+      "display_name": "Liquid",
+      "aliases": [],
+      "embedded_langs": [
+        "html",
+        "css",
+        "json",
+        "javascript",
+        "liquid-injection"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/liquid-tm-grammar",
+        "path": "grammars/liquid.tmLanguage.json"
+      }
+    },
+    {
+      "id": "liquid-injection",
+      "grammar_file": "liquid-injection.json",
+      "scope_name": "liquid.injection",
+      "display_name": "Liquid embedded syntax",
+      "aliases": [],
+      "embedded_langs": [
+        "html",
+        "css",
+        "json",
+        "javascript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "text.html.liquid"
+      ],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/liquid-tm-grammar",
+        "path": "grammars/liquid-injection.tmLanguage.json"
+      }
+    },
+    {
+      "id": "lua",
+      "grammar_file": "lua.json",
+      "scope_name": "source.lua",
+      "display_name": "Lua",
+      "aliases": [],
+      "embedded_langs": [
+        "c"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/lua/syntaxes/lua.tmLanguage.json"
+      }
+    },
+    {
+      "id": "luau",
+      "grammar_file": "luau.json",
+      "scope_name": "source.luau",
+      "display_name": "Luau",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/Luau.tmLanguage",
+        "path": "Luau.tmLanguage.json"
+      }
+    },
+    {
+      "id": "make",
+      "grammar_file": "make.json",
+      "scope_name": "source.makefile",
+      "display_name": "Makefile",
+      "aliases": [
+        "makefile"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/make/syntaxes/make.tmLanguage.json"
+      }
+    },
+    {
+      "id": "markdown",
+      "grammar_file": "markdown.json",
+      "scope_name": "text.html.markdown",
+      "display_name": "Markdown",
+      "aliases": [
+        "md"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [
+        "css",
+        "html",
+        "ini",
+        "java",
+        "lua",
+        "make",
+        "perl",
+        "r",
+        "ruby",
+        "php",
+        "sql",
+        "xml",
+        "yaml",
+        "clojure",
+        "c",
+        "cpp",
+        "diff",
+        "docker",
+        "go",
+        "pug",
+        "javascript",
+        "json",
+        "jsonc",
+        "less",
+        "swift",
+        "scss",
+        "powershell",
+        "python",
+        "julia",
+        "regexp",
+        "rust",
+        "scala",
+        "shellscript",
+        "typescript",
+        "tsx",
+        "csharp",
+        "dart",
+        "html-derivative"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/markdown-basics/syntaxes/markdown.tmLanguage.json"
+      }
+    },
+    {
+      "id": "markdown-vue",
+      "grammar_file": "markdown-vue.json",
+      "scope_name": "markdown.vue.codeblock",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "vue"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "text.html.markdown"
+      ],
+      "role": "dependency",
+      "repository_id": "vue",
+      "selector": {
+        "path": "extensions/vscode/syntaxes/markdown-vue.json"
+      }
+    },
+    {
+      "id": "mdx",
+      "grammar_file": "mdx.json",
+      "scope_name": "source.mdx",
+      "display_name": "MDX",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [
+        "tsx",
+        "toml",
+        "yaml",
+        "c",
+        "clojure",
+        "cpp",
+        "csharp",
+        "css",
+        "diff",
+        "docker",
+        "go",
+        "graphql",
+        "haskell",
+        "html",
+        "ini",
+        "java",
+        "javascript",
+        "json",
+        "julia",
+        "kotlin",
+        "less",
+        "lua",
+        "make",
+        "markdown",
+        "perl",
+        "python",
+        "r",
+        "ruby",
+        "rust",
+        "scala",
+        "scss",
+        "shellscript",
+        "sql",
+        "xml",
+        "swift",
+        "typescript"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/markdown-tm-language",
+        "scope": "source.mdx"
+      }
+    },
+    {
+      "id": "nix",
+      "grammar_file": "nix.json",
+      "scope_name": "source.nix",
+      "display_name": "Nix",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/nix-linguist",
+        "path": "dist/nix.tmLanguage.json"
+      }
+    },
+    {
+      "id": "perl",
+      "grammar_file": "perl.json",
+      "scope_name": "source.perl",
+      "display_name": "Perl",
+      "aliases": [],
+      "embedded_langs": [
+        "html",
+        "xml",
+        "css",
+        "javascript",
+        "sql"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/perl/syntaxes/perl.tmLanguage.json"
+      }
+    },
+    {
+      "id": "php",
+      "grammar_file": "php.json",
+      "scope_name": "source.php",
+      "display_name": "PHP",
+      "aliases": [],
+      "embedded_langs": [
+        "html",
+        "xml",
+        "sql",
+        "javascript",
+        "json",
+        "css"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/php/syntaxes/php.tmLanguage.json"
+      }
+    },
+    {
+      "id": "postcss",
+      "grammar_file": "postcss.json",
+      "scope_name": "source.css.postcss",
+      "display_name": "PostCSS",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/Syntax-highlighting-for-PostCSS",
+        "scope": "source.postcss"
+      }
+    },
+    {
+      "id": "powershell",
+      "grammar_file": "powershell.json",
+      "scope_name": "source.powershell",
+      "display_name": "PowerShell",
+      "aliases": [
+        "ps",
+        "ps1",
+        "pwsh"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/powershell/syntaxes/powershell.tmLanguage.json"
+      }
+    },
+    {
+      "id": "pug",
+      "grammar_file": "pug.json",
+      "scope_name": "text.pug",
+      "display_name": "Pug",
+      "aliases": [
+        "jade"
+      ],
+      "embedded_langs": [
+        "javascript",
+        "css",
+        "html"
+      ],
+      "embedded_langs_lazy": [
+        "sass",
+        "scss"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/pug/syntaxes/pug.tmLanguage.json"
+      }
+    },
+    {
+      "id": "python",
+      "grammar_file": "python.json",
+      "scope_name": "source.python",
+      "display_name": "Python",
+      "aliases": [
+        "py"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/python/syntaxes/MagicPython.tmLanguage.json"
+      }
+    },
+    {
+      "id": "r",
+      "grammar_file": "r.json",
+      "scope_name": "source.r",
+      "display_name": "R",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/r/syntaxes/r.tmLanguage.json"
+      }
+    },
+    {
+      "id": "regexp",
+      "grammar_file": "regexp.json",
+      "scope_name": "source.regexp.python",
+      "display_name": "RegExp",
+      "aliases": [
+        "regex"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/python/syntaxes/MagicRegExp.tmLanguage.json"
+      }
+    },
+    {
+      "id": "ruby",
+      "grammar_file": "ruby.json",
+      "scope_name": "source.ruby",
+      "display_name": "Ruby",
+      "aliases": [
+        "rb"
+      ],
+      "embedded_langs": [
+        "html",
+        "haml",
+        "xml",
+        "sql",
+        "graphql",
+        "css",
+        "cpp",
+        "c",
+        "javascript",
+        "shellscript",
+        "lua",
+        "yaml"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/ruby/syntaxes/ruby.tmLanguage.json"
+      }
+    },
+    {
+      "id": "rust",
+      "grammar_file": "rust.json",
+      "scope_name": "source.rust",
+      "display_name": "Rust",
+      "aliases": [
+        "rs"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/rust/syntaxes/rust.tmLanguage.json"
+      }
+    },
+    {
+      "id": "sass",
+      "grammar_file": "sass.json",
+      "scope_name": "source.sass",
+      "display_name": "Sass",
+      "aliases": [],
+      "embedded_langs": [
+        "css",
+        "sassdoc"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-sass",
+        "scope": "source.sass"
+      }
+    },
+    {
+      "id": "sassdoc",
+      "grammar_file": "sassdoc.json",
+      "scope_name": "source.sassdoc",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "javascript",
+        "scss"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-sass",
+        "path": "grammars/sassdoc.cson"
+      }
+    },
+    {
+      "id": "scala",
+      "grammar_file": "scala.json",
+      "scope_name": "source.scala",
+      "display_name": "Scala",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/vscode-scala-syntax",
+        "scope": "source.scala"
+      }
+    },
+    {
+      "id": "scss",
+      "grammar_file": "scss.json",
+      "scope_name": "source.css.scss",
+      "display_name": "SCSS",
+      "aliases": [],
+      "embedded_langs": [
+        "css",
+        "sassdoc"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/scss/syntaxes/scss.tmLanguage.json"
+      }
+    },
+    {
+      "id": "shellscript",
+      "grammar_file": "shellscript.json",
+      "scope_name": "source.shell",
+      "display_name": "Shell",
+      "aliases": [
+        "bash",
+        "sh",
+        "shell",
+        "zsh"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/shellscript/syntaxes/shell-unix-bash.tmLanguage.json"
+      }
+    },
+    {
+      "id": "sql",
+      "grammar_file": "sql.json",
+      "scope_name": "source.sql",
+      "display_name": "SQL",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/sql/syntaxes/sql.tmLanguage.json"
+      }
+    },
+    {
+      "id": "svelte",
+      "grammar_file": "svelte.json",
+      "scope_name": "source.svelte",
+      "display_name": "Svelte",
+      "aliases": [],
+      "embedded_langs": [
+        "javascript",
+        "typescript",
+        "css",
+        "postcss"
+      ],
+      "embedded_langs_lazy": [
+        "sass",
+        "scss",
+        "less",
+        "pug",
+        "markdown"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "svelte",
+      "selector": {
+        "path": "packages/svelte-vscode/syntaxes/svelte.tmLanguage.src.yaml"
+      }
+    },
+    {
+      "id": "swift",
+      "grammar_file": "swift.json",
+      "scope_name": "source.swift",
+      "display_name": "Swift",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/swift/syntaxes/swift.tmLanguage.json"
+      }
+    },
+    {
+      "id": "terraform",
+      "grammar_file": "terraform.json",
+      "scope_name": "source.hcl.terraform",
+      "display_name": "Terraform",
+      "aliases": [
+        "tf",
+        "tfvars"
+      ],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/syntax",
+        "scope": "source.hcl.terraform"
+      }
+    },
+    {
+      "id": "toml",
+      "grammar_file": "toml.json",
+      "scope_name": "source.toml",
+      "display_name": "TOML",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/toml.tmbundle",
+        "scope": "source.toml"
+      }
+    },
+    {
+      "id": "tsx",
+      "grammar_file": "tsx.json",
+      "scope_name": "source.tsx",
+      "display_name": "TSX",
+      "aliases": [],
+      "embedded_langs": [
+        "es-tag-css",
+        "es-tag-html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/typescript-basics/syntaxes/TypeScriptReact.tmLanguage.json"
+      }
+    },
+    {
+      "id": "typescript",
+      "grammar_file": "typescript.json",
+      "scope_name": "source.ts",
+      "display_name": "TypeScript",
+      "aliases": [
+        "ts",
+        "cts",
+        "mts"
+      ],
+      "embedded_langs": [
+        "es-tag-css",
+        "es-tag-html"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json"
+      }
+    },
+    {
+      "id": "vue",
+      "grammar_file": "vue.json",
+      "scope_name": "text.html.vue",
+      "display_name": "Vue",
+      "aliases": [],
+      "embedded_langs": [
+        "css",
+        "javascript",
+        "typescript",
+        "json",
+        "html",
+        "html-derivative",
+        "markdown-vue",
+        "vue-directives",
+        "vue-interpolations",
+        "vue-sfc-style-variable-injection"
+      ],
+      "embedded_langs_lazy": [
+        "markdown",
+        "pug",
+        "sass",
+        "scss",
+        "less",
+        "jsx",
+        "tsx",
+        "jsonc",
+        "json5",
+        "yaml",
+        "toml",
+        "graphql"
+      ],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vue",
+      "selector": {
+        "path": "extensions/vscode/syntaxes/vue.tmLanguage.json"
+      }
+    },
+    {
+      "id": "vue-directives",
+      "grammar_file": "vue-directives.json",
+      "scope_name": "vue.directives",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "vue"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.vue",
+        "text.html.markdown",
+        "text.html.derivative",
+        "text.pug"
+      ],
+      "role": "dependency",
+      "repository_id": "vue",
+      "selector": {
+        "path": "extensions/vscode/syntaxes/vue-directives.json"
+      }
+    },
+    {
+      "id": "vue-interpolations",
+      "grammar_file": "vue-interpolations.json",
+      "scope_name": "vue.interpolations",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "vue"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.vue",
+        "text.html.markdown",
+        "text.html.derivative",
+        "text.pug"
+      ],
+      "role": "dependency",
+      "repository_id": "vue",
+      "selector": {
+        "path": "extensions/vscode/syntaxes/vue-interpolations.json"
+      }
+    },
+    {
+      "id": "vue-sfc-style-variable-injection",
+      "grammar_file": "vue-sfc-style-variable-injection.json",
+      "scope_name": "vue.sfc.style.variable.injection",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "javascript"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.vue"
+      ],
+      "role": "dependency",
+      "repository_id": "vue",
+      "selector": {
+        "path": "extensions/vscode/syntaxes/vue-sfc-style-variable-injection.json"
+      }
+    },
+    {
+      "id": "wasm",
+      "grammar_file": "wasm.json",
+      "scope_name": "source.wat",
+      "display_name": "WebAssembly",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-webassembly",
+        "scope": "source.webassembly"
+      }
+    },
+    {
+      "id": "wgsl",
+      "grammar_file": "wgsl.json",
+      "scope_name": "source.wgsl",
+      "display_name": "WGSL",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/wgsl-analyzer",
+        "scope": "source.wgsl"
+      }
+    },
+    {
+      "id": "xml",
+      "grammar_file": "xml.json",
+      "scope_name": "text.xml",
+      "display_name": "XML",
+      "aliases": [],
+      "embedded_langs": [
+        "java"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/xml/syntaxes/xml.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml",
+      "grammar_file": "yaml.json",
+      "scope_name": "source.yaml",
+      "display_name": "YAML",
+      "aliases": [
+        "yml"
+      ],
+      "embedded_langs": [
+        "yaml-1-2",
+        "yaml-embedded"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml-1-0",
+      "grammar_file": "yaml-1-0.json",
+      "scope_name": "source.yaml.1.0",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "yaml",
+        "yaml-1-1",
+        "yaml-1-2",
+        "yaml-1-3"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml-1.0.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml-1-1",
+      "grammar_file": "yaml-1-1.json",
+      "scope_name": "source.yaml.1.1",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "yaml",
+        "yaml-1-0",
+        "yaml-1-2",
+        "yaml-1-3"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml-1.1.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml-1-2",
+      "grammar_file": "yaml-1-2.json",
+      "scope_name": "source.yaml.1.2",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "yaml",
+        "yaml-1-0",
+        "yaml-1-1",
+        "yaml-1-3"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml-1.2.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml-1-3",
+      "grammar_file": "yaml-1-3.json",
+      "scope_name": "source.yaml.1.3",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "yaml",
+        "yaml-1-2"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml-1.3.tmLanguage.json"
+      }
+    },
+    {
+      "id": "yaml-embedded",
+      "grammar_file": "yaml-embedded.json",
+      "scope_name": "source.yaml.embedded",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "yaml",
+        "yaml-1-2"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "vscode",
+      "selector": {
+        "path": "extensions/yaml/syntaxes/yaml-embedded.tmLanguage.json"
+      }
+    },
+    {
+      "id": "zig",
+      "grammar_file": "zig.json",
+      "scope_name": "source.zig",
+      "display_name": "Zig",
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/sublime-zig-language",
+        "path": "Syntaxes/Zig.tmLanguage.json"
+      }
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "repositories": [
+    {
+      "id": "vscode",
+      "repository": "microsoft/vscode",
+      "ref": "HEAD",
+      "adapter": "vscode",
+      "role": "collection",
+      "reason": "Editor-maintained collection of common programming and configuration grammars.",
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE.txt"
+      }
+    },
+    {
+      "id": "linguist",
+      "repository": "github/linguist",
+      "ref": "HEAD",
+      "adapter": "linguist",
+      "role": "collection",
+      "reason": "GitHub-maintained aggregate pins; specialist grammars follow this collection instead of independent repository heads.",
+      "modules": [
+        "vendor/grammars/graphiql",
+        "vendor/grammars/language-haml",
+        "vendor/grammars/language-haskell",
+        "vendor/grammars/language-javascript",
+        "vendor/grammars/language-kotlin",
+        "vendor/grammars/language-sass",
+        "vendor/grammars/language-webassembly",
+        "vendor/grammars/markdown-tm-language",
+        "vendor/grammars/syntax",
+        "vendor/grammars/toml.tmbundle",
+        "vendor/grammars/vscode-cmake-tools",
+        "vendor/grammars/vscode-scala-syntax",
+        "vendor/grammars/wgsl-analyzer",
+        "vendor/grammars/Syntax-highlighting-for-PostCSS",
+        "vendor/grammars/sublime-zig-language",
+        "vendor/grammars/elixir-tmbundle",
+        "vendor/grammars/vscode-gleam",
+        "vendor/grammars/Luau.tmLanguage",
+        "vendor/grammars/nix-linguist",
+        "vendor/grammars/godot-vscode-plugin",
+        "vendor/grammars/vsc-ember-syntax",
+        "vendor/grammars/liquid-tm-grammar"
+      ],
+      "paths": {
+        "vendor/grammars/vscode-cmake-tools": [
+          "syntaxes/"
+        ],
+        "vendor/grammars/graphiql": [
+          "packages/vscode-graphql-syntax/grammars/"
+        ],
+        "vendor/grammars/language-haml": [
+          "grammars/"
+        ],
+        "vendor/grammars/language-haskell": [
+          "grammars/"
+        ],
+        "vendor/grammars/syntax": [
+          "syntaxes/"
+        ],
+        "vendor/grammars/language-javascript": [
+          "grammars/"
+        ],
+        "vendor/grammars/language-kotlin": [
+          "dist/Kotlin.tmLanguage"
+        ],
+        "vendor/grammars/markdown-tm-language": [
+          "source.mdx.tmLanguage"
+        ],
+        "vendor/grammars/language-sass": [
+          "grammars/"
+        ],
+        "vendor/grammars/vscode-scala-syntax": [
+          "syntaxes/"
+        ],
+        "vendor/grammars/toml.tmbundle": [
+          "Syntaxes/"
+        ],
+        "vendor/grammars/language-webassembly": [
+          "grammars/"
+        ],
+        "vendor/grammars/wgsl-analyzer": [
+          "editors/code/syntaxes/"
+        ],
+        "vendor/grammars/Syntax-highlighting-for-PostCSS": [
+          ""
+        ],
+        "vendor/grammars/sublime-zig-language": [
+          "Syntaxes/Zig.tmLanguage.json"
+        ],
+        "vendor/grammars/elixir-tmbundle": [
+          "Syntaxes/Elixir.tmLanguage",
+          "Syntaxes/EEx.tmLanguage"
+        ],
+        "vendor/grammars/vscode-gleam": [
+          "syntaxes/gleam.tmLanguage.json"
+        ],
+        "vendor/grammars/Luau.tmLanguage": [
+          "Luau.tmLanguage.json"
+        ],
+        "vendor/grammars/nix-linguist": [
+          "dist/nix.tmLanguage.json"
+        ],
+        "vendor/grammars/godot-vscode-plugin": [
+          "syntaxes/GDScript.tmLanguage.json"
+        ],
+        "vendor/grammars/vsc-ember-syntax": [
+          "syntaxes/source.gjs.json",
+          "syntaxes/source.gts.json"
+        ],
+        "vendor/grammars/liquid-tm-grammar": [
+          "grammars/"
+        ]
+      },
+      "module_licenses": {
+        "vendor/grammars/vscode-cmake-tools": {
+          "id": "MIT",
+          "path": "LICENSE.txt"
+        },
+        "vendor/grammars/graphiql": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/language-haml": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/language-haskell": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/syntax": {
+          "id": "MPL-2.0",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/language-javascript": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/language-kotlin": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/markdown-tm-language": {
+          "id": "MIT",
+          "path": "license"
+        },
+        "vendor/grammars/language-sass": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/vscode-scala-syntax": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/toml.tmbundle": {
+          "id": "LicenseRef-TextMate-Bundle",
+          "path": "README.mdown"
+        },
+        "vendor/grammars/language-webassembly": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/wgsl-analyzer": {
+          "id": "MIT",
+          "path": "LICENSE-MIT"
+        },
+        "vendor/grammars/Syntax-highlighting-for-PostCSS": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/sublime-zig-language": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/elixir-tmbundle": {
+          "id": "Apache-2.0",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/vscode-gleam": {
+          "id": "Apache-2.0",
+          "path": "LICENSE.txt"
+        },
+        "vendor/grammars/Luau.tmLanguage": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/nix-linguist": {
+          "id": "MIT",
+          "path": "LICENSE.txt"
+        },
+        "vendor/grammars/godot-vscode-plugin": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/vsc-ember-syntax": {
+          "id": "MIT",
+          "path": "LICENSE"
+        },
+        "vendor/grammars/liquid-tm-grammar": {
+          "id": "MIT",
+          "path": "LICENSE.md"
+        }
+      }
+    },
+    {
+      "id": "angular",
+      "repository": "angular/vscode-ng-language-service",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "Angular embedding support",
+      "paths": [
+        "syntaxes/expression.json",
+        "syntaxes/inline-styles.json",
+        "syntaxes/inline-template.json",
+        "syntaxes/let-declaration.json",
+        "syntaxes/template.json",
+        "syntaxes/template-blocks.json"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "vue",
+      "repository": "vuejs/language-tools",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "Vue single-file components and injections",
+      "paths": [
+        "extensions/vscode/syntaxes/markdown-vue.json",
+        "extensions/vscode/syntaxes/vue.tmLanguage.json",
+        "extensions/vscode/syntaxes/vue-directives.json",
+        "extensions/vscode/syntaxes/vue-interpolations.json",
+        "extensions/vscode/syntaxes/vue-sfc-style-variable-injection.json"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "svelte",
+      "repository": "sveltejs/language-tools",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "Svelte single-file components",
+      "paths": [
+        "packages/svelte-vscode/syntaxes/svelte.tmLanguage.src.yaml"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "astro",
+      "repository": "withastro/language-tools",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "Astro components",
+      "paths": [
+        "packages/vscode/syntaxes/astro.tmLanguage.src.yaml"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "template-tags",
+      "repository": "0x00000001A/es6-string-html",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "HTML and SVG tagged-template injections for Lit and other template libraries",
+      "paths": [
+        "syntaxes/es6-inline-html.json"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    },
+    {
+      "id": "styled-components",
+      "repository": "styled-components/vscode-styled-components",
+      "ref": "HEAD",
+      "adapter": "files",
+      "role": "exception",
+      "reason": "CSS-in-JS declarations, Styled Components, Emotion, and Styled JSX embeddings",
+      "paths": [
+        "syntaxes/styled-components.json",
+        "syntaxes/css.styled.json"
+      ],
+      "license": {
+        "id": "MIT",
+        "path": "LICENSE"
+      }
+    }
+  ],
+  "lazy_grammars": [
+    "markdown",
+    "mdx",
+    "vue",
+    "svelte",
+    "astro",
+    "pug",
+    "haml"
+  ]
+}

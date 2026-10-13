@@ -1,0 +1,110 @@
+name: Grammar updates
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: grammar-updates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CANDIDATE: ${{ runner.temp }}/grammar-candidate
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      UPDATE_BRANCH: codex/grammar-updates
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.x
+      - name: Install data converters
+        run: pnpm -C node install --frozen-lockfile --ignore-scripts
+      - name: Materialize the accepted snapshot
+        run: |
+          node scripts/materialize-assets.mjs --sources --payloads
+          node scripts/write-grammar-notices.mjs
+      - name: Prepare repository snapshots
+        id: prepare
+        run: |
+          node scripts/prepare-grammar-update.mjs --output-dir "$CANDIDATE"
+          node --input-type=module -e 'import fs from "node:fs"; const report = JSON.parse(fs.readFileSync(process.env.CANDIDATE + "/report.json")); fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + report.changed + "\n")'
+      - name: Build the native candidate validator
+        if: steps.prepare.outputs.changed == 'true'
+        run: pnpm -C node run build:native
+      - name: Validate and apply the candidate
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          node scripts/write-grammar-diffs.mjs "$CANDIDATE"
+          node scripts/validate-grammar-candidate.mjs "$CANDIDATE"
+          node scripts/apply-grammar-update.mjs "$CANDIDATE"
+      - name: Verify native compatibility
+        if: steps.prepare.outputs.changed == 'true'
+        run: pnpm -C node run test:ferriki-compat:core
+      - name: Verify grammar output agreement
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          pnpm -C node run check:bench-curated
+          pnpm -C node run check:bench-tiobe
+      - name: Publish immutable source and payload objects
+        if: steps.prepare.outputs.changed == 'true'
+        env:
+          BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
+        run: |
+          node scripts/publish-assets.mjs
+          node scripts/verify-assets.mjs
+      - name: Open a reviewable update
+        if: steps.prepare.outputs.changed == 'true'
+        run: |
+          node scripts/write-grammar-update-report.mjs "$CANDIDATE/report.json" "$CANDIDATE/report.md"
+          existing=$(gh pr list --head "$UPDATE_BRANCH" --base "$DEFAULT_BRANCH" --state open --json url --jq '.[0].url // empty')
+          remote_tip=$(git ls-remote --heads origin "refs/heads/$UPDATE_BRANCH" | cut -f 1)
+          if [ -n "$remote_tip" ]; then
+            git fetch --depth=1 origin "$UPDATE_BRANCH"
+            if [ "$(git show -s --format=%ae FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ] ||
+               [ "$(git show -s --format=%ce FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ]; then
+              echo 'The grammar update branch contains a manual commit. Review it before resuming automated updates.' >&2
+              exit 1
+            fi
+          fi
+          git switch -c "$UPDATE_BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/grammars assets/catalog.json
+          git commit -m 'chore(grammars): refresh repository snapshots'
+          if [ -z "$remote_tip" ] || ! git diff --quiet FETCH_HEAD HEAD; then
+            git push --force-with-lease="refs/heads/$UPDATE_BRANCH:$remote_tip" origin "HEAD:refs/heads/$UPDATE_BRANCH"
+          fi
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file "$CANDIDATE/report.md"
+          else
+            gh pr create --draft --base "$DEFAULT_BRANCH" --head "$UPDATE_BRANCH" --title 'chore(grammars): refresh repository snapshots' --body-file "$CANDIDATE/report.md"
+          fi
+      - name: Keep the candidate and its report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: grammar-candidate
+          path: ${{ env.CANDIDATE }}
+          if-no-files-found: ignore
+          retention-days: 14

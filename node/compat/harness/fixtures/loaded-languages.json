@@ -1,0 +1,131 @@
+{
+  "core/test/core-sync.test.ts": {
+    "dynamic load sync theme and lang": [
+      [
+        "css",
+        "html",
+        "es-tag-html",
+        "typescript",
+        "css-styled",
+        "es-tag-css",
+        "javascript",
+        "c",
+        "python",
+        "ts",
+        "cts",
+        "mts",
+        "js",
+        "cjs",
+        "mjs",
+        "py"
+      ]
+    ]
+  },
+  "core/test/core.test.ts": {
+    "dynamic load theme and lang": [
+      [
+        "css",
+        "html",
+        "es-tag-html",
+        "typescript",
+        "css-styled",
+        "es-tag-css",
+        "javascript",
+        "c",
+        "python",
+        "ts",
+        "cts",
+        "mts",
+        "js",
+        "cjs",
+        "mjs",
+        "py"
+      ]
+    ]
+  },
+  "shiki/test/general.test.ts": {
+    "dynamic load theme and lang": [
+      [
+        "css",
+        "html",
+        "es-tag-html",
+        "typescript",
+        "css-styled",
+        "es-tag-css",
+        "javascript",
+        "python",
+        "ts",
+        "cts",
+        "mts",
+        "js",
+        "cjs",
+        "mjs",
+        "py"
+      ]
+    ],
+    "requires nested lang": [
+      [
+        "cjs",
+        "css",
+        "css-styled",
+        "cts",
+        "es-tag-css",
+        "es-tag-html",
+        "html",
+        "html-derivative",
+        "javascript",
+        "js",
+        "json",
+        "markdown-vue",
+        "mjs",
+        "mts",
+        "ts",
+        "typescript",
+        "vue",
+        "vue-directives",
+        "vue-interpolations",
+        "vue-sfc-style-variable-injection"
+      ]
+    ],
+    "dynamic load theme and lang with md": [15]
+  },
+  "shiki/test/injections.test.ts": {
+    "injections-side-effects angular-html": [
+      [
+        "es-tag-html",
+        "typescript",
+        "css",
+        "css-styled",
+        "es-tag-css",
+        "javascript",
+        "html",
+        "ts",
+        "cts",
+        "mts",
+        "js",
+        "cjs",
+        "mjs"
+      ],
+      [
+        "es-tag-html",
+        "typescript",
+        "css",
+        "css-styled",
+        "es-tag-css",
+        "javascript",
+        "html",
+        "angular-expression",
+        "angular-let-declaration",
+        "angular-template",
+        "angular-template-blocks",
+        "angular-html",
+        "ts",
+        "cts",
+        "mts",
+        "js",
+        "cjs",
+        "mjs"
+      ]
+    ]
+  }
+}

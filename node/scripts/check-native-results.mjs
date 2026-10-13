@@ -6,7 +6,7 @@ import { TEST_ASSET_CACHE_DIR } from "./test-asset-env.mjs";
 
 const binding = loadFerrikiNativeBinding();
 const highlighter = binding.createHighlighter({
-  standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/shiki", import.meta.url)),
+  standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/standard", import.meta.url)),
   assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
 });
 try {
@@ -122,7 +122,7 @@ for (let round = 0; round < 3; round++) {
               loader,
               options: {
                 standardAssetRoot: fileURLToPath(
-                  new URL("../ferriki/assets/shiki", import.meta.url),
+                  new URL("../ferriki/assets/standard", import.meta.url),
                 ),
                 assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
               },

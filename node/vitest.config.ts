@@ -2,6 +2,7 @@ import process from "node:process";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
+import { adaptCatalogSnapshots } from "./compat/harness/catalog-snapshots";
 import { TEST_ASSET_CACHE_DIR } from "./scripts/test-asset-env.mjs";
 
 function compatPackage(entry: string) {
@@ -32,6 +33,9 @@ export default defineConfig({
       // upstream JS against upstream JS (migration plan, Finding 0).
       name: "ferriki-honest-alias",
       enforce: "pre" as const,
+      transform(code: string, id: string) {
+        if (process.env.FERRIKI_HONEST_ALIAS) return adaptCatalogSnapshots(code, id);
+      },
       resolveId(source: string, importer?: string) {
         if (!process.env.FERRIKI_HONEST_ALIAS) return;
         if (source === "shiki/bundle/full" || source === "shiki/core") return backendEntry;

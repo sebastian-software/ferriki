@@ -54,7 +54,7 @@ export type RegistrationInput<T> =
 export interface AssetOptions {
   /** Allows downloads; `false` loads only cached payloads. Default: `true`. */
   remote?: boolean;
-  /** Mirror serving `<commit>/assets/shiki/<path>`. Default: `https://assets.ferriki.dev`. */
+  /** Mirror serving `<language-id>/<short-hash>` and `themes/<theme-id>/<short-hash>`. Default: `https://assets.ferriki.dev`. */
   baseUrl?: string;
   /** Cache directory. Default: `node_modules/.cache/ferriki`, then the platform cache. */
   cacheDir?: string;

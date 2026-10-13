@@ -8,7 +8,7 @@ on:
   pull_request:
     branches:
       - main
-      - 'codex/**'
+      - "codex/**"
 
 permissions:
   contents: read
@@ -71,6 +71,9 @@ jobs:
       - name: Format
         run: cargo fmt --all --check
 
+      - name: Materialize locked test payloads
+        run: node scripts/materialize-assets.mjs --payloads
+
       - name: Clippy
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
@@ -121,6 +124,9 @@ jobs:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Materialize locked test payloads
+        run: node scripts/materialize-assets.mjs --payloads
 
       - name: Test
         run: cargo test --workspace --all-features --locked
@@ -209,6 +215,9 @@ jobs:
           fi
           echo "value=$threshold" >> "$GITHUB_OUTPUT"
           echo "Line coverage gate is >= $threshold%"
+
+      - name: Materialize locked test payloads
+        run: node scripts/materialize-assets.mjs --payloads
 
       - name: Collect coverage and enforce the gate
         run: |

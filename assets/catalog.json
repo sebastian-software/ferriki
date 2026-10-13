@@ -1,0 +1,2833 @@
+{
+  "version": 1,
+  "bootstrap_commit": "c277803ebbbb4d645e8be20c047841bda227c4c0",
+  "languages": {
+    "format_version": 3,
+    "source": {
+      "upstream": "ferriki-curated",
+      "version": null,
+      "commit": null
+    },
+    "entries": [
+      {
+        "id": "angular-expression",
+        "scope_name": "expression.ng",
+        "asset_file": "angular-expression.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "angular-html",
+        "scope_name": "text.html.derivative.ng",
+        "asset_file": "angular-html.fkgram",
+        "display_name": "Angular HTML",
+        "aliases": [],
+        "embedded_langs": [
+          "html",
+          "angular-expression",
+          "angular-let-declaration",
+          "angular-template",
+          "angular-template-blocks"
+        ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "angular-inline-style",
+        "scope_name": "inline-styles.ng",
+        "asset_file": "angular-inline-style.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["scss"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["source.ts.ng"]
+      },
+      {
+        "id": "angular-inline-template",
+        "scope_name": "inline-template.ng",
+        "asset_file": "angular-inline-template.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["angular-html", "angular-template"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["source.ts.ng"]
+      },
+      {
+        "id": "angular-let-declaration",
+        "scope_name": "template.let.ng",
+        "asset_file": "angular-let-declaration.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["angular-expression"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
+      },
+      {
+        "id": "angular-template",
+        "scope_name": "template.ng",
+        "asset_file": "angular-template.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["angular-expression"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
+      },
+      {
+        "id": "angular-template-blocks",
+        "scope_name": "template.blocks.ng",
+        "asset_file": "angular-template-blocks.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["angular-expression", "angular-template"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
+      },
+      {
+        "id": "angular-ts",
+        "scope_name": "source.ts.ng",
+        "asset_file": "angular-ts.fkgram",
+        "display_name": "Angular TypeScript",
+        "aliases": [],
+        "embedded_langs": [
+          "angular-expression",
+          "angular-inline-style",
+          "angular-inline-template",
+          "angular-let-declaration",
+          "angular-template",
+          "angular-template-blocks",
+          "es-tag-css",
+          "es-tag-html"
+        ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "annotation-liquidhaskell-haskell",
+        "scope_name": "annotation.liquidhaskell.haskell",
+        "asset_file": "annotation-liquidhaskell-haskell.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "astro",
+        "scope_name": "source.astro",
+        "asset_file": "astro.fkgram",
+        "display_name": "Astro",
+        "aliases": [],
+        "embedded_langs": ["json", "javascript", "typescript", "css", "postcss", "tsx"],
+        "embedded_langs_lazy": ["sass", "scss", "less"],
+        "inject_to": []
+      },
+      {
+        "id": "c",
+        "scope_name": "source.c",
+        "asset_file": "c.fkgram",
+        "display_name": "C",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "clojure",
+        "scope_name": "source.clojure",
+        "asset_file": "clojure.fkgram",
+        "display_name": "Clojure",
+        "aliases": ["clj"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "cmake",
+        "scope_name": "source.cmake",
+        "asset_file": "cmake.fkgram",
+        "display_name": "CMake",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "cpp",
+        "scope_name": "source.cpp",
+        "asset_file": "cpp.fkgram",
+        "display_name": "C++",
+        "aliases": ["c++"],
+        "embedded_langs": ["cpp-macro", "regexp"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "cpp-macro",
+        "scope_name": "source.cpp.embedded.macro",
+        "asset_file": "cpp-macro.fkgram",
+        "display_name": "C++",
+        "aliases": [],
+        "embedded_langs": ["regexp", "cpp"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "csharp",
+        "scope_name": "source.cs",
+        "asset_file": "csharp.fkgram",
+        "display_name": "C#",
+        "aliases": ["c#", "cs"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "css",
+        "scope_name": "source.css",
+        "asset_file": "css.fkgram",
+        "display_name": "CSS",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "css-styled",
+        "scope_name": "source.css.styled",
+        "asset_file": "css-styled.fkgram",
+        "display_name": "CSS-in-JS declaration support",
+        "aliases": [],
+        "embedded_langs": ["css", "typescript"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "dart",
+        "scope_name": "source.dart",
+        "asset_file": "dart.fkgram",
+        "display_name": "Dart",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "diff",
+        "scope_name": "source.diff",
+        "asset_file": "diff.fkgram",
+        "display_name": "Diff",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "docker",
+        "scope_name": "source.dockerfile",
+        "asset_file": "docker.fkgram",
+        "display_name": "Dockerfile",
+        "aliases": ["dockerfile"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "eex",
+        "scope_name": "text.elixir",
+        "asset_file": "eex.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "elixir",
+        "scope_name": "source.elixir",
+        "asset_file": "elixir.fkgram",
+        "display_name": "Elixir",
+        "aliases": ["ex", "exs"],
+        "embedded_langs": ["eex", "html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "es-tag-css",
+        "scope_name": "inline.es6-css",
+        "asset_file": "es-tag-css.fkgram",
+        "display_name": "CSS-in-JS",
+        "aliases": [],
+        "embedded_langs": ["typescript", "css-styled"],
+        "embedded_langs_lazy": [],
+        "inject_to": [
+          "source.js",
+          "source.js.jsx",
+          "source.ts",
+          "source.tsx",
+          "source.ts.ng",
+          "source.gjs",
+          "source.gts",
+          "text.html.vue",
+          "source.svelte",
+          "source.astro",
+          "text.html.basic",
+          "text.html.handlebars",
+          "text.html.liquid"
+        ]
+      },
+      {
+        "id": "es-tag-html",
+        "scope_name": "inline.es6-html",
+        "asset_file": "es-tag-html.fkgram",
+        "display_name": "HTML and SVG tagged templates",
+        "aliases": [],
+        "embedded_langs": ["typescript", "html"],
+        "embedded_langs_lazy": [],
+        "inject_to": [
+          "source.js",
+          "source.js.jsx",
+          "source.ts",
+          "source.tsx",
+          "source.ts.ng",
+          "source.gjs",
+          "source.gts",
+          "text.html.vue",
+          "source.svelte",
+          "source.astro",
+          "text.html.basic",
+          "text.html.handlebars",
+          "text.html.liquid"
+        ]
+      },
+      {
+        "id": "gdscript",
+        "scope_name": "source.gdscript",
+        "asset_file": "gdscript.fkgram",
+        "display_name": "GDScript",
+        "aliases": ["gd"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "gleam",
+        "scope_name": "source.gleam",
+        "asset_file": "gleam.fkgram",
+        "display_name": "Gleam",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "glimmer-js",
+        "scope_name": "source.gjs",
+        "asset_file": "glimmer-js.fkgram",
+        "display_name": "Glimmer JS",
+        "aliases": ["gjs"],
+        "embedded_langs": ["javascript", "css", "html", "typescript"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "glimmer-ts",
+        "scope_name": "source.gts",
+        "asset_file": "glimmer-ts.fkgram",
+        "display_name": "Glimmer TS",
+        "aliases": ["gts"],
+        "embedded_langs": ["typescript", "css", "html", "javascript"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "go",
+        "scope_name": "source.go",
+        "asset_file": "go.fkgram",
+        "display_name": "Go",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "graphql",
+        "scope_name": "source.graphql",
+        "asset_file": "graphql.fkgram",
+        "display_name": "GraphQL",
+        "aliases": ["gql"],
+        "embedded_langs": ["javascript", "typescript", "jsx", "tsx"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "haml",
+        "scope_name": "text.haml",
+        "asset_file": "haml.fkgram",
+        "display_name": "Ruby Haml",
+        "aliases": [],
+        "embedded_langs": ["javascript", "css"],
+        "embedded_langs_lazy": ["ruby", "sass", "markdown"],
+        "inject_to": []
+      },
+      {
+        "id": "handlebars",
+        "scope_name": "text.html.handlebars",
+        "asset_file": "handlebars.fkgram",
+        "display_name": "Handlebars",
+        "aliases": ["hbs", "hjs"],
+        "embedded_langs": ["html", "css", "javascript", "yaml"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "haskell",
+        "scope_name": "source.haskell",
+        "asset_file": "haskell.fkgram",
+        "display_name": "Haskell",
+        "aliases": ["hs"],
+        "embedded_langs": ["annotation-liquidhaskell-haskell"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "hcl",
+        "scope_name": "source.hcl",
+        "asset_file": "hcl.fkgram",
+        "display_name": "HashiCorp HCL",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "html",
+        "scope_name": "text.html.basic",
+        "asset_file": "html.fkgram",
+        "display_name": "HTML",
+        "aliases": [],
+        "embedded_langs": ["javascript", "css"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "html-derivative",
+        "scope_name": "text.html.derivative",
+        "asset_file": "html-derivative.fkgram",
+        "display_name": "HTML (Derivative)",
+        "aliases": [],
+        "embedded_langs": ["html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "ini",
+        "scope_name": "source.ini",
+        "asset_file": "ini.fkgram",
+        "display_name": "INI",
+        "aliases": ["properties"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "java",
+        "scope_name": "source.java",
+        "asset_file": "java.fkgram",
+        "display_name": "Java",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "javascript",
+        "scope_name": "source.js",
+        "asset_file": "javascript.fkgram",
+        "display_name": "JavaScript",
+        "aliases": ["js", "cjs", "mjs"],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "js-regexp",
+        "scope_name": "source.js.regexp",
+        "asset_file": "js-regexp.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "jsdoc",
+        "scope_name": "source.jsdoc",
+        "asset_file": "jsdoc.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["javascript"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "json",
+        "scope_name": "source.json",
+        "asset_file": "json.fkgram",
+        "display_name": "JSON",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "json5",
+        "scope_name": "source.json5",
+        "asset_file": "json5.fkgram",
+        "display_name": "JSON5",
+        "aliases": [],
+        "embedded_langs": ["graphql", "html", "js-regexp", "jsdoc", "sql"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "jsonc",
+        "scope_name": "source.json.comments",
+        "asset_file": "jsonc.fkgram",
+        "display_name": "JSON with Comments",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "jsx",
+        "scope_name": "source.js.jsx",
+        "asset_file": "jsx.fkgram",
+        "display_name": "JSX",
+        "aliases": [],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "julia",
+        "scope_name": "source.julia",
+        "asset_file": "julia.fkgram",
+        "display_name": "Julia",
+        "aliases": ["jl"],
+        "embedded_langs": ["cpp", "python", "javascript", "r", "sql"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "kotlin",
+        "scope_name": "source.kotlin",
+        "asset_file": "kotlin.fkgram",
+        "display_name": "Kotlin",
+        "aliases": ["kt", "kts"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "less",
+        "scope_name": "source.css.less",
+        "asset_file": "less.fkgram",
+        "display_name": "Less",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "liquid",
+        "scope_name": "text.html.liquid",
+        "asset_file": "liquid.fkgram",
+        "display_name": "Liquid",
+        "aliases": [],
+        "embedded_langs": ["html", "css", "json", "javascript", "liquid-injection"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "liquid-injection",
+        "scope_name": "liquid.injection",
+        "asset_file": "liquid-injection.fkgram",
+        "display_name": "Liquid embedded syntax",
+        "aliases": [],
+        "embedded_langs": ["html", "css", "json", "javascript"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["text.html.liquid"]
+      },
+      {
+        "id": "lua",
+        "scope_name": "source.lua",
+        "asset_file": "lua.fkgram",
+        "display_name": "Lua",
+        "aliases": [],
+        "embedded_langs": ["c"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "luau",
+        "scope_name": "source.luau",
+        "asset_file": "luau.fkgram",
+        "display_name": "Luau",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "make",
+        "scope_name": "source.makefile",
+        "asset_file": "make.fkgram",
+        "display_name": "Makefile",
+        "aliases": ["makefile"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "markdown",
+        "scope_name": "text.html.markdown",
+        "asset_file": "markdown.fkgram",
+        "display_name": "Markdown",
+        "aliases": ["md"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [
+          "css",
+          "html",
+          "ini",
+          "java",
+          "lua",
+          "make",
+          "perl",
+          "r",
+          "ruby",
+          "php",
+          "sql",
+          "xml",
+          "yaml",
+          "clojure",
+          "c",
+          "cpp",
+          "diff",
+          "docker",
+          "go",
+          "pug",
+          "javascript",
+          "json",
+          "jsonc",
+          "less",
+          "swift",
+          "scss",
+          "powershell",
+          "python",
+          "julia",
+          "regexp",
+          "rust",
+          "scala",
+          "shellscript",
+          "typescript",
+          "tsx",
+          "csharp",
+          "dart",
+          "html-derivative"
+        ],
+        "inject_to": []
+      },
+      {
+        "id": "markdown-vue",
+        "scope_name": "markdown.vue.codeblock",
+        "asset_file": "markdown-vue.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["vue"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["text.html.markdown"]
+      },
+      {
+        "id": "mdx",
+        "scope_name": "source.mdx",
+        "asset_file": "mdx.fkgram",
+        "display_name": "MDX",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [
+          "tsx",
+          "toml",
+          "yaml",
+          "c",
+          "clojure",
+          "cpp",
+          "csharp",
+          "css",
+          "diff",
+          "docker",
+          "go",
+          "graphql",
+          "haskell",
+          "html",
+          "ini",
+          "java",
+          "javascript",
+          "json",
+          "julia",
+          "kotlin",
+          "less",
+          "lua",
+          "make",
+          "markdown",
+          "perl",
+          "python",
+          "r",
+          "ruby",
+          "rust",
+          "scala",
+          "scss",
+          "shellscript",
+          "sql",
+          "xml",
+          "swift",
+          "typescript"
+        ],
+        "inject_to": []
+      },
+      {
+        "id": "nix",
+        "scope_name": "source.nix",
+        "asset_file": "nix.fkgram",
+        "display_name": "Nix",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "perl",
+        "scope_name": "source.perl",
+        "asset_file": "perl.fkgram",
+        "display_name": "Perl",
+        "aliases": [],
+        "embedded_langs": ["html", "xml", "css", "javascript", "sql"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "php",
+        "scope_name": "source.php",
+        "asset_file": "php.fkgram",
+        "display_name": "PHP",
+        "aliases": [],
+        "embedded_langs": ["html", "xml", "sql", "javascript", "json", "css"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "postcss",
+        "scope_name": "source.css.postcss",
+        "asset_file": "postcss.fkgram",
+        "display_name": "PostCSS",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "powershell",
+        "scope_name": "source.powershell",
+        "asset_file": "powershell.fkgram",
+        "display_name": "PowerShell",
+        "aliases": ["ps", "ps1", "pwsh"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "pug",
+        "scope_name": "text.pug",
+        "asset_file": "pug.fkgram",
+        "display_name": "Pug",
+        "aliases": ["jade"],
+        "embedded_langs": ["javascript", "css", "html"],
+        "embedded_langs_lazy": ["sass", "scss"],
+        "inject_to": []
+      },
+      {
+        "id": "python",
+        "scope_name": "source.python",
+        "asset_file": "python.fkgram",
+        "display_name": "Python",
+        "aliases": ["py"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "r",
+        "scope_name": "source.r",
+        "asset_file": "r.fkgram",
+        "display_name": "R",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "regexp",
+        "scope_name": "source.regexp.python",
+        "asset_file": "regexp.fkgram",
+        "display_name": "RegExp",
+        "aliases": ["regex"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "ruby",
+        "scope_name": "source.ruby",
+        "asset_file": "ruby.fkgram",
+        "display_name": "Ruby",
+        "aliases": ["rb"],
+        "embedded_langs": [
+          "html",
+          "haml",
+          "xml",
+          "sql",
+          "graphql",
+          "css",
+          "cpp",
+          "c",
+          "javascript",
+          "shellscript",
+          "lua",
+          "yaml"
+        ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "rust",
+        "scope_name": "source.rust",
+        "asset_file": "rust.fkgram",
+        "display_name": "Rust",
+        "aliases": ["rs"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "sass",
+        "scope_name": "source.sass",
+        "asset_file": "sass.fkgram",
+        "display_name": "Sass",
+        "aliases": [],
+        "embedded_langs": ["css", "sassdoc"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "sassdoc",
+        "scope_name": "source.sassdoc",
+        "asset_file": "sassdoc.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["javascript", "scss"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "scala",
+        "scope_name": "source.scala",
+        "asset_file": "scala.fkgram",
+        "display_name": "Scala",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "scss",
+        "scope_name": "source.css.scss",
+        "asset_file": "scss.fkgram",
+        "display_name": "SCSS",
+        "aliases": [],
+        "embedded_langs": ["css", "sassdoc"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "shellscript",
+        "scope_name": "source.shell",
+        "asset_file": "shellscript.fkgram",
+        "display_name": "Shell",
+        "aliases": ["bash", "sh", "shell", "zsh"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "sql",
+        "scope_name": "source.sql",
+        "asset_file": "sql.fkgram",
+        "display_name": "SQL",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "svelte",
+        "scope_name": "source.svelte",
+        "asset_file": "svelte.fkgram",
+        "display_name": "Svelte",
+        "aliases": [],
+        "embedded_langs": ["javascript", "typescript", "css", "postcss"],
+        "embedded_langs_lazy": ["sass", "scss", "less", "pug", "markdown"],
+        "inject_to": []
+      },
+      {
+        "id": "swift",
+        "scope_name": "source.swift",
+        "asset_file": "swift.fkgram",
+        "display_name": "Swift",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "terraform",
+        "scope_name": "source.hcl.terraform",
+        "asset_file": "terraform.fkgram",
+        "display_name": "Terraform",
+        "aliases": ["tf", "tfvars"],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "toml",
+        "scope_name": "source.toml",
+        "asset_file": "toml.fkgram",
+        "display_name": "TOML",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "tsx",
+        "scope_name": "source.tsx",
+        "asset_file": "tsx.fkgram",
+        "display_name": "TSX",
+        "aliases": [],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "typescript",
+        "scope_name": "source.ts",
+        "asset_file": "typescript.fkgram",
+        "display_name": "TypeScript",
+        "aliases": ["ts", "cts", "mts"],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "vue",
+        "scope_name": "text.html.vue",
+        "asset_file": "vue.fkgram",
+        "display_name": "Vue",
+        "aliases": [],
+        "embedded_langs": [
+          "css",
+          "javascript",
+          "typescript",
+          "json",
+          "html",
+          "html-derivative",
+          "markdown-vue",
+          "vue-directives",
+          "vue-interpolations",
+          "vue-sfc-style-variable-injection"
+        ],
+        "embedded_langs_lazy": [
+          "markdown",
+          "pug",
+          "sass",
+          "scss",
+          "less",
+          "jsx",
+          "tsx",
+          "jsonc",
+          "json5",
+          "yaml",
+          "toml",
+          "graphql"
+        ],
+        "inject_to": []
+      },
+      {
+        "id": "vue-directives",
+        "scope_name": "vue.directives",
+        "asset_file": "vue-directives.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["vue"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["source.vue", "text.html.markdown", "text.html.derivative", "text.pug"]
+      },
+      {
+        "id": "vue-interpolations",
+        "scope_name": "vue.interpolations",
+        "asset_file": "vue-interpolations.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["vue"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["source.vue", "text.html.markdown", "text.html.derivative", "text.pug"]
+      },
+      {
+        "id": "vue-sfc-style-variable-injection",
+        "scope_name": "vue.sfc.style.variable.injection",
+        "asset_file": "vue-sfc-style-variable-injection.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["javascript"],
+        "embedded_langs_lazy": [],
+        "inject_to": ["source.vue"]
+      },
+      {
+        "id": "wasm",
+        "scope_name": "source.wat",
+        "asset_file": "wasm.fkgram",
+        "display_name": "WebAssembly",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "wgsl",
+        "scope_name": "source.wgsl",
+        "asset_file": "wgsl.fkgram",
+        "display_name": "WGSL",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "xml",
+        "scope_name": "text.xml",
+        "asset_file": "xml.fkgram",
+        "display_name": "XML",
+        "aliases": [],
+        "embedded_langs": ["java"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml",
+        "scope_name": "source.yaml",
+        "asset_file": "yaml.fkgram",
+        "display_name": "YAML",
+        "aliases": ["yml"],
+        "embedded_langs": ["yaml-1-2", "yaml-embedded"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml-1-0",
+        "scope_name": "source.yaml.1.0",
+        "asset_file": "yaml-1-0.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["yaml", "yaml-1-1", "yaml-1-2", "yaml-1-3"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml-1-1",
+        "scope_name": "source.yaml.1.1",
+        "asset_file": "yaml-1-1.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["yaml", "yaml-1-0", "yaml-1-2", "yaml-1-3"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml-1-2",
+        "scope_name": "source.yaml.1.2",
+        "asset_file": "yaml-1-2.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["yaml", "yaml-1-0", "yaml-1-1", "yaml-1-3"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml-1-3",
+        "scope_name": "source.yaml.1.3",
+        "asset_file": "yaml-1-3.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["yaml", "yaml-1-2"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "yaml-embedded",
+        "scope_name": "source.yaml.embedded",
+        "asset_file": "yaml-embedded.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": ["yaml", "yaml-1-2"],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "zig",
+        "scope_name": "source.zig",
+        "asset_file": "zig.fkgram",
+        "display_name": "Zig",
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      }
+    ]
+  },
+  "themes": {
+    "format_version": 3,
+    "source": {
+      "upstream": "ferriki-curated",
+      "version": null,
+      "commit": null
+    },
+    "entries": [
+      {
+        "id": "andromeeda",
+        "asset_file": "andromeeda.fktheme",
+        "display_name": "andromeeda",
+        "theme_type": "dark"
+      },
+      {
+        "id": "aurora-x",
+        "asset_file": "aurora-x.fktheme",
+        "display_name": "aurora-x",
+        "theme_type": "dark"
+      },
+      {
+        "id": "ayu-dark",
+        "asset_file": "ayu-dark.fktheme",
+        "display_name": "ayu-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "ayu-light",
+        "asset_file": "ayu-light.fktheme",
+        "display_name": "ayu-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "ayu-mirage",
+        "asset_file": "ayu-mirage.fktheme",
+        "display_name": "ayu-mirage",
+        "theme_type": "dark"
+      },
+      {
+        "id": "catppuccin-frappe",
+        "asset_file": "catppuccin-frappe.fktheme",
+        "display_name": "catppuccin-frappe",
+        "theme_type": "dark"
+      },
+      {
+        "id": "catppuccin-latte",
+        "asset_file": "catppuccin-latte.fktheme",
+        "display_name": "catppuccin-latte",
+        "theme_type": "light"
+      },
+      {
+        "id": "catppuccin-macchiato",
+        "asset_file": "catppuccin-macchiato.fktheme",
+        "display_name": "catppuccin-macchiato",
+        "theme_type": "dark"
+      },
+      {
+        "id": "catppuccin-mocha",
+        "asset_file": "catppuccin-mocha.fktheme",
+        "display_name": "catppuccin-mocha",
+        "theme_type": "dark"
+      },
+      {
+        "id": "dark-plus",
+        "asset_file": "dark-plus.fktheme",
+        "display_name": "dark-plus",
+        "theme_type": "dark"
+      },
+      {
+        "id": "dracula",
+        "asset_file": "dracula.fktheme",
+        "display_name": "dracula",
+        "theme_type": "dark"
+      },
+      {
+        "id": "dracula-soft",
+        "asset_file": "dracula-soft.fktheme",
+        "display_name": "dracula-soft",
+        "theme_type": "dark"
+      },
+      {
+        "id": "everforest-dark",
+        "asset_file": "everforest-dark.fktheme",
+        "display_name": "everforest-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "everforest-light",
+        "asset_file": "everforest-light.fktheme",
+        "display_name": "everforest-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "github-dark",
+        "asset_file": "github-dark.fktheme",
+        "display_name": "github-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "github-dark-default",
+        "asset_file": "github-dark-default.fktheme",
+        "display_name": "github-dark-default",
+        "theme_type": "dark"
+      },
+      {
+        "id": "github-dark-dimmed",
+        "asset_file": "github-dark-dimmed.fktheme",
+        "display_name": "github-dark-dimmed",
+        "theme_type": "dark"
+      },
+      {
+        "id": "github-dark-high-contrast",
+        "asset_file": "github-dark-high-contrast.fktheme",
+        "display_name": "github-dark-high-contrast",
+        "theme_type": "dark"
+      },
+      {
+        "id": "github-light",
+        "asset_file": "github-light.fktheme",
+        "display_name": "github-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "github-light-default",
+        "asset_file": "github-light-default.fktheme",
+        "display_name": "github-light-default",
+        "theme_type": "light"
+      },
+      {
+        "id": "github-light-high-contrast",
+        "asset_file": "github-light-high-contrast.fktheme",
+        "display_name": "github-light-high-contrast",
+        "theme_type": "light"
+      },
+      {
+        "id": "gruvbox-dark-hard",
+        "asset_file": "gruvbox-dark-hard.fktheme",
+        "display_name": "gruvbox-dark-hard",
+        "theme_type": "dark"
+      },
+      {
+        "id": "gruvbox-dark-medium",
+        "asset_file": "gruvbox-dark-medium.fktheme",
+        "display_name": "gruvbox-dark-medium",
+        "theme_type": "dark"
+      },
+      {
+        "id": "gruvbox-dark-soft",
+        "asset_file": "gruvbox-dark-soft.fktheme",
+        "display_name": "gruvbox-dark-soft",
+        "theme_type": "dark"
+      },
+      {
+        "id": "gruvbox-light-hard",
+        "asset_file": "gruvbox-light-hard.fktheme",
+        "display_name": "gruvbox-light-hard",
+        "theme_type": "light"
+      },
+      {
+        "id": "gruvbox-light-medium",
+        "asset_file": "gruvbox-light-medium.fktheme",
+        "display_name": "gruvbox-light-medium",
+        "theme_type": "light"
+      },
+      {
+        "id": "gruvbox-light-soft",
+        "asset_file": "gruvbox-light-soft.fktheme",
+        "display_name": "gruvbox-light-soft",
+        "theme_type": "light"
+      },
+      {
+        "id": "horizon",
+        "asset_file": "horizon.fktheme",
+        "display_name": "horizon",
+        "theme_type": "dark"
+      },
+      {
+        "id": "horizon-bright",
+        "asset_file": "horizon-bright.fktheme",
+        "display_name": "horizon-bright",
+        "theme_type": "light"
+      },
+      {
+        "id": "houston",
+        "asset_file": "houston.fktheme",
+        "display_name": "houston",
+        "theme_type": "dark"
+      },
+      {
+        "id": "kanagawa-dragon",
+        "asset_file": "kanagawa-dragon.fktheme",
+        "display_name": "kanagawa-dragon",
+        "theme_type": "dark"
+      },
+      {
+        "id": "kanagawa-lotus",
+        "asset_file": "kanagawa-lotus.fktheme",
+        "display_name": "kanagawa-lotus",
+        "theme_type": "light"
+      },
+      {
+        "id": "kanagawa-wave",
+        "asset_file": "kanagawa-wave.fktheme",
+        "display_name": "kanagawa-wave",
+        "theme_type": "dark"
+      },
+      {
+        "id": "laserwave",
+        "asset_file": "laserwave.fktheme",
+        "display_name": "laserwave",
+        "theme_type": "dark"
+      },
+      {
+        "id": "light-plus",
+        "asset_file": "light-plus.fktheme",
+        "display_name": "light-plus",
+        "theme_type": "light"
+      },
+      {
+        "id": "material-theme",
+        "asset_file": "material-theme.fktheme",
+        "display_name": "material-theme",
+        "theme_type": "dark"
+      },
+      {
+        "id": "material-theme-darker",
+        "asset_file": "material-theme-darker.fktheme",
+        "display_name": "material-theme-darker",
+        "theme_type": "dark"
+      },
+      {
+        "id": "material-theme-lighter",
+        "asset_file": "material-theme-lighter.fktheme",
+        "display_name": "material-theme-lighter",
+        "theme_type": "light"
+      },
+      {
+        "id": "material-theme-ocean",
+        "asset_file": "material-theme-ocean.fktheme",
+        "display_name": "material-theme-ocean",
+        "theme_type": "dark"
+      },
+      {
+        "id": "material-theme-palenight",
+        "asset_file": "material-theme-palenight.fktheme",
+        "display_name": "material-theme-palenight",
+        "theme_type": "dark"
+      },
+      {
+        "id": "min-dark",
+        "asset_file": "min-dark.fktheme",
+        "display_name": "min-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "min-light",
+        "asset_file": "min-light.fktheme",
+        "display_name": "min-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "monokai",
+        "asset_file": "monokai.fktheme",
+        "display_name": "monokai",
+        "theme_type": "dark"
+      },
+      {
+        "id": "night-owl",
+        "asset_file": "night-owl.fktheme",
+        "display_name": "night-owl",
+        "theme_type": "dark"
+      },
+      {
+        "id": "night-owl-light",
+        "asset_file": "night-owl-light.fktheme",
+        "display_name": "night-owl-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "nord",
+        "asset_file": "nord.fktheme",
+        "display_name": "nord",
+        "theme_type": "dark"
+      },
+      {
+        "id": "one-dark-pro",
+        "asset_file": "one-dark-pro.fktheme",
+        "display_name": "one-dark-pro",
+        "theme_type": "dark"
+      },
+      {
+        "id": "one-light",
+        "asset_file": "one-light.fktheme",
+        "display_name": "one-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "plastic",
+        "asset_file": "plastic.fktheme",
+        "display_name": "plastic",
+        "theme_type": "dark"
+      },
+      {
+        "id": "poimandres",
+        "asset_file": "poimandres.fktheme",
+        "display_name": "poimandres",
+        "theme_type": "dark"
+      },
+      {
+        "id": "red",
+        "asset_file": "red.fktheme",
+        "display_name": "red",
+        "theme_type": "dark"
+      },
+      {
+        "id": "rose-pine",
+        "asset_file": "rose-pine.fktheme",
+        "display_name": "rose-pine",
+        "theme_type": "dark"
+      },
+      {
+        "id": "rose-pine-dawn",
+        "asset_file": "rose-pine-dawn.fktheme",
+        "display_name": "rose-pine-dawn",
+        "theme_type": "light"
+      },
+      {
+        "id": "rose-pine-moon",
+        "asset_file": "rose-pine-moon.fktheme",
+        "display_name": "rose-pine-moon",
+        "theme_type": "dark"
+      },
+      {
+        "id": "slack-dark",
+        "asset_file": "slack-dark.fktheme",
+        "display_name": "slack-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "slack-ochin",
+        "asset_file": "slack-ochin.fktheme",
+        "display_name": "slack-ochin",
+        "theme_type": "light"
+      },
+      {
+        "id": "snazzy-light",
+        "asset_file": "snazzy-light.fktheme",
+        "display_name": "snazzy-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "solarized-dark",
+        "asset_file": "solarized-dark.fktheme",
+        "display_name": "solarized-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "solarized-light",
+        "asset_file": "solarized-light.fktheme",
+        "display_name": "solarized-light",
+        "theme_type": "light"
+      },
+      {
+        "id": "synthwave-84",
+        "asset_file": "synthwave-84.fktheme",
+        "display_name": "synthwave-84",
+        "theme_type": "dark"
+      },
+      {
+        "id": "tokyo-night",
+        "asset_file": "tokyo-night.fktheme",
+        "display_name": "tokyo-night",
+        "theme_type": "dark"
+      },
+      {
+        "id": "vesper",
+        "asset_file": "vesper.fktheme",
+        "display_name": "vesper",
+        "theme_type": "dark"
+      },
+      {
+        "id": "vitesse-black",
+        "asset_file": "vitesse-black.fktheme",
+        "display_name": "vitesse-black",
+        "theme_type": "dark"
+      },
+      {
+        "id": "vitesse-dark",
+        "asset_file": "vitesse-dark.fktheme",
+        "display_name": "vitesse-dark",
+        "theme_type": "dark"
+      },
+      {
+        "id": "vitesse-light",
+        "asset_file": "vitesse-light.fktheme",
+        "display_name": "vitesse-light",
+        "theme_type": "light"
+      }
+    ]
+  },
+  "release": {
+    "manifestVersion": 1,
+    "assets": {
+      "languages/angular-expression.fkgram": {
+        "sha256": "99b9e4f30e0597e13f6a9d3be599fe8c1217438c2d881250b585ddb8a4937eca",
+        "size": 19541,
+        "formatVersion": 3
+      },
+      "languages/angular-html.fkgram": {
+        "sha256": "22c69e5b0585034bc449a832552fb5caad8d2598aa1c0511cbde19351d49ef79",
+        "size": 1531,
+        "formatVersion": 3
+      },
+      "languages/angular-inline-style.fkgram": {
+        "sha256": "27f215a0c832174a48df6bffb6730daa68092f48428ced72ae129b2e4ae1bdff",
+        "size": 1342,
+        "formatVersion": 3
+      },
+      "languages/angular-inline-template.fkgram": {
+        "sha256": "663e6a2aaf7e448f75fb474cc80b4d1c56da1edb32b872964094aa9e5b9f382a",
+        "size": 1171,
+        "formatVersion": 3
+      },
+      "languages/angular-let-declaration.fkgram": {
+        "sha256": "13df9f164009bb591d9d82a524713483d36e4160ef1081b39674b9cf6a22ebab",
+        "size": 1090,
+        "formatVersion": 3
+      },
+      "languages/angular-template-blocks.fkgram": {
+        "sha256": "3fd6847e8b7d749a15152846a70255dafc9654de849d0ce73861860dd5082d63",
+        "size": 2178,
+        "formatVersion": 3
+      },
+      "languages/angular-template.fkgram": {
+        "sha256": "9b6c9ffde728b8e9762bff44fa462ca4620edc07fdc1a0b60acb0fcf975c9504",
+        "size": 679,
+        "formatVersion": 3
+      },
+      "languages/angular-ts.fkgram": {
+        "sha256": "a206b99e60ede08581a8bdc6a20b0761946e8739a000f8ee8173433c9aa327fe",
+        "size": 194457,
+        "formatVersion": 3
+      },
+      "languages/annotation-liquidhaskell-haskell.fkgram": {
+        "sha256": "ed697f44e8759d9155e989e4aeee44c29b9b355433f1bc3355bc78a6e5f2571d",
+        "size": 51515,
+        "formatVersion": 3
+      },
+      "languages/astro.fkgram": {
+        "sha256": "f6a6d090a4dc74b3b5f33396edc4c87ba98333bf4075be6cf8664e98b588b67e",
+        "size": 24245,
+        "formatVersion": 3
+      },
+      "languages/c.fkgram": {
+        "sha256": "fceed4f92952b040975e268404ef4c3dde5d147b6fa36ee817c983639769855a",
+        "size": 72246,
+        "formatVersion": 3
+      },
+      "languages/clojure.fkgram": {
+        "sha256": "987e0abbaa6595dbd2f3dacf7456995ee346d750fa9f0fb328925729669a80b0",
+        "size": 7052,
+        "formatVersion": 3
+      },
+      "languages/cmake.fkgram": {
+        "sha256": "433c5fb54367a29eca2e51067d8aaee7b5476e1aac150e68345134e244d38109",
+        "size": 31068,
+        "formatVersion": 3
+      },
+      "languages/cpp-macro.fkgram": {
+        "sha256": "0b336c5c8bdb080672d6b44fde83cc99e39944b788478dc01664c351d6c1d9a4",
+        "size": 294346,
+        "formatVersion": 3
+      },
+      "languages/cpp.fkgram": {
+        "sha256": "bf807938458cb97c15afb7a8d9e992ddfc90aba2e533d5d63756c248d9ab823e",
+        "size": 516943,
+        "formatVersion": 3
+      },
+      "languages/csharp.fkgram": {
+        "sha256": "27892161ce4cb761ee4988d4fd3ebb4e618437eb069c7fee1443bb51e79fdca8",
+        "size": 101905,
+        "formatVersion": 3
+      },
+      "languages/css-styled.fkgram": {
+        "sha256": "cc5f2825dda22918180b7ccd52631d1b8a02c1fe0ee12f11fa0b3a241e94499e",
+        "size": 20630,
+        "formatVersion": 3
+      },
+      "languages/css.fkgram": {
+        "sha256": "fb87e4ad68a5e50a043f2c02f6aaadcda690879d6c721f7d886aa769ce674525",
+        "size": 65683,
+        "formatVersion": 3
+      },
+      "languages/dart.fkgram": {
+        "sha256": "566a0a78be76f1040cc6e647bb3e3533aa31b6485b805d01deeb8ebb2ddc08a7",
+        "size": 8793,
+        "formatVersion": 3
+      },
+      "languages/diff.fkgram": {
+        "sha256": "5b6e07664e585538254ed24e81814bdaa1972f7be4d4e983d7733ecb148feafd",
+        "size": 3025,
+        "formatVersion": 3
+      },
+      "languages/docker.fkgram": {
+        "sha256": "96cbf2cf9357837fd6c587604c2c3a8a31ec286549cffe4ff250ec819d60c66a",
+        "size": 2224,
+        "formatVersion": 3
+      },
+      "languages/eex.fkgram": {
+        "sha256": "71b40e95262db0b2d85600122d7aa07549b7c670c7652174666fa6f495534989",
+        "size": 863,
+        "formatVersion": 3
+      },
+      "languages/elixir.fkgram": {
+        "sha256": "895474a538be4d5e22f5070542a8b0df383758cd249a4f0ebc1dfde66b35a430",
+        "size": 17645,
+        "formatVersion": 3
+      },
+      "languages/es-tag-css.fkgram": {
+        "sha256": "09cd8bc1976e5453a842ac0a8362823494d51d7acac388f65ceeb8de1002d944",
+        "size": 6984,
+        "formatVersion": 3
+      },
+      "languages/es-tag-html.fkgram": {
+        "sha256": "ec4d093e52b95fb188397a49532d117e63c3e71d3d3d01d075356dea1b662322",
+        "size": 2540,
+        "formatVersion": 3
+      },
+      "languages/gdscript.fkgram": {
+        "sha256": "c05c1d3336c8a2ce9cd9ffc9506d0c3d713e98d092ed388b2d340f8f55a9303b",
+        "size": 19288,
+        "formatVersion": 3
+      },
+      "languages/gleam.fkgram": {
+        "sha256": "8fd541a69c1378e7c5009eeb79b491e02cbe16683a2f710ce0890f8dc8e5a10c",
+        "size": 2682,
+        "formatVersion": 3
+      },
+      "languages/glimmer-js.fkgram": {
+        "sha256": "a85c489f82bd130299844a2cea26cd133d3247db388f72393bfb37c04793f72e",
+        "size": 20133,
+        "formatVersion": 3
+      },
+      "languages/glimmer-ts.fkgram": {
+        "sha256": "51484ac102a7be01fe0a52399349a5dea4a31c29bbb8f74b71f2ca2d3a69ad3e",
+        "size": 20133,
+        "formatVersion": 3
+      },
+      "languages/go.fkgram": {
+        "sha256": "941db5b6caf557f3708917b6ee4f6775f47d41e40930acc41c74aa31e16febb3",
+        "size": 51940,
+        "formatVersion": 3
+      },
+      "languages/graphql.fkgram": {
+        "sha256": "abcbe0d0cdf555a1e23d7207d29ddb9780bb02dff7882e3e8612ff80a114efd1",
+        "size": 18680,
+        "formatVersion": 3
+      },
+      "languages/haml.fkgram": {
+        "sha256": "59ad5c8909d3975c91ca6feba5a21518e93b27d66559f5b5d94c3ff716b4a2ca",
+        "size": 6939,
+        "formatVersion": 3
+      },
+      "languages/handlebars.fkgram": {
+        "sha256": "419cfca1360712610219d848abb5b25f54968dd2a371a7e5868493b4e14fcfef",
+        "size": 13408,
+        "formatVersion": 3
+      },
+      "languages/haskell.fkgram": {
+        "sha256": "12d8c01af78b48521468eeabced4c6dc959a0bea4742a751aab969cc0ac65410",
+        "size": 50033,
+        "formatVersion": 3
+      },
+      "languages/hcl.fkgram": {
+        "sha256": "09e5f2c1704a6c53a3b3e615ec6a99a8e91da8d7ee96dcce46df0dbe91071986",
+        "size": 11695,
+        "formatVersion": 3
+      },
+      "languages/html-derivative.fkgram": {
+        "sha256": "8d23d29c5c650d5d5e13b78901e171028614fe121cf795216309064715552071",
+        "size": 1365,
+        "formatVersion": 3
+      },
+      "languages/html.fkgram": {
+        "sha256": "63cd10a6dcec861f41d0746d32a56a2bc765bcf56102e6032359a81c64f0e688",
+        "size": 60559,
+        "formatVersion": 3
+      },
+      "languages/ini.fkgram": {
+        "sha256": "ab5f718475cfc80362938bcf7bc968b764cb08a390861f787f5798667c30b82b",
+        "size": 1946,
+        "formatVersion": 3
+      },
+      "languages/java.fkgram": {
+        "sha256": "7395636e1dc68c3d0d0a4918ea88645f40c7e2f85057fe07e221610f64b07bca",
+        "size": 27565,
+        "formatVersion": 3
+      },
+      "languages/javascript.fkgram": {
+        "sha256": "9be3c5cf08b3bb95b22f05129e6bc135518eedda35ee6175bdd6d2979e518522",
+        "size": 188538,
+        "formatVersion": 3
+      },
+      "languages/js-regexp.fkgram": {
+        "sha256": "a41f58eb6e544fbaae346164188e7d96c0cdae1e0b30fca54cd0e519efe542e7",
+        "size": 2609,
+        "formatVersion": 3
+      },
+      "languages/jsdoc.fkgram": {
+        "sha256": "2bbe11dce3d83efbb1a6f4a35e6b2c65547f9af5ec6aaed6167ffe2f70a1ec70",
+        "size": 10107,
+        "formatVersion": 3
+      },
+      "languages/json.fkgram": {
+        "sha256": "5247ead20b77465def885add8e098c532dd3b2db64f6132424d1e6de1e3ab250",
+        "size": 4026,
+        "formatVersion": 3
+      },
+      "languages/json5.fkgram": {
+        "sha256": "cca7035c6431d01002ca06de56269c884a8406504f352d9fb5e04f28d72cecfb",
+        "size": 46122,
+        "formatVersion": 3
+      },
+      "languages/jsonc.fkgram": {
+        "sha256": "97865b7059e1d5833dffd909bf85fbaeb64689d600d9b98142bdee42111b798a",
+        "size": 4335,
+        "formatVersion": 3
+      },
+      "languages/jsx.fkgram": {
+        "sha256": "5ca8c92158d5925f01e281716a1c53b751a3288669b5f35a5197a615ab04795e",
+        "size": 191495,
+        "formatVersion": 3
+      },
+      "languages/julia.fkgram": {
+        "sha256": "45b43af09ac6850576d019e9cd8ae61fda15c932f1c16e697f965c9df98c3d35",
+        "size": 34995,
+        "formatVersion": 3
+      },
+      "languages/kotlin.fkgram": {
+        "sha256": "ffc4b3480d1a3f7838aef4a895cde1ce4b77dcc63c1e097b5d45637148a5ef66",
+        "size": 15113,
+        "formatVersion": 3
+      },
+      "languages/less.fkgram": {
+        "sha256": "7a67fe324efd4c131efadfcd60c06d6d3b0e14bdd58e25518039c0a766d1899a",
+        "size": 101533,
+        "formatVersion": 3
+      },
+      "languages/liquid-injection.fkgram": {
+        "sha256": "99fde04c95df1bf623cdd7e1186447b519946ab2bbc698274369123028fdf90d",
+        "size": 17515,
+        "formatVersion": 3
+      },
+      "languages/liquid.fkgram": {
+        "sha256": "f74af9d6dcbeeac4c480f3611f30e3c818a1e02a075f3961436658ae365d351c",
+        "size": 17714,
+        "formatVersion": 3
+      },
+      "languages/lua.fkgram": {
+        "sha256": "55c470272e2afa851d14bef5842d4e53a71960c8e4ee4f73949604bdca946fe0",
+        "size": 15581,
+        "formatVersion": 3
+      },
+      "languages/luau.fkgram": {
+        "sha256": "73ebfee71c024e48f46eac0d408e023bcce9bab2cca04397ed6171d53a4392b3",
+        "size": 16249,
+        "formatVersion": 3
+      },
+      "languages/make.fkgram": {
+        "sha256": "61efd318307f1b8eb7a541d5c8e9d25a68a111e032183dad4d1596b374941cc1",
+        "size": 9205,
+        "formatVersion": 3
+      },
+      "languages/markdown-vue.fkgram": {
+        "sha256": "eb1a3a4aaf6fbc0a8f023eabb3360f803aef60bfea51f7b3d1962349159135eb",
+        "size": 924,
+        "formatVersion": 3
+      },
+      "languages/markdown.fkgram": {
+        "sha256": "1e27280796533ce3f8d27c6ccbdeca0531dd261aa41b2dea271aecf3842a7da5",
+        "size": 61131,
+        "formatVersion": 3
+      },
+      "languages/mdx.fkgram": {
+        "sha256": "8033521d1fa940cf958530d8caad4a00f7bdf6a76998a702f3326114b7f0a1e0",
+        "size": 134909,
+        "formatVersion": 3
+      },
+      "languages/nix.fkgram": {
+        "sha256": "c2385b905b9de95983098987c1cec7114421578260991bf55a231b8a3ea60d86",
+        "size": 14941,
+        "formatVersion": 3
+      },
+      "languages/perl.fkgram": {
+        "sha256": "6aed0a5f2a11e0f54cb4cd1a1c06180bef84e0c66e1dc6e32769474992bf8703",
+        "size": 43614,
+        "formatVersion": 3
+      },
+      "languages/php.fkgram": {
+        "sha256": "15e8acfaaa48db349b9a9ee38a44c73ee7b888bfa436d907a568a8d8c1469532",
+        "size": 115487,
+        "formatVersion": 3
+      },
+      "languages/postcss.fkgram": {
+        "sha256": "b92e71c984cb84d8b64b3afb26cc4356a3224b389f34b9abde94613a41aafff8",
+        "size": 6418,
+        "formatVersion": 3
+      },
+      "languages/powershell.fkgram": {
+        "sha256": "e99da7f65f79248cac85859de1ea5be4b53460712a09369fd367b12670ffd05e",
+        "size": 22198,
+        "formatVersion": 3
+      },
+      "languages/pug.fkgram": {
+        "sha256": "40a2417af35bc3c388840c1aea24a8bc2647fb80500e457138a3e9ab48f84d10",
+        "size": 14625,
+        "formatVersion": 3
+      },
+      "languages/python.fkgram": {
+        "sha256": "f87d133e1555a5dd578f49edd95004b0015160b6ebb3dc832a172d1c747dd965",
+        "size": 78379,
+        "formatVersion": 3
+      },
+      "languages/r.fkgram": {
+        "sha256": "38b7db147093f5cacf99f69810b4536c2da068061fb0f4caf1cb2f1ab8c9c188",
+        "size": 52825,
+        "formatVersion": 3
+      },
+      "languages/regexp.fkgram": {
+        "sha256": "273a7b5318fed8b210c847514441622f53ca2573b19f6ae609bf4fb8a8415c6b",
+        "size": 8514,
+        "formatVersion": 3
+      },
+      "languages/ruby.fkgram": {
+        "sha256": "57ac82d94aac4c1be221a3bbb8ceff01801f6041bc50e0165775ad07f9f893c9",
+        "size": 50462,
+        "formatVersion": 3
+      },
+      "languages/rust.fkgram": {
+        "sha256": "f2e7decec9584bd4ad56004f5225492c7de2130738e26c960fd7805b1ec1de43",
+        "size": 17967,
+        "formatVersion": 3
+      },
+      "languages/sass.fkgram": {
+        "sha256": "fcee2a7aad9404bc8367d92083ab601a009f7ef89529ee5b1a54e9b2e85ae5be",
+        "size": 15580,
+        "formatVersion": 3
+      },
+      "languages/sassdoc.fkgram": {
+        "sha256": "91689d5d3461c6e6e1f4cbd4546da92e394b1b9e1193a229d2959cd022ea460c",
+        "size": 6340,
+        "formatVersion": 3
+      },
+      "languages/scala.fkgram": {
+        "sha256": "005c50b563538091580d77da447c29d070f7bcf885830a39c80f2b11efef637f",
+        "size": 28395,
+        "formatVersion": 3
+      },
+      "languages/scss.fkgram": {
+        "sha256": "86fcf824c2845b4944fdac0b37b5799d5226115c0aae06c3edc33fe19e3fc38a",
+        "size": 30569,
+        "formatVersion": 3
+      },
+      "languages/shellscript.fkgram": {
+        "sha256": "585f21aebb7100a07d973596b0cf50b059541a44d96528d56f6312ba6cf78e50",
+        "size": 41604,
+        "formatVersion": 3
+      },
+      "languages/sql.fkgram": {
+        "sha256": "f4141b397d6232a1e6a6e126706cdda44514a90178f5503106d2e69e86497962",
+        "size": 24629,
+        "formatVersion": 3
+      },
+      "languages/svelte.fkgram": {
+        "sha256": "0408ce20b12d807900bbb2a66b9d83dddd03d4e9012666a4d9e1ebcd00cd983e",
+        "size": 17942,
+        "formatVersion": 3
+      },
+      "languages/swift.fkgram": {
+        "sha256": "f68de646c991f102549b991e9216d4305f89862d27082b475b62786e515f42c5",
+        "size": 103812,
+        "formatVersion": 3
+      },
+      "languages/terraform.fkgram": {
+        "sha256": "f8b1ae12763968e748190a728ca8f13bc4f8cd47786fc345225fb3386d0bc717",
+        "size": 13125,
+        "formatVersion": 3
+      },
+      "languages/toml.fkgram": {
+        "sha256": "cd08380fda2217c9f41d452c5198fe419aeef6748d4d73ec2d2dfab146ba5076",
+        "size": 7670,
+        "formatVersion": 3
+      },
+      "languages/tsx.fkgram": {
+        "sha256": "9c10727eaf4606c966adf8c09683238a1f02337242dfd8654c103de9a9c7ac5b",
+        "size": 189236,
+        "formatVersion": 3
+      },
+      "languages/typescript.fkgram": {
+        "sha256": "1c6be2284a9d03eafa4fb252d0187b2a67badb5a0dbabd86c9790fe7f26bc3ab",
+        "size": 194192,
+        "formatVersion": 3
+      },
+      "languages/vue-directives.fkgram": {
+        "sha256": "9adac9e1b1564fad42597f9681c31686b75724b61e34b2ac7257bae9550eb566",
+        "size": 641,
+        "formatVersion": 3
+      },
+      "languages/vue-interpolations.fkgram": {
+        "sha256": "97b71807f62e3bc273fc9e2dfe865d144b9c99d532f08da13fcc8b890e86c0b5",
+        "size": 632,
+        "formatVersion": 3
+      },
+      "languages/vue-sfc-style-variable-injection.fkgram": {
+        "sha256": "59387cf9319df1bf68ed0155d86b8878a7c55c0e48983bacc2d3cf272b929d71",
+        "size": 1064,
+        "formatVersion": 3
+      },
+      "languages/vue.fkgram": {
+        "sha256": "928c47d311e33b6e03857802881bb9fc4fec0cba6b1b927d3d63e1f0bf39f8e4",
+        "size": 22384,
+        "formatVersion": 3
+      },
+      "languages/wasm.fkgram": {
+        "sha256": "82d8bf2adc5912f848c0370f5f26998943953377de7fe749d0535f6bfad26fd2",
+        "size": 10101,
+        "formatVersion": 3
+      },
+      "languages/wgsl.fkgram": {
+        "sha256": "96636e996a3b3948a2b198d8ef38b441d51798684e847eb65692363c2e51e6b8",
+        "size": 10994,
+        "formatVersion": 3
+      },
+      "languages/xml.fkgram": {
+        "sha256": "99196a0c71f90818c62b591e12f6de34dea6420e4bbbaf2172e2b9d76cb40546",
+        "size": 5743,
+        "formatVersion": 3
+      },
+      "languages/yaml-1-0.fkgram": {
+        "sha256": "75f6a6eb03a64e38c823e25b666cf96787b9677f4752863d79ae9f1b0788d1aa",
+        "size": 21193,
+        "formatVersion": 3
+      },
+      "languages/yaml-1-1.fkgram": {
+        "sha256": "b650a7b6f49e5189bb18239d8e9a3f582703a2ed7cc9ef522ba0e1e5108edd76",
+        "size": 31815,
+        "formatVersion": 3
+      },
+      "languages/yaml-1-2.fkgram": {
+        "sha256": "f347b6b472e1ffd13c591bca68628c8a2cab75357118671a248f3a0c6a158338",
+        "size": 30213,
+        "formatVersion": 3
+      },
+      "languages/yaml-1-3.fkgram": {
+        "sha256": "4c5222f3e8db4ccb44f33f0e18b96f801c91fcad5314bb22c77804e89ce5491d",
+        "size": 1533,
+        "formatVersion": 3
+      },
+      "languages/yaml-embedded.fkgram": {
+        "sha256": "953b29fdf5d1efd63671200780abf4d564edc77ee04d7057fc4a0a8c889ff1f3",
+        "size": 9619,
+        "formatVersion": 3
+      },
+      "languages/yaml.fkgram": {
+        "sha256": "57ba2db66ea3623db97b2c4843044920b3aa3f6e0e6e54f1bf34d9b3489a8812",
+        "size": 2749,
+        "formatVersion": 3
+      },
+      "languages/zig.fkgram": {
+        "sha256": "bf3ca951b07c21873487d2fb7ecc49cdb6fe4959b40896b35186a3a58509f601",
+        "size": 8936,
+        "formatVersion": 3
+      },
+      "themes/andromeeda.fktheme": {
+        "sha256": "ed2651f9e461fd8fad39214f7a2569799371e7208947d5381365c0bd4322bd83",
+        "size": 8987,
+        "formatVersion": 3
+      },
+      "themes/aurora-x.fktheme": {
+        "sha256": "dd1789e79a1fe5681351fc03f9653567e59fb8ae2f2ac863aaeb241fb6601577",
+        "size": 13627,
+        "formatVersion": 3
+      },
+      "themes/ayu-dark.fktheme": {
+        "sha256": "e8e9428d0a190a8cd02ffb7723fd3bb7c23bd26b6bd0a22be73d3fa44dc90872",
+        "size": 20050,
+        "formatVersion": 3
+      },
+      "themes/ayu-light.fktheme": {
+        "sha256": "5199d76dac55eafc6803f622e3b7f88c065d9e1f7322257776367a4a3823400a",
+        "size": 20124,
+        "formatVersion": 3
+      },
+      "themes/ayu-mirage.fktheme": {
+        "sha256": "8b32a7b1d8b2630c9001853a0746ddbd9c7f1b76f6c8bc3ab089759e485e633b",
+        "size": 20058,
+        "formatVersion": 3
+      },
+      "themes/catppuccin-frappe.fktheme": {
+        "sha256": "535e6ae30b8d3dadb27a2ce83a5ebaf58be8e98bbebd2ded8b370b862aea320e",
+        "size": 50840,
+        "formatVersion": 3
+      },
+      "themes/catppuccin-latte.fktheme": {
+        "sha256": "6b9ce7b813181e65bcbf6b84e6bf6a746e598f91d6a063933b57352eb320327e",
+        "size": 50837,
+        "formatVersion": 3
+      },
+      "themes/catppuccin-macchiato.fktheme": {
+        "sha256": "7de8b82927482beeaebe84c75276d0329cc4ac50de491d35f9e099dc8dba79bb",
+        "size": 50851,
+        "formatVersion": 3
+      },
+      "themes/catppuccin-mocha.fktheme": {
+        "sha256": "71e66d379e12de385cad9f2b4e7b95902deb73b089a42169d2dcaadf57f89be5",
+        "size": 50835,
+        "formatVersion": 3
+      },
+      "themes/dark-plus.fktheme": {
+        "sha256": "5ffb7c2d8c42572c44582c5b8c2afc228ea01434edb4c9f114b7f828bcc3ebd8",
+        "size": 9067,
+        "formatVersion": 3
+      },
+      "themes/dracula-soft.fktheme": {
+        "sha256": "97749b8eefd765b07978ad2c89df904e7051ea5587e3b625f6dc5931183ec4ea",
+        "size": 21053,
+        "formatVersion": 3
+      },
+      "themes/dracula.fktheme": {
+        "sha256": "006e24889694faf45bfcdbdaaf17096c6ae712d592659b44beae643e66e8b689",
+        "size": 21033,
+        "formatVersion": 3
+      },
+      "themes/everforest-dark.fktheme": {
+        "sha256": "c9ab6e899d1da7947399e0b920c1fac1bf2ae856fd1b3d7d59e663264333d4d7",
+        "size": 53728,
+        "formatVersion": 3
+      },
+      "themes/everforest-light.fktheme": {
+        "sha256": "db2082f19473014cf72381a1456223f5a10e78aea7a00cfb82330f8984a11051",
+        "size": 53734,
+        "formatVersion": 3
+      },
+      "themes/github-dark-default.fktheme": {
+        "sha256": "b5b398986282d23b99d462a20ebad7b75da8c07c3e1e876190b2f292a53c557b",
+        "size": 14425,
+        "formatVersion": 3
+      },
+      "themes/github-dark-dimmed.fktheme": {
+        "sha256": "a2d8a8a1ef9718214a7590514b637fc00cf4922b4a3a2c13e48acba6bd42bbd6",
+        "size": 14421,
+        "formatVersion": 3
+      },
+      "themes/github-dark-high-contrast.fktheme": {
+        "sha256": "3755ea00abf572b2204f5f197add9dd79842f4ef08a555bf5e0777cce66466c0",
+        "size": 14597,
+        "formatVersion": 3
+      },
+      "themes/github-dark.fktheme": {
+        "sha256": "739a553651e07e530d80207846757eaf59e3a100cc2e9d00b3372221c3f3eb5e",
+        "size": 11379,
+        "formatVersion": 3
+      },
+      "themes/github-light-default.fktheme": {
+        "sha256": "b989ac945556d0b66ef60837410621ae0fd9aa8f80ef6e6c97c0dcb6d940f220",
+        "size": 14149,
+        "formatVersion": 3
+      },
+      "themes/github-light-high-contrast.fktheme": {
+        "sha256": "eecbd10943f1dd5cd39a86e400947f5d3ad0ae9ed68e643d5151379f64703f71",
+        "size": 14280,
+        "formatVersion": 3
+      },
+      "themes/github-light.fktheme": {
+        "sha256": "2d680840a84fedb5dcb7783625f17f6a2b3bfe34d20ee8957fb9d5bb69ba8399",
+        "size": 11161,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-dark-hard.fktheme": {
+        "sha256": "575f001f750455fc48b172e672a8085b003bc8f674dd070224da9824973d78ab",
+        "size": 22620,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-dark-medium.fktheme": {
+        "sha256": "ce1eec17e955df5590bfa02d8a456e96920e2ee6df6a15dd3e33d024ca9bc9d1",
+        "size": 22628,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-dark-soft.fktheme": {
+        "sha256": "a51dcc3cc28c7a2b08713444a76e1b75cbfe6a0386a29fb8a9129e469d4eb736",
+        "size": 22620,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-light-hard.fktheme": {
+        "sha256": "188fbc112ebede33b77f34ae412788d6588fd2545d3f0df1122c7289b66c531c",
+        "size": 22626,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-light-medium.fktheme": {
+        "sha256": "a22aa25a46466033398fe25300e273be56c36c3b9521947bceb57e3201b6fc74",
+        "size": 22634,
+        "formatVersion": 3
+      },
+      "themes/gruvbox-light-soft.fktheme": {
+        "sha256": "458d06c2791cd0824954f19f5c72cfbb5e2af49acc3a43acfa46bcdf885a9485",
+        "size": 22626,
+        "formatVersion": 3
+      },
+      "themes/horizon-bright.fktheme": {
+        "sha256": "0ce9a4fe32c3fbbcb4dde3e4a973be338e4a6d4bbb997c2b869ea317583ef4f4",
+        "size": 8768,
+        "formatVersion": 3
+      },
+      "themes/horizon.fktheme": {
+        "sha256": "97100d9ad1a469f50557dd4f48e6113220dad828c5848fc185ec8df323ca7194",
+        "size": 8746,
+        "formatVersion": 3
+      },
+      "themes/houston.fktheme": {
+        "sha256": "7b610c72ffc5dce615355883149cadeff4df30c0c3ee0a67f73b5da87fa3fcd8",
+        "size": 35389,
+        "formatVersion": 3
+      },
+      "themes/kanagawa-dragon.fktheme": {
+        "sha256": "4a14658b30edae3dcb9e27ae271906914a2c93397fabd7cded3fc5b7d8807216",
+        "size": 17106,
+        "formatVersion": 3
+      },
+      "themes/kanagawa-lotus.fktheme": {
+        "sha256": "7fe8ad9610089b69cf5c1cc32b5f66c2a63e9b9647fd9c2653513969f9e81227",
+        "size": 17104,
+        "formatVersion": 3
+      },
+      "themes/kanagawa-wave.fktheme": {
+        "sha256": "746bb935e369ac89dc1bed68c6707588acb2a3565c33c259364eadb06da31f9b",
+        "size": 17098,
+        "formatVersion": 3
+      },
+      "themes/laserwave.fktheme": {
+        "sha256": "f9355e591dfaca56d07911581bb24e2a48200b06fa16952e66f7fdb88387a56d",
+        "size": 11469,
+        "formatVersion": 3
+      },
+      "themes/light-plus.fktheme": {
+        "sha256": "1da659518420ceaf84a9bc9e8bb81cc6acf01d3d29299c11f7413b9c92f54700",
+        "size": 9914,
+        "formatVersion": 3
+      },
+      "themes/material-theme-darker.fktheme": {
+        "sha256": "3b737a7b4c1d599602041ce56c7eb461bfcb41eaa327ee9fbec705f7f61c39f2",
+        "size": 18624,
+        "formatVersion": 3
+      },
+      "themes/material-theme-lighter.fktheme": {
+        "sha256": "14b317f21e3f510834cde632a831024ce83e1518d5b5707fed0e3faf77c1e4f6",
+        "size": 18632,
+        "formatVersion": 3
+      },
+      "themes/material-theme-ocean.fktheme": {
+        "sha256": "69fd93541bc02ad9b43fa63895dc03eccd45971a67e513948c532a44ad6118bd",
+        "size": 18622,
+        "formatVersion": 3
+      },
+      "themes/material-theme-palenight.fktheme": {
+        "sha256": "0fdf233cbee3b365fde9b1fda1f89fab522e20e0f316c021583bedff43f54e6f",
+        "size": 18636,
+        "formatVersion": 3
+      },
+      "themes/material-theme.fktheme": {
+        "sha256": "09012134db74c16db5f514a14fd1ea0c8241287d0b1a6da7f8214e032755ef6e",
+        "size": 18596,
+        "formatVersion": 3
+      },
+      "themes/min-dark.fktheme": {
+        "sha256": "407dc643155bf01fb1fabed512159ef043aba459fb1b0d84900aafc30a5e3d5f",
+        "size": 6259,
+        "formatVersion": 3
+      },
+      "themes/min-light.fktheme": {
+        "sha256": "c87e5480e5936ec1973b9fe5095fb16c0f1e498919fc65243178fca930e047e3",
+        "size": 6940,
+        "formatVersion": 3
+      },
+      "themes/monokai.fktheme": {
+        "sha256": "9a01985660210c7ab177fa046cfec0341e833ec0c62a4c650786f2260c820184",
+        "size": 7998,
+        "formatVersion": 3
+      },
+      "themes/night-owl-light.fktheme": {
+        "sha256": "3d93826dddd2863f967c6429d1fdf4d27920a6d99de6deeb7e957748b4757f18",
+        "size": 25886,
+        "formatVersion": 3
+      },
+      "themes/night-owl.fktheme": {
+        "sha256": "2f0502e18dd5fa1fa2097ef55d8ab792be4d0fb257345f4b2dece4521953a7c2",
+        "size": 28884,
+        "formatVersion": 3
+      },
+      "themes/nord.fktheme": {
+        "sha256": "e68ff2dae71a50102ba8c9d37f1938c88a877b71b42e7aefd20b3f2cf801d784",
+        "size": 26684,
+        "formatVersion": 3
+      },
+      "themes/one-dark-pro.fktheme": {
+        "sha256": "9a50af5841c383b3d8bd95fc6dcf9f730ae162b30e31031c3906d8417c8ce7b7",
+        "size": 33764,
+        "formatVersion": 3
+      },
+      "themes/one-light.fktheme": {
+        "sha256": "7c65346287d9ad211e1e9f98f96c3ef6e009bb18eb265d6d36f3bb72f916299f",
+        "size": 25272,
+        "formatVersion": 3
+      },
+      "themes/plastic.fktheme": {
+        "sha256": "2af349fa69c945226df67615abfb313248062d0beda37fe60ed54dbae5ea9441",
+        "size": 9261,
+        "formatVersion": 3
+      },
+      "themes/poimandres.fktheme": {
+        "sha256": "9d9a6d835193042be32b3c43e263113809fb5b0b6fad7901969ac90a99d02560",
+        "size": 33467,
+        "formatVersion": 3
+      },
+      "themes/red.fktheme": {
+        "sha256": "79c762160674bd448cf320bf85e5ed50fef4d16a1c6ce23af814f34035b4551f",
+        "size": 6376,
+        "formatVersion": 3
+      },
+      "themes/rose-pine-dawn.fktheme": {
+        "sha256": "aba3ddf33b974e53604f7493c0e2036fc293835e67daaf4e171ad4a36092e88f",
+        "size": 21734,
+        "formatVersion": 3
+      },
+      "themes/rose-pine-moon.fktheme": {
+        "sha256": "914b8b26c8cbdd76cc96f3bc55eba13cd0ac7c61560e22cd6d319efda5d6e152",
+        "size": 21732,
+        "formatVersion": 3
+      },
+      "themes/rose-pine.fktheme": {
+        "sha256": "e03ec34f2e1906e46b6c7a8911476d9e781cd344383063cb259346374c2364ae",
+        "size": 21712,
+        "formatVersion": 3
+      },
+      "themes/slack-dark.fktheme": {
+        "sha256": "b5400b202f1acf19cfea6dbe11af8641af5d590f5477e3df19b6f9244fbbbab4",
+        "size": 9089,
+        "formatVersion": 3
+      },
+      "themes/slack-ochin.fktheme": {
+        "sha256": "1a33b0edc21671867888c1fe84d3e5da991ef4cc973651f81fe34b2ac216a96f",
+        "size": 9406,
+        "formatVersion": 3
+      },
+      "themes/snazzy-light.fktheme": {
+        "sha256": "87e816a0591f7e0dd51e512c23351636c151073269294bebf2c8b94f0dc7a0ae",
+        "size": 20751,
+        "formatVersion": 3
+      },
+      "themes/solarized-dark.fktheme": {
+        "sha256": "840e04e0ba9985b120181dcf60ea4e7a296682ea4d2f307a29f154647bcb37cf",
+        "size": 6980,
+        "formatVersion": 3
+      },
+      "themes/solarized-light.fktheme": {
+        "sha256": "f3581b25322af2d5d12776708e69f855976637dc2055cee5ad48176d448ec845",
+        "size": 6611,
+        "formatVersion": 3
+      },
+      "themes/synthwave-84.fktheme": {
+        "sha256": "952fbc956d1d0854ca64f48a895bab12076272d0fdc9cb1dbf29b35f4d999d56",
+        "size": 14012,
+        "formatVersion": 3
+      },
+      "themes/tokyo-night.fktheme": {
+        "sha256": "7aa092e644b16524f9c736a501a8bd56caf9b8bb2099808f5f51af0086b25cf2",
+        "size": 35640,
+        "formatVersion": 3
+      },
+      "themes/vesper.fktheme": {
+        "sha256": "e1a4434a8249d30a7f1cc9018d4d9a5cf65a7b4f2912825cc0dfd3e9680cd31c",
+        "size": 12697,
+        "formatVersion": 3
+      },
+      "themes/vitesse-black.fktheme": {
+        "sha256": "197e1b3ce578124e8f9dc922cc4691c82c236a4f97b91c0e740b791773032470",
+        "size": 13655,
+        "formatVersion": 3
+      },
+      "themes/vitesse-dark.fktheme": {
+        "sha256": "076d2908ee46458a36e097f56f32fd786bef7e32ba63b61ece543442ea7e2a2d",
+        "size": 13735,
+        "formatVersion": 3
+      },
+      "themes/vitesse-light.fktheme": {
+        "sha256": "4896b4b7be950b9e08cd97f57392662d9725a947f2133b24c4b797f4a10938cc",
+        "size": 13595,
+        "formatVersion": 3
+      }
+    },
+    "storageLayout": "language-hash-v2"
+  },
+  "theme_sources": [
+    {
+      "id": "andromeeda",
+      "theme_file": "andromeeda.json",
+      "display_name": "andromeeda",
+      "theme_type": "dark",
+      "sha256": "7a02578e92e5cf56584107156fda0a64d29a2633296d16c06b0ac03337bcc225",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/andromeeda.json"
+    },
+    {
+      "id": "aurora-x",
+      "theme_file": "aurora-x.json",
+      "display_name": "aurora-x",
+      "theme_type": "dark",
+      "sha256": "8b0b31deb4cf1457f736b73f81a6b6c35d79da5b794ac82c0da1835896e883b5",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/aurora-x.json"
+    },
+    {
+      "id": "ayu-dark",
+      "theme_file": "ayu-dark.json",
+      "display_name": "ayu-dark",
+      "theme_type": "dark",
+      "sha256": "d12ec5d45edf0c6dd1b70eafffd1a1990800614dbddcb67ae9722a48bc73afd3",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/ayu-dark.json"
+    },
+    {
+      "id": "ayu-light",
+      "theme_file": "ayu-light.json",
+      "display_name": "ayu-light",
+      "theme_type": "light",
+      "sha256": "5ccdc6750d014d51a1ea0b8eedf236d9b6d84dbc91770d653fa040098d3c2b3e",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/ayu-light.json"
+    },
+    {
+      "id": "ayu-mirage",
+      "theme_file": "ayu-mirage.json",
+      "display_name": "ayu-mirage",
+      "theme_type": "dark",
+      "sha256": "bfcb47de92bb5891ec0d2a324c17a5410680dd790349c39d5b22032a992e1003",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/ayu-mirage.json"
+    },
+    {
+      "id": "catppuccin-frappe",
+      "theme_file": "catppuccin-frappe.json",
+      "display_name": "catppuccin-frappe",
+      "theme_type": "dark",
+      "sha256": "ceab2a80285c41a3d22a896028c556d2639e944b155061c05d4e8db29860309f",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/catppuccin-frappe.json"
+    },
+    {
+      "id": "catppuccin-latte",
+      "theme_file": "catppuccin-latte.json",
+      "display_name": "catppuccin-latte",
+      "theme_type": "light",
+      "sha256": "6f6a644bdfc2f9f726fbe4500019c115dd6a18ba0116357537bcc44ca782d1a5",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/catppuccin-latte.json"
+    },
+    {
+      "id": "catppuccin-macchiato",
+      "theme_file": "catppuccin-macchiato.json",
+      "display_name": "catppuccin-macchiato",
+      "theme_type": "dark",
+      "sha256": "838fb5a0d482907a558b5a4bf43976b7249e6cbe0c3f6e0074af99ab691192d2",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/catppuccin-macchiato.json"
+    },
+    {
+      "id": "catppuccin-mocha",
+      "theme_file": "catppuccin-mocha.json",
+      "display_name": "catppuccin-mocha",
+      "theme_type": "dark",
+      "sha256": "43298c436f7527ef2deee6c5af9fbea61f5eaf547f5b36295c00654e87a9bd88",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/catppuccin-mocha.json"
+    },
+    {
+      "id": "dark-plus",
+      "theme_file": "dark-plus.json",
+      "display_name": "dark-plus",
+      "theme_type": "dark",
+      "sha256": "9defc2bdb15852177f5937bd4b4d5a822c8bc1eeffddb6b741890a887f0683be",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/dark-plus.json"
+    },
+    {
+      "id": "dracula",
+      "theme_file": "dracula.json",
+      "display_name": "dracula",
+      "theme_type": "dark",
+      "sha256": "f026b056d5321f7e8469fd811ced975d98e0222a2515d27879f149f751763573",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/dracula.json"
+    },
+    {
+      "id": "dracula-soft",
+      "theme_file": "dracula-soft.json",
+      "display_name": "dracula-soft",
+      "theme_type": "dark",
+      "sha256": "e03231d5b1b17910a1f71db90b3bdaa6bc4dc0aae9f9d8bba552fbeb7e13bd39",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/dracula-soft.json"
+    },
+    {
+      "id": "everforest-dark",
+      "theme_file": "everforest-dark.json",
+      "display_name": "everforest-dark",
+      "theme_type": "dark",
+      "sha256": "cd9bf71333f0296d3cb6b83e25cab67356ce9631cba415762719a9232c2f5a98",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/everforest-dark.json"
+    },
+    {
+      "id": "everforest-light",
+      "theme_file": "everforest-light.json",
+      "display_name": "everforest-light",
+      "theme_type": "light",
+      "sha256": "5a1d79eb1d563e6d560bf95fc787d1f02e02c74c88ecbc99803e0c180553f281",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/everforest-light.json"
+    },
+    {
+      "id": "github-dark",
+      "theme_file": "github-dark.json",
+      "display_name": "github-dark",
+      "theme_type": "dark",
+      "sha256": "69b7a9693e9814d478a7d1fdafa52c24cb609b0b0832f50c0a415bf988364d91",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-dark.json"
+    },
+    {
+      "id": "github-dark-default",
+      "theme_file": "github-dark-default.json",
+      "display_name": "github-dark-default",
+      "theme_type": "dark",
+      "sha256": "82ed36bb46a16e69056d2b8f67d217bb6e1ae465cc03479548040ef78bde8632",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-dark-default.json"
+    },
+    {
+      "id": "github-dark-dimmed",
+      "theme_file": "github-dark-dimmed.json",
+      "display_name": "github-dark-dimmed",
+      "theme_type": "dark",
+      "sha256": "d862633306756cdbc299fb7652cb996883067b3f6e1dde36243605f13572c60d",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-dark-dimmed.json"
+    },
+    {
+      "id": "github-dark-high-contrast",
+      "theme_file": "github-dark-high-contrast.json",
+      "display_name": "github-dark-high-contrast",
+      "theme_type": "dark",
+      "sha256": "5804aa288ff5efebf57d650be8a65e7020ea444d67feb17ed4371399ee002162",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-dark-high-contrast.json"
+    },
+    {
+      "id": "github-light",
+      "theme_file": "github-light.json",
+      "display_name": "github-light",
+      "theme_type": "light",
+      "sha256": "711147741f72fc0db072b09a28de8bedb8984997d572cee9c52c47fa409f17d8",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-light.json"
+    },
+    {
+      "id": "github-light-default",
+      "theme_file": "github-light-default.json",
+      "display_name": "github-light-default",
+      "theme_type": "light",
+      "sha256": "6254983def23d3bb79bf10ee0b95b923c810e50242deacb283ee9761093937e8",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-light-default.json"
+    },
+    {
+      "id": "github-light-high-contrast",
+      "theme_file": "github-light-high-contrast.json",
+      "display_name": "github-light-high-contrast",
+      "theme_type": "light",
+      "sha256": "0d5ea6c82c5113f429873170391dea84642e978c497988aad77b9b8b42270ad2",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/github-light-high-contrast.json"
+    },
+    {
+      "id": "gruvbox-dark-hard",
+      "theme_file": "gruvbox-dark-hard.json",
+      "display_name": "gruvbox-dark-hard",
+      "theme_type": "dark",
+      "sha256": "9be0598abfdf9b0e1e0790aed1ff76f39cb752a4d0903c8ec558cce92adff69c",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-dark-hard.json"
+    },
+    {
+      "id": "gruvbox-dark-medium",
+      "theme_file": "gruvbox-dark-medium.json",
+      "display_name": "gruvbox-dark-medium",
+      "theme_type": "dark",
+      "sha256": "8d301867af3eb863e1ae289e8657264e244ffbf2c12f4c40cd13635b102f0046",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-dark-medium.json"
+    },
+    {
+      "id": "gruvbox-dark-soft",
+      "theme_file": "gruvbox-dark-soft.json",
+      "display_name": "gruvbox-dark-soft",
+      "theme_type": "dark",
+      "sha256": "18af82a9166c19dfb93abf535ac6a50264213440779f23f193a4194b85e41df7",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-dark-soft.json"
+    },
+    {
+      "id": "gruvbox-light-hard",
+      "theme_file": "gruvbox-light-hard.json",
+      "display_name": "gruvbox-light-hard",
+      "theme_type": "light",
+      "sha256": "84d9987e9eb3d2cd690a0ba20b265d25cb1d9f9f8907c24d9ab1be6cfd90d7fc",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-light-hard.json"
+    },
+    {
+      "id": "gruvbox-light-medium",
+      "theme_file": "gruvbox-light-medium.json",
+      "display_name": "gruvbox-light-medium",
+      "theme_type": "light",
+      "sha256": "0fee7e7311f0c1c7b15d01cdb327b9651f7220b1702a3bdfcf9b1ead55752d5b",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-light-medium.json"
+    },
+    {
+      "id": "gruvbox-light-soft",
+      "theme_file": "gruvbox-light-soft.json",
+      "display_name": "gruvbox-light-soft",
+      "theme_type": "light",
+      "sha256": "5f2077c4830cda0fc8e325b77ba42bbce1a0c3875ad02f869c3ba10d72e19814",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/gruvbox-light-soft.json"
+    },
+    {
+      "id": "horizon",
+      "theme_file": "horizon.json",
+      "display_name": "horizon",
+      "theme_type": "dark",
+      "sha256": "9efc612d085200c30766c92420382bb4904f7526701d223ef2a17f6a70ab455b",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/horizon.json"
+    },
+    {
+      "id": "horizon-bright",
+      "theme_file": "horizon-bright.json",
+      "display_name": "horizon-bright",
+      "theme_type": "light",
+      "sha256": "a6699c9600647c18f8cc1db8963d8912c08a8e68e5a53f5b3eb15a24465d8d62",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/horizon-bright.json"
+    },
+    {
+      "id": "houston",
+      "theme_file": "houston.json",
+      "display_name": "houston",
+      "theme_type": "dark",
+      "sha256": "89b705970a1bde0a9c6b76a9be737851c69fa080fd0ddbf723b78fbf7f5b49e1",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/houston.json"
+    },
+    {
+      "id": "kanagawa-dragon",
+      "theme_file": "kanagawa-dragon.json",
+      "display_name": "kanagawa-dragon",
+      "theme_type": "dark",
+      "sha256": "158319f1b8fa8893522ce960aa17dfa2cdc986caaedd5acc7bc1a6474c15a9ce",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/kanagawa-dragon.json"
+    },
+    {
+      "id": "kanagawa-lotus",
+      "theme_file": "kanagawa-lotus.json",
+      "display_name": "kanagawa-lotus",
+      "theme_type": "light",
+      "sha256": "caa3ec0d80c5bf21693573ba026166220b01aa52f7587d90faba8b89e3dd5ca6",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/kanagawa-lotus.json"
+    },
+    {
+      "id": "kanagawa-wave",
+      "theme_file": "kanagawa-wave.json",
+      "display_name": "kanagawa-wave",
+      "theme_type": "dark",
+      "sha256": "7efdd421e37c8f7f029317a9747baaa67fae2d5c21d745c21529aac4ffafa734",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/kanagawa-wave.json"
+    },
+    {
+      "id": "laserwave",
+      "theme_file": "laserwave.json",
+      "display_name": "laserwave",
+      "theme_type": "dark",
+      "sha256": "9dc38f176177660b3acb17f8baf41a9f586d0b81ca8308833ca22ee89f3cb42c",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/laserwave.json"
+    },
+    {
+      "id": "light-plus",
+      "theme_file": "light-plus.json",
+      "display_name": "light-plus",
+      "theme_type": "light",
+      "sha256": "704d9d039c566596c85d2d2e0a8e16153b260b3f953278102fbdd70f19cc95ff",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/light-plus.json"
+    },
+    {
+      "id": "material-theme",
+      "theme_file": "material-theme.json",
+      "display_name": "material-theme",
+      "theme_type": "dark",
+      "sha256": "211a8e2026c27b1a039bada9e3f06128b01a76c1791d81e7989cb41130d3a32f",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/material-theme.json"
+    },
+    {
+      "id": "material-theme-darker",
+      "theme_file": "material-theme-darker.json",
+      "display_name": "material-theme-darker",
+      "theme_type": "dark",
+      "sha256": "c906002a1229bc5e4e699ff7f0913f3429bcd6cf532702a969ac28cde189cfd6",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/material-theme-darker.json"
+    },
+    {
+      "id": "material-theme-lighter",
+      "theme_file": "material-theme-lighter.json",
+      "display_name": "material-theme-lighter",
+      "theme_type": "light",
+      "sha256": "ff5725bd2d243d2e10028443af828d61d837099660aec8ea7f55048ef26872f9",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/material-theme-lighter.json"
+    },
+    {
+      "id": "material-theme-ocean",
+      "theme_file": "material-theme-ocean.json",
+      "display_name": "material-theme-ocean",
+      "theme_type": "dark",
+      "sha256": "ebe798f6238dc9e4a431aeceaafaec484d363ab23f2f74f40966a9e6f511a0fc",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/material-theme-ocean.json"
+    },
+    {
+      "id": "material-theme-palenight",
+      "theme_file": "material-theme-palenight.json",
+      "display_name": "material-theme-palenight",
+      "theme_type": "dark",
+      "sha256": "bc9a2a21201b38c23549b77772956d5a190289166635f337ee5dec7aa5b9f6db",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/material-theme-palenight.json"
+    },
+    {
+      "id": "min-dark",
+      "theme_file": "min-dark.json",
+      "display_name": "min-dark",
+      "theme_type": "dark",
+      "sha256": "cb02499c9e59675edd0a80f83ceace1493deb60b167d6c8b1c65d62364b8dbc2",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/min-dark.json"
+    },
+    {
+      "id": "min-light",
+      "theme_file": "min-light.json",
+      "display_name": "min-light",
+      "theme_type": "light",
+      "sha256": "b8b5be2b8e1ba7f8c2e3bfb9aed4b1b87969980a602bec7eb2b14e56e21a64fc",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/min-light.json"
+    },
+    {
+      "id": "monokai",
+      "theme_file": "monokai.json",
+      "display_name": "monokai",
+      "theme_type": "dark",
+      "sha256": "f6a25b33a38ad98925bee00fe2127c06992025818ed7d320c3f94e171119bf14",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/monokai.json"
+    },
+    {
+      "id": "night-owl",
+      "theme_file": "night-owl.json",
+      "display_name": "night-owl",
+      "theme_type": "dark",
+      "sha256": "dda3b16f82e8cf18c429401a5a07cd5b60253f6b252657c0a7a51a36d1ad74f6",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/night-owl.json"
+    },
+    {
+      "id": "night-owl-light",
+      "theme_file": "night-owl-light.json",
+      "display_name": "night-owl-light",
+      "theme_type": "light",
+      "sha256": "ca4a996704d562e7eb46cbacdc8e32b128c6118ec79181749566488c8ff4a6ba",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/night-owl-light.json"
+    },
+    {
+      "id": "nord",
+      "theme_file": "nord.json",
+      "display_name": "nord",
+      "theme_type": "dark",
+      "sha256": "0ea054997b6bbe5ca17baae04576190ca34ab06e52908d8831a6cca91b49d090",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/nord.json"
+    },
+    {
+      "id": "one-dark-pro",
+      "theme_file": "one-dark-pro.json",
+      "display_name": "one-dark-pro",
+      "theme_type": "dark",
+      "sha256": "f8154cef4e56ff3ee9eee1857deed551842bc7fe6e2fd27023ae6f0655a94c39",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/one-dark-pro.json"
+    },
+    {
+      "id": "one-light",
+      "theme_file": "one-light.json",
+      "display_name": "one-light",
+      "theme_type": "light",
+      "sha256": "cd90b4b872605b8bc5bb5c2148927e19f8376ed2740a8100b1c9b525da7cc864",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/one-light.json"
+    },
+    {
+      "id": "plastic",
+      "theme_file": "plastic.json",
+      "display_name": "plastic",
+      "theme_type": "dark",
+      "sha256": "c2b9e45c7488f576b8c48e95ad237f727c7ae25f60dbe57f9e926ce7e7827ea2",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/plastic.json"
+    },
+    {
+      "id": "poimandres",
+      "theme_file": "poimandres.json",
+      "display_name": "poimandres",
+      "theme_type": "dark",
+      "sha256": "29f90ecf3e070306216868227b38ec81b458d931d2759256064abc05600cf817",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/poimandres.json"
+    },
+    {
+      "id": "red",
+      "theme_file": "red.json",
+      "display_name": "red",
+      "theme_type": "dark",
+      "sha256": "2d7b12e3fbebe5070a4732ac13d72ca419487e4d2959f6d4acf1b66777a7a669",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/red.json"
+    },
+    {
+      "id": "rose-pine",
+      "theme_file": "rose-pine.json",
+      "display_name": "rose-pine",
+      "theme_type": "dark",
+      "sha256": "e7a308d28bd7328696448e134057c1a9be2f11554b3d6ea7ad0800804d47b7c8",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/rose-pine.json"
+    },
+    {
+      "id": "rose-pine-dawn",
+      "theme_file": "rose-pine-dawn.json",
+      "display_name": "rose-pine-dawn",
+      "theme_type": "light",
+      "sha256": "9553200699233f23be58851bdd5deac89cdc23a0112bf15910993869c38c15a2",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/rose-pine-dawn.json"
+    },
+    {
+      "id": "rose-pine-moon",
+      "theme_file": "rose-pine-moon.json",
+      "display_name": "rose-pine-moon",
+      "theme_type": "dark",
+      "sha256": "d482cd50102dfd156a795b476b1796a8abe2584d8dbb58e0e1e697fed0e34bf4",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/rose-pine-moon.json"
+    },
+    {
+      "id": "slack-dark",
+      "theme_file": "slack-dark.json",
+      "display_name": "slack-dark",
+      "theme_type": "dark",
+      "sha256": "8934af48cc12a75afaf8a84d52e94624c9bf83cbf0c774eb2b6542bbf3d98240",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/slack-dark.json"
+    },
+    {
+      "id": "slack-ochin",
+      "theme_file": "slack-ochin.json",
+      "display_name": "slack-ochin",
+      "theme_type": "light",
+      "sha256": "84c17b25450fbe2730bd95554ce02981b00b4188f1fef5de37bc916490c7fda3",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/slack-ochin.json"
+    },
+    {
+      "id": "snazzy-light",
+      "theme_file": "snazzy-light.json",
+      "display_name": "snazzy-light",
+      "theme_type": "light",
+      "sha256": "9b98d162633922efbb8c3e389cbad2c828612acca3218610cc6860d0adcda89c",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/snazzy-light.json"
+    },
+    {
+      "id": "solarized-dark",
+      "theme_file": "solarized-dark.json",
+      "display_name": "solarized-dark",
+      "theme_type": "dark",
+      "sha256": "218c77600df01ed7ae1960ff1d23d7ec7116fc50b3d24df77550f10e3e255966",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/solarized-dark.json"
+    },
+    {
+      "id": "solarized-light",
+      "theme_file": "solarized-light.json",
+      "display_name": "solarized-light",
+      "theme_type": "light",
+      "sha256": "93bf0c70abe212833685555b38b5072072fb9e5cd0a614770e9b96c4d9ad3f5a",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/solarized-light.json"
+    },
+    {
+      "id": "synthwave-84",
+      "theme_file": "synthwave-84.json",
+      "display_name": "synthwave-84",
+      "theme_type": "dark",
+      "sha256": "72fbd749421a297dcb8f5c05b81b48cbb2755dc2e102b4f7595def76b76227f1",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/synthwave-84.json"
+    },
+    {
+      "id": "tokyo-night",
+      "theme_file": "tokyo-night.json",
+      "display_name": "tokyo-night",
+      "theme_type": "dark",
+      "sha256": "b77b29c07cceabd70495101d64f1acd350965be209fc13f33ec246cc5f06da01",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/tokyo-night.json"
+    },
+    {
+      "id": "vesper",
+      "theme_file": "vesper.json",
+      "display_name": "vesper",
+      "theme_type": "dark",
+      "sha256": "49941f05b0071448272bdd7b2739af5dd954d81c706df6e9965506bcd0b397b6",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/vesper.json"
+    },
+    {
+      "id": "vitesse-black",
+      "theme_file": "vitesse-black.json",
+      "display_name": "vitesse-black",
+      "theme_type": "dark",
+      "sha256": "300c2bc38cb890b7c37c1a7ba473ef1256309cd12dc3679d30f5e8e1259aa494",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/vitesse-black.json"
+    },
+    {
+      "id": "vitesse-dark",
+      "theme_file": "vitesse-dark.json",
+      "display_name": "vitesse-dark",
+      "theme_type": "dark",
+      "sha256": "fde16183d942cc7beb22b8bb19e41fcd203656e0ee151e7af8fea703c2a0db22",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/vitesse-dark.json"
+    },
+    {
+      "id": "vitesse-light",
+      "theme_file": "vitesse-light.json",
+      "display_name": "vitesse-light",
+      "theme_type": "light",
+      "sha256": "4af3c41a3e41a78cf0105066f40482764c0bedaa28045267675662b1b5b31581",
+      "source": "https://raw.githubusercontent.com/sebastian-software/ferriki/c277803ebbbb4d645e8be20c047841bda227c4c0/assets/upstream/textmate-grammars-themes/themes/vitesse-light.json"
+    }
+  ]
+}
