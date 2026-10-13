@@ -86,6 +86,10 @@ local build artifacts, not committed repository data.
   bytes. A mismatch or failed request stops publication; it never deletes or
   repairs a published object. New uploads are downloaded again and verified.
   Redirects are rejected, and the zone key is sent only to Bunny's Storage API.
+  The explicit manual bootstrap-cleanup mode can remove verified, unreleased
+  full-hash migration copies and the temporary upload directory after short-name
+  CDN verification succeeds. Unexpected files or different bytes abort cleanup
+  before deletion. Scheduled updates and ordinary releases never enable it.
 - **Release gate.** Before either registry publishes, the release-source gate
   materializes the accepted snapshot and verifies its immutable storage objects.
   Public npm verification checks every payload through the CDN by SHA-256 and
