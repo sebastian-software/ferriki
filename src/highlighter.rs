@@ -45,7 +45,7 @@ pub struct HighlighterCore {
 /// use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs};
 ///
 /// fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+///     let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/standard"))?;
 ///     let mut highlighter = Highlighter::builder().with_assets(assets).build()?;
 ///     let highlighted = highlighter.highlight_html_lines(
 ///         "fn main() {}", "rust", "nord", &RenderOptions::default(),
@@ -1090,7 +1090,7 @@ mod tests {
     use super::*;
 
     fn standard_highlighter() -> HighlighterCore {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard");
         HighlighterCore::with_standard_assets(&root).expect("highlighter")
     }
 

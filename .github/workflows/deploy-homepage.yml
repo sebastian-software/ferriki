@@ -3,34 +3,36 @@ name: Homepage
 on:
   pull_request:
     paths:
-      - 'homepage/**'
-      - 'docs/**'
-      - 'node/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'assets/shiki/**'
-      - 'build.rs'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'scripts/publish-blacksmith-evidence.mjs'
-      - '.github/workflows/deploy-homepage.yml'
+      - "homepage/**"
+      - "docs/**"
+      - "node/**"
+      - "crates/**"
+      - "src/**"
+      - "assets/catalog.json"
+      - "assets/grammars/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/publish-blacksmith-evidence.mjs"
+      - ".github/workflows/deploy-homepage.yml"
   push:
     branches: [main]
     paths:
-      - 'homepage/**'
-      - 'docs/**'
-      - 'node/**'
-      - 'crates/**'
-      - 'src/**'
-      - 'assets/shiki/**'
-      - 'build.rs'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'scripts/publish-blacksmith-evidence.mjs'
+      - "homepage/**"
+      - "docs/**"
+      - "node/**"
+      - "crates/**"
+      - "src/**"
+      - "assets/catalog.json"
+      - "assets/grammars/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/publish-blacksmith-evidence.mjs"
       # The site states the measured figures of this report and the version
       # of this manifest (homepage/app/data/benchmarks.ts, app/version.ts), so
       # a new measurement or a release pull request must redeploy it.
-      - '.github/workflows/deploy-homepage.yml'
+      - ".github/workflows/deploy-homepage.yml"
   workflow_dispatch:
 
 permissions:
@@ -58,8 +60,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
           cache-dependency-path: |
             node/pnpm-lock.yaml
             homepage/pnpm-lock.yaml

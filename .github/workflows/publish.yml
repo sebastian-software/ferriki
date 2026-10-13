@@ -6,6 +6,14 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      assets-only:
+        description: Upload and verify the locked assets without publishing packages
+        type: boolean
+        default: false
+      bootstrap-assets:
+        description: Seed assets from the exact historical snapshot instead of the CDN
+        type: boolean
+        default: false
       force-publish:
         description: Publish the current manifest version even without a new release
         type: boolean
@@ -20,7 +28,7 @@ on:
       release-tag:
         description: Exact v<version> tag required for force-publish; dispatch on this tag ref
         type: string
-        default: ''
+        default: ""
 
 permissions:
   contents: read
@@ -33,7 +41,38 @@ env:
   NPM_DIST_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.dist-tag || 'latest' }}
 
 jobs:
+  publish-locked-assets:
+    name: Publish locked assets only
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.assets-only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.x
+      - name: Install data converters
+        run: pnpm -C node install --frozen-lockfile --ignore-scripts
+      - name: Materialize the locked objects
+        env:
+          FERRIKI_ASSETS_BOOTSTRAP: ${{ inputs.bootstrap-assets && '1' || '0' }}
+        run: node scripts/materialize-assets.mjs --sources --payloads
+      - name: Upload immutable objects
+        env:
+          BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
+        run: node scripts/publish-assets.mjs
+      - name: Verify public CDN objects
+        run: node scripts/verify-assets.mjs
+
   release-please:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.assets-only) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -80,7 +119,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Resolve immutable release source
         id: source
@@ -105,6 +144,22 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ steps.source.outputs.release_sha }}
           RELEASE_VERSION: ${{ steps.source.outputs.release_version }}
+
+      - name: Install pnpm for asset validation
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - name: Materialize and verify the immutable release assets
+        run: |
+          pnpm -C node install --frozen-lockfile --ignore-scripts
+          node scripts/materialize-assets.mjs --sources --payloads
+          node scripts/write-grammar-notices.mjs
+          node scripts/publish-assets.mjs
+          node scripts/verify-assets.mjs
+        env:
+          BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
 
   publish-crates:
     name: Publish to crates.io
@@ -200,7 +255,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version: "22"
           cache: pnpm
           cache-dependency-path: node/pnpm-lock.yaml
 
@@ -285,7 +340,7 @@ jobs:
         with:
           # Node 24 supplies npm 11 for direct tarball publication with OIDC
           # Trusted Publishing and provenance after pnpm 10 packs the package.
-          node-version: '24'
+          node-version: "24"
           registry-url: https://registry.npmjs.org
           cache: pnpm
           cache-dependency-path: node/pnpm-lock.yaml
@@ -409,7 +464,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Verify public npm packages, provenance, and install
         run: node ./node/scripts/verify-npm-publish.mjs
@@ -435,7 +490,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Verify all three crates.io versions
         run: node ./node/scripts/verify-crates-publish.mjs
@@ -464,7 +519,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '22'
+          node-version: "22"
 
       # Each native-<platform id> artifact lands in its own directory, so the
       # summary can list every sidecar's addon size. Targets whose build failed

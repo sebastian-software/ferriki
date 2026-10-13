@@ -27,7 +27,7 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 const output = `${root}/node/.generated/class-highlighting`;
 mkdirSync(output, { recursive: true });
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
-const upstream = `${root}/assets/upstream/textmate-grammars-themes`;
+const upstream = `${root}/assets/upstream/curated`;
 const grammars = readdirSync(`${upstream}/grammars`)
   .filter((file) => file.endsWith(".json"))
   .sort()

@@ -63,7 +63,7 @@ if (values.boundary === "facade") {
   dispose = () => highlighter.dispose();
 } else {
   const highlighter = loadFerrikiNativeBinding().createHighlighter({
-    standardAssetRoot: join(repoRoot, "node/ferriki/assets/shiki"),
+    standardAssetRoot: join(repoRoot, "node/ferriki/assets/standard"),
   });
   for (const lang of [language.textmate, ...(language.embedded ?? [])])
     highlighter.loadStandardGrammar(lang);

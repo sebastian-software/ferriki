@@ -20,11 +20,11 @@ renderer.
 ## Assets and lifecycle
 
 Ferriki does not embed all standard grammars into the library. An application
-supplies the generated `assets/shiki` directory from this repository (or the
+supplies the generated `assets/standard` directory from this repository (or the
 same files packaged with that application):
 
 ```text
-assets/shiki/
+assets/standard/
   languages/manifest.fkindex
   languages/*.fkgram
   themes/manifest.fkindex
@@ -50,7 +50,7 @@ ferriki = "<version>"
 ```
 
 The checked-in, compiled [`rust_consumer` example](../examples/rust_consumer.rs)
-runs with `cargo run -p ferriki --example rust_consumer -- assets/shiki`. The
+runs with `cargo run -p ferriki --example rust_consumer -- assets/standard`. The
 public [`Highlighter` API](../src/highlighter.rs) also carries a compiling
 Rustdoc example.
 
@@ -59,7 +59,7 @@ use std::path::Path;
 use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs, render_html_lines};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/standard"))?;
     let mut highlighter = Highlighter::builder()
         .with_assets(assets)
         .load_languages(["rust", "typescript"])
@@ -213,7 +213,7 @@ available for trusted application-owned assets; they validate binary formats
 but do not have release digests to verify.
 
 `StandardAssetCatalogs::from_release_manifest` takes the same manifests plus a
-parsed `ReleaseManifest` (`assets/shiki/release-manifest.json`) instead of
+parsed `ReleaseManifest` (`assets/standard/release-manifest.json`) instead of
 hand-built metadata. A `FORMAT_VERSION` change requires matching assets; it is
 not a promise of backward-compatible binary decoding.
 
@@ -238,24 +238,25 @@ let mut highlighter = Highlighter::builder()
 
 - The crate compiles in both catalog manifests and the release manifest, so
   resolution, aliases and error messages work offline. Payloads are fetched
-  on first load from `<base_url>/<commit>/assets/shiki/<path>`, verified
+  on first load from `<base_url>/<language-id>/<sha256>` or
+  `<base_url>/themes/<theme-id>/<sha256>`, verified
   against the release manifest, and cached as one file per SHA-256 digest.
   Later loads, and later releases with unchanged payloads, read the cache.
 - Settings left unset in `RemoteAssets` fall back to `FERRIKI_ASSETS_REMOTE`
   (`0` or `false` turns downloads off), `FERRIKI_ASSETS_BASE_URL`
   (`https://assets.ferriki.dev`) and `FERRIKI_CACHE_DIR` (the platform cache
   directory plus `ferriki`), the same variables the Node package uses.
-- A published crate knows its release commit from `.cargo_vcs_info.json`. A
-  build from a git checkout or path dependency does not and must set
-  `RemoteAssets::with_commit`.
+- Content-addressed catalogs work from crates.io, Git, and path dependencies
+  without a release commit. `RemoteAssets::with_commit` remains available for
+  legacy commit-based catalogs.
 - Errors: `AssetDownload` for an unreachable mirror or a non-200 response,
   `AssetIntegrity` for bytes that do not match the release manifest (never
   cached), and `AssetUnavailable` for a cache miss with downloads turned off.
   There is no retry.
-- Offline use: point `FERRIKI_ASSETS_BASE_URL` at a mirror of the repository's
-  `assets/shiki/` at the release commit, run once online to populate the cache
+- Offline use: point `FERRIKI_ASSETS_BASE_URL` at a mirror with the immutable
+  language/theme hash paths, run once online to populate the cache
   and reuse it, or use `DirectoryAssetSource`/`EmbeddedAssetSource` over a
-  checkout. There is no bundled-catalog crate.
+  materialized local catalog. There is no bundled-catalog crate.
 - HTTP uses the blocking `ureq` client with rustls and the operating system's
   trust store; `HTTPS_PROXY` is honored. The feature is not available on
   wasm32. [`examples/remote_assets.rs`](../examples/remote_assets.rs) runs it

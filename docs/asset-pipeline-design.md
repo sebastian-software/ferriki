@@ -1,6 +1,6 @@
 # Ferriki Asset Pipeline Design
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 Ferriki owns its standard grammar selection, metadata, pinned original sources,
 and generated binary catalogs. The native TextMate tokenizer and asset loaders
@@ -15,7 +15,7 @@ The durable decisions are [ADR 0006](../adr/0006-lazy-shiki-asset-loading.md),
 ## Sources and generation
 
 1. `assets/grammars/repositories.json` configures two maintained collections
-   and five justified exceptions. `catalog.json` owns language selectors, stable
+   and six justified exceptions. `catalog.json` owns language selectors, stable
    IDs and aliases, scope variants, embedding policy, and scope patches.
 2. `prepare-grammar-update.mjs` resolves each repository ref once, discovers
    TextMate grammars through editor manifests or Linguist's pinned modules,
@@ -24,13 +24,13 @@ The durable decisions are [ADR 0006](../adr/0006-lazy-shiki-asset-loading.md),
    expressions remain as authored. Required supported dependencies are included
    transitively; newly discovered primary languages are reported for selection.
 3. The normalized JSON lives under
-   `assets/upstream/textmate-grammars-themes/`. This historical directory also
-   retains the existing theme snapshots. Neither is JavaScript runtime code.
+   `assets/upstream/curated/`. This historical directory also
+   retains the existing theme snapshots. Both are ignored local data materialized
+   from immutable Bunny objects or verified pinned sources.
 4. `ferriki-asset-gen` writes the two versioned binary catalogs and the release
-   manifest under `assets/shiki/`. That historical path remains stable for
-   released CDN URLs. `scripts/generate-ferriki-catalog.mjs` derives enumerable
+   manifest under the ignored `assets/standard/` build directory. `scripts/generate-ferriki-catalog.mjs` derives enumerable
    Node metadata from the binary manifests without including payloads.
-5. `scripts/sync-grammars.mjs --check` verifies committed sources, dependency
+5. `scripts/sync-grammars.mjs --check` verifies materialized sources against committed locks, dependency
    metadata, and grammar notices without network access. The compatibility
    gate exercises all standard grammars through native compilation and checks
    external imports.
@@ -38,7 +38,9 @@ The durable decisions are [ADR 0006](../adr/0006-lazy-shiki-asset-loading.md),
 Native candidate validation precedes `apply-grammar-update.mjs`. Preparation
 with `--locked` reproduces accepted repository snapshots. The weekly/manual
 Grammar updates workflow validates the candidate and compatibility gate before
-opening a draft PR; failures retain the candidate and diagnostic artifacts.
+uploading immutable source/payload objects, verifying the public CDN, and
+opening a draft PR containing metadata and pins. Normalized diffs and full
+candidate data remain workflow artifacts. Failures retain diagnostic artifacts.
 
 The old Shiki bootstrap and `textmate-grammars-themes` sync scripts target
 `assets/compat/` by default and are compatibility-reference tools.
@@ -51,7 +53,7 @@ payload digest, size, and format version. `GRAMMAR-NOTICES.md` contains the
 original source links and archived grammar license notices.
 
 Published packages contain catalog metadata and notices. Payloads are fetched
-asynchronously from the release-pinned CDN, verified by digest, and cached.
+asynchronously from language/theme hash URLs selected by the release catalog, verified by digest, and cached.
 Rust can also use directory or embedded sources and has an optional `remote`
 feature. Asset decoding and native compilation happen only when needed.
 

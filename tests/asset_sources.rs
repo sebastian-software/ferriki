@@ -18,7 +18,7 @@ struct Fixture {
 }
 
 fn fixture() -> Fixture {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard");
     let languages = std::fs::read(root.join("languages/manifest.fkindex")).unwrap();
     let themes = std::fs::read(root.join("themes/manifest.fkindex")).unwrap();
     let paths = decode_language_manifest(&languages)

@@ -33,11 +33,7 @@ const registrations = await Promise.all(
   languages.map(async (entry) => {
     const grammar = JSON.parse(
       await readFile(
-        path.join(
-          candidate,
-          "assets/upstream/textmate-grammars-themes/grammars",
-          entry.grammar_file,
-        ),
+        path.join(candidate, "assets/upstream/curated/grammars", entry.grammar_file),
         "utf8",
       ),
     );

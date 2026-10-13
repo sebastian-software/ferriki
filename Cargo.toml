@@ -21,16 +21,14 @@ publish = ["crates-io"]
 # The package sits at the repository root, so the published archive is an
 # explicit allow-list rather than everything Cargo finds. Node sources, the
 # upstream mirrors, the other crates and the grammar and theme payloads stay
-# out; only the two catalog manifests and the release manifest ship, so the
-# `remote` feature can resolve and verify payloads from the CDN (ADR 0013).
+# out. The small reviewed catalog lock ships and compiles into indexes offline;
+# the `remote` feature resolves and verifies CDN payloads (ADR 0013).
 include = [
   "/build.rs",
   "/src",
   "/tests",
   "/examples",
-  "/assets/shiki/languages/manifest.fkindex",
-  "/assets/shiki/themes/manifest.fkindex",
-  "/assets/shiki/release-manifest.json",
+  "/assets/catalog.json",
   "/README.md",
   "/LICENSE-MIT",
   "/LICENSE-APACHE",
@@ -48,6 +46,10 @@ ferriki-textmate = { version = "1.0.0", path = "crates/ferriki-textmate" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
+
+[build-dependencies]
+ferriki-asset-gen = { version = "1.0.0", path = "crates/ferriki-asset-gen" }
+serde_json = { workspace = true }
 
 # The HTTP client exists only outside wasm32, where it cannot run; a wasm build
 # gets its own fetch path (ADR 0009). TLS uses rustls with ring and the

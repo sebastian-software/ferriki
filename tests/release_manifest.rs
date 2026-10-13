@@ -15,12 +15,12 @@ use ferriki_asset_gen::{
 };
 
 fn catalog_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard")
 }
 
 fn committed_manifest() -> ReleaseManifest {
     let source = std::fs::read_to_string(catalog_dir().join(RELEASE_MANIFEST_FILE))
-        .expect("assets/shiki/release-manifest.json exists; regenerate the assets");
+        .expect("assets/standard/release-manifest.json exists; regenerate the assets");
     ReleaseManifest::from_json(&source).expect("release manifest parses")
 }
 
@@ -43,7 +43,12 @@ fn release_manifest_matches_the_committed_payloads() {
         assert_eq!(asset.format_version, FORMAT_VERSION, "{path} format");
     }
     assert_eq!(
-        ReleaseManifest::from_catalog_dir(&catalog_dir()).expect("hash catalog"),
+        {
+            let mut generated =
+                ReleaseManifest::from_catalog_dir(&catalog_dir()).expect("hash catalog");
+            generated.storage_layout = Some("language-hash-v1".to_owned());
+            generated
+        },
         manifest,
         "payloads on disk and the release manifest differ; regenerate the assets"
     );

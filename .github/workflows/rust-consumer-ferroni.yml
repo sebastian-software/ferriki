@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '17 7 * * 1'
+    - cron: "17 7 * * 1"
 
 permissions:
   contents: read
@@ -33,6 +33,9 @@ jobs:
       # Ferroni without changing the repository's committed lockfile.
       - name: Update Ferroni
         run: cargo update -p ferroni
+
+      - name: Materialize locked test payloads
+        run: node scripts/materialize-assets.mjs --payloads
 
       - name: Test workspace with all features
         run: cargo test --workspace --all-features --locked

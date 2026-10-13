@@ -243,3 +243,16 @@ await assert.rejects(
   verifyCdnPayloads({ ...pinned, commit: undefined }, { fetchImpl: serve(payload) }),
   /not pinned to a commit/,
 );
+
+await verifyCdnPayloads(
+  { ...pinned, storageLayout: "language-hash-v1" },
+  {
+    fetchImpl: async (url) => {
+      assert.equal(
+        url,
+        `https://assets.ferriki.dev/themes/nord/${pinned.assets["themes/nord.fktheme"].sha256}`,
+      );
+      return { ok: true, arrayBuffer: async () => payload.buffer };
+    },
+  },
+);

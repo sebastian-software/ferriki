@@ -1,6 +1,6 @@
 import process from "node:process";
 // Repository checks read standard payloads from the cache that `build:native`
-// seeds from assets/shiki, never from the network: the package ships no
+// seeds from assets/standard, never from the network: the package ships no
 // payloads (ADR 0013), and a checkout has no release commit to download from.
 // Explicit FERRIKI_CACHE_DIR / FERRIKI_ASSETS_REMOTE values win, so a check can
 // still be pointed at a real mirror.

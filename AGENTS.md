@@ -36,6 +36,7 @@
 ## Build and test
 
 ```sh
+node scripts/materialize-assets.mjs --payloads # Test data; Rust builds are offline
 cargo test --workspace                       # Rust (also: fmt --check, clippy -D warnings)
 cd node && pnpm install && pnpm run build:native
 # Mandatory release gate (includes the honest native compatibility checks)

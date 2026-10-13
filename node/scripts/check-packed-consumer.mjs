@@ -61,8 +61,8 @@ try {
     "index.d.mts",
     "native.mjs",
     "grammar.mjs",
-    "assets/shiki/catalog.mjs",
-    "assets/shiki/GRAMMAR-NOTICES.md",
+    "assets/standard/catalog.mjs",
+    "assets/standard/GRAMMAR-NOTICES.md",
   ])
     assert(files.has(required), `packed Ferriki package is missing ${required}`);
   assert(

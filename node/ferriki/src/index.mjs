@@ -4,7 +4,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { types } from "node:util";
 
-import { languageCatalog, themeCatalog } from "../assets/shiki/catalog.mjs";
+import { languageCatalog, themeCatalog } from "../assets/standard/catalog.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
   addClassToHast,
@@ -18,7 +18,7 @@ import {
 import { createAssetDownloader } from "./asset-download.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const standardAssetRoot = join(packageDir, "assets", "shiki");
+const standardAssetRoot = join(packageDir, "assets", "standard");
 const NONE_THEME_BACKING = "nord";
 let singleton;
 
@@ -80,7 +80,7 @@ export function createHighlighterCoreSync(options = {}) {
     throw new FerrikiError(
       missingBinary
         ? `${detail}\nInstall a Ferriki platform binary for this target or choose a documented supported target.`
-        : `${detail}\nVerify that the package contains assets/shiki and reinstall it.`,
+        : `${detail}\nVerify that the package contains assets/standard and reinstall it.`,
       missingBinary ? "ERR_NATIVE_LOAD" : "ERR_ASSET",
       { cause },
     );

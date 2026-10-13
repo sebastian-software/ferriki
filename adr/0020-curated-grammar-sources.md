@@ -53,6 +53,8 @@ language coverage.
   draft update PR on its dedicated `codex/grammar-updates` branch. A manual
   commit on that branch stops automatic replacement; concurrent changes are
   protected by a push lease. Merging and releasing remain maintainer actions.
+  Passing candidates publish source and compiled objects to Bunny Storage before
+  the metadata PR is opened. Normalized diffs remain workflow artifacts.
   Commit and payload hashes are generated, never maintained by hand. Newly
   discovered primary languages appear in the report instead of silently
   becoming defaults.
@@ -74,9 +76,12 @@ language coverage.
 - Users load the result through existing `langs`/`loadLanguage` registrations.
   Rust consumers use `register_language` or `register_language_json`.
   External dependencies and injections are explicit registrations.
-- Existing theme snapshots and the CDN paths under `assets/shiki/` stay in
-  place. The directory name is a historical distribution path, not a source
-  dependency. The compatibility mirrors remain immutable test references.
+- Source snapshots and generated files are materialized locally and ignored by
+  Git. `assets/catalog.json` owns the compiled catalog metadata and theme source
+  hashes; `sources.json` owns grammar source hashes. Bunny stores original,
+  normalized, and compiled grammar bytes under `<id>/<sha256>` and themes under
+  `themes/<id>/<sha256>`. ADR 0013 defines publication and legacy URL handling.
+  The compatibility mirrors remain immutable test references.
 
 ## Consequences
 
@@ -152,3 +157,7 @@ package and crate version updates.
 - 2026-10-13: Targets 1.1.0 with a one-time exception for the initial standard
   catalog transition. Retains external-registration migration guidance and
   the normal guarantees for future catalog changes, stable APIs, and Rust.
+
+- 2026-10-13: Keeps only selection, provenance, patches, notices, and catalog
+  metadata in Git. Publishes immutable language/theme hash objects to Bunny,
+  with normalized update diffs retained as review artifacts.

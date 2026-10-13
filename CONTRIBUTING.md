@@ -9,6 +9,9 @@
 ## The happy path
 
 ```sh
+# Materialize test payloads; ordinary Rust compilation needs no downloads
+node scripts/materialize-assets.mjs --payloads
+
 # Rust checks (fmt, clippy, tests — all gated in CI)
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
@@ -109,9 +112,11 @@ the sync pipeline generates repository pins, file hashes, notices, and assets.
 The [Grammar updates workflow](.github/workflows/grammar-updates.yml) runs every
 Monday at 06:00 UTC and supports a manual run from GitHub Actions. It validates
 the candidate with the native engine, mandatory core compatibility gate, and
-both correctness corpora, then creates or updates one draft PR on
+both correctness corpora, uploads verified immutable objects to Bunny, then
+creates or updates one draft PR on
 `codex/grammar-updates`. Merge it after review to include the assets in the next
-regular release. The workflow becomes available after it reaches the default
+regular release. Source and binary data stay out of Git; the PR changes locks
+and catalog metadata. The workflow becomes available after it reaches the default
 branch; unchanged snapshots create no PR.
 
 Keep the bot branch for generated updates. Make selection or patch changes in

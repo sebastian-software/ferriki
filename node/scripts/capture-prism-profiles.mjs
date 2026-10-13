@@ -89,7 +89,7 @@ assert.equal(
 );
 assert.equal(
   modeReport.identity.assetsSha256,
-  sha256(await readFile(join(nodeRoot, "ferriki/assets/shiki/release-manifest.json"))),
+  sha256(await readFile(join(nodeRoot, "ferriki/assets/standard/release-manifest.json"))),
 );
 
 const target = resolveFerrikiPlatformTarget();
@@ -133,7 +133,7 @@ for (const language of languages) {
 const guardedInputPaths = [
   profileReceiptPath,
   loadedAddon,
-  join(nodeRoot, "ferriki/assets/shiki/release-manifest.json"),
+  join(nodeRoot, "ferriki/assets/standard/release-manifest.json"),
   join(nodeRoot, "benchmarks/curated/manifest.json"),
   join(nodeRoot, "pnpm-lock.yaml"),
   join(nodeRoot, "package.json"),

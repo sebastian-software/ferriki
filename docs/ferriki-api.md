@@ -190,7 +190,7 @@ cached fails with `ERR_ASSET` and names the remedies.
 
 Offline, air-gapped and network-less CI builds either reuse a cache populated
 by one online run, or point `FERRIKI_ASSETS_BASE_URL` at a mirror that serves
-the repository's `assets/shiki/` below `<release-commit>/assets/shiki/`. See
+the immutable `<language-id>/<sha256>` and `themes/<theme-id>/<sha256>` paths. See
 [troubleshooting](./troubleshooting.md#offline-and-air-gapped-use).
 
 ## Highlighter methods
@@ -313,11 +313,13 @@ const lines = source.split("\n");
 const html = highlighter.codeToHtml(source, {
   lang: "typescript",
   theme: "nord",
-  decorations: [{
-    start: { line: 3, character: 0 },
-    end: { line: 9, character: lines[9].replace(/\r$/, "").length },
-    properties: { class: "line highlighted" },
-  }],
+  decorations: [
+    {
+      start: { line: 3, character: 0 },
+      end: { line: 9, character: lines[9].replace(/\r$/, "").length },
+      properties: { class: "line highlighted" },
+    },
+  ],
 });
 ```
 

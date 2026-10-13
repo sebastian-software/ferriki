@@ -1,4 +1,4 @@
-//! Run with `cargo run -p ferriki --example rust_consumer -- assets/shiki`.
+//! Run with `cargo run -p ferriki --example rust_consumer -- assets/standard`.
 
 use std::path::Path;
 

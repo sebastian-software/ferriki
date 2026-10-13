@@ -14,7 +14,7 @@ use ferriki::{ErrorKind, Highlighter, RemoteAssets, StandardAssetCatalogs};
 
 const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
 
-/// Serves `assets/shiki` below `/<COMMIT>/assets/shiki/`, one request per
+/// Serves `assets/standard` below `/<COMMIT>/assets/standard/`, one request per
 /// connection. Individual paths can be replaced to simulate a bad mirror.
 struct Mirror {
     url: String,
@@ -48,10 +48,7 @@ impl Mirror {
 
     /// `None` answers 404; `Some(bytes)` answers 200 with those bytes.
     fn replace(&self, path: &str, body: Option<Vec<u8>>) {
-        self.overrides
-            .lock()
-            .unwrap()
-            .insert(format!("/{COMMIT}/assets/shiki/{path}"), body);
+        self.overrides.lock().unwrap().insert(cdn_path(path), body);
     }
 }
 
@@ -70,8 +67,7 @@ fn serve(mut stream: TcpStream, overrides: &Mutex<HashMap<String, Option<Vec<u8>
         .to_owned();
     let body = match overrides.lock().unwrap().get(&path) {
         Some(replaced) => replaced.clone(),
-        None => path
-            .strip_prefix(&format!("/{COMMIT}/assets/shiki/"))
+        None => relative_path(&path)
             .and_then(|relative| std::fs::read(catalog_dir().join(relative)).ok()),
     };
     let response = match body {
@@ -91,8 +87,40 @@ fn serve(mut stream: TcpStream, overrides: &Mutex<HashMap<String, Option<Vec<u8>
     let _ = stream.write_all(&response);
 }
 
+fn cdn_path(path: &str) -> String {
+    let release = ferriki_asset_gen::ReleaseManifest::from_json(
+        &std::fs::read_to_string(catalog_dir().join("release-manifest.json")).unwrap(),
+    )
+    .unwrap();
+    let hash = &release.assets[path].sha256;
+    if let Some(id) = path
+        .strip_prefix("languages/")
+        .and_then(|s| s.strip_suffix(".fkgram"))
+    {
+        format!("/{id}/{hash}")
+    } else {
+        let id = path
+            .strip_prefix("themes/")
+            .unwrap()
+            .strip_suffix(".fktheme")
+            .unwrap();
+        format!("/themes/{id}/{hash}")
+    }
+}
+fn relative_path(request: &str) -> Option<String> {
+    let release = ferriki_asset_gen::ReleaseManifest::from_json(
+        &std::fs::read_to_string(catalog_dir().join("release-manifest.json")).unwrap(),
+    )
+    .unwrap();
+    release
+        .assets
+        .keys()
+        .find(|key| cdn_path(key) == request)
+        .cloned()
+}
+
 fn catalog_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard")
 }
 
 /// A fresh cache directory per call. The counter keeps parallel tests apart on
@@ -215,15 +243,18 @@ fn download_failures_and_offline_misses_have_distinct_errors() {
 }
 
 #[test]
-fn a_checkout_build_without_a_release_commit_names_the_remedy() {
+fn content_addressed_checkout_loads_without_a_release_commit() {
     let mirror = Mirror::start();
     let cache = temp_cache();
     let without_commit = settings(&mirror, &cache).with_commit(None);
-    // Tests build from a checkout, which has no published release commit.
-    if option_env!("FERRIKI_RELEASE_COMMIT").is_none() {
-        let error = load(without_commit, "rust", "nord").expect_err("no commit");
-        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
-        assert!(error.to_string().contains("with_commit"), "{error}");
-    }
-    assert_eq!(mirror.requests(), 0);
+    let mut highlighter = load(without_commit, "rust", "nord").expect("digest URLs need no commit");
+    assert!(
+        !highlighter
+            .highlight("fn main() {}", "rust", "nord")
+            .unwrap()
+            .tokens
+            .is_empty()
+    );
+    assert!(mirror.requests() > 0);
+    let _ = std::fs::remove_dir_all(cache);
 }

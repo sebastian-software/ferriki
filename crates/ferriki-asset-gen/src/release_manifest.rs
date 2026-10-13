@@ -28,6 +28,10 @@ pub struct ReleaseManifest {
     pub manifest_version: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
+    /// `language-hash-v1` serves immutable payloads by canonical ID and SHA-256.
+    /// Absent values retain the legacy release-commit URL layout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage_layout: Option<String>,
     pub assets: BTreeMap<String, ReleaseAsset>,
 }
 
@@ -77,6 +81,7 @@ impl ReleaseManifest {
         Ok(Self {
             manifest_version: RELEASE_MANIFEST_VERSION,
             commit: None,
+            storage_layout: None,
             assets,
         })
     }
@@ -89,6 +94,13 @@ impl ReleaseManifest {
                 "unsupported release manifest version {}; expected {RELEASE_MANIFEST_VERSION}",
                 manifest.manifest_version
             )));
+        }
+        if manifest
+            .storage_layout
+            .as_deref()
+            .is_some_and(|layout| layout != "language-hash-v1")
+        {
+            return Err(serde::de::Error::custom("unsupported asset storage layout"));
         }
         Ok(manifest)
     }
@@ -142,6 +154,7 @@ mod tests {
         let manifest = ReleaseManifest {
             manifest_version: RELEASE_MANIFEST_VERSION,
             commit: None,
+            storage_layout: None,
             assets,
         };
         let json = manifest.to_json();

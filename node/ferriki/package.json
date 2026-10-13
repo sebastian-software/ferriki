@@ -28,7 +28,7 @@
     "LICENSE-APACHE",
     "LICENSE-MIT",
     "README.md",
-    "assets/shiki",
+    "assets/standard",
     "classes.mjs",
     "grammar.mjs",
     "index.d.mts",

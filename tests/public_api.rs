@@ -9,7 +9,7 @@ use ferriki::{
 fn assets() -> StandardAssetCatalogs {
     StandardAssetCatalogs::load_from_root(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/assets/shiki"
+        "/assets/standard"
     )))
     .expect("fixture assets")
 }
@@ -357,9 +357,9 @@ fn multi_theme_api_reuses_standard_assets_and_typed_errors() {
     }
 
     let missing = StandardAssetCatalogs::from_embedded(
-        include_bytes!("../assets/shiki/languages/manifest.fkindex"),
+        include_bytes!(concat!(env!("OUT_DIR"), "/languages.fkindex")),
         [],
-        include_bytes!("../assets/shiki/themes/manifest.fkindex"),
+        include_bytes!(concat!(env!("OUT_DIR"), "/themes.fkindex")),
         [],
     )
     .expect("catalogs without payloads");

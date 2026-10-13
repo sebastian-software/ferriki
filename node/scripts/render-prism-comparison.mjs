@@ -157,7 +157,7 @@ const evidence = {
     addonSha256: build.binarySha256,
     rustSourceSha256: build.rustSourceSha256,
     assetsSha256: sha256(
-      readFileSync(new URL("../ferriki/assets/shiki/release-manifest.json", import.meta.url)),
+      readFileSync(new URL("../ferriki/assets/standard/release-manifest.json", import.meta.url)),
     ),
     prismComponentsSha256: sha256(readFileSync(componentsUrl)),
   },

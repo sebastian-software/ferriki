@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Context
 
@@ -24,8 +24,8 @@ Ferriki loads and registers its standard assets lazily.
   metadata, aliases, and embedded-language metadata (ADR 0020). Existing theme
   snapshots remain supported.
 - Ferriki maintains these inputs as data assets, not as JavaScript runtime code.
-  `ferriki-asset-gen` turns the normalized upstream mirror into the binary
-  catalogs under `assets/shiki/` ([ADR 0015](0015-postcard-asset-codec.md)).
+  `ferriki-asset-gen` turns normalized, locally materialized source data into
+  binary catalogs in the ignored `assets/standard/` directory ([ADR 0015](0015-postcard-asset-codec.md)).
 - The Rust core owns efficient registration, compilation, and caching after an
   asset is loaded.
 - Themes and grammars use the same conceptual loading path as user-provided
@@ -33,7 +33,9 @@ Ferriki loads and registers its standard assets lazily.
 - Standard assets are never eagerly embedded runtime state. How a consumer
   obtains the payloads (a release-pinned CDN, an optional offline package, or
   an embedded catalog) is decided in
-  [ADR 0013](0013-cdn-loaded-standard-assets.md).
+  [ADR 0013](0013-cdn-loaded-standard-assets.md). Sources and payloads live
+  in immutable Bunny Storage objects; Git retains reviewed metadata, pins,
+  patches, and license notices.
 
 ## Consequences
 
@@ -51,3 +53,4 @@ Ferriki loads and registers its standard assets lazily.
 - 2026-03-09: Accepted.
 - 2026-09-30: The Ferriki-owned pipeline replaced the JS bundle assets; delivery of payloads moved to ADR 0013.
 - 2026-10-12: Ferriki owns curated grammar sources and metadata per ADR 0020.
+- 2026-10-13: Sources and generated data moved out of Git into immutable Bunny Storage; metadata compiles offline.

@@ -244,7 +244,7 @@ const shikiSource = readJson(join(repoRoot, "node/compat/upstream/shiki/.source.
 const textmateSource = readJson(
   join(repoRoot, "node/compat/upstream/vscode-textmate/.source.json"),
 );
-const assetManifestPath = join(nodeRoot, "ferriki/assets/shiki/release-manifest.json");
+const assetManifestPath = join(nodeRoot, "ferriki/assets/standard/release-manifest.json");
 const assetManifest = readJson(assetManifestPath);
 const tmGrammarsPath = join(nodeRoot, "node_modules/tm-grammars/package.json");
 const tmGrammarsPackage = readJson(tmGrammarsPath);

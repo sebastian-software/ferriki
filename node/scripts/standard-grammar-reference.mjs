@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 // Compare tokenizer/rendering behavior using identical grammar data. Ferriki's
 // independently updated catalog need not match Shiki's historical bundle.
 export function standardGrammarRegistrations(names) {
-  const root = new URL("../../assets/upstream/textmate-grammars-themes/", import.meta.url);
+  const root = new URL("../../assets/upstream/curated/", import.meta.url);
   const { languages } = JSON.parse(readFileSync(new URL("languages.json", root), "utf8"));
   const byKey = new Map(
     languages.flatMap((entry) => [entry.id, ...entry.aliases].map((key) => [key, entry])),

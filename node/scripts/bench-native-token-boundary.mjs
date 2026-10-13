@@ -16,7 +16,7 @@ const encode = (value) => (typed ? value : JSON.stringify(value));
 const decode = (value) => (typed ? value : JSON.parse(value));
 const highlighter = native.createHighlighter(
   encode({
-    standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/shiki", import.meta.url)),
+    standardAssetRoot: fileURLToPath(new URL("../ferriki/assets/standard", import.meta.url)),
     assets: { remote: false, cacheDir: TEST_ASSET_CACHE_DIR },
   }),
 );

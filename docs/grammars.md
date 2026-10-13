@@ -2,7 +2,7 @@
 
 Ferriki maintains its own standard catalog, with primary languages and support
 grammars for embedded languages and injections. They load on demand through
-the existing release-pinned CDN and cache. First use needs network access or a
+immutable CDN objects selected by each release and the local cache. First use needs network access or a
 prepared cache; see [asset loading](asset-loading.md).
 
 The catalog covers:
@@ -130,8 +130,17 @@ aggregate tree and `.gitmodules`. Inputs in JSON, YAML, XML PLIST, and data-only
 CSON are converted to normalized TextMate JSON. Tree-sitter descriptors and
 Sublime `.sublime-syntax` state machines are outside this converter.
 
-The existing raw-source directory name and `assets/shiki/` CDN path remain for
-distribution stability. The source pipeline does not read Shiki modules.
+Git stores source selectors, repository and file hashes, patches, license
+notices, and the small [`assets/catalog.json`](../assets/catalog.json) metadata
+lock. Original grammars, normalized JSON, theme snapshots, compiled payloads,
+and generated indexes are ignored local build data. The source pipeline reads upstream grammar data directly.
+
+Bunny Storage holds immutable objects at `assets.ferriki.dev/<language-id>/<sha256>`.
+Original, normalized, and compiled bytes each have their own full SHA-256;
+identical bytes share an object. Themes use `themes/<theme-id>/<sha256>`.
+A release ships its exact catalog and hashes. New uploads cannot change an
+older release's selection, and old objects are retained. Legacy
+`<commit>/assets/shiki/<path>` URLs continue to use the GitHub origin.
 
 ### Prepare and validate a local update
 
@@ -142,14 +151,17 @@ root. Choose a new candidate directory; preparation refuses an existing one.
 
 ```sh
 pnpm -C node install --frozen-lockfile --ignore-scripts
+node scripts/materialize-assets.mjs --sources --payloads
 pnpm -C node run build:native
 node scripts/prepare-grammar-update.mjs --output-dir /tmp/ferriki-candidate
+node scripts/write-grammar-diffs.mjs /tmp/ferriki-candidate
 node scripts/validate-grammar-candidate.mjs /tmp/ferriki-candidate
 node scripts/apply-grammar-update.mjs /tmp/ferriki-candidate
 pnpm -C node run test:ferriki-compat:core
 pnpm -C node run check:bench-curated
 pnpm -C node run check:bench-tiobe
 node scripts/sync-grammars.mjs --check
+node scripts/publish-assets.mjs --check
 ```
 
 Preparation resolves each repository's configured ref once, writes a separate
@@ -162,14 +174,16 @@ retain their explicit lazy policy.
 
 `--locked` prepares the same snapshot again without resolving moving refs.
 `sync-grammars.mjs` without flags reproduces normalized files from their locked
-original URLs; `--check` verifies committed data without network access.
+original URLs; `--check` verifies the materialized files against the committed locks without network access.
 No maintainer edits commit or file hashes manually. Selection and adapter
 configuration changes remain explicit edits in the two configuration files.
 
 The initial native build supplies the candidate validator. After application,
 the mandatory core gate rebuilds the addon and seeds its cache from the new
-assets before testing. Review the candidate's `report.json` and resulting diff
-before committing an update.
+assets before testing. Review the candidate's `report.json`, normalized diffs in `diffs/`, and metadata
+changes before committing an update. `apply-grammar-update.mjs` rebuilds the
+local payloads and refreshes `assets/catalog.json`. Commit only configuration,
+locks, patches, and notices; the large generated directories stay ignored.
 
 ### Automatic update pull requests
 
@@ -181,7 +195,10 @@ unchanged accepted snapshot finishes without creating a PR. Otherwise it
 compiles every grammar natively, applies the candidate in the runner, runs
 the mandatory core compatibility gate (including frontend embeddings and
 external imports), and checks both correctness corpora. Only a passing
-candidate is pushed.
+candidate is uploaded and pushed. Uploads check existing bytes first, only
+create missing hash objects, and verify every new object by reading it back.
+Public CDN verification must pass before the update PR is refreshed. A hash
+conflict stops publication without overwriting the object.
 
 The workflow owns `codex/grammar-updates` and creates one draft PR against the
 default branch. Later runs refresh that branch and the open PR's report instead
@@ -194,7 +211,11 @@ To activate the schedule, merge the workflow and its scripts onto the default
 branch. Under **Settings → Actions → General → Workflow permissions**, enable
 **Allow GitHub Actions to create and approve pull requests** if it is disabled.
 The workflow declares `contents: write` and `pull-requests: write` and uses the
-repository's automatic `GITHUB_TOKEN`; no additional token secret is required.
+repository's automatic `GITHUB_TOKEN`; no additional GitHub token secret is required. Bunny uploads require the
+repository secret `BUNNY_STORAGE_ACCESS_KEY` and the repository variables
+`BUNNY_STORAGE_ZONE` and `BUNNY_STORAGE_HOSTNAME` (for example,
+`ferriki-assets` and `storage.bunnycdn.com`). Use the Storage Zone upload
+password, not the account management API key. Never commit either key.
 See [GitHub's workflow permission documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
 
 After activation, use **Actions → Grammar updates → Run workflow** to request
@@ -205,19 +226,23 @@ gh workflow run grammar-updates.yml --repo sebastian-software/ferriki
 gh run list --workflow grammar-updates.yml --repo sebastian-software/ferriki
 ```
 
-Review the source pins, changed grammar IDs, license notices, and generated
-asset diff in the PR. GitHub puts `pull_request` CI runs triggered by
+Review source pins, changed grammar IDs, license notices, and catalog hashes
+in the PR. Download the **grammar-candidate** artifact for normalized diffs and
+full candidate data; those large files are not committed. GitHub puts `pull_request` CI runs triggered by
 `GITHUB_TOKEN` in an approval-required state; select **Approve workflows to run**
 on the PR when shown. The update workflow already runs its grammar validation
 before pushing, but the PR's regular required checks must also pass before
 merge. See [GitHub's token-trigger behavior](https://docs.github.com/en/actions/concepts/security/github_token).
-Merge after review; assets reach consumers through the normal release and CDN
-publication process. The updater does not merge PRs or publish a release.
+Merge after review; the next release selects the already uploaded objects
+through its packaged catalog. The release gate repeats Storage and public CDN
+verification before publishing either registry. The updater does not merge PRs or publish a release.
 
 ### Recover a failed update
 
 A missing source, ambiguous selector, changed patch precondition, unsupported
-license, or failed validation stops the workflow before it pushes a candidate.
+license, failed validation, or failed upload stops the workflow before it
+pushes a candidate. Already uploaded immutable objects are safe to retain.
+A rerun verifies and skips them.
 The **grammar-candidate** artifact retains available candidate files and reports
 for 14 days, including `failure.json` for preparation errors. Download it from
 the failed Actions run and inspect the failing step. An existing PR keeps its
@@ -232,4 +257,42 @@ automatic proposals, disable the workflow in GitHub Actions.
 The native compatibility gate compiles every selected grammar and exercises
 external importing. Advisory backtracking warnings are available through the
 Rust APIs; a complete static grammar lint remains outside this importer.
-The grammar notices ship as `assets/shiki/GRAMMAR-NOTICES.md`.
+The grammar notices are generated from the checked-in license archives and
+ship in the npm package as `assets/standard/GRAMMAR-NOTICES.md`.
+
+### Seed or repair the CDN
+
+The **Publish** workflow has an `assets-only` mode for uploading the locked
+snapshot without publishing packages. Run it on the exact reviewed ref:
+
+```sh
+gh workflow run publish.yml --repo sebastian-software/ferriki \
+  --ref <reviewed-ref> -f assets-only=true
+```
+
+For the initial migration only, also pass `-f bootstrap-assets=true`. That
+mode reconstructs verified bytes from pinned original URLs and the historical
+commit recorded in the catalog lock. Ordinary runs prefer Bunny and can
+reconstruct missing originals from their pinned sources. Every download must
+match its locked hash; payload bootstrap never follows a moving branch.
+
+Keep `https://raw.githubusercontent.com/sebastian-software/ferriki` as the
+default pull-zone origin for legacy `<commit>/assets/shiki/<path>` URLs. Add
+an **Override Origin: Storage Zone** edge rule selecting `ferriki-assets` for
+`pattern:^https?://[^/]+/(?:themes/)?[a-z0-9-]+/[a-f0-9]{64}(?:\?.*)?$`,
+with no path prefix. The path allowlist must accept both legacy assets and
+full hash paths; apply
+`Cache-Control: public, max-age=31536000, immutable` only to successful asset
+responses. New publication adds objects without purging or replacing old ones.
+
+To verify all public originals, normalized sources, and runtime payloads:
+
+```sh
+node scripts/verify-assets.mjs
+node scripts/materialize-assets.mjs --sources --payloads \
+  --output-dir /tmp/ferriki-clean-assets
+```
+
+The second command proves materialization in an empty directory. Rust crate
+compilation reads the small committed metadata lock and needs no downloads;
+repository tests and native compatibility checks materialize payloads first.

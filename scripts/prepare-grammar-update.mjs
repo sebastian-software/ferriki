@@ -70,6 +70,9 @@ async function prepare() {
     const candidate = selectCandidate(inventories.get(selection.repository_id), selection.selector);
     const bytes = await reader.read(candidate.repository, candidate.commit, candidate.path);
     let grammar = parseGrammarSource(bytes.toString("utf8"), candidate.path);
+    const rawFile = path.join(outputRoot, "assets/grammar-raw", selection.id, digest(bytes));
+    await mkdir(path.dirname(rawFile), { recursive: true });
+    await writeFile(rawFile, bytes);
     const originalScope = grammar.scopeName;
     if (selection.patch_file) {
       const patches = JSON.parse(await readFile(path.join(root, selection.patch_file), "utf8"));
@@ -239,7 +242,7 @@ async function prepare() {
     })),
   };
   const sources = { version: 2, repositories: snapshots, languages };
-  const sourceRoot = path.join(outputRoot, "assets/upstream/textmate-grammars-themes");
+  const sourceRoot = path.join(outputRoot, "assets/upstream/curated");
   await mkdir(path.join(sourceRoot, "grammars"), { recursive: true });
   for (const [id, content] of grammarFiles)
     await writeFile(path.join(sourceRoot, "grammars", `${id}.json`), content);
@@ -257,16 +260,14 @@ async function prepare() {
     path.join(sourceRoot, "languages.json"),
     `${JSON.stringify({ languages: languages.map((entry) => Object.fromEntries(keys.map((key) => [key, entry[key]]))) }, null, 2)}\n`,
   );
+  await cp(path.join(root, "assets/upstream/curated/themes"), path.join(sourceRoot, "themes"), {
+    recursive: true,
+  });
   await cp(
-    path.join(root, "assets/upstream/textmate-grammars-themes/themes"),
-    path.join(sourceRoot, "themes"),
-    { recursive: true },
-  );
-  await cp(
-    path.join(root, "assets/upstream/textmate-grammars-themes/themes.json"),
+    path.join(root, "assets/upstream/curated/themes.json"),
     path.join(sourceRoot, "themes.json"),
   );
-  await mkdir(path.join(outputRoot, "assets/shiki"), { recursive: true });
+  await mkdir(path.join(outputRoot, "assets/standard"), { recursive: true });
   await writeFile(
     path.join(outputRoot, "assets/grammars/sources.json"),
     `${JSON.stringify(sources, null, 2)}\n`,

@@ -25,12 +25,12 @@ Load the language before synchronous rendering, or use the async factory with
 the bundled loader:
 
 ```js
-import { bundledLanguages, createHighlighter } from '@ferriki/core'
+import { bundledLanguages, createHighlighter } from "@ferriki/core";
 
 const highlighter = await createHighlighter({
   langs: [bundledLanguages.typescript],
-  themes: ['nord'],
-})
+  themes: ["nord"],
+});
 ```
 
 Check `bundledLanguagesAlias` when a file extension or common alias is used.
@@ -91,18 +91,19 @@ or platform sidecar. Inspect `npm pack --dry-run` from `node/ferriki`.
 ## `Ferriki could not download assets` or `… is not cached`
 
 Standard grammars and themes are not bundled; they are downloaded on first use
-from `https://assets.ferriki.dev/<release-commit>/assets/shiki/…`, verified by
+from `https://assets.ferriki.dev/<language-id>/<sha256>` or
+`https://assets.ferriki.dev/themes/<theme-id>/<sha256>`, verified by
 SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 
 - **`Ferriki could not download assets: … HTTP 404` or a connection error**:
-  the mirror is unreachable or does not serve that release. Check network
+  the mirror is unreachable or does not serve that immutable object. Check network
   access, Node's proxy configuration and `FERRIKI_ASSETS_BASE_URL`. See
   [asset loading](asset-loading.md) for Node-version requirements. Downloads
   are not retried.
 - **`… did not match its release-pinned SHA-256`**: the mirror served
   different bytes. Nothing was cached; fix the mirror.
 - **`… is not cached … Load it through the asynchronous createHighlighter,
-  loadLanguage or loadTheme first`**: a synchronous path met a language or theme
+loadLanguage or loadTheme first`**: a synchronous path met a language or theme
   that was never loaded. Load it asynchronously once, or pre-populate the cache.
 - **`… remote assets are turned off`**: `remote: false` or
   `FERRIKI_ASSETS_REMOTE=0` is set and the cache lacks the payload.
@@ -120,10 +121,10 @@ There is no offline package; use one of these instead:
   `FERRIKI_CACHE_DIR`) as a CI cache or container layer, and set
   `FERRIKI_ASSETS_REMOTE=0` for the offline runs. The cache holds one file per
   SHA-256 digest; entries never change and are reused across releases.
-- **Run a mirror.** Serve a copy of the repository's `assets/shiki/` at the
-  release commit below `<release-commit>/assets/shiki/` and set
-  `FERRIKI_ASSETS_BASE_URL` (or the `baseUrl` asset option) to its root. The
-  commit is recorded in `node_modules/@ferriki/core/assets/shiki/release-manifest.json`.
+- **Run a mirror.** Serve verified objects at `<language-id>/<sha256>` and
+  `themes/<theme-id>/<sha256>` and set
+  `FERRIKI_ASSETS_BASE_URL` (or the `baseUrl` asset option) to its root. The exact hashes are
+  recorded in `node_modules/@ferriki/core/assets/standard/release-manifest.json`.
 
 Privacy: a default install contacts `assets.ferriki.dev` the first time a
 language or theme is used, sending an ordinary HTTPS request for that file.

@@ -6,7 +6,7 @@ import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./gra
 import { rawUrl } from "./grammar-repositories.mjs";
 
 const root = new URL("../", import.meta.url);
-const sourceRoot = new URL("assets/upstream/textmate-grammars-themes/", root);
+const sourceRoot = new URL("assets/upstream/curated/", root);
 const sources = JSON.parse(await readFile(new URL("assets/grammars/sources.json", root), "utf8"));
 const writeNotices = process.argv.includes("--check-sources");
 const check = process.argv.includes("--check") || writeNotices;
@@ -15,7 +15,13 @@ if (process.argv.slice(2).some((arg) => !["--check", "--check-sources"].includes
 const { languages } = sources;
 const ids = new Set();
 const keys = new Set();
-const licenses = new Set(["MIT", "Apache-2.0", "BSD-3-Clause", "MPL-2.0", "LicenseRef-TextMate-Bundle"]);
+const licenses = new Set([
+  "MIT",
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "MPL-2.0",
+  "LicenseRef-TextMate-Bundle",
+]);
 for (const entry of languages) {
   if (
     !/^[a-z0-9-]+$/.test(entry.id) ||
@@ -138,7 +144,7 @@ for (const file of [...new Set(languages.map((entry) => entry.license_file))].so
     notices.push(`- [${entry.id}](${entry.source}) — [${entry.license}](${entry.license_url})`);
   notices.push("", text.trim(), "");
 }
-const noticeFile = new URL("assets/shiki/GRAMMAR-NOTICES.md", root);
+const noticeFile = new URL("assets/standard/GRAMMAR-NOTICES.md", root);
 const noticeText = `${notices.join("\n")}\n`;
 if (check && !writeNotices) {
   if ((await readFile(noticeFile, "utf8")) !== noticeText) throw new Error("Grammar notices drift");

@@ -91,9 +91,9 @@ impl StandardAssetCatalogs {
     /// variables.
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
     pub fn remote(settings: RemoteAssets) -> Result<Self> {
-        const LANGUAGES: &[u8] = include_bytes!("../assets/shiki/languages/manifest.fkindex");
-        const THEMES: &[u8] = include_bytes!("../assets/shiki/themes/manifest.fkindex");
-        const RELEASE: &str = include_str!("../assets/shiki/release-manifest.json");
+        const LANGUAGES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/languages.fkindex"));
+        const THEMES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/themes.fkindex"));
+        const RELEASE: &str = include_str!(concat!(env!("OUT_DIR"), "/release-manifest.json"));
         let release = ReleaseManifest::from_json(RELEASE).map_err(|source| {
             Error::new(
                 ErrorKind::AssetFormat,

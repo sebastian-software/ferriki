@@ -1,7 +1,9 @@
 # Ferriki Asset Format
 
 Ferriki stores generated standard language and theme catalogs in a compact
-binary format under [`assets/shiki`](../assets/shiki).
+binary format in the ignored local `assets/standard/` build directory.
+The reviewed metadata lock is [`assets/catalog.json`](../assets/catalog.json);
+payloads live on Bunny under language/theme IDs and full SHA-256 hashes.
 
 This format is currently an internal Ferriki implementation detail. It exists
 to decouple the runtime from upstream JS build artifacts and to give the Rust
@@ -34,15 +36,15 @@ manifest is checked separately by the `AssetSource` layer (SHA-256).
 
 Language catalog:
 
-- [`assets/shiki/languages/manifest.fkindex`](../assets/shiki/languages/manifest.fkindex)
+- `assets/standard/languages/manifest.fkindex`
 - one `.fkgram` file per language
 
 Theme catalog:
 
-- [`assets/shiki/themes/manifest.fkindex`](../assets/shiki/themes/manifest.fkindex)
+- `assets/standard/themes/manifest.fkindex`
 - one `.fktheme` file per theme
 
-The generated [`assets/shiki/catalog.mjs`](../assets/shiki/catalog.mjs) is the
+The generated `assets/standard/catalog.mjs` is the
 Node-facing metadata projection of both manifests. It is intentionally kept
 separate from the binary payloads so catalog enumeration remains lazy.
 
@@ -162,7 +164,7 @@ Notes:
 
 ## Release Manifest
 
-[`assets/shiki/release-manifest.json`](../assets/shiki/release-manifest.json)
+`assets/standard/release-manifest.json`
 pins every payload for the CDN loading of
 [ADR 0013](../adr/0013-cdn-loaded-standard-assets.md). The generator writes it
 next to the two catalogs:
@@ -170,6 +172,7 @@ next to the two catalogs:
 ```json
 {
   "manifestVersion": 1,
+  "storageLayout": "language-hash-v1",
   "assets": {
     "languages/typescript.fkgram": {
       "sha256": "<lowercase hex>",
@@ -180,14 +183,16 @@ next to the two catalogs:
 }
 ```
 
-- Keys are payload paths relative to `assets/shiki/`. Together with a commit
-  they form the CDN URL
-  `https://assets.ferriki.dev/<commit>/assets/shiki/<key>`.
+- Keys identify language/theme files in a local materialized catalog. With
+  `storageLayout: "language-hash-v1"`, remote URLs use
+  `https://assets.ferriki.dev/<language-id>/<sha256>` or
+  `https://assets.ferriki.dev/themes/<theme-id>/<sha256>`. An absent layout
+  retains legacy `<commit>/assets/shiki/<key>` URLs.
 - `manifestVersion` versions this JSON layout, independently of the binary
   `FORMAT_VERSION`.
-- The repository copy has no `commit`: a file cannot contain the SHA of the
-  commit that adds it. The release build writes the release commit into the
-  packaged copies.
+- The reviewed metadata lives in `assets/catalog.json`; binary indexes and
+  payloads are generated or downloaded local artifacts. A packaged `commit`
+  records release provenance and does not select the content-addressed URL.
 - The binary manifests keep the language and theme metadata (aliases,
   embedded languages, injections); the release manifest adds only what is
   needed to fetch and verify a payload. A consumer turns each entry into
@@ -220,7 +225,7 @@ Format changes should follow these rules:
   `FORMAT_VERSION`.
 - Update generator and loader together, including the manifest reader in
   [`scripts/generate-ferriki-catalog.mjs`](../scripts/generate-ferriki-catalog.mjs).
-- Regenerate `assets/shiki/*`.
+- Regenerate `assets/standard/*`.
 - Keep roundtrip tests green.
 - Add or update targeted compatibility tests when semantic normalization
   changes.

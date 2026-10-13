@@ -19,8 +19,8 @@ const PACKAGED_FILES = [
 const pkgDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(pkgDir, "..", "..");
 const args = parseArgs(process.argv.slice(2));
-const sourceDir = args.sourceDir ?? join(repoRoot, "assets", "shiki");
-const destDir = args.destDir ?? join(pkgDir, "assets", "shiki");
+const sourceDir = args.sourceDir ?? join(repoRoot, "assets", "standard");
+const destDir = args.destDir ?? join(pkgDir, "assets", "standard");
 // Tests and CI read payloads from this cache instead of the network:
 // FERRIKI_CACHE_DIR points here and FERRIKI_ASSETS_REMOTE is 0.
 const testCacheDir = args.testCacheDir ?? join(repoRoot, "node", ".cache", "ferriki-assets");
@@ -39,16 +39,16 @@ for (const file of PACKAGED_FILES) {
 }
 console.log(`[ferriki] Standard asset manifests synced: ${sourceDir} -> ${destDir}`);
 
-// A release pins its payloads to the commit it was built from; without it the
-// runtime cannot download (ADR 0013). Only the release workflow passes it.
+// Stamp release provenance. Hash-addressed payloads need no commit in their
+// URLs; legacy manifests still use this commit for downloads (ADR 0013).
 if (args.releaseCommit) {
   if (!/^[0-9a-f]{40}$/.test(args.releaseCommit))
     throw new Error(`[ferriki] --release-commit must be a full commit SHA: ${args.releaseCommit}`);
   const packaged = join(destDir, "release-manifest.json");
-  const { manifestVersion, assets } = JSON.parse(await readFile(packaged, "utf8"));
+  const release = JSON.parse(await readFile(packaged, "utf8"));
   await writeFile(
     packaged,
-    `${JSON.stringify({ manifestVersion, commit: args.releaseCommit, assets }, null, 2)}\n`,
+    `${JSON.stringify({ ...release, commit: args.releaseCommit }, null, 2)}\n`,
   );
   console.log(`[ferriki] Release manifest pinned to ${args.releaseCommit}`);
 }

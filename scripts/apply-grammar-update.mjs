@@ -20,7 +20,7 @@ const old = JSON.parse(await readFile(path.join(root, "assets/grammars/sources.j
 const paths = [
   "assets/grammars/sources.json",
   "assets/grammars/catalog.json",
-  "assets/upstream/textmate-grammars-themes/languages.json",
+  "assets/upstream/curated/languages.json",
 ];
 // Validate the complete candidate before changing any current source file.
 const catalog = JSON.parse(await readFile(path.join(candidateRoot, paths[1]), "utf8"));
@@ -52,7 +52,13 @@ if (
 )
   throw new Error("Candidate selection drift");
 const languageKeys = new Set();
-const licenses = new Set(["MIT", "Apache-2.0", "BSD-3-Clause", "MPL-2.0", "LicenseRef-TextMate-Bundle"]);
+const licenses = new Set([
+  "MIT",
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "MPL-2.0",
+  "LicenseRef-TextMate-Bundle",
+]);
 for (const entry of sources.languages) {
   if (
     !licenses.has(entry.license) ||
@@ -71,7 +77,7 @@ for (const entry of sources.languages) {
     entry.source !== rawUrl(pin.repository, pin.commit, entry.upstream_path)
   )
     throw new Error(`Candidate repository pin drift: ${entry.id}`);
-  const file = `assets/upstream/textmate-grammars-themes/grammars/${entry.grammar_file}`;
+  const file = `assets/upstream/curated/grammars/${entry.grammar_file}`;
   const bytes = await readFile(path.join(candidateRoot, file));
   if (digest(bytes) !== entry.sha256) throw new Error(`Candidate grammar drift: ${entry.id}`);
   const grammar = JSON.parse(bytes);
@@ -97,6 +103,9 @@ for (const entry of sources.languages) {
     throw new Error(`Candidate license drift: ${entry.id}`);
   paths.push(file, entry.license_file);
 }
+await cp(path.join(candidateRoot, "assets/grammar-raw"), path.join(root, "assets/grammar-raw"), {
+  recursive: true,
+});
 for (const file of new Set(paths)) await cp(path.join(candidateRoot, file), path.join(root, file));
 const ids = new Set(sources.languages.map((entry) => entry.id));
 const activeLicenses = new Set(sources.languages.map((entry) => entry.license_file));
@@ -108,16 +117,15 @@ for (const entry of old.languages)
     await rm(path.join(root, entry.license_file), { force: true });
 for (const entry of old.languages)
   if (!ids.has(entry.id)) {
-    await rm(
-      path.join(root, "assets/upstream/textmate-grammars-themes/grammars", entry.grammar_file),
-    );
-    await rm(path.join(root, "assets/shiki/languages", `${entry.id}.fkgram`), { force: true });
+    await rm(path.join(root, "assets/upstream/curated/grammars", entry.grammar_file));
+    await rm(path.join(root, "assets/standard/languages", `${entry.id}.fkgram`), { force: true });
   }
-// Rebuild the versioned assets and notices from the verified normalized data.
+// Rebuild local artifacts and update the small reviewed catalog lock.
 execFileSync(process.execPath, ["scripts/generate-ferriki-assets.mjs"], {
   cwd: root,
   stdio: "inherit",
 });
+execFileSync(process.execPath, ["scripts/write-asset-lock.mjs"], { cwd: root, stdio: "inherit" });
 execFileSync(process.execPath, ["scripts/sync-grammars.mjs", "--check-sources"], {
   cwd: root,
   stdio: "inherit",

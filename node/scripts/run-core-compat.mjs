@@ -11,7 +11,14 @@ import {
 import "./test-asset-env.mjs";
 
 const nodeRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const materialize = spawnSync(
+  process.execPath,
+  ["../scripts/materialize-assets.mjs", "--sources"],
+  { cwd: nodeRoot, env: process.env, stdio: "inherit" },
+);
+if (materialize.status !== 0) process.exit(materialize.status ?? 1);
 for (const script of [
+  "../scripts/test-asset-store.mjs",
   "../scripts/test-grammar-source.mjs",
   "../scripts/test-grammar-repositories.mjs",
   "../scripts/test-grammar-update-workflow.mjs",

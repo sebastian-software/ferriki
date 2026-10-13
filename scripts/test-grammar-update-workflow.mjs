@@ -11,6 +11,21 @@ const workflow = load(
   await readFile(new URL("../.github/workflows/grammar-updates.yml", import.meta.url), "utf8"),
 );
 const job = workflow.jobs.update;
+const releaseWorkflow = load(
+  await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8"),
+);
+assert.equal(releaseWorkflow.on.workflow_dispatch.inputs["assets-only"].default, false);
+assert.equal(
+  releaseWorkflow.jobs["release-please"].if,
+  "${{ !(github.event_name == 'workflow_dispatch' && inputs.assets-only) }}",
+  "asset-only dispatch must skip release management and all dependent registry jobs",
+);
+const assetOnly = releaseWorkflow.jobs["publish-locked-assets"];
+assert.equal(assetOnly.if, "${{ github.event_name == 'workflow_dispatch' && inputs.assets-only }}");
+assert.equal(assetOnly.steps[0].with["persist-credentials"], false);
+const assetCommands = assetOnly.steps.map((step) => step.run || "").join("\n");
+assert.doesNotMatch(assetCommands, /cargo publish|pnpm publish|publish-npm|release-please/);
+assert(assetCommands.indexOf("publish-assets.mjs") < assetCommands.indexOf("verify-assets.mjs"));
 const publication = job.steps.find((step) => step.name === "Open a reviewable update");
 assert.equal(workflow.on.schedule[0].cron, "0 6 * * 1");
 assert(Object.hasOwn(workflow.on, "workflow_dispatch"));
@@ -21,6 +36,7 @@ const requiredSteps = [
   "Validate and apply the candidate",
   "Verify native compatibility",
   "Verify grammar output agreement",
+  "Publish immutable source and payload objects",
 ];
 for (const name of requiredSteps) {
   const index = job.steps.findIndex((step) => step.name === name);
@@ -55,6 +71,7 @@ async function runner(generation, existing = true, raceDirectory) {
   const directory = path.join(temporary, `runner-${++iteration}`);
   git(["clone", "--quiet", origin, directory]);
   await writeFile(path.join(directory, "assets/grammars/sources.json"), `${generation}\n`);
+  await writeFile(path.join(directory, "assets/catalog.json"), `${generation}\n`);
   await writeFile(path.join(directory, "unrelated.txt"), "Do not commit this file.\n");
   const candidate = path.join(directory, "candidate");
   await mkdir(candidate);
@@ -125,15 +142,16 @@ process.exit(result.status ?? 1);
   git(["clone", "--quiet", origin, seed]);
   for (const directory of [
     "assets/grammars",
-    "assets/upstream/textmate-grammars-themes",
-    "assets/shiki",
+    "assets/upstream/curated",
+    "assets/standard",
     "scripts",
   ])
     await mkdir(path.join(seed, directory), { recursive: true });
   for (const file of [
     "assets/grammars/sources.json",
-    "assets/upstream/textmate-grammars-themes/example.json",
-    "assets/shiki/example.fkgram",
+    "assets/upstream/curated/example.json",
+    "assets/catalog.json",
+    "assets/standard/example.fkgram",
   ])
     await writeFile(path.join(seed, file), "0\n");
   await copyFile(

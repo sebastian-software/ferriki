@@ -203,21 +203,16 @@ impl NodeAssetHost {
                     ),
                 ));
             }
-            let commit = self.settings.commit.as_deref().ok_or_else(|| {
-                Error::new(
-                    ErrorKind::AssetUnavailable,
-                    format!(
-                        "Asset {path} is not cached, and this build has no release commit to download it from. \
-                         Set FERRIKI_RELEASE_COMMIT, or pre-populate {}.",
-                        self.settings.cache_dir.display()
-                    ),
-                )
-            })?;
             result.push(PlannedAsset {
                 path: path.to_owned(),
                 digest: digest.as_str().to_owned(),
                 size: asset.size,
-                url: format!("{}/{commit}/assets/shiki/{path}", self.settings.base_url),
+                url: crate::asset_settings::asset_url(
+                    self.release.storage_layout.as_deref(),
+                    &self.settings,
+                    path,
+                    digest.as_str(),
+                )?,
             });
         }
         Ok(result)
@@ -293,7 +288,7 @@ mod tests {
     }
 
     fn fixture_root() -> (PathBuf, PathBuf) {
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/shiki");
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard");
         let root = temp_dir("root");
         std::fs::create_dir_all(root.join("languages")).expect("language directory");
         std::fs::create_dir_all(root.join("themes")).expect("theme directory");
@@ -367,9 +362,18 @@ mod tests {
             !cache.join(&vue.sha256).exists(),
             "corrupt bytes are removed for refetch"
         );
-        assert!(plan.iter().all(|asset| asset.url.starts_with(
-            "https://mirror.example/0123456789abcdef0123456789abcdef01234567/assets/shiki/"
-        )));
+        for asset in &plan {
+            let id = asset
+                .path
+                .strip_prefix("languages/")
+                .unwrap()
+                .strip_suffix(".fkgram")
+                .unwrap();
+            assert_eq!(
+                asset.url,
+                format!("https://mirror.example/{id}/{}", asset.digest)
+            );
+        }
 
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&cache);

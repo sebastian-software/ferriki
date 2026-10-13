@@ -23,7 +23,7 @@
     "check:classes": "node ./scripts/check-class-highlighting.mjs",
     "check:errors": "node ./scripts/check-ferriki-errors.mjs",
     "check:remote-assets": "node ./scripts/check-ferriki-remote-assets.mjs",
-    "check:grammars": "node ../scripts/test-grammar-source.mjs && node ../scripts/test-grammar-repositories.mjs && node ../scripts/sync-grammars.mjs --check && node ./scripts/check-ferriki-grammars.mjs && node ./scripts/check-ferriki-frontend.mjs",
+    "check:grammars": "node ../scripts/materialize-assets.mjs --sources && node ../scripts/test-asset-store.mjs && node ../scripts/test-grammar-source.mjs && node ../scripts/test-grammar-repositories.mjs && node ../scripts/sync-grammars.mjs --check && node ./scripts/check-ferriki-grammars.mjs && node ./scripts/check-ferriki-frontend.mjs",
     "check:platform-package": "node ./scripts/check-platform-package.mjs",
     "check:packed-sidecar": "node ./scripts/check-packed-sidecar.mjs",
     "check:api": "node ./scripts/check-generated-api.mjs",

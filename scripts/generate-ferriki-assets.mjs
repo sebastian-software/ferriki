@@ -1,56 +1,52 @@
-import { spawnSync } from 'node:child_process';
-import path from 'node:path';
+import { spawnSync } from "node:child_process";
+import path from "node:path";
 
 const args = parseArgs(process.argv.slice(2));
 const cmd = [
-  'run',
-  '-p',
-  'ferriki-asset-gen',
-  '--',
-  'generate',
-  '--upstream-dir',
+  "run",
+  "-p",
+  "ferriki-asset-gen",
+  "--",
+  "generate",
+  "--upstream-dir",
   args.upstreamDir,
-  '--output-dir',
+  "--output-dir",
   args.outputDir,
-  '--source-name',
-  args.sourceName
+  "--source-name",
+  args.sourceName,
 ];
 
 if (args.sourceVersion) {
-  cmd.push('--source-version', args.sourceVersion);
+  cmd.push("--source-version", args.sourceVersion);
 }
 if (args.sourceCommit) {
-  cmd.push('--source-commit', args.sourceCommit);
+  cmd.push("--source-commit", args.sourceCommit);
 }
 
-const result = spawnSync('cargo', cmd, {
-  cwd: path.resolve('.'),
-  stdio: 'inherit'
+const result = spawnSync("cargo", cmd, {
+  cwd: path.resolve("."),
+  stdio: "inherit",
 });
 
 if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
-const catalog = spawnSync(
-  'node',
-  ['scripts/generate-ferriki-catalog.mjs', args.outputDir],
-  {
-    cwd: path.resolve('.'),
-    stdio: 'inherit'
-  }
-);
+const catalog = spawnSync("node", ["scripts/generate-ferriki-catalog.mjs", args.outputDir], {
+  cwd: path.resolve("."),
+  stdio: "inherit",
+});
 
 if (catalog.status !== 0) {
   process.exit(catalog.status ?? 1);
 }
 
 function parseArgs(argv) {
-  let upstreamDir = path.resolve('assets/upstream/textmate-grammars-themes');
-  let outputDir = path.resolve('assets/shiki');
+  let upstreamDir = path.resolve("assets/upstream/curated");
+  let outputDir = path.resolve("assets/standard");
   let sourceVersion;
   let sourceCommit;
-  let sourceName = 'ferriki-curated';
+  let sourceName = "ferriki-curated";
 
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
@@ -58,15 +54,15 @@ function parseArgs(argv) {
     if (!value) {
       throw new Error(`Missing value for ${flag}`);
     }
-    if (flag === '--upstream-dir') {
+    if (flag === "--upstream-dir") {
       upstreamDir = path.resolve(value);
-    } else if (flag === '--output-dir') {
+    } else if (flag === "--output-dir") {
       outputDir = path.resolve(value);
-    } else if (flag === '--source-name') {
+    } else if (flag === "--source-name") {
       sourceName = value;
-    } else if (flag === '--source-version') {
+    } else if (flag === "--source-version") {
       sourceVersion = value;
-    } else if (flag === '--source-commit') {
+    } else if (flag === "--source-commit") {
       sourceCommit = value;
     } else {
       throw new Error(`Unknown flag: ${flag}`);

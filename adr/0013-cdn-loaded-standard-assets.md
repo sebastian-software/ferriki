@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Context
 
@@ -23,7 +23,7 @@ That assumption now dominates the package size. Measured on the 0.4 releases:
   465 KB. A theme is about 11 KB. A typical project uses a handful of languages
   and one or two themes.
 - The `ferriki` crate ships no assets. Rust consumers on crates.io have no
-  supported way to obtain them other than copying `assets/shiki` from this
+  supported way to obtain them other than copying `assets/standard` from this
   repository.
 - A native Ferromark + Ferriki combination package would have to carry the full
   catalog, which makes it several times larger than Ferromark itself.
@@ -34,7 +34,7 @@ for a project that already publishes eight npm packages and three crates per
 release.
 
 Every release commit already contains the generated payloads under
-`assets/shiki/`. GitHub serves any file of a public repository by ref and path
+`assets/standard/`. GitHub serves any file of a public repository by ref and path
 from `raw.githubusercontent.com`, for a tag and for a commit SHA alike. Verified
 for `assets/shiki/languages/typescript.fkgram`: both refs of the 0.4.0 release
 return the committed bytes. The same host cannot serve a blob by its hash
@@ -46,160 +46,79 @@ payload written for an incompatible format version.
 
 ## Decision
 
-No release package bundles grammar or theme payloads. Ferriki downloads them
-itself, on demand, from a CDN that mirrors the repository at the release commit,
-and verifies every file against a digest that the release pins.
+Standard grammar and theme data lives in Bunny Storage, served through
+`assets.ferriki.dev`. Git owns the selection, provenance, patches, license
+notices, and the small reviewed `assets/catalog.json` lock. Original sources,
+normalized JSON, binary payloads, and generated catalog indexes are ignored
+local build artifacts, not committed repository data.
 
-- **Release manifest.** Each release carries the release commit SHA and, for
-  every payload, its path, SHA-256 digest, byte size and format version,
-  together with the language and theme metadata (IDs, aliases,
-  embedded-language references, injections). The metadata stays in the two
-  binary catalog manifests; `assets/shiki/release-manifest.json` adds the
-  digest, size and format version per payload path. The repository copy has no
-  commit, because a file cannot contain the SHA of the commit that adds it; the
-  release build writes the release commit into the packaged copies. Both ship
-  inside `@ferriki/core` and inside the `ferriki` crate, so language and theme
-  resolution, aliases and error messages work without network access. A test
-  fails when a committed payload and the release manifest disagree.
-- **No bundled payloads.** `@ferriki/core` contains the JavaScript facade, the
-  types and the manifest, but no grammar or theme payloads.
-- **CDN as a 1:1 mirror of the repository.** The default base URL is
-  `https://assets.ferriki.dev`. It maps request paths 1:1 onto
-  `https://raw.githubusercontent.com/sebastian-software/ferriki`, so a payload
-  URL is `https://assets.ferriki.dev/<release-commit>/assets/shiki/languages/typescript.fkgram`.
-  Ferriki builds these URLs from the manifest and always uses the commit SHA,
-  never a tag, because commits cannot be moved. A tag in place of the commit
-  works for manual access.
-- **Hosting.** `assets.ferriki.dev` is a Bunny pull zone owned by the
-  maintainers' company, with `raw.githubusercontent.com/sebastian-software/ferriki`
-  as origin and a CNAME at the `ferriki.dev` registrar. The pull zone overrides
-  the origin cache lifetime to at least a year, which is safe because every URL
-  is pinned to an immutable commit. An edge rule serves only paths below
-  `/<ref>/assets/shiki/`. Because clients know only the own hostname, the
-  provider or the origin can change without breaking released versions.
-- **Integrity and deduplication.** Downloaded bytes are verified against the
-  manifest digest before they are decoded or cached; a mismatch is a typed
-  error and is never cached. The local cache is keyed by that digest, so a
-  payload that did not change between releases is not downloaded again even
-  though its URL contains a different commit. A payload whose format version
-  does not match the runtime is a typed error as well.
-- **Resolution order.** An asset is taken from the local cache when a valid
-  copy is there, and otherwise from the remote base URL.
-- **No offline packages.** The CDN is the only published source of payloads;
-  there is no npm package and no crate that bundles the catalog. Offline and
-  air-gapped use has three answers that need no extra release artifact: a
-  mirror of the repository's `assets/shiki/` at the release commit behind
-  `FERRIKI_ASSETS_BASE_URL`, a cache pre-populated by one online run (for
-  example a CI cache or a container layer), and, in Rust, the directory and
-  embedded sources over a checkout.
-- **Remote fetching is on by default in Node.** Without bundled payloads,
-  nothing would highlight out of the box otherwise. `createHighlighter`
-  accepts `assets: { remote, baseUrl, cacheDir }`. For the shorthand functions,
-  whose internal highlighter no option reaches, and for CI, the process-wide
-  `FERRIKI_ASSETS_REMOTE=0` (or `false`), `FERRIKI_ASSETS_BASE_URL` and
-  `FERRIKI_CACHE_DIR` apply; an explicit option wins over the environment. The
-  base URL is configurable so organizations can use their own mirror. With
-  remote fetching off, a missing asset fails with a typed error that names the
-  remedies: allow remote assets, point the base URL at a mirror, or
-  pre-populate the cache.
-- **Cache location.** Node uses `node_modules/.cache/ferriki/` of the nearest
-  package root, following the common `find-cache-dir` convention, and falls
-  back to `$XDG_CACHE_HOME/ferriki` or `~/.cache/ferriki`. Rust uses the
-  platform cache directory plus `ferriki` (`$XDG_CACHE_HOME` or `~/.cache` on
-  Linux, `~/Library/Caches` on macOS, `%LOCALAPPDATA%` on Windows).
-  `FERRIKI_CACHE_DIR` overrides the location. Both runtimes store one file per
-  SHA-256 digest, written through a temporary file and a rename, so they can
-  share a cache. A cached file that fails its digest is replaced by a fresh
-  download. The cache is never evicted: entries are immutable and addressed by
-  digest.
-- **Failure handling.** An unreachable CDN or a failed download is a typed
-  error. There is no retry policy.
-- **Loading stays asynchronous.** Remote resolution happens only in the
-  asynchronous `createHighlighter`, `getSingletonHighlighter` and
-  `loadLanguage`/`loadTheme` paths, and in the one-shot functions for the
-  languages and themes they are given. Synchronous factories, loads and
-  highlighting never perform I/O beyond the cache and report a payload that is
-  not cached as `ERR_ASSET`, naming the remedies.
-- **Node transport.** An N-API async task runs the network-free Rust planner
-  on the libuv thread pool. It resolves aliases and embedded languages from
-  the packaged manifests, verifies existing cache entries and returns only
-  missing assets with their pinned path, digest, size and URL. The JavaScript
-  host uses Node's built-in `fetch` with at most six download workers per load.
-  Separate loads can have more downloads in flight, while matching in-process
-  cache targets share one transfer. Each request has a 60-second timeout; the
-  stream enforces the release-pinned byte limit, hashes bytes as they arrive,
-  and installs verified files through a temporary file and rename.
-  Rust verifies the cache again when the synchronous catalog reads a payload.
-  The addon does not compile the Rust HTTP or TLS stack. Node proxy and
-  certificate configuration is documented in
-  [`docs/asset-loading.md`](../docs/asset-loading.md).
-- **Rust asset sources.** `ferriki` exposes a public `AssetSource` trait keyed
-  by digest, with directory and embedded sources, and
-  `StandardAssetCatalogs::from_release_manifest` for any source. The `remote`
-  cargo feature adds `StandardAssetCatalogs::remote(RemoteAssets)`, which
-  compiles in both catalog manifests and the release manifest and downloads
-  payloads on first use. `RemoteAssets` mirrors the Node settings (`remote`,
-  `base_url`, `cache_dir`, plus `commit`) and falls back to the same
-  environment variables. The feature is off by default, so the library stays
-  free of network code unless a consumer opts in.
-- **Rust HTTP and TLS.** The `remote` feature uses the blocking `ureq` client,
-  matching the synchronous `AssetSource::read`, with rustls on ring and the
-  operating system's trust store (`rustls-platform-verifier`), so corporate
-  certificate authorities and TLS inspection work and `HTTPS_PROXY` is
-  honored. The client is compiled only outside wasm32; a wasm build needs its
-  own fetch path ([ADR 0009](0009-native-only-runtime.md)).
-- **Release commit in Rust.** `cargo publish` writes `.cargo_vcs_info.json`
-  with the packaged commit, which for a release is the tagged release commit.
-  The crate's build script reads it, so a published crate knows where its
-  payloads live. A build from a checkout has no such file and must pass the
-  commit explicitly.
-
-**Implementation state.** Implemented: the release manifest and its drift
-test, the Bunny pull zone, the Rust `AssetSource` trait with digest
-verification, the Rust `remote` feature with the manifests shipped inside the
-`ferriki` crate, and the Node path: `@ferriki/core` ships only the manifests,
-the release workflow stamps the release commit into the packaged release
-manifest, Rust plans and verifies payloads, and the facade downloads them with
-Node's built-in fetch. Repository checks read a cache seeded from `assets/shiki/`
-with downloads turned off. After publishing, `verify-npm-publish.mjs` installs
-the public package, checks its commit, highlights from an empty cache, and
-verifies every pinned payload on `assets.ferriki.dev` by SHA-256.
+- **Immutable objects.** Grammar objects use `<canonical-language-id>/<sha256>`;
+  themes use `themes/<theme-id>/<sha256>`. SHA-256 covers every byte of the
+  original source, normalized source, or compiled payload. Equal bytes reuse
+  an object. Changed bytes use a new name. Aliases resolve to the canonical ID.
+- **Pinned catalogs.** Each package/crate version carries its fixed catalog,
+  payload digests, sizes, and binary format versions. The release manifest's
+  `storageLayout: "language-hash-v1"` selects digest URLs. Its optional `commit`
+  records release provenance and does not choose the new object's location.
+  The absent layout retains legacy `<commit>/assets/shiki/<path>` URLs.
+- **Offline compilation.** Rust's build script encodes the reviewed catalog
+  metadata into `OUT_DIR` through `ferriki-asset-gen`. Compiling a crate requires
+  neither Node nor downloads. Node generates the same tiny indexes from the
+  lock when preparing its package. Both packages exclude source/payload data.
+- **Materialization.** `scripts/materialize-assets.mjs` verifies cached files
+  or loads immutable objects for repository tests and regeneration. Sources
+  retain pinned upstream URLs and hashes as reconstruction inputs. The initial
+  migration records a fixed Ferriki snapshot for existing theme sources and
+  payloads; explicit bootstrap mode seeds storage before the new origin exists.
+  Every reconstruction is checked against the accepted digest and size.
+- **Sync and publication.** ADR 0020's weekly/manual workflow prepares sources,
+  converts and compiles them, checks native compatibility and output agreement,
+  then uploads original/normalized sources and payloads. It opens an update PR
+  containing metadata and license changes. Normalized source diffs and the full
+  candidate remain downloadable review artifacts. New files reach consumers
+  when a release adopts the reviewed catalog, not when upstream moves.
+- **Append-only uploader.** `scripts/publish-assets.mjs` preflights the complete
+  local upload set. It reads any existing storage object and skips matching
+  bytes. A mismatch or failed request stops publication; it never deletes or
+  repairs a published object. New uploads are downloaded again and verified.
+  Redirects are rejected, and the zone key is sent only to Bunny's Storage API.
+- **Release gate.** Before either registry publishes, the release-source gate
+  materializes the accepted snapshot and verifies its immutable storage objects.
+  Public npm verification checks every payload through the CDN by SHA-256 and
+  size. Package/crate version updates remain owned by Release Please.
+- **Hosting and migration.** A Storage Zone origin override handles
+  hash paths. The default GitHub origin keeps released commit-based URLs working. Access rules
+  permit only the legacy asset paths and canonical ID/full-hash paths; successful
+  immutable responses have a one-year cache lifetime. The hostname stays
+  `assets.ferriki.dev`, so the provider can change without changing clients.
+- **Caching and integrity.** Downloads are verified before decoding or caching.
+  The local cache uses one file per digest and deduplicates across releases.
+  Size, digest, or format mismatches fail and are never cached. Node uses its
+  built-in fetch with six workers and a 60-second timeout; the optional Rust
+  `remote` feature uses ureq/rustls and the platform trust store. Existing
+  proxy, certificate, cache-location, and download-limit behavior is unchanged.
+- **Offline use.** Synchronous loading reads only the populated cache. Prewarm
+  the cache, supply a mirror through `FERRIKI_ASSETS_BASE_URL`, or use Rust's
+  directory/embedded asset sources. Remote loading is enabled by default in
+  Node and opt-in through Rust's `remote` feature. The documented opt-out is
+  `FERRIKI_ASSETS_REMOTE=0`; missing offline data names the available remedies.
 
 ## Consequences
 
-- `@ferriki/core` shrinks from 9.0 MB to roughly 225 KB, plus the platform
-  addon. A Ferromark combination package carries no catalog either and uses
-  the same sources.
-- No new artifact is needed for the default path: the payloads stay where the
-  asset pipeline already commits them, and the release commit pins them. The
-  repository must stay public, and release commits must never be rewritten or
-  garbage-collected, because released versions resolve their assets through
-  them.
-- The release checks must prove that the manifest digests match the files at
-  the release commit, and after publishing, that the CDN URLs of the release
-  answer with the expected bytes.
-- By default, the first use of any language or theme needs network access to
-  `assets.ferriki.dev` and adds download latency. After that the cache makes it
-  free. On a CDN cache miss, availability also depends on GitHub.
-- Offline and air-gapped builds, and CI without network access, must
-  pre-populate the cache or point the base URL at a mirror. The documentation
-  and the error messages must say so.
-- A default install contacts `assets.ferriki.dev`. The documentation needs a
-  privacy note and the opt-out. The CDN is paid for by the maintainers'
-  company; at a few hundred kilobytes per project and first use, the expected
-  cost is small.
-- A release publishes no additional package: one npm package plus the
-  platform sidecars, and three crates, as before.
-- Rust consumers that enable `remote` inherit ureq and rustls. cargo-deny sees
-  `webpki-root-certs` (CDLA-Permissive-2.0) through a wasm32-only dependency of
-  the platform verifier, because it checks the union of all targets;
-  `deny.toml` carries a narrow exception for that crate.
-- The on-disk layout of the npm package and the Rust asset API change before
-  1.0. [ADR 0011](0011-ferriki-1.0-api-contract.md) and the API contract
-  documents must list the new options and errors before they are frozen.
-- One package per language and bundling language payloads inside release
-  packages are ruled out. ADR 0020 curates the available standard catalog;
-  every selected payload still loads through this CDN model.
+- Git reviews configuration, pins, hashes, metadata, and patches rather than
+  thousands of imported or generated lines. Payload availability depends on
+  the storage/CDN, with upstream reconstruction available to maintainers.
+- Existing objects must remain available for the lifetime of released versions.
+  Storage cleanup requires explicit analysis of every released catalog. The
+  automatic updater never performs garbage collection or changes active catalogs.
+- Maintainer publication needs a zone-specific Actions secret and non-sensitive
+  zone/endpoint variables. Consumer installs need no Bunny credentials.
+- The fixed source/payload snapshots can be reproduced and checked independently
+  of current upstream heads. Developer tests materialize data before execution;
+  ordinary Rust compilation remains network-free.
+- No language/theme packages or extra runtime dependencies are introduced.
+  First use still downloads only the requested languages, dependencies, and
+  themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
 
@@ -218,3 +137,7 @@ verifies every pinned payload on `assets.ferriki.dev` by SHA-256.
   Rust keeps manifest planning and cache verification, while the optional Rust
   `remote` feature retains its independent ureq transport.
 - 2026-10-12: Clarifies that catalog curation (ADR 0020) preserves CDN-only payload delivery.
+
+- 2026-10-13: Moves sources and payloads out of Git into immutable Bunny Storage
+  objects keyed by canonical language/theme ID and full content hash. Retains
+  reviewed metadata locks, offline crate compilation, and legacy release URLs (#152).

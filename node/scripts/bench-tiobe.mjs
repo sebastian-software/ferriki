@@ -213,7 +213,7 @@ const report = {
   revision: { commit: git("rev-parse", "HEAD"), status: git("status", "--porcelain") },
   nativeBuild: native,
   assetManifestSha256: sha256(
-    readFileSync(join(nodeRoot, "ferriki/assets/shiki/release-manifest.json")),
+    readFileSync(join(nodeRoot, "ferriki/assets/standard/release-manifest.json")),
   ),
   harnessSha256: sha256(
     readFileSync(script) + readFileSync(new URL("./tiobe-benchmark.mjs", import.meta.url)),

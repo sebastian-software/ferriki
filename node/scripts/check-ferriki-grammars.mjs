@@ -8,7 +8,7 @@ import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { languageCatalog } from "../ferriki/assets/shiki/catalog.mjs";
+import { languageCatalog } from "../ferriki/assets/standard/catalog.mjs";
 import { bundledLanguages, createHighlighter } from "../ferriki/index.mjs";
 import { createEngine, validateOutput } from "./tiobe-benchmark.mjs";
 import "./test-asset-env.mjs";

@@ -30,11 +30,11 @@ let assets = StandardAssetCatalogs::remote(RemoteAssets::default())?;
 moves the cache, and `FERRIKI_ASSETS_REMOTE=0` turns downloads off so only
 cached payloads load.
 
-Without the feature, your application supplies the generated `assets/shiki`
+Without the feature, your application supplies the generated `assets/standard`
 directory from the Ferriki release that matches the crate version:
 
 ```text
-assets/shiki/
+assets/standard/
   languages/manifest.fkindex
   languages/*.fkgram
   themes/manifest.fkindex
@@ -53,7 +53,7 @@ use std::path::Path;
 use ferriki::{Highlighter, RenderOptions, StandardAssetCatalogs, render_html_lines};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/shiki"))?;
+    let assets = StandardAssetCatalogs::load_from_root(Path::new("assets/standard"))?;
     let mut highlighter = Highlighter::builder()
         .with_assets(assets)
         .load_languages(["rust", "typescript"])

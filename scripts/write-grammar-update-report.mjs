@@ -41,9 +41,13 @@ if (report.external_scopes.length) {
 }
 lines.push(
   "",
+  "## Review artifacts",
+  "",
+  "The workflow artifact contains normalized grammar diffs in `diffs/` and the complete candidate. Sources and payloads are stored by content hash outside Git.",
+  "",
   "## Validation",
   "",
-  "I ran native candidate compilation, the mandatory Ferriki core compatibility gate, and both corpus output-agreement checks.",
+  "I ran native candidate compilation, the mandatory Ferriki core compatibility gate, and both corpus output-agreement checks, and immutable Bunny Storage upload/read-back verification.",
   "",
   "Refs #152; ADR 0020.",
   "",

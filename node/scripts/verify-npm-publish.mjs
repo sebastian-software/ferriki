@@ -228,7 +228,10 @@ export async function verifyCdnPayloads(releaseManifest, { fetchImpl = fetch } =
   async function worker() {
     while (next < entries.length) {
       const [path, asset] = entries[next++];
-      const url = `${ASSETS_BASE_URL}/${commit}/assets/shiki/${path}`;
+      const url =
+        releaseManifest.storageLayout === "language-hash-v1"
+          ? `${ASSETS_BASE_URL}/${path.startsWith("themes/") ? "themes/" : ""}${path.split("/")[1].replace(/\.(fkgram|fktheme)$/, "")}/${asset.sha256}`
+          : `${ASSETS_BASE_URL}/${commit}/assets/shiki/${path}`;
       try {
         const response = await fetchImpl(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
         if (!response.ok) {

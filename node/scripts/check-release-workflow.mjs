@@ -148,8 +148,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "verify-crates-publish:",
     "NPM_PUBLISH_RESULT:",
     "write-release-summary.mjs",
-    // The package ships no payloads; its release manifest must name the commit
-    // whose tree the CDN serves, or installs cannot download (ADR 0013).
+    // The package ships no payloads. Keep exact release provenance in the
+    // manifest alongside immutable payload hashes (ADR 0013).
     'sync-standard-assets.mjs --release-commit "$(git rev-parse HEAD)"',
   ])
     assert(workflow.includes(required), `release workflow is missing ${required}`);

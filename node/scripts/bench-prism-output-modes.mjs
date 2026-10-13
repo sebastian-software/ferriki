@@ -73,7 +73,7 @@ function identitySnapshot() {
       receiptSha256: sha256(readFileSync(native.receiptPath)),
     },
     assetsSha256: sha256(
-      readFileSync(join(nodeRoot, "ferriki/assets/shiki/release-manifest.json")),
+      readFileSync(join(nodeRoot, "ferriki/assets/standard/release-manifest.json")),
     ),
     harnessSha256: sha256(readFileSync(scriptPath)),
     sharedHarnessSha256: sha256(readFileSync(join(nodeRoot, "scripts/tiobe-benchmark.mjs"))),

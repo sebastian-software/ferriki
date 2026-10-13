@@ -330,7 +330,7 @@ pub(crate) mod tests {
     }
 
     pub(crate) fn standard_highlighter() -> FerrikiHighlighter {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/standard");
         let cache = test_cache(&root);
         create_highlighter(NativeHighlighterOptions {
             standard_asset_root: Some(root.display().to_string()),
@@ -578,7 +578,7 @@ pub(crate) mod tests {
             themes: vec![],
         };
         assert!(local.compute().expect("local plan").is_empty());
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/shiki");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/standard");
         let cache = std::env::temp_dir().join(format!("ferriki-typed-plan-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&cache);
         let planned_root = cache.join("catalogs");
