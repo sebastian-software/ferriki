@@ -591,25 +591,25 @@ importers:
         version: 25.3.3
     optionalDependencies:
       '@ferriki/darwin-arm64':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/darwin-arm64
       '@ferriki/linux-arm64-gnu':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/linux-arm64-gnu
       '@ferriki/linux-arm64-musl':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/linux-arm64-musl
       '@ferriki/linux-x64-gnu':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/linux-x64-gnu
       '@ferriki/linux-x64-musl':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/linux-x64-musl
       '@ferriki/win32-arm64-msvc':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/win32-arm64-msvc
       '@ferriki/win32-x64-msvc':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../platforms/win32-x64-msvc
   platforms/darwin-arm64: {}
   platforms/linux-arm64-gnu: {}
@@ -621,7 +621,7 @@ importers:
   vite:
     dependencies:
       '@ferriki/core':
-        specifier: 1.0.0
+        specifier: 1.1.0
         version: link:../ferriki
       magic-string:
         specifier: catalog:integrations
@@ -6086,31 +6086,37 @@ packages:
         sha512-TmnEAEAsBJVZM/AADELsK76llnwcf9vMKuPz8JflO1frO8Lchitr0fNaN9d+Ap0BjKtqWqd/J17qeDnXh8CL2A==
   '@xmldom/xmldom@0.8.15':
     resolution:
-      integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==
+      integrity: >-
+        sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==
     engines:
       node: '>=10.0.0'
   base64-js@1.5.1:
     resolution:
-      integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
+      integrity: >-
+        sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
   coffeescript@1.12.7:
     resolution:
-      integrity: sha512-pLXHFxQMPklVoEekowk8b3erNynC+DVJzChxS/LCBBgR6/8AJkHivkm//zbowcfc7BTCAjryuhx6gPqPRfsFoA==
+      integrity: >-
+        sha512-pLXHFxQMPklVoEekowk8b3erNynC+DVJzChxS/LCBBgR6/8AJkHivkm//zbowcfc7BTCAjryuhx6gPqPRfsFoA==
     engines:
       node: '>=0.8.0'
     hasBin: true
   cson-parser@4.0.9:
     resolution:
-      integrity: sha512-I79SAcCYquWnEfXYj8hBqOOWKj6eH6zX1hhX3yqmS4K3bYp7jME3UFpHPzu3rUew0oyfc0s8T6IlWGXRAheHag==
+      integrity: >-
+        sha512-I79SAcCYquWnEfXYj8hBqOOWKj6eH6zX1hhX3yqmS4K3bYp7jME3UFpHPzu3rUew0oyfc0s8T6IlWGXRAheHag==
     engines:
       node: '>=10.13'
   plist@3.1.0:
     resolution:
-      integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==
+      integrity: >-
+        sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==
     engines:
       node: '>=10.4.0'
   xmlbuilder@15.1.1:
     resolution:
-      integrity: sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==
+      integrity: >-
+        sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==
     engines:
       node: '>=8.0'
 snapshots:
@@ -9039,7 +9045,6 @@ snapshots:
   signal-exit@4.1.0: {}
   typanion@3.14.0: {}
   universal-user-agent@7.0.3: {}
-
   '@xmldom/xmldom@0.8.15': {}
   base64-js@1.5.1: {}
   coffeescript@1.12.7: {}

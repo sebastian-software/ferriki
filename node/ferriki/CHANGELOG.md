@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.0](https://github.com/sebastian-software/ferriki/compare/v1.0.0...v1.1.0) (2026-10-13)
+
+
+### Features
+
+* **grammars:** own curated sources and immutable asset delivery ([09782d0](https://github.com/sebastian-software/ferriki/commit/09782d016d066d1ae96b6856eb23b3ab72520ea3))
+* **react:** isolate code macros with automatic Shadow DOM SSR ([9cf2c61](https://github.com/sebastian-software/ferriki/commit/9cf2c619386da699509516be0ec140a7dc575821))
+* **render:** highlight declarative decorations in one native operation ([#257](https://github.com/sebastian-software/ferriki/issues/257)) ([d352552](https://github.com/sebastian-software/ferriki/commit/d352552db2d9f96f135cf1b07234e01d5b6b3d2f))
+
+
+### Bug Fixes
+
+* **release:** retain public npm install diagnostics ([5658a58](https://github.com/sebastian-software/ferriki/commit/5658a583d8c5cbef329da0b9ad8de88b936c3da4))
+* **release:** stream bounded npm install diagnostics ([ddd0f69](https://github.com/sebastian-software/ferriki/commit/ddd0f6955cf71bbffdeeae337a0956d89dc530c1))
+
+
+### Performance Improvements
+
+* reduce allocations during warm highlighting ([#265](https://github.com/sebastian-software/ferriki/issues/265)) ([f68bb01](https://github.com/sebastian-software/ferriki/commit/f68bb01f013613157846ea492281166d6595b922))
+* **textmate:** share cached theme rules ([e0374c0](https://github.com/sebastian-software/ferriki/commit/e0374c0623ace44c2f5286311755b08df77a2b8d))
+
 ## [1.0.0](https://github.com/sebastian-software/ferriki/compare/v0.14.0...v1.0.0) (2026-10-10)
 
 
