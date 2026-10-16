@@ -1,0 +1,14 @@
+diff --git a/crates/ferriki-textmate/src/regexp.rs b/crates/ferriki-textmate/src/regexp.rs
+index 58d9aae..9a0f688 100644
+--- a/crates/ferriki-textmate/src/regexp.rs
++++ b/crates/ferriki-textmate/src/regexp.rs
+@@ -627,7 +627,8 @@ impl<T: Copy> CompiledRule<T> {
+         let config = ScannerConfig::default()
+             .options(ONIG_OPTION_CAPTURE_GROUP)
+             .syntax(ScannerSyntax::Oniguruma)
+-            .prefilter(regex_prefilter);
++            .prefilter(regex_prefilter)
++            .prefilter_warmup(0);
+         let scanner = pattern_cache
+             .compile(&scanner_reg_exps, &config, share_patterns)
+             .map_err(RegexError::new)?;

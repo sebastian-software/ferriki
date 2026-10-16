@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-16",
+  "checks": [
+    {
+      "command": "cargo test --workspace --all-features --locked",
+      "root": "repository",
+      "state": "PASSED",
+      "note": "Includes local HTTP-server tests; rerun outside sandbox after loopback binding was denied."
+    },
+    {
+      "command": "cargo fmt --all --check",
+      "root": "repository",
+      "state": "PASSED"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+      "root": "repository",
+      "state": "PASSED"
+    },
+    {
+      "command": "cargo +1.94 check --workspace --all-targets --all-features --locked",
+      "root": "repository",
+      "state": "PASSED",
+      "note": "Toolchain read from the root Cargo.toml MSRV."
+    },
+    {
+      "command": "pnpm run test:ferriki-compat:core",
+      "root": "node",
+      "state": "PASSED",
+      "log": "core.log.gz",
+      "note": "Rebuilds the ordinary addon after restoring the experimental Rust change. Existing upstream exclusions and optional comparator skip remain."
+    },
+    {
+      "command": "pnpm run test:ferriki-compat:textmate",
+      "root": "node",
+      "state": "PASSED",
+      "log": "textmate.log.gz"
+    },
+    {
+      "command": "pnpm exec eslint benchmarks/curated/results/ferroni-2.2.1/cold-first-html.mjs benchmarks/curated/results/ferroni-2.2.1/summarize.mjs",
+      "root": "node",
+      "state": "PASSED"
+    },
+    {
+      "command": "node scripts/check-adrs.mjs",
+      "root": "repository",
+      "state": "PASSED"
+    },
+    {
+      "command": "cargo deny check advisories bans licenses sources",
+      "root": "repository",
+      "state": "FAILED",
+      "log": "deny.log.gz",
+      "note": "Pre-existing rustls 0.23.45: RUSTSEC-2026-0346, RUSTSEC-2026-0347, RUSTSEC-2026-0348, RUSTSEC-2026-0349. Bans, licenses, sources pass. The advisory database recommends >=0.23.46. No Ferroni finding, no new exceptions."
+    }
+  ]
+}

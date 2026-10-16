@@ -38,6 +38,12 @@ For a local Ferroni experiment, set `FERRIKI_FERRONI_PATH=/absolute/path/to/ferr
 when building. The [profiling instructions](../tiobe/README.md#profile-one-workload)
 also apply to this corpus with `--corpus curated`.
 
+The [October 16 local Ferroni 2.2.1 check](results/ferroni-2.2.1/README.md)
+compares 2.1.0 and 2.2.1 on the same Ferriki source and also tests immediate
+DFA construction. Overall warmed performance is roughly unchanged, with
+repeatable gains and regressions by language; first use improves. Automatic
+DFA warmup remains the default.
+
 Repeat baseline/candidate in ABBA order with the same source fixtures,
 assets, dependencies, features and build flags. Never run builds or CPU
 profiles alongside timed workloads. Preserve outputs, source hashes and
