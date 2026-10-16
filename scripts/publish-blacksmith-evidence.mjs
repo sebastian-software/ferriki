@@ -7,7 +7,7 @@ import { gunzipSync } from "node:zlib";
 import { validateReport } from "../node/scripts/run-blacksmith-comparison.mjs";
 
 const root = new URL("../", import.meta.url);
-const archive = "docs/benchmarks/blacksmith/2026-10-10";
+const archive = "docs/benchmarks/blacksmith/2026-10-16";
 const check = process.argv.includes("--check");
 const profiles = [];
 const json = (bytes) => JSON.parse(bytes.toString("utf8"));
@@ -122,8 +122,8 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
 assert.equal(profiles[0].revision, profiles[1].revision);
 assert.equal(profiles[0].ferroni, profiles[1].ferroni);
 outputs.set("docs/benchmarks/blacksmith-comparison.json", {
-  measured: "2026-10-10",
-  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/38043610857",
+  measured: "2026-10-16",
+  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/38967200840",
   corpusDocuments: 14,
   profiles,
 });

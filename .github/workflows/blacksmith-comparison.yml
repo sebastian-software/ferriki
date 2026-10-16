@@ -61,6 +61,8 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Build pinned comparators
         run: pnpm run build:compat
+      - name: Materialize standard grammar references
+        run: node ../scripts/materialize-assets.mjs --sources
       - name: Build release addon and local assets
         run: pnpm run build:native
       - name: Validate and measure serially

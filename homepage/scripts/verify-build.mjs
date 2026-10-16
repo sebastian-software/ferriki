@@ -7,7 +7,9 @@
 import { access, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 
+import { validateReport } from "../../node/scripts/run-blacksmith-comparison.mjs";
 import { expectedPages } from "./site-pages.mjs";
 import { verifyArdoAcceptanceHtml } from "./verify-ardo-acceptance.mjs";
 
@@ -31,7 +33,7 @@ const grammarSources = await readJson(
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
-const apiNames = ["codeToHtml"];
+const apiNames = new Set(["codeToHtml"]);
 const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
 const corpusSize = report.warm.codeToHtml.length;
 const cohortErrors = [];
@@ -39,7 +41,7 @@ const cohortErrors = [];
 if (!report.method?.apis?.includes("codeToHtml")) {
   cohortErrors.push("the report does not identify its HTML measurement");
 }
-const otherApis = (report.method?.apis ?? []).filter((api) => !apiNames.includes(api));
+const otherApis = (report.method?.apis ?? []).filter((api) => !apiNames.has(api));
 if (otherApis.length > 0) {
   cohortErrors.push(`the report measures APIs the site does not present: ${otherApis.join(", ")}`);
 }
@@ -54,23 +56,22 @@ if (
   cohortErrors.push("the report has no valid clean source provenance");
 }
 
+// Reuse the benchmark's strict gates, including the narrowly documented YAML
+// limitation. Validate original samples before checking compact published data.
+const original = JSON.parse(
+  gunzipSync(
+    await readFile(
+      new URL(`../../${report.evidence.archive}comparison-on.json.gz`, import.meta.url),
+    ),
+  ).toString("utf8"),
+);
+validateReport(original, "comparison", true);
 for (const engine of nodeEngines) {
-  const result = report.agreement[engine];
-  if (result?.documents !== corpusSize || result?.of !== corpusSize) {
-    cohortErrors.push(`${engine} does not pass the strict full-corpus Node output gate`);
-  }
+  if (JSON.stringify(report.agreement[engine]) !== JSON.stringify(original.agreement[engine]))
+    cohortErrors.push(`${engine} agreement differs from the validated artifact`);
 }
-
-for (const api of apiNames) {
-  if (report.warm[api].length !== corpusSize) {
-    cohortErrors.push(`${api} has a different document count from codeToHtml`);
-  }
-  for (const engine of nodeEngines) {
-    if (totals[api][engine] !== undefined && report.agreement[engine].documents !== corpusSize) {
-      cohortErrors.push(`${api} includes ${engine} without full-corpus Node agreement`);
-    }
-  }
-}
+if (JSON.stringify(report.warmTotalMs) !== JSON.stringify(original.warmTotalMs))
+  cohortErrors.push("published totals differ from the validated artifact");
 
 if (report.phiki?.status === "available") {
   const phikiRows = report.outputAgreement?.documents ?? [];
@@ -138,7 +139,6 @@ const required = [
   [prismComparison, "prism-comparison-grid"],
   [homepage, `v${version}`],
   [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
-  [homepage, oneDecimal(factor("codeToHtml", "shiki-js"))],
   [homepage, report.revision],
   [homepage, "@ferriki/core/react/macro"],
   [homepage, 'href="/guide/build-time-macros"'],
@@ -160,12 +160,17 @@ const required = [
   [footprintPage, footprint.revision],
 ];
 for (const engine of ["shiki-wasm", "shiki-js"]) {
-  required.push([benchmarks, oneDecimal(factor("codeToHtml", engine))]);
+  if (totals.codeToHtml[engine] !== undefined)
+    required.push([benchmarks, oneDecimal(factor("codeToHtml", engine))]);
 }
 for (const profile of blacksmith.profiles) {
   required.push([benchmarks, profile.machine.cpu], [benchmarks, profile.runner]);
   required.push([homepage, profile.label], [benchmarks, profile.label]);
   for (const engine of ["shiki-wasm", "shiki-js"]) {
+    if (profile.warm.on[engine] === undefined) {
+      required.push([homepage, "Unsupported"], [benchmarks, "Unsupported"]);
+      continue;
+    }
     const observedFactor = oneDecimal(profile.warm.on[engine] / profile.warm.on.ferriki);
     required.push([homepage, observedFactor], [benchmarks, observedFactor]);
   }

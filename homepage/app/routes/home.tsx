@@ -111,7 +111,7 @@ function EvidenceIntro() {
   return (
     <>
       Load the grammars once, then render block after block. On the same {documents} files, Ferriki
-      and both Shiki engines produced identical HTML on both Blacksmith hosts. These figures measure
+      and Shiki/WASM produced identical HTML on both Blacksmith hosts. These figures measure
       repeated highlighting with loaded languages and themes.
     </>
   );

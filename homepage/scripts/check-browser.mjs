@@ -57,6 +57,21 @@ try {
     }
   }
 
+  await page.goto(new URL("/evidence/benchmarks/", origin).href, { waitUntil: "load" });
+  const benchmarkReport = JSON.parse(
+    await readFile(new URL("../../docs/benchmarks/shiki-comparison.json", import.meta.url), "utf8"),
+  );
+  const yaml = benchmarkReport.warm.codeToHtml.find((row) => row.lang === "yaml");
+  assert(yaml?.unsupported?.["shiki-js"], "Expected the documented YAML converter limitation");
+  await page.getByLabel("Compare", { exact: true }).selectOption(yaml.path);
+  assert.match(await page.locator(".ferriki-benchmark-chart").textContent(), /YAML grammar/);
+  const yamlRow = page.getByRole("row").filter({ hasText: yaml.path });
+  assert.match(await yamlRow.textContent(), /Unsupported/);
+  assert.doesNotMatch(await page.locator("main").textContent(), /NaN|Infinity/);
+  await page.getByLabel("Compare", { exact: true }).selectOption("");
+  assert.doesNotMatch(await page.locator(".ferriki-benchmark-chart").textContent(), /NaN|Infinity/);
+  console.log("Verified YAML's unsupported Shiki/JS state and full-corpus chart selection.");
+
   const prismSamples = JSON.parse(
     await readFile(new URL("../app/data/prism-comparison.json", import.meta.url), "utf8"),
   );

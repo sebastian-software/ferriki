@@ -49,16 +49,16 @@ share one engine. Ferriki is in beta: until
 
 **Load once. Highlight block after block.** For a CMS, documentation server or
 site build, keep one highlighter with its loaded languages and themes. On our
-14-file Blacksmith corpus, Ferriki produced the same HTML as both Shiki
-engines and ran **4.7× faster than Shiki/WASM on Linux x86-64** and **5.5× on
-macOS ARM64** with reused highlighters. These are measured corpus totals,
+14-file Blacksmith corpus, Ferriki produced the same HTML as Shiki/WASM and
+ran **4.2× faster than Shiki/WASM on Linux x86-64** and **5.3× on macOS
+ARM64** with reused highlighters. These are measured corpus totals,
 not a guarantee for every workload. The [benchmarks](https://ferriki.dev/evidence/benchmarks)
 include both hosts, JSON/Astro, first-use timings and committed raw reports.
 
 Keep the default regex prefilter for repeated work. For a short-lived process,
 `regexPrefilter: false` in Node or `.with_regex_prefilter(false)` in Rust avoids
-prefilter construction. In the recorded Node full-corpus run, it shortened first
-use by 35–37% but made repeated highlighting take 51–68% longer. See
+prefilter construction. In the recorded Node full-corpus run, repeated
+highlighting took 40–41% longer without it; first-use results varied by host. See
 [choosing the prefilter](docs/ferriki-api.md#choosing-the-regex-prefilter) for
 the timing boundary and the singleton's reuse behavior.
 

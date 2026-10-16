@@ -1,8 +1,28 @@
 // Compact reports are derived from the checksum-verified Blacksmith archive by
 // scripts/publish-blacksmith-evidence.mjs. Pages share these measured values.
+import blacksmithReport from "../../../docs/benchmarks/blacksmith-comparison.json";
 import sourceReport from "../../../docs/benchmarks/shiki-comparison.json";
 
-export { default as blacksmith } from "../../../docs/benchmarks/blacksmith-comparison.json";
+export type Timings = {
+  ferriki: number;
+  "shiki-wasm": number;
+} & Partial<Record<NodeEngineId, number>>;
+type BlacksmithProfile = {
+  id: string;
+  label: string;
+  runner: string;
+  machine: { cpu: string };
+  ferroni: string;
+  warm: { on: Timings; off: Timings };
+  cold: { on: Timings; off: Timings };
+  jsonAstro: Array<{
+    language: string;
+    size: string;
+    on: Timings;
+    off: Timings;
+  }>;
+};
+export const blacksmith: { profiles: BlacksmithProfile[] } = blacksmithReport;
 
 export type EngineId = "ferriki" | "phiki" | "shiki-js" | "shiki-wasm";
 export type NodeEngineId = Exclude<EngineId, "phiki">;
@@ -13,6 +33,7 @@ type BenchmarkRow = {
   path: string;
   lines: number;
   bytes: number;
+  unsupported?: Partial<Record<NodeEngineId, string>>;
   medianMs: Partial<Record<EngineId, number>>;
 };
 
@@ -106,7 +127,10 @@ type ExtendedReport = {
   };
   theme: string;
   warm: Record<Api, BenchmarkRow[]>;
-  cold: Record<NodeEngineId, { medianMs: number; runs: number }>;
+  cold: Record<
+    NodeEngineId,
+    { medianMs?: number; runs?: number; status?: string; reason?: string; paths?: string[] }
+  >;
   warmTotalMs: Record<Api, Partial<Record<NodeEngineId, number>>>;
 };
 
@@ -126,18 +150,20 @@ export const htmlEngines: EngineId[] = [...nodeEngines, "phiki"];
 export const apis: Api[] = ["codeToHtml"];
 
 /** How many times faster Ferriki is than `other`: their time over Ferriki's. */
-export function speedup(api: Api, other: NodeEngineId): number {
+export function speedup(api: Api, other: NodeEngineId): number | undefined {
   const totals = report.warmTotalMs[api];
   const ferriki = totals.ferriki;
   const baseline = totals[other];
   if (ferriki === undefined || baseline === undefined) {
-    throw new Error(`The benchmark report has no complete ${api} total for ${other}.`);
+    return undefined;
   }
   return baseline / ferriki;
 }
 
-export function coldSpeedup(other: NodeEngineId): number {
-  return report.cold[other].medianMs / report.cold.ferriki.medianMs;
+export function coldSpeedup(other: NodeEngineId): number | undefined {
+  const baseline = report.cold[other].medianMs;
+  const ferriki = report.cold.ferriki.medianMs;
+  return baseline === undefined || ferriki === undefined ? undefined : baseline / ferriki;
 }
 
 /** One decimal, as the pages state it: 1.31 becomes "1.3×". */
