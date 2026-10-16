@@ -10,8 +10,16 @@ pnpm --dir node run build:compat
 pnpm --dir node run build:native
 pnpm --dir homepage install --frozen-lockfile
 pnpm --dir homepage exec playwright install chromium
-pnpm --dir homepage verify
+FERRIKI_ASSETS_BASE_URL=https://raw.githubusercontent.com/sebastian-software/ferriki \
+  pnpm --dir homepage verify
 ```
+
+Ardo 5 and Ferromark 3.1 still embed a legacy commit-based Ferriki catalog.
+After the [public CDN cutoff](../docs/migrations/legacy-cdn.md), their build-time
+downloads use the pinned GitHub files through `FERRIKI_ASSETS_BASE_URL`. CI sets
+this override only for the homepage build. Use the same override for `pnpm dev`
+or `pnpm build` locally. Remove it when the embedded Ferriki dependency adopts
+the immutable Storage catalog; current Ferriki consumers use the default CDN.
 
 `verify` checks that the committed homepage samples, including the
 `@ferriki/vite` macro sample, still match the current build, checks the shape
