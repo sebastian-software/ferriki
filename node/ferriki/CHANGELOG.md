@@ -7,6 +7,7 @@
 
 * **ci:** update rustls and retry transient asset downloads ([cd0632b](https://github.com/sebastian-software/ferriki/commit/cd0632b37ed2b7eee178c84a7f04d86d07aafbbc))
 * **deps:** update ferroni to 2.2.2 ([775f1f4](https://github.com/sebastian-software/ferriki/commit/775f1f42c3edffd8b3471112d7a07cd0d3d21b29))
+* **deps:** update napi native binding patches ([#273](https://github.com/sebastian-software/ferriki/issues/273)) ([5b5a43d](https://github.com/sebastian-software/ferriki/commit/5b5a43d71270ac9f3a350c6ef4ce75da7c430bc3))
 * **homepage:** use a mirror for the legacy Ferromark catalog ([d967a1d](https://github.com/sebastian-software/ferriki/commit/d967a1d6006b44543f963813f3d455b4b42d324f))
 * **textmate:** preserve upstream empty rule semantics ([#274](https://github.com/sebastian-software/ferriki/issues/274)) ([30b3622](https://github.com/sebastian-software/ferriki/commit/30b36228ee4718187f18027726b36c1498b975ac))
 
