@@ -236,7 +236,12 @@ impl<'a> RuleFactory<'a> {
         description: &RawRule,
         repository: RepositoryContext,
     ) -> Rule {
-        if let Some(match_pattern) = description.match_pattern.as_ref() {
+        // vscode-textmate selects match and while rules with JavaScript truthiness.
+        if let Some(match_pattern) = description
+            .match_pattern
+            .as_ref()
+            .filter(|pattern| !pattern.is_empty())
+        {
             let captures = self.compile_captures(description.captures.as_ref(), repository);
             return Rule::Match(MatchRule::new(
                 description.location.clone(),
@@ -282,7 +287,11 @@ impl<'a> RuleFactory<'a> {
             repository.clone(),
         );
 
-        if let Some(while_pattern) = description.while_pattern.as_ref() {
+        if let Some(while_pattern) = description
+            .while_pattern
+            .as_ref()
+            .filter(|pattern| !pattern.is_empty())
+        {
             let while_captures = self.compile_captures(
                 description
                     .while_captures
