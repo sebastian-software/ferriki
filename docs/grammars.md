@@ -314,6 +314,10 @@ node scripts/materialize-assets.mjs --sources --payloads \
   --output-dir /tmp/ferriki-clean-assets
 ```
 
+Maintainer downloads make at most three attempts for temporary gateway errors,
+connection resets, or timeouts. Certificate errors, permanent HTTP failures,
+oversized responses, and integrity mismatches still fail without retries.
+
 The second command proves materialization in an empty directory. Rust crate
 compilation reads the small committed metadata lock and needs no downloads;
 repository tests and native compatibility checks materialize payloads first.
