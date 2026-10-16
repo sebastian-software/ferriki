@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import { join } from "node:path";
 import process from "node:process";
 import { test } from "node:test";
 import { rotate } from "./benchmark-schedule.mjs";
+import { readMemoryEvidence } from "./memory-evidence.mjs";
 import {
+  digest,
   memoryEngines,
   memoryRepetitions,
   memoryScenarios,
@@ -12,6 +17,7 @@ import {
 } from "./memory-workloads.mjs";
 import {
   memoryMethod,
+  memorySummary,
   summarizeMemory,
   validateMemoryContext,
   validateMemoryReport,
@@ -99,6 +105,83 @@ test("publication rejects missing processes, changed work, output mismatch and i
     const report = fixture();
     mutate(report);
     assert.throws(() => validateMemoryReport(report));
+  }
+});
+
+test("archive publication checks every original worker, not only combined report hashes", () => {
+  const directory = mkdtempSync(join(os.tmpdir(), "ferriki-memory-evidence-"));
+  const report = fixture();
+  const binary = "1".repeat(64);
+  const context = {
+    profile: "test",
+    runnerLabel: "local",
+    node: process.version,
+    status: "",
+    commit: "a".repeat(40),
+    tree: "b".repeat(40),
+    binarySha256: binary,
+    cargoLockSha256: "2".repeat(64),
+    pnpmLockSha256: "3".repeat(64),
+    nodeOptions: "",
+    comparators: { shiki: "4.5.0" },
+    nativeBuild: {
+      ferriki: { status: "", commit: "a".repeat(40) },
+      binarySha256: binary,
+      cargoLockSha256: "2".repeat(64),
+    },
+  };
+  const write = (name, value) => writeFileSync(join(directory, name), JSON.stringify(value));
+  const checksums = () =>
+    writeFileSync(
+      join(directory, "SHA256SUMS"),
+      readdirSync(directory)
+        .filter((name) => name !== "SHA256SUMS")
+        .sort()
+        .map((name) => `${digest(readFileSync(join(directory, name)))}  ${name}\n`)
+        .join(""),
+    );
+  try {
+    write("context.json", context);
+    write("validation.json", { ok: true, errors: [] });
+    for (const scenario of report.scenarios) {
+      for (const engine of memoryEngines) {
+        const name = `${scenario.id}-validate-${engine}-0`;
+        write(`${name}.json`, {
+          engine,
+          workload: scenario.workload,
+          outputs: scenario.validation[engine],
+          nativeBinarySha256: engine === "ferriki" ? binary : null,
+        });
+        writeFileSync(join(directory, `${name}.stderr.log`), "");
+      }
+      for (const sample of scenario.samples) {
+        sample.nativeBinarySha256 = sample.engine === "ferriki" ? binary : null;
+        const { repetition, ...raw } = sample;
+        const name = `${scenario.id}-measure-${sample.engine}-${repetition}`;
+        write(`${name}.json`, raw);
+        writeFileSync(join(directory, `${name}.stderr.log`), "");
+      }
+    }
+    write("memory.json", report);
+    writeFileSync(join(directory, "summary.md"), memorySummary(report, context));
+    checksums();
+    assert.deepEqual(readMemoryEvidence(directory).report, report);
+    writeFileSync(join(directory, "memory.json"), "changed");
+    assert.throws(() => readMemoryEvidence(directory), /artifact changed/);
+    write("memory.json", report);
+    const changed = structuredClone(report);
+    changed.scenarios[0].samples[0].phases.initialized.rss++;
+    write("memory.json", changed);
+    checksums();
+    assert.throws(() => readMemoryEvidence(directory), /differs from its worker/);
+    write("memory.json", report);
+    write("validation.json", { ok: false, errors: ["failed"] });
+    checksums();
+    assert.throws(() => readMemoryEvidence(directory), /Failed memory capture/);
+    writeFileSync(join(directory, "SHA256SUMS"), `${"a".repeat(64)}  ../outside\n`);
+    assert.throws(() => readMemoryEvidence(directory), /Invalid memory artifact checksum/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });
 

@@ -1,0 +1,57 @@
+{
+  "measuredAt": "2026-10-16T22:06:26.527Z",
+  "profile": "macos-arm64",
+  "runnerLabel": "blacksmith-6vcpu-macos-26",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/38973585782",
+  "runAttempt": "1",
+  "commit": "77bd49284792fea290fcd8d6a6bfe079dee256fb",
+  "tree": "40a10f6dd550bb1933522f30b0e2826c923c8d81",
+  "status": "",
+  "cpu": "Apple M4 Pro (Virtual)",
+  "cores": 6,
+  "platform": "darwin-arm64",
+  "os": "Darwin 25.3.0",
+  "memoryBytes": 25769803776,
+  "node": "v24.21.0",
+  "nodeOptions": "",
+  "comparators": {
+    "shiki": "4.5.0",
+    "prismjs": "1.30.0"
+  },
+  "ferriki": "1.1.1",
+  "nativeBuild": {
+    "builtAt": "2026-10-16T22:06:26.218Z",
+    "binarySha256": "633942a5bd2813f472b5f1bcf5dc4de67b877a460e59a90470184f523849397a",
+    "ferriki": {
+      "commit": "77bd49284792fea290fcd8d6a6bfe079dee256fb",
+      "status": ""
+    },
+    "rustSourceSha256": "f40a93d99d4ddc7a6f173a748a5ec2165bec7231a013d310d75806c52a54bd15",
+    "ferroni": {
+      "version": "2.2.2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/Users/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.2.2/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter"
+      ]
+    },
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/Users/runner/_work/ferriki/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47"
+  },
+  "binarySha256": "633942a5bd2813f472b5f1bcf5dc4de67b877a460e59a90470184f523849397a",
+  "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47",
+  "pnpmLockSha256": "20f083d910c85a20ec9d7199ff182d18bd7133d13d4339c088c58c6031cfd115"
+}

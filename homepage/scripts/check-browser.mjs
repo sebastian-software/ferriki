@@ -72,6 +72,40 @@ try {
   assert.doesNotMatch(await page.locator(".ferriki-benchmark-chart").textContent(), /NaN|Infinity/);
   console.log("Verified YAML's unsupported Shiki/JS state and full-corpus chart selection.");
 
+  const memoryReport = JSON.parse(
+    await readFile(
+      new URL("../../docs/benchmarks/blacksmith-memory.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const memoryTable = page.getByRole("region", { name: /^RSS after repeated rendering/ });
+  assert.equal(
+    await memoryTable.getByRole("row").count(),
+    5,
+    "Expected both memory workloads on both hosts",
+  );
+  for (const profile of memoryReport.profiles) {
+    const scenario = profile.scenarios.find((entry) => entry.id === "repository");
+    const row = memoryTable.getByRole("row").filter({ hasText: `${profile.label} · 12 files` });
+    const rowText = await row.textContent();
+    for (const engine of ["ferriki", "shiki-wasm", "shiki-js"]) {
+      const value = scenario.engines[engine].finalRss;
+      const text = `${(value.median / 2 ** 20).toFixed(1)} [${(value.min / 2 ** 20).toFixed(1)}–${(value.max / 2 ** 20).toFixed(1)}]`;
+      assert(
+        rowText.includes(text),
+        `${profile.id}/${engine}: memory value differs from verified evidence`,
+      );
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await memoryTable.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.activeElement.scrollLeft > 0);
+  await page.setViewportSize({ width: 844, height: 390 });
+  console.log(
+    "Verified process-memory medians, full ranges and keyboard scrolling on narrow screens.",
+  );
+
   const prismSamples = JSON.parse(
     await readFile(new URL("../app/data/prism-comparison.json", import.meta.url), "utf8"),
   );

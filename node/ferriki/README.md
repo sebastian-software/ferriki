@@ -18,6 +18,14 @@ ARM64**. These factors describe the measured corpus and machines. The
 [benchmarks](https://ferriki.dev/evidence/benchmarks) include both hosts,
 first-use timings, JSON/Astro and the committed raw reports.
 
+A separate [Blacksmith memory capture](https://ferriki.dev/evidence/benchmarks#process-memory)
+recorded **27–31% lower whole-process RSS than Shiki/WASM** after 600 rendered
+documents in a shared 12-file cohort. The generated large TypeScript case was
+**64–68% lower**. Tables show all engines, medians and full ranges over six fresh
+processes per engine and workload; macOS repository ranges overlap with
+Shiki/JS. These figures include native and WASM memory and describe these
+workloads and hosts, without a claim about allocation counts or service capacity.
+
 ## Install
 
 ```sh
