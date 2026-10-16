@@ -55,7 +55,7 @@ serde_json = { workspace = true }
 # gets its own fetch path (ADR 0009). TLS uses rustls with ring and the
 # operating system's trust store, so corporate CAs and TLS inspection work.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rustls = { version = "0.23", default-features = false, features = [ "ring", "std", "tls12" ], optional = true }
+rustls = { version = "0.23.46", default-features = false, features = [ "ring", "std", "tls12" ], optional = true }
 ureq = { version = "3", default-features = false, features = [ "rustls-no-provider", "platform-verifier", "gzip" ], optional = true }
 
 [[example]]

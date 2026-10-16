@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 export const DEFAULT_CDN = "https://assets.ferriki.dev";
 export const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -17,7 +18,34 @@ export async function verifiedRead(file, hash, size) {
   }
 }
 
-export async function fetchBytes(
+const transientDownloadCodes = new Set([
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+  "UND_ERR_SOCKET",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+]);
+
+// Maintainer GETs can safely restart after a reset or a temporary CDN failure.
+// Keep retries bounded and never retry certificate, integrity, or size errors.
+export async function fetchBytes(url, options = {}) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchBytesOnce(url, options);
+    } catch (error) {
+      const retryable =
+        [502, 503, 504].includes(error.status) ||
+        transientDownloadCodes.has(error.cause?.code ?? error.code) ||
+        error.name === "TimeoutError";
+      if (attempt === 2 || !retryable) throw error;
+      await delay(250 * 2 ** attempt);
+    }
+  }
+}
+
+async function fetchBytesOnce(
   url,
   { missing = false, limit = 8 * 1024 * 1024, fetchImpl = fetch } = {},
 ) {
@@ -28,7 +56,9 @@ export async function fetchBytes(
   }
   if (!response.ok) {
     await response.body?.cancel();
-    throw new Error(`Asset request failed: HTTP ${response.status}`);
+    throw Object.assign(new Error(`Asset request failed: HTTP ${response.status}`), {
+      status: response.status,
+    });
   }
   const chunks = [];
   let size = 0;
