@@ -187,7 +187,8 @@ next to the two catalogs:
   `storageLayout: "language-hash-v2"`, remote URLs use
   `https://assets.ferriki.dev/<language-id>/<short-hash>` or
   `https://assets.ferriki.dev/themes/<theme-id>/<short-hash>`. An absent layout
-  retains legacy `<commit>/assets/shiki/<key>` URLs. `language-hash-v1` uses
+  resolves legacy `<commit>/assets/shiki/<key>` URLs for custom mirrors; the
+  public CDN [no longer hosts them](./migrations/legacy-cdn.md). `language-hash-v1` uses
   full SHA-256 names; v2 encodes the first 64 digest bits modulo `62^8` in
   `0-9A-Za-z`, padded to eight characters. The complete digest remains the
   cache identity and integrity check.

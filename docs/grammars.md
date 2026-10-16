@@ -141,8 +141,9 @@ in the lock. Their URL names use eight Base62 digits derived from the first
 64 digest bits modulo `62^8`, with alphabet `0-9A-Za-z` and zero padding.
 Identical bytes share an object; a short-name collision stops publication. Themes use `themes/<theme-id>/<short-hash>`.
 A release ships its exact catalog and hashes. New uploads cannot change an
-older release's selection, and old objects are retained. Legacy
-`<commit>/assets/shiki/<path>` URLs continue to use the GitHub origin.
+older release's selection, and old immutable Storage objects are retained.
+Legacy `<commit>/assets/shiki/<path>` URLs were retired on October 16, 2026;
+see the [migration note](./migrations/legacy-cdn.md).
 
 ### Prepare and validate a local update
 
@@ -284,19 +285,21 @@ commit recorded in the catalog lock. Ordinary runs prefer Bunny and can
 reconstruct missing originals from their pinned sources. Every download must
 match its locked hash; payload bootstrap never follows a moving branch.
 
-Keep `https://raw.githubusercontent.com/sebastian-software/ferriki` as the
-default pull-zone origin for legacy `<commit>/assets/shiki/<path>` URLs. Add
-an **Override Origin: Storage Zone** rule selecting `ferriki-assets`, with no
-path prefix. Generate its **Match any** URL properties with:
+Set the `ferriki-assets` pull zone (`6708006`, `assets.ferriki.dev`) to use
+the `ferriki-assets` Storage Zone (`1987400`) as its default origin, with no
+path prefix. Remove the GitHub origin and the path-specific **Override Origin:
+Storage Zone** rule. Generate the URL properties for the access and cache rules
+with:
 
 ```sh
 node scripts/bunny-edge-patterns.mjs
 ```
 
-Use `storageOriginMatchAny` for the origin override. Block requests matching
-none of `allowedAssetPaths`. For the response header, require both status
-`200` and a URL matching any allowed asset path. The generator also retains
-legacy release URLs. Hash paths have no query parameters.
+Block requests matching none of `allowedAssetPaths`. For the response header,
+require both status `200` and a URL matching any allowed asset path. These are
+only the short Base62 language/theme paths; commit-based paths are rejected.
+Hash paths have no query parameters. Purge the pull-zone cache after retiring
+the legacy route so cached legacy responses cannot remain accessible.
 Bunny evaluates `pattern:` values as
 [Lua patterns](https://bunny.net/blog/introducing-pattern-matching-for-edge-rules/),
 so the generator expands exact character counts instead of using regex syntax.
