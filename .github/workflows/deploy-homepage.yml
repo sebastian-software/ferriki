@@ -102,8 +102,12 @@ jobs:
       - name: Lint, typecheck and format
         run: pnpm lint && pnpm typecheck && pnpm format:check
 
+      # Ardo 5 / Ferromark 3.1 still embed a commit-based Ferriki catalog.
+      # Use its pinned GitHub files until that dependency adopts immutable assets.
       # Also verifies the prerendered pages against the benchmark report.
       - name: Build
+        env:
+          FERRIKI_ASSETS_BASE_URL: https://raw.githubusercontent.com/sebastian-software/ferriki
         run: pnpm build
 
       - name: Install Chromium for browser checks
