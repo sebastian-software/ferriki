@@ -1,12 +1,28 @@
 import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
 
-import { blacksmith, engineLabels, formatFactor, formatMs, nodeEngines } from "../data/benchmarks";
+import {
+  blacksmith,
+  engineLabels,
+  formatFactor,
+  formatMs,
+  nodeEngines,
+  type Timings,
+} from "../data/benchmarks";
 
-type Timings = Record<(typeof nodeEngines)[number], number>;
 const warmValues = (timings: Timings) =>
-  Object.fromEntries(nodeEngines.map((id) => [id, formatMs(timings[id])]));
+  Object.fromEntries(
+    nodeEngines.map((id) => [
+      id,
+      timings[id] === undefined ? "Unsupported" : formatMs(timings[id]),
+    ]),
+  );
 const changes = (on: Timings, off: Timings) =>
-  Object.fromEntries(nodeEngines.map((id) => [id, change(on[id], off[id])]));
+  Object.fromEntries(
+    nodeEngines.map((id) => [
+      id,
+      on[id] === undefined || off[id] === undefined ? "Unsupported" : change(on[id], off[id]),
+    ]),
+  );
 
 const contenders = nodeEngines.map((id) => ({
   id,
@@ -19,7 +35,7 @@ export function BlacksmithSummary() {
   const rows: ComparisonRow[] = blacksmith.profiles.map((profile) => ({
     label: `${profile.label} · ${profile.machine.cpu}`,
     values: warmValues(profile.warm.on),
-    verdict: `${formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki)} · ${formatFactor(profile.warm.on["shiki-js"] / profile.warm.on.ferriki)}`,
+    verdict: `${formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki)} · ${profile.warm.on["shiki-js"] === undefined ? "Unsupported" : formatFactor(profile.warm.on["shiki-js"] / profile.warm.on.ferriki)}`,
   }));
   return (
     <ComparisonTable

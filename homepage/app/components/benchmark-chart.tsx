@@ -37,8 +37,16 @@ export function BenchmarkChart({ perDocument = false }: { perDocument?: boolean 
       <p>
         Reused highlighters · {report.theme} · measured {report.measured}.
         <PhikiChartNote documentPath={documentPath} />
+        <JavaScriptLimitNote />
       </p>
     </figure>
+  );
+}
+
+function JavaScriptLimitNote() {
+  if (report.cold["shiki-js"].status !== "unsupported") return null;
+  return (
+    <> Shiki/JS does not support the current YAML grammar; its full-corpus total is unavailable.</>
   );
 }
 

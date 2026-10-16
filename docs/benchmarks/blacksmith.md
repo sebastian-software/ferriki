@@ -21,8 +21,10 @@ gh workflow run blacksmith-comparison.yml --ref main -f platform=both
 ```
 
 Paid runners are only started by manual dispatch. Each host builds its release
-addon and pinned Shiki comparators before timing. All workloads on that host run
-serially, using the same addon with `regexPrefilter` enabled and then disabled
+addon and pinned Shiki comparators before timing. It also materializes the
+locked standard grammar sources used by the Shiki reference. All workloads on
+that host run serially, using the same addon with `regexPrefilter` enabled and
+then disabled
 for each corpus. Separate hosts may run concurrently.
 
 - The repository comparison measures 14 real source files, both warm reused
@@ -59,17 +61,20 @@ profile with identical fixtures, harness and compiler.
 
 ## Published measurements
 
-The [October 10, 2026 archive](blacksmith/2026-10-10/README.md) preserves all
-twelve successful reports from both profiles with Ferroni 2.1.0. On the same
-14 repository files, default reused Ferriki highlighters were 4.7× faster
-than Shiki/WASM on Linux x86-64 and 5.5× faster on macOS ARM64, with identical
-HTML. Linux's observed processor was AMD EPYC; macOS used an Apple M4 Pro
+The [October 16, 2026 archive](blacksmith/2026-10-16/README.md) preserves all
+twelve successful reports from both profiles with Ferroni 2.2.2. On the same
+14 repository files, default reused Ferriki highlighters were 4.2× faster
+than Shiki/WASM on Linux x86-64 and 5.3× faster on macOS ARM64, with identical
+HTML against Shiki/WASM. Shiki/JS matched the other 13 files; its full-corpus
+total is unavailable because it cannot translate the current YAML grammar.
+Linux's observed processor was AMD EPYC; macOS used an Apple M4 Pro
 virtual machine. The Linux profile is x86-64, not a promise of Intel hardware.
 
 The [website](https://ferriki.dev/evidence/benchmarks) presents these two hosts,
 first-use and reuse results, and JSON/Astro with the unchanged Shiki controls.
-The controls moved with Ferriki in macOS's on/off windows, so that difference
-does not establish a prefilter benefit. The archive records the full scope
+Unchanged controls moved between on/off windows on both hosts, and first-use
+results differed by host; these observations do not establish a consistent
+prefilter benefit for first use or JSON/Astro. The archive records the full scope
 and interpretation alongside the raw samples.
 
 The workflow does not replace the published homepage report automatically.
@@ -85,6 +90,7 @@ To reproduce locally, after native and compatibility builds:
 
 ```sh
 cd node
+node ../scripts/materialize-assets.mjs --sources
 node scripts/run-blacksmith-comparison.mjs /tmp/ferriki-comparison
 ```
 

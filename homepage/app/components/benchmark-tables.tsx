@@ -35,7 +35,12 @@ function measuredValues(
 }
 
 function speedupPair(api: Api): string {
-  return `${formatFactor(speedup(api, "shiki-wasm"))} · ${formatFactor(speedup(api, "shiki-js"))}`;
+  return (["shiki-wasm", "shiki-js"] as const)
+    .map((id) => {
+      const factor = speedup(api, id);
+      return factor === undefined ? "Unsupported" : formatFactor(factor);
+    })
+    .join(" · ");
 }
 
 /** Corpus totals per API: the headline numbers, including the slower ones. */
@@ -47,7 +52,7 @@ export function BenchmarkSummary() {
       nodeEngines,
     ),
     verdict: speedupPair(api),
-    behind: speedup(api, "shiki-wasm") < 1 || speedup(api, "shiki-js") < 1,
+    behind: (speedup(api, "shiki-wasm") ?? 1) < 1 || (speedup(api, "shiki-js") ?? 1) < 1,
   }));
 
   return (
@@ -126,7 +131,10 @@ function documentComparisonRow(
         {phikiDetail !== undefined && <> · {phikiDetail}</>}
       </>
     ),
-    values: measuredValues(times, engines),
+    values: {
+      ...measuredValues(times, engines),
+      ...Object.fromEntries(Object.keys(row.unsupported ?? {}).map((id) => [id, "Unsupported"])),
+    },
     verdict: ferriki === undefined || wasm === undefined ? "–" : formatFactor(wasm / ferriki),
     behind: ferriki !== undefined && wasm !== undefined && wasm / ferriki < 1,
   };
