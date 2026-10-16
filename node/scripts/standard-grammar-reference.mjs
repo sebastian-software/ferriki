@@ -21,3 +21,14 @@ export function standardGrammarRegistrations(names) {
     JSON.parse(readFileSync(new URL(`grammars/${entry.grammar_file}`, root), "utf8")),
   );
 }
+
+// Keep the theme identical too, independently of the comparator's release.
+export function standardThemeRegistrations(names) {
+  const root = new URL("../../assets/upstream/curated/", import.meta.url);
+  const { themes } = JSON.parse(readFileSync(new URL("themes.json", root), "utf8"));
+  return names.map((name) => {
+    const entry = themes.find((theme) => theme.id === name);
+    if (!entry) throw new Error(`No standard reference theme: ${name}`);
+    return JSON.parse(readFileSync(new URL(`themes/${entry.theme_file}`, root), "utf8"));
+  });
+}

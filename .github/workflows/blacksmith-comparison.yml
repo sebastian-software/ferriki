@@ -1,7 +1,8 @@
 name: Blacksmith comparison
 
 # Same runner profiles as Ferroni. Paid runners are only started by a manual
-# dispatch; all workloads and both prefilter modes share one VM per profile.
+# dispatch. Each corpus gets its own VM; its engines and both prefilter modes
+# stay together. Merge only joins reports, never timings from different VMs.
 on:
   workflow_dispatch:
     inputs:
@@ -29,16 +30,18 @@ env:
 
 jobs:
   compare:
-    name: ${{ matrix.profile }}
+    name: ${{ matrix.profile }} / ${{ matrix.corpus }}
     if: github.repository == 'sebastian-software/ferriki'
     runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
+        corpus: [comparison, curated, tiobe]
         profile: ${{ fromJSON(inputs.platform == 'macos-arm64' && '["macos-arm64"]' || inputs.platform == 'linux-x86-64' && '["linux-x86-64"]' || '["macos-arm64","linux-x86-64"]') }}
     env:
       PROFILE: ${{ matrix.profile }}
+      CORPUS: ${{ matrix.corpus }}
       RUNNER_LABEL: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
       COMPARISON_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
@@ -59,19 +62,62 @@ jobs:
           node-version: 24.21.0
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
-      - name: Build pinned comparators
-        run: pnpm run build:compat
+      - name: Check current comparator releases
+        run: node scripts/check-benchmark-versions.mjs
       - name: Materialize standard grammar references
         run: node ../scripts/materialize-assets.mjs --sources
       - name: Build release addon and local assets
         run: pnpm run build:native
       - name: Validate and measure serially
-        run: node scripts/run-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE"
+        run: node scripts/run-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE" --corpus "$CORPUS"
       - name: Keep the measurements
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: comparison-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: comparison-shard-${{ matrix.profile }}-${{ matrix.corpus }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/compare/${{ matrix.profile }}/
           if-no-files-found: warn
+          retention-days: 90
+
+  merge:
+    name: merge ${{ matrix.profile }}
+    if: github.repository == 'sebastian-software/ferriki'
+    needs: compare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(inputs.platform == 'macos-arm64' && '["macos-arm64"]' || inputs.platform == 'linux-x86-64' && '["linux-x86-64"]' || '["macos-arm64","linux-x86-64"]') }}
+    env:
+      PROFILE: ${{ matrix.profile }}
+      SUFFIX: ${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+      - name: Install validation dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: comparison-shard-${{ matrix.profile }}-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/shards
+      - name: Verify and join all corpus evidence
+        run: |
+          node scripts/merge-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE" \
+            "$RUNNER_TEMP/shards/comparison-shard-$PROFILE-comparison-$SUFFIX" \
+            "$RUNNER_TEMP/shards/comparison-shard-$PROFILE-curated-$SUFFIX" \
+            "$RUNNER_TEMP/shards/comparison-shard-$PROFILE-tiobe-$SUFFIX"
+      - name: Keep the complete measurements
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: comparison-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/compare/${{ matrix.profile }}/
+          if-no-files-found: error
           retention-days: 90

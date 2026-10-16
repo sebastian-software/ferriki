@@ -92,6 +92,7 @@ onlyBuiltDependencies:
   - workerd
 catalog:
   prismjs: 1.30.0
+  shiki-benchmark: npm:shiki@4.5.0
   cson-parser: 4.0.9
   js-yaml: 4.1.1
   plist: 3.1.0
