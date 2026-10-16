@@ -6,6 +6,11 @@ name: Blacksmith comparison
 on:
   workflow_dispatch:
     inputs:
+      suite:
+        description: Measurement suite
+        type: choice
+        options: [timings, memory, all]
+        default: timings
       platform:
         description: Runner profile
         type: choice
@@ -31,7 +36,7 @@ env:
 jobs:
   compare:
     name: ${{ matrix.profile }} / ${{ matrix.corpus }}
-    if: github.repository == 'sebastian-software/ferriki'
+    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory'
     runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 60
     strategy:
@@ -81,7 +86,7 @@ jobs:
 
   merge:
     name: merge ${{ matrix.profile }}
-    if: github.repository == 'sebastian-software/ferriki'
+    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory'
     needs: compare
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -119,5 +124,53 @@ jobs:
         with:
           name: comparison-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/compare/${{ matrix.profile }}/
+          if-no-files-found: error
+          retention-days: 90
+
+  memory:
+    name: memory ${{ matrix.profile }}
+    if: github.repository == 'sebastian-software/ferriki' && (inputs.suite == 'memory' || inputs.suite == 'all')
+    runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(inputs.platform == 'macos-arm64' && '["macos-arm64"]' || inputs.platform == 'linux-x86-64' && '["linux-x86-64"]' || '["macos-arm64","linux-x86-64"]') }}
+    env:
+      PROFILE: ${{ matrix.profile }}
+      RUNNER_LABEL: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
+      COMPARISON_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: blacksmith-memory-${{ matrix.profile }}
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Check current comparator releases
+        run: node scripts/check-benchmark-versions.mjs
+      - name: Materialize standard grammar references
+        run: node ../scripts/materialize-assets.mjs --sources
+      - name: Build release addon and local assets
+        run: pnpm run build:native
+      - name: Validate HTML and measure isolated processes serially
+        run: node scripts/run-blacksmith-memory.mjs "$RUNNER_TEMP/memory/$PROFILE"
+      - name: Keep memory evidence and diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: memory-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/memory/${{ matrix.profile }}/
           if-no-files-found: error
           retention-days: 90

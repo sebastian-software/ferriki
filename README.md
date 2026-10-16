@@ -55,6 +55,14 @@ ARM64** with reused highlighters. These are measured corpus totals,
 not a guarantee for every workload. The [benchmarks](https://ferriki.dev/evidence/benchmarks)
 include both hosts, JSON/Astro, first-use timings and committed raw reports.
 
+A separate [Blacksmith memory capture](https://ferriki.dev/evidence/benchmarks#process-memory)
+recorded **27–31% lower whole-process RSS than Shiki/WASM** after 600 rendered
+documents in a shared 12-file cohort. The generated large TypeScript case was
+**64–68% lower**. Tables show all engines, medians and full ranges over six fresh
+processes per engine and workload; macOS repository ranges overlap with
+Shiki/JS. These figures include native and WASM memory and describe these
+workloads and hosts, without a claim about allocation counts or service capacity.
+
 Keep the default regex prefilter for repeated work. For a short-lived process,
 `regexPrefilter: false` in Node or `.with_regex_prefilter(false)` in Rust avoids
 prefilter construction. In the recorded Node full-corpus run, repeated

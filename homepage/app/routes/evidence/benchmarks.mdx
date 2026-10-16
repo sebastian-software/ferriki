@@ -16,6 +16,8 @@ import {
   JsonAstroModeDifferences,
 } from "../../components/blacksmith-benchmarks";
 
+import { MemoryBenchmarks } from "../../components/memory-benchmarks";
+
 # Benchmarks
 
 A CMS or site build can highlight hundreds of blocks with one loaded
@@ -49,6 +51,66 @@ runtime from `main` at `2d04039`, with the benchmark workflow and comparator
 updates. Shiki is the current stable npm release, independently of the pinned
 compatibility suite; a registry check rejects stale comparator pins before a run.
 This compares current engines; it does not isolate the effect of a Ferroni upgrade.
+
+## Process memory
+
+A separate Blacksmith run measures the complete Node process, including Rust
+and WASM memory. It uses the same two runner profiles as the timing suite,
+with one dedicated VM per profile. Six fresh processes per engine and workload
+run serially in rotating order; every process result is retained.
+
+The shared repository cohort contains **12 files** and runs 50 passes with one
+loaded highlighter: **600 rendered documents**. YAML is excluded for all engines
+because Shiki/JS cannot translate the grammar. SQL is also excluded because
+Shiki/JS differs from native/WASM on that fixture in a fresh isolated process.
+This memory cohort is separate from the 14-file timing corpus above. The second
+workload repeats the TypeScript API source with newline separators to at least
+256 KiB and renders it ten times. All three engines pass exact HTML SHA-256
+and byte-length agreement for both measured workloads before measurement.
+Each HTML result is consumed and released before the next document.
+
+In this capture, Ferriki's median RSS after the repository workload was
+**27–31% lower than Shiki/WASM** across the two hosts. For the generated large
+TypeScript case it was **64–68% lower**. Against Shiki/JS, the repository values
+were closer: macOS ranges overlap, while Linux recorded a lower Ferriki range.
+The tables show all engines and full ranges rather than a universal memory
+factor. Both hosts used Ferriki 1.1.1, Shiki 4.5.0, Ferroni 2.2.2, Node 24.21.0
+and Rust 1.99.1, at measured revision `77bd492`.
+
+### After initialization
+
+<MemoryBenchmarks metric="initializedRss" />
+
+### After repeated rendering
+
+<MemoryBenchmarks metric="finalRss" />
+
+### Peak process memory
+
+<MemoryBenchmarks metric="peakRss" />
+
+RSS measures resident memory for the whole process. The peak is the OS
+high-water mark from startup through the final render checkpoint, including
+imports, inputs, initialization, rendering and explicit V8 garbage collection.
+It is not a render-only allocation peak. Initialization and render checkpoints
+use two explicit V8 collections separated by event-loop turns; no collection is
+forced between documents. Raw pre-GC values and checkpoints after 1, 10 and 50
+repository passes (1, 5 and 10 large-document renders) remain in the archive.
+
+V8 heap measurements alone would miss Rust allocations. The raw reports retain
+heap, external and ArrayBuffer fields as diagnostics, without adding them to
+RSS. Native allocators and WASM can retain pages after V8 GC, so retained RSS
+does not by itself establish a leak. These are bounded sequential workloads;
+they do not measure allocation counts, concurrent capacity or a production
+memory limit. Compare engines within each host; the two operating systems
+account for memory differently.
+
+The [memory capture](https://github.com/sebastian-software/ferriki/actions/runs/38973585782)
+and [committed memory archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16-memory)
+retain the source revision, engine versions, hardware, build receipts, every
+worker result and original checksums. The homepage build validates this archive
+before generating its tables. See the
+[memory method and reproduction steps](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/blacksmith.md#process-memory).
 
 ## First use and the regex prefilter
 
@@ -144,6 +206,12 @@ Run both paid Blacksmith profiles manually from the repository root:
 gh workflow run blacksmith-comparison.yml --ref main -f platform=both
 ```
 
+To run the separate memory suite:
+
+```sh
+gh workflow run blacksmith-comparison.yml --ref main -f platform=both -f suite=memory
+```
+
 Or measure locally, keeping the machine idle:
 
 ```sh
@@ -153,6 +221,7 @@ node scripts/check-benchmark-versions.mjs
 node ../scripts/materialize-assets.mjs --sources
 pnpm run build:native
 node scripts/run-blacksmith-comparison.mjs /tmp/ferriki-comparison
+node scripts/run-blacksmith-memory.mjs /tmp/ferriki-memory
 ```
 
 To reproduce the recorded inputs, check out the measured revision

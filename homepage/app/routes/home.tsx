@@ -19,6 +19,7 @@ import {
   FlowSection,
   MacroSection,
 } from "../components/home-sections";
+import { MemoryBenchmarks } from "../components/memory-benchmarks";
 import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
 import { grammarCount } from "../data/grammar-catalog";
 import sample from "../data/sample.json";
@@ -124,8 +125,8 @@ function EvidenceNote() {
       {blacksmith.profiles[0].ferroni} and Shiki {report.versions.shiki}. Strict HTML checks passed
       on {agreeingDocuments} of {documents} repository files. The{" "}
       <Link to="/evidence/benchmarks">benchmark page</Link> includes both hosts, first-use timings,
-      JSON and Astro, raw reports and reproduction commands. Your workload and hardware determine
-      your result.
+      JSON and Astro, isolated process memory, raw reports and reproduction commands. Your workload
+      and hardware determine your result.
     </>
   );
 }
@@ -150,6 +151,13 @@ function EvidenceSection() {
         />
         <BlacksmithSummary />
         <BenchmarkChart />
+        <h3>Memory after repeated rendering</h3>
+        <p>
+          A separate Blacksmith capture measures the whole Node process, including native and WASM
+          memory, over six fresh processes per engine. These values use a shared 12-file cohort
+          rendered 50 times; they are separate from the timing corpus above.
+        </p>
+        <MemoryBenchmarks repositoryOnly />
       </div>
     </Section>
   );
