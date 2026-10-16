@@ -4,10 +4,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
+import { validateCorpusProvenance } from "../node/scripts/merge-blacksmith-comparison.mjs";
 import { validateReport } from "../node/scripts/run-blacksmith-comparison.mjs";
 
 const root = new URL("../", import.meta.url);
-const archive = "docs/benchmarks/blacksmith/2026-10-16";
+const archive = "docs/benchmarks/blacksmith/2026-10-16-sharded";
 const check = process.argv.includes("--check");
 const profiles = [];
 const json = (bytes) => JSON.parse(bytes.toString("utf8"));
@@ -45,14 +46,10 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
     for (const mode of ["on", "off"]) {
       const report = json(original.get(`${corpus}-${mode}.json`));
       validateReport(report, corpus, mode === "on");
-      if (corpus === "comparison") {
-        assert.equal(report.source.revision, context.commit);
-        assert.equal(report.source.workingTreeClean, true);
-      } else {
-        assert.equal(report.revision.commit, context.commit);
-        assert.equal(report.revision.status, "");
-        assert.equal(report.nativeBuild.binarySha256, context.nativeBuild.binarySha256);
-      }
+      const corpusContext = context.corpusContexts?.[corpus] ?? context;
+      if (context.corpusContexts)
+        assert.deepEqual(corpusContext, json(original.get(`contexts/${corpus}.json`)));
+      validateCorpusProvenance(report, corpus, corpusContext);
       reports[`${corpus}-${mode}`] = report;
     }
   }
@@ -123,7 +120,7 @@ assert.equal(profiles[0].revision, profiles[1].revision);
 assert.equal(profiles[0].ferroni, profiles[1].ferroni);
 outputs.set("docs/benchmarks/blacksmith-comparison.json", {
   measured: "2026-10-16",
-  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/38967200840",
+  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/38971164540",
   corpusDocuments: 14,
   profiles,
 });

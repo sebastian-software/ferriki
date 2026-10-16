@@ -1,10 +1,11 @@
-# TIOBE workloads for Ferroni optimization
+# TIOBE highlighting workloads
 
 This benchmark lives in Ferriki because full syntax highlighting needs the
-TextMate interpreter, asset catalog, renderer and Node boundary. Its primary
-purpose is to compare **Ferroni changes on a fixed Ferriki build** and find
-language-specific regressions or optimization candidates. It does not measure
-isolated regex execution time.
+TextMate interpreter, asset catalog, renderer and Node boundary. It compares
+current highlighters on the same inputs and supports focused Ferroni profiling
+experiments. It does not measure isolated regex execution
+time. Published comparisons use the current stable Shiki release through the
+separate `shiki-benchmark` dependency; the compatibility mirror stays pinned.
 
 The current runner measures the public HTML path only. Reports under
 [`results/`](results/README.md) are dated archives from the former Node token
@@ -24,8 +25,9 @@ original examples, with explicit dialects and grammar IDs in the manifest.
 From `node/`, with the repository's pinned pnpm version:
 
 ```sh
-pnpm install --ignore-scripts
-pnpm run build:compat
+pnpm install --frozen-lockfile --ignore-scripts
+node scripts/check-benchmark-versions.mjs
+node ../scripts/materialize-assets.mjs --sources
 pnpm run build:native
 pnpm run check:bench-tiobe
 pnpm run bench:tiobe --write /tmp/tiobe-baseline.json
@@ -42,7 +44,7 @@ these workloads and the curated and repository corpora on the same Linux x86-64
 and macOS ARM64 runner profiles as Ferroni. `--regex-prefilter on|off` selects
 the Ferriki factory option and records it in the report's method.
 
-The [October 16, 2026 archive](../../../docs/benchmarks/blacksmith/2026-10-16/README.md)
+The [October 16, 2026 archive](../../../docs/benchmarks/blacksmith/2026-10-16-sharded/README.md)
 preserves all twelve repository, curated and TIOBE reports from both profiles
 with Ferroni 2.2.2. TIOBE remains a per-language diagnostic; the website's
 headline factors use the separate 14-file repository corpus.
