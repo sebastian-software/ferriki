@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
+import { validateCorpusProvenance } from "../node/scripts/merge-blacksmith-comparison.mjs";
 import { validateReport } from "../node/scripts/run-blacksmith-comparison.mjs";
 
 const root = new URL("../", import.meta.url);
@@ -45,14 +46,8 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
     for (const mode of ["on", "off"]) {
       const report = json(original.get(`${corpus}-${mode}.json`));
       validateReport(report, corpus, mode === "on");
-      if (corpus === "comparison") {
-        assert.equal(report.source.revision, context.commit);
-        assert.equal(report.source.workingTreeClean, true);
-      } else {
-        assert.equal(report.revision.commit, context.commit);
-        assert.equal(report.revision.status, "");
-        assert.equal(report.nativeBuild.binarySha256, context.nativeBuild.binarySha256);
-      }
+      const corpusContext = context.corpusContexts?.[corpus] ?? context;
+      validateCorpusProvenance(report, corpus, corpusContext);
       reports[`${corpus}-${mode}`] = report;
     }
   }

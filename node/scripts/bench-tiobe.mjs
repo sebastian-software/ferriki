@@ -1,4 +1,4 @@
-// Full highlighting workloads for evaluating Ferroni changes through Ferriki.
+// Compare current Node highlighters on complete highlighting workloads.
 import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -216,7 +216,9 @@ const report = {
     readFileSync(join(nodeRoot, "ferriki/assets/standard/release-manifest.json")),
   ),
   harnessSha256: sha256(
-    readFileSync(script) + readFileSync(new URL("./tiobe-benchmark.mjs", import.meta.url)),
+    readFileSync(script) +
+      readFileSync(new URL("./tiobe-benchmark.mjs", import.meta.url)) +
+      readFileSync(new URL("./standard-grammar-reference.mjs", import.meta.url)),
   ),
   corpus: {
     id: values.corpus,
@@ -228,7 +230,7 @@ const report = {
   versions: Object.fromEntries(
     [
       ["ferriki", "ferriki"],
-      ["shiki", "node_modules/shiki"],
+      ["shiki", "node_modules/shiki-benchmark"],
       ["prism", "node_modules/prismjs"],
     ].map(([id, path]) => [
       id,

@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
-import { standardGrammarRegistrations } from "./standard-grammar-reference.mjs";
+import {
+  standardGrammarRegistrations,
+  standardThemeRegistrations,
+} from "./standard-grammar-reference.mjs";
 import "./test-asset-env.mjs";
 
 export const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -145,12 +148,13 @@ export async function createEngine(id, language, { regexPrefilter = true } = {})
       dispose() {},
     };
   }
-  const module = id === "ferriki" ? await import("../ferriki/index.mjs") : await import("shiki");
+  const module =
+    id === "ferriki" ? await import("../ferriki/index.mjs") : await import("shiki-benchmark");
   const engine =
     id === "ferriki"
       ? undefined
       : id === "shiki-wasm"
-        ? module.createOnigurumaEngine(import("shiki/wasm"))
+        ? module.createOnigurumaEngine(import("shiki-benchmark/wasm"))
         : module.createJavaScriptRegexEngine();
   const languageInputs = await Promise.all(
     [language.textmate, ...(language.embedded ?? [])].map(async (name) => {
@@ -159,12 +163,15 @@ export async function createEngine(id, language, { regexPrefilter = true } = {})
         return id === "ferriki" ? name : standardGrammarRegistrations([name]);
       // The dated TIOBE corpus includes languages outside Ferriki's standard
       // set. Keep measuring those through the public custom-grammar API.
-      return (await import(`@shikijs/langs/${name}`)).default;
+      const { bundledLanguages: referenceLanguages } = await import("shiki-benchmark");
+      if (!Object.hasOwn(referenceLanguages, name))
+        throw new Error(`Comparator has no grammar: ${name}`);
+      return referenceLanguages[name]();
     }),
   );
   const highlighter = await module.createHighlighter({
     langs: languageInputs,
-    themes: [theme],
+    themes: id === "ferriki" ? [theme] : standardThemeRegistrations([theme]),
     engine,
     assets: { remote: false },
     ...(id === "ferriki" ? { regexPrefilter } : {}),

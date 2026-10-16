@@ -1,4 +1,4 @@
-// Run each workload serially on one host and retain failures alongside timings.
+// Run selected workloads serially on one VM and retain failures alongside timings.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -9,12 +9,15 @@ import {
   openSync,
   readdirSync,
   readFileSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
+import { installedComparators } from "./check-benchmark-versions.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 import { engines, loadCorpus, repoRoot, yamlJavaScriptUnsupported } from "./tiobe-benchmark.mjs";
 
@@ -115,6 +118,7 @@ export function renderSummary(reports, context, errors = []) {
     `# Ferriki Blacksmith comparison: ${context.profile}`,
     "",
     `Commit: ${context.commit}. Runner: ${context.runnerLabel}. CPU: ${context.cpu}. Node: ${context.node}.`,
+    ...(context.corpora ? [`Corpus scope: ${context.corpora.join(", ")}.`] : []),
     "",
     "Warm HTML medians reuse highlighters. Cold measurements use fresh processes and include imports, setup and one full-corpus render; process creation and asset downloads are excluded. Smaller values are faster. The prefilter is enabled by default. These are observations on this host, not a comparison with an earlier Ferroni release.",
     "",
@@ -194,11 +198,15 @@ export function renderSummary(reports, context, errors = []) {
   return lines.join("\n");
 }
 
-function run(directory) {
+export const comparisonCorpora = ["comparison", "curated", "tiobe"];
+
+function run(directory, corpora) {
   mkdirSync(join(directory, "logs"), { recursive: true });
   const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "utf8" }).trim();
   const context = {
     measuredAt: new Date().toISOString(),
+    corpora,
+    comparators: installedComparators(),
     profile: process.env.PROFILE ?? `${process.platform}-${process.arch}`,
     runnerLabel: process.env.RUNNER_LABEL ?? "local",
     runUrl: process.env.COMPARISON_RUN_URL ?? null,
@@ -217,13 +225,13 @@ function run(directory) {
     cargoLockSha256: sha256(readFileSync(join(repoRoot, "Cargo.lock"))),
     pnpmLockSha256: sha256(readFileSync(join(nodeRoot, "pnpm-lock.yaml"))),
     schedule:
-      "Serial comparison, curated and TIOBE reports; prefilter on then off per corpus; engines rotate warm order within each report. Both modes use the same addon.",
+      "Selected corpora execute serially on this VM; prefilter on then off per corpus; warm and cold engine order rotates within each report. Both modes use the same addon.",
   };
   writeFileSync(join(directory, "context.json"), `${JSON.stringify(context, null, 2)}\n`);
   const reports = {};
   const errors = [];
   let timedOut = false;
-  for (const corpus of ["comparison", "curated", "tiobe"]) {
+  for (const corpus of corpora) {
     if (timedOut) break;
     for (const mode of ["on", "off"]) {
       const name = `${corpus}-${mode}`;
@@ -263,6 +271,14 @@ function run(directory) {
       }
     }
   }
+  writeEvidence(directory, reports, context, errors);
+  if (errors.length) {
+    console.error(errors.join("\n"));
+    process.exitCode = 1;
+  }
+}
+
+export function writeEvidence(directory, reports, context, errors = []) {
   const summary = renderSummary(reports, context, errors);
   writeFileSync(join(directory, "summary.md"), summary);
   writeFileSync(
@@ -270,25 +286,30 @@ function run(directory) {
     `${JSON.stringify({ ok: errors.length === 0, errors }, null, 2)}\n`,
   );
   const paths = [
-    ...readdirSync(directory).filter((name) => name !== "logs" && name !== "SHA256SUMS"),
-    ...readdirSync(join(directory, "logs")).map((name) => `logs/${name}`),
+    ...readdirSync(directory, { recursive: true }).filter(
+      (name) => name !== "SHA256SUMS" && statSync(join(directory, name)).isFile(),
+    ),
   ].sort();
   writeFileSync(
     join(directory, "SHA256SUMS"),
     paths.map((path) => `${sha256(readFileSync(join(directory, path)))}  ${path}\n`).join(""),
   );
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
-  if (errors.length) {
-    console.error(errors.join("\n"));
-    process.exitCode = 1;
-  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { values, positionals } = parseArgs({
+    allowPositionals: true,
+    options: { corpus: { type: "string" } },
+  });
   assert.equal(
-    process.argv.length,
-    3,
-    "Usage: node scripts/run-blacksmith-comparison.mjs /absolute/output-directory",
+    positionals.length,
+    1,
+    "Usage: node scripts/run-blacksmith-comparison.mjs OUTPUT [--corpus comparison|curated|tiobe]",
   );
-  run(resolve(process.argv[2]));
+  assert.ok(
+    !values.corpus || comparisonCorpora.includes(values.corpus),
+    "Unknown comparison corpus",
+  );
+  run(resolve(positionals[0]), values.corpus ? [values.corpus] : comparisonCorpora);
 }

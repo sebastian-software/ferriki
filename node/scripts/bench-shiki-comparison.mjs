@@ -5,6 +5,7 @@ import os from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { coldSamples, rotate } from "./benchmark-schedule.mjs";
 import {
   checkPhikiPrerequisites,
   createPhikiSetup,
@@ -13,7 +14,10 @@ import {
 } from "./phiki-benchmark.mjs";
 import { compareHighlightedHtml, phikiStyleCriteria } from "./phiki-html-agreement.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
-import { standardGrammarRegistrations } from "./standard-grammar-reference.mjs";
+import {
+  standardGrammarRegistrations,
+  standardThemeRegistrations,
+} from "./standard-grammar-reference.mjs";
 import { engineUnsupportedReason } from "./tiobe-benchmark.mjs";
 // Measures Ferriki, Shiki with two regex engines, and optional Phiki on the
 // same repository corpus. Ferriki and both Shiki engines must produce the
@@ -57,14 +61,14 @@ async function createEngine(id, selectedLangs = langs) {
     const ferriki = await import("../ferriki/index.mjs");
     return ferriki.createHighlighter({ langs: selectedLangs, themes: [theme], regexPrefilter });
   }
-  const shiki = await import("shiki");
+  const shiki = await import("shiki-benchmark");
   const engine =
     id === "shiki-wasm"
-      ? shiki.createOnigurumaEngine(import("shiki/wasm"))
+      ? shiki.createOnigurumaEngine(import("shiki-benchmark/wasm"))
       : shiki.createJavaScriptRegexEngine();
   return shiki.createHighlighter({
     langs: standardGrammarRegistrations(selectedLangs),
-    themes: [theme],
+    themes: standardThemeRegistrations([theme]),
     engine,
   });
 }
@@ -242,11 +246,6 @@ const minSamples = 30;
 const coldRuns = 10;
 const minMilliseconds = 1500;
 
-function rotate(values, start) {
-  const offset = start % values.length;
-  return [...values.slice(offset), ...values.slice(0, offset)];
-}
-
 async function measure(doc, documentIndex) {
   const options = { lang: doc.lang, theme };
   const timed = nodeEngines.filter((id) => nodeAgreement[id].includes(doc.path));
@@ -348,22 +347,22 @@ function runNodeCold(id, selectedPaths) {
   return Number(child.stdout);
 }
 
+const eligibleColdEngines = nodeEngines.filter((id) =>
+  docs.every((doc) => !unsupported.get(doc.path)[id]),
+);
+const fullColdSamples = coldSamples(eligibleColdEngines, coldRuns, (id) => runNodeCold(id));
 const cold = Object.fromEntries(
   nodeEngines.map((id) => {
-    if (docs.some((doc) => unsupported.get(doc.path)[id]))
-      return [
-        id,
-        {
-          status: "unsupported",
-          reason: "Full-corpus cold timing requires every grammar to be supported",
-          paths: docs.filter((doc) => unsupported.get(doc.path)[id]).map((doc) => doc.path),
-        },
-      ];
-    const runs = [];
-    for (let run = 0; run < coldRuns; run++) runs.push(runNodeCold(id));
+    const runs = fullColdSamples[id];
     return [
       id,
-      { medianMs: median(runs), runs: coldRuns, ...(keepSamples ? { samplesMs: runs } : {}) },
+      runs
+        ? { medianMs: median(runs), runs: coldRuns, ...(keepSamples ? { samplesMs: runs } : {}) }
+        : {
+            status: "unsupported",
+            reason: "Full-corpus cold timing requires every grammar to be supported",
+            paths: docs.filter((doc) => unsupported.get(doc.path)[id]).map((doc) => doc.path),
+          },
     ];
   }),
 );
@@ -396,13 +395,11 @@ if (phikiPrepared && sharedHtmlDocs.length > 0) {
     .reduce((sum, row) => sum + row.medianMs.phiki, 0);
   warmMatchingTotalMs = { documents: sharedHtmlDocs.length, of: docs.length, medianMs };
 
-  const runs = Object.fromEntries(nodeEngines.map((id) => [id, []]));
-  for (let run = 0; run < coldRuns; run++) {
-    for (const id of nodeEngines) runs[id].push(runNodeCold(id, selectedPaths));
-  }
-  const phikiRuns = [];
-  for (let run = 0; run < coldRuns; run++)
-    phikiRuns.push(renderPhikiCold(nodeRoot, phikiPrepared, sharedHtmlDocs));
+  const runs = coldSamples([...nodeEngines, "phiki"], coldRuns, (id) =>
+    id === "phiki"
+      ? renderPhikiCold(nodeRoot, phikiPrepared, sharedHtmlDocs)
+      : runNodeCold(id, selectedPaths),
+  );
   coldMatching = {
     status: "available",
     documents: sharedHtmlDocs.length,
@@ -410,16 +407,16 @@ if (phikiPrepared && sharedHtmlDocs.length > 0) {
     paths: selectedPaths,
     medianMs: Object.fromEntries([
       ...nodeEngines.map((id) => [id, median(runs[id])]),
-      ["phiki", median(phikiRuns)],
+      ["phiki", median(runs.phiki)],
     ]),
     runs: coldRuns,
-    ...(keepSamples ? { samplesMs: { ...runs, phiki: phikiRuns } } : {}),
+    ...(keepSamples ? { samplesMs: runs } : {}),
   };
 }
 
 const versions = {
   ferriki: packageVersion("ferriki"),
-  shiki: packageVersion("node_modules/shiki"),
+  shiki: packageVersion("node_modules/shiki-benchmark"),
   tmGrammars: packageVersion("node_modules/tm-grammars"),
   tmThemes: packageVersion("node_modules/tm-themes"),
   phiki: phikiPrepared?.versions.phiki ?? null,
@@ -467,6 +464,8 @@ const report = {
     minSamples,
     minMilliseconds,
     coldRuns,
+    coldTimingOrder:
+      "Ten rounds of fresh processes; eligible engine order rotates each round, serially",
     statistic: "median",
     phiki: {
       status: phikiStatus.status,
@@ -480,7 +479,7 @@ const report = {
       warmTimingOrder:
         "serial; per document, warmup and measured orders each rotate by documentIndex + round among eligible engines, separately for each phase; Phiki sample duration comes from the PHP worker stopwatch",
       coldTimingOrder:
-        "full corpus: ten consecutive fresh processes per Node engine in ferriki -> shiki-wasm -> shiki-js order; shared cohort: ten rounds in ferriki -> shiki-wasm -> shiki-js order, then ten consecutive Phiki processes",
+        "full corpus and shared cohort: ten rounds of fresh processes, rotating eligible engines each round; shared cohort includes Phiki in the rotation",
       agreement:
         "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
       eolNormalization:
