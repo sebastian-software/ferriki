@@ -248,7 +248,8 @@ let mut highlighter = Highlighter::builder()
   directory plus `ferriki`), the same variables the Node package uses.
 - Content-addressed catalogs work from crates.io, Git, and path dependencies
   without a release commit. `RemoteAssets::with_commit` remains available for
-  legacy commit-based catalogs.
+  legacy commit-based catalogs on custom mirrors. The public CDN
+  [retired those paths](./migrations/legacy-cdn.md) on October 16, 2026.
 - Errors: `AssetDownload` for an unreachable mirror or a non-200 response,
   `AssetIntegrity` for bytes that do not match the release manifest (never
   cached), and `AssetUnavailable` for a cache miss with downloads turned off.

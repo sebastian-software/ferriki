@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-13
+Last updated: 2026-10-16
 
 ## Context
 
@@ -52,7 +52,7 @@ notices, and the small reviewed `assets/catalog.json` lock. Original sources,
 normalized JSON, binary payloads, and generated catalog indexes are ignored
 local build artifacts, not committed repository data.
 
-- **Immutable objects.** Grammar objects use `<canonical-language-id>/<sha256>`;
+- **Immutable objects.** Grammar objects use `<canonical-language-id>/<short-hash>`;
   themes use `themes/<theme-id>/<short-hash>`. SHA-256 covers every byte of the
   original source, normalized source, or compiled payload. The URL uses eight
   Base62 digits; the catalog keeps the complete SHA-256 for integrity. Equal bytes reuse
@@ -64,7 +64,8 @@ local build artifacts, not committed repository data.
   using `0-9A-Za-z` and zero padding to eight characters. A colliding object
   name stops publication without an overwrite. Its optional `commit`
   records release provenance and does not choose the new object's location.
-  The absent layout retains legacy `<commit>/assets/shiki/<path>` URLs.
+  The absent layout still resolves legacy `<commit>/assets/shiki/<path>` URLs
+  for custom mirrors; the public CDN no longer hosts them.
 - **Offline compilation.** Rust's build script encodes the reviewed catalog
   metadata into `OUT_DIR` through `ferriki-asset-gen`. Compiling a crate requires
   neither Node nor downloads. Node generates the same tiny indexes from the
@@ -94,10 +95,13 @@ local build artifacts, not committed repository data.
   materializes the accepted snapshot and verifies its immutable storage objects.
   Public npm verification checks every payload through the CDN by SHA-256 and
   size. Package/crate version updates remain owned by Release Please.
-- **Hosting and migration.** A Storage Zone origin override handles
-  hash paths. The default GitHub origin keeps released commit-based URLs working. Access rules
-  permit only the legacy asset paths and canonical ID/eight-character Base62 paths; successful
-  immutable responses have a one-year cache lifetime. The hostname stays
+- **Hosting.** The `ferriki-assets` pull zone uses the `ferriki-assets`
+  Storage Zone as its default origin, with no GitHub origin or path-specific
+  Storage Zone override. Access rules permit only canonical ID/eight-character
+  Base62 language and theme paths; successful immutable responses have a
+  one-year cache lifetime. Commit-based hosted URLs were retired on
+  2026-10-16 (#267); see the [migration note](../docs/migrations/legacy-cdn.md).
+  The hostname stays
   `assets.ferriki.dev`, so the provider can change without changing clients.
 - **Caching and integrity.** Downloads are verified before decoding or caching.
   The local cache uses one file per digest and deduplicates across releases.
@@ -116,7 +120,8 @@ local build artifacts, not committed repository data.
 - Git reviews configuration, pins, hashes, metadata, and patches rather than
   thousands of imported or generated lines. Payload availability depends on
   the storage/CDN, with upstream reconstruction available to maintainers.
-- Existing objects must remain available for the lifetime of released versions.
+- Published immutable Storage objects must remain available for the lifetime
+  of released versions.
   Storage cleanup requires explicit analysis of every released catalog. The
   automatic updater never performs garbage collection or changes active catalogs.
 - Maintainer publication needs a zone-specific Actions secret and non-sensitive
@@ -150,3 +155,7 @@ local build artifacts, not committed repository data.
   objects keyed by canonical language/theme ID and eight Base62 digits, with
   full SHA-256 integrity checks. Retains
   reviewed metadata locks, offline crate compilation, and legacy release URLs (#152).
+
+- 2026-10-16: Retires hosted commit-based URLs and the GitHub origin (#267).
+  Uses Storage as the default origin and limits access/cache rules to short
+  Base62 paths. Older catalogs require an update or a custom mirror.

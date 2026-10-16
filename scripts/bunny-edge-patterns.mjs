@@ -7,8 +7,7 @@ const storage = [`${origin}${id}${short}$`, `${origin}themes/${id}${short}$`];
 console.log(
   JSON.stringify(
     {
-      storageOriginMatchAny: storage,
-      allowedAssetPaths: [`${origin}[^/?]+/assets/shiki/[^?]+.*$`, ...storage],
+      allowedAssetPaths: storage,
       successfulResponseCacheControl: "public, max-age=31536000, immutable",
     },
     null,
