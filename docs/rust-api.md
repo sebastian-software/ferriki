@@ -81,9 +81,9 @@ and injections, and does not change matching or colors. Direct TextMate consumer
 can set `GrammarConfiguration::with_regex_prefilter(false)` when first compiling
 a grammar.
 
-The [Blacksmith measurements](benchmarks/blacksmith/2026-10-16/README.md)
-recorded faster repeated work with the prefilter enabled, while full-corpus
-first-use results varied by host. Those measurements exercise the Node HTML path;
+The [Blacksmith measurements](benchmarks/blacksmith/2026-10-16-sharded/README.md)
+recorded faster repeated work with the prefilter enabled and shorter full-corpus
+first use with it disabled. Those measurements exercise the Node HTML path;
 they are not Rust API speedup factors or isolated-snippet latency promises.
 
 Builder loads are eager. Unlisted standard grammars and themes remain lazy and

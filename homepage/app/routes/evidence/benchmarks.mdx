@@ -20,7 +20,7 @@ import {
 
 A CMS or site build can highlight hundreds of blocks with one loaded
 highlighter. That repeated work is the headline here: on our 14-file corpus,
-Ferriki was **4.2× faster than Shiki/WASM on Linux x86-64** and **5.3× faster
+Ferriki was **3.3× faster than Shiki/WASM on Linux x86-64** and **4.1× faster
 on macOS ARM64**. Ferriki and Shiki/WASM produced identical HTML for
 every repository file on both hosts.
 
@@ -35,18 +35,20 @@ the same factor for another workload.
 Linux ran on an AMD EPYC with the `blacksmith-4vcpu-ubuntu-2404` profile;
 macOS ran on an Apple M4 Pro virtual machine with
 `blacksmith-6vcpu-macos-26`. These are the same runner profiles used by
-Ferroni. Both used Node 24.21.0, Rust 1.99.1, Ferroni 2.2.2, the same source
-revision, theme and fixtures. The machines are reported separately.
+Ferroni. Both profiles used Ferriki 1.1.1, Shiki 4.5.0, Node 24.21.0, Rust
+1.99.1 and Ferroni 2.2.2, with identical source, theme and fixture inputs.
+The machines are reported separately.
 
-The [October 16, 2026 workflow run](https://github.com/sebastian-software/ferriki/actions/runs/38967200840)
+The [October 16, 2026 workflow run](https://github.com/sebastian-software/ferriki/actions/runs/38971164540)
 passed on both hosts. All twelve reports, logs, build receipts and original
 checksums are preserved in the
-[committed measurement archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16).
+[committed measurement archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16-sharded).
 The website reads compact reports generated from that archive; its build checks
-their provenance and values. The measured revision adds only a missing workflow
-preparation step to `main` at `775f1f4`; runtime code, dependencies, grammar
-catalog and benchmark harness are unchanged. This compares current engines;
-it does not isolate the effect of a Ferroni upgrade.
+their provenance and values. The measured revision uses the current Ferriki
+runtime from `main` at `2d04039`, with the benchmark workflow and comparator
+updates. Shiki is the current stable npm release, independently of the pinned
+compatibility suite; a registry check rejects stale comparator pins before a run.
+This compares current engines; it does not isolate the effect of a Ferroni upgrade.
 
 ## First use and the regex prefilter
 
@@ -59,10 +61,7 @@ it is not a per-render option. Rust exposes the same choice through
 <RegexModeBenchmarks />
 
 In this run, disabling the prefilter made repeated repository highlighting take
-**40–41% longer**. Full-corpus first use was **33% shorter on macOS** but
-**14% longer on Linux**. The unchanged Shiki/WASM first-use control also took
-70% longer in Linux's off window, so this does not establish a consistent
-startup benefit.
+**31–48% longer**, while full-corpus first use was **25–28% shorter**.
 First use includes package imports, highlighter setup and one render of all
 14 files. It excludes process creation and asset downloads, and does not
 measure the latency of one isolated snippet. The on/off reports ran in
@@ -86,13 +85,13 @@ agreement for every cell.
 
 <JsonAstroModeDifferences />
 
-On Linux, Ferriki's JSON off timings were 15–17% shorter. Astro's example was
-27% shorter and its large input 25% longer. The unchanged Shiki controls were
-15–25% faster across these cells. On macOS, Ferriki's JSON timings were 22–26%
-longer and Astro's 79–99% longer, while the Shiki controls were 17–24% slower.
-These shared movements show that the windows are not stable controls for a
-configuration-only comparison. The larger Astro differences remain observations;
-a causal comparison needs repeated, alternating runs on one host.
+On Linux, Ferriki's JSON off timings were 2–6% longer. Astro's example was 17%
+shorter and its large input 38% longer. The unchanged Shiki controls ranged from
+28% faster to 11% slower across these cells. On macOS, Ferriki's JSON timings
+were 7–19% shorter and Astro's 32–34% longer, while the Shiki controls were
+4–16% faster. The reports run in separate fixed-order windows, and the controls
+also move; these are observations rather than isolated configuration effects.
+A causal comparison needs repeated, alternating runs on one host.
 
 ## Method
 
@@ -113,12 +112,15 @@ a causal comparison needs repeated, alternating runs on one host.
    Setup diagnostics are excluded and are not fair cold-start comparisons.
 4. **Cold repository timings.** Ten fresh processes per Node engine. Timing
    starts before engine-specific imports and includes setup and rendering the
-   corpus once. Engines run in Ferriki, Shiki/WASM, Shiki/JS order. Process
-   creation is outside the clock; grammar and theme assets are locally cached.
-5. **Separate machines, serial work.** Each host builds one release addon,
-   then runs repository, curated and TIOBE workloads serially, with prefilter
-   on then off per corpus. Builds and other benchmarks do not share a timing
-   window. Compiler, addon hash, source revision and fixture hashes are recorded.
+   corpus once. Eligible engine order rotates each round. Process creation is
+   outside the clock; grammar and theme assets are locally cached.
+5. **Independent corpus VMs.** Each profile uses one VM per corpus. All engines
+   and both prefilter modes for that corpus run serially on the same VM, with
+   prefilter on then off. Independent corpora run concurrently on separate VMs.
+   A merge validates every report, checksum and build input before joining the
+   evidence. Repository totals and JSON/Astro are separate corpus observations;
+   timings from different VMs are never combined into one comparison. Each VM's
+   compiler, addon hash, source revision and fixture hashes are retained.
 
 The repository corpus contains real files from Ferriki and its unchanged
 upstream mirrors. The curated corpus covers 20 formats, including embedded
@@ -147,15 +149,16 @@ Or measure locally, keeping the machine idle:
 ```sh
 cd node
 pnpm install --frozen-lockfile --ignore-scripts
-pnpm run build:compat
+node scripts/check-benchmark-versions.mjs
 node ../scripts/materialize-assets.mjs --sources
 pnpm run build:native
 node scripts/run-blacksmith-comparison.mjs /tmp/ferriki-comparison
 ```
 
 To reproduce the recorded inputs, check out the measured revision
-`c18c0127bad274072ee81f9e1e9d4dc142f978da` first. A current checkout measures
-the current sources. Reports describe workspace builds; they do not certify
+`aea84dc7b911c79a86dd3631c698c991c36184b8` first. A current checkout measures
+the current sources. Omit the registry freshness check when reproducing a dated
+archive with its recorded comparator pins. Reports describe workspace builds; they do not certify
 registry artifacts. The [workflow guide](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/blacksmith.md)
 covers artifact retention and interpretation.
 

@@ -13,7 +13,7 @@ beta: until 1.0, a minor release can change the API.
 
 **Load once. Highlight block after block.** On our 14-file Blacksmith corpus,
 reused Ferriki highlighters produced identical HTML to Shiki/WASM,
-running **4.2× faster than Shiki/WASM on Linux x86-64** and **5.3× on macOS
+running **3.3× faster than Shiki/WASM on Linux x86-64** and **4.1× on macOS
 ARM64**. These factors describe the measured corpus and machines. The
 [benchmarks](https://ferriki.dev/evidence/benchmarks) include both hosts,
 first-use timings, JSON/Astro and the committed raw reports.

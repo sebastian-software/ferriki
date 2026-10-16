@@ -11,7 +11,7 @@ existing offline asset cache. `example` highlights one complete fixture;
 `large` repeats it 16 times. These large inputs are synthetic highlighting
 traffic, rather than standalone runnable applications.
 
-Run from `node/` after preparing comparator packages and the
+Run from `node/` after installing dependencies and building the
 ordinary native addon:
 
 ```sh
@@ -27,7 +27,7 @@ receipts, and exact TextMate HTML parity before timing. Current runs do not
 measure public Node token APIs.
 Prism's Astro/Svelte/Vue/MDX cells are explicitly unsupported.
 
-The [October 16, 2026 Blacksmith archive](../../../docs/benchmarks/blacksmith/2026-10-16/README.md)
+The [October 16, 2026 Blacksmith archive](../../../docs/benchmarks/blacksmith/2026-10-16-sharded/README.md)
 preserves default/off measurements on Linux x86-64 and macOS ARM64 with Ferroni
 2.2.2. The [published benchmarks](https://ferriki.dev/evidence/benchmarks#json-and-astro)
 show JSON/Astro medians and unchanged Shiki controls. The controls also moved

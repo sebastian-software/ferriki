@@ -160,3 +160,22 @@ test("merge rejects mismatched builds, failed shards and output changes even wit
       assert.throws(() => mergeShards(join(directory, "invalid"), sources));
     });
 });
+
+test("each corpus keeps its own binary receipt when identical inputs produce different binaries", () =>
+  temporary((directory) => {
+    const binarySha256 = "b".repeat(64);
+    const sources = fixtures(directory, (corpus, context, files) => {
+      if (corpus !== "curated") return;
+      context.nativeBuild.binarySha256 = binarySha256;
+      for (const mode of ["on", "off"]) {
+        const name = `${corpus}-${mode}.json`;
+        const report = JSON.parse(files.get(name));
+        report.nativeBuild.binarySha256 = binarySha256;
+        files.set(name, Buffer.from(JSON.stringify(report)));
+      }
+    });
+    const { context, reports } = mergeShards(join(directory, "merged"), sources);
+    assert.equal(context.corpusContexts.curated.nativeBuild.binarySha256, binarySha256);
+    assert.equal(reports["curated-on"].nativeBuild.binarySha256, binarySha256);
+    assert.notEqual(context.nativeBuild.binarySha256, binarySha256);
+  }));

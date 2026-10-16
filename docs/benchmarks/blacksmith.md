@@ -78,20 +78,20 @@ profile with identical fixtures, harness and compiler.
 
 ## Published measurements
 
-The [October 16, 2026 archive](blacksmith/2026-10-16/README.md) preserves all
-twelve successful reports from both profiles with Ferroni 2.2.2. On the same
-14 repository files, default reused Ferriki highlighters were 4.2× faster
-than Shiki/WASM on Linux x86-64 and 5.3× faster on macOS ARM64, with identical
+The [October 16, 2026 archive](blacksmith/2026-10-16-sharded/README.md) preserves all
+twelve successful reports from both profiles with Ferriki 1.1.1, Shiki 4.5.0
+and Ferroni 2.2.2. On the same
+14 repository files, default reused Ferriki highlighters were 3.3× faster
+than Shiki/WASM on Linux x86-64 and 4.1× faster on macOS ARM64, with identical
 HTML against Shiki/WASM. Shiki/JS matched the other 13 files; its full-corpus
 total is unavailable because it cannot translate the current YAML grammar.
 Linux's observed processor was AMD EPYC; macOS used an Apple M4 Pro
 virtual machine. The Linux profile is x86-64, not a promise of Intel hardware.
 
-The [website](https://ferriki.dev/evidence/benchmarks) presents these two hosts,
+The [website](https://ferriki.dev/evidence/benchmarks) presents these runner profiles,
 first-use and reuse results, and JSON/Astro with the unchanged Shiki controls.
-Unchanged controls moved between on/off windows on both hosts, and first-use
-results differed by host; these observations do not establish a consistent
-prefilter benefit for first use or JSON/Astro. The archive records the full scope
+Unchanged controls moved between on/off windows on both profiles. These
+observations do not isolate the prefilter's effect on first use or JSON/Astro. The archive records the full scope
 and interpretation alongside the raw samples.
 
 The workflow does not replace the published homepage report automatically.
@@ -103,7 +103,7 @@ artifact hashes, all report gates and published data; the homepage build runs
 the same check. Update `README.md.src` and regenerate the root README with
 `mise run readme:write` when its headline figures change.
 
-To reproduce locally, after native and compatibility builds:
+To reproduce locally, after dependency installation and the native build:
 
 ```sh
 cd node

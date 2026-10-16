@@ -129,15 +129,15 @@ For a short-lived process that creates a highlighter and uses it once,
 including the singleton's first creation; it is not a per-call
 `HighlightOptions` setting. Matching and colors remain the same.
 
-The [two-host Blacksmith run](benchmarks/blacksmith/2026-10-16/README.md)
-recorded 40–41% longer warm repository highlighting with the prefilter disabled.
-First use was 33% shorter on macOS but 14% longer on Linux. It includes imports,
-setup and rendering all 14 corpus files, excluding process creation and downloads.
-These Node HTML measurements do not predict one isolated snippet. The reports
-ran in fixed-order windows, and the unchanged Linux Shiki/WASM cold control also
-increased by 70%; they do not establish a consistent first-use benefit.
-JSON/Astro on/off timings likewise include movement in unchanged controls on
-both hosts and do not isolate the prefilter's effect.
+The [Blacksmith run](benchmarks/blacksmith/2026-10-16-sharded/README.md)
+recorded 31–48% longer warm repository highlighting with the prefilter disabled,
+but 25–28% shorter first use. First use includes imports, setup and rendering
+all 14 corpus files, excluding process creation and downloads. These Node HTML
+measurements do not predict one isolated snippet. Engine order rotates within
+reports, but the on/off reports run in separate fixed-order windows. These are
+observations, not an isolated measurement of the option's effect. JSON/Astro
+on/off timings also include movement in unchanged controls; their differences
+do not establish a causal prefilter benefit.
 
 ```js
 const highlighter = await createHighlighter({
