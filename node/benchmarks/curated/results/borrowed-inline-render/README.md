@@ -1,10 +1,40 @@
 # Borrowed inline rendering and theme defaults
 
-This October 17, 2026 experiment compares Ferriki main
+The initial October 17, 2026 experiment compares the local Ferriki baseline
 `a8a177ee24467a81712c87657eda10e5c6894d06` with two local Rust changes on an
 Apple M1 Ultra, macOS arm64, Node 24.21.0, rustc 1.99.0, and registry Ferroni
 2.2.1. All timing builds use the ordinary stripped release profile, automatic
 regex prefiltering, the same lockfile and assets, and `github-dark`.
+
+## PR integration check: Ferroni 2.2.2
+
+The PR rebases the same Rust changes onto main
+`de4ae42b9330355ef6352314eef26795f815781a` (Ferriki 1.1.1 and Ferroni 2.2.2).
+Fresh baseline and candidate builds use that same dependency lockfile and
+ordinary release profile. The refreshed published homepage fixture revision is
+`aea84dc7b911c79a86dd3631c698c991c36184b8`.
+
+The native curated repetition covers all 40 cases in four fresh workers, with
+12 warmups and 20 rounds. Its median worker geometric mean changes by
+**-5.79%**, with a worker range of -7.48% to -4.80%. The sum of pooled case
+medians changes from 218.40 to 212.81 ms (-2.56%).
+
+The public homepage repetition uses six fresh workers, 12 warmups, 40 rounds,
+and 30 alternating cold-start pairs. Its total changes by **-3.20%**. All 14
+per-document central estimates improve, from -1.37% to -20.05%; the largest
+warm upper 95% interval endpoint is +0.70%. Cold start is unchanged (+0.01%),
+with a 95% interval of **[-1.64%, +0.96%]**. Every individual warm case and
+cold start therefore remains below the +2% regression boundary on this host.
+
+Rust formatting, strict Clippy, the complete Rust all-features suite, the
+mandatory Node core compatibility gate, and both curated/TIOBE parity gates
+pass on the rebased source. The existing optional missing-PHP smoke skip
+remains explicit. [Current-main results](main-2.2.2/summary.json),
+[build receipts](main-2.2.2/builds.json),
+[homepage samples](main-2.2.2/homepage.json.gz),
+[curated samples](main-2.2.2/curated.json.gz), and
+[validation](main-2.2.2/validation.json) retain this follow-up separately from
+the initial Ferroni 2.2.1 evidence below.
 
 ## Changes
 
@@ -58,12 +88,12 @@ mean answer different questions.
 The public `codeToHtml` comparison uses the homepage's 14-file repository
 corpus. Source files are frozen before changing the implementation, including
 `src/highlighter.rs`, so shorter candidate source does not reduce the work.
-The exact published revision and the current main revision are separate input
-cohorts. Both use the current, identical grammar/theme assets for the baseline
+The published revision recorded with that baseline and the local baseline
+revision are separate input cohorts. Both use the current, identical grammar/theme assets for the baseline
 and candidate; this is a comparison of the patch, not a recreation of the
 historical Blacksmith machine or dependency versions.
 
-The current-main cohort uses six independent workers, 12 warmups, 60 rounds,
+The initial-source cohort uses six independent workers, 12 warmups, 60 rounds,
 and 40 alternating cold-start pairs. Every document and engine must equal
 Shiki/WASM HTML before timing in each warm worker. Small calls use batches
 targeting at least 1 ms, capped at 100 calls; source loading, validation, and
@@ -72,14 +102,14 @@ output. Cold timing includes imports, corpus reading, grammar loading, and
 the first highlight of all 14 documents, excluding process creation, as in
 the existing homepage runner.
 
-Current-main results: the median worker ratio of summed document medians is
+Initial-source results: the median worker ratio of summed document medians is
 **-2.08%**. All 14 per-document changes are negative, from -0.91% to -20.06%.
 The cold median paired ratio is -0.15%, with a 95% bootstrap interval of
 **[-0.44%, +0.17%]**: effectively unchanged.
 
 Intervals resample independent worker ratios (warm) or fresh-process pairs
 (cold), with 10,000 deterministic bootstrap resamples. They do not treat
-hundreds of calls in one worker as independent experiments. Every current-main
+hundreds of calls in one worker as independent experiments. Every initial-source
 document's upper interval endpoint, and the cold upper endpoint, is below
 the requested +2% regression limit.
 
@@ -89,7 +119,7 @@ with 40 rounds and 30 alternating cold-start pairs. Its warm total changes by
 ratio changes by -0.26%, with a 95% interval of **[-0.70%, +0.01%]**.
 Every individual warm upper interval endpoint also stays below +2%.
 
-| Homepage document | Current-source change | Published-source change |
+| Homepage document | Initial-source change | Published-source change |
 | ----------------- | --------------------: | ----------------------: |
 | Rust              |                -8.13% |                  -7.37% |
 | TypeScript        |                -1.64% |                  -1.95% |
@@ -118,16 +148,18 @@ The profiles show copying and allocator work in `prepare_tokens`, and raw
 theme cloning in the small-file path. Inlining limits attribution to individual
 helpers; the isolated ordinary-build comparisons establish the effects.
 Scanner DFA candidate walking remains the largest named self symbol in the
-broad profile. Its existing upstream candidate is recorded in the separate
-[Ferroni investigation](../ferroni-2.2.1-profiling/README.md); this patch keeps
-using unmodified registry Ferroni.
+broad profile. These Rust allocation changes keep the external Ferroni engine untouched.
 
 ## Evidence and limits
 
 Raw samples, output hashes, source and addon fingerprints, ordinary build
 receipts, profile captures, and validation logs are retained alongside this
-report. The baseline source is the main commit above. The final source is the
-patch accompanying this report. The preliminary ablation precedes final
+report. The initial baseline can be reconstructed from commit
+`09782d016d066d1ae96b6856eb23b3ab72520ea3` plus
+[the baseline dependency patch](baseline-dependency.patch). Its local commit
+also contained diagnostic documentation. The initial candidate adds the two
+`src/` changes in this PR to that baseline; the PR integration check below uses
+the newer main source and dependencies. The preliminary ablation precedes final
 test-helper and formatting edits; final repetitions use the final release
 binary identified by their receipts. The preliminary combined addon's binary
 hash is retained in the ablation and context; its separate build receipt was
@@ -138,7 +170,7 @@ replaced by the final build receipt.
 - [Native ablation](ablation.json.gz) and
   [final native repetition](curated-final.json.gz).
 - [Public ablation](homepage-ablation.json.gz),
-  [current-source repetition](homepage-final.json.gz), and
+  [initial-source repetition](homepage-final.json.gz), and
   [published-source repetition](homepage-published.json.gz).
 - [Broad profile](profiles/baseline-profile.json.gz) and
   [small-file profile](profiles/small-profile.json.gz), with compressed symbol
