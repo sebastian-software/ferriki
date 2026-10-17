@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/core",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "native syntax highlighting with HTML and CSS-class output",
   "keywords": [
     "highlighter",
@@ -86,13 +86,13 @@
     "@types/node": "catalog:types"
   },
   "optionalDependencies": {
-    "@ferriki/darwin-arm64": "1.1.1",
-    "@ferriki/linux-arm64-gnu": "1.1.1",
-    "@ferriki/linux-arm64-musl": "1.1.1",
-    "@ferriki/linux-x64-gnu": "1.1.1",
-    "@ferriki/linux-x64-musl": "1.1.1",
-    "@ferriki/win32-arm64-msvc": "1.1.1",
-    "@ferriki/win32-x64-msvc": "1.1.1"
+    "@ferriki/darwin-arm64": "1.1.2",
+    "@ferriki/linux-arm64-gnu": "1.1.2",
+    "@ferriki/linux-arm64-musl": "1.1.2",
+    "@ferriki/linux-x64-gnu": "1.1.2",
+    "@ferriki/linux-x64-musl": "1.1.2",
+    "@ferriki/win32-arm64-msvc": "1.1.2",
+    "@ferriki/win32-x64-msvc": "1.1.2"
   },
   "engines": {
     "node": ">=22.13.0"
