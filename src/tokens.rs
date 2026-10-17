@@ -64,7 +64,7 @@ pub(crate) fn convert_token_offsets_to_utf8<'a>(
 ) -> Result<()> {
     let map = utf16_to_byte_map(input);
     for offset in offsets {
-        *offset = *map.get(*offset).ok_or_else(|| {
+        *offset = map.get(*offset).ok_or_else(|| {
             Error::new(
                 ErrorKind::Internal,
                 "Token offset exceeds the highlighted source.",
@@ -135,7 +135,7 @@ pub struct HighlightTokensWithThemesResult {
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn token_from_metadata(
     line: &str,
-    utf16_map: &[usize],
+    utf16_map: &Utf16ToByteMap,
     range: Range<usize>,
     line_offset: usize,
     metadata: u32,
@@ -148,8 +148,8 @@ pub(crate) fn token_from_metadata(
     if start_index >= end_index {
         return None;
     }
-    let start_byte = *utf16_map.get(start_index)?;
-    let end_byte = *utf16_map.get(end_index)?;
+    let start_byte = utf16_map.get(start_index)?;
+    let end_byte = utf16_map.get(end_index)?;
     let attributes = EncodedTokenAttributes::new(metadata);
     Some(HighlightToken {
         content: line.get(start_byte..end_byte)?.to_owned(),
@@ -166,7 +166,25 @@ pub(crate) fn token_from_metadata(
     })
 }
 
-pub(crate) fn utf16_to_byte_map(input: &str) -> Vec<usize> {
+pub(crate) enum Utf16ToByteMap {
+    Ascii(usize),
+    Unicode(Vec<usize>),
+}
+
+impl Utf16ToByteMap {
+    pub(crate) fn get(&self, index: usize) -> Option<usize> {
+        match self {
+            Self::Ascii(length) => (index <= *length).then_some(index),
+            Self::Unicode(offsets) => offsets.get(index).copied(),
+        }
+    }
+}
+
+pub(crate) fn utf16_to_byte_map(input: &str) -> Utf16ToByteMap {
+    // ASCII positions are already byte positions, including the end boundary.
+    if input.is_ascii() {
+        return Utf16ToByteMap::Ascii(input.len());
+    }
     let mut map = Vec::with_capacity(input.encode_utf16().count() + 1);
     for (byte_index, character) in input.char_indices() {
         map.push(byte_index);
@@ -175,7 +193,7 @@ pub(crate) fn utf16_to_byte_map(input: &str) -> Vec<usize> {
         }
     }
     map.push(input.len());
-    map
+    Utf16ToByteMap::Unicode(map)
 }
 
 pub(crate) fn split_lines(input: &str) -> Vec<(&str, usize)> {
@@ -263,7 +281,33 @@ mod tests {
 
     #[test]
     fn maps_utf16_offsets_to_utf8_boundaries() {
-        assert_eq!(utf16_to_byte_map("a😀b"), vec![0, 1, 1, 5, 6]);
+        for (input, expected) in [
+            ("", &[0][..]),
+            ("ab\t\n", &[0, 1, 2, 3, 4]),
+            ("é界", &[0, 2, 5]),
+            ("a😀b", &[0, 1, 1, 5, 6]),
+            ("e\u{301}", &[0, 1, 3]),
+            ("🦀\r\nx", &[0, 0, 4, 5, 6, 7]),
+        ] {
+            let map = utf16_to_byte_map(input);
+            for (index, byte) in expected.iter().enumerate() {
+                assert_eq!(map.get(index), Some(*byte), "{input:?} at {index}");
+            }
+            assert_eq!(map.get(expected.len()), None, "{input:?}");
+            assert_eq!(map.get(usize::MAX), None, "{input:?}");
+        }
+    }
+
+    #[test]
+    fn converting_offsets_preserves_bounds_checks_for_ascii_and_unicode() {
+        for input in ["abc", "a😀b"] {
+            let end = input.encode_utf16().count();
+            let mut offsets = [0, end];
+            convert_token_offsets_to_utf8(offsets.iter_mut(), input).expect("valid offsets");
+            assert_eq!(offsets, [0, input.len()]);
+            let mut invalid = [end + 1];
+            assert!(convert_token_offsets_to_utf8(invalid.iter_mut(), input).is_err());
+        }
     }
 
     #[test]

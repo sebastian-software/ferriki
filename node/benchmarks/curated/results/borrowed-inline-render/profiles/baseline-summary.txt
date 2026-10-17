@@ -1,0 +1,116 @@
+12146 samples
+
+== self ==
+ 15.35%  ferriki.node!<ferroni::dfa_prefilter::SetPrefilter>::candidates_at
+  4.40%  ferriki.node!<ferriki_textmate::matcher::Matcher>::matches::<&[&str], ferriki_textmate::tokenize_string::matches_scope_identifiers>
+  4.10%  ferriki.node!ferroni::regexec::match_at_impl::<true, false>
+  2.93%  ferriki.node!ferroni::regset::regset_search_body_position_lead
+  2.58%  ferriki.node!<ferriki_textmate::attributed_scope_stack::AttributedScopeStack>::push_attributed::<ferriki_textmate::grammar::Grammar>
+  2.46%  ferriki.node!ferroni::regexec::match_at_impl::<false, false>
+  2.41%  libsystem_platform.dylib!_platform_memmove
+  2.39%  ferriki.node!fun_1eb87c
+  2.34%  libsystem_platform.dylib!_platform_memcmp
+  1.90%  ferriki.node!ferriki_textmate::tokenize_string::tokenize_string::<ferriki_textmate::grammar::Grammar>
+  1.85%  libsystem_malloc.dylib!0x33a78
+  1.14%  ferriki.node!ferroni::scanner::build_scanner_match
+  1.10%  ferriki.node!ferriki::render::render_html
+  1.05%  libsystem_kernel.dylib!mach_absolute_time
+  0.91%  ferriki.node!<core::hash::sip::Hasher<core::hash::sip::Sip13Rounds> as core::hash::Hasher>::write
+  0.91%  ferriki.node!ferriki_textmate::tokenize_string::handle_captures::<ferriki_textmate::grammar::Grammar>
+  0.86%  ferriki.node!ferroni::regset::onig_regset_search_impl
+  0.86%  libsystem_malloc.dylib!0x3a864
+  0.79%  libsystem_malloc.dylib!0x3f4fc
+  0.79%  ferriki.node!<ferriki_textmate::theme::Theme>::match_scope
+  0.74%  libsystem_malloc.dylib!0x3c168
+  0.72%  ferriki.node!ferroni::regset::attempt_entry_at
+  0.70%  ferriki.node!regex_automata::hybrid::search::find_fwd
+  0.69%  libsystem_pthread.dylib!pthread_mutex_lock
+  0.63%  libsystem_malloc.dylib!0x3f554
+  0.62%  libnode.137.dylib!v8::internal::Utf8DecoderBase<v8::internal::Utf8Decoder>::Utf8DecoderBase(v8::base::Vector<unsigned char const>)
+  0.60%  ferriki.node!ferriki::render::prepare_tokens
+  0.58%  ferriki.node!<ferriki_textmate::grammar::Grammar>::tokenize
+  0.58%  ferriki.node!ferroni::regcomp::optimize_nodes
+  0.56%  libsystem_malloc.dylib!0x40110
+
+== inclusive ==
+100.00%  libnode.137.dylib!node::Start(int, char**)
+100.00%  dyld!start
+ 99.99%  libnode.137.dylib!node::NodeMainInstance::Run()
+ 99.98%  libnode.137.dylib!Builtins_InterpreterEntryTrampoline
+ 99.98%  libnode.137.dylib!Builtins_JSEntryTrampoline
+ 99.98%  libnode.137.dylib!Builtins_JSEntry
+ 99.98%  libnode.137.dylib!v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.98%  libnode.137.dylib!v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::interna
+ 99.98%  libnode.137.dylib!v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*)
+ 99.98%  libnode.137.dylib!Builtins_CallApiCallbackGeneric
+ 99.98%  libnode.137.dylib!Builtins_GeneratorPrototypeNext
+ 99.98%  libnode.137.dylib!v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&)
+ 99.98%  libnode.137.dylib!v8::internal::Execution::TryCall(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::inte
+ 99.98%  libnode.137.dylib!v8::internal::SourceTextModule::ExecuteModule(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::SourceTextModule>, v8::internal
+ 99.98%  libnode.137.dylib!v8::internal::SourceTextModule::InnerModuleEvaluation(v8::internal::Isolate*, v8::internal::Handle<v8::internal::SourceTextModule>, v8::intern
+ 99.98%  libnode.137.dylib!v8::internal::SourceTextModule::Evaluate(v8::internal::Isolate*, v8::internal::Handle<v8::internal::SourceTextModule>)
+ 99.98%  libnode.137.dylib!v8::internal::Module::Evaluate(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Module>)
+ 99.98%  libnode.137.dylib!v8::Module::Evaluate(v8::Local<v8::Context>)
+ 99.98%  libnode.137.dylib!node::loader::ModuleWrap::Evaluate(v8::FunctionCallbackInfo<v8::Value> const&)
+ 99.98%  libnode.137.dylib!Builtins_AsyncFunctionAwaitResolveClosure
+ 99.98%  libnode.137.dylib!Builtins_PromiseFulfillReactionJob
+ 99.98%  libnode.137.dylib!Builtins_RunMicrotasks
+ 99.98%  libnode.137.dylib!Builtins_JSRunMicrotasksEntry
+ 99.98%  libnode.137.dylib!v8::internal::Execution::TryRunMicrotasks(v8::internal::Isolate*, v8::internal::MicrotaskQueue*)
+ 99.98%  libnode.137.dylib!v8::internal::MicrotaskQueue::RunMicrotasks(v8::internal::Isolate*)
+ 99.98%  libnode.137.dylib!v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*)
+ 99.98%  libnode.137.dylib!node::InternalCallbackScope::Close()
+ 99.98%  libnode.137.dylib!node::InternalCallbackScope::~InternalCallbackScope()
+ 99.98%  libnode.137.dylib!node::StartExecution(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value>(node::StartExecutionCallbackInfoWithModule const&)>)
+ 99.98%  libnode.137.dylib!node::LoadEnvironment(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value>(node::StartExecutionCallbackInfoWithModule const&)>, st
+
+293 samples (2.41%) under /prepare_tokens|merge_whitespace|ThemeData.*clone/
+
+== leaf symbols in subtree ==
+ 24.91%  ferriki.node!ferriki::render::prepare_tokens
+ 12.63%  libsystem_platform.dylib!_platform_memmove
+  6.14%  ferriki.node!<alloc::string::String as core::clone::Clone>::clone
+  5.46%  libsystem_malloc.dylib!0x33a78
+  2.73%  ferriki.node!fun_1eb87c
+  2.73%  libsystem_malloc.dylib!0x3f4fc
+  2.39%  libsystem_malloc.dylib!0x3a864
+  2.39%  libsystem_malloc.dylib!0x3f554
+  2.39%  ferriki.node!<alloc::string::String as core::fmt::Write>::write_str
+  2.05%  libsystem_malloc.dylib!0x3a8c8
+  1.71%  libsystem_malloc.dylib!0x3f528
+  1.71%  ferriki.node!<alloc::raw_vec::RawVecInner>::finish_grow
+  1.71%  libsystem_malloc.dylib!0x33ba8
+  1.71%  libsystem_malloc.dylib!0x33ae8
+  1.37%  libsystem_malloc.dylib!0x3f540
+  1.37%  libsystem_malloc.dylib!0x33b74
+  1.37%  libsystem_malloc.dylib!0x33cec
+  1.37%  ferriki.node!__rustc::__rdl_alloc
+  1.02%  libsystem_malloc.dylib!0x3f51c
+  1.02%  libsystem_malloc.dylib!0x33c54
+  1.02%  libsystem_malloc.dylib!0x3a87c
+  1.02%  libsystem_malloc.dylib!0x3a958
+  1.02%  libsystem_malloc.dylib!0x33b58
+  1.02%  ferriki.node!__rustc::__rust_no_alloc_shim_is_unstable_v2
+  1.02%  libsystem_malloc.dylib!0x33be0
+  0.68%  libsystem_malloc.dylib!0x33d8c
+  0.68%  libsystem_kernel.dylib!mach_absolute_time
+  0.68%  libsystem_malloc.dylib!0x33b40
+  0.68%  libsystem_malloc.dylib!0x37b68
+  0.68%  ferriki.node!<core::fmt::Formatter>::pad
+
+== direct children ==
+ 41.64%  ferriki.node!<alloc::string::String as core::clone::Clone>::clone
+ 24.91%  (self)
+ 17.41%  ferriki.node!<alloc::raw_vec::RawVec<ferriki::decorated_render::Node>>::grow_one
+  8.53%  ferriki.node!alloc::fmt::format::format_inner
+  3.07%  ferriki.node!<ferriki_textmate::theme::RawTheme as core::clone::Clone>::clone
+  1.02%  ferriki.node!<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.68%  ferriki.node!fun_1eb87c
+  0.34%  libsystem_malloc.dylib!0x3c028
+  0.34%  libsystem_malloc.dylib!0x3c044
+  0.34%  libsystem_platform.dylib!_platform_memmove
+  0.34%  libsystem_malloc.dylib!0x40134
+  0.34%  libsystem_malloc.dylib!0x3c070
+  0.34%  libsystem_malloc.dylib!0x3bed8
+  0.34%  libsystem_malloc.dylib!0x3bf60
+  0.34%  libsystem_malloc.dylib!0x3c238

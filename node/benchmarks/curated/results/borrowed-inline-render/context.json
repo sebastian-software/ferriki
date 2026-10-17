@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-17",
+  "baselineCommit": "a8a177ee24467a81712c87657eda10e5c6894d06",
+  "publishedCorpusCommit": "ad991d0d1cbcc8e5f24d5cbcc95d3468425323db",
+  "finalRustSourceSha256": "8cb9fe7d3f320bf53db887ab6e5eb156c8b95f92d504a0f89e2c761d78372225",
+  "sourceFingerprints": {
+    "assets/catalog.json": "ad9bcfdb8e3ca49d6572bd89f958974bf0021351d0a8c65c163c9a3cd326f544",
+    "assets/grammars/catalog.json": "dcec5db9b44298f319bbac0a678f5268e2903e04bb16b67c8ebba7aef57d02d0",
+    "node/pnpm-lock.yaml": "fd71bef8120f15a4601c4e790fb73164b0f06a9f552eec166f36e2bac3e90fa9",
+    "node/scripts/bench-native-boundary-paired.mjs": "75d053d7a4346806e35769d0266b3b067fe10d649010ccbf90e0ca168cb91cc3",
+    "node/scripts/bench-homepage-paired.mjs": "b933ac76f9df5b421f7aab58e368aca505b13b3bbbf96df2166e1877b75a7691",
+    "node/compat/upstream/shiki/.source.json": "dfc30d3b7fd4436854a380d879bb920ddd4a053017dff6978c9d30f9550dff5a",
+    "node/compat/upstream/vscode-textmate/.source.json": "c530785f94277f8a3dfe2a0a28591a08d0ab499ef53190be937b3035a9722d0f"
+  },
+  "curatedFixtures": {
+    "node/benchmarks/curated/fixtures/Orders.astro": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
+    "node/benchmarks/curated/fixtures/Orders.java": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+    "node/benchmarks/curated/fixtures/Orders.svelte": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
+    "node/benchmarks/curated/fixtures/Orders.swift": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+    "node/benchmarks/curated/fixtures/Orders.tsx": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
+    "node/benchmarks/curated/fixtures/Orders.vue": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
+    "node/benchmarks/curated/fixtures/orders.cpp": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+    "node/benchmarks/curated/fixtures/orders.css": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
+    "node/benchmarks/curated/fixtures/orders.html": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
+    "node/benchmarks/curated/fixtures/orders.json": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
+    "node/benchmarks/curated/fixtures/orders.md": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
+    "node/benchmarks/curated/fixtures/orders.mdx": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
+    "node/benchmarks/curated/fixtures/orders.py": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+    "node/benchmarks/curated/fixtures/orders.rb": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
+    "node/benchmarks/curated/fixtures/orders.rs": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+    "node/benchmarks/curated/fixtures/orders.scss": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
+    "node/benchmarks/curated/fixtures/orders.sh": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
+    "node/benchmarks/curated/fixtures/orders.toml": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
+    "node/benchmarks/curated/fixtures/orders.ts": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
+    "node/benchmarks/curated/fixtures/orders.yaml": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a"
+  },
+  "profiling": {
+    "tool": "samply 0.13.1",
+    "overrides": {
+      "CARGO_PROFILE_RELEASE_DEBUG": "line-tables-only",
+      "CARGO_PROFILE_RELEASE_STRIP": "none"
+    },
+    "baselineReadyEpochMs": 1792238852245,
+    "smallReadyEpochMs": 1792238894676,
+    "durationSeconds": 12
+  },
+  "preliminaryCombinedBinarySha256": "acd63026d013f8288e2e7779e11674eb158a0cc15ffd038c092e00208e407520",
+  "timingAndValidationWindows": "Sequential; no builds, tests, or profiles during timed comparisons.",
+  "versions": {
+    "ferriki": "1.0.0",
+    "shiki": "4.4.3",
+    "samply": "samply 0.13.1"
+  }
+}

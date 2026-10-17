@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import '/Users/sebastian/Workspace/ferriki/node/scripts/test-asset-env.mjs';
+import { createHighlighter } from '/Users/sebastian/Workspace/ferriki/node/ferriki/index.mjs';
+import { createEngine, validateOutput } from '/Users/sebastian/Workspace/ferriki/node/scripts/tiobe-benchmark.mjs';
+import { comparisonCorpus } from '/Users/sebastian/Workspace/ferriki/node/scripts/shiki-comparison-corpus.mjs';
+const docs=comparisonCorpus.slice(8).map(([lang,path])=>({lang,code:readFileSync(`/Users/sebastian/Workspace/ferriki/${path}`,'utf8')}));
+const h=await createHighlighter({langs:docs.map(d=>d.lang),themes:['github-dark']});
+for (const doc of docs) {
+ const oracle=await createEngine('shiki-wasm',{textmate:doc.lang});
+ assert.equal(h.codeToHtml(doc.code,{lang:doc.lang,theme:'github-dark'}),oracle.html(doc.code));
+ oracle.dispose();
+}
+for(let i=0;i<20;i++) for(const d of docs)h.codeToHtml(d.code,{lang:d.lang,theme:'github-dark'});
+console.error(`steady state from ${Date.now()}`);
+const end=performance.now()+12000;
+let consumed=0;
+while(performance.now()<end)for(const d of docs) consumed+=h.codeToHtml(d.code,{lang:d.lang,theme:'github-dark'}).length;
+console.log(consumed);
+h.dispose();
