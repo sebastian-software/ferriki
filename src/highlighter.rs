@@ -788,15 +788,17 @@ impl HighlighterCore {
         theme_id: &str,
         options: &TokenizeOptions,
     ) -> Result<HighlightTokensResult> {
-        let theme = self
-            .activate_theme(theme_id)?
-            .ok_or_else(|| {
-                Error::new(
-                    ErrorKind::UnknownTheme,
-                    format!("Unknown theme `{theme_id}`."),
-                )
-            })?
-            .clone();
+        let theme = self.activate_theme(theme_id)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownTheme,
+                format!("Unknown theme `{theme_id}`."),
+            )
+        })?;
+        // Tokenization only needs the output defaults. Cloning ThemeData here
+        // also copies every raw theme rule on each warm highlight.
+        let foreground = theme.foreground.clone();
+        let background = theme.background.clone();
+        let theme_name = theme.name.clone();
         if is_plain_language(language) || language == "ansi" {
             let tokens = split_lines(code)
                 .into_iter()
@@ -817,9 +819,9 @@ impl HighlighterCore {
                 .collect();
             return Ok(HighlightTokensResult {
                 tokens,
-                foreground: theme.foreground,
-                background: theme.background,
-                theme_name: theme.name,
+                foreground,
+                background,
+                theme_name,
             });
         }
         let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
@@ -931,9 +933,9 @@ impl HighlighterCore {
 
         Ok(HighlightTokensResult {
             tokens: output_lines,
-            foreground: theme.foreground,
-            background: theme.background,
-            theme_name: theme.name,
+            foreground,
+            background,
+            theme_name,
         })
     }
 
@@ -995,9 +997,14 @@ impl HighlighterCore {
                 }
                 let token = base.expect("a token boundary has a source token");
                 let map = utf16_to_byte_map(&token.content);
+                let start_byte = map
+                    .get(start - token.offset)
+                    .expect("theme boundary must be within its token");
+                let end_byte = map
+                    .get(end - token.offset)
+                    .expect("theme boundary must be within its token");
                 tokens.push(HighlightThemeToken {
-                    content: token.content[map[start - token.offset]..map[end - token.offset]]
-                        .to_owned(),
+                    content: token.content[start_byte..end_byte].to_owned(),
                     offset: start,
                     variants,
                     token_type: token.token_type,

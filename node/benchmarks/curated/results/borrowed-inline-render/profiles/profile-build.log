@@ -1,0 +1,31 @@
+
+> ferriki-workspace@0.0.0 build:native /Users/sebastian/Workspace/ferriki/node
+> pnpm -C ferriki build:native
+
+../platforms/linux-arm64-gnu             |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["linux"],"libc":["glibc"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+../platforms/linux-arm64-musl            |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["linux"],"libc":["musl"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+../platforms/linux-x64-gnu               |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["linux"],"libc":["glibc"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+../platforms/linux-x64-musl              |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["linux"],"libc":["musl"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+../platforms/win32-arm64-msvc            |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["win32"],"libc":["any"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+../platforms/win32-x64-msvc              |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["win32"],"libc":["any"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+
+> @ferriki/core@1.0.0 build:native /Users/sebastian/Workspace/ferriki/node/ferriki
+> node ./scripts/build-native.mjs
+
+Materialized locked asset metadata and payloads.
+   Compiling ferriki v1.0.0 (/Users/sebastian/Workspace/ferriki)
+   Compiling ferriki-core v1.0.0 (/Users/sebastian/Workspace/ferriki/crates/ferriki-core)
+    Finished `release` profile [optimized + debuginfo] target(s) in 9.12s
+platforms/linux-arm64-gnu                |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["linux"],"libc":["glibc"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+platforms/linux-arm64-musl               |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["linux"],"libc":["musl"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+platforms/linux-x64-gnu                  |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["linux"],"libc":["glibc"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+platforms/linux-x64-musl                 |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["linux"],"libc":["musl"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+platforms/win32-arm64-msvc               |  WARN  Unsupported platform: wanted: {"cpu":["arm64"],"os":["win32"],"libc":["any"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+platforms/win32-x64-msvc                 |  WARN  Unsupported platform: wanted: {"cpu":["x64"],"os":["win32"],"libc":["any"]} (current: {"os":"darwin","cpu":"arm64","libc":"unknown"})
+Finished in 1ms on 1 files using 20 threads.
+[ferriki] Standard asset manifests synced: /Users/sebastian/Workspace/ferriki/assets/standard -> /Users/sebastian/Workspace/ferriki/node/ferriki/assets/standard
+[ferriki] Test asset cache ready: /Users/sebastian/Workspace/ferriki/node/.cache/ferriki-assets (0 added)
+[ferriki] Native addon ready: /Users/sebastian/Workspace/ferriki/node/ferriki/ferriki.node
+[ferriki] Workspace native addon ready: /Users/sebastian/Workspace/ferriki/node/ferriki/dist/ferriki.node
+[ferriki] Platform addon ready: /Users/sebastian/Workspace/ferriki/node/ferriki/dist/ferriki.darwin-arm64.node
+[ferriki] Sidecar addon ready: /Users/sebastian/Workspace/ferriki/node/platforms/darwin-arm64/ferriki.node

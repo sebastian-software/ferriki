@@ -1,0 +1,7 @@
+{
+  "baselineCommit": "7da64467890423d10f44c049d34810a131798d46",
+  "mainCommit": "de4ae42b9330355ef6352314eef26795f815781a",
+  "homepageFixtureRevision": "aea84dc7b911c79a86dd3631c698c991c36184b8",
+  "ordinaryRelease": true,
+  "candidatePatchesRelativeTo": "baselineCommit"
+}

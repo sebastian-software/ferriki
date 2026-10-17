@@ -1,0 +1,43 @@
+12026 samples
+
+== self ==
+  8.86%  ferriki.node!<ferroni::dfa_prefilter::SetPrefilter>::candidates_at
+  4.13%  libsystem_platform.dylib!_platform_memmove
+  3.78%  ferriki.node!ferroni::regexec::match_at_impl::<false, false>
+  2.70%  ferriki.node!ferroni::regexec::match_at_impl::<true, false>
+  2.49%  ferriki.node!<alloc::raw_vec::RawVecInner>::finish_grow
+  2.18%  ferriki.node!ferroni::regset::regset_search_body_position_lead
+  2.15%  ferriki.node!<ferriki_textmate::attributed_scope_stack::AttributedScopeStack>::push_attributed::<ferriki_textmate::grammar::Grammar>
+  1.70%  ferriki.node!<ferroni::dfa_prefilter::Walk>::item
+
+== inclusive ==
+100.00%  libnode.137.dylib!node::Start(int, char**)
+100.00%  dyld!start
+ 99.98%  libnode.137.dylib!node::PerIsolatePlatformData::RunForegroundTask(std::__1::unique_ptr<v8::Task, std::__1::default_delete<v8::Task> >)
+ 99.98%  libnode.137.dylib!node::PerIsolatePlatformData::FlushForegroundTasksInternal()
+ 99.98%  libnode.137.dylib!node::NodePlatform::DrainTasks(v8::Isolate*)
+ 99.98%  libnode.137.dylib!node::SpinEventLoopInternal(node::Environment*)
+ 99.98%  libnode.137.dylib!node::NodeMainInstance::Run(node::ExitCode*, node::Environment*)
+ 99.98%  libnode.137.dylib!node::NodeMainInstance::Run()
+
+389 samples (3.23%) under /RawTheme.*clone|prepare_tokens/
+
+== leaf symbols in subtree ==
+ 19.54%  ferriki.node!ferriki::render::prepare_tokens
+ 17.74%  libsystem_platform.dylib!_platform_memmove
+  4.63%  libsystem_malloc.dylib!0x33a78
+  4.11%  ferriki.node!<ferriki_textmate::theme::RawTheme as core::clone::Clone>::clone
+  3.34%  ferriki.node!<alloc::raw_vec::RawVecInner>::finish_grow
+  2.83%  libsystem_malloc.dylib!0x3a8c8
+  2.83%  libsystem_malloc.dylib!0x33c10
+  2.57%  ferriki.node!core::fmt::write
+
+== direct children ==
+ 38.05%  ferriki.node!<alloc::string::String as core::clone::Clone>::clone
+ 23.65%  (self)
+ 13.62%  ferriki.node!alloc::fmt::format::format_inner
+ 10.80%  ferriki.node!<alloc::raw_vec::RawVec<ferriki::decorated_render::Node>>::grow_one
+  7.97%  ferriki.node!<alloc::vec::Vec<alloc::string::String> as core::clone::Clone>::clone
+  2.57%  ferriki.node!<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.51%  libsystem_platform.dylib!_platform_memmove
+  0.51%  libsystem_malloc.dylib!0x3c168

@@ -1,0 +1,60 @@
+{
+  "baseline": {
+    "builtAt": "2026-10-17T14:07:55.738Z",
+    "binarySha256": "4a12e2e19a8d57b85680873b90ee8acb4d51e1ea71d3163166c163bd1641ba7f",
+    "ferriki": {
+      "commit": "de4ae42b9330355ef6352314eef26795f815781a",
+      "status": ""
+    },
+    "rustSourceSha256": "f40a93d99d4ddc7a6f173a748a5ec2165bec7231a013d310d75806c52a54bd15",
+    "ferroni": {
+      "version": "2.2.2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.2.2/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": ["default", "dfa-prefilter"]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/Users/sebastian/Workspace/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47"
+  },
+  "candidate": {
+    "builtAt": "2026-10-17T14:08:53.878Z",
+    "binarySha256": "ae0463a81633372a61c0f16fda5762d74c4950aa5f950980e3cdbb162c09409a",
+    "ferriki": {
+      "commit": "59995fe3a92f3ddab27bac07042b58688668ffa2",
+      "status": ""
+    },
+    "rustSourceSha256": "fd67eebec01090ab156d0a0ad01a1a43bc3029e5baaaf0baf0ed5d9947249c09",
+    "ferroni": {
+      "version": "2.2.2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/Users/sebastian/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.2.2/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": ["default", "dfa-prefilter"]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/Users/sebastian/Workspace/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47"
+  }
+}

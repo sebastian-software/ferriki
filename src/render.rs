@@ -76,23 +76,13 @@ pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> S
         html.push('"');
     }
     html.push_str("><code>");
-    for (line_index, line) in prepare_tokens(&result.tokens, options).iter().enumerate() {
+    let lines = prepare_inline_tokens(&result.tokens, options);
+    for (line_index, line) in lines.iter().enumerate() {
         if line_index > 0 {
             html.push('\n');
         }
         html.push_str("<span class=\"line\">");
-        for token in line {
-            html.push_str("<span");
-            let style = token_style(token);
-            if !style.is_empty() {
-                html.push_str(" style=\"");
-                html.push_str(&escape_attribute(&style));
-                html.push('"');
-            }
-            html.push('>');
-            html.push_str(&escape_html(&token.content));
-            html.push_str("</span>");
-        }
+        render_inline_tokens(&mut html, line, options);
         html.push_str("</span>");
     }
     html.push_str("</code></pre>");
@@ -123,25 +113,79 @@ pub fn render_html_lines(result: &HighlightTokensResult, options: &RenderOptions
             })
             .collect();
     }
-    prepare_tokens(&result.tokens, options)
+    prepare_inline_tokens(&result.tokens, options)
         .iter()
         .map(|line| {
             let mut html = String::new();
-            for token in line {
-                html.push_str("<span");
-                let style = token_style(token);
-                if !style.is_empty() {
-                    html.push_str(" style=\"");
-                    html.push_str(&escape_attribute(&style));
-                    html.push('"');
-                }
-                html.push('>');
-                html.push_str(&escape_html(&token.content));
-                html.push_str("</span>");
-            }
+            render_inline_tokens(&mut html, line, options);
             html
         })
         .collect()
+}
+
+fn prepare_inline_tokens<'a>(
+    source: &'a [Vec<HighlightToken>],
+    options: &RenderOptions,
+) -> Cow<'a, [Vec<HighlightToken>]> {
+    if options.merge_same_style_tokens {
+        Cow::Owned(prepare_tokens(source, options))
+    } else {
+        // Whitespace can borrow the following token's style during serialization.
+        Cow::Borrowed(source)
+    }
+}
+
+fn render_inline_tokens(html: &mut String, line: &[HighlightToken], options: &RenderOptions) {
+    let merge_whitespaces = options.merge_whitespaces && !options.merge_same_style_tokens;
+    let mut start = 0;
+    for (index, token) in line.iter().enumerate() {
+        let decorated = has_decoration(token);
+        if merge_whitespaces
+            && !decorated
+            && !token.content.is_empty()
+            && token.content.chars().all(char::is_whitespace)
+            && index + 1 < line.len()
+        {
+            continue;
+        }
+        if start < index && decorated {
+            // Carried whitespace before an underlined/struck token stays unstyled.
+            render_inline_span(html, None, &line[start..index]);
+            start = index;
+        }
+        render_inline_span(html, Some(token), &line[start..=index]);
+        start = index + 1;
+    }
+}
+
+fn render_inline_span(
+    html: &mut String,
+    style: Option<&HighlightToken>,
+    content: &[HighlightToken],
+) {
+    html.push_str("<span");
+    if let Some(token) = style {
+        let mut has_style = false;
+        for_each_token_style(token, |name, value| {
+            if has_style {
+                html.push(';');
+            } else {
+                html.push_str(" style=\"");
+                has_style = true;
+            }
+            html.push_str(name);
+            html.push(':');
+            html.push_str(&escape_attribute(value));
+        });
+        if has_style {
+            html.push('"');
+        }
+    }
+    html.push('>');
+    for token in content {
+        html.push_str(&escape_html(&token.content));
+    }
+    html.push_str("</span>");
 }
 
 fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
@@ -435,34 +479,39 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 
 pub(crate) fn token_style(token: &HighlightToken) -> String {
     let mut declarations = String::new();
-    if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
-        declarations.reserve("color:".len() + color.len());
-        declarations.push_str("color:");
-        declarations.push_str(color);
-    }
-    let style = token.font_style.unwrap_or_default();
-    let mut append = |declaration: &str| {
-        if !declarations.is_empty() {
+    for_each_token_style(token, |name, value| {
+        let has_declarations = !declarations.is_empty();
+        declarations.reserve(usize::from(has_declarations) + name.len() + 1 + value.len());
+        if has_declarations {
             declarations.push(';');
         }
-        declarations.push_str(declaration);
-    };
+        declarations.push_str(name);
+        declarations.push(':');
+        declarations.push_str(value);
+    });
+    declarations
+}
+
+fn for_each_token_style(token: &HighlightToken, mut append: impl FnMut(&str, &str)) {
+    if let Some(color) = token.color.as_deref().filter(|color| !color.is_empty()) {
+        append("color", color);
+    }
+    let style = token.font_style.unwrap_or_default();
     if style.contains(FontStyle::ITALIC) {
-        append("font-style:italic");
+        append("font-style", "italic");
     }
     if style.contains(FontStyle::BOLD) {
-        append("font-weight:bold");
+        append("font-weight", "bold");
     }
     match (
         style.contains(FontStyle::UNDERLINE),
         style.contains(FontStyle::STRIKETHROUGH),
     ) {
-        (true, true) => append("text-decoration:underline line-through"),
-        (true, false) => append("text-decoration:underline"),
-        (false, true) => append("text-decoration:line-through"),
+        (true, true) => append("text-decoration", "underline line-through"),
+        (true, false) => append("text-decoration", "underline"),
+        (false, true) => append("text-decoration", "line-through"),
         (false, false) => {}
     }
-    declarations
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
@@ -593,6 +642,25 @@ mod tests {
         let tree = render_hast(result, options);
         let expected = hast_node_to_html(&tree["children"][0]);
         assert_eq!(render_html(result, options), expected, "{options:?}");
+        let expected_lines: Vec<_> = tree["children"][0]["children"][0]["children"]
+            .as_array()
+            .expect("code lines")
+            .iter()
+            .filter(|line| line["type"] == "element")
+            .map(|line| {
+                line["children"]
+                    .as_array()
+                    .expect("line tokens")
+                    .iter()
+                    .map(hast_node_to_html)
+                    .collect::<String>()
+            })
+            .collect();
+        assert_eq!(
+            render_html_lines(result, options),
+            expected_lines,
+            "{options:?}"
+        );
     }
 
     #[test]
@@ -610,6 +678,105 @@ mod tests {
         ] {
             assert_eq!(super::escape_html(input), text);
             assert_eq!(super::escape_attribute(input), attribute);
+        }
+    }
+
+    #[test]
+    fn inline_styles_preserve_declaration_order_and_escape_values() {
+        for (color, font_style, expected) in [
+            (None, None, ""),
+            (Some(""), Some(FontStyle::NONE), ""),
+            (Some("#aBc"), None, "color:#aBc"),
+            (
+                None,
+                Some(FontStyle::ITALIC | FontStyle::BOLD),
+                "font-style:italic;font-weight:bold",
+            ),
+            (
+                Some("color<&\""),
+                Some(FontStyle::NOT_SET),
+                "color:color<&\";font-style:italic;font-weight:bold;text-decoration:underline line-through",
+            ),
+            (
+                None,
+                Some(FontStyle::UNDERLINE),
+                "text-decoration:underline",
+            ),
+            (
+                None,
+                Some(FontStyle::STRIKETHROUGH),
+                "text-decoration:line-through",
+            ),
+            (None, Some(FontStyle::from_bits(32)), ""),
+        ] {
+            let token = HighlightToken {
+                content: "x".to_owned(),
+                offset: 0,
+                color: color.map(str::to_owned),
+                font_style,
+                token_type: None,
+                scope_names: None,
+            };
+            assert_eq!(super::token_style(&token), expected);
+            let result = HighlightTokensResult {
+                tokens: vec![vec![token]],
+                foreground: String::new(),
+                background: String::new(),
+                theme_name: "probe".to_owned(),
+            };
+            let attribute = if expected.is_empty() {
+                String::new()
+            } else {
+                format!(" style=\"{}\"", super::escape_attribute(expected))
+            };
+            assert_eq!(
+                render_html_lines(&result, &RenderOptions::default()),
+                [format!("<span{attribute}>x</span>")],
+            );
+        }
+    }
+
+    #[test]
+    fn inline_whitespace_merging_preserves_empty_and_decorated_tokens() {
+        let tokens: Vec<_> = [
+            ("", FontStyle::NONE),
+            ("<&😀", FontStyle::ITALIC),
+            (" \t", FontStyle::NONE),
+            ("\u{a0}", FontStyle::BOLD),
+            (" ", FontStyle::UNDERLINE),
+            ("text", FontStyle::STRIKETHROUGH),
+        ]
+        .into_iter()
+        .map(|(content, style)| HighlightToken {
+            content: content.to_owned(),
+            offset: 0,
+            color: Some("#abcdef".to_owned()),
+            font_style: Some(style),
+            token_type: None,
+            scope_names: None,
+        })
+        .collect();
+        for first in &tokens {
+            for second in &tokens {
+                for third in &tokens {
+                    let result = HighlightTokensResult {
+                        tokens: vec![vec![first.clone(), second.clone(), third.clone()]],
+                        foreground: "#000000".to_owned(),
+                        background: "#ffffff".to_owned(),
+                        theme_name: "probe".to_owned(),
+                    };
+                    for merge_whitespaces in [false, true] {
+                        for merge_same_style_tokens in [false, true] {
+                            assert_html_matches_hast(
+                                &result,
+                                &RenderOptions::default()
+                                    .with_merge_whitespaces(merge_whitespaces)
+                                    .with_merge_same_style_tokens(merge_same_style_tokens),
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 
