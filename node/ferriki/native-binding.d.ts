@@ -11,6 +11,12 @@ export declare class FerrikiHighlighter {
   getHtmlRenderData(code: string, options: NativeTokenOptions): HtmlRenderData;
   getHtmlRenderDataWithThemes(code: string, options: NativeTokenOptions): HtmlRenderDataWithThemes;
   codeToHtml(code: string, options: NativeHighlightOptions): string;
+  /** Render inline multi-theme HTML without creating JavaScript token objects. */
+  codeToHtmlWithThemes(
+    code: string,
+    options: NativeHighlightOptions,
+    presentation: NativeMultiRenderOptions,
+  ): string;
   /** Highlight and decorate without transporting tokens or a tree to JS. */
   codeToHtmlWithDecorations(
     code: string,
@@ -160,6 +166,11 @@ export interface NativeHtmlDecoration {
   range: NativeDecorationRange;
   tagName: string;
   properties: Array<NativeHtmlAttribute>;
+}
+
+export interface NativeMultiRenderOptions {
+  defaultColor?: string | boolean;
+  cssVariablePrefix?: string;
 }
 
 export interface NativeResolvedDecoration {

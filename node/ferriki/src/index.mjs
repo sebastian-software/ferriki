@@ -277,9 +277,8 @@ export function createHighlighterCoreSync(options = {}) {
     return result;
   }
 
-  function getHtmlRenderDataWithThemes(code, options) {
+  function getHtmlRenderDataWithThemes(code, options, themes = resolveThemeEntries(options)) {
     assertAnsiInput(code, options);
-    const themes = resolveThemeEntries(options);
     loadThemeSync(...themes.map((theme) => theme.input));
     if (
       typeof native.getHtmlRenderDataWithThemes === "function" &&
@@ -505,6 +504,29 @@ export function createHighlighterCoreSync(options = {}) {
     return tree;
   }
 
+  function renderHtmlWithThemes(code, options) {
+    const themes = resolveThemeEntries(options);
+    const strings = [options.rootStyle, options.tabindex, options.cssVariablePrefix];
+    if (
+      typeof native.codeToHtmlWithThemes === "function" &&
+      !themes.some((theme) => theme.name === "none") &&
+      strings.every((value) => typeof value !== "string" || value.isWellFormed())
+    ) {
+      loadThemeSync(...themes.map((theme) => theme.input));
+      const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
+      prepared.themeEntries = themes;
+      return callNativeOperation("Ferriki multi-theme HTML rendering failed", () =>
+        native.codeToHtmlWithThemes(code, prepared, {
+          defaultColor: options.defaultColor,
+          cssVariablePrefix: options.cssVariablePrefix,
+        }),
+      );
+    }
+    return hastToHtml(
+      renderTokenResultHast(getHtmlRenderDataWithThemes(code, options, themes), options),
+    );
+  }
+
   const highlighter = {
     codeToHtmlWithCss(code, options) {
       options = withTransformerDefaults(options);
@@ -537,10 +559,7 @@ export function createHighlighterCoreSync(options = {}) {
         const html = hastToHtml(buildHast(code, validated));
         return applyPostprocess(html, validated, code);
       }
-      if (hasThemes(options))
-        return hastToHtml(
-          renderTokenResultHast(getHtmlRenderDataWithThemes(code, options), options),
-        );
+      if (hasThemes(options)) return renderHtmlWithThemes(code, options);
       if (registrationName(options?.theme) === "none")
         return hastToHtml(renderTokenResultHast(getHtmlRenderData(code, options), options));
       return callNativeOperation("Ferriki HTML rendering failed", () =>

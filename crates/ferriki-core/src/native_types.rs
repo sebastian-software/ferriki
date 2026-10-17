@@ -44,6 +44,15 @@ pub struct NativeHighlightOptions {
     pub theme_entries: Option<Vec<ThemeEntry>>,
 }
 
+// Multi-theme presentation controls are separate from the single-theme input,
+// so the existing fast path does not pay for extra N-API property reads.
+#[napi(object, object_to_js = false)]
+#[derive(Default)]
+pub struct NativeMultiRenderOptions {
+    pub default_color: Option<Either<String, bool>>,
+    pub css_variable_prefix: Option<String>,
+}
+
 // Token calls do not read HTML-only render controls from the JS object.
 #[napi(object, object_to_js = false)]
 #[derive(Clone, Default)]
