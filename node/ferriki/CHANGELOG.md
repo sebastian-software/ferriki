@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/sebastian-software/ferriki/compare/v1.1.1...v1.1.2) (2026-10-17)
+
+
+### Performance Improvements
+
+* **node:** render inline multi-theme HTML natively ([#281](https://github.com/sebastian-software/ferriki/issues/281)) ([e7a4fb1](https://github.com/sebastian-software/ferriki/commit/e7a4fb17e1eb34b45d4ed1bcb8d36d8de4ce85d8))
+* reduce highlighting and inline HTML allocations ([#279](https://github.com/sebastian-software/ferriki/issues/279)) ([ab3b911](https://github.com/sebastian-software/ferriki/commit/ab3b911f2659f8d95c516dbfd71c0d72ac6f5abe))
+
 ## [1.1.1](https://github.com/sebastian-software/ferriki/compare/v1.1.0...v1.1.1) (2026-10-16)
 
 
