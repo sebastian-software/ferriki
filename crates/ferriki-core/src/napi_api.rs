@@ -115,6 +115,35 @@ impl FerrikiHighlighter {
         Ok(render_html(&tokens, &options.render))
     }
 
+    /// Render inline multi-theme HTML without creating JavaScript token objects.
+    #[napi(js_name = "codeToHtmlWithThemes")]
+    pub fn code_to_html_with_themes(
+        &self,
+        code: String,
+        options: NativeHighlightOptions,
+        presentation: NativeMultiRenderOptions,
+    ) -> Result<String> {
+        let render = HighlightOptions::from(options.clone()).render;
+        let tokens = self.tokenize_with_themes(&code, options.into())?;
+        let default_color = match presentation.default_color {
+            Some(Either::B(false)) => None,
+            Some(Either::A(value)) => (!value.is_empty()).then_some(value),
+            _ => Some("light".to_owned()),
+        };
+        let css_variable_prefix = presentation
+            .css_variable_prefix
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "--shiki-".to_owned());
+        Ok(ferriki::__private::render_html_with_themes(
+            &tokens,
+            &ferriki::__private::MultiThemeRenderOptions {
+                render,
+                default_color,
+                css_variable_prefix,
+            },
+        ))
+    }
+
     /// Highlight and decorate without transporting tokens or a tree to JS.
     #[napi(js_name = "codeToHtmlWithDecorations")]
     pub fn code_to_html_with_decorations(

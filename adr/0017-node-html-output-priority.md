@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ## Context
 
@@ -53,6 +53,13 @@ measurements.
   callers cannot request them as a standalone Node result. Remove
   `codeToHast` and `codeToTokens` convenience methods from transformer contexts
   as well.
+- Classic inline multi-theme HTML without callbacks uses a complete native
+  render operation. Rust serializes the aligned theme tokens directly, including
+  CSS variables, default-color selection, whitespace merging, and root controls.
+  The private bridge adds no public structured output or stable Rust multi-theme
+  rendering API. CSS classes, callbacks, decorations, inline structure, grammar
+  continuation, `none` themes, and presentation strings with lone surrogates
+  retain the host pipeline.
 - Keep `getLastGrammarState(code, options)` as the source of serializable
   grammar state for HTML continuation. Do not expose token-result or HAST-result
   overloads. Keep the public Rust token APIs and native tokenizer unchanged.
@@ -87,3 +94,5 @@ measurements.
   neither adds a JSX serializer or public structured output.
 - 2026-10-12: Records native declarative rendering alongside isolated React
   presentation; both preserve the HTML output contract (#257, #263).
+- 2026-10-17: Adds complete native rendering for eligible inline multi-theme
+  HTML while preserving the JavaScript callback and presentation fallbacks.

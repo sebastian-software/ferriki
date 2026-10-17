@@ -10,6 +10,7 @@ mod decorated_render;
 mod decorations;
 mod error;
 mod highlighter;
+mod multi_render;
 mod node_assets;
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
 mod remote;
@@ -38,6 +39,7 @@ pub mod __private {
         decoration_sections, next_decoration_section, plan_decoration_mutations,
     };
     pub use crate::highlighter::HighlighterCore;
+    pub use crate::multi_render::{MultiThemeRenderOptions, render_html_with_themes};
     pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions, PlannedAsset};
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
     pub use crate::remote::RemoteAssetHost;
