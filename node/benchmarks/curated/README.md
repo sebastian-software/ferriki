@@ -38,6 +38,11 @@ For a local Ferroni experiment, set `FERRIKI_FERRONI_PATH=/absolute/path/to/ferr
 when building. The [profiling instructions](../tiobe/README.md#profile-one-workload)
 also apply to this corpus with `--corpus curated`.
 
+The [October 17 borrowed-rendering experiment](results/borrowed-inline-render/README.md)
+records isolated theme/renderer candidates, a repeated 40-case comparison,
+and per-document regression checks on both the current and exact published
+homepage fixtures, including cold starts.
+
 Repeat baseline/candidate in ABBA order with the same source fixtures,
 assets, dependencies, features and build flags. Never run builds or CPU
 profiles alongside timed workloads. Preserve outputs, source hashes and

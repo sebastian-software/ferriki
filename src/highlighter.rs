@@ -788,15 +788,17 @@ impl HighlighterCore {
         theme_id: &str,
         options: &TokenizeOptions,
     ) -> Result<HighlightTokensResult> {
-        let theme = self
-            .activate_theme(theme_id)?
-            .ok_or_else(|| {
-                Error::new(
-                    ErrorKind::UnknownTheme,
-                    format!("Unknown theme `{theme_id}`."),
-                )
-            })?
-            .clone();
+        let theme = self.activate_theme(theme_id)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownTheme,
+                format!("Unknown theme `{theme_id}`."),
+            )
+        })?;
+        // Tokenization only needs the output defaults. Cloning ThemeData here
+        // also copies every raw theme rule on each warm highlight.
+        let foreground = theme.foreground.clone();
+        let background = theme.background.clone();
+        let theme_name = theme.name.clone();
         if is_plain_language(language) || language == "ansi" {
             let tokens = split_lines(code)
                 .into_iter()
@@ -817,9 +819,9 @@ impl HighlighterCore {
                 .collect();
             return Ok(HighlightTokensResult {
                 tokens,
-                foreground: theme.foreground,
-                background: theme.background,
-                theme_name: theme.name,
+                foreground,
+                background,
+                theme_name,
             });
         }
         let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
@@ -931,9 +933,9 @@ impl HighlighterCore {
 
         Ok(HighlightTokensResult {
             tokens: output_lines,
-            foreground: theme.foreground,
-            background: theme.background,
-            theme_name: theme.name,
+            foreground,
+            background,
+            theme_name,
         })
     }
 

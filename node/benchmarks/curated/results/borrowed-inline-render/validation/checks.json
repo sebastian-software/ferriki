@@ -1,0 +1,61 @@
+{
+  "packageManager": "pnpm 10.28.2",
+  "checks": [
+    {
+      "command": "cargo fmt --all --check",
+      "cwd": "repository root",
+      "state": "PASSED",
+      "evidence": "formatting"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+      "cwd": "repository root",
+      "state": "PASSED",
+      "evidence": "clippy.log.gz"
+    },
+    {
+      "command": "cargo test --workspace --all-features --locked",
+      "cwd": "repository root",
+      "state": "PASSED",
+      "evidence": "rust-tests.log.gz; 217 tests; loopback-server access enabled"
+    },
+    {
+      "command": "pnpm run test:ferriki-compat:core",
+      "cwd": "node/",
+      "state": "PASSED",
+      "evidence": "core-compat.log.gz; includes compatibility builds and benchmark contract tests; existing deferred fixtures and optional missing-PHP smoke skip"
+    },
+    {
+      "command": "pnpm run check:bench-curated",
+      "cwd": "node/",
+      "state": "PASSED",
+      "evidence": "curated-gate.log.gz; 20 formats x 2 sizes"
+    },
+    {
+      "command": "pnpm run check:bench-tiobe",
+      "cwd": "node/",
+      "state": "PASSED",
+      "evidence": "tiobe-gate.log.gz; 19 languages x 2 sizes"
+    },
+    {
+      "command": "pnpm exec eslint scripts/bench-homepage-paired.mjs",
+      "cwd": "node/",
+      "state": "PASSED",
+      "evidence": "lint-final.log.gz"
+    },
+    {
+      "command": "pnpm exec oxfmt --check scripts/bench-homepage-paired.mjs benchmarks/curated/README.md benchmarks/curated/results/borrowed-inline-render/README.md benchmarks/curated/results/borrowed-inline-render/builds.json benchmarks/curated/results/borrowed-inline-render/context.json benchmarks/curated/results/borrowed-inline-render/summary.json benchmarks/curated/results/borrowed-inline-render/validation/checks.json",
+      "cwd": "node/",
+      "state": "PASSED",
+      "evidence": "format-check.log.gz"
+    },
+    {
+      "command": "git diff --check",
+      "cwd": "repository root",
+      "state": "PASSED",
+      "evidence": "no whitespace errors"
+    }
+  ],
+  "initialRustAttempt": "FAILED: sandbox blocked loopback bind; full authorized rerun passed.",
+  "measuredAddonStillInstalled": true
+}
