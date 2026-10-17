@@ -119,7 +119,13 @@ impl Parser {
         while let Some(matcher) = self.parse_operand() {
             matchers.push(matcher);
         }
-        Matcher::Conjunction(matchers)
+        // A single operand already has the group's truth value. Keep empty
+        // and multi-operand groups intact, including their evaluation order.
+        if matchers.len() == 1 {
+            matchers.pop().expect("one matcher was collected")
+        } else {
+            Matcher::Conjunction(matchers)
+        }
     }
 
     fn parse_inner_expression(&mut self) -> Matcher {
@@ -133,7 +139,13 @@ impl Parser {
                 self.advance();
             }
         }
-        Matcher::Disjunction(matchers)
+        // A single operand already has the group's truth value. Keep empty
+        // and multi-operand groups intact, including their evaluation order.
+        if matchers.len() == 1 {
+            matchers.pop().expect("one matcher was collected")
+        } else {
+            Matcher::Disjunction(matchers)
+        }
     }
 
     fn advance(&mut self) {
@@ -216,6 +228,31 @@ mod tests {
     #[test]
     fn matches_upstream_selector_cases() {
         let cases = [
+            Case {
+                expression: "()",
+                input: &[],
+                result: true,
+            },
+            Case {
+                expression: "- ()",
+                input: &[],
+                result: false,
+            },
+            Case {
+                expression: "(((foo)))",
+                input: &["foo"],
+                result: true,
+            },
+            Case {
+                expression: "(((foo)))",
+                input: &["bar"],
+                result: false,
+            },
+            Case {
+                expression: "(foo | ())",
+                input: &["bar"],
+                result: true,
+            },
             Case {
                 expression: "foo",
                 input: &["foo"],

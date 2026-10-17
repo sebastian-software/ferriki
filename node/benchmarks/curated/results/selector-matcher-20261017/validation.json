@@ -1,0 +1,9 @@
+{
+  "selector/fmt": 0,
+  "selector/clippy": 0,
+  "selector/workspace-tests": 0,
+  "selector/adrs": 0,
+  "selector/core-compat": 0,
+  "selector/curated-parity": 0,
+  "selector/tiobe-parity": 0
+}
