@@ -1,10 +1,21 @@
-# Borrowed inline rendering and theme defaults
+# Allocation reductions in highlighting and inline rendering
 
 The initial October 17, 2026 experiment compares the local Ferriki baseline
 `a8a177ee24467a81712c87657eda10e5c6894d06` with two local Rust changes on an
 Apple M1 Ultra, macOS arm64, Node 24.21.0, rustc 1.99.0, and registry Ferroni
 2.2.1. All timing builds use the ordinary stripped release profile, automatic
 regex prefiltering, the same lockfile and assets, and `github-dark`.
+
+## Follow-up: direct CSS emission and ASCII offsets
+
+The follow-up compares two more allocation reductions against PR revision
+`7da64467890423d10f44c049d34810a131798d46`: emitting inline CSS directly into
+the HTML buffer and representing ASCII UTF-16/UTF-8 positions without an
+allocated lookup vector. Unicode retains its original mapping algorithm.
+Independent builds isolate each change before measuring their combination.
+The [follow-up report](style-ascii/README.md) records the incremental results,
+the complete PR comparison against main, and the repeated homepage boundary.
+The measurements below describe the earlier two-change PR revision.
 
 ## PR integration check: Ferroni 2.2.2
 
@@ -45,6 +56,12 @@ the initial Ferroni 2.2.1 evidence below.
   `render_html` and `render_html_lines`. Whitespace before underlined or
   struck-through tokens still gets its separate unstyled span. Same-style
   merging retains the existing owned preparation path.
+- Emit inline CSS declarations into the HTML buffer, with the same property
+  order and attribute escaping. HAST and decorated rendering retain owned CSS
+  strings through the shared declaration visitor.
+- Use checked identity positions for ASCII input instead of allocating a
+  UTF-16-to-byte vector. Non-ASCII input keeps the original vector mapping,
+  including the handling of surrogate halves and end boundaries.
 
 The public types, tokenization algorithm, theme matching, escaping, output
 bytes, and dependency versions are unchanged. No ADR decision changes.
@@ -234,7 +251,8 @@ node scripts/bench-native-boundary-paired.mjs \
   --corpora curated --write curated.json
 ```
 
-For the published-source cohort, extract each corpus file with `git show`
-from `ad991d0d1cbcc8e5f24d5cbcc95d3468425323db`, the revision recorded in
-`docs/benchmarks/shiki-comparison.json`. Use that directory as `--corpus-root`
-and the same package snapshots.
+For the initial published-source cohort, extract each corpus file with
+`git show` from `ad991d0d1cbcc8e5f24d5cbcc95d3468425323db`. The integration
+and follow-up cohorts use `aea84dc7b911c79a86dd3631c698c991c36184b8` instead.
+Use the selected frozen directory as `--corpus-root` with matching package
+snapshots; these revision cohorts are distinct.

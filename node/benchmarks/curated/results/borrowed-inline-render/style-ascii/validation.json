@@ -1,0 +1,56 @@
+{
+  "checks": [
+    {
+      "command": "cargo fmt --all --check",
+      "cwd": "repository root",
+      "state": "PASSED"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+      "cwd": "repository root",
+      "state": "PASSED"
+    },
+    {
+      "command": "cargo test --workspace --all-features --locked",
+      "cwd": "repository root",
+      "state": "PASSED"
+    },
+    {
+      "command": "pnpm run test:ferriki-compat:core",
+      "cwd": "node/",
+      "state": "PASSED"
+    },
+    {
+      "command": "pnpm run check:bench-curated",
+      "cwd": "node/",
+      "state": "PASSED"
+    },
+    {
+      "command": "pnpm run check:bench-tiobe",
+      "cwd": "node/",
+      "state": "PASSED"
+    },
+    {
+      "command": "pnpm exec oxfmt --check <changed reports>",
+      "cwd": "node/",
+      "state": "PASSED"
+    },
+    {
+      "command": "git diff --check",
+      "cwd": "repository root",
+      "state": "PASSED"
+    },
+    {
+      "command": "gzip -dc <combined.patch.gz> | git apply --check --reverse",
+      "cwd": "repository root",
+      "state": "PASSED"
+    },
+    {
+      "command": "python3 <summarize.py> (JSON equality with summary.json)",
+      "cwd": "repository root",
+      "state": "PASSED"
+    }
+  ],
+  "compatibilityRebuildMatchesFinalSourceAndBinary": true,
+  "optionalSmokeSkip": "Existing optional Phiki smoke test skipped because PHP is unavailable."
+}

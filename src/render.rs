@@ -165,10 +165,19 @@ fn render_inline_span(
 ) {
     html.push_str("<span");
     if let Some(token) = style {
-        let style = token_style(token);
-        if !style.is_empty() {
-            html.push_str(" style=\"");
-            html.push_str(&escape_attribute(&style));
+        let mut has_style = false;
+        for_each_token_style(token, |name, value| {
+            if has_style {
+                html.push(';');
+            } else {
+                html.push_str(" style=\"");
+                has_style = true;
+            }
+            html.push_str(name);
+            html.push(':');
+            html.push_str(&escape_attribute(value));
+        });
+        if has_style {
             html.push('"');
         }
     }
@@ -470,34 +479,39 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 
 pub(crate) fn token_style(token: &HighlightToken) -> String {
     let mut declarations = String::new();
-    if let Some(color) = token.color.as_ref().filter(|color| !color.is_empty()) {
-        declarations.reserve("color:".len() + color.len());
-        declarations.push_str("color:");
-        declarations.push_str(color);
-    }
-    let style = token.font_style.unwrap_or_default();
-    let mut append = |declaration: &str| {
-        if !declarations.is_empty() {
+    for_each_token_style(token, |name, value| {
+        let has_declarations = !declarations.is_empty();
+        declarations.reserve(usize::from(has_declarations) + name.len() + 1 + value.len());
+        if has_declarations {
             declarations.push(';');
         }
-        declarations.push_str(declaration);
-    };
+        declarations.push_str(name);
+        declarations.push(':');
+        declarations.push_str(value);
+    });
+    declarations
+}
+
+fn for_each_token_style(token: &HighlightToken, mut append: impl FnMut(&str, &str)) {
+    if let Some(color) = token.color.as_deref().filter(|color| !color.is_empty()) {
+        append("color", color);
+    }
+    let style = token.font_style.unwrap_or_default();
     if style.contains(FontStyle::ITALIC) {
-        append("font-style:italic");
+        append("font-style", "italic");
     }
     if style.contains(FontStyle::BOLD) {
-        append("font-weight:bold");
+        append("font-weight", "bold");
     }
     match (
         style.contains(FontStyle::UNDERLINE),
         style.contains(FontStyle::STRIKETHROUGH),
     ) {
-        (true, true) => append("text-decoration:underline line-through"),
-        (true, false) => append("text-decoration:underline"),
-        (false, true) => append("text-decoration:line-through"),
+        (true, true) => append("text-decoration", "underline line-through"),
+        (true, false) => append("text-decoration", "underline"),
+        (false, true) => append("text-decoration", "line-through"),
         (false, false) => {}
     }
-    declarations
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
@@ -664,6 +678,61 @@ mod tests {
         ] {
             assert_eq!(super::escape_html(input), text);
             assert_eq!(super::escape_attribute(input), attribute);
+        }
+    }
+
+    #[test]
+    fn inline_styles_preserve_declaration_order_and_escape_values() {
+        for (color, font_style, expected) in [
+            (None, None, ""),
+            (Some(""), Some(FontStyle::NONE), ""),
+            (Some("#aBc"), None, "color:#aBc"),
+            (
+                None,
+                Some(FontStyle::ITALIC | FontStyle::BOLD),
+                "font-style:italic;font-weight:bold",
+            ),
+            (
+                Some("color<&\""),
+                Some(FontStyle::NOT_SET),
+                "color:color<&\";font-style:italic;font-weight:bold;text-decoration:underline line-through",
+            ),
+            (
+                None,
+                Some(FontStyle::UNDERLINE),
+                "text-decoration:underline",
+            ),
+            (
+                None,
+                Some(FontStyle::STRIKETHROUGH),
+                "text-decoration:line-through",
+            ),
+            (None, Some(FontStyle::from_bits(32)), ""),
+        ] {
+            let token = HighlightToken {
+                content: "x".to_owned(),
+                offset: 0,
+                color: color.map(str::to_owned),
+                font_style,
+                token_type: None,
+                scope_names: None,
+            };
+            assert_eq!(super::token_style(&token), expected);
+            let result = HighlightTokensResult {
+                tokens: vec![vec![token]],
+                foreground: String::new(),
+                background: String::new(),
+                theme_name: "probe".to_owned(),
+            };
+            let attribute = if expected.is_empty() {
+                String::new()
+            } else {
+                format!(" style=\"{}\"", super::escape_attribute(expected))
+            };
+            assert_eq!(
+                render_html_lines(&result, &RenderOptions::default()),
+                [format!("<span{attribute}>x</span>")],
+            );
         }
     }
 

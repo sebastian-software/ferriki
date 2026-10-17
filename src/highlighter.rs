@@ -997,9 +997,14 @@ impl HighlighterCore {
                 }
                 let token = base.expect("a token boundary has a source token");
                 let map = utf16_to_byte_map(&token.content);
+                let start_byte = map
+                    .get(start - token.offset)
+                    .expect("theme boundary must be within its token");
+                let end_byte = map
+                    .get(end - token.offset)
+                    .expect("theme boundary must be within its token");
                 tokens.push(HighlightThemeToken {
-                    content: token.content[map[start - token.offset]..map[end - token.offset]]
-                        .to_owned(),
+                    content: token.content[start_byte..end_byte].to_owned(),
                     offset: start,
                     variants,
                     token_type: token.token_type,
