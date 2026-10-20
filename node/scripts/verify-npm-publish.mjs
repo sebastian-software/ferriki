@@ -282,7 +282,7 @@ async function verifyPublicInstall(packageName, version) {
           "node_modules",
           ...packageName.split("/"),
           "assets",
-          "shiki",
+          "standard",
           "release-manifest.json",
         ),
         "utf8",
