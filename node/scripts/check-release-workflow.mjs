@@ -151,6 +151,10 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     // The package ships no payloads. Keep exact release provenance in the
     // manifest alongside immutable payload hashes (ADR 0013).
     'sync-standard-assets.mjs --release-commit "$(git rev-parse HEAD)"',
+    // The publish job downloads native addons instead of running
+    // build-native.mjs, so it must materialize the catalog and notices itself.
+    "node ../scripts/materialize-assets.mjs --payloads",
+    "node ../scripts/write-grammar-notices.mjs",
   ])
     assert(workflow.includes(required), `release workflow is missing ${required}`);
 

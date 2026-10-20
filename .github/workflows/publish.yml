@@ -413,11 +413,16 @@ jobs:
 
       # The main package ships no native addon; every platform package holds
       # the matrix-built artifact downloaded above. It ships no grammar or theme
-      # payloads either: the packaged release manifest is pinned to this commit,
-      # whose tree assets.ferriki.dev serves (ADR 0013).
+      # payloads either, only the standard catalog and manifests that resolve
+      # immutable payloads on assets.ferriki.dev (ADR 0013). This job downloads
+      # the native addons instead of building them, so it materializes the
+      # catalog and grammar notices itself, as build-native.mjs does; without
+      # them the packed package lacks assets/standard.
       - name: Build package wrappers and sync standard assets
         run: |
           pnpm run build
+          node ../scripts/materialize-assets.mjs --payloads
+          node ../scripts/write-grammar-notices.mjs
           node ./ferriki/scripts/sync-standard-assets.mjs --release-commit "$(git rev-parse HEAD)"
 
       - name: Verify all release packages
