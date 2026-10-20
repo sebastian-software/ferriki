@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.2](https://github.com/sebastian-software/ferriki/compare/v1.1.1...v1.1.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* **release:** materialize standard assets before packing for npm ([#284](https://github.com/sebastian-software/ferriki/issues/284)) ([8a959b2](https://github.com/sebastian-software/ferriki/commit/8a959b294357478b8233677b6bf0497a2249d3eb))
+
+
+### Performance Improvements
+
+* **deps:** adopt Ferroni 2.2.3 scanner optimization ([#283](https://github.com/sebastian-software/ferriki/issues/283)) ([5e1b00e](https://github.com/sebastian-software/ferriki/commit/5e1b00e1a9f6308ac4cd22541a28c502a72019ec))
+* **node:** render inline multi-theme HTML natively ([#281](https://github.com/sebastian-software/ferriki/issues/281)) ([e7a4fb1](https://github.com/sebastian-software/ferriki/commit/e7a4fb17e1eb34b45d4ed1bcb8d36d8de4ce85d8))
+* reduce highlighting and inline HTML allocations ([#279](https://github.com/sebastian-software/ferriki/issues/279)) ([ab3b911](https://github.com/sebastian-software/ferriki/commit/ab3b911f2659f8d95c516dbfd71c0d72ac6f5abe))
+
 ## [1.1.1](https://github.com/sebastian-software/ferriki/compare/v1.1.0...v1.1.1) (2026-10-16)
 
 
