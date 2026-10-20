@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-16
+Last updated: 2026-10-20
 
 ## Context
 
@@ -159,3 +159,7 @@ local build artifacts, not committed repository data.
 - 2026-10-16: Retires hosted commit-based URLs and the GitHub origin (#267).
   Uses Storage as the default origin and limits access/cache rules to short
   Base62 paths. Older catalogs require an update or a custom mirror.
+
+- 2026-10-20: The npm publish job materializes the standard catalog and grammar
+  notices before packing, as native builds do. It downloads prebuilt addons, so
+  without this step 1.1.1 packed no `assets/standard` and never reached npm.
