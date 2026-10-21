@@ -8,6 +8,10 @@ use crate::{Error, ErrorKind, Result};
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct TokenizeOptions {
+    /// Best-effort per-line budget in milliseconds. Ferriki checks it between
+    /// tokenizer matching passes and after each synchronous pass returns; a
+    /// regex search cannot be interrupted and may run past the budget. `0`
+    /// disables the time limit.
     pub time_limit_millis: u64,
     pub max_line_length: usize,
     pub include_token_type: bool,

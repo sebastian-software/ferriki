@@ -56,6 +56,10 @@ The default per-line tokenization budget is 500 ms. Set
 acceptable. `tokenizeMaxLineLength` defaults to unlimited (`0`); when set, a
 line at or above the limit is returned as one unstyled token so callers can
 identify the degradation instead of receiving misleading syntax colors.
+The time budget is best-effort: Ferriki checks it between tokenizer matching
+passes and after each pass returns. A pass can run one or more synchronous
+regex searches, which cannot be interrupted and may run past the budget. The
+overrun is reported as a stopped-early tokenization result.
 
 Ferriki's public highlighter is synchronous after creation. Calls on one
 instance are serialized; use one instance per worker for parallel workloads.

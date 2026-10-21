@@ -35,6 +35,10 @@ Each line has a 500 ms tokenization budget by default. Set
 `tokenizeTimeLimit: 0` only for trusted input. With `tokenizeMaxLineLength`
 set, a longer line comes back as one unstyled token, so the degradation is
 visible instead of silently wrong.
+The time budget is best-effort. Ferriki checks it between tokenizer matching
+passes and after each pass returns. A pass can run one or more synchronous
+regex searches, which cannot be interrupted and may exceed the budget. An
+overrun is reported as stopped-early tokenization.
 
 ## ANSI input is rejected
 
