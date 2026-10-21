@@ -407,7 +407,15 @@ impl RemoteAssetHost {
         );
         let digests = paths
             .into_iter()
-            .map(|path| self.release.assets[path].sha256.parse::<AssetDigest>())
+            .map(|path| {
+                let asset = self.release.assets.get(path).ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::AssetFormat,
+                        format!("Release metadata is missing `{path}`."),
+                    )
+                })?;
+                asset.sha256.parse::<AssetDigest>()
+            })
             .collect::<Result<Vec<_>>>()?;
         // A language with its embedded languages is a dozen small files; fetch
         // them concurrently, a few at a time, and report the first failure.
@@ -440,7 +448,19 @@ impl RemoteAssetHost {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ferriki_asset_gen::{AssetSourceRef, generate_catalogs_from_upstream};
     use std::collections::BTreeMap;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static NEXT_TEMP: AtomicUsize = AtomicUsize::new(0);
+
+    fn temp_dir(label: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "ferriki-remote-{label}-{}-{}",
+            std::process::id(),
+            NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+        ))
+    }
 
     fn release(commit: Option<&str>) -> ReleaseManifest {
         ReleaseManifest::from_json(&format!(
@@ -526,5 +546,59 @@ mod tests {
             .expect_err("no cache directory");
         assert_eq!(error.kind(), ErrorKind::AssetIo);
         assert!(error.to_string().contains("FERRIKI_CACHE_DIR"));
+    }
+
+    #[test]
+    fn prefetch_reports_missing_release_metadata_without_panicking() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("missing-release-entry");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let language_manifest = decode_language_manifest(
+            &std::fs::read(root.join("languages/manifest.fkindex")).expect("language manifest"),
+        )
+        .expect("decode language manifest");
+        let language = &language_manifest.entries[0];
+        let missing_path = format!("languages/{}", language.asset_file);
+        let mut release: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        release["assets"]
+            .as_object_mut()
+            .expect("release assets")
+            .remove(&missing_path)
+            .expect("language release metadata");
+        std::fs::write(
+            root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE),
+            serde_json::to_vec(&release).expect("serialize release manifest"),
+        )
+        .expect("write incomplete release manifest");
+
+        let host = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(temp_dir("missing-release-entry-cache"))),
+        )
+        .expect("remote host");
+        let error = host
+            .prefetch(std::slice::from_ref(&language.id), &[])
+            .expect_err("missing release metadata should be an error");
+
+        assert_eq!(error.kind(), ErrorKind::AssetFormat);
+        assert!(error.to_string().contains(&missing_path));
+        std::fs::remove_dir_all(root).expect("remove catalog fixture");
     }
 }
