@@ -20,6 +20,10 @@ import { createAssetDownloader } from "./asset-download.mjs";
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const standardAssetRoot = join(packageDir, "assets", "standard");
 const NONE_THEME_BACKING = "nord";
+const GRAMMAR_STATE_SOURCE_PREFIX = "\0ferriki-grammar-state-v1\0";
+const MAX_GRAMMAR_STATE_JSON_BYTES = 1_048_576;
+const GRAMMAR_STATE_CONTINUATION = Symbol("ferriki.grammar-state-continuation");
+const GRAMMAR_STATE_CAPTURE = Symbol("ferriki.grammar-state-capture");
 let singleton;
 
 export class ShikiError extends Error {
@@ -246,6 +250,11 @@ export function createHighlighterCoreSync(options = {}) {
     prepared.lang = language;
     prepared.theme = theme;
     delete prepared.themes;
+    delete prepared.continuationState;
+    delete prepared.captureContinuationState;
+    if (options?.[GRAMMAR_STATE_CONTINUATION] !== undefined)
+      prepared.continuationState = options[GRAMMAR_STATE_CONTINUATION];
+    if (options?.[GRAMMAR_STATE_CAPTURE]) prepared.captureContinuationState = true;
     // The build-time code element transformer needs scope identity in inline
     // output too. Keep this control private to the native presentation bridge.
     if (
@@ -262,6 +271,8 @@ export function createHighlighterCoreSync(options = {}) {
     delete prepared.meta;
     delete prepared.data;
     delete prepared.grammarState;
+    delete prepared[GRAMMAR_STATE_CONTINUATION];
+    delete prepared[GRAMMAR_STATE_CAPTURE];
     // The typed native boundary receives normalized tabindex controls.
     if (prepared.tabindex === null) prepared.tabindex = false;
     else if (typeof prepared.tabindex === "number") prepared.tabindex = String(prepared.tabindex);
@@ -282,7 +293,10 @@ export function createHighlighterCoreSync(options = {}) {
     loadThemeSync(...themes.map((theme) => theme.input));
     if (
       typeof native.getHtmlRenderDataWithThemes === "function" &&
-      !themes.some((theme) => theme.name === "none")
+      !themes.some((theme) => theme.name === "none") &&
+      !options?.grammarState &&
+      options?.[GRAMMAR_STATE_CONTINUATION] === undefined &&
+      !options?.[GRAMMAR_STATE_CAPTURE]
     ) {
       const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
       prepared.themeEntries = themes;
@@ -333,23 +347,57 @@ export function createHighlighterCoreSync(options = {}) {
     return [registrationName(options?.theme) || result.themeName];
   }
 
-  function makeGrammarState(code, options, result) {
+  function makeGrammarState(options, result) {
     const language = grammarLanguage(options);
     const themes = grammarThemes(options, result);
     const lastToken = result.tokens.flat().at(-1);
     const scopes = lastToken?.scopeNames?.length
       ? [...lastToken.scopeNames.slice(0, -1)].reverse()
       : [scopeNameForLanguage(language)];
+    if (typeof result.continuationState !== "string")
+      throw new FerrikiError("Native tokenization did not return grammar state", "ERR_INTERNAL");
     return {
       version: 1,
+      stateFormat: "textmate-stack-v1",
       lang: language,
       theme: themes[0],
       themes,
       scopes,
-      // Ferriki keeps the context in the serializable state so a state can
-      // cross a worker or process boundary without leaking native pointers.
-      source: code,
+      // Keep the stable v1 object shape while storing a portable native stack
+      // in this opaque context. Legacy v1 raw-source states remain accepted.
+      source: `${GRAMMAR_STATE_SOURCE_PREFIX}${result.continuationState}`,
     };
+  }
+
+  function decodeGrammarStateSource(state) {
+    if (state.stateFormat === undefined) return undefined;
+    if (
+      state.stateFormat !== "textmate-stack-v1" ||
+      !state.source.startsWith(GRAMMAR_STATE_SOURCE_PREFIX)
+    )
+      throw new ShikiError("Invalid grammar state", "ERR_USAGE");
+    if (
+      Buffer.byteLength(state.source, "utf8") >
+      Buffer.byteLength(GRAMMAR_STATE_SOURCE_PREFIX, "utf8") + MAX_GRAMMAR_STATE_JSON_BYTES
+    )
+      throw new ShikiError("Invalid grammar state", "ERR_USAGE");
+    const source = state.source;
+    const serialized = source.slice(GRAMMAR_STATE_SOURCE_PREFIX.length);
+    try {
+      const value = JSON.parse(serialized);
+      if (
+        !value ||
+        typeof value !== "object" ||
+        value.version !== 1 ||
+        typeof value.grammarFingerprint !== "string" ||
+        typeof value.rootScope !== "string" ||
+        !Array.isArray(value.frames)
+      )
+        throw new Error("invalid native state envelope");
+      return serialized;
+    } catch {
+      throw new ShikiError("Invalid grammar state", "ERR_USAGE");
+    }
   }
 
   function validateGrammarState(state, options) {
@@ -365,6 +413,8 @@ export function createHighlighterCoreSync(options = {}) {
     ) {
       throw new ShikiError("Invalid grammar state", "ERR_USAGE");
     }
+    if (state.stateFormat !== undefined && state.stateFormat !== "textmate-stack-v1")
+      throw new ShikiError("Invalid grammar state", "ERR_USAGE");
     const language = grammarLanguage(options);
     if (state.lang !== language)
       throw new ShikiError(
@@ -379,6 +429,7 @@ export function createHighlighterCoreSync(options = {}) {
           "ERR_USAGE",
         );
     }
+    decodeGrammarStateSource(state);
     return state;
   }
 
@@ -386,6 +437,9 @@ export function createHighlighterCoreSync(options = {}) {
     const state = options?.grammarState;
     if (!state) return { source: code, prefixLength: 0, prefixLines: 0 };
     validateGrammarState(state, options);
+    const continuationState = decodeGrammarStateSource(state);
+    if (continuationState !== undefined)
+      return { source: code, prefixLength: 0, prefixLines: 0, continuationState };
     const separator = state.source.endsWith("\n") ? "" : "\n";
     return {
       source: `${state.source}${separator}${code}`,
@@ -413,6 +467,9 @@ export function createHighlighterCoreSync(options = {}) {
     const sourceOptions = input.prefixLength
       ? { ...validated, grammarState: undefined }
       : { ...validated };
+    sourceOptions[GRAMMAR_STATE_CAPTURE] = true;
+    if (input.continuationState !== undefined)
+      sourceOptions[GRAMMAR_STATE_CONTINUATION] = input.continuationState;
     // Grammar state uses the final token scope path, so request scopes when no
     // callback metadata mode selected them.
     if (sourceOptions.includeExplanation === undefined)
@@ -426,7 +483,7 @@ export function createHighlighterCoreSync(options = {}) {
       result = highlightWithTransformers(input.source, sourceOptions);
     else result = renderHtmlDataRaw(input.source, sourceOptions);
     result = removeGrammarPrefix(result, input.prefixLength, input.prefixLines);
-    return makeGrammarState(input.source, validated, result);
+    return makeGrammarState(validated, result);
   }
 
   function getGrammarState(code, options) {
@@ -482,8 +539,11 @@ export function createHighlighterCoreSync(options = {}) {
     context.source = source;
     assertAnsiInput(source, validated);
     const input = prepareGrammarInput(source, validated);
+    const nativeOptions = { ...validated };
+    if (input.continuationState !== undefined)
+      nativeOptions[GRAMMAR_STATE_CONTINUATION] = input.continuationState;
     const result = removeGrammarPrefix(
-      renderHtmlDataRaw(input.source, validated),
+      renderHtmlDataRaw(input.source, nativeOptions),
       input.prefixLength,
       input.prefixLines,
     );
@@ -1023,6 +1083,8 @@ function callNativeOperation(message, operation) {
   } catch (cause) {
     if (cause instanceof ShikiError) throw cause;
     const detail = cause instanceof Error ? cause.message : String(cause);
+    if (detail.includes("Invalid grammar state:"))
+      throw new ShikiError("Invalid grammar state", "ERR_USAGE", { cause });
     const code = /time|line length|resource|limit/i.test(detail)
       ? "ERR_RESOURCE_LIMIT"
       : /asset|grammar|theme|catalog/i.test(detail)
@@ -1225,6 +1287,9 @@ function combineThemeResults(results, options) {
     bg: background,
     themeName: `shiki-themes ${results.map((result) => result.name).join(" ")}`,
     ...(defaultColor ? {} : { rootStyle: `${foreground};${background}` }),
+    ...(results[0]?.result.continuationState
+      ? { continuationState: results[0].result.continuationState }
+      : {}),
   };
 }
 

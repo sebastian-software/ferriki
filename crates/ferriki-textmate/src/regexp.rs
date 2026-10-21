@@ -5,6 +5,7 @@
 //! TextMate regular-expression sources compiled onto ferroni's Scanner API.
 
 use std::array;
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -136,6 +137,30 @@ impl<T> RegExpSource<T> {
         replace_numeric_back_references(&self.source, line_text, capture_indices)
     }
 
+    /// Checks that a serialized dynamic pattern could only have been produced
+    /// by replacing this source's numeric backreferences with escaped captures.
+    ///
+    /// Grammar-state snapshots are untrusted input. Accepting an arbitrary
+    /// replacement here would let a caller supply executable regex syntax in
+    /// place of the captured text, so matching is bounded by a fixed work
+    /// budget and validates the exact escaping performed by the tokenizer.
+    pub(crate) fn is_valid_back_reference_expansion(
+        &self,
+        candidate: &str,
+        work: &mut usize,
+    ) -> bool {
+        let parts = split_back_reference_source(&self.source);
+        let reference_count = parts
+            .iter()
+            .filter(|part| matches!(part, BackReferencePart::Capture))
+            .count();
+        if reference_count == 0 || reference_count > MAX_VALIDATION_BACKREFERENCES {
+            return false;
+        }
+        let mut memo = HashMap::new();
+        matches_back_reference_parts(&parts, candidate, 0, 0, &mut memo, work)
+    }
+
     #[must_use]
     pub(crate) fn resolve_anchors(&self, allow_a: bool, allow_g: bool) -> &str {
         let Some(cache) = self.anchor_cache.as_ref() else {
@@ -148,6 +173,123 @@ impl<T> RegExpSource<T> {
             (true, true) => &cache.a1_g1,
         }
     }
+}
+
+const MAX_VALIDATION_BACKREFERENCES: usize = 256;
+const MAX_BACK_REFERENCE_VALIDATION_WORK: usize = 100_000;
+
+enum BackReferencePart<'a> {
+    Literal(&'a str),
+    Capture,
+}
+
+fn split_back_reference_source(source: &str) -> Vec<BackReferencePart<'_>> {
+    let bytes = source.as_bytes();
+    let mut parts = Vec::new();
+    let mut position = 0;
+    let mut last_pushed_position = 0;
+    while position < bytes.len() {
+        if bytes[position] == b'\\' && bytes.get(position + 1).is_some_and(u8::is_ascii_digit) {
+            let mut digit_end = position + 2;
+            while bytes.get(digit_end).is_some_and(u8::is_ascii_digit) {
+                digit_end += 1;
+            }
+            parts.push(BackReferencePart::Literal(
+                &source[last_pushed_position..position],
+            ));
+            parts.push(BackReferencePart::Capture);
+            last_pushed_position = digit_end;
+            position = digit_end;
+        } else {
+            position += 1;
+        }
+    }
+    parts.push(BackReferencePart::Literal(&source[last_pushed_position..]));
+    parts
+}
+
+fn matches_back_reference_parts(
+    parts: &[BackReferencePart<'_>],
+    candidate: &str,
+    part_index: usize,
+    byte_position: usize,
+    memo: &mut HashMap<(usize, usize), bool>,
+    work: &mut usize,
+) -> bool {
+    *work += 1;
+    if *work > MAX_BACK_REFERENCE_VALIDATION_WORK {
+        return false;
+    }
+    if let Some(result) = memo.get(&(part_index, byte_position)) {
+        return *result;
+    }
+    let result = match parts.get(part_index) {
+        None => byte_position == candidate.len(),
+        Some(BackReferencePart::Literal(literal)) => {
+            candidate
+                .get(byte_position..)
+                .is_some_and(|suffix| suffix.starts_with(literal))
+                && matches_back_reference_parts(
+                    parts,
+                    candidate,
+                    part_index + 1,
+                    byte_position + literal.len(),
+                    memo,
+                    work,
+                )
+        }
+        Some(BackReferencePart::Capture) => {
+            let mut end = byte_position;
+            loop {
+                if matches_back_reference_parts(parts, candidate, part_index + 1, end, memo, work) {
+                    break true;
+                }
+                let Some(next_end) = escaped_capture_character_end(candidate, end) else {
+                    break false;
+                };
+                end = next_end;
+                *work += 1;
+                if *work > MAX_BACK_REFERENCE_VALIDATION_WORK {
+                    break false;
+                }
+            }
+        }
+    };
+    memo.insert((part_index, byte_position), result);
+    result
+}
+
+fn escaped_capture_character_end(value: &str, byte_position: usize) -> Option<usize> {
+    let character = value.get(byte_position..)?.chars().next()?;
+    if character == '\\' {
+        let next_position = byte_position + character.len_utf8();
+        let escaped_character = value.get(next_position..)?.chars().next()?;
+        return requires_regex_literal_escape(escaped_character)
+            .then_some(next_position + escaped_character.len_utf8());
+    }
+    (!requires_regex_literal_escape(character)).then_some(byte_position + character.len_utf8())
+}
+
+fn requires_regex_literal_escape(character: char) -> bool {
+    matches!(
+        character,
+        '-' | '\\'
+            | '{'
+            | '}'
+            | '*'
+            | '+'
+            | '?'
+            | '|'
+            | '^'
+            | '$'
+            | '.'
+            | ','
+            | '['
+            | ']'
+            | '('
+            | ')'
+            | '#'
+    ) || character.is_whitespace()
 }
 
 fn rewrite_end_anchor(source: &str) -> (String, bool) {
@@ -318,26 +460,7 @@ fn utf16_offset_to_utf8(value: &str, offset: usize) -> usize {
 fn escape_reg_exp_characters(value: &str) -> String {
     let mut escaped = String::with_capacity(value.len());
     for character in value.chars() {
-        if matches!(
-            character,
-            '-' | '\\'
-                | '{'
-                | '}'
-                | '*'
-                | '+'
-                | '?'
-                | '|'
-                | '^'
-                | '$'
-                | '.'
-                | ','
-                | '['
-                | ']'
-                | '('
-                | ')'
-                | '#'
-        ) || character.is_whitespace()
-        {
+        if requires_regex_literal_escape(character) {
             escaped.push('\\');
         }
         escaped.push(character);
@@ -872,6 +995,35 @@ mod tests {
             source.resolve_back_references(line, &captures),
             r"end-a\.b-"
         );
+        let mut work = 0;
+        assert!(source.is_valid_back_reference_expansion(r"end-a\.b-", &mut work));
+        let mut work = 0;
+        assert!(!source.is_valid_back_reference_expansion(r"end-a.*-", &mut work));
+        let mut work = 0;
+        assert!(!source.is_valid_back_reference_expansion(r"end-a\q-", &mut work));
+    }
+
+    #[test]
+    fn validates_only_bounded_escaped_backreference_expansions() {
+        let source = RegExpSource::new(r"begin-\1-middle-\2-end", 1_u32);
+        let mut work = 0;
+        assert!(source.is_valid_back_reference_expansion(r"begin-a\.b-middle-x\*y-end", &mut work));
+        let mut work = 0;
+        assert!(!source.is_valid_back_reference_expansion(r"begin-a.*-middle-x-end", &mut work));
+
+        let too_many_backreferences = RegExpSource::new(r"\1".repeat(257), 2_u32);
+        let mut work = 0;
+        assert!(!too_many_backreferences.is_valid_back_reference_expansion("", &mut work));
+    }
+
+    #[test]
+    fn enforces_backreference_validation_budget_across_frames() {
+        let source = RegExpSource::new(r"\1", 1_u32);
+        let pattern = "a".repeat(15_000);
+        let mut work = 0;
+        assert!(source.is_valid_back_reference_expansion(&pattern, &mut work));
+        assert!(source.is_valid_back_reference_expansion(&pattern, &mut work));
+        assert!(!source.is_valid_back_reference_expansion(&pattern, &mut work));
     }
 
     #[test]

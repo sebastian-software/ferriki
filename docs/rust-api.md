@@ -153,6 +153,20 @@ failures. `TokenizeOptions` exposes the same resource limits as the Node core.
 An overlong line is returned as a plain token, matching the Node behavior;
 tokenizer failures use `ErrorKind::Tokenization`.
 
+`ferriki-textmate::Grammar` can serialize a returned `Arc<StateStack>` with
+`serialize_state_stack(Some(&stack))` and restore it with
+`deserialize_state_stack(&json)`. The versioned JSON carries the compiled
+grammar fingerprint and scope/rule frames, not the full input or theme
+attributes. Dynamic backreferences and captured scope names can retain the
+matched fragments needed to resume; the receiving grammar reapplies its current
+theme. Pass `None` to serialize the initial root stack. Snapshots are limited
+to 1 MiB, 2,048 frames, 4,096 scope frames, and 64 KiB per dynamic pattern;
+backreference and rule-relationship validation also has a cumulative work
+limit of 100,000 steps. Restoration rejects malformed snapshots or a different grammar.
+The grammar, embedded grammar sources, and ordered contributed-injection list
+must match in the receiving process. Source-location metadata does not affect
+the fingerprint.
+
 Options and output records are non-exhaustive so later releases can add fields.
 Construct `TokenizeOptions` and `RenderOptions` with `Default` and their
 `with_*` methods; inspect output records without exhaustive destructuring.

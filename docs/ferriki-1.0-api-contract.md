@@ -120,7 +120,14 @@ The singleton retains its first creation's defaults.
   `txt`, `plain`, `plaintext`, and `ansi`; an omitted runtime `lang` defaults to
   `text` for HTML calls, although the TypeScript declaration requires `lang`.
   Pass that state through `grammarState` to a later HTML render; there are no
-  token-result or HAST-result overloads.
+  token-result or HAST-result overloads. Its stable `version: 1` and required
+  `source: string` fields remain; new results add optional
+  `stateFormat: "textmate-stack-v1"` and store a compact serialized tokenizer
+  stack in the opaque `source` field. Legacy v1 states without `stateFormat`
+  retain raw-source continuation compatibility. The first use as
+  `grammarState` in `getLastGrammarState` replays the source and returns a
+  compact state; `codeToHtml` replays a legacy source for that call and returns
+  only HTML. Legacy replay keeps its prior unbounded source-size behavior.
 - Standalone Node HAST/token methods and the public `hastToHtml()` serializer
   are removed before 1.0. This is a deliberate breaking divergence from
   Shiki, with no deprecated aliases or compatibility package.

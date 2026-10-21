@@ -2,7 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+use std::collections::HashSet;
 use std::sync::{Arc, PoisonError, RwLock};
+
+use serde::{Deserialize, Serialize};
 
 use crate::BacktrackingWarning;
 use crate::RegexError;
@@ -17,8 +20,8 @@ use crate::line_output::{
 };
 use crate::matcher::MatcherPriority;
 use crate::raw_grammar::{RawGrammar, RuleId};
-use crate::regexp::{OnigString, ScannerPatternCache};
-use crate::rule::RuleRegistry;
+use crate::regexp::{OnigString, ScannerPatternCache, has_captures};
+use crate::rule::{Rule, RuleRegistry};
 use crate::rule_factory::{GrammarProvider, RuleFactory};
 use crate::state_stack::StateStack;
 use crate::theme::{ScopeStack, StyleAttributes, Theme};
@@ -157,12 +160,110 @@ enum TokenOutput {
 pub struct Grammar {
     root_id: RuleId,
     root_scope_name: String,
+    grammar_fingerprint: String,
     registry: RuleRegistry,
     injections: Vec<Injection>,
     basic_scope_attributes: BasicScopeAttributesProvider,
     token_type_matchers: Vec<TokenTypeMatcher>,
     balanced_bracket_selectors: Option<BalancedBracketSelectors>,
     theme_provider: ThemeProvider,
+}
+
+const MAX_SERIALIZED_GRAMMAR_STATE_BYTES: usize = 1_048_576;
+const MAX_SERIALIZED_GRAMMAR_STATE_DEPTH: usize = 2_048;
+const MAX_SERIALIZED_GRAMMAR_STATE_SCOPES: usize = 4_096;
+const MAX_SERIALIZED_DYNAMIC_PATTERN_BYTES: usize = 65_536;
+const MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK: usize = 100_000;
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct SerializedGrammarState {
+    version: u8,
+    grammar_fingerprint: String,
+    root_scope: String,
+    frames: Vec<SerializedStateStackFrame>,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct SerializedStateStackFrame {
+    rule_id: u32,
+    begin_rule_captured_eol: bool,
+    end_rule: Option<String>,
+    name_scopes: Vec<Vec<String>>,
+    content_name_scopes: Vec<Vec<String>>,
+}
+
+impl SerializedStateStackFrame {
+    fn from_stack(stack: &Arc<StateStack>) -> Self {
+        Self {
+            rule_id: stack.rule_id().get(),
+            begin_rule_captured_eol: stack.begin_rule_captured_eol,
+            end_rule: stack.end_rule.clone(),
+            name_scopes: scope_extension(
+                stack.name_scopes_list.as_ref(),
+                stack
+                    .parent
+                    .as_ref()
+                    .and_then(|parent| parent.name_scopes_list.as_ref()),
+            ),
+            content_name_scopes: scope_extension(
+                stack.content_name_scopes_list.as_ref(),
+                stack.name_scopes_list.as_ref(),
+            ),
+        }
+    }
+}
+
+fn scope_extension(
+    stack: Option<&Arc<AttributedScopeStack>>,
+    base: Option<&Arc<AttributedScopeStack>>,
+) -> Vec<Vec<String>> {
+    stack
+        .and_then(|stack| stack.extension_if_defined(base))
+        .unwrap_or_default()
+        .into_iter()
+        .map(|frame| frame.scope_names)
+        .collect()
+}
+
+fn serialized_scope_count(frames: &[SerializedStateStackFrame]) -> usize {
+    frames
+        .iter()
+        .map(|frame| frame.name_scopes.len() + frame.content_name_scopes.len())
+        .sum()
+}
+
+fn validate_scope_extensions(extensions: &[Vec<String>]) -> Result<(), String> {
+    for extension in extensions {
+        if extension.len() != 1
+            || extension.iter().any(|scope| {
+                scope.is_empty() || scope.chars().any(char::is_whitespace) || scope.len() > 4_096
+            })
+        {
+            return Err(invalid_serialized_state(
+                "state contains an invalid scope extension",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn extend_scope_stack(
+    base: Option<Arc<AttributedScopeStack>>,
+    extensions: &[Vec<String>],
+    provider: &impl ScopeAttributesProvider,
+) -> Option<Arc<AttributedScopeStack>> {
+    let mut current = base;
+    for extension in extensions {
+        let path = extension.join(" ");
+        current = current.map(|scope| scope.push_attributed(Some(&path), provider));
+    }
+    current
+}
+
+fn invalid_serialized_state(reason: &str) -> String {
+    format!("Invalid grammar state: {reason}")
 }
 
 /// Port of upstream `IThemeProvider`: grammars read the theme at tokenize
@@ -242,9 +343,10 @@ impl Grammar {
             injections.extend(Injection::from_selector(selector, rule_id));
         }
 
-        for injection_scope_name in grammar_provider.injections(&root_grammar.scope_name) {
+        let external_injection_scopes = grammar_provider.injections(&root_grammar.scope_name);
+        for injection_scope_name in &external_injection_scopes {
             let Some((injection_grammar, rule_id)) =
-                factory.compile_external_grammar(&injection_scope_name)
+                factory.compile_external_grammar(injection_scope_name)
             else {
                 continue;
             };
@@ -254,6 +356,7 @@ impl Grammar {
         }
         injections.sort_by_key(|injection| priority_order(injection.priority));
 
+        let grammar_fingerprint = factory.grammar_fingerprint(&external_injection_scopes);
         let (_, mut registry) = factory.into_parts();
         registry.regex_prefilter = configuration.regex_prefilter;
         let token_type_matchers = configuration
@@ -277,6 +380,7 @@ impl Grammar {
         Self {
             root_id,
             root_scope_name: root_grammar.scope_name.clone(),
+            grammar_fingerprint,
             registry,
             injections,
             basic_scope_attributes: BasicScopeAttributesProvider::new(
@@ -318,6 +422,109 @@ impl Grammar {
     #[must_use]
     pub fn color_map(&self) -> Vec<String> {
         self.theme_provider.theme().get_color_map()
+    }
+
+    /// Serializes a tokenizer stack for continuation across process boundaries.
+    ///
+    /// The versioned JSON contains grammar identity and scope/rule frames, but
+    /// no theme attributes or full input text. Dynamic backreferences and
+    /// captured scope names can retain the matched fragments needed to resume.
+    /// A receiving grammar resolves attributes with its current theme. Pass
+    /// `None` to serialize the initial
+    /// root stack. Snapshots are limited to 1 MiB and 2,048 stack frames.
+    pub fn serialize_state_stack(&self, state: Option<&Arc<StateStack>>) -> Result<String, String> {
+        let state = state.cloned().unwrap_or_else(|| self.initial_state());
+        if state.depth > MAX_SERIALIZED_GRAMMAR_STATE_DEPTH {
+            return Err(invalid_serialized_state("state stack is too deep"));
+        }
+        let mut stacks = Vec::with_capacity(state.depth);
+        let mut current = Some(state);
+        while let Some(stack) = current {
+            stacks.push(stack);
+            current = stacks.last().and_then(|stack| stack.parent.clone());
+        }
+        stacks.reverse();
+        let frames: Vec<_> = stacks
+            .iter()
+            .map(SerializedStateStackFrame::from_stack)
+            .collect();
+        if serialized_scope_count(&frames) > MAX_SERIALIZED_GRAMMAR_STATE_SCOPES {
+            return Err(invalid_serialized_state("state contains too many scopes"));
+        }
+        let mut validation_work = 0;
+        for (index, frame) in frames.iter().enumerate().skip(1) {
+            validate_serialized_frame(frame, &frames[index - 1], self, &mut validation_work)?;
+        }
+        let initial_state = self.initial_state();
+        if frames.first() != Some(&SerializedStateStackFrame::from_stack(&initial_state)) {
+            return Err(invalid_serialized_state(
+                "state stack belongs to a different grammar",
+            ));
+        }
+        let value = SerializedGrammarState {
+            version: 1,
+            grammar_fingerprint: self.grammar_fingerprint.clone(),
+            root_scope: self.root_scope_name.clone(),
+            frames,
+        };
+        let serialized = serde_json::to_string(&value)
+            .map_err(|error| invalid_serialized_state(&error.to_string()))?;
+        if serialized.len() > MAX_SERIALIZED_GRAMMAR_STATE_BYTES {
+            return Err(invalid_serialized_state("serialized state is too large"));
+        }
+        Ok(serialized)
+    }
+
+    /// Reconstructs a tokenizer stack produced by [`Self::serialize_state_stack`].
+    ///
+    /// Returns an error for invalid JSON, unsupported versions, a different
+    /// compiled grammar, invalid rule/scope frames, or snapshots beyond the
+    /// serialization limits.
+    pub fn deserialize_state_stack(&self, serialized: &str) -> Result<Arc<StateStack>, String> {
+        if serialized.len() > MAX_SERIALIZED_GRAMMAR_STATE_BYTES {
+            return Err(invalid_serialized_state("serialized state is too large"));
+        }
+        let value: SerializedGrammarState = serde_json::from_str(serialized)
+            .map_err(|error| invalid_serialized_state(&error.to_string()))?;
+        if value.version != 1
+            || value.grammar_fingerprint != self.grammar_fingerprint
+            || value.root_scope != self.root_scope_name
+            || value.frames.is_empty()
+            || value.frames.len() > MAX_SERIALIZED_GRAMMAR_STATE_DEPTH
+        {
+            return Err(invalid_serialized_state(
+                "state version, grammar, or root scope does not match",
+            ));
+        }
+
+        if serialized_scope_count(&value.frames) > MAX_SERIALIZED_GRAMMAR_STATE_SCOPES {
+            return Err(invalid_serialized_state("state contains too many scopes"));
+        }
+
+        let mut state = self.initial_state();
+        if value.frames.first() != Some(&SerializedStateStackFrame::from_stack(&state)) {
+            return Err(invalid_serialized_state("root stack frame is invalid"));
+        }
+        let mut validation_work = 0;
+        for (index, frame) in value.frames.iter().enumerate().skip(1) {
+            let rule_id = RuleId::new(frame.rule_id);
+            validate_serialized_frame(frame, &value.frames[index - 1], self, &mut validation_work)?;
+            let name_scopes_list =
+                extend_scope_stack(state.name_scopes_list.clone(), &frame.name_scopes, self);
+            let content_name_scopes_list =
+                extend_scope_stack(name_scopes_list.clone(), &frame.content_name_scopes, self);
+            state = StateStack::new(
+                Some(state),
+                rule_id,
+                -1,
+                -1,
+                frame.begin_rule_captured_eol,
+                frame.end_rule.clone(),
+                name_scopes_list,
+                content_name_scopes_list,
+            );
+        }
+        Ok(state)
     }
 
     pub fn tokenize_line(
@@ -481,6 +688,206 @@ impl Grammar {
     }
 }
 
+fn validate_serialized_frame(
+    frame: &SerializedStateStackFrame,
+    parent_frame: &SerializedStateStackFrame,
+    grammar: &Grammar,
+    validation_work: &mut usize,
+) -> Result<(), String> {
+    validate_scope_extensions(&frame.name_scopes)?;
+    validate_scope_extensions(&frame.content_name_scopes)?;
+    if frame
+        .end_rule
+        .as_ref()
+        .is_some_and(|end_rule| end_rule.len() > MAX_SERIALIZED_DYNAMIC_PATTERN_BYTES)
+    {
+        return Err(invalid_serialized_state(
+            "dynamic rule pattern exceeds the size limit",
+        ));
+    }
+
+    let rule_id = RuleId::new(frame.rule_id);
+    let rule = grammar
+        .registry
+        .try_get_rule(rule_id)
+        .ok_or_else(|| invalid_serialized_state("state references an unknown rule"))?;
+    if !is_valid_stack_child(parent_frame.rule_id, rule_id, grammar, validation_work)? {
+        return Err(invalid_serialized_state(
+            "state contains an invalid parent/child rule relationship",
+        ));
+    }
+    match rule {
+        Rule::BeginEnd(begin_end) => {
+            if frame.end_rule.is_some() != begin_end.end_has_back_references {
+                return Err(invalid_serialized_state(
+                    "state dynamic pattern does not match its grammar rule",
+                ));
+            }
+            if let Some(end_rule) = frame.end_rule.as_deref()
+                && !begin_end.has_valid_resolved_end_pattern(end_rule, validation_work)
+            {
+                return Err(invalid_serialized_state(
+                    "state dynamic pattern is not an escaped grammar backreference expansion",
+                ));
+            }
+        }
+        Rule::BeginWhile(begin_while) => {
+            if frame.end_rule.is_some() != begin_while.while_has_back_references {
+                return Err(invalid_serialized_state(
+                    "state dynamic pattern does not match its grammar rule",
+                ));
+            }
+            if let Some(end_rule) = frame.end_rule.as_deref()
+                && !begin_while.has_valid_resolved_while_pattern(end_rule, validation_work)
+            {
+                return Err(invalid_serialized_state(
+                    "state dynamic pattern is not an escaped grammar backreference expansion",
+                ));
+            }
+        }
+        Rule::Capture(_) | Rule::Match(_) | Rule::IncludeOnly(_) => {
+            return Err(invalid_serialized_state(
+                "state references a rule that cannot remain on the tokenizer stack",
+            ));
+        }
+    }
+
+    validate_static_scope_extensions(rule, frame, parent_frame)?;
+    Ok(())
+}
+
+fn validate_static_scope_extensions(
+    rule: &Rule,
+    frame: &SerializedStateStackFrame,
+    parent_frame: &SerializedStateStackFrame,
+) -> Result<(), String> {
+    let name = rule.get_name(None, None);
+    let mut inherited_name_scopes = scope_names(&parent_frame.content_name_scopes);
+    if let Some(expected) = static_scope_names(name) {
+        inherited_name_scopes.extend(expected);
+        if scope_names(&frame.name_scopes) != inherited_name_scopes {
+            return Err(invalid_serialized_state(
+                "state name scopes do not match the grammar rule",
+            ));
+        }
+    } else if !scope_names(&frame.name_scopes).starts_with(&inherited_name_scopes) {
+        return Err(invalid_serialized_state(
+            "state name scopes do not extend the parent content scopes",
+        ));
+    }
+
+    let content_name = rule.get_content_name("", &[]);
+    if let Some(expected) = static_scope_names(content_name)
+        && scope_names(&frame.content_name_scopes) != expected
+    {
+        return Err(invalid_serialized_state(
+            "state content scopes do not match the grammar rule",
+        ));
+    }
+    Ok(())
+}
+
+fn static_scope_names(name: Option<String>) -> Option<Vec<String>> {
+    let Some(name) = name else {
+        return Some(Vec::new());
+    };
+    if has_captures(Some(&name)) {
+        None
+    } else {
+        Some(name.split(' ').map(str::to_owned).collect())
+    }
+}
+
+fn scope_names(extensions: &[Vec<String>]) -> Vec<String> {
+    extensions
+        .iter()
+        .filter_map(|extension| extension.first().cloned())
+        .collect()
+}
+
+fn is_valid_stack_child(
+    parent_rule_id: u32,
+    child_rule_id: RuleId,
+    grammar: &Grammar,
+    validation_work: &mut usize,
+) -> Result<bool, String> {
+    let mut visited = HashSet::new();
+    if rule_patterns_reach(
+        parent_rule_id,
+        child_rule_id,
+        &grammar.registry,
+        &mut visited,
+        validation_work,
+    )? {
+        return Ok(true);
+    }
+    for injection in &grammar.injections {
+        let mut visited = HashSet::new();
+        if rule_patterns_reach(
+            injection.rule_id.get(),
+            child_rule_id,
+            &grammar.registry,
+            &mut visited,
+            validation_work,
+        )? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn rule_patterns_reach(
+    parent_rule_id: u32,
+    child_rule_id: RuleId,
+    registry: &RuleRegistry,
+    visited: &mut HashSet<u32>,
+    validation_work: &mut usize,
+) -> Result<bool, String> {
+    *validation_work += 1;
+    if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
+        return Err(invalid_serialized_state(
+            "state validation exceeded its work limit",
+        ));
+    }
+    let Some(parent) = registry.try_get_rule(RuleId::new(parent_rule_id)) else {
+        return Ok(false);
+    };
+    let patterns = match parent {
+        Rule::IncludeOnly(rule) => &rule.patterns,
+        Rule::BeginEnd(rule) => &rule.patterns,
+        Rule::BeginWhile(rule) => &rule.patterns,
+        Rule::Capture(_) | Rule::Match(_) => return Ok(false),
+    };
+    for pattern_id in patterns {
+        *validation_work += 1;
+        if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
+            return Err(invalid_serialized_state(
+                "state validation exceeded its work limit",
+            ));
+        }
+        if *pattern_id == child_rule_id {
+            return Ok(true);
+        }
+        if !visited.insert(pattern_id.get()) {
+            continue;
+        }
+        if registry
+            .try_get_rule(*pattern_id)
+            .is_some_and(|rule| rule.as_include_only().is_some())
+            && rule_patterns_reach(
+                pattern_id.get(),
+                child_rule_id,
+                registry,
+                visited,
+                validation_work,
+            )?
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 impl ScopeAttributesProvider for Grammar {
     fn metadata_for_scope(&self, scope_name: &str) -> BasicScopeAttributes {
         self.basic_scope_attributes
@@ -519,7 +926,12 @@ const fn priority_order(priority: MatcherPriority) -> i8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Grammar, GrammarConfiguration};
+    use super::{
+        Grammar, GrammarConfiguration, MAX_SERIALIZED_DYNAMIC_PATTERN_BYTES,
+        MAX_SERIALIZED_GRAMMAR_STATE_SCOPES,
+    };
+    use crate::raw_grammar::RuleId;
+    use crate::rule::Rule;
     use crate::{
         BacktrackingRisk, EncodedTokenAttributes, GrammarStore, RawGrammar, RawTheme,
         StandardTokenType, Theme,
@@ -531,6 +943,17 @@ mod tests {
 
     fn default_theme() -> Theme {
         Theme::create_from_raw_theme(None, None).unwrap()
+    }
+
+    fn find_rule_id(grammar: &Grammar, predicate: impl Fn(&Rule) -> bool) -> u32 {
+        (1..=grammar.registry.len() as u32)
+            .find(|id| {
+                grammar
+                    .registry
+                    .try_get_rule(RuleId::new(*id))
+                    .is_some_and(&predicate)
+            })
+            .expect("the test grammar should contain the requested rule kind")
     }
 
     #[test]
@@ -707,6 +1130,382 @@ mod tests {
             .unwrap();
         assert_eq!(second.rule_stack.depth, 1);
         assert!(!second.stopped_early);
+    }
+
+    #[test]
+    fn serializes_and_restores_state_across_grammar_instances() {
+        let raw = raw_grammar(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "\"",
+                    "end": "\"",
+                    "name": "string.quoted.test"
+                }]
+            }"#,
+        );
+        let store = GrammarStore::new();
+        let grammar = Grammar::new(
+            &raw,
+            &store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let first = grammar.tokenize_line2("\"open", None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&first.rule_stack))
+            .unwrap();
+        let serialized =
+            serde_json::to_string(&serde_json::from_str::<serde_json::Value>(&serialized).unwrap())
+                .unwrap();
+
+        let fresh_grammar = Grammar::new(
+            &raw,
+            &store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let restored = fresh_grammar.deserialize_state_stack(&serialized).unwrap();
+        let continued = fresh_grammar
+            .tokenize_line2("close\"", Some(restored), 0)
+            .unwrap();
+        let uninterrupted = grammar
+            .tokenize_line2("close\"", Some(first.rule_stack), 0)
+            .unwrap();
+
+        assert_eq!(continued.tokens, uninterrupted.tokens);
+        assert!(continued.rule_stack.equals(&uninterrupted.rule_stack));
+
+        let mut wrong_grammar = serde_json::from_str::<serde_json::Value>(&serialized).unwrap();
+        wrong_grammar["grammarFingerprint"] = serde_json::Value::String("wrong".into());
+        assert!(
+            fresh_grammar
+                .deserialize_state_stack(&wrong_grammar.to_string())
+                .is_err()
+        );
+
+        let unnamed = raw_grammar(
+            r#"{
+                "scopeName": "source.unnamed",
+                "patterns": [{ "begin": "O", "end": "E" }]
+            }"#,
+        );
+        let unnamed_grammar = Grammar::new(
+            &unnamed,
+            &store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let unnamed_state = unnamed_grammar.tokenize_line("O", None, 0).unwrap();
+        let unnamed_json = unnamed_grammar
+            .serialize_state_stack(Some(&unnamed_state.rule_stack))
+            .unwrap();
+        assert!(
+            unnamed_grammar
+                .deserialize_state_stack(&unnamed_json)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_forged_rule_kinds_dynamic_patterns_and_scope_extensions() {
+        let raw = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "\\\"",
+                        "end": "\\\"",
+                        "name": "string.quoted",
+                        "contentName": "string.content",
+                        "beginCaptures": { "0": { "name": "punctuation.begin" } }
+                    },
+                    { "match": "x", "name": "word" },
+                    { "include": "#container" }
+                ],
+                "repository": { "container": { "patterns": [{ "match": "y" }] } }
+            }"##,
+        );
+        let grammar = Grammar::new(
+            &raw,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line("\"open", None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .unwrap();
+        let valid: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+
+        let non_stack_rule_ids = [
+            find_rule_id(&grammar, |rule| rule.as_match().is_some()),
+            find_rule_id(&grammar, |rule| rule.as_capture().is_some()),
+            find_rule_id(&grammar, |rule| rule.as_include_only().is_some()),
+        ];
+        for rule_id in non_stack_rule_ids {
+            let mut forged = valid.clone();
+            forged["frames"][1]["ruleId"] = serde_json::Value::from(rule_id);
+            assert!(
+                grammar
+                    .deserialize_state_stack(&forged.to_string())
+                    .err()
+                    .expect("forged rule ID should be rejected")
+                    .starts_with("Invalid grammar state:"),
+                "rule ID {rule_id} must not be accepted as a stack frame"
+            );
+        }
+
+        let mut forged = valid.clone();
+        forged["frames"][1]["endRule"] = serde_json::Value::String("attacker.*".into());
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+
+        let mut forged = valid.clone();
+        forged["frames"][1]["nameScopes"] = serde_json::json!([["forged.scope"]]);
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+
+        let mut forged = valid.clone();
+        forged["frames"][1]["contentNameScopes"] = serde_json::json!([["forged.scope"]]);
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+
+        let mut forged = valid.clone();
+        forged["frames"][1]["nameScopes"] = serde_json::json!([["string", "quoted"]]);
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+
+        let mut forged = valid;
+        forged["frames"][1]["nameScopes"] = serde_json::Value::Array(
+            (0..=MAX_SERIALIZED_GRAMMAR_STATE_SCOPES)
+                .map(|_| serde_json::json!(["scope"]))
+                .collect(),
+        );
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_a_valid_rule_id_in_an_invalid_parent_child_position() {
+        let raw = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "O", "end": "E", "name": "outer",
+                        "contentName": "outer.content",
+                        "patterns": [{ "begin": "I", "end": "J", "name": "inner" }]
+                    },
+                    { "begin": "S", "end": "T", "name": "sibling" }
+                ]
+            }"##,
+        );
+        let grammar = Grammar::new(
+            &raw,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let nested = grammar.tokenize_line("OI", None, 0).unwrap();
+        assert_eq!(nested.rule_stack.depth, 3);
+        let sibling = grammar.tokenize_line("S", None, 0).unwrap();
+        let nested_state: serde_json::Value = serde_json::from_str(
+            &grammar
+                .serialize_state_stack(Some(&nested.rule_stack))
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(
+            grammar
+                .deserialize_state_stack(&nested_state.to_string())
+                .is_ok()
+        );
+        let sibling_state: serde_json::Value = serde_json::from_str(
+            &grammar
+                .serialize_state_stack(Some(&sibling.rule_stack))
+                .unwrap(),
+        )
+        .unwrap();
+        let sibling_rule_id = sibling_state["frames"][1]["ruleId"].as_u64().unwrap();
+        let mut forged = nested_state;
+        forged["frames"][2]["ruleId"] = serde_json::Value::from(sibling_rule_id);
+
+        let error = grammar
+            .deserialize_state_stack(&forged.to_string())
+            .err()
+            .expect("invalid parent/child rule relationship should be rejected");
+        assert!(error.contains("parent/child rule relationship"));
+    }
+
+    #[test]
+    fn rejects_forged_and_oversized_dynamic_backreference_patterns() {
+        let raw = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [{ "begin": "([a]+)", "end": "\\1", "name": "string.test" }]
+            }"##,
+        );
+        let grammar = Grammar::new(
+            &raw,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line("aaa", None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .unwrap();
+        let valid: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+        assert!(grammar.deserialize_state_stack(&serialized).is_ok());
+
+        let mut forged = valid.clone();
+        forged["frames"][1]["endRule"] = serde_json::Value::String("a.*".into());
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+
+        let mut forged = valid;
+        forged["frames"][1]["endRule"] =
+            serde_json::Value::String("a".repeat(MAX_SERIALIZED_DYNAMIC_PATTERN_BYTES + 1));
+        assert!(
+            grammar
+                .deserialize_state_stack(&forged.to_string())
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn applies_one_cumulative_backreference_validation_budget_to_all_frames() {
+        let raw = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "(.+)", "end": "\\1", "name": "string.test",
+                    "patterns": [{ "include": "$self" }]
+                }]
+            }"##,
+        );
+        let grammar = Grammar::new(
+            &raw,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line(&"a".repeat(15_000), None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .unwrap();
+        let mut forged: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+        let frame = forged["frames"][1].clone();
+        for _ in 0..8 {
+            forged["frames"].as_array_mut().unwrap().push(frame.clone());
+        }
+
+        let error = grammar
+            .deserialize_state_stack(&forged.to_string())
+            .err()
+            .expect("unbounded repeated backreference validation should be rejected");
+        assert!(error.starts_with("Invalid grammar state:"));
+    }
+
+    #[test]
+    fn fingerprints_ignore_locations_but_include_ordered_external_injections() {
+        let located = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "$vscodeTextmateLocation": { "filename": "/one/source.tmLanguage.json", "line": 1, "char": 0 },
+                "patterns": [{
+                    "begin": "\\\"", "end": "\\\"", "name": "string.test",
+                    "$vscodeTextmateLocation": { "filename": "/one/rule.tmLanguage.json", "line": 2, "char": 3 }
+                }]
+            }"##,
+        );
+        let relocated = raw_grammar(
+            r##"{
+                "scopeName": "source.test",
+                "$vscodeTextmateLocation": { "filename": "/two/source.tmLanguage.json", "line": 99, "char": 8 },
+                "patterns": [{
+                    "begin": "\\\"", "end": "\\\"", "name": "string.test",
+                    "$vscodeTextmateLocation": { "filename": "/two/rule.tmLanguage.json", "line": 99, "char": 8 }
+                }]
+            }"##,
+        );
+        let empty_store = GrammarStore::new();
+        let first = Grammar::new(
+            &located,
+            &empty_store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let second = Grammar::new(
+            &relocated,
+            &empty_store,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = first.tokenize_line("\"open", None, 0).unwrap();
+        let portable = first.serialize_state_stack(Some(&open.rule_stack)).unwrap();
+        assert!(second.deserialize_state_stack(&portable).is_ok());
+
+        let root = raw_grammar(r##"{ "scopeName": "source.injected-test", "patterns": [] }"##);
+        let injection_a = raw_grammar(
+            r##"{
+                "scopeName": "source.inject-a", "injectionSelector": "L:source.injected-test",
+                "patterns": [{ "begin": "A", "end": "a", "name": "injected.a" }]
+            }"##,
+        );
+        let injection_b = raw_grammar(
+            r##"{
+                "scopeName": "source.inject-b", "injectionSelector": "L:source.injected-test",
+                "patterns": [{ "begin": "B", "end": "b", "name": "injected.b" }]
+            }"##,
+        );
+        let mut store_ab = GrammarStore::new();
+        store_ab.insert(injection_a.clone());
+        store_ab.insert(injection_b.clone());
+        store_ab.set_injections(
+            "source.injected-test",
+            vec!["source.inject-a".into(), "source.inject-b".into()],
+        );
+        let mut store_ba = GrammarStore::new();
+        store_ba.insert(injection_a);
+        store_ba.insert(injection_b);
+        store_ba.set_injections(
+            "source.injected-test",
+            vec!["source.inject-b".into(), "source.inject-a".into()],
+        );
+        let grammar_ab = Grammar::new(
+            &root,
+            &store_ab,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let grammar_ba = Grammar::new(
+            &root,
+            &store_ba,
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let state = grammar_ab.serialize_state_stack(None).unwrap();
+        assert!(grammar_ba.deserialize_state_stack(&state).is_err());
     }
 
     #[test]

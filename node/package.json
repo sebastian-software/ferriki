@@ -35,6 +35,7 @@
     "bench:decorations": "node ./scripts/bench-native-decorations.mjs",
     "check:transformers": "node ./scripts/check-ferriki-transformers.mjs",
     "check:token-state": "node ./scripts/check-ferriki-token-state.mjs",
+    "bench:grammar-state": "node ./scripts/bench-grammar-state-continuation.mjs",
     "check:ferromark-ardo": "node ./scripts/check-ferromark-ardo-contract.mjs",
     "check:platform-matrix": "node ./scripts/check-ferriki-platform-matrix.mjs",
     "check:docs": "node ./scripts/check-docs-contract.mjs && node ./scripts/check-packed-consumer.mjs",

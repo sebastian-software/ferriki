@@ -77,6 +77,7 @@ keys! {
     name => "name",
     foreground => "foreground",
     background => "background",
+    continuation_state => "continuationState",
 }
 
 /// Creates JavaScript values for the writer.
@@ -245,6 +246,10 @@ impl<'a, S: Sink> Writer<'a, S> {
             Some((keys.fg, self.sink.string(&value.fg)?)),
             Some((keys.bg, self.sink.string(&value.bg)?)),
             Some((keys.theme_name, self.sink.string(&value.theme_name)?)),
+            match &value.continuation_state {
+                Some(state) => Some((keys.continuation_state, self.sink.string(state)?)),
+                None => None,
+            },
         ];
         self.object(entries)
     }
@@ -255,7 +260,15 @@ impl<'a, S: Sink> Writer<'a, S> {
         })?;
         let themes = self.array(&value.themes, |writer, theme| writer.theme(theme))?;
         let keys = self.keys;
-        self.object([Some((keys.tokens, tokens)), Some((keys.themes, themes))])
+        let continuation_state = match &value.continuation_state {
+            Some(state) => Some((keys.continuation_state, self.sink.string(state)?)),
+            None => None,
+        };
+        self.object([
+            Some((keys.tokens, tokens)),
+            Some((keys.themes, themes)),
+            continuation_state,
+        ])
     }
 }
 

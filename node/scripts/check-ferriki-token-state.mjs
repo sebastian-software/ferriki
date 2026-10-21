@@ -3,7 +3,7 @@ import { createHighlighter, getLastGrammarState, ShikiError } from "../ferriki/i
 import "./test-asset-env.mjs";
 
 const highlighter = await createHighlighter({
-  langs: ["javascript", "typescript"],
+  langs: ["javascript", "typescript", "markdown"],
   themes: ["nord", "vitesse-light"],
 });
 
@@ -14,7 +14,12 @@ try {
   assert.deepEqual(roundTripped, state);
   assert.equal(state.lang, "javascript");
   assert.equal(state.theme, "nord");
-  assert.equal(state.source, 'const value = "');
+  assert.equal(state.version, 1);
+  assert.equal(state.stateFormat, "textmate-stack-v1");
+  assert.equal(typeof state.source, "string");
+  assert.notEqual(state.source, 'const value = "');
+  assert(!state.source.includes('const value = "'));
+  assert(Buffer.byteLength(state.source) < 1024);
 
   const fragment = 'text"';
   const natural = highlighter.codeToHtml(fragment, options);
@@ -24,6 +29,37 @@ try {
   assert.equal(
     continued,
     highlighter.codeToHtml(fragment, { ...options, grammarState: roundTripped }),
+  );
+
+  const legacyState = {
+    version: 1,
+    lang: roundTripped.lang,
+    theme: roundTripped.theme,
+    themes: roundTripped.themes,
+    scopes: roundTripped.scopes,
+    source: 'const value = "',
+  };
+  assert.match(highlighter.codeToHtml(fragment, { ...options, grammarState: legacyState }), /text/);
+  assert.equal(
+    continued,
+    highlighter.codeToHtml(fragment, { ...options, grammarState: legacyState }),
+  );
+  const stateMarker = "\0ferriki-grammar-state-v1\0";
+  const markerLikeLegacyState = {
+    ...legacyState,
+    source: `${stateMarker}${JSON.stringify({
+      version: 1,
+      grammarFingerprint: "legacy-source",
+      rootScope: "source.js",
+      frames: [],
+    })}`,
+  };
+  assert.equal(
+    highlighter.codeToHtml(fragment, {
+      ...options,
+      grammarState: markerLikeLegacyState,
+    }),
+    highlighter.codeToHtml(fragment, options),
   );
   let continuedSpanCalled = false;
   const transformedContinuation = highlighter.codeToHtml(fragment, {
@@ -66,6 +102,40 @@ try {
       }),
     (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
   );
+  const invalidSnapshot = JSON.parse(state.source.slice(state.source.indexOf("{")));
+  invalidSnapshot.grammarFingerprint = "wrong-grammar";
+  assert.throws(
+    () =>
+      highlighter.codeToHtml("x", {
+        ...options,
+        grammarState: {
+          ...state,
+          source: `${state.source.slice(0, state.source.indexOf("{"))}${JSON.stringify(invalidSnapshot)}`,
+        },
+      }),
+    (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+  );
+  const invalidRuleIdSnapshot = JSON.parse(state.source.slice(state.source.indexOf("{")));
+  invalidRuleIdSnapshot.frames[1].ruleId = 4294967295;
+  assert.throws(
+    () =>
+      highlighter.codeToHtml("x", {
+        ...options,
+        grammarState: {
+          ...state,
+          source: `${state.source.slice(0, state.source.indexOf("{"))}${JSON.stringify(invalidRuleIdSnapshot)}`,
+        },
+      }),
+    (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+  );
+  const oversizedCompactState = {
+    ...state,
+    source: `${state.source.slice(0, state.source.indexOf("{"))}${" ".repeat(1_048_577)}`,
+  };
+  assert.throws(
+    () => highlighter.codeToHtml("x", { ...options, grammarState: oversizedCompactState }),
+    (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
+  );
   assert.throws(
     () =>
       highlighter.codeToHtml("x", {
@@ -90,6 +160,49 @@ try {
   });
   assert.match(multiThemeHtml, /--shiki-light:/);
   assert.match(multiThemeHtml, /--shiki-dark:/);
+
+  const markdownOptions = { lang: "markdown", theme: "nord" };
+  const embeddedState = JSON.parse(
+    JSON.stringify(highlighter.getLastGrammarState('```js\nconst value = "', markdownOptions)),
+  );
+  const freshHighlighter = await createHighlighter({
+    langs: ["javascript", "typescript", "markdown"],
+    themes: ["nord", "vitesse-light"],
+  });
+  try {
+    const continuationScopes = [];
+    const embeddedHtml = freshHighlighter.codeToHtml('continued";\n```\n', {
+      ...markdownOptions,
+      grammarState: embeddedState,
+      includeExplanation: "scopeName",
+      transformers: [
+        {
+          span(_node, _line, _column, _lineNode, token) {
+            if (token.content.includes("continued")) continuationScopes.push(token.scopeNames);
+          },
+        },
+      ],
+    });
+    const legacyEmbeddedState = {
+      ...embeddedState,
+      stateFormat: undefined,
+      source: '```js\nconst value = "',
+    };
+    assert.equal(
+      embeddedHtml,
+      freshHighlighter.codeToHtml('continued";\n```\n', {
+        ...markdownOptions,
+        grammarState: legacyEmbeddedState,
+        includeExplanation: "scopeName",
+      }),
+    );
+    assert.match(embeddedHtml, /continued/);
+    assert(
+      continuationScopes.some((scopes) => scopes?.some((scope) => scope.startsWith("string."))),
+    );
+  } finally {
+    freshHighlighter.dispose();
+  }
 
   let scopedToken;
   const scopedHtml = highlighter.codeToHtml("const value = 1", {
