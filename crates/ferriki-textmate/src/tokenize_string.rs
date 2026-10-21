@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::RegexError;
 
@@ -61,6 +61,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
 ) -> Result<TokenizeStringResult, RegexError> {
     let line_length = line_text.utf16_len();
     let mut anchor_position = -1;
+    let start_time = Instant::now();
 
     if check_while_conditions {
         let result = check_while_conditions_impl(
@@ -76,28 +77,42 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
         line_pos = result.line_pos;
         is_first_line = result.is_first_line;
         anchor_position = result.anchor_position;
+
+        if time_limit_exceeded(start_time, time_limit_millis) {
+            return Ok(TokenizeStringResult {
+                stack,
+                stopped_early: true,
+            });
+        }
     }
 
-    let start_time = Instant::now();
     loop {
-        if time_limit_millis != 0
-            && start_time.elapsed().as_millis() > u128::from(time_limit_millis)
-        {
+        if time_limit_exceeded(start_time, time_limit_millis) {
             return Ok(TokenizeStringResult {
                 stack,
                 stopped_early: true,
             });
         }
 
-        let Some(matched) = match_rule_or_injections(
+        let matched = match_rule_or_injections(
             grammar,
             line_text,
             is_first_line,
             line_pos,
             &stack,
             anchor_position,
-        )?
-        else {
+        )?;
+
+        // Ferroni's synchronous Scanner API cannot accept a per-search
+        // deadline. Detect an overrun as soon as the current search returns.
+        if time_limit_exceeded(start_time, time_limit_millis) {
+            return Ok(TokenizeStringResult {
+                stack,
+                stopped_early: true,
+            });
+        }
+
+        let Some(matched) = matched else {
             produce(&stack, line_length, line_tokens, line_fonts);
             return Ok(TokenizeStringResult {
                 stack,
@@ -278,6 +293,10 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
             is_first_line = false;
         }
     }
+}
+
+fn time_limit_exceeded(start_time: Instant, time_limit_millis: u64) -> bool {
+    time_limit_millis != 0 && start_time.elapsed() > Duration::from_millis(time_limit_millis)
 }
 
 struct WhileCheckResult {
@@ -662,7 +681,9 @@ fn utf16_prefix(value: &str, end: usize) -> &str {
 
 #[cfg(test)]
 mod tests {
+    use std::process::{Command, Stdio};
     use std::sync::Arc;
+    use std::time::{Duration, Instant};
 
     use super::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
     use crate::{
@@ -964,5 +985,134 @@ mod tests {
         assert!(!result.stopped_early);
         assert_eq!(result.stack.depth, 1);
         assert!(!tokens.is_empty());
+    }
+
+    #[test]
+    fn stops_after_a_single_regex_search_exceeds_the_time_limit() {
+        const CHILD_TEST: &str = "tokenize_string::tests::single_regex_search_overrun_child";
+        const CHILD_ENV: &str = "FERRIKI_REGEX_DEADLINE_CHILD";
+        const CHILD_TIMEOUT: Duration = Duration::from_secs(10);
+
+        let mut child = Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", CHILD_TEST, "--nocapture", "--test-threads=1"])
+            .env(CHILD_ENV, "1")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("should start bounded regex deadline test child");
+
+        let started = Instant::now();
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => {
+                    let output = child
+                        .wait_with_output()
+                        .expect("should collect regex deadline test child output");
+                    assert!(
+                        status.success(),
+                        "regex deadline child failed\nstdout:\n{}\nstderr:\n{}",
+                        String::from_utf8_lossy(&output.stdout),
+                        String::from_utf8_lossy(&output.stderr)
+                    );
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    assert!(
+                        stdout.contains("single regex search baseline")
+                            || stderr.contains("single regex search baseline"),
+                        "regex deadline child did not report its measured search"
+                    );
+                    return;
+                }
+                Ok(None) if started.elapsed() < CHILD_TIMEOUT => {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Ok(None) => {
+                    let _ = child.kill();
+                    let output = child
+                        .wait_with_output()
+                        .expect("should reap timed out regex deadline test child");
+                    panic!(
+                        "regex deadline child exceeded {CHILD_TIMEOUT:?}\nstdout:\n{}\nstderr:\n{}",
+                        String::from_utf8_lossy(&output.stdout),
+                        String::from_utf8_lossy(&output.stderr)
+                    );
+                }
+                Err(error) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    panic!("could not wait for regex deadline child: {error}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn single_regex_search_overrun_child() {
+        if std::env::var_os("FERRIKI_REGEX_DEADLINE_CHILD").is_none() {
+            return;
+        }
+
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "match": "z", "name": "never.test" }]
+            }"#,
+        );
+
+        // Calibrate the work against this machine, increasing the bounded line
+        // until one unbounded search takes long enough for a clear margin.
+        let mut size = 4 * 1024 * 1024;
+        let max_size = 64 * 1024 * 1024;
+        let (line, baseline, baseline_result) = loop {
+            let line = "a".repeat(size);
+            let (result, elapsed) = run_no_match_search(&grammar, &line, 0);
+            assert!(!result.stopped_early);
+            if elapsed >= Duration::from_millis(8) || size == max_size {
+                break (line, elapsed, result);
+            }
+            size = (size * 2).min(max_size);
+        };
+        drop(baseline_result);
+
+        // Millisecond granularity in the public option means a quarter of the
+        // calibrated search time gives a robust overrun margin.
+        let budget_millis = (baseline.as_millis() / 4).max(1) as u64;
+        let (result, elapsed) = run_no_match_search(&grammar, &line, budget_millis);
+        eprintln!(
+            "single regex search baseline {:.3} ms; limited search {:.3} ms with a {budget_millis} ms tokenization budget",
+            baseline.as_secs_f64() * 1_000.0,
+            elapsed.as_secs_f64() * 1_000.0
+        );
+        assert!(result.stopped_early);
+        assert!(
+            elapsed > Duration::from_millis(budget_millis),
+            "the calibrated scanner pass should exceed its {budget_millis} ms budget"
+        );
+    }
+
+    fn run_no_match_search(
+        grammar: &TestGrammar,
+        line: &str,
+        time_limit_millis: u64,
+    ) -> (TokenizeStringResult, Duration) {
+        let onig = crate::OnigString::new(line);
+        let state = grammar.initial_state();
+        let mut tokens = LineTokens::new(false, line, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        let started = Instant::now();
+        let result = tokenize_string(
+            grammar,
+            &onig,
+            true,
+            0,
+            state,
+            &mut tokens,
+            &mut fonts,
+            false,
+            time_limit_millis,
+        )
+        .unwrap();
+        (result, started.elapsed())
     }
 }

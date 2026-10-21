@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-11
+Last updated: 2026-10-21
 
 ## Context
 
@@ -20,6 +20,12 @@ Adopt [`docs/ferriki-1.0-api-contract.md`](../docs/ferriki-1.0-api-contract.md)
 as the normative 1.0 Node API matrix. It classifies every public export,
 factory input, highlight option, output shape, lifecycle rule, and error policy
 as Stable, Shim, Remove, Deferred, or Non-goal.
+
+`tokenizeTimeLimit` is a best-effort per-line budget. The tokenizer checks it
+between matching passes and after each pass returns, but Ferroni's synchronous
+scanner cannot interrupt a regex search already in progress. A search can
+therefore exceed the configured duration; Ferriki reports the overrun through
+stopped-early tokenization.
 
 The factory-only `regexPrefilter` boolean defaults to `true`, allowing the
 native scanner's automatic warm-up policy. `false` disables prefilter
@@ -88,3 +94,4 @@ being mistaken for parity.
 
 - 2026-10-10: Clarifies native decoration ownership without changing public Node output methods (#122).
 - 2026-10-11: Records the one-time 1.1.0 React macro presentation transition while preserving other stable contracts (#263).
+- 2026-10-21: Clarifies the best-effort `tokenizeTimeLimit` contract and scanner interruption limit (#292).

@@ -236,7 +236,7 @@ an explicit worker boundary; create one highlighter per worker instead.
 | `rootStyle`             | `string \| false`                       | Inline style on the root element.                                                                                                    |
 | `tabindex`              | `string \| number \| false \| null`     | Root `tabindex` attribute.                                                                                                           |
 | `tokenizeMaxLineLength` | `number`                                | Maximum tokenized line length.                                                                                                       |
-| `tokenizeTimeLimit`     | `number`                                | Tokenization time budget in milliseconds.                                                                                            |
+| `tokenizeTimeLimit`     | `number`                                | Best-effort per-line time budget in milliseconds; one synchronous regex search can exceed it.                                        |
 | `structure`             | `'classic'                              | 'inline'`                                                                                                                            | Select the classic `<pre><code>` tree or inline token tree. |
 | `meta`                  | `Record<string, unknown>`               | Fence metadata copied to the root HAST element, except private `_` keys.                                                             |
 | `data`                  | `Record<string, unknown>`               | Callback-only metadata on the classic root `<pre>` HAST node; omitted from HTML serialization. Inline structure has no `<pre>` node. |
@@ -244,11 +244,14 @@ an explicit worker boundary; create one highlighter per worker instead.
 | `decorations`           | `DecorationItem[]`                      | Validated UTF-16 ranges applied around highlighted HAST sections.                                                                    |
 
 `tokenizeTimeLimit` defaults to 500 ms per line; `0` disables the time limit.
+Ferriki checks the budget between tokenizer matching passes and after each
+pass returns. A pass can run one or more synchronous regex searches, which
+cannot be interrupted; it can therefore run past the configured budget. The
+overrun is reported through the stopped-early tokenization result.
 `tokenizeMaxLineLength` defaults to `0` (unlimited). When a non-zero line
 length limit is reached, Ferriki renders that line as deliberately unstyled
-HTML instead of silently claiming syntax-level highlighting. A tokenization
-timeout follows the native TextMate stopped-early behavior and remains
-observable in the HTML and transformer callback payloads.
+HTML instead of silently claiming syntax-level highlighting. Stopped-early
+tokenization remains observable in the HTML and transformer callback payloads.
 
 ANSI escape sequences are outside the Ferriki 1.0 contract. Passing escape
 bytes with `lang: 'ansi'` throws `ShikiError`; strip or parse terminal output

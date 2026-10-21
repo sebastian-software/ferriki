@@ -52,7 +52,11 @@ The common ones: `lang`, `theme` or `themes`, `defaultColor`,
 `cssVariablePrefix`, `styleMode`, `mergeWhitespaces`, `mergeSameStyleTokens`,
 `tabindex`, `rootStyle`, `structure`, `meta`, `grammarState` and
 `includeExplanation`. `tokenizeTimeLimit` (500 ms per line by default) and
-`tokenizeMaxLineLength` bound the work one line may take.
+`tokenizeMaxLineLength` limit per-line tokenization work. The time budget is
+best-effort: Ferriki checks it between tokenizer matching passes and after each
+pass returns. A pass can run one or more synchronous regex searches, which
+cannot be interrupted and may exceed the configured budget. An overrun is
+reported as stopped-early tokenization.
 
 ## Errors
 
