@@ -1,5 +1,6 @@
-import process from "node:process";
+import { Buffer } from "node:buffer";
 import { performance } from "node:perf_hooks";
+import process from "node:process";
 import { createHighlighter } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 

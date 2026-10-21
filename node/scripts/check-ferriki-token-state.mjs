@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { createHighlighter, getLastGrammarState, ShikiError } from "../ferriki/index.mjs";
 import "./test-asset-env.mjs";
 
