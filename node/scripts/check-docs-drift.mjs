@@ -69,7 +69,7 @@ export const STALE_RELEASE_COPY = [
   ],
   [
     "in-progress release language",
-    /\b(?:release|version)\b[^.!?\n]{0,80}\b(?:being\s+(?:published|released)|in progress)\b/i,
+    /\b(?:release|version)\b(?:(?![.!?\n])[\s\S]){0,80}\b(?:being\s+(?:published|released)|in progress)\b/i,
   ],
 ];
 
