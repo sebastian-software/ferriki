@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import process from "node:process";
