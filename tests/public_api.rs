@@ -185,10 +185,10 @@ fn highlighter_exposes_lazy_advisory_backtracking_warnings() {
 }
 
 #[test]
-fn warning_snapshots_reset_after_grammar_invalidation_but_survive_theme_changes() {
+fn warning_snapshots_reset_only_when_the_grammar_is_invalidated() {
     let mut highlighter = Highlighter::builder().build().expect("highlighter");
     let grammar = parse_raw_grammar(
-        r#"{"scopeName":"source.lifecycle","patterns":[{"begin":"BEGIN","end":"(a+)+$","name":"meta.risky"},{"match":"[a-z]+","name":"word.clean"}]}"#,
+        r#"{"scopeName":"source.lifecycle","patterns":[{"begin":"BEGIN","end":"(a+)+$","name":"meta.risky"},{"match":"[a-z]+","name":"word.clean"},{"include":"source.embedded"}]}"#,
         Some("lifecycle.json"),
     )
     .expect("grammar");
@@ -222,6 +222,23 @@ fn warning_snapshots_reset_after_grammar_invalidation_but_survive_theme_changes(
     highlighter
         .register_language(LanguageRegistration::new("unrelated", unrelated))
         .expect("unrelated grammar registration");
+    assert_eq!(
+        highlighter
+            .backtracking_warnings("lifecycle")
+            .unwrap()
+            .expect("registered language")
+            .len(),
+        1
+    );
+
+    let embedded = parse_raw_grammar(
+        r#"{"scopeName":"source.embedded","patterns":[{"match":"y","name":"word"}]}"#,
+        Some("embedded.json"),
+    )
+    .expect("embedded grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("embedded", embedded))
+        .expect("embedded grammar registration");
     assert_eq!(
         highlighter.backtracking_warnings("lifecycle").unwrap(),
         Some(vec![])

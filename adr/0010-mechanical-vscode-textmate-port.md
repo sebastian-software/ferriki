@@ -38,10 +38,11 @@ named `ferriki-textmate`.
   (default) or disables it before a grammar's scanners compile. This tuning
   extension preserves matching, capture, and TextMate traversal behavior.
 - Each `SyncRegistry` shares one Ferroni `ScannerPatternCache` across its
-  grammar and injection scanners. The cache is cleared when the registry
-  invalidates compiled grammars or is disposed; directly constructed grammars
-  use an isolated cache. A pattern list bypasses the shared cache once it holds
-  an end or while pattern resolved from begin captures, because Ferroni retains
+  grammar and injection scanners. Its entries are keyed by pattern text and
+  compile settings, so they survive grammar invalidation; the cache is cleared
+  only when the registry is disposed. Directly constructed grammars use an
+  isolated cache. A pattern list bypasses the shared cache once it holds an end
+  or while pattern resolved from begin captures, because Ferroni retains
   entries until `clear`, while TextMate rebuilds those scanners when captured
   end or while patterns change. Static patterns that only reference their own
   groups have fixed text and share the cache. Ferroni's cache API is
@@ -50,6 +51,11 @@ named `ferriki-textmate`.
   follow-up.
   The rule-local cache still retains at most one compiled scanner for each
   anchor variant and clears those entries when a source changes.
+- Upstream registers every grammar before it compiles one. Ferriki registers
+  languages on demand, so `SyncRegistry` records which scopes and injection
+  lists each compiled grammar read while compiling, including lookups that
+  found nothing. A new or replaced grammar, or a changed injection list, drops
+  only the compiled grammars that read it.
 - `ferriki-textmate` owns raw grammar models, selector matching, themes, rules,
   grammar compilation, tokenization, and state stacks. The `ferriki` crate
   owns asset catalogs, runtime orchestration and rendering, and
@@ -134,3 +140,4 @@ this decision.
 - 2026-10-10: Documents the prefilter configuration extension for one-shot highlighting with Ferroni 2.1.0.
 - 2026-10-10: Shares Ferroni's scanner pattern cache across each `SyncRegistry`, while keeping resolved backreference patterns out of its retaining cache and recording the all-or-nothing API limitation (#230).
 - 2026-10-22: Narrows the cache bypass to lists holding a resolved end or while pattern; static backreference patterns now share the cache, cutting first-use time for grammars such as C++, PHP and Swift.
+- 2026-10-22: Registering a grammar or changing an injection list drops only the compiled grammars that read that scope, and the shared scanner pattern cache survives invalidation.
