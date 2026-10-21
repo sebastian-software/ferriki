@@ -4,7 +4,8 @@
 
 //! Synchronous raw-grammar, compiled-grammar, and theme registry.
 
-use std::collections::BTreeMap;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -14,8 +15,59 @@ use crate::regexp::ScannerPatternCache;
 use crate::rule_factory::{GrammarProvider, GrammarStore};
 use crate::theme::{RawTheme, Theme, ThemeError};
 
+/// A compiled grammar and the registry state it read while compiling.
+///
+/// Grammars resolve every external include and injection while they compile
+/// and never consult the registry afterwards, so these sets are complete.
+struct CompiledGrammar {
+    grammar: Rc<Grammar>,
+    /// Scope names looked up, including ones that were not registered then.
+    lookups: BTreeSet<String>,
+    /// Target scopes whose injection lists were read.
+    injection_targets: BTreeSet<String>,
+}
+
+/// Records what a grammar reads from the registry while it compiles.
+struct RecordingGrammarProvider<'a> {
+    store: &'a GrammarStore,
+    lookups: RefCell<BTreeSet<String>>,
+    injection_targets: RefCell<BTreeSet<String>>,
+}
+
+impl<'a> RecordingGrammarProvider<'a> {
+    fn new(store: &'a GrammarStore, root_scope_name: &str) -> Self {
+        Self {
+            store,
+            lookups: RefCell::new(BTreeSet::from([root_scope_name.to_owned()])),
+            injection_targets: RefCell::new(BTreeSet::new()),
+        }
+    }
+
+    fn into_compiled(self, grammar: Rc<Grammar>) -> CompiledGrammar {
+        CompiledGrammar {
+            grammar,
+            lookups: self.lookups.into_inner(),
+            injection_targets: self.injection_targets.into_inner(),
+        }
+    }
+}
+
+impl GrammarProvider for RecordingGrammarProvider<'_> {
+    fn lookup(&self, scope_name: &str) -> Option<Arc<RawGrammar>> {
+        self.lookups.borrow_mut().insert(scope_name.to_owned());
+        self.store.lookup(scope_name)
+    }
+
+    fn injections(&self, scope_name: &str) -> Vec<String> {
+        self.injection_targets
+            .borrow_mut()
+            .insert(scope_name.to_owned());
+        self.store.injections(scope_name)
+    }
+}
+
 pub struct SyncRegistry {
-    grammars: BTreeMap<String, Rc<Grammar>>,
+    grammars: BTreeMap<String, CompiledGrammar>,
     raw_grammars: GrammarStore,
     theme: ThemeProvider,
     color_map: Vec<String>,
@@ -69,25 +121,37 @@ impl SyncRegistry {
         self.color_map.clone()
     }
 
+    /// Registers or replaces `grammar` and sets the injection list of its scope.
+    ///
+    /// Registry loading completes before compilation upstream, but Rust
+    /// callers register grammars later, for example one language at a time.
+    /// Compiled grammars that looked up this scope while compiling, found or
+    /// not, are dropped and recompile on their next request; all others stay
+    /// cached. Scanner patterns are cached by pattern text and compile
+    /// settings, so they stay valid until [`Self::dispose`].
     pub fn add_grammar(&mut self, grammar: RawGrammar, injection_scope_names: Vec<String>) {
         let scope_name = grammar.scope_name.clone();
         self.raw_grammars.insert(grammar);
+        self.grammars
+            .retain(|_, compiled| !compiled.lookups.contains(&scope_name));
         self.set_injections(scope_name, injection_scope_names);
     }
 
+    /// Replaces the injection list of `target_scope`. Compiled grammars that
+    /// read the previous list are dropped; an unchanged list keeps them.
     pub fn set_injections(
         &mut self,
         target_scope: impl Into<String>,
         injection_scope_names: Vec<String>,
     ) {
+        let target_scope = target_scope.into();
+        if self.raw_grammars.injections(&target_scope) == injection_scope_names {
+            return;
+        }
+        self.grammars
+            .retain(|_, compiled| !compiled.injection_targets.contains(&target_scope));
         self.raw_grammars
             .set_injections(target_scope, injection_scope_names);
-        // Compiled grammars can include or inject any registered grammar.
-        // Registry loading completes before compilation upstream; clearing is
-        // the equivalent safe behavior when Rust callers replace a grammar or
-        // update a target's external injection list later.
-        self.grammars.clear();
-        self.scanner_pattern_cache.clear();
     }
 
     #[must_use]
@@ -105,21 +169,24 @@ impl SyncRegistry {
         scope_name: &str,
         configuration: GrammarConfiguration,
     ) -> Result<Option<Rc<Grammar>>, ThemeError> {
-        if let Some(grammar) = self.grammars.get(scope_name) {
-            return Ok(Some(Rc::clone(grammar)));
+        if let Some(compiled) = self.grammars.get(scope_name) {
+            return Ok(Some(Rc::clone(&compiled.grammar)));
         }
         let Some(raw_grammar) = self.raw_grammars.lookup(scope_name) else {
             return Ok(None);
         };
+        let provider = RecordingGrammarProvider::new(&self.raw_grammars, scope_name);
         let grammar = Rc::new(Grammar::with_theme_provider(
             &raw_grammar,
-            &self.raw_grammars,
+            &provider,
             self.theme.clone(),
             configuration,
             self.scanner_pattern_cache.clone(),
         ));
-        self.grammars
-            .insert(scope_name.to_owned(), Rc::clone(&grammar));
+        self.grammars.insert(
+            scope_name.to_owned(),
+            provider.into_compiled(Rc::clone(&grammar)),
+        );
         Ok(Some(grammar))
     }
 }
@@ -341,7 +408,7 @@ mod tests {
         assert_eq!(registry.scanner_pattern_cache.len(), 1);
 
         registry.set_injections("source.test", vec!["source.inject".into()]);
-        assert_eq!(registry.scanner_pattern_cache.len(), 0);
+        assert_eq!(registry.scanner_pattern_cache.len(), 1);
         assert_eq!(
             before.tokenize_line("x", None, 0).unwrap().tokens[0].scopes,
             ["source.test", "normal.test"]
@@ -357,6 +424,90 @@ mod tests {
             ["source.test", "injected.test"]
         );
         assert_eq!(registry.scanner_pattern_cache.len(), 1);
+    }
+
+    fn compiled(registry: &mut SyncRegistry, scope_name: &str) -> Rc<crate::Grammar> {
+        registry
+            .grammar_for_scope_name(scope_name, GrammarConfiguration::default())
+            .unwrap()
+            .unwrap()
+    }
+
+    fn word_grammar(scope_name: &str, word: &str) -> RawGrammar {
+        grammar(&format!(
+            r#"{{
+                "scopeName": "{scope_name}",
+                "patterns": [{{ "match": "{word}", "name": "keyword.{word}" }}]
+            }}"#
+        ))
+    }
+
+    #[test]
+    fn keeps_compiled_grammars_that_do_not_read_a_new_registration() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(word_grammar("source.first", "x"), Vec::new());
+        let first = compiled(&mut registry, "source.first");
+        let patterns = registry.scanner_pattern_cache.len();
+
+        registry.add_grammar(word_grammar("source.second", "y"), Vec::new());
+        registry.set_injections("source.second", Vec::new());
+
+        assert!(Rc::ptr_eq(&first, &compiled(&mut registry, "source.first")));
+        assert_eq!(registry.scanner_pattern_cache.len(), patterns);
+    }
+
+    #[test]
+    fn recompiles_grammars_that_include_a_scope_registered_later() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.host",
+                    "patterns": [{ "include": "source.embedded" }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+        registry.add_grammar(word_grammar("source.other", "z"), Vec::new());
+        let before = compiled(&mut registry, "source.host");
+        let other = compiled(&mut registry, "source.other");
+        assert_eq!(
+            before.tokenize_line("y", None, 0).unwrap().tokens[0].scopes,
+            ["source.host"]
+        );
+
+        registry.add_grammar(word_grammar("source.embedded", "y"), Vec::new());
+        let after = compiled(&mut registry, "source.host");
+        assert!(!Rc::ptr_eq(&before, &after));
+        assert_eq!(
+            after.tokenize_line("y", None, 0).unwrap().tokens[0].scopes,
+            ["source.host", "keyword.y"]
+        );
+        assert!(Rc::ptr_eq(&other, &compiled(&mut registry, "source.other")));
+
+        registry.add_grammar(word_grammar("source.embedded", "w"), Vec::new());
+        let replaced = compiled(&mut registry, "source.host");
+        assert!(!Rc::ptr_eq(&after, &replaced));
+        assert_eq!(
+            replaced.tokenize_line("w", None, 0).unwrap().tokens[0].scopes,
+            ["source.host", "keyword.w"]
+        );
+    }
+
+    #[test]
+    fn keeps_compiled_grammars_when_an_injection_list_is_set_unchanged() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            word_grammar("source.test", "x"),
+            vec!["source.inject".into()],
+        );
+        let first = compiled(&mut registry, "source.test");
+
+        registry.set_injections("source.test", vec!["source.inject".into()]);
+        assert!(Rc::ptr_eq(&first, &compiled(&mut registry, "source.test")));
+
+        registry.set_injections("source.test", Vec::new());
+        assert!(!Rc::ptr_eq(&first, &compiled(&mut registry, "source.test")));
     }
 
     #[test]
