@@ -9,9 +9,11 @@ import {
   checkDocsDrift,
   FERRIKI_PACKAGE,
   NODE_FLOOR_DOCS,
+  RELEASE_STATUS_DOCS,
   SHIKI_BASELINE_DOCS,
   SHIKI_SOURCE,
   STALE_GUIDANCE,
+  STALE_RELEASE_COPY,
 } from "./check-docs-drift.mjs";
 
 // The fixture is a copy of the real documents, so every case below starts
@@ -23,6 +25,7 @@ const fixtureFiles = [
     SHIKI_SOURCE,
     FERRIKI_PACKAGE,
     ...STALE_GUIDANCE.map(([relative]) => relative),
+    ...RELEASE_STATUS_DOCS,
     ...SHIKI_BASELINE_DOCS,
     ...NODE_FLOOR_DOCS,
   ]),
@@ -98,6 +101,25 @@ test("accepts the checked-in documents and reports both sources", async () => {
     assert.deepEqual(await checkDocsDrift(root), { shikiRef, nodeFloor });
   });
 });
+
+for (const [label, pattern] of STALE_RELEASE_COPY) {
+  const staleCopy =
+    label === "pre-1.0 release language"
+      ? "Ferriki is in beta until 1.0."
+      : "The 1.1.0 release is being published.";
+  assert.match(staleCopy, pattern, `the ${label} fixture must match its drift rule`);
+
+  for (const relative of RELEASE_STATUS_DOCS) {
+    test(`rejects ${label} in ${relative}`, async () => {
+      await withFixture(async (root) => {
+        await edit(root, relative, (source) => `${source}\n${staleCopy}\n`);
+        await assert.rejects(checkDocsDrift(root), {
+          message: `${relative} contains ${label}`,
+        });
+      });
+    });
+  }
+}
 
 for (const relative of SHIKI_BASELINE_DOCS) {
   test(`rejects a stale Shiki baseline in ${relative}`, async () => {

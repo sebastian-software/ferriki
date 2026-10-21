@@ -8,8 +8,11 @@ Ferriki is native syntax highlighting with HTML and CSS-class output for
 Node.js: Shiki-shaped HTML APIs and an owned grammar catalog on a Rust engine. Shiki brought
 editor-grade highlighting to the web; Ferriki runs TextMate grammars
 on a Rust port of VS Code's tokenizer and [Ferroni](https://ferroni.dev),
-Oniguruma in Rust, without WebAssembly or regex translation. Ferriki is in
-beta: until 1.0, a minor release can change the API.
+Oniguruma in Rust, without WebAssembly or regex translation. Ferriki follows
+semantic versioning: breaking changes to its public API require a major
+version. The
+[changelog](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/CHANGELOG.md)
+lists each release's changes.
 
 **Load once. Highlight block after block.** On our 14-file Blacksmith corpus,
 reused Ferriki highlighters produced identical HTML to Shiki/WASM,
