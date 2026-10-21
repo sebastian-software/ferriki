@@ -139,11 +139,13 @@ export interface ThemedToken {
 
 export interface GrammarState {
   readonly version: 1;
+  /** Present on compact native-stack states; absent on legacy raw-source states. */
+  readonly stateFormat?: "textmate-stack-v1";
   readonly lang: string;
   readonly theme: string;
   readonly themes: readonly string[];
   readonly scopes: readonly string[];
-  /** Opaque serialized source context used to continue tokenization. */
+  /** Opaque serialized context used to continue tokenization; not source text. */
   readonly source: string;
 }
 

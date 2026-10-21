@@ -91,7 +91,13 @@ impl FerrikiHighlighter {
         code: String,
         options: NativeTokenOptions,
     ) -> Result<HtmlRenderData> {
-        Ok(self.tokenize(&code, options)?.into())
+        if options.continuation_state.is_none()
+            && !options.capture_continuation_state.unwrap_or(false)
+        {
+            return Ok(self.tokenize(&code, options)?.into());
+        }
+        let result = self.tokenize_with_grammar_state(&code, options)?;
+        Ok(result.into())
     }
 
     #[napi(js_name = "getHtmlRenderDataWithThemes")]
@@ -100,7 +106,7 @@ impl FerrikiHighlighter {
         code: String,
         options: NativeTokenOptions,
     ) -> Result<HtmlRenderDataWithThemes> {
-        Ok(self.tokenize_with_themes(&code, options)?.into())
+        Ok(self.tokenize_with_themes_with_state(&code, options)?.into())
     }
 
     #[napi(js_name = "codeToHtml")]
@@ -221,11 +227,40 @@ impl FerrikiHighlighter {
         ))
     }
 
+    fn tokenize_with_grammar_state(
+        &self,
+        code: &str,
+        options: NativeTokenOptions,
+    ) -> Result<(ferriki::HighlightTokensResult, Option<String>)> {
+        let continuation_state = options.continuation_state.clone();
+        let capture_continuation_state = options.capture_continuation_state.unwrap_or(false);
+        let options = HighlightOptions::from(NativeHighlightOptions::from(options));
+        native(self.core.borrow_mut().tokenize_with_grammar_state(
+            code,
+            &options.language,
+            &options.theme,
+            &options.tokenize,
+            continuation_state.as_deref(),
+            capture_continuation_state,
+        ))
+    }
+
     pub(crate) fn tokenize_with_themes(
         &self,
         code: &str,
         options: NativeTokenOptions,
     ) -> Result<ferriki::HighlightTokensWithThemesResult> {
+        self.tokenize_with_themes_with_state(code, options)
+            .map(|(result, _)| result)
+    }
+
+    fn tokenize_with_themes_with_state(
+        &self,
+        code: &str,
+        options: NativeTokenOptions,
+    ) -> Result<(ferriki::HighlightTokensWithThemesResult, Option<String>)> {
+        let continuation_state = options.continuation_state.clone();
+        let capture_continuation_state = options.capture_continuation_state.unwrap_or(false);
         let themes = options
             .theme_entries
             .as_ref()
@@ -234,12 +269,18 @@ impl FerrikiHighlighter {
             .map(|entry| (entry.color.clone(), entry.name.clone()))
             .collect::<Vec<_>>();
         let options = HighlightOptions::from(NativeHighlightOptions::from(options));
-        native(self.core.borrow_mut().tokenize_with_themes(
-            code,
-            &options.language,
-            &themes,
-            &options.tokenize,
-        ))
+        native(
+            self.core
+                .borrow_mut()
+                .tokenize_with_grammar_state_and_themes(
+                    code,
+                    &options.language,
+                    &themes,
+                    &options.tokenize,
+                    continuation_state.as_deref(),
+                    capture_continuation_state,
+                ),
+        )
     }
 }
 

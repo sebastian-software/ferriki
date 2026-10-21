@@ -50,11 +50,13 @@ export interface HtmlRenderData {
   fg: string;
   bg: string;
   themeName: string;
+  continuationState?: string;
 }
 
 export interface HtmlRenderDataWithThemes {
   tokens: Array<Array<HtmlThemeToken>>;
   themes: Array<ThemeMetadata>;
+  continuationState?: string;
 }
 
 export interface HtmlThemeToken {
@@ -187,6 +189,8 @@ export interface NativeTokenOptions {
   styleMode?: string;
   preserveScopeBoundaries?: boolean;
   themeEntries?: Array<ThemeEntry>;
+  continuationState?: string;
+  captureContinuationState?: boolean;
 }
 
 export declare function nextDecorationSection(

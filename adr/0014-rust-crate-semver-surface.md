@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-11
+Last updated: 2026-10-21
 
 ## Context
 
@@ -105,6 +105,17 @@ Each crate publishes a deliberate, curated surface.
   must use constructors, setters and wildcard arms. The N-API host converts
   these results to private typed binding objects without changing the
   published Rust types.
+- **TextMate continuation snapshots.** `Grammar::serialize_state_stack` and
+  `Grammar::deserialize_state_stack` provide an opaque JSON snapshot for
+  process-portable tokenizer continuation. The snapshot is tied to the compiled
+  grammar identity, carries rule and scope frames rather than theme attributes,
+  and resolves attributes using the receiving grammar's current theme. It omits
+  the full input but can retain matched fragments in dynamic backreferences and
+  scope names. The versioned format rejects mismatched grammars and malformed
+  data, and bounds snapshots to 1 MiB, 2,048 stack frames, 4,096 scope frames,
+  64 KiB per dynamic pattern, and 100,000 cumulative validation steps. The
+  fingerprint includes the ordered contributed-injection list and excludes
+  source-location metadata.
 - Port code that only the old public surface reached now has no caller; it
   stays for upstream parity with an explicit `dead_code` allowance
   ([ADR 0010](0010-mechanical-vscode-textmate-port.md)).
@@ -138,3 +149,4 @@ Each crate publishes a deliberate, curated surface.
 
 - 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
 - 2026-10-11: Adds the released Rust semver baseline and explicit major-release policy (#254).
+- 2026-10-21: Adds the versioned serializable TextMate continuation snapshot API used by Node grammar state (#291).

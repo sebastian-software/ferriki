@@ -52,6 +52,17 @@ hand-written declarations against mirrored Shiki types; the API contract
 documents the intentional native-state, structured-output, and
 transformer-context boundaries (#158, #207).
 
+Grammar-state continuation keeps the stable `version: 1` and required
+`source: string` fields. New results may add the optional
+`stateFormat: "textmate-stack-v1"`; their opaque `source` field contains a
+serializable tokenizer stack rather than the full input. Dynamic backreferences
+and captured scope names may retain matched input fragments. Older v1 states
+without that discriminator continue to use their raw-source context. The first
+use as `grammarState` in `getLastGrammarState` replays that source and returns a
+compact state; `codeToHtml` replays a legacy source for that call and returns
+only HTML. This compatibility replay retains the existing unbounded
+source-size behavior.
+
 The initial React `Code` macro presentation transition targets 1.1.0 as the
 one-time early-1.x exception recorded in
 [ADR 0019](0019-shadow-dom-code-elements.md#release-scope). Its DOM and CSS
@@ -95,3 +106,4 @@ being mistaken for parity.
 - 2026-10-10: Clarifies native decoration ownership without changing public Node output methods (#122).
 - 2026-10-11: Records the one-time 1.1.0 React macro presentation transition while preserving other stable contracts (#263).
 - 2026-10-21: Clarifies the best-effort `tokenizeTimeLimit` contract and scanner interruption limit (#292).
+- 2026-10-21: Records the additive portable tokenizer-stack format for grammar-state continuation while retaining the v1 required fields and legacy inputs (#291).

@@ -5,6 +5,8 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
+use sha2::{Digest, Sha256};
+
 use crate::include_reference::{IncludeReference, parse_include};
 use crate::raw_grammar::{RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
 use crate::regexp::ScannerPatternCache;
@@ -209,6 +211,19 @@ impl<'a> RuleFactory<'a> {
 
     pub(crate) fn into_parts(self) -> (Arc<RawGrammar>, RuleRegistry) {
         (self.root_grammar, self.registry)
+    }
+
+    pub(crate) fn grammar_fingerprint(&self, external_injection_scopes: &[String]) -> String {
+        let mut identity = serde_json::to_value((
+            &self.root_grammar,
+            &self.included_grammars,
+            external_injection_scopes,
+        ))
+        .expect("compiled grammar source is serializable");
+        strip_source_locations(&mut identity);
+        let source = serde_json::to_vec(&identity)
+            .expect("normalized compiled grammar identity is serializable");
+        format!("{:x}", Sha256::digest(source))
     }
 
     fn get_compiled_rule_id(
@@ -468,6 +483,23 @@ impl<'a> RuleFactory<'a> {
         self.included_grammars
             .insert(scope_name.to_owned(), Arc::clone(&grammar));
         Some(grammar)
+    }
+}
+
+fn strip_source_locations(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Array(values) => {
+            for value in values {
+                strip_source_locations(value);
+            }
+        }
+        serde_json::Value::Object(values) => {
+            values.remove("$vscodeTextmateLocation");
+            for value in values.values_mut() {
+                strip_source_locations(value);
+            }
+        }
+        _ => {}
     }
 }
 

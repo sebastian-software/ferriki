@@ -788,6 +788,23 @@ impl HighlighterCore {
         theme_id: &str,
         options: &TokenizeOptions,
     ) -> Result<HighlightTokensResult> {
+        self.tokenize_with_grammar_state(code, language, theme_id, options, None, false)
+            .map(|(result, _)| result)
+    }
+
+    /// Node's serializable continuation bridge. The public Rust highlighter
+    /// keeps its existing stack-based API; this method transports only the
+    /// JSON representation needed by the JS facade.
+    #[doc(hidden)]
+    pub fn tokenize_with_grammar_state(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme_id: &str,
+        options: &TokenizeOptions,
+        serialized_state: Option<&str>,
+        capture_state: bool,
+    ) -> Result<(HighlightTokensResult, Option<String>)> {
         let theme = self.activate_theme(theme_id)?.ok_or_else(|| {
             Error::new(
                 ErrorKind::UnknownTheme,
@@ -800,6 +817,12 @@ impl HighlighterCore {
         let background = theme.background.clone();
         let theme_name = theme.name.clone();
         if is_plain_language(language) || language == "ansi" {
+            if serialized_state.is_some() || capture_state {
+                return Err(Error::new(
+                    ErrorKind::Tokenization,
+                    "Invalid grammar state: plain language does not have grammar state.",
+                ));
+            }
             let tokens = split_lines(code)
                 .into_iter()
                 .map(|(line, offset)| {
@@ -817,12 +840,15 @@ impl HighlighterCore {
                     }
                 })
                 .collect();
-            return Ok(HighlightTokensResult {
-                tokens,
-                foreground,
-                background,
-                theme_name,
-            });
+            return Ok((
+                HighlightTokensResult {
+                    tokens,
+                    foreground,
+                    background,
+                    theme_name,
+                },
+                None,
+            ));
         }
         let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
             Error::new(
@@ -831,7 +857,10 @@ impl HighlighterCore {
             )
         })?;
         let color_map = self.registry.get_color_map();
-        let mut state = None;
+        let mut state = serialized_state
+            .map(|serialized| grammar.deserialize_state_stack(serialized))
+            .transpose()
+            .map_err(|reason| Error::new(ErrorKind::Tokenization, reason))?;
         let mut output_lines = Vec::new();
 
         for (line, line_offset) in split_lines(code) {
@@ -931,12 +960,19 @@ impl HighlighterCore {
             output_lines.push(line_tokens);
         }
 
-        Ok(HighlightTokensResult {
-            tokens: output_lines,
-            foreground,
-            background,
-            theme_name,
-        })
+        let continuation = capture_state
+            .then(|| grammar.serialize_state_stack(state.as_ref()))
+            .transpose()
+            .map_err(|reason| Error::new(ErrorKind::Tokenization, reason))?;
+        Ok((
+            HighlightTokensResult {
+                tokens: output_lines,
+                foreground,
+                background,
+                theme_name,
+            },
+            continuation,
+        ))
     }
 
     pub fn tokenize_with_themes(
@@ -946,6 +982,21 @@ impl HighlighterCore {
         themes: &[(String, String)],
         options: &TokenizeOptions,
     ) -> Result<HighlightTokensWithThemesResult> {
+        self.tokenize_with_grammar_state_and_themes(code, language, themes, options, None, false)
+            .map(|(result, _)| result)
+    }
+
+    /// Multi-theme counterpart of [`Self::tokenize_with_grammar_state`].
+    #[doc(hidden)]
+    pub fn tokenize_with_grammar_state_and_themes(
+        &mut self,
+        code: &str,
+        language: &str,
+        themes: &[(String, String)],
+        options: &TokenizeOptions,
+        serialized_state: Option<&str>,
+        capture_state: bool,
+    ) -> Result<(HighlightTokensWithThemesResult, Option<String>)> {
         if themes.is_empty() {
             return Err(Error::from_reason("At least one theme is required."));
         }
@@ -955,13 +1006,22 @@ impl HighlighterCore {
         // and cannot reproduce theme-dependent boundaries or token overrides.
         let results = themes
             .iter()
-            .map(|(_, theme)| self.tokenize(code, language, theme, options))
+            .map(|(_, theme)| {
+                self.tokenize_with_grammar_state(
+                    code,
+                    language,
+                    theme,
+                    options,
+                    serialized_state,
+                    capture_state,
+                )
+            })
             .collect::<Result<Vec<_>>>()?;
         let mut output_lines = Vec::new();
-        for line_index in 0..results[0].tokens.len() {
+        for line_index in 0..results[0].0.tokens.len() {
             let lines: Vec<_> = results
                 .iter()
-                .map(|result| &result.tokens[line_index])
+                .map(|result| &result.0.tokens[line_index])
                 .collect();
             let mut boundaries = BTreeSet::new();
             for line in &lines {
@@ -1013,19 +1073,25 @@ impl HighlighterCore {
             }
             output_lines.push(tokens);
         }
-        Ok(HighlightTokensWithThemesResult {
-            tokens: output_lines,
-            themes: themes
-                .iter()
-                .zip(results)
-                .map(|((color, _), result)| HighlightThemeMetadata {
-                    color: color.clone(),
-                    name: result.theme_name,
-                    foreground: result.foreground,
-                    background: result.background,
-                })
-                .collect(),
-        })
+        let continuation = results
+            .first()
+            .and_then(|(_, continuation)| continuation.clone());
+        Ok((
+            HighlightTokensWithThemesResult {
+                tokens: output_lines,
+                themes: themes
+                    .iter()
+                    .zip(results.iter())
+                    .map(|((color, _), (result, _))| HighlightThemeMetadata {
+                        color: color.clone(),
+                        name: result.theme_name.clone(),
+                        foreground: result.foreground.clone(),
+                        background: result.background.clone(),
+                    })
+                    .collect(),
+            },
+            continuation,
+        ))
     }
 }
 

@@ -301,6 +301,10 @@ impl BeginEndRule {
     ) -> String {
         self.end.resolve_back_references(line_text, capture_indices)
     }
+
+    pub(crate) fn has_valid_resolved_end_pattern(&self, pattern: &str, work: &mut usize) -> bool {
+        self.end.is_valid_back_reference_expansion(pattern, work)
+    }
 }
 
 pub(crate) struct BeginWhileRule {
@@ -378,6 +382,11 @@ impl BeginWhileRule {
     ) -> String {
         self.while_source
             .resolve_back_references(line_text, capture_indices)
+    }
+
+    pub(crate) fn has_valid_resolved_while_pattern(&self, pattern: &str, work: &mut usize) -> bool {
+        self.while_source
+            .is_valid_back_reference_expansion(pattern, work)
     }
 
     #[allow(

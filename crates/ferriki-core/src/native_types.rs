@@ -65,6 +65,8 @@ pub struct NativeTokenOptions {
     pub style_mode: Option<String>,
     pub preserve_scope_boundaries: Option<bool>,
     pub theme_entries: Option<Vec<ThemeEntry>>,
+    pub continuation_state: Option<String>,
+    pub capture_continuation_state: Option<bool>,
 }
 
 impl From<NativeHighlightOptions> for NativeTokenOptions {
@@ -78,6 +80,8 @@ impl From<NativeHighlightOptions> for NativeTokenOptions {
             style_mode: options.style_mode,
             preserve_scope_boundaries: options.preserve_scope_boundaries,
             theme_entries: options.theme_entries,
+            continuation_state: None,
+            capture_continuation_state: None,
         }
     }
 }
@@ -128,6 +132,7 @@ pub struct HtmlRenderData {
     pub fg: String,
     pub bg: String,
     pub theme_name: String,
+    pub continuation_state: Option<String>,
 }
 
 impl From<ferriki::HighlightTokensResult> for HtmlRenderData {
@@ -141,7 +146,18 @@ impl From<ferriki::HighlightTokensResult> for HtmlRenderData {
             fg: result.foreground,
             bg: result.background,
             theme_name: result.theme_name,
+            continuation_state: None,
         }
+    }
+}
+
+impl From<(ferriki::HighlightTokensResult, Option<String>)> for HtmlRenderData {
+    fn from(
+        (result, continuation_state): (ferriki::HighlightTokensResult, Option<String>),
+    ) -> Self {
+        let mut output = Self::from(result);
+        output.continuation_state = continuation_state;
+        output
     }
 }
 
@@ -174,6 +190,7 @@ pub struct ThemeMetadata {
 pub struct HtmlRenderDataWithThemes {
     pub tokens: Vec<Vec<HtmlThemeToken>>,
     pub themes: Vec<ThemeMetadata>,
+    pub continuation_state: Option<String>,
 }
 
 impl From<ferriki::HighlightTokensWithThemesResult> for HtmlRenderDataWithThemes {
@@ -216,7 +233,18 @@ impl From<ferriki::HighlightTokensWithThemesResult> for HtmlRenderDataWithThemes
                     background: theme.background,
                 })
                 .collect(),
+            continuation_state: None,
         }
+    }
+}
+
+impl From<(ferriki::HighlightTokensWithThemesResult, Option<String>)> for HtmlRenderDataWithThemes {
+    fn from(
+        (result, continuation_state): (ferriki::HighlightTokensWithThemesResult, Option<String>),
+    ) -> Self {
+        let mut output = Self::from(result);
+        output.continuation_state = continuation_state;
+        output
     }
 }
 

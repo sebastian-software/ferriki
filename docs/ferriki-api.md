@@ -388,10 +388,13 @@ interface ThemedToken {
 
 interface GrammarState {
   version: 1;
+  /** Present on compact native-stack states; absent on legacy raw-source states. */
+  stateFormat?: "textmate-stack-v1";
   lang: string;
   theme: string;
   themes: string[];
   scopes: string[];
+  /** Opaque serialized continuation context. Newly returned values are not source text. */
   source: string;
 }
 ```
@@ -401,8 +404,21 @@ interface GrammarState {
 `type` metadata without scope paths. It does not create a standalone token
 result or an `explanation` array.
 `getLastGrammarState` and the `grammarState` option provide a validated,
-serializable continuation context. A state from another language or a theme
-not present in the current highlight call is rejected with `ShikiError`.
+serializable continuation context. New states keep `version: 1` and the
+required `source: string` field; `stateFormat: "textmate-stack-v1"` identifies a
+compact, portable TextMate stack stored in that opaque field. It does not retain
+the full input, though dynamic backreferences and captured scope names can
+retain matched fragments needed for continuation. Legacy v1 states without
+`stateFormat` still contain raw source and remain accepted. Their first
+use as `grammarState` in `getLastGrammarState` replays that source for
+compatibility and returns a compact state for subsequent state generation.
+`codeToHtml` calls with a legacy state replay the source for that call and
+return only HTML. Legacy replay retains its prior unbounded source-size
+behavior; compact states are bounded to 1 MiB, 2,048 stack frames, 4,096 scope
+frames, and 64 KiB per dynamic pattern. A state from another language or a
+theme not present in the current highlight call is rejected with
+`ShikiError`. Snapshot validation is also limited to 100,000 cumulative rule
+and dynamic-pattern validation steps.
 
 `HighlightOptions.data` is callback-only metadata. In classic structure it is
 attached to the internal root `<pre>` HAST node's `data` field for callbacks;
