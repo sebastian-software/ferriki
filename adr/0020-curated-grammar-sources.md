@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-13
+Last updated: 2026-10-21
 
 ## Context
 
@@ -45,8 +45,10 @@ language coverage.
   separate candidate and change report. VS Code discovery reads
   `contributes.grammars`; Linguist discovery reads its pinned aggregate tree and
   `.gitmodules`. It converts JSON, YAML, XML PLIST, and data-only CSON to JSON. YAML
-  variables expand with cycle checks. Imports have an 8 MiB limit and a
-  60-second request timeout. No Shiki build or package is needed for sync.
+  variables expand with cycle checks and limits of 8 MiB total expanded
+  output, 16 MiB cumulative intermediate variable output, 100,000 substitutions,
+  and 64 nested variables. Imports have an 8 MiB limit and a 60-second request
+  timeout. No Shiki build or package is needed for sync.
 - `--locked` reproduces accepted snapshots without resolving moving refs.
   Native candidate validation precedes application. The weekly/manual Grammar
   updates workflow runs the compatibility gate and creates or refreshes one
@@ -161,3 +163,6 @@ package and crate version updates.
 - 2026-10-13: Keeps only selection, provenance, patches, notices, and catalog
   metadata in Git. Publishes immutable language/theme hash objects to Bunny,
   with normalized update diffs retained as review artifacts.
+- 2026-10-21: Added byte, substitution, and recursion-depth bounds to YAML
+  variable expansion during source sync, including a cap on intermediate output
+  generated across nested references.

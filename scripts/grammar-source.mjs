@@ -2,6 +2,11 @@ import { createRequire } from "node:module";
 
 const require = createRequire(new URL("../node/package.json", import.meta.url));
 
+const YAML_VARIABLE_EXPANSION_BYTE_LIMIT = 8 * 1024 * 1024;
+const YAML_VARIABLE_EXPANSION_INTERMEDIATE_BYTE_LIMIT = 16 * 1024 * 1024;
+const YAML_VARIABLE_EXPANSION_SUBSTITUTION_LIMIT = 100_000;
+const YAML_VARIABLE_EXPANSION_DEPTH_LIMIT = 64;
+
 // These parsers are build dependencies. Downloaded grammars are always data.
 export function parseGrammarSource(text, source) {
   if (/\.cson$/i.test(source)) {
@@ -12,18 +17,67 @@ export function parseGrammarSource(text, source) {
     const { load, JSON_SCHEMA } = require("js-yaml");
     const grammar = load(text, { schema: JSON_SCHEMA });
     const variables = grammar.variables || {};
-    function expand(value, visiting = new Set()) {
-      return value.replace(/\{\{([\w-]+)\}\}/g, (_, name) => {
+    const budget = { expandedBytes: 0, intermediateBytes: 0, substitutions: 0 };
+    function exceeded(limit, maximum) {
+      throw new Error(
+        "YAML grammar variable expansion in " +
+          source +
+          " exceeded the " +
+          limit +
+          " limit (" +
+          maximum +
+          ")",
+      );
+    }
+    function expand(value, visiting = new Set(), depth = 0) {
+      if (!/\{\{([\w-]+)\}\}/.test(value)) return { value, hasVariables: false, bytes: 0 };
+
+      const parts = [];
+      let outputBytes = 0;
+      let position = 0;
+      function append(part, bytes = Buffer.byteLength(part, "utf8")) {
+        if (outputBytes + bytes > YAML_VARIABLE_EXPANSION_BYTE_LIMIT)
+          exceeded("expanded string bytes", "8 MiB");
+        outputBytes += bytes;
+        parts.push(part);
+      }
+
+      const pattern = /\{\{([\w-]+)\}\}/g;
+      let match;
+      while ((match = pattern.exec(value))) {
+        append(value.slice(position, match.index));
+        const name = match[1];
         if (visiting.has(name) || typeof variables[name] !== "string")
           throw new Error(`Invalid grammar variable ${name} in ${source}`);
-        return expand(variables[name], new Set([...visiting, name]));
-      });
+        if (depth >= YAML_VARIABLE_EXPANSION_DEPTH_LIMIT)
+          exceeded("nesting depth", YAML_VARIABLE_EXPANSION_DEPTH_LIMIT);
+        budget.substitutions += 1;
+        if (budget.substitutions > YAML_VARIABLE_EXPANSION_SUBSTITUTION_LIMIT)
+          exceeded("substitution count", "100,000");
+        const expanded = expand(variables[name], new Set([...visiting, name]), depth + 1);
+        const bytes = expanded.hasVariables
+          ? expanded.bytes
+          : Buffer.byteLength(expanded.value, "utf8");
+        if (budget.intermediateBytes + bytes > YAML_VARIABLE_EXPANSION_INTERMEDIATE_BYTE_LIMIT)
+          exceeded("intermediate variable output bytes", "16 MiB");
+        budget.intermediateBytes += bytes;
+        append(expanded.value, bytes);
+        position = pattern.lastIndex;
+      }
+      append(value.slice(position));
+      return { value: parts.join(""), hasVariables: true, bytes: outputBytes };
     }
     function walk(value) {
       if (Array.isArray(value)) return value.map(walk);
       if (value && typeof value === "object")
         return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, walk(item)]));
-      return typeof value === "string" ? expand(value) : value;
+      if (typeof value !== "string") return value;
+      const expanded = expand(value);
+      if (!expanded.hasVariables) return value;
+      if (budget.expandedBytes + expanded.bytes > YAML_VARIABLE_EXPANSION_BYTE_LIMIT)
+        exceeded("total expanded bytes", "8 MiB");
+      budget.expandedBytes += expanded.bytes;
+      return expanded.value;
     }
     delete grammar.variables;
     return walk(grammar);
