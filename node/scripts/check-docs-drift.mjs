@@ -53,6 +53,26 @@ export const NODE_FLOOR_DOCS = [
   "node/ferriki/README.md",
 ];
 
+// These are current reader-facing documents, so release status must not be
+// described using pre-1.0 or in-progress wording. Dated records keep history.
+export const RELEASE_STATUS_DOCS = [
+  "README.md.src",
+  "README.md",
+  "node/ferriki/README.md",
+  "docs/asset-loading.md",
+];
+
+export const STALE_RELEASE_COPY = [
+  [
+    "pre-1.0 release language",
+    /\bFerriki\s+is\s+in\s+beta\b|\bpre[- ]1\.0\b|\b(?:until|before)\s+(?:Ferriki\s+)?1\.0(?:\.0)?\b/i,
+  ],
+  [
+    "in-progress release language",
+    /\b(?:release|version)\b[^.!?\n]{0,80}\b(?:being\s+(?:published|released)|in progress)\b/i,
+  ],
+];
+
 export const SHIKI_SOURCE = "node/compat/upstream/shiki/.source.json";
 export const FERRIKI_PACKAGE = "node/ferriki/package.json";
 
@@ -78,6 +98,12 @@ export async function checkDocsDrift(root) {
     const source = await read(relative);
     for (const phrase of stalePhrases)
       assert(!source.includes(phrase), `${relative} contains stale guidance: ${phrase}`);
+  }
+
+  for (const relative of RELEASE_STATUS_DOCS) {
+    const source = await read(relative);
+    for (const [label, pattern] of STALE_RELEASE_COPY)
+      assert(!pattern.test(source), `${relative} contains ${label}`);
   }
 
   // Positive contracts: prose facts that have exactly one machine-readable source.
@@ -131,6 +157,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = join(fileURLToPath(new URL(".", import.meta.url)), "../..");
   const { shikiRef, nodeFloor } = await checkDocsDrift(root);
   console.log(
-    `Ferriki contributor-doc guidance is current (Shiki ${shikiRef} baseline, Node >= ${nodeFloor})`,
+    `Ferriki documentation is current (Shiki ${shikiRef} baseline, Node >= ${nodeFloor}, release wording)`,
   );
 }

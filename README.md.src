@@ -14,9 +14,9 @@ Ferriki is a native syntax highlighter for Node.js and Rust. Shiki brought
 editor-grade highlighting to the web; Ferriki keeps its HTML API shape, owns a
 curated grammar catalog, and runs TextMate grammars and themes on a Rust port
 of VS Code's TextMate tokenizer, so Rust programs, Node.js and Vite builds
-share one engine. Ferriki is in beta: until
-1.0, a minor release can change the API, and the
-[changelog](node/ferriki/CHANGELOG.md) lists each change.
+share one engine. Ferriki follows semantic versioning: breaking changes to its
+public API require a major version. The
+[changelog](node/ferriki/CHANGELOG.md) lists each release's changes.
 
 ## Why Ferriki
 

@@ -30,9 +30,9 @@ IDs are canonical, so aliases use the same object. Each Ferriki version keeps
 its fixed catalog and hashes. Updates append new objects without changing
 payloads used by older releases that use immutable Storage objects. The public
 CDN rejects legacy `<commit>/assets/shiki/<path>` URLs as of October 16, 2026.
-Update to Ferriki 1.1.0 or later for the short-hash catalog; while that release
-is being published, existing legacy installs need a populated cache or a custom
-mirror. See the [migration note](./migrations/legacy-cdn.md).
+Ferriki 1.1.0 and later use the short-hash catalog. For older releases,
+existing installs need a populated cache or a custom mirror. See the
+[migration note](./migrations/legacy-cdn.md).
 
 Synchronous factories, loads and highlighting read only the cache. Load
 standard grammars and themes through the asynchronous API first, or prepopulate
