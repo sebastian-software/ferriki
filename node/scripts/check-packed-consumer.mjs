@@ -6,11 +6,13 @@ import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
+import { normalizeNpmPackMetadata } from "./npm-pack-metadata.mjs";
 
 import "./test-asset-env.mjs";
 
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const packageRoot = join(nodeRoot, "ferriki");
+const packageManifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
 const examplePath = join(nodeRoot, "..", "docs", "examples", "ferromark-ardo.mjs");
 // The main package ships no native addon; a consumer loads it from the
 // matching platform package, so this gate installs both tarballs.
@@ -54,7 +56,7 @@ function run(command, args, options = {}) {
 
 try {
   const packed = run(npmCommand, ["pack", "--json", "--pack-destination", tempRoot]);
-  const metadata = JSON.parse(packed.stdout)[0];
+  const metadata = normalizeNpmPackMetadata(packed.stdout, packageManifest.name);
   const files = new Set(metadata.files.map((file) => file.path));
   for (const required of [
     "index.mjs",
@@ -86,10 +88,11 @@ try {
   );
 
   const tarball = join(tempRoot, metadata.filename);
-  const sidecar = JSON.parse(
+  const sidecar = normalizeNpmPackMetadata(
     run(npmCommand, ["pack", "--json", "--pack-destination", tempRoot], { cwd: sidecarRoot })
       .stdout,
-  )[0];
+    target.packageName,
+  );
   assert.equal(sidecar.name, target.packageName, `sidecar tarball is ${sidecar.name}`);
   const consumer = await mkdtemp(join(tempRoot, "consumer-"));
   run(npmCommand, ["init", "--yes"], { cwd: consumer, stdio: "ignore" });
@@ -274,7 +277,7 @@ void oneShot
     join(consumer, "node_modules", "@ferriki", "core", "README.md"),
     "utf8",
   );
-  const { description } = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
+  const { description } = packageManifest;
   assert(
     installedReadme.replace(/\s+/g, " ").includes(`Ferriki is ${description}`),
     `packed README was not installed, or its tagline no longer matches the package description: ${description}`,

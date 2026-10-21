@@ -129,6 +129,17 @@ const docsContractCheck = spawnSync(process.execPath, ["./scripts/check-docs-con
 });
 if (docsContractCheck.status !== 0) process.exit(docsContractCheck.status || 1);
 
+const npmPackMetadataTest = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-npm-pack-metadata.mjs"],
+  {
+    cwd: nodeRoot,
+    env: process.env,
+    stdio: "inherit",
+  },
+);
+if (npmPackMetadataTest.status !== 0) process.exit(npmPackMetadataTest.status || 1);
+
 const packedConsumerCheck = spawnSync(process.execPath, ["./scripts/check-packed-consumer.mjs"], {
   cwd: nodeRoot,
   env: {
