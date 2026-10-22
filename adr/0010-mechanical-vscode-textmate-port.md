@@ -51,6 +51,14 @@ named `ferriki-textmate`.
   follow-up.
   The rule-local cache still retains at most one compiled scanner for each
   anchor variant and clears those entries when a source changes.
+- A registry can export its pattern cache as a Ferroni precompiled archive and
+  attach archives that the cache consults before compiling a pattern
+  (`export_precompiled_patterns`, `add_precompiled_patterns`).
+  `Grammar::compile_all_scanners` compiles every reachable rule in every
+  `\A`/`\G` variant so an archive covers a whole grammar. It skips lists
+  that end or continue with a resolved pattern, since those bypass the cache.
+  Disposing a registry drops attached archives. Upstream has no counterpart;
+  tokens are unchanged, because a missing or invalid entry compiles from text.
 - Upstream registers every grammar before it compiles one. Ferriki registers
   languages on demand, so `SyncRegistry` records which scopes and injection
   lists each compiled grammar read while compiling, including lookups that
@@ -141,3 +149,4 @@ this decision.
 - 2026-10-10: Shares Ferroni's scanner pattern cache across each `SyncRegistry`, while keeping resolved backreference patterns out of its retaining cache and recording the all-or-nothing API limitation (#230).
 - 2026-10-22: Narrows the cache bypass to lists holding a resolved end or while pattern; static backreference patterns now share the cache, cutting first-use time for grammars such as C++, PHP and Swift.
 - 2026-10-22: Registering a grammar or changing an injection list drops only the compiled grammars that read that scope, and the shared scanner pattern cache survives invalidation.
+- 2026-10-22: Adds precompiled scanner archive export and attach to `SyncRegistry`, and `Grammar::compile_all_scanners` (#325).

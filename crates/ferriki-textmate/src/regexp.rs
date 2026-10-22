@@ -9,12 +9,13 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use crate::RegexError;
+use crate::{PrecompiledPatternsError, RegexError};
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub(crate) use ferroni::scanner::{OnigString, ScannerFindOptions};
 use ferroni::scanner::{
-    Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache, ScannerSyntax,
+    PrecompiledPatterns, Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache,
+    ScannerSyntax,
 };
 
 /// Shared compiled patterns for the grammars owned by one registry.
@@ -38,11 +39,36 @@ impl ScannerPatternCache {
         Self(Arc::new(Mutex::new(FerroniScannerPatternCache::new())))
     }
 
+    /// Drops compiled patterns and attached archives.
     pub(crate) fn clear(&self) {
+        let mut cache = self.0.lock().expect("scanner pattern cache lock poisoned");
+        cache.clear();
+        cache.clear_precompiled();
+    }
+
+    /// Ferriki extension: exports every pattern compiled through this cache.
+    /// Scanners holding resolved end or while patterns bypass the cache, so
+    /// their patterns are never exported.
+    pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
         self.0
             .lock()
             .expect("scanner pattern cache lock poisoned")
-            .clear();
+            .export_precompiled()
+            .map_err(PrecompiledPatternsError::new)
+    }
+
+    /// Ferriki extension: consults `archive` before compiling a pattern.
+    pub(crate) fn add_precompiled(
+        &self,
+        archive: impl Into<Arc<[u8]>>,
+    ) -> Result<(), PrecompiledPatternsError> {
+        let source =
+            PrecompiledPatterns::from_bytes(archive).map_err(PrecompiledPatternsError::new)?;
+        self.0
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .add_precompiled(source);
+        Ok(())
     }
 
     fn compile(
@@ -69,6 +95,15 @@ impl ScannerPatternCache {
             .expect("scanner pattern cache lock poisoned")
             .len()
     }
+}
+
+/// The settings every TextMate scanner compiles with. Precompiled archives
+/// are keyed by them, so a pattern loads only for the same prefilter mode.
+pub(crate) fn scanner_config(regex_prefilter: bool) -> ScannerConfig {
+    ScannerConfig::default()
+        .options(ONIG_OPTION_CAPTURE_GROUP)
+        .syntax(ScannerSyntax::Oniguruma)
+        .prefilter(regex_prefilter)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -754,10 +789,7 @@ impl<T: Copy> CompiledRule<T> {
         // vscode-oniguruma compiles scanner patterns with CAPTURE_GROUP by
         // default, so unnamed groups keep capturing next to named ones and
         // numbered backreferences stay valid in patterns with named groups.
-        let config = ScannerConfig::default()
-            .options(ONIG_OPTION_CAPTURE_GROUP)
-            .syntax(ScannerSyntax::Oniguruma)
-            .prefilter(regex_prefilter);
+        let config = scanner_config(regex_prefilter);
         let scanner = pattern_cache
             .compile(&scanner_reg_exps, &config, share_patterns)
             .map_err(RegexError::new)?;
