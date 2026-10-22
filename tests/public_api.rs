@@ -491,3 +491,61 @@ fn class_output_reuses_theme_context_through_the_public_rust_api() {
     assert!(output.css.contains("#E6DB74"));
     assert!(output.css.contains("#CFCFC2"));
 }
+
+#[test]
+fn empty_source_lines_advance_textmate_state_and_keep_output_lines() {
+    let mut highlighter = Highlighter::builder().build().expect("highlighter");
+    let grammar = parse_raw_grammar(
+        r#"{"scopeName":"source.blank-end","patterns":[{"begin":"BEGIN","end":"^$","name":"meta.block","patterns":[{"match":"inside","name":"constant.inside"}]},{"match":"next","name":"keyword.outside"}]}"#,
+        Some("blank-end.json"),
+    )
+    .expect("grammar");
+    highlighter
+        .register_language(LanguageRegistration::new("blank-end", grammar))
+        .expect("grammar registration");
+    highlighter
+        .register_theme(
+            parse_theme_data(
+                "blank-end-theme",
+                r##"{"colors":{"editor.foreground":"#dddddd","editor.background":"#222222"},"tokenColors":[{"scope":"meta.block","settings":{"foreground":"#ff0000"}},{"scope":"keyword.outside","settings":{"foreground":"#00ff00"}}]}"##,
+            )
+            .expect("theme"),
+        )
+        .expect("theme registration");
+
+    let code = "BEGIN\n\nnext\n";
+    for options in [
+        TokenizeOptions::default(),
+        TokenizeOptions::default().with_preserve_scope_boundaries(true),
+    ] {
+        let result = highlighter
+            .highlight_with_options(code, "blank-end", "blank-end-theme", &options)
+            .expect("tokens");
+        assert_eq!(result.tokens.len(), 4);
+        assert!(result.tokens[1].is_empty());
+        assert!(result.tokens[3].is_empty());
+        let next = result.tokens[2]
+            .iter()
+            .find(|token| token.content == "next")
+            .expect("outside token");
+        assert_eq!(next.color.as_deref(), Some("#00FF00"));
+        assert_eq!(next.offset, "BEGIN\n\n".len());
+        if options.preserve_scope_boundaries {
+            let scopes = next.scope_names.as_ref().expect("scope paths");
+            assert!(scopes.iter().any(|scope| scope == "keyword.outside"));
+            assert!(!scopes.iter().any(|scope| scope == "meta.block"));
+        }
+    }
+
+    let html = highlighter
+        .highlight_html_lines(
+            code,
+            "blank-end",
+            "blank-end-theme",
+            &RenderOptions::default(),
+        )
+        .expect("HTML lines");
+    assert_eq!(html.lines.len(), 4);
+    assert!(html.lines[1].is_empty());
+    assert!(html.lines[3].is_empty());
+}
