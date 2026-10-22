@@ -12,18 +12,18 @@ where highlighted output goes, which grammar and theme assets you use, and how
 your application identifies a language.
 
 Ferriki is aimed at projects that produce HTML. It uses the same native engine
-from Rust and Node.js, and its standard catalog follows the TextMate grammars
-used by Shiki and editor extensions. Syntect is a good choice when your Rust
-application needs its HTML or terminal-oriented output, or already relies on
-Sublime Text syntax and theme assets. This page compares the libraries' current
-interfaces; it does not promise a drop-in API or matching colors.
+from Rust and Node.js, with a Ferriki-maintained selection of TextMate
+grammars and support dependencies from pinned sources. Syntect is a good choice
+when your Rust application needs its HTML or terminal-oriented output, or
+already relies on Sublime Text syntax and theme assets. This page compares the
+libraries' current interfaces; it does not promise a drop-in API or matching colors.
 
 ## At a glance
 
 | Concern             | Ferriki                                                                                                        | syntect                                                                                                             |
 | ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Main Rust interface | Reusable `Highlighter`; return themed tokens or rendered HTML                                                  | Reusable syntax and theme sets; produce highlighted HTML, styled segments, or terminal output                       |
-| Grammar inputs      | Shiki-derived TextMate grammars in generated Ferriki assets; caller can register TextMate-shaped JSON          | Precompiled default syntax set; add `.sublime-syntax` files or build a syntax set from folders                      |
+| Grammar inputs      | Curated TextMate catalog from pinned sources; custom TextMate JSON registrations                               | Precompiled default syntax set; add `.sublime-syntax` files or build a syntax set from folders                      |
 | Themes              | Shiki-compatible JSON theme subset in generated assets; custom Rust themes register through typed or JSON APIs | Sublime `.tmTheme` files and built-in themes                                                                        |
 | Regex configuration | Ferroni's pure-Rust Oniguruma-compatible scanner, backed by `regex-automata` and requiring no C toolchain      | `regex-onig` (C Oniguruma, default) or optional `regex-fancy` (Rust `fancy-regex`) feature                          |
 | Output              | HTML, class-based HTML, or Rust token records                                                                  | HTML and styled ranges; a built-in helper formats styled ranges as ANSI escapes                                     |
@@ -70,14 +70,14 @@ conversion. For a grammar you depend on, test its embedded-language rules,
 regex features, scope names, and representative source files in the destination
 engine.
 
-Ferriki ships 260 generated canonical grammar assets from the TextMate
-grammar ecosystem used by Shiki. Its full Node bundle exposes 364 language
-keys: 260 canonical IDs and 104 aliases, with multiple keys resolving to one
-grammar asset. Syntect's default syntax set and additional
-`.sublime-syntax` folders have their own coverage. These are different catalog
-boundaries; compare the actual grammars your application needs, including
-injections and embedded languages, rather than inferring coverage from a
-headline count.
+Ferriki maintains a curated TextMate catalog from pinned upstream sources; it does
+not ship Shiki's full grammar selection. The selected sources and resolved commits
+are recorded in the [grammar source lock](https://github.com/sebastian-software/ferriki/blob/main/assets/grammars/sources.json).
+The [language guide](/guide/languages-and-themes) lists supported standard IDs and
+aliases, with support grammars shown separately. Syntect's default syntax set and
+additional `.sublime-syntax` folders have their own coverage. Compare the specific
+grammars your application needs, including injections and embedded languages, against
+the supported IDs rather than inferring coverage from a headline count.
 
 ## Themes and assets
 
@@ -152,4 +152,5 @@ and the [Rust API reference](https://github.com/sebastian-software/ferriki/blob/
   [Sublime package set](https://github.com/sublimehq/Packages), and [TextMate
   grammar integration in VS Code](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide).
 - [bat asset workflow](https://github.com/sharkdp/bat/blob/master/doc/assets.md) and [`syntect_tmlanguage`](https://docs.rs/syntect-tmlanguage).
-- [Ferriki Rust API](https://docs.rs/ferriki) and [language catalog notes](/evidence/compatibility).
+- [Ferriki Rust API](https://docs.rs/ferriki) and
+  [supported language IDs, aliases, and support grammars](/guide/languages-and-themes).
