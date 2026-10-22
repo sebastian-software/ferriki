@@ -37,8 +37,14 @@ jobs:
       - name: Verify the pin check itself
         run: node scripts/test-check-workflow-pins.mjs
 
+      - name: Verify the workflow context check itself
+        run: node scripts/test-check-workflow-contexts.mjs
+
       - name: Verify every workflow action is pinned by commit SHA
         run: node scripts/check-workflow-pins.mjs
+
+      - name: Verify workflow expression context availability
+        run: node scripts/check-workflow-contexts.mjs
 
   adrs:
     name: Decision records
