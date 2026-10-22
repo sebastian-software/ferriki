@@ -151,7 +151,7 @@ export function createHighlighterCoreSync(options = {}) {
     const registrations = await resolveRegistrations(inputs);
     const names = registrations.flatMap((registration) =>
       isCustomLanguageRegistration(registration)
-        ? [...(registration.embeddedLangs || [])]
+        ? [...(registration.embeddedLangs || []), ...(registration.embeddedLanguages || [])]
         : [resolveAlias(registrationName(registration))],
     );
     await prefetchAssets(names, []);
@@ -204,12 +204,11 @@ export function createHighlighterCoreSync(options = {}) {
 
   async function loadTheme(...inputs) {
     const registrations = await resolveRegistrations(inputs);
-    await prefetchAssets(
-      [],
-      registrations
-        .filter((registration) => !isCustomThemeRegistration(registration))
-        .map(registrationName),
-    );
+    const themes = registrations.map((registration) => {
+      if (isCustomThemeRegistration(registration)) return registration.include;
+      return registrationName(registration);
+    });
+    await prefetchAssets([], themes);
     loadThemeSync(...registrations);
   }
 
