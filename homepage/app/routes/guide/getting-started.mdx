@@ -7,19 +7,18 @@ import { HighlightingFlows } from "../../components/highlighting-flows";
 
 # Getting started
 
-Ferriki highlights code with the TextMate grammars and themes from Shiki's
-catalog, on a native Rust engine. From Node.js it keeps Shiki's rendered HTML
-API; in a Vite 8 build, macros prepare code examples at build time
-([Build-time macros](/guide/build-time-macros)); from Rust it is a regular crate
-([Start with Rust](/rust/getting-started)).
+Bring editor-grade TextMate highlighting to documentation, CMS content, and
+site builds. Ferriki maintains its own curated grammar catalog and runs it on a
+native Rust engine: Node.js renders Shiki-shaped HTML, Rust offers a crate API,
+and Vite 8 macros prepare component examples during the build.
 
 <HighlightingFlows />
 
 ## Requirements
 
-- Node.js 22.13.0 or newer. The package is ESM-only: use `import`, not `require()`.
-- A supported platform: Linux x64 and arm64 (glibc or musl), macOS on Apple
-  Silicon, or Windows x64 and arm64. See [Compatibility](/evidence/compatibility).
+- Node.js 22.13.0 or newer. Ferriki is ESM-only; use `import` from a `.mjs` file.
+- A supported platform: Linux x64/arm64 (glibc or musl), macOS on Apple
+  Silicon, or Windows x64/arm64. See [Compatibility](/evidence/compatibility).
 
 ## Install
 
@@ -27,41 +26,44 @@ API; in a Vite 8 build, macros prepare code examples at build time
 npm install @ferriki/core
 ```
 
-The native addon comes from a platform package (`@ferriki/<platform>`) that npm
-installs as an optional dependency. Keep optional dependencies enabled in your
-deployment.
+npm installs the native addon as an optional `@ferriki/<platform>` dependency.
+Keep optional dependencies enabled in your production install.
 
-Grammar and theme payloads are not bundled. The asynchronous APIs download
-them from `assets.ferriki.dev` the first time they are loaded, verify each
-payload against the release's SHA-256 digest, and cache it in
-`node_modules/.cache/ferriki`. To use a mirror, set `FERRIKI_ASSETS_BASE_URL`.
-For offline builds, prepopulate the cache or set `FERRIKI_ASSETS_REMOTE=0` and
-use cached payloads only. Downloads happen during `createHighlighter`,
-`loadLanguage`, `loadTheme`, and one-shot calls; rendering on a loaded
-highlighter stays synchronous.
+Language and theme payloads are not bundled. The first time an asynchronous
+API loads them, Ferriki downloads release-pinned files from `assets.ferriki.dev`,
+checks their SHA-256 digests, and caches them in
+`node_modules/.cache/ferriki`. For offline builds, prepopulate the cache or set
+`FERRIKI_ASSETS_BASE_URL` to a mirror. Set `FERRIKI_ASSETS_REMOTE=0` to use
+cached payloads only. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md).
 
-## Highlight once
+## See your first result
+
+Save this complete ESM file as `highlight.mjs`:
 
 ```js ferriki-check=one-shot
+import { writeFile } from "node:fs/promises";
 import { codeToHtml } from "@ferriki/core";
 
 const html = await codeToHtml("const answer = 42;", {
   lang: "javascript",
   theme: "github-dark",
 });
+
+await writeFile("highlighted.html", html);
+console.log("Saved highlighted.html. Open it in a browser to preview your code.");
 ```
 
-The one-shot functions share a singleton highlighter and return a Promise.
-They load the language and theme on first use.
-Later calls reuse that singleton, including its loaded languages and themes.
+Run `node highlight.mjs`, then open `highlighted.html` or insert its
+`<pre>` fragment into your page. The first call loads its
+language and theme; later one-shot calls reuse the process-local highlighter.
 
 ## Reuse a highlighter
 
-For a site build or a server, create one highlighter with the languages and
-themes you need. Rendering with loaded languages and themes is synchronous;
-you can still load additional ones through the asynchronous methods.
-In a CMS, keep it for the worker's lifetime rather than recreating it for
-each code block. The [benchmarks](/evidence/benchmarks) measure this repeated use.
+For a site build or server, create one highlighter with the languages and
+themes you need. Rendering with loaded languages and themes is synchronous; you
+can still load more through the asynchronous methods. In a CMS, keep the
+highlighter for the worker's lifetime rather than recreating it for each code
+block. The [benchmarks](/evidence/benchmarks) measure repeated use.
 
 ```js ferriki-check=reusable
 import { createHighlighter } from "@ferriki/core";
@@ -83,22 +85,18 @@ try {
 A highlighter belongs to one thread: create one per worker for parallel builds.
 Dispose it when the build or server no longer needs it.
 
-Keep the default regex prefilter for repeated work. For a short-lived process,
-set `regexPrefilter: false` when creating the highlighter to avoid prefilter
-construction. This can reduce first-use work; it does not promise a shorter
-render for every snippet. See [factory options](/guide/api#highlighter-options)
-and the [measured tradeoff](/evidence/benchmarks#first-use-and-the-regex-prefilter).
-
 ## HTML with CSS
 
 For reusable CSS classes and the matching theme stylesheet, use
-`codeToHtmlWithCss()` or set `styleMode: "classes"` on `codeToHtml()`.
+`codeToHtmlWithCss()` or set `styleMode: "classes"` on `codeToHtml()`. The
+[class-based highlighting guide](/guide/class-highlighting) shows complete
+HTML and CSS examples, including light and dark theme switching.
 
 The [API overview](/guide/api) lists every function and option.
 
 ## Next steps
 
 - Coming from Shiki? Read [Migrating from Shiki](/guide/migrating-from-shiki).
-- Code examples in components? Prepare them with [Build-time macros](/guide/build-time-macros).
+- Code examples in components? Start with [Build-time macros](/guide/build-time-macros).
 - Need a language or theme of your own? See [Languages and themes](/guide/languages-and-themes).
 - Something fails to load? Check [Troubleshooting](/guide/troubleshooting).
