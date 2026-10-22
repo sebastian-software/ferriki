@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 45
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      CANDIDATE: ${{ runner.temp }}/grammar-candidate
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       UPDATE_BRANCH: codex/grammar-updates
     steps:
@@ -44,6 +43,8 @@ jobs:
           node scripts/write-grammar-notices.mjs
       - name: Prepare repository snapshots
         id: prepare
+        env:
+          CANDIDATE: ${{ runner.temp }}/grammar-candidate
         run: |
           node scripts/prepare-grammar-update.mjs --output-dir "$CANDIDATE"
           node --input-type=module -e 'import fs from "node:fs"; const report = JSON.parse(fs.readFileSync(process.env.CANDIDATE + "/report.json")); fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + report.changed + "\n")'
@@ -52,6 +53,8 @@ jobs:
         run: pnpm -C node run build:native
       - name: Validate and apply the candidate
         if: steps.prepare.outputs.changed == 'true'
+        env:
+          CANDIDATE: ${{ runner.temp }}/grammar-candidate
         run: |
           node scripts/write-grammar-diffs.mjs "$CANDIDATE"
           node scripts/validate-grammar-candidate.mjs "$CANDIDATE"
@@ -75,6 +78,8 @@ jobs:
           node scripts/verify-assets.mjs
       - name: Open a reviewable update
         if: steps.prepare.outputs.changed == 'true'
+        env:
+          CANDIDATE: ${{ runner.temp }}/grammar-candidate
         run: |
           node scripts/write-grammar-update-report.mjs "$CANDIDATE/report.json" "$CANDIDATE/report.md"
           existing=$(gh pr list --head "$UPDATE_BRANCH" --base "$DEFAULT_BRANCH" --state open --json url --jq '.[0].url // empty')
@@ -105,6 +110,6 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: grammar-candidate
-          path: ${{ env.CANDIDATE }}
+          path: ${{ runner.temp }}/grammar-candidate
           if-no-files-found: ignore
           retention-days: 14

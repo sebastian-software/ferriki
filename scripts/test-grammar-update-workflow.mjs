@@ -38,6 +38,18 @@ const assetCommands = assetOnly.steps.map((step) => step.run || "").join("\n");
 assert.doesNotMatch(assetCommands, /cargo publish|pnpm publish|publish-npm|release-please/);
 assert(assetCommands.indexOf("publish-assets.mjs") < assetCommands.indexOf("verify-assets.mjs"));
 const publication = job.steps.find((step) => step.name === "Open a reviewable update");
+const candidatePath = "${{ runner.temp }}/grammar-candidate";
+assert.equal(job.env.CANDIDATE, undefined);
+for (const name of [
+  "Prepare repository snapshots",
+  "Validate and apply the candidate",
+  "Open a reviewable update",
+]) {
+  const step = job.steps.find((candidate) => candidate.name === name);
+  assert.equal(step.env.CANDIDATE, candidatePath, `${name} must use the runner temp candidate path`);
+}
+const artifact = job.steps.find((step) => step.name === "Keep the candidate and its report");
+assert.equal(artifact.with.path, candidatePath);
 assert.equal(workflow.on.schedule[0].cron, "0 6 * * 1");
 assert(Object.hasOwn(workflow.on, "workflow_dispatch"));
 assert.equal(job.env.UPDATE_BRANCH, "codex/grammar-updates");
