@@ -180,6 +180,7 @@ impl RemoteAssetSource {
         if !metadata.is_file() || metadata.len() != size {
             // Reject a malformed cache entry before allocating based on its
             // file size. The manifest pins the only acceptable size.
+            drop(file);
             let _ = std::fs::remove_file(path);
             return None;
         }
@@ -590,6 +591,7 @@ mod tests {
         let file = std::fs::File::create(&path).expect("cache entry");
         file.set_len(64 * 1024 * 1024)
             .expect("oversized cache entry");
+        drop(file);
 
         let error = offline_source(&release, &cache)
             .read(&digest)
