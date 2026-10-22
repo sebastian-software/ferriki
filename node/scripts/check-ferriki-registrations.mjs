@@ -169,16 +169,23 @@ async function cacheEntries(cacheDir) {
   }
 }
 
-async function verifyPrefetch(name, key, create) {
+async function verifyPrefetch(name, key, create, { notRequested = [] } = {}) {
   const cacheDir = join(tempRoot, name);
   assert.deepEqual(await cacheEntries(cacheDir), [], `${name} starts with an empty cache`);
   const requestOffset = requests.length;
   const instance = await create(cacheDir);
   try {
+    const prefetchRequests = requests.slice(requestOffset);
     assert(
-      requests.slice(requestOffset).includes(assetUrl(key)),
+      prefetchRequests.includes(assetUrl(key)),
       `${name} requests the uncached ${key} payload`,
     );
+    for (const unusedKey of notRequested) {
+      assert(
+        !prefetchRequests.includes(assetUrl(unusedKey)),
+        `${name} does not request the unused ${unusedKey} payload`,
+      );
+    }
     assert.deepEqual(
       await readFile(join(cacheDir, release.assets[key].sha256)),
       await readFile(join(repositoryAssetRoot, key)),
@@ -266,6 +273,29 @@ try {
         throw error;
       }
     },
+  );
+
+  const bothEmbeddedLanguagesRegistration = {
+    name: "ferriki-registration-embedded-languages-precedence",
+    scopeName: "source.ferriki-registration-embedded-languages-precedence",
+    patterns: [{ match: "\\bEMBEDDED\\b", name: "keyword.embedded" }],
+    embeddedLangs: ["go"],
+    embeddedLanguages: ["javascript"],
+  };
+  await verifyPrefetch(
+    "load-language-embedded-languages-precedence",
+    "languages/javascript.fkgram",
+    async (cacheDir) => {
+      const instance = createHighlighterCoreSync({ assets: remoteAssets(cacheDir) });
+      try {
+        await instance.loadLanguage(bothEmbeddedLanguagesRegistration);
+        return instance;
+      } catch (error) {
+        instance.dispose();
+        throw error;
+      }
+    },
+    { notRequested: ["languages/go.fkgram"] },
   );
 
   const syncCacheDir = join(tempRoot, "sync-empty-cache");
