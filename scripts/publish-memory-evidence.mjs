@@ -64,7 +64,18 @@ if (process.argv.includes("--check"))
   );
 else writeFileSync(target, output);
 if (process.argv.includes("--check")) {
-  for (const scenario of ["repository", "large-typescript"]) {
+  // Entry-point READMEs show the primary repository cohort. Keep the separate
+  // large-TypeScript result on the detailed evidence page with its workload context.
+  const headlinePathsByScenario = {
+    repository: [
+      "README.md.src",
+      "README.md",
+      "node/ferriki/README.md",
+      "homepage/app/routes/evidence/benchmarks.mdx",
+    ],
+    "large-typescript": ["homepage/app/routes/evidence/benchmarks.mdx"],
+  };
+  for (const [scenario, paths] of Object.entries(headlinePathsByScenario)) {
     const reductions = profiles
       .map((profile) => {
         const { engines } = profile.scenarios.find((entry) => entry.id === scenario);
@@ -74,12 +85,7 @@ if (process.argv.includes("--check")) {
       })
       .sort((a, b) => a - b);
     const range = `${reductions[0]}–${reductions[1]}%`;
-    for (const path of [
-      "README.md.src",
-      "README.md",
-      "node/ferriki/README.md",
-      "homepage/app/routes/evidence/benchmarks.mdx",
-    ])
+    for (const path of paths)
       assert.ok(
         readFileSync(new URL(path, root), "utf8").includes(range),
         `${path}: stale ${scenario} memory headline (${range})`,
