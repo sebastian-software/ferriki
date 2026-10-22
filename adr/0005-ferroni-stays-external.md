@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-22
 
 ## Context
 
@@ -38,3 +38,4 @@ Ferroni stays external.
 
 - 2026-03-09: Accepted.
 - 2026-09-30: Runtime code moved out of `ferriki-core`; Ferroni types left the public API in 0.6.0.
+- 2026-10-22: Raised the floor to 2.5.2 and enabled Ferroni's `precompiled` feature, the base for publishing precompiled scanner archives (#325).
