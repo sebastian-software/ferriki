@@ -314,13 +314,18 @@ async function verifyViewport({ page, pageFile, viewport, origin }) {
     `${pageFile} has horizontal page overflow at ${viewport.name} width ${viewport.width}px: ${layout.pageWidth}px`,
   );
 
+  if (pageFile === "index.html") await verifyMacroSample(page, viewport);
+
   const navDisplay = await page
     .locator(selectors.nav)
     .evaluate((element) => getComputedStyle(element).display);
   const menuDisplay = await page
     .locator(selectors.menu)
     .evaluate((element) => getComputedStyle(element).display);
-  const searchVisible = await page.locator(selectors.search).isVisible();
+  assert(
+    await page.locator(selectors.search).isVisible(),
+    "The site should keep search visible at each checked viewport",
+  );
   if (viewport.name === "desktop") {
     assert.notEqual(navDisplay, "none", `${pageFile} hides desktop section navigation`);
     assert.equal(menuDisplay, "none", `${pageFile} shows the phone navigation on desktop`);
@@ -336,9 +341,71 @@ async function verifyViewport({ page, pageFile, viewport, origin }) {
       `${pageFile} hides the phone navigation at ${viewport.name} width`,
     );
   }
-  assert(searchVisible, `${pageFile} hides search at ${viewport.name} width`);
   await verifyAccessibility(page, pageFile, viewport);
   console.log(`Verified ${pageFile} at ${viewport.name} (${viewport.width}px).`);
+}
+async function verifyMacroSample(page, viewport) {
+  const sample = page.locator(".ferriki-macro-sample");
+  assert.equal(await sample.count(), 1, "Homepage must show the Vite macro example");
+  const figures = sample.locator("figure");
+  assert.equal(await figures.count(), 2, "Expected source and prepared-result panels");
+  await verifyMacroContent(sample, figures);
+  await verifyMacroLayout(figures, viewport);
+  await verifyMacroKeyboard(page, figures);
+}
+
+async function verifyMacroContent(sample, figures) {
+  const input = figures.nth(0).locator("pre");
+  const output = figures.nth(1).locator("pre");
+  assert.match(await input.textContent(), /@ferriki\/core\/react\/macro/);
+  const outputText = await output.textContent();
+  assert.equal(outputText, "export const answer = 42;");
+  assert(outputText.length < 128, "The visible prepared result should stay compact");
+  assert.doesNotMatch(
+    await sample.textContent(),
+    /FerrikiMacroRenderHelper|FerrikiCodeBlocks|FerrikiDefineCodeElement/,
+    "The full transform should remain a separate inspection artifact",
+  );
+  assert.equal(await input.getAttribute("tabindex"), "0");
+  assert.equal(await output.getAttribute("tabindex"), "0");
+}
+
+async function verifyMacroLayout(figures, viewport) {
+  const input = figures.nth(0).locator("pre");
+  const output = figures.nth(1).locator("pre");
+  const [inputBounds, outputBounds] = await Promise.all([
+    input.boundingBox(),
+    output.boundingBox(),
+  ]);
+  assert(inputBounds && outputBounds, "Both macro panels need visible bounds");
+  if (viewport.width <= 700) {
+    assert(outputBounds.y > inputBounds.y, "The macro panels should stack on a phone");
+    return;
+  }
+  assert(outputBounds.x > inputBounds.x, "The macro panels should read from left to right");
+  assert(
+    Math.abs(outputBounds.y - inputBounds.y) < 2,
+    "The macro panels should align at the top on wider screens",
+  );
+}
+
+async function verifyMacroKeyboard(page, figures) {
+  const input = figures.nth(0).locator("pre");
+  const output = figures.nth(1).locator("pre");
+  await input.focus();
+  await page.keyboard.press("Tab");
+  assert(
+    await output.evaluate((element) => element === document.activeElement),
+    "Keyboard focus should move from the Vite input to the prepared output",
+  );
+  const outline = await output.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
+  });
+  assert(
+    outline.style !== "none" && outline.width >= 2,
+    "The focused prepared output should have a visible focus indicator",
+  );
 }
 
 async function verifyAccessibility(page, pageFile, viewport) {

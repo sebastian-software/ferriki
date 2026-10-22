@@ -48,13 +48,13 @@ export const meta: MetaFunction = ({ location }) => {
   const page = section?.pages.find(([, to]) => to === path);
   const title = page
     ? `${page[0]} · ${section?.label} · Ferriki`
-    : "Ferriki — Native syntax highlighting for Node.js and Rust";
+    : "Ferriki — Beautiful code, ready for your page";
   return [
     { title },
     {
       name: "description",
       content:
-        "Ferriki is a native syntax highlighter for Node.js and Rust: Shiki's HTML API and the TextMate grammars your editor uses, on a Rust engine, with build-time macros for Vite 8.",
+        "Native TextMate syntax highlighting for Node.js and Rust. Use familiar Shiki-style HTML calls in Node.js, or prepare React examples during Vite 8 builds.",
     },
   ];
 };

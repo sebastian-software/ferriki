@@ -31,8 +31,9 @@ summary of each release.
 Neither the npm package nor the Rust crate bundles grammar or theme payloads.
 The first time a language or theme is loaded, the Node.js package, or the Rust
 crate with its `remote` feature, downloads the payload from
-`assets.ferriki.dev` under the commit of its own release, checks it against the
-SHA-256 digest and size in the release manifest, and caches it. In Node.js the
+`assets.ferriki.dev`. A release-pinned manifest selects immutable
+language and theme objects by short hash; Ferriki checks each object against the
+manifest’s SHA-256 digest and size, then caches it. In Node.js the
 cache is `node_modules/.cache/ferriki`. A payload that fails the
 check is not cached. `FERRIKI_ASSETS_BASE_URL` points at a mirror, and
 `FERRIKI_ASSETS_REMOTE=0` loads from a populated cache only.

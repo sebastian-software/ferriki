@@ -6,7 +6,6 @@ import { Link } from "react-router";
 
 import { grammarCount } from "../data/grammar-catalog";
 import macroSample from "../data/macro-sample.json";
-import { HighlightingFlows } from "./highlighting-flows";
 
 /*
  * The landing page sections that state no measurement: the build-time macro
@@ -19,91 +18,143 @@ export function MacroSection() {
   return (
     <Section
       id="build-time"
-      title="Highlight at build time"
+      title="Prepare component examples before they ship"
       intro={
         <>
-          Write a code example where it is shown: <code>&lt;Code /&gt;</code> from{" "}
-          <code>@ferriki/core/react/macro</code> in React, or <code>code()</code> from{" "}
-          <code>@ferriki/core/macro</code> in any module. During the Vite 8 build,{" "}
-          <code>@ferriki/vite</code> replaces each one with highlighted HTML and its CSS, so the
-          browser loads no grammar and no engine.
+          Put <code>&lt;Code /&gt;</code> beside the React component that teaches the idea. During a
+          Vite 8 build, <code>@ferriki/vite</code> replaces it with the prepared HTML and CSS shown
+          here. Your page receives the highlighted result before it ships.
         </>
       }
       note={
         <>
-          <a href="https://github.com/sebastian-software/ferriki/blob/main/homepage/scripts/render-macro-sample.mjs">
-            Transformed by scripts/render-macro-sample.mjs
+          The prepared block below comes from the adapter&rsquo;s actual output. The{" "}
+          <a href="https://github.com/sebastian-software/ferriki/blob/main/homepage/app/data/macro-sample-transform.txt">
+            full transformed module
           </a>{" "}
-          with <code>@ferriki/vite</code>&rsquo;s default options; the{" "}
+          is committed for inspection;{" "}
+          <a href="https://github.com/sebastian-software/ferriki/blob/main/homepage/scripts/render-macro-sample.mjs">
+            the generator
+          </a>{" "}
+          verifies both artifacts against <code>@ferriki/vite</code>&rsquo;s output. The{" "}
           <Link to="/guide/build-time-macros">macro guide</Link> covers setup and the rules.
         </>
       }
     >
-      <div className="fam-code-grid ferriki-macro-sample">
+      <div className="ferriki-macro-sample">
         <figure className="ferriki-highlighted-panel">
-          <figcaption>Answer.tsx</figcaption>
+          <figcaption>Answer.tsx · Vite input</figcaption>
           <div dangerouslySetInnerHTML={{ __html: macroSample.inputHtml }} />
         </figure>
+        <span className="ferriki-macro-arrow" aria-hidden="true">
+          →
+        </span>
         <figure className="ferriki-highlighted-panel">
-          <figcaption>Answer.tsx as @ferriki/vite emits it</figcaption>
-          <div dangerouslySetInnerHTML={{ __html: macroSample.outputHtml }} />
+          <figcaption>Prepared TypeScript · github-dark</figcaption>
+          <div dangerouslySetInnerHTML={{ __html: macroSample.preparedHtml }} />
         </figure>
       </div>
     </Section>
   );
 }
 
-function MigrationExample() {
+function NodeExample() {
   return (
-    <CodePanel caption="highlight.ts">
+    <CodePanel caption="example.mjs">
       <span className="kw">import</span> {"{ "}
       <span className="fn">createHighlighter</span>
       {" }"} <span className="kw">from</span> <span className="str">&quot;@ferriki/core&quot;</span>
-      ; <span className="cm">// was: "shiki"</span>
-      {"\n\n"}
+      ;{"\n\n"}
       <span className="kw">const</span> highlighter = <span className="kw">await</span>{" "}
       <span className="fn">createHighlighter</span>({"{"}
       {"\n"}
-      {"  "}langs: [<span className="str">&quot;typescript&quot;</span>,{" "}
-      <span className="str">&quot;rust&quot;</span>],{"\n"}
-      {"  "}themes: [<span className="str">&quot;github-light&quot;</span>,{" "}
-      <span className="str">&quot;github-dark&quot;</span>],{"\n"}
+      {"  "}langs: [<span className="str">&quot;typescript&quot;</span>],{"\n"}
+      {"  "}themes: [<span className="str">&quot;github-dark&quot;</span>],{"\n"}
       {"});"}
       {"\n\n"}
-      <span className="kw">const</span> html = highlighter.
-      <span className="fn">codeToHtml</span>(source, {"{"}
+      <span className="kw">try</span> {"{"}
       {"\n"}
-      {"  "}lang: <span className="str">&quot;typescript&quot;</span>,{"\n"}
-      {"  "}theme: <span className="str">&quot;github-dark&quot;</span>,{"\n"}
-      {"});"}
+      {"  "}
+      <span className="kw">const</span> html = highlighter.<span className="fn">codeToHtml</span>(
+      {"\n"}
+      {"    "}
+      <span className="str">&quot;const answer = 42;&quot;</span>,{"\n"}
+      {"    { lang: "}
+      <span className="str">&quot;typescript&quot;</span>, theme:{" "}
+      <span className="str">&quot;github-dark&quot;</span> {"}"},{"\n"}
+      {"  );"}
+      {"\n"}
+      {"  "}
+      <span className="fn">console</span>.<span className="fn">log</span>(html);{"\n"}
+      {"} "}
+      <span className="kw">finally</span> {"{"}
+      {"\n"}
+      {"  "}highlighter.<span className="fn">dispose</span>();{"\n"}
+      {"}"}
     </CodePanel>
+  );
+}
+
+function RustImports() {
+  return (
+    <>
+      <span className="kw">use</span> ferriki::{"{"}
+      {"\n"}
+      {"    "}
+      <span className="ty">Highlighter</span>, <span className="ty">RemoteAssets</span>,{"\n"}
+      {"    "}
+      <span className="ty">RenderOptions</span>, <span className="ty">StandardAssetCatalogs</span>,
+      {"\n"}
+      {"    "}
+      <span className="fn">render_html</span>,{"\n"}
+      {"};"}
+      {"\n\n"}
+    </>
   );
 }
 
 function RustExample() {
   return (
-    <CodePanel caption="main.rs">
-      <span className="kw">use</span>{" "}
-      <span className="ty">
-        ferriki::{"{"}Highlighter, RenderOptions, StandardAssetCatalogs{"}"}
-      </span>
-      ;{"\n\n"}
-      <span className="kw">let</span> assets = <span className="ty">StandardAssetCatalogs</span>
-      ::<span className="fn">load_from_root</span>(path)?;{"\n"}
+    <CodePanel caption="main.rs · cargo add ferriki --features remote">
+      <RustImports />
+      <span className="kw">fn</span> <span className="fn">main</span>() -&gt;{" "}
+      <span className="ty">Result</span>&lt;(), <span className="ty">Box</span>&lt;
+      <span className="kw">dyn</span> <span className="ty">std::error::Error</span>&gt;&gt; {"{"}
+      {"\n"}
+      {"    "}
       <span className="kw">let mut</span> highlighter = <span className="ty">Highlighter</span>::
       <span className="fn">builder</span>(){"\n"}
-      {"    "}.<span className="fn">with_assets</span>(assets){"\n"}
-      {"    "}.<span className="fn">load_languages</span>([
-      <span className="str">&quot;rust&quot;</span>]){"\n"}
-      {"    "}.<span className="fn">load_themes</span>([
-      <span className="str">&quot;github-dark&quot;</span>]){"\n"}
-      {"    "}.<span className="fn">build</span>()?;{"\n\n"}
-      <span className="kw">let</span> lines = highlighter.
-      <span className="fn">highlight_html_lines</span>({"\n"}
-      {"    "}source, <span className="str">&quot;rust&quot;</span>,{" "}
-      <span className="str">&quot;github-dark&quot;</span>, &amp;
-      <span className="ty">RenderOptions</span>::<span className="fn">default</span>(),{"\n"}
-      )?;
+      {"        ."}
+      <span className="fn">with_assets</span>(<span className="ty">StandardAssetCatalogs</span>::
+      <span className="fn">remote</span>({"\n"}
+      {"            "}
+      <span className="ty">RemoteAssets</span>::<span className="fn">default</span>(){"\n"}
+      {"        )?)"}
+      {"\n"}
+      {"        ."}
+      <span className="fn">load_languages</span>([<span className="str">&quot;rust&quot;</span>])
+      {"\n"}
+      {"        ."}
+      <span className="fn">load_themes</span>([<span className="str">&quot;github-dark&quot;</span>
+      ]){"\n"}
+      {"        ."}
+      <span className="fn">build</span>()?;{"\n\n"}
+      {"    "}
+      <span className="kw">let</span> tokens = highlighter.<span className="fn">highlight</span>(
+      {"\n"}
+      {"        "}
+      <span className="str">&quot;fn main() &#123;&#125;&quot;</span>,{" "}
+      <span className="str">&quot;rust&quot;</span>,{" "}
+      <span className="str">&quot;github-dark&quot;</span>,{"\n"}
+      {"    )?;"}
+      {"\n"}
+      {"    "}
+      <span className="fn">println!</span>(<span className="str">&quot;&#123;&#125;&quot;</span>,{" "}
+      <span className="fn">render_html</span>(&amp;tokens, &amp;
+      <span className="ty">RenderOptions</span>::<span className="fn">default</span>()));{"\n"}
+      {"    "}
+      <span className="ty">Ok</span>(()){"\n"}
+      {"}"}
     </CodePanel>
   );
 }
@@ -112,27 +163,24 @@ export function CodeSection() {
   return (
     <Section
       id="code"
-      title="One engine, called from Node.js or from Rust."
+      title="A familiar HTML API, on one native engine"
       intro={
         <>
-          In Node.js, Ferriki keeps Shiki&rsquo;s <code>codeToHtml</code>, reusable highlighters,
-          the singleton and their options; coming from Shiki is usually one changed import. In Rust,
-          the <code>ferriki</code> crate is the same engine as a library, with no Node.js in the
-          process.
+          Use familiar Shiki-style HTML calls in Node.js. The Rust crate calls the same native
+          TextMate engine directly, and Vite 8 can prepare React examples as your site builds.
         </>
       }
       note={
         <>
-          What changes and what stays is listed in the{" "}
-          <Link to="/guide/migrating-from-shiki">migration guide</Link>; the{" "}
-          <Link to="/rust/getting-started">Rust guide</Link> covers assets and Ferromark. For Rust
-          HTML projects evaluating another highlighter, see{" "}
-          <Link to="/guide/ferriki-and-syntect">Ferriki and syntect</Link>.
+          For Rust projects, add the <code>remote</code> feature to use the release-pinned grammar
+          and theme catalog. Start with the <Link to="/guide/getting-started">Node.js guide</Link>,
+          the <Link to="/rust/getting-started">Rust guide</Link>, or the{" "}
+          <Link to="/guide/migrating-from-shiki">Shiki migration guide</Link>.
         </>
       }
     >
       <div className="fam-code-grid">
-        <MigrationExample />
+        <NodeExample />
         <RustExample />
       </div>
     </Section>
@@ -141,8 +189,8 @@ export function CodeSection() {
 
 const coverage = [
   {
-    name: "Shiki's HTML API",
-    status: "Covered",
+    name: "Shiki-compatible HTML API subset",
+    status: "Tested",
     settled: true,
     detail:
       "codeToHtml, reusable highlighters, the singleton, the themes map, language aliases, transformers and decorations.",
@@ -193,7 +241,7 @@ const coverage = [
     status: "By design",
     settled: true,
     detail:
-      "Ferriki runs in Node.js and Rust, at build or render time. Pages receive HTML and CSS; the browser loads no grammar and no engine.",
+      "Render in Node.js or Rust at build time or on the server. Pages receive HTML and CSS ready to display, with highlighting handled before the code reaches the browser.",
   },
 ];
 
@@ -202,7 +250,7 @@ export function CoverageSection() {
     <Section
       id="coverage"
       title="What it covers"
-      intro="Ferriki is deliberately narrow: highlighting to HTML and CSS, in Node.js, in Rust and in the Vite build."
+      intro="Highlight code for the pages you publish: render HTML and CSS from Node.js or Rust, or prepare component examples during a Vite 8 build."
       note={
         <>
           <Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>{" "}
@@ -241,22 +289,9 @@ export function ClosingSection() {
       }
     >
       <p className="fam-intro">
-        Three ways in, one native engine: <code>@ferriki/core</code> from npm, the{" "}
-        <code>ferriki</code> crate from crates.io, and the build-time macros through{" "}
-        <code>@ferriki/vite</code>. There is no WebAssembly to load and no engine to choose.
+        The npm package, Rust crate, and Vite adapter share one native TextMate engine. Your app
+        gets highlighted HTML and CSS, ready for the page.
       </p>
     </ClosingAction>
-  );
-}
-
-export function FlowSection() {
-  return (
-    <Section
-      id="flows"
-      title="From source to highlighted HTML"
-      intro="Call the highlighter in a build script or on the server, or let Vite prepare literal examples in your components. Both paths deliver ready-to-display markup."
-    >
-      <HighlightingFlows />
-    </Section>
   );
 }

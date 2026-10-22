@@ -1,7 +1,6 @@
 import {
   EvidenceFigures,
   Mark,
-  Principles,
   ProjectHero,
   RegistryFacts,
   Relations,
@@ -10,16 +9,12 @@ import {
 } from "ferramenta-family";
 import { Link } from "react-router";
 
-import { BenchmarkChart } from "../components/benchmark-chart";
-import { BlacksmithSummary } from "../components/blacksmith-benchmarks";
 import {
   ClosingSection,
   CodeSection,
   CoverageSection,
-  FlowSection,
   MacroSection,
 } from "../components/home-sections";
-import { MemoryBenchmarks } from "../components/memory-benchmarks";
 import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
 import { grammarCount } from "../data/grammar-catalog";
 import sample from "../data/sample.json";
@@ -30,20 +25,23 @@ function HeroSection() {
     <ProjectHero
       icon="ferriki"
       title="Ferriki"
-      what="A native syntax highlighter for Node.js and Rust."
-      lede="Shiki's HTML API and editor-maintained grammars on a native Rust engine. Load a highlighter once and reuse it across your CMS or site build. Vite macros prepare code examples before they reach the browser."
+      what="Beautiful code. Ready for your page."
+      lede="Native TextMate highlighting for docs, CMS pages, and site builds. Use familiar Shiki-style HTML calls in Node.js, call the same native engine from Rust, or prepare React examples during Vite 8 builds."
       facts={[
-        { label: "Succeeds", value: "Shiki" },
+        { label: "Runtime", value: "Native Rust" },
         { label: "Grammars", value: String(grammarCount) },
-        { label: "Release", value: `v${version}` },
+        { label: "Output", value: "HTML + CSS" },
       ]}
       actions={
         <>
           <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
-            Get started <Mark name="arrow" className="icon" size={18} />
+            Start with Node.js <Mark name="arrow" className="icon" size={18} />
           </Link>
           <Link to="/guide/build-time-macros" className="fam-btn fam-btn-ghost">
-            Highlight at build time
+            Use Vite 8
+          </Link>
+          <Link to="/rust/getting-started" className="fam-btn fam-btn-ghost">
+            Use Rust
           </Link>
         </>
       }
@@ -51,37 +49,10 @@ function HeroSection() {
         <>
           <code translate="no">npm install @ferriki/core</code>
           <span> · </span>
-          <code translate="no">cargo add ferriki</code>
+          <code translate="no">cargo add ferriki --features remote</code>
         </>
       }
     />
-  );
-}
-
-const pillars = [
-  {
-    heading: "The grammars editors trust",
-    text: `TextMate grammars started in TextMate and power the highlighting in VS Code and Shiki; the language communities maintain them. Ferriki maintains a curated catalog of ${grammarCount} language and support grammars and 65 themes, fetched on first use from the release-pinned asset service, verified and cached.`,
-  },
-  {
-    heading: "Context, not keyword lists",
-    text: "A TextMate grammar follows a language's structure across lines: CSS and JavaScript inside HTML, code fences in Markdown, template literals, heredocs. Ferriki's tokenizer is a mechanical port of vscode-textmate, checked against its own tests.",
-  },
-  {
-    heading: "One engine for Node and Rust",
-    text: "The ferriki crate on crates.io is the engine itself; the Node.js package runs the same code through a native addon. Ferromark, the family's Markdown parser, highlights Markdown and MDX code fences with it natively. Shiki is a JavaScript library and has no Rust API.",
-  },
-  {
-    heading: "Native highlighting, small installs",
-    text: "Ferriki runs directly on your server or build machine, with no WebAssembly to initialize. Ferroni, its Rust pattern engine, understands the original TextMate grammars. Only your platform’s addon is installed; languages and themes download as needed and stay cached.",
-  },
-];
-
-function PipelineSection() {
-  return (
-    <Section id="pipeline" title="Where Ferriki fits">
-      <Relations current="ferriki" />
-    </Section>
   );
 }
 
@@ -90,7 +61,7 @@ function SampleSection() {
     <Section
       id="sample"
       title="One file, three languages"
-      intro="An HTML page with a stylesheet and a module script: the HTML grammar hands each block to the CSS and JavaScript grammars, and the template literal inside the script keeps its own scopes. This is Ferriki's committed output for the source on the left."
+      intro="An HTML page with a stylesheet and a module script: the HTML grammar hands each block to the CSS and JavaScript grammars, and the template literal inside the script keeps its own scopes. This is Ferriki’s committed output for the source on the left."
       note={
         <a href="https://github.com/sebastian-software/ferriki/tree/main/homepage/scripts">
           Rendered by scripts/render-sample.mjs with codeToHtml
@@ -111,9 +82,9 @@ function SampleSection() {
 function EvidenceIntro() {
   return (
     <>
-      Load the grammars once, then render block after block. On the same {documents} files, Ferriki
-      and Shiki/WASM produced identical HTML on both Blacksmith hosts. These figures measure
-      repeated highlighting with loaded languages and themes.
+      On two Blacksmith hosts, Ferriki and Shiki + WASM produced identical HTML for{" "}
+      {agreeingDocuments} of {documents} files in the repository corpus. The figures show repeated{" "}
+      <code>codeToHtml</code> calls with languages and themes already loaded.
     </>
   );
 }
@@ -122,11 +93,10 @@ function EvidenceNote() {
   return (
     <>
       Measured {report.measured} at commit <code>{report.revision}</code>, with Ferroni{" "}
-      {blacksmith.profiles[0].ferroni} and Shiki {report.versions.shiki}. Strict HTML checks passed
-      on {agreeingDocuments} of {documents} repository files. The{" "}
-      <Link to="/evidence/benchmarks">benchmark page</Link> includes both hosts, first-use timings,
-      JSON and Astro, isolated process memory, raw reports and reproduction commands. Your workload
-      and hardware determine your result.
+      {blacksmith.profiles[0].ferroni} and Shiki {report.versions.shiki}. The{" "}
+      <Link to="/evidence/benchmarks">full benchmark report</Link> includes both hosts, first-use,
+      JSON and Astro, memory, raw reports, and reproduction commands. Results depend on workload and
+      hardware.
     </>
   );
 }
@@ -140,25 +110,22 @@ function EvidenceSection() {
       intro={<EvidenceIntro />}
       note={<EvidenceNote />}
     >
-      <div>
-        <EvidenceFigures
-          figures={blacksmith.profiles.map((profile) => ({
-            label: `${profile.label} · faster than Shiki/WASM`,
-            value: formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki),
-            detail: "codeToHtml on a reused highlighter · 14-file corpus",
-            measure: profile.machine.cpu,
-          }))}
-        />
-        <BlacksmithSummary />
-        <BenchmarkChart />
-        <h3>Memory after repeated rendering</h3>
-        <p>
-          A separate Blacksmith capture measures the whole Node process, including native and WASM
-          memory, over six fresh processes per engine. These values use a shared 12-file cohort
-          rendered 50 times; they are separate from the timing corpus above.
-        </p>
-        <MemoryBenchmarks repositoryOnly />
-      </div>
+      <EvidenceFigures
+        figures={blacksmith.profiles.map((profile) => ({
+          label: profile.label,
+          value: formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki),
+          detail: "faster than Shiki + WASM · 14-file repository corpus",
+          measure: profile.machine.cpu,
+        }))}
+      />
+    </Section>
+  );
+}
+
+function PipelineSection() {
+  return (
+    <Section id="pipeline" title="Part of your build">
+      <Relations current="ferriki" />
     </Section>
   );
 }
@@ -168,18 +135,10 @@ export default function HomePage() {
     <RegistryFacts>
       <div className="fam-page ferriki-home">
         <HeroSection />
-        <Section
-          id="why"
-          title="Highlighting that understands the language."
-          intro="Many highlighters describe each language with a short list of patterns of their own. Ferriki uses the grammars your editor uses, so code on the page reads the way it does where you wrote it."
-        >
-          <Principles items={pillars} />
-        </Section>
         <SampleSection />
-        <MacroSection />
-        <FlowSection />
-        <EvidenceSection />
         <CodeSection />
+        <MacroSection />
+        <EvidenceSection />
         <PipelineSection />
         <CoverageSection />
         <ClosingSection />

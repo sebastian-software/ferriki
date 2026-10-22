@@ -1,0 +1,33 @@
+
+import { defineCodeElement as FerrikiDefineCodeElement } from "@ferriki/core/web-component";
+import { codeElementSizing as FerrikiCodeElementSizing } from "@ferriki/core/web-component";
+
+const FerrikiCodeBlocks = {"ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784":{"code":"export const answer = 42;","language":"ts","html":"\u003cpre class=\"shiki github-dark-default\" style=\"background-color:var(--ferriki-background-color, #0d1117);color:var(--ferriki-foreground, #e6edf3)\" tabindex=\"0\">\u003ccode>\u003cspan class=\"line\">\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-keyword-color, #FF7B72)\" class=\"ferriki-color-token\">export\u003c/span>\u003cspan style=\"color:#E6EDF3\"> \u003c/span>\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-keyword-color, #FF7B72)\" class=\"ferriki-color-token\">const\u003c/span>\u003cspan style=\"color:#E6EDF3\"> \u003c/span>\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-constant-color, #79C0FF)\" class=\"ferriki-color-token\">answer\u003c/span>\u003cspan style=\"color:#E6EDF3\"> \u003c/span>\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-operator-color, #FF7B72)\" class=\"ferriki-color-token\">=\u003c/span>\u003cspan style=\"color:#E6EDF3\"> \u003c/span>\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-number-color, #79C0FF)\" class=\"ferriki-color-token\">42\u003c/span>\u003cspan style=\"color:var(--_ferriki-token-color);--_ferriki-token-color:var(--ferriki-punctuation-color, #E6EDF3)\" class=\"ferriki-color-token\">;\u003c/span>\u003c/span>\u003c/code>\u003c/pre>","css":"","metadata":{"lineNumbers":false,"highlightedLines":[]}}};
+const FerrikiCodeSizes = { "ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784": { lineCount: 1, style: FerrikiCodeElementSizing(1) } };
+const FerrikiCodeElementConfig = { ...{"themeAliases":[]}, blocks: { "ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784": FerrikiCodeBlocks["ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784"].html } };
+
+const FerrikiCodeServerStyles = import.meta.env.SSR ? "\u003cstyle data-ferriki-code-base>\n:host {\n  display: block;\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace;\n}\n\n:host,\n:host *,\n:host *::before,\n:host *::after {\n  box-sizing: border-box;\n}\n\n:where(pre) {\n  color: var(--ferriki-foreground, inherit);\n  background-color: var(--ferriki-background-color, transparent);\n}\n\n:host pre {\n  margin: 0;\n  max-block-size: var(--ferriki-code-max-block-size, none);\n  max-width: 100%;\n  overflow: auto;\n  font-family: inherit;\n  font-size: 0.875rem;\n  font-style: normal;\n  font-weight: normal;\n  line-height: var(--ferriki-code-line-height, 1.3125rem);\n  padding-block: var(--ferriki-code-padding-block, 0px);\n  text-decoration: none;\n}\n\n:host pre > code {\n  font: inherit;\n}\n\n.ferriki-highlight-line[data-ln]::before {\n  content: attr(data-ln);\n  display: inline-block;\n  min-width: 2.5em;\n  margin-right: 1.5em;\n  padding-right: 0.75em;\n  text-align: right;\n  opacity: 0.55;\n}\n\n.ferriki-highlight-line.highlighted {\n  background: color-mix(in srgb, currentColor 10%, transparent);\n}\n\u003c/style>" : undefined;
+const FerrikiCodeServerHtml = import.meta.env.SSR ? { "ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784": { __html: "\u003ctemplate shadowrootmode=\"open\">\u003c!--ferriki-code:ferriki%2Db0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784-->" + FerrikiCodeServerStyles + FerrikiCodeBlocks["ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784"].html + "</template>" } } : undefined;
+let FerrikiCodeElementRegistered = false;
+function FerrikiMacroRenderHelper(props) {
+  const { codeRef, render, theme, maxLines, ...presentationProps } = props;
+  if (render === undefined) {
+    if (!import.meta.env.SSR && !FerrikiCodeElementRegistered) {
+      FerrikiDefineCodeElement(FerrikiCodeElementConfig);
+      FerrikiCodeElementRegistered = true;
+    }
+    const sizing = FerrikiCodeSizes[codeRef];
+    if (import.meta.env.SSR) {
+      return <ferriki-code {...presentationProps} data-ferriki-theme={theme} code-ref={codeRef} max-lines={maxLines} style={maxLines === undefined ? sizing.style : FerrikiCodeElementSizing(sizing.lineCount, maxLines)} dangerouslySetInnerHTML={FerrikiCodeServerHtml[codeRef]} />;
+    }
+    return <ferriki-code {...presentationProps} data-ferriki-theme={theme} code-ref={codeRef} max-lines={maxLines} style={maxLines === undefined ? sizing.style : FerrikiCodeElementSizing(sizing.lineCount, maxLines)} />;
+  }
+  return render({ code: FerrikiCodeBlocks[codeRef], ...presentationProps, ...(theme === undefined ? {} : { theme }), ...(maxLines === undefined ? {} : { maxLines }) });
+}
+
+
+export function Answer() {
+  return (
+    <FerrikiMacroRenderHelper codeRef="ferriki-b0c957431e44bf49c7775e94a31cb63dc0668c176f90b68de328596524a4a784" />
+  );
+}
