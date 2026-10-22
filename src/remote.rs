@@ -137,7 +137,7 @@ impl RemoteAssetSource {
     /// Makes sure a payload is in the cache, downloading it when allowed.
     pub(crate) fn fetch(&self, digest: &AssetDigest) -> Result<()> {
         let (path, size) = self.payload(digest)?;
-        if self.read_cached(digest).is_some() {
+        if self.read_cached(digest, size).is_some() {
             return Ok(());
         }
         if !self.settings.remote {
@@ -173,10 +173,21 @@ impl RemoteAssetSource {
         self.settings.cache_dir.join(digest.as_str())
     }
 
-    fn read_cached(&self, digest: &AssetDigest) -> Option<Vec<u8>> {
+    fn read_cached(&self, digest: &AssetDigest, size: u64) -> Option<Vec<u8>> {
         let path = self.cache_path(digest);
-        let bytes = std::fs::read(&path).ok()?;
-        if AssetDigest::of(&bytes) == *digest {
+        let file = std::fs::File::open(&path).ok()?;
+        let metadata = file.metadata().ok()?;
+        if !metadata.is_file() || metadata.len() != size {
+            // Reject a malformed cache entry before allocating based on its
+            // file size. The manifest pins the only acceptable size.
+            let _ = std::fs::remove_file(path);
+            return None;
+        }
+        let mut bytes = Vec::with_capacity(usize::try_from(size).ok()?);
+        if file.take(size).read_to_end(&mut bytes).is_err() {
+            return None;
+        }
+        if bytes.len() as u64 == size && AssetDigest::of(&bytes) == *digest {
             return Some(bytes);
         }
         // A truncated or foreign file is replaced by a fresh download.
@@ -259,7 +270,7 @@ impl RemoteAssetSource {
 impl AssetSource for RemoteAssetSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
         let (path, size) = self.payload(digest)?;
-        if let Some(bytes) = self.read_cached(digest) {
+        if let Some(bytes) = self.read_cached(digest, size) {
             return Ok(Cow::Owned(bytes));
         }
         if !self.download_on_read {
@@ -470,6 +481,27 @@ mod tests {
         .expect("manifest")
     }
 
+    fn release_with_asset(bytes: &[u8]) -> (ReleaseManifest, AssetDigest) {
+        let digest = AssetDigest::of(bytes);
+        let manifest = ReleaseManifest::from_json(&format!(
+            r#"{{"manifestVersion":1,"assets":{{"languages/test.fkgram":{{"sha256":"{}","size":{},"formatVersion":1}}}}}}"#,
+            digest.as_str(),
+            bytes.len()
+        ))
+        .expect("manifest");
+        (manifest, digest)
+    }
+
+    fn offline_source(release: &ReleaseManifest, cache_dir: &Path) -> RemoteAssetSource {
+        let settings = RemoteAssets::default()
+            .with_remote(Some(false))
+            .with_cache_dir(Some(cache_dir.to_path_buf()))
+            .with_commit(Some("abc".to_owned()))
+            .resolve(release, env(&[]))
+            .expect("settings");
+        RemoteAssetSource::new(release, settings, false).expect("remote source")
+    }
+
     fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
         let vars: BTreeMap<String, String> = vars
             .iter()
@@ -546,6 +578,80 @@ mod tests {
             .expect_err("no cache directory");
         assert_eq!(error.kind(), ErrorKind::AssetIo);
         assert!(error.to_string().contains("FERRIKI_CACHE_DIR"));
+    }
+
+    #[test]
+    fn oversized_cache_entries_are_rejected_offline() {
+        let expected = b"release-pinned payload";
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("oversized-cache-entry");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let path = cache.join(digest.as_str());
+        let file = std::fs::File::create(&path).expect("cache entry");
+        file.set_len(64 * 1024 * 1024)
+            .expect("oversized cache entry");
+
+        let error = offline_source(&release, &cache)
+            .read(&digest)
+            .expect_err("oversized cache miss stays offline");
+
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert!(!path.exists(), "the oversized cache entry is removed");
+        std::fs::remove_dir_all(cache).expect("remove cache");
+    }
+
+    #[test]
+    fn valid_cache_entries_are_read_offline() {
+        let expected = b"release-pinned payload";
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("valid-cache-entry");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        std::fs::write(cache.join(digest.as_str()), expected).expect("cache entry");
+
+        let source = offline_source(&release, &cache);
+        let bytes = source.read(&digest).expect("valid cache entry");
+
+        assert_eq!(bytes.as_ref(), expected);
+        std::fs::remove_dir_all(cache).expect("remove cache");
+    }
+
+    #[test]
+    fn truncated_cache_entries_are_rejected_offline() {
+        let expected = b"release-pinned payload";
+        let truncated = b"short";
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("truncated-cache-entry");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let path = cache.join(digest.as_str());
+        std::fs::write(&path, truncated).expect("truncated cache entry");
+
+        let error = offline_source(&release, &cache)
+            .read(&digest)
+            .expect_err("truncated cache miss stays offline");
+
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert!(!path.exists(), "the truncated cache entry is removed");
+        std::fs::remove_dir_all(cache).expect("remove cache");
+    }
+
+    #[test]
+    fn same_size_cache_entries_still_require_the_pinned_digest() {
+        let expected = b"pinned data";
+        let corrupt = b"wrong data!";
+        assert_eq!(expected.len(), corrupt.len());
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("same-size-corrupt-cache-entry");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let path = cache.join(digest.as_str());
+        std::fs::write(&path, corrupt).expect("corrupt cache entry");
+
+        let error = offline_source(&release, &cache)
+            .read(&digest)
+            .expect_err("digest mismatch stays offline");
+
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert!(!path.exists(), "the digest-mismatched entry is removed");
+        std::fs::remove_dir_all(cache).expect("remove cache");
     }
 
     #[test]
