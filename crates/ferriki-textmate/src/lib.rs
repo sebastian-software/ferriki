@@ -14,6 +14,7 @@ mod grammar;
     reason = "ported from vscode-textmate's asynchronous registry, which SyncRegistry does not use yet"
 )]
 mod grammar_dependencies;
+mod grammar_fingerprint;
 mod include_reference;
 mod line_output;
 mod matcher;

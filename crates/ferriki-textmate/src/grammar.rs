@@ -15,6 +15,7 @@ use crate::basic_scope_attributes::{
     BasicScopeAttributes, BasicScopeAttributesProvider, EmbeddedLanguages,
 };
 use crate::encoded_token_attributes::{EncodedTokenAttributes, FontAttribute, StandardTokenType};
+use crate::grammar_fingerprint::GrammarFingerprint;
 use crate::line_output::{
     BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
 };
@@ -160,7 +161,7 @@ enum TokenOutput {
 pub struct Grammar {
     root_id: RuleId,
     root_scope_name: String,
-    grammar_fingerprint: String,
+    grammar_fingerprint: GrammarFingerprint,
     registry: RuleRegistry,
     injections: Vec<Injection>,
     basic_scope_attributes: BasicScopeAttributesProvider,
@@ -314,7 +315,7 @@ impl Grammar {
     }
 
     pub(crate) fn with_theme_provider(
-        raw_grammar: &RawGrammar,
+        raw_grammar: &Arc<RawGrammar>,
         grammar_provider: &dyn GrammarProvider,
         theme_provider: ThemeProvider,
         configuration: GrammarConfiguration,
@@ -324,7 +325,11 @@ impl Grammar {
             grammar_provider,
             theme_provider,
             configuration,
-            RuleFactory::with_pattern_cache(raw_grammar, grammar_provider, scanner_pattern_cache),
+            RuleFactory::with_pattern_cache(
+                Arc::clone(raw_grammar),
+                grammar_provider,
+                scanner_pattern_cache,
+            ),
         )
     }
 
@@ -339,7 +344,7 @@ impl Grammar {
         let mut injections = Vec::new();
 
         for (selector, rule) in &root_grammar.injections {
-            let rule_id = factory.compile_raw_rule(Arc::clone(rule), &root_grammar.repository);
+            let rule_id = factory.compile_raw_rule(Arc::clone(rule));
             injections.extend(Injection::from_selector(selector, rule_id));
         }
 
@@ -356,7 +361,7 @@ impl Grammar {
         }
         injections.sort_by_key(|injection| priority_order(injection.priority));
 
-        let grammar_fingerprint = factory.grammar_fingerprint(&external_injection_scopes);
+        let grammar_fingerprint = factory.grammar_fingerprint(external_injection_scopes);
         let (_, mut registry) = factory.into_parts();
         registry.regex_prefilter = configuration.regex_prefilter;
         let token_type_matchers = configuration
@@ -463,7 +468,7 @@ impl Grammar {
         }
         let value = SerializedGrammarState {
             version: 1,
-            grammar_fingerprint: self.grammar_fingerprint.clone(),
+            grammar_fingerprint: self.grammar_fingerprint.get().to_owned(),
             root_scope: self.root_scope_name.clone(),
             frames,
         };
@@ -487,7 +492,7 @@ impl Grammar {
         let value: SerializedGrammarState = serde_json::from_str(serialized)
             .map_err(|error| invalid_serialized_state(&error.to_string()))?;
         if value.version != 1
-            || value.grammar_fingerprint != self.grammar_fingerprint
+            || value.grammar_fingerprint != self.grammar_fingerprint.get()
             || value.root_scope != self.root_scope_name
             || value.frames.is_empty()
             || value.frames.len() > MAX_SERIALIZED_GRAMMAR_STATE_DEPTH

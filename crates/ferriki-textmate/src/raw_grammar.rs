@@ -5,6 +5,8 @@ use std::sync::Arc;
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::grammar_fingerprint::SourceDigest;
+
 /// The internal identity assigned to a compiled rule.
 ///
 /// This mirrors vscode-textmate's branded numeric `RuleId` without exposing a
@@ -50,6 +52,9 @@ pub struct RawGrammar {
         skip_serializing_if = "Option::is_none"
     )]
     pub(crate) location: Option<Location>,
+    /// Ferriki: memoized source digest for state-snapshot fingerprints.
+    #[serde(skip)]
+    pub(crate) source_digest: SourceDigest,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
