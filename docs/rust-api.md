@@ -46,6 +46,10 @@ Run it with `cargo run`. It prints a complete `<pre><code>` HTML block with inli
 theme styles. The standard payloads are requested only when their language or theme is
 loaded; later runs reuse the digest-addressed cache.
 
+For a broader Rust highlighter comparison, see [Ferriki and syntect](https://ferriki.dev/guide/ferriki-and-syntect).
+It covers grammar and theme inputs, assets, language detection, output, and the limits
+of the current timing evidence.
+
 ## Run offline
 
 After a run has populated the cache, disable downloads to use cached payloads only:
@@ -67,20 +71,6 @@ release-level integrity checks with provisioned offline assets, use
 `StandardAssetCatalogs::from_release_manifest` with a digest-addressed
 `DirectoryAssetSource` or `EmbeddedAssetSource`; the verified-source details are
 below.
-
-The Rust crate has no Node.js or N-API dependency. `ferriki-core` is the private N-API
-host and uses the same grammar, theme, tokenizer, and renderer implementation.
-
-The Rust crate also owns the decoration policy used by Node's HTML pipeline. Its
-typed ranges, edit plans, and complete declarative Node renderer belong to the
-internal `__private` bridge; this work does not introduce a stable Rust decoration or
-HAST API. Rust rendering consumers continue to own their wrappers and annotations.
-The boundary and API decision are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md).
-
-If you are choosing between Rust highlighters, the [Ferriki and syntect
-comparison](https://ferriki.dev/guide/ferriki-and-syntect) covers grammar and theme
-formats, assets, detection, output, and the limits of the current timing evidence.
-Ferriki produces HTML and tokens; it does not currently have an ANSI renderer.
 
 ## Local asset catalogs
 
@@ -261,8 +251,14 @@ does not promise `Clone` or `Eq`; compare `kind()` for fallback decisions and
 use `std::error::Error::source()` for diagnostics. Tokenizer regex errors and
 asset codec errors have crate-owned types, so their public signatures do not
 commit consumers to the error representations of ferroni or the asset codec.
-`ferriki::__private` is a semver-exempt bridge for the N-API host, including its
-UTF-16 highlighter and multi-theme records. Applications use `Highlighter`.
+`ferriki-core` is the private N-API host and uses the same grammar, theme, tokenizer,
+and renderer implementation. `ferriki::__private` is its semver-exempt bridge,
+including the UTF-16 highlighter and multi-theme records. Applications use
+`Highlighter`. The internal bridge also contains the decoration policy used by Node's
+HTML pipeline: typed ranges, edit plans, and the declarative Node renderer. This does
+not introduce a stable Rust decoration or HAST API; Rust rendering consumers own their
+wrappers and annotations. The boundary is recorded in
+[ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md).
 
 ## Verified asset sources
 
