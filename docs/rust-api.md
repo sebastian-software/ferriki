@@ -1,27 +1,91 @@
 # Ferriki from Rust
 
-The `ferriki` crate is the synchronous, reusable highlighter. It contains no
-Node.js or N-API dependency. `ferriki-core` is the private N-API host and uses
-the same grammar, theme, tokenizer, and renderer implementation.
+Use Ferriki from Rust to highlight code and render HTML. The `ferriki` crate is
+synchronous and reusable, with no Node.js or N-API dependency.
 
-The Rust crate also owns the decoration policy used by Node's HTML pipeline.
-Its typed ranges, edit plans, and complete declarative Node renderer belong
-to the internal `__private` bridge;
-this work does not introduce a stable Rust decoration or HAST API. Rust
-rendering consumers continue to own their wrappers and annotations. The
-boundary and API decision are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md).
+## Highlight your first snippet
+
+Create a binary crate, add Ferriki with remote assets enabled, and save the program
+below as `src/main.rs`:
+
+```sh
+cargo new ferriki-demo
+cd ferriki-demo
+cargo add ferriki --features remote
+```
+
+The `remote` feature is off by default; the dependency command opts into its HTTP
+support. Ferriki compiles the standard catalog and release manifests into the crate.
+When the program first loads a language or theme, missing payloads download from the
+release-pinned asset service. Ferriki checks each payload's size and SHA-256 against
+the release manifest before it enters the local cache.
+
+```rust
+use ferriki::{Highlighter, RemoteAssets, RenderOptions, StandardAssetCatalogs, render_html};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let assets = StandardAssetCatalogs::remote(RemoteAssets::default())?;
+    let mut highlighter = Highlighter::builder()
+        .with_assets(assets)
+        .load_languages(["rust"])
+        .load_themes(["github-dark"])
+        .build()?;
+
+    let tokens = highlighter.highlight(
+        "fn main() { println!(\"Hello, Ferriki!\"); }",
+        "rust",
+        "github-dark",
+    )?;
+    let html = render_html(&tokens, &RenderOptions::default());
+    println!("{html}");
+    Ok(())
+}
+```
+
+Run it with `cargo run`. It prints a complete `<pre><code>` HTML block with inline
+theme styles. The standard payloads are requested only when their language or theme is
+loaded; later runs reuse the digest-addressed cache.
+
+## Run offline
+
+After a run has populated the cache, disable downloads to use cached payloads only:
+
+```sh
+FERRIKI_ASSETS_REMOTE=0 cargo run
+```
+
+If you set `FERRIKI_CACHE_DIR` for the online run, set it to the same directory here.
+With downloads disabled, a missing payload returns `AssetUnavailable`.
+`FERRIKI_ASSETS_BASE_URL` points at a mirror. The `remote` feature is unavailable on
+wasm32; use explicit asset provisioning there or when a deployment must start offline.
+
+For deployments that provision assets from the start, use a release-matched directory
+or embed selected payloads in the application. The filename-based
+`StandardAssetCatalogs::load_from_root` and `StandardAssetCatalogs::from_embedded`
+constructors validate asset formats but do not verify release digests. To keep
+release-level integrity checks with provisioned offline assets, use
+`StandardAssetCatalogs::from_release_manifest` with a digest-addressed
+`DirectoryAssetSource` or `EmbeddedAssetSource`; the verified-source details are
+below.
+
+The Rust crate has no Node.js or N-API dependency. `ferriki-core` is the private N-API
+host and uses the same grammar, theme, tokenizer, and renderer implementation.
+
+The Rust crate also owns the decoration policy used by Node's HTML pipeline. Its
+typed ranges, edit plans, and complete declarative Node renderer belong to the
+internal `__private` bridge; this work does not introduce a stable Rust decoration or
+HAST API. Rust rendering consumers continue to own their wrappers and annotations.
+The boundary and API decision are recorded in [ADR 0008](../adr/0008-transformers-and-decorations-stay-in-js.md).
 
 If you are choosing between Rust highlighters, the [Ferriki and syntect
-comparison](https://ferriki.dev/guide/ferriki-and-syntect) covers grammar and
-theme formats, assets, detection, output, and the limits of the current timing
-evidence. Ferriki produces HTML and tokens; it does not currently have an ANSI
-renderer.
+comparison](https://ferriki.dev/guide/ferriki-and-syntect) covers grammar and theme
+formats, assets, detection, output, and the limits of the current timing evidence.
+Ferriki produces HTML and tokens; it does not currently have an ANSI renderer.
 
-## Assets and lifecycle
+## Local asset catalogs
 
-Ferriki does not embed all standard grammars into the library. An application
-supplies the generated `assets/standard` directory from this repository (or the
-same files packaged with that application):
+Use these constructors when the application supplies standard assets directly. The
+assets must come from the same Ferriki release as the crate:
 
 ```text
 assets/standard/
@@ -31,17 +95,16 @@ assets/standard/
   themes/*.fktheme
 ```
 
-No `node/ferriki` directory is required. `StandardAssetCatalogs::load_from_root`
-reads the two manifests at construction time. Grammar and theme payloads are
-decoded only on first use, then cached by the catalogs and the highlighter.
-`StandardAssetCatalogs::from_embedded` accepts the same two manifests and maps
-from asset filenames to `Cow<'static, [u8]>` for applications using
-`Cow::Borrowed(include_bytes!(...))`. Borrowed payloads are not copied at
-construction. The
-manifests contain aliases, embedded-language references, and injection metadata
-in both modes. Missing payloads and incompatible format versions are typed
-errors. The binary format is versioned but remains an internal format; keep
-assets and the Rust crate from the same Ferriki release.
+No `node/ferriki` directory is required. `StandardAssetCatalogs::load_from_root` reads
+the two manifests at construction time. Grammar and theme payloads are decoded only
+on first use, then cached by the catalogs and the highlighter.
+`StandardAssetCatalogs::from_embedded` accepts the same two manifests and maps from
+asset filenames to `Cow<'static, [u8]>` for applications using
+`Cow::Borrowed(include_bytes!(...))`. Borrowed payloads are not copied at construction.
+The manifests contain aliases, embedded-language references, and injection metadata in
+both modes. Missing payloads and incompatible format versions are typed errors. The
+binary format is versioned but remains an internal format; keep assets and the Rust
+crate from the same Ferriki release.
 
 ```toml
 [dependencies]
@@ -49,10 +112,9 @@ assets and the Rust crate from the same Ferriki release.
 ferriki = "<version>"
 ```
 
-The checked-in, compiled [`rust_consumer` example](../examples/rust_consumer.rs)
-runs with `cargo run -p ferriki --example rust_consumer -- assets/standard`. The
-public [`Highlighter` API](../src/highlighter.rs) also carries a compiling
-Rustdoc example.
+The checked-in, compiled [`rust_consumer` example](../examples/rust_consumer.rs) runs
+with `cargo run -p ferriki --example rust_consumer -- assets/standard`. The public
+[`Highlighter` API](../src/highlighter.rs) also carries a compiling Rustdoc example.
 
 ```rust
 use std::path::Path;
