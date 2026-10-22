@@ -167,10 +167,12 @@ dependencies = [
  "ferriki-asset-gen",
  "ferriki-textmate",
  "rustls",
+ "rustls-webpki",
  "serde",
  "serde_json",
  "sha2",
  "ureq",
+ "webpki-root-certs",
 ]
 
 [[package]]

@@ -38,7 +38,7 @@ include = [
 # Loads standard payloads on demand from the release-pinned CDN mirror,
 # verified and cached by digest (ADR 0013). Off by default, so the library
 # stays free of network code unless a consumer opts in.
-remote = ["dep:ureq", "dep:rustls"]
+remote = ["dep:ureq", "dep:rustls", "dep:rustls-webpki", "dep:webpki-root-certs"]
 
 [dependencies]
 ferriki-asset-gen = { version = "1.1.2", path = "crates/ferriki-asset-gen" }
@@ -57,6 +57,10 @@ serde_json = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rustls = { version = "0.23.46", default-features = false, features = [ "ring", "std", "tls12" ], optional = true }
 ureq = { version = "3", default-features = false, features = [ "rustls-no-provider", "platform-verifier", "gzip" ], optional = true }
+# The published manifest must enforce these security fixes for downstream
+# lockfiles; this repository's Cargo.lock only controls its own builds.
+rustls-webpki = { version = "0.103.16", default-features = false, optional = true }
+webpki-root-certs = { version = "1.0.10", default-features = false, optional = true }
 
 [[example]]
 name = "remote_assets"
