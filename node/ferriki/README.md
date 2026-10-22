@@ -55,8 +55,9 @@ the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
 faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
 for hosts, conditions, first-use timings, and raw results.
 
-A separate six-process capture measured **27–31% lower whole-process RSS than
-Shiki/WASM** after 600 documents in a shared 12-file cohort. See the
+A separate capture with six fresh processes per engine and workload on each
+host measured **27–31% lower whole-process RSS than Shiki/WASM** after 600
+documents in a shared 12-file cohort. See the
 [memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
 
 ## Reuse a highlighter
