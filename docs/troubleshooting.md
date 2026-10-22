@@ -132,4 +132,6 @@ There is no offline package; use one of these instead:
 
 Privacy: a default install contacts `assets.ferriki.dev` the first time a
 language or theme is used, sending an ordinary HTTPS request for that file.
+Its `User-Agent` names the Ferriki version: `ferriki/<version> (node)` from
+the npm package, `ferriki/<version>` from the Rust crate.
 Set `FERRIKI_ASSETS_REMOTE=0`, or use a mirror, to avoid it.

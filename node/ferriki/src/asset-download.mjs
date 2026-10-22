@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, readFileSync } from "node:fs";
 import { mkdir, open, rename, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
@@ -7,6 +7,8 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 const DOWNLOAD_TIMEOUT_MS = 60_000;
+// Identifies the client like the Rust loader's `ferriki/<version>`.
+const USER_AGENT = `ferriki/${JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version} (node)`;
 const MAX_DOWNLOAD_WORKERS = 6;
 const inFlight = new Map();
 
@@ -74,7 +76,10 @@ async function downloadAsset(asset, target) {
   const temporary = `${target}.${process.pid}-${randomUUID()}.tmp`;
   try {
     await mkdir(dirname(target), { recursive: true });
-    const response = await fetch(asset.url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+    const response = await fetch(asset.url, {
+      headers: { "user-agent": USER_AGENT },
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    });
     if (response.status !== 200) {
       await response.body?.cancel().catch(() => {});
       throw new Error(`Downloading ${asset.url} failed: HTTP ${response.status}`);

@@ -36,6 +36,7 @@ const remotePaths = new Map(
 );
 const remotePath = (key) => `/${payloadPath(key, release.assets[key])}`;
 const requests = [];
+const userAgents = new Set();
 const replaced = new Map();
 const missing = new Set();
 const delayed = new Set();
@@ -44,6 +45,7 @@ const oversized = new Set();
 const interrupted = new Set();
 const server = createServer(async (request, response) => {
   requests.push(request.url);
+  userAgents.add(request.headers["user-agent"]);
   const relative = remotePaths.get(request.url);
   if (!relative || missing.has(relative)) {
     response.writeHead(404).end();
@@ -153,6 +155,10 @@ try {
   assert(firstDownload instanceof Promise);
   await firstDownload;
   assert(requests.includes(remotePath("languages/vue.fkgram")));
+  const { version } = JSON.parse(
+    await readFile(new URL("../ferriki/package.json", import.meta.url)),
+  );
+  assert.deepEqual([...userAgents], [`ferriki/${version} (node)`]);
   assert(requests.includes(remotePath("themes/nord.fktheme")));
   assert(
     requests.includes(remotePath("languages/typescript.fkgram")),
