@@ -1,7 +1,7 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- The artifact path is fixed relative to this script. */
 // Runs the landing page's build-time macro sample through the @ferriki/vite
-// adapter in this repository and commits the module it emitted as-is: the page
-// shows the adapter's real transform output, never a hand-written imitation.
+// adapter and saves both its full transform and the compact rendered block
+// used on the page. The visible result comes from the adapter, never imitation.
 // Run after `pnpm run build:native` in `node/`.
 //
 //   node scripts/render-macro-sample.mjs          # write app/data/macro-sample.json
@@ -17,6 +17,7 @@ process.env.FERRIKI_CACHE_DIR ??= TEST_ASSET_CACHE_DIR;
 process.env.FERRIKI_ASSETS_REMOTE ??= "0";
 
 const artifact = new URL("../app/data/macro-sample.json", import.meta.url);
+const transformArtifact = new URL("../app/data/macro-sample-transform.txt", import.meta.url);
 const id = "/src/Answer.tsx";
 const input = `import { Code } from "@ferriki/core/react/macro";
 
@@ -48,16 +49,20 @@ if (warnings.length > 0) throw new Error(`@ferriki/vite warned:\n${warnings.join
 const output = result.code;
 const highlighter = await createHighlighter({ langs: ["tsx"], themes: ["github-dark"] });
 const inputHtml = highlighter.codeToHtml(input, { lang: "tsx", theme: "github-dark" });
-const outputHtml = highlighter.codeToHtml(output, { lang: "tsx", theme: "github-dark" });
+const preparedBlocks = Object.values(plugin.api.codeElementBlocks());
+if (preparedBlocks.length !== 1 || !preparedBlocks[0]) {
+  throw new Error(`Expected one prepared React code block, got ${preparedBlocks.length}.`);
+}
+const preparedHtml = preparedBlocks[0];
 highlighter.dispose();
 
 if (process.argv.includes("--check")) {
   const committed = JSON.parse(readFileSync(artifact, "utf8"));
   if (
     committed.input !== input ||
-    committed.output !== output ||
     committed.inputHtml !== inputHtml ||
-    committed.outputHtml !== outputHtml
+    committed.preparedHtml !== preparedHtml ||
+    readFileSync(transformArtifact, "utf8") !== output
   ) {
     throw new Error(
       "The landing page macro sample changed. Run pnpm macro-sample:write and commit the result.",
@@ -70,7 +75,9 @@ if (process.argv.includes("--check")) {
   );
   writeFileSync(
     artifact,
-    `${JSON.stringify({ version, id, input, output, inputHtml, outputHtml }, null, 2)}\n`,
+    JSON.stringify({ version, id, input, inputHtml, preparedHtml }, null, 2) +
+      String.fromCharCode(10),
   );
-  console.log("Wrote app/data/macro-sample.json from @ferriki/vite's transform.");
+  writeFileSync(transformArtifact, output);
+  console.log("Wrote the compact rendered sample and full transform from @ferriki/vite.");
 }

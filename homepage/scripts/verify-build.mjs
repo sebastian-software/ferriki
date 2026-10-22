@@ -168,7 +168,7 @@ for (const profile of blacksmith.profiles) {
   required.push([homepage, profile.label], [benchmarks, profile.label]);
   for (const engine of ["shiki-wasm", "shiki-js"]) {
     if (profile.warm.on[engine] === undefined) {
-      required.push([homepage, "Unsupported"], [benchmarks, "Unsupported"]);
+      required.push([benchmarks, "Unsupported"]);
       continue;
     }
     const observedFactor = oneDecimal(profile.warm.on[engine] / profile.warm.on.ferriki);

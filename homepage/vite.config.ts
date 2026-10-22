@@ -44,7 +44,8 @@ export default defineConfig({
     focusableMdxProvider,
     ardo({
       title: "Ferriki",
-      description: "Native syntax highlighting for Node.js and Rust, with Shiki's HTML API",
+      description:
+        "Beautiful, ready-to-display code for docs and site builds, with native TextMate highlighting for Node.js and Rust.",
       githubPages: false,
       siteUrl: "https://ferriki.dev",
     }),
