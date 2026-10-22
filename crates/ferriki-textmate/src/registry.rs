@@ -416,6 +416,45 @@ mod tests {
     }
 
     #[test]
+    fn shares_static_back_reference_patterns_across_grammars() {
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        for scope_name in ["source.first", "source.second"] {
+            registry.add_grammar(
+                grammar(&format!(
+                    r#"{{
+                        "scopeName": "{scope_name}",
+                        "patterns": [{{
+                            "match": "(['\"])[a-z]*\\1",
+                            "name": "string.quoted"
+                        }}]
+                    }}"#
+                )),
+                Vec::new(),
+            );
+        }
+
+        for scope_name in ["source.first", "source.second"] {
+            let grammar = registry
+                .grammar_for_scope_name(scope_name, GrammarConfiguration::default())
+                .unwrap()
+                .unwrap();
+            let tokens = grammar
+                .tokenize_line(r#"'ab' "cd'"#, None, 0)
+                .unwrap()
+                .tokens;
+            assert_eq!(
+                (
+                    tokens[0].end_index,
+                    tokens[0].scopes.last().unwrap().as_str()
+                ),
+                (4, "string.quoted")
+            );
+            assert_eq!(tokens.last().unwrap().scopes, [scope_name]);
+            assert_eq!(registry.scanner_pattern_cache.len(), 1);
+        }
+    }
+
+    #[test]
     fn shared_patterns_keep_backtracking_warnings_on_each_grammar() {
         let mut registry = SyncRegistry::new(None, None).unwrap();
         for scope_name in ["source.first", "source.second"] {

@@ -19,9 +19,11 @@ use ferroni::scanner::{
 
 /// Shared compiled patterns for the grammars owned by one registry.
 ///
-/// Dynamic backreference patterns intentionally bypass this cache: Ferroni
-/// keeps strong references until `clear`, while vscode-textmate rebuilds and
-/// drops those scanners when captured end or while patterns change.
+/// Scanners holding an end or while pattern resolved from begin captures
+/// intentionally bypass this cache: Ferroni keeps strong references until
+/// `clear`, while vscode-textmate rebuilds and drops those scanners when
+/// captured end or while patterns change. Static patterns that merely contain
+/// a backreference to their own groups have fixed text and share the cache.
 #[derive(Clone)]
 pub(crate) struct ScannerPatternCache(Arc<Mutex<FerroniScannerPatternCache>>);
 
@@ -586,6 +588,9 @@ pub(crate) struct RegExpSourceList<T> {
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
     regex_prefilter: bool,
     scanner_pattern_cache: ScannerPatternCache,
+    /// Set once a source was replaced at runtime. Only resolved end and while
+    /// patterns are replaced, so the list's text is no longer static.
+    has_resolved_sources: bool,
 }
 
 impl<T> Default for RegExpSourceList<T> {
@@ -615,6 +620,7 @@ impl<T> RegExpSourceList<T> {
             anchor_cache: array::from_fn(|_| None),
             regex_prefilter,
             scanner_pattern_cache,
+            has_resolved_sources: false,
         }
     }
 
@@ -657,6 +663,7 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
         let new_source = new_source.into();
+        self.has_resolved_sources = true;
         if self.items[index].source != new_source {
             self.dispose_caches();
             self.items[index].set_source(new_source);
@@ -678,7 +685,7 @@ impl<T: Copy> RegExpSourceList<T> {
             self.items.iter().map(|item| item.rule_id).collect(),
             self.regex_prefilter,
             &self.scanner_pattern_cache,
-            self.items.iter().all(|item| !item.has_back_references),
+            !self.has_resolved_sources,
         )?);
         self.cached = Some(Arc::clone(&compiled));
         Ok(compiled)
@@ -709,7 +716,7 @@ impl<T: Copy> RegExpSourceList<T> {
             self.items.iter().map(|item| item.rule_id).collect(),
             self.regex_prefilter,
             &self.scanner_pattern_cache,
-            self.items.iter().all(|item| !item.has_back_references),
+            !self.has_resolved_sources,
         )?);
         self.anchor_cache[cache_index] = Some(Arc::clone(&compiled));
         Ok(compiled)
