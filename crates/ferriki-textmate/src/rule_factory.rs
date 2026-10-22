@@ -5,10 +5,9 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use sha2::{Digest, Sha256};
-
+use crate::grammar_fingerprint::GrammarFingerprint;
 use crate::include_reference::{IncludeReference, parse_include};
-use crate::raw_grammar::{RawCaptures, RawGrammar, RawRepository, RawRule, RuleId};
+use crate::raw_grammar::{RawCaptures, RawGrammar, RawRule, RuleId};
 use crate::regexp::ScannerPatternCache;
 use crate::rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
@@ -89,34 +88,62 @@ pub(crate) fn initialize_grammar(grammar: &RawGrammar, base: Option<Arc<RawRule>
     grammar
 }
 
+/// The repository chain visible to a rule: its grammar's repository plus the
+/// local `repository` objects of enclosing rules, innermost last.
+///
+/// vscode-textmate passes the repository object by reference and only builds
+/// a merged copy where a rule declares a local repository. This shares the
+/// grammar and each overlay rule instead, so cloning a context costs two
+/// reference-count increments rather than a copy of every repository map.
 #[derive(Clone)]
 struct RepositoryContext {
-    layers: Vec<RawRepository>,
-    scope_name: String,
+    grammar: Arc<RawGrammar>,
+    overlay: Option<Arc<RepositoryOverlay>>,
+}
+
+struct RepositoryOverlay {
+    rule: Arc<RawRule>,
+    parent: Option<Arc<RepositoryOverlay>>,
 }
 
 impl RepositoryContext {
-    fn new(repository: &RawRepository, scope_name: &str) -> Self {
+    fn new(grammar: &Arc<RawGrammar>) -> Self {
         Self {
-            layers: vec![repository.clone()],
-            scope_name: scope_name.to_owned(),
+            grammar: Arc::clone(grammar),
+            overlay: None,
         }
     }
 
-    fn with_overlay(&self, repository: &RawRepository) -> Self {
-        let mut layers = self.layers.clone();
-        layers.push(repository.clone());
+    /// Layers `rule.repository` over this context; `rule` must have one.
+    fn with_overlay(&self, rule: &Arc<RawRule>) -> Self {
+        debug_assert!(rule.repository.is_some());
         Self {
-            layers,
-            scope_name: self.scope_name.clone(),
+            grammar: Arc::clone(&self.grammar),
+            overlay: Some(Arc::new(RepositoryOverlay {
+                rule: Arc::clone(rule),
+                parent: self.overlay.clone(),
+            })),
         }
+    }
+
+    fn scope_name(&self) -> &str {
+        &self.grammar.scope_name
     }
 
     fn get(&self, name: &str) -> Option<Arc<RawRule>> {
-        self.layers
-            .iter()
-            .rev()
-            .find_map(|repository| repository.get(name).cloned())
+        let mut overlay = self.overlay.as_deref();
+        while let Some(layer) = overlay {
+            if let Some(rule) = layer
+                .rule
+                .repository
+                .as_ref()
+                .and_then(|repository| repository.get(name))
+            {
+                return Some(Arc::clone(rule));
+            }
+            overlay = layer.parent.as_deref();
+        }
+        self.grammar.repository.get(name).cloned()
     }
 }
 
@@ -127,16 +154,24 @@ pub(crate) struct RuleFactory<'a> {
     included_grammars: BTreeMap<String, Arc<RawGrammar>>,
     compiled_rule_ids: HashMap<usize, RuleId>,
     registry: RuleRegistry,
+    // Ferriki: the raw sources behind `root_grammar` and `included_grammars`,
+    // kept for `grammar_fingerprint`.
+    raw_root_grammar: Arc<RawGrammar>,
+    included_raw_grammars: BTreeMap<String, Arc<RawGrammar>>,
 }
 
 impl<'a> RuleFactory<'a> {
     #[must_use]
     pub(crate) fn new(grammar: &RawGrammar, grammar_provider: &'a dyn GrammarProvider) -> Self {
-        Self::with_registry(grammar, grammar_provider, RuleRegistry::new())
+        Self::with_registry(
+            Arc::new(grammar.clone()),
+            grammar_provider,
+            RuleRegistry::new(),
+        )
     }
 
     pub(crate) fn with_pattern_cache(
-        grammar: &RawGrammar,
+        grammar: Arc<RawGrammar>,
         grammar_provider: &'a dyn GrammarProvider,
         scanner_pattern_cache: ScannerPatternCache,
     ) -> Self {
@@ -148,48 +183,42 @@ impl<'a> RuleFactory<'a> {
     }
 
     fn with_registry(
-        grammar: &RawGrammar,
+        grammar: Arc<RawGrammar>,
         grammar_provider: &'a dyn GrammarProvider,
         registry: RuleRegistry,
     ) -> Self {
         Self {
             grammar_provider,
-            root_grammar: Arc::new(initialize_grammar(grammar, None)),
+            root_grammar: Arc::new(initialize_grammar(&grammar, None)),
             included_grammars: BTreeMap::new(),
             compiled_rule_ids: HashMap::new(),
             registry,
+            raw_root_grammar: grammar,
+            included_raw_grammars: BTreeMap::new(),
         }
     }
 
     pub(crate) fn compile_root(&mut self) -> RuleId {
-        let grammar = Arc::clone(&self.root_grammar);
-        let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
+        let repository = RepositoryContext::new(&self.root_grammar);
         let root = repository
             .get("$self")
             .expect("initialized grammar must define $self");
         self.get_compiled_rule_id(root, repository)
     }
 
-    pub(crate) fn compile_raw_rule(
-        &mut self,
-        rule: Arc<RawRule>,
-        repository: &RawRepository,
-    ) -> RuleId {
-        self.get_compiled_rule_id(
-            rule,
-            RepositoryContext::new(repository, &self.root_grammar.scope_name),
-        )
+    /// Compiles `rule` against the root grammar's repository.
+    pub(crate) fn compile_raw_rule(&mut self, rule: Arc<RawRule>) -> RuleId {
+        let repository = RepositoryContext::new(&self.root_grammar);
+        self.get_compiled_rule_id(rule, repository)
     }
 
     pub(crate) fn compile_external_grammar(
         &mut self,
         scope_name: &str,
     ) -> Option<(Arc<RawGrammar>, RuleId)> {
-        let root_repository = self.root_grammar.repository.clone();
-        let root_repository =
-            RepositoryContext::new(&root_repository, &self.root_grammar.scope_name);
+        let root_repository = RepositoryContext::new(&self.root_grammar);
         let grammar = self.get_external_grammar(scope_name, &root_repository)?;
-        let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
+        let repository = RepositoryContext::new(&grammar);
         let rule = repository.get("$self")?;
         let rule_id = self.get_compiled_rule_id(rule, repository);
         Some((grammar, rule_id))
@@ -213,17 +242,15 @@ impl<'a> RuleFactory<'a> {
         (self.root_grammar, self.registry)
     }
 
-    pub(crate) fn grammar_fingerprint(&self, external_injection_scopes: &[String]) -> String {
-        let mut identity = serde_json::to_value((
-            &self.root_grammar,
-            &self.included_grammars,
+    pub(crate) fn grammar_fingerprint(
+        &self,
+        external_injection_scopes: Vec<String>,
+    ) -> GrammarFingerprint {
+        GrammarFingerprint::new(
+            Arc::clone(&self.raw_root_grammar),
+            self.included_raw_grammars.clone(),
             external_injection_scopes,
-        ))
-        .expect("compiled grammar source is serializable");
-        strip_source_locations(&mut identity);
-        let source = serde_json::to_vec(&identity)
-            .expect("normalized compiled grammar identity is serializable");
-        format!("{:x}", Sha256::digest(source))
+        )
     }
 
     fn get_compiled_rule_id(
@@ -238,7 +265,7 @@ impl<'a> RuleFactory<'a> {
 
         let id = self.registry.reserve_rule();
         self.compiled_rule_ids.insert(identity, id);
-        let scope_name = repository.scope_name.clone();
+        let scope_name = repository.scope_name().to_owned();
         let mut rule = self.compile_rule(id, &description, repository);
         rule.set_source_scope_name(scope_name);
         self.registry.set_rule(id, rule);
@@ -248,7 +275,7 @@ impl<'a> RuleFactory<'a> {
     fn compile_rule(
         &mut self,
         id: RuleId,
-        description: &RawRule,
+        description: &Arc<RawRule>,
         repository: RepositoryContext,
     ) -> Rule {
         // vscode-textmate selects match and while rules with JavaScript truthiness.
@@ -268,10 +295,11 @@ impl<'a> RuleFactory<'a> {
         }
 
         let Some(begin) = description.begin.as_ref() else {
-            let repository = description.repository.as_ref().map_or_else(
-                || repository.clone(),
-                |local| repository.with_overlay(local),
-            );
+            let repository = if description.repository.is_some() {
+                repository.with_overlay(description)
+            } else {
+                repository
+            };
             let shorthand;
             let patterns = if let Some(patterns) = description.patterns.as_deref() {
                 Some(patterns)
@@ -451,7 +479,7 @@ impl<'a> RuleFactory<'a> {
                 .map(|rule| self.get_compiled_rule_id(rule, repository)),
             IncludeReference::TopLevelReference { scope_name } => {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
-                let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
+                let repository = RepositoryContext::new(&grammar);
                 let rule = repository.get("$self")?;
                 Some(self.get_compiled_rule_id(rule, repository))
             }
@@ -460,7 +488,7 @@ impl<'a> RuleFactory<'a> {
                 rule_name,
             } => {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
-                let repository = RepositoryContext::new(&grammar.repository, &grammar.scope_name);
+                let repository = RepositoryContext::new(&grammar);
                 let rule = repository.get(rule_name)?;
                 Some(self.get_compiled_rule_id(rule, repository))
             }
@@ -482,24 +510,9 @@ impl<'a> RuleFactory<'a> {
         ));
         self.included_grammars
             .insert(scope_name.to_owned(), Arc::clone(&grammar));
+        self.included_raw_grammars
+            .insert(scope_name.to_owned(), raw_grammar);
         Some(grammar)
-    }
-}
-
-fn strip_source_locations(value: &mut serde_json::Value) {
-    match value {
-        serde_json::Value::Array(values) => {
-            for value in values {
-                strip_source_locations(value);
-            }
-        }
-        serde_json::Value::Object(values) => {
-            values.remove("$vscodeTextmateLocation");
-            for value in values.values_mut() {
-                strip_source_locations(value);
-            }
-        }
-        _ => {}
     }
 }
 
