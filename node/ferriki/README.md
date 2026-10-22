@@ -4,212 +4,164 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
-Ferriki is native syntax highlighting with HTML and CSS-class output for
-Node.js: Shiki-shaped HTML APIs and an owned grammar catalog on a Rust engine. Shiki brought
-editor-grade highlighting to the web; Ferriki runs TextMate grammars
-on a Rust port of VS Code's tokenizer and [Ferroni](https://ferroni.dev),
-Oniguruma in Rust, without WebAssembly or regex translation. Ferriki follows
-semantic versioning: breaking changes to its public API require a major
-version. The
-[changelog](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/CHANGELOG.md)
-lists each release's changes.
+Ship polished code examples in your docs, CMS, or site build. Ferriki runs its
+curated TextMate grammar catalog on a native Rust engine and keeps familiar
+Shiki-shaped HTML calls for Node.js. Prepare examples as static HTML, or keep
+one highlighter ready for a stream of blocks.
 
-**Load once. Highlight block after block.** On our 14-file Blacksmith corpus,
-reused Ferriki highlighters produced identical HTML to Shiki/WASM,
-running **3.3× faster than Shiki/WASM on Linux x86-64** and **4.1× on macOS
-ARM64**. These factors describe the measured corpus and machines. The
-[benchmarks](https://ferriki.dev/evidence/benchmarks) include both hosts,
-first-use timings, JSON/Astro and the committed raw reports.
+## Requirements and install
 
-A separate [Blacksmith memory capture](https://ferriki.dev/evidence/benchmarks#process-memory)
-recorded **27–31% lower whole-process RSS than Shiki/WASM** after 600 rendered
-documents in a shared 12-file cohort. The generated large TypeScript case was
-**64–68% lower**. Tables show all engines, medians and full ranges over six fresh
-processes per engine and workload; macOS repository ranges overlap with
-Shiki/JS. These figures include native and WASM memory and describe these
-workloads and hosts, without a claim about allocation counts or service capacity.
-
-## Install
+Ferriki is ESM-only and requires Node.js 22.13.0 or newer. npm installs the
+optional native package for your platform: Linux x64/arm64 with glibc or musl,
+macOS on Apple Silicon, and Windows x64/arm64. Keep optional dependencies
+enabled in production installs.
 
 ```sh
 npm install @ferriki/core
 ```
 
-Ferriki requires Node.js 22.13.0 or newer and is ESM-only. The package declares
-one optional native package for each supported target (Linux x64 and arm64 with
-glibc or musl, macOS arm64, Windows x64 and arm64), and the package manager
-installs the matching one. The main package ships no native addon of its own,
-so keep optional dependencies enabled in production installs.
+Grammar and theme payloads are downloaded from `assets.ferriki.dev` the first
+time they are loaded, pinned to this release, verified by SHA-256, and cached
+in `node_modules/.cache/ferriki`. For offline use, populate the cache before
+the build or point `FERRIKI_ASSETS_BASE_URL` at a mirror. Set
+`FERRIKI_ASSETS_REMOTE=0` to use the cache only. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
+for cache, proxy, and certificate settings.
 
-The package ships no grammar or theme payloads either. The first time a
-language or theme is loaded, Ferriki downloads it from `assets.ferriki.dev`,
-pinned to this release and verified by SHA-256, and caches it in
-`node_modules/.cache/ferriki`. Offline builds reuse a populated cache or point
-`FERRIKI_ASSETS_BASE_URL` at a mirror; `FERRIKI_ASSETS_REMOTE=0` turns
-downloads off. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
-for cache, proxy and certificate settings.
+## See a highlighted page
 
-## Highlight code
-
-Use the shorthand for one-off highlighting:
+Save this complete ESM file as `highlight.mjs`:
 
 ```js
+import { writeFile } from "node:fs/promises";
 import { codeToHtml } from "@ferriki/core";
 
-const html = await codeToHtml('console.log("Hello")', {
+const html = await codeToHtml("const answer = 42;", {
   lang: "javascript",
-  theme: "nord",
+  theme: "github-dark",
 });
+
+await writeFile("highlighted.html", html);
+console.log("Saved highlighted.html. Open it in a browser to preview your code.");
 ```
+
+Run `node highlight.mjs`, then open `highlighted.html`. The one-shot API loads
+the language and theme on first use and reuses a process-local highlighter on
+later calls.
+
+## Measured results
+
+On our measured 14-file Blacksmith corpus, a reused Ferriki highlighter produced
+the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
+faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
+for hosts, conditions, first-use timings, and raw results.
+
+A separate six-process capture measured **27–31% lower whole-process RSS than
+Shiki/WASM** after 600 documents in a shared 12-file cohort. See the
+[memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
 
 ## Reuse a highlighter
 
-A highlighter loads its languages and themes once; calls on it are synchronous.
-Keep the highlighter for the lifetime of a CMS worker or site build. The
-`codeToHtml()` shorthand also reuses a process-local singleton.
-Call `highlighter.dispose()` when you are done, or declare it with `using` in
-TypeScript:
+For a CMS worker or site build, load the languages and themes you need once.
+Rendering with loaded assets is synchronous. Create one highlighter per worker
+and dispose it when the worker shuts down.
 
 ```js
 import { createHighlighter } from "@ferriki/core";
 
 const highlighter = await createHighlighter({
   langs: ["javascript", "typescript"],
-  themes: ["vitesse-light", "vitesse-dark"],
+  themes: ["github-light", "github-dark"],
 });
 
-const html = highlighter.codeToHtml("const answer = 42", {
-  lang: "typescript",
-  theme: "vitesse-dark",
-});
+try {
+  const html = highlighter.codeToHtml("const answer: number = 42;", {
+    lang: "typescript",
+    theme: "github-dark",
+  });
+  console.log(html);
+} finally {
+  highlighter.dispose();
+}
 ```
 
-`getSingletonHighlighter()` shares one highlighter per process, and the
-shorthand functions use it. Custom languages and themes take Shiki's TextMate
-registration shapes in `langs` and `themes` and are validated before they reach
-the native engine. Languages embedded by a grammar load with it; lazy
-embeddings load after an explicit `loadLanguage`. The synchronous factories
-accept already-resolved names and registrations only.
+`getSingletonHighlighter()` shares one highlighter per process, and the one-shot
+functions use it. Custom languages and themes use Shiki's TextMate registration
+shapes in `langs` and `themes` and are validated before they reach the native
+engine. Languages embedded by a grammar load with it; lazy embeddings load
+after an explicit `loadLanguage`.
 
-Ferriki maintains a curated set of standard grammars, including embedded dependencies, and
-65 themes. Use `bundledLanguages` to discover the available IDs and aliases.
-Import other JSON TextMate grammars with `pnpm exec ferriki grammar fetch
-./grammar.tmLanguage.json --name example --output ./example.ferriki.json`, then
-pass the resulting JSON to `langs` or `loadLanguage`. URLs and commit-pinned
-GitHub sources are supported too; see the [grammar guide](https://github.com/sebastian-software/ferriki/blob/main/docs/grammars.md).
+For tuning repeated work and short-lived highlighters, see [the prefilter guide](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#choosing-the-regex-prefilter).
 
-Keep the default regex prefilter for repeated work. For a short-lived
-highlighter, pass `regexPrefilter: false` to `createHighlighter()` to skip
-prefilter construction. This is a creation-time choice, with unchanged output.
-The [prefilter guide](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md#choosing-the-regex-prefilter)
-covers the measured setup/reuse tradeoff and the singleton's configuration.
+## Languages and themes
 
-## Light and dark themes
+Ferriki maintains its own curated catalog of standard TextMate grammars,
+including embedded dependencies, and 65 themes. Use `bundledLanguages` and
+`bundledLanguagesAlias` to discover available IDs and aliases. The
+[grammar guide](https://github.com/sebastian-software/ferriki/blob/main/docs/grammars.md)
+covers catalog coverage and external imports. For a local grammar, run:
 
-Pass an ordered theme map. With `defaultColor: false`, Ferriki emits CSS
-variables for every theme and leaves the choice to your stylesheet:
-
-```js
-const html = highlighter.codeToHtml("const answer = 42", {
-  lang: "typescript",
-  themes: { light: "vitesse-light", dark: "vitesse-dark" },
-  defaultColor: false,
-});
+```sh
+npm exec -- ferriki grammar fetch ./grammar.tmLanguage.json \
+  --name example --output ./example.ferriki.json
 ```
 
-## Class-based output
+The importer also accepts URLs and commit-pinned GitHub sources. Review a
+grammar's license before redistributing it.
 
-`styleMode: "classes"` renders every grammar scope as a nested span with
-readable classes such as `tok-string`, for your own stylesheet.
-`codeToHtmlWithCss` returns `{ html, css }` with the CSS derived from unchanged
-TextMate themes. With a theme map, `data-ferriki-theme="dark"` on the block or
-an ancestor switches themes without highlighting again:
+## Class-based output and theme maps
 
-```js
-import { codeToHtmlWithCss } from "@ferriki/core";
-
-const { html, css } = await codeToHtmlWithCss("const answer = 42", {
-  lang: "typescript",
-  themes: { light: "github-light", dark: "github-dark" },
-});
-```
-
-The mode is inspired by GitHub's PrettyLights and wooorm's
-[starry-night](https://github.com/wooorm/starry-night). The
-[class-based highlighting guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md)
-covers the class names, custom CSS and theme switching.
+Use `styleMode: "classes"` for nested TextMate scope classes, or
+`codeToHtmlWithCss()` to return highlighted HTML with its matching CSS. An
+ordered `themes` map can switch palettes on prepared markup without highlighting
+again. The [class-based highlighting guide](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md)
+shows complete HTML and stylesheet examples for custom classes and theme
+switching.
 
 ## Transformers
 
-Transformer and decoration callbacks run in JavaScript and receive typed
-token and HAST data. Rust handles decoration ranges, token boundaries, and
-wrapping. Plain declarative ranges with string attributes render directly in Rust
-for classic single-theme HTML with inline theme styles; callbacks and other
-render modes retain the host pipeline and existing objects. The notation
-helpers from `@shikijs/transformers` for focus, highlights, diffs and word
-highlights work with them.
+Transformer and decoration callbacks run in JavaScript and receive typed token
+and HAST data. The native engine handles decoration ranges, token boundaries,
+and wrapping. Shiki's `@shikijs/transformers` notation helpers for focus,
+highlights, diffs, and word highlights work with them.
 
 ## Build-time macros
 
 [`@ferriki/vite`](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
-turns `code()` from `@ferriki/core/macro` and `<Code />` from
-`@ferriki/core/react/macro` into highlighted HTML and CSS during a Vite 8
-build, so the browser receives neither a grammar nor a highlighter. Install it
-with the same version as this package:
-
-```sh
-npm install @ferriki/core @ferriki/vite
-```
-
-React `<Code />` uses `<ferriki-code>` as its built-in presentation. React SSR
-includes Declarative Shadow DOM with the prepared highlighted code, while the
-browser render uses an empty reference host and registers its prepared blocks
-for hydration and later client-rendered navigation. The parser creates the
-server shadow root before the component upgrades; upgrade and hydration retain
-its nodes. Each root gets a small local style block for layout, scrolling, line
-annotations, and inline theme switching. Classes mode also links one aggregated
-external CSS asset per build output, and its link stays after upgrade. SSR and
-client builds can emit different assets when their graphs differ; deploy the
-SSR build's CSS with its markup. Inline mode needs no CSS asset or Vite base URL.
-Pass `maxLines={12}` to cap the visible height; longer
-blocks retain all code and scroll vertically, while shorter blocks stay short.
-Omit it for an unlimited block. The macro adjusts its pre-JavaScript
-reservation automatically.
-`@ferriki/core/web-component` also presents prepared HTML/CSS without React,
-and `@ferriki/core/web-component/server` fills manually authored server-rendered
-reference hosts. The direct `highlightedCode` property remains available. See the
-[Shadow code elements guide](https://github.com/sebastian-software/ferriki/blob/main/docs/shadow-code-elements.md)
-for SSR, registration, theme switching, CSS migration, and policy limits.
-
-See the [inline code macros guide](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md).
+turns `code()` and React `<Code />` calls into highlighted output during a Vite
+8 build. The highlighter runs during the build, and the default React component
+uses a small framework-free presentation module to display the prepared output.
+The [Vite guide](https://github.com/sebastian-software/ferriki/tree/main/node/vite)
+has a complete React setup and advanced SSR details.
 
 ## Rust
 
-The same engine is the [`ferriki`](https://crates.io/crates/ferriki) crate; see
-the [Rust API guide](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md).
+The same native engine is available as the [`ferriki` crate](https://crates.io/crates/ferriki).
+See the [Rust API guide](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md).
 
 ## Compatibility
 
-Ferriki follows Shiki v4.4.3. Shiki's own tests run unchanged against the
-native addon from a pinned mirror, each one classified as supported, deferred
-or out of scope, and the tokenizer is checked against the complete
-vscode-textmate v9.3.2 oracle. HTML is the package's output; token and HAST
-data reach transformer callbacks. Terminal ANSI input is rejected with
-`ShikiError` instead of rendered.
+Ferriki follows Shiki v4.4.3. Shiki's tests run unchanged against the native
+addon from a pinned mirror, each classified as supported, deferred, or out of
+scope; the tokenizer is checked against the complete vscode-textmate v9.3.2
+oracle. Node's public output is HTML; transformer callbacks can inspect token
+and HAST data. Terminal ANSI input is rejected with `ShikiError` instead of
+being rendered. See the [compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md)
+and [Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
 
 ## Documentation
 
 - [Ferriki API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md)
 - [Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md)
-- [Compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md): the Shiki baseline and the supported targets
+- [Compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md)
 - [Troubleshooting](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md): native-loader and offline failures
-- [Code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md): focus, highlights, diffs and copy behavior
+- [Code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md): focus, highlights, diffs, and copy behavior
 - [ferriki.dev](https://ferriki.dev): guides and benchmarks
 
 ## License
 
 Licensed under either of [MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT)
-or [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE) at your option.
+or [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
+at your option.
 
 <!-- ferramenta-family:start -->
 

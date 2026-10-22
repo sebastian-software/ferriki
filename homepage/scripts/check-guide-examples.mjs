@@ -10,11 +10,13 @@ import {
   FERRIKI_PLATFORM_TARGETS,
   resolveFerrikiPlatformTarget,
 } from "../../node/ferriki/platforms.mjs";
+import { normalizeNpmPackMetadata } from "../../node/scripts/npm-pack-metadata.mjs";
 
 const homepageRoot = join(fileURLToPath(new URL("..", import.meta.url)));
 const repoRoot = join(homepageRoot, "..");
 const nodeRoot = join(repoRoot, "node");
 const packageRoot = join(nodeRoot, "ferriki");
+const packageManifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
 const cacheDir = join(nodeRoot, ".cache", "ferriki-assets");
 const platformId = process.env.FERRIKI_PLATFORM_ID ?? resolveFerrikiPlatformTarget()?.id;
 assert(
@@ -142,14 +144,16 @@ function run(command, args, options = {}) {
 }
 
 try {
-  const core = JSON.parse(
+  const core = normalizeNpmPackMetadata(
     run(npm, ["pack", "--json", "--pack-destination", temporaryRoot]).stdout,
-  )[0];
-  const sidecar = JSON.parse(
+    packageManifest.name,
+  );
+  const sidecar = normalizeNpmPackMetadata(
     run(npm, ["pack", "--json", "--pack-destination", temporaryRoot], {
       cwd: join(nodeRoot, "platforms", platformId),
     }).stdout,
-  )[0];
+    platform.packageName,
+  );
   assert.equal(
     sidecar.name,
     platform.packageName,

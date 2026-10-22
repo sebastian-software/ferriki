@@ -8,58 +8,66 @@ import codeElementLifecycle from "../../../../docs/assets/code-element-lifecycle
 
 # Build-time macros
 
-`code()` and `<Code />` are build-time macros for code examples that live in
-your components. You write the example as a literal; during a Vite 8 build,
-`@ferriki/vite` replaces it with highlighted HTML and the CSS it needs. The
-browser receives that markup and loads no grammar, no theme and no highlighter.
-
-Shiki's official integrations, as of v4.4.3 (the release Ferriki is checked
-against), plug into Markdown pipelines such as rehype, markdown-it and
-VitePress. Shiki has no build-time macro for code inside components.
+Keep a code example beside the component that explains it. During a Vite 8
+build, `@ferriki/vite` replaces literal `code()` and `<Code />` macro calls
+with highlighted HTML and the CSS they need. React's default `<Code />`
+presentation uses a small, framework-free module to display that prepared
+output in the browser.
 
 <HighlightingFlows />
 
-## Install
+## Install and configure
 
 ```sh
 npm install @ferriki/core @ferriki/vite
 ```
 
-`@ferriki/vite` requires Vite 8 and Node.js 22.13.0 or newer. It shares
-Ferriki's version: keep `@ferriki/core`, its platform package and
-`@ferriki/vite` on the same release. The macro markers ship in `@ferriki/core`;
-the adapter adds only `magic-string`.
+Use Vite 8 and Node.js 22.13.0 or newer. Keep `@ferriki/core`, its optional
+platform package, and `@ferriki/vite` on the same release. The native platform
+requirements are listed in [Compatibility](/evidence/compatibility). If your
+Vite React project does not already use the React plugin, install it with
+`npm install -D @vitejs/plugin-react`.
 
-## Configure Vite
+The first build downloads the configured grammar and theme payloads from
+`assets.ferriki.dev`, verifies them, and caches them locally. For offline
+builds, prepopulate the cache or configure a mirror in [asset settings](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md).
 
-Place Ferriki before the framework plugin that lowers JSX:
+Put Ferriki before React so the macro runs before JSX is lowered:
 
 ```ts
 // vite.config.ts
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { ferriki } from "@ferriki/vite";
 
 export default defineConfig({
-  plugins: [
-    ferriki({
-      themes: { light: "github-light-default", dark: "github-dark-default" },
-      styleMode: "classes",
-      lineNumbers: true,
-    }),
-    // Add your framework plugin, such as React, after Ferriki.
-  ],
+  plugins: [ferriki({ theme: "github-dark-default" }), react()],
 });
 ```
 
-| Option         | Default                 | Meaning                                                                                            |
-| -------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `theme`        | `"github-dark-default"` | One theme for every block                                                                          |
-| `themes`       | none                    | A named theme map instead of `theme`; the first key supplies the default colors                    |
-| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and matching generated CSS                                         |
-| `lineNumbers`  | `false`                 | The default for every macro; each macro can override it                                            |
-| `transformers` | none                    | Transformer callbacks applied to every prepared block                                              |
-| `assets`       | none                    | Asset source and cache settings, as for `createHighlighter`                                        |
-| `include`      | none                    | `(id) => boolean` for compiler output without a JavaScript or TypeScript extension (see MDX below) |
+## Add your first React component
+
+Import `Code` from the macro entry and write its source directly in the
+component:
+
+```tsx
+import { Code } from "@ferriki/core/react/macro";
+
+export function Example() {
+  return (
+    <main>
+      <h1>A code example, ready for the page</h1>
+      <Code language="ts" source={`const answer: number = 42;`} />
+    </main>
+  );
+}
+```
+
+Keep `language` and `source` literal. `source` may be a string or a template
+literal without `${...}` interpolation; the macro cannot evaluate variables,
+imports, or computed strings. Render `Example` in your app, start Vite with its
+usual command such as `npm run dev`, and open that route to see the highlighted
+block.
 
 ## Prepare code with `code()`
 
@@ -102,6 +110,18 @@ interpolations; template escapes have their normal JavaScript meaning.
 Variables, imported files and computed strings are not evaluated, and the
 options must be an object literal. Anything dynamic fails the build with the
 file and position.
+
+### Vite plugin options
+
+| Option         | Default                 | Meaning                                                         |
+| -------------- | ----------------------- | --------------------------------------------------------------- |
+| `theme`        | `"github-dark-default"` | One theme for every block                                       |
+| `themes`       | none                    | Named themes; the first key supplies the default colors         |
+| `styleMode`    | `"inline"`              | `"classes"` emits scope classes and matching CSS                |
+| `lineNumbers`  | `false`                 | Default for every macro; each call can override it              |
+| `transformers` | none                    | Transformer callbacks applied to every prepared block           |
+| `assets`       | none                    | Asset source and cache settings, as for `createHighlighter`     |
+| `include`      | none                    | `(id) => boolean` for compiler output without a JS/TS extension |
 
 ## Prepare code with `<Code />` in React
 

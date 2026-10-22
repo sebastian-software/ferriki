@@ -12,80 +12,112 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-Ferriki is a native syntax highlighter for Node.js and Rust. Shiki brought
-editor-grade highlighting to the web; Ferriki keeps its HTML API shape, owns a
-curated grammar catalog, and runs TextMate grammars and themes on a Rust port
-of VS Code's TextMate tokenizer, so Rust programs, Node.js and Vite builds
-share one engine. Ferriki follows semantic versioning: breaking changes to its
-public API require a major version. The
-[changelog](node/ferriki/CHANGELOG.md) lists each release's changes.
+**Beautiful code. Ready for your page.** Ferriki brings editor-grade TextMate
+highlighting to documentation, CMS content, and site builds. Its native Rust
+engine works from Node.js and Rust, while Vite 8 macros prepare literal
+component examples during the build. The Node API keeps
+Shiki's familiar HTML call shape, backed by Ferriki's own curated grammar
+catalog.
 
-## Why Ferriki
+## Choose your path
 
-1. **One engine, two languages.** The [`ferriki`](https://crates.io/crates/ferriki)
-   crate is the highlighter, `@ferriki/core` runs it through a native addon,
-   and [Ferromark](https://ferromark.dev) uses it to highlight Markdown and MDX
-   fences natively. Shiki runs on JavaScript, with Oniguruma in WebAssembly or
-   a JavaScript regex engine, and has no Rust form.
-2. **Build-time macros in Vite 8.** With [`@ferriki/vite`](node/vite/README.md),
-   `code()` and `<Code />` become highlighted HTML and CSS during the build; the
-   browser receives no grammar and no engine. Only modules that import a macro
-   are touched. Shiki's official content integrations work on Markdown; it has
-   no build-time macro for components.
-3. **Class-based output with nested scopes.** `styleMode: "classes"` renders
-   grammar scopes as nested spans for stylesheet themes. `codeToHtmlWithCss`
-   derives the CSS from unchanged TextMate themes, and a theme map switches
-   through `data-ferriki-theme` without highlighting again. Inspired by
-   GitHub's PrettyLights and [starry-night](https://github.com/wooorm/starry-night).
-4. **Native highlighting, small installs.**
-   [Ferroni](https://ferroni.dev), Oniguruma in Rust, runs grammar patterns as
-   written. Each platform's addon is its own optional package, and grammars and
-   themes download on first use from a release-pinned CDN, verified by SHA-256
-   and cached.
-5. **Continuity.** Shiki's `codeToHtml`, highlighters, singleton, `themes` map
-   and custom grammars keep their call shapes, and the `@shikijs/transformers`
-   notation plugs in as is. A pinned, unmodified mirror of Shiki v4.4.3's tests
-   and the vscode-textmate v9.3.2 oracle check this in CI.
+| If you build with… | Start with… | Guide |
+| --- | --- | --- |
+| Node.js | `npm install @ferriki/core` | [Node.js package guide](node/ferriki/README.md) |
+| Rust | `cargo add ferriki --features remote` | [Rust API guide](docs/rust-api.md) |
+| Vite 8 and React | `npm install @ferriki/core @ferriki/vite` | [Vite macros guide](node/vite/README.md) |
 
-**Load once. Highlight block after block.** For a CMS, documentation server or
-site build, keep one highlighter with its loaded languages and themes. On our
-14-file Blacksmith corpus, Ferriki produced the same HTML as Shiki/WASM and
-ran **3.3× faster than Shiki/WASM on Linux x86-64** and **4.1× on macOS
-ARM64** with reused highlighters. These are measured corpus totals,
-not a guarantee for every workload. The [benchmarks](https://ferriki.dev/evidence/benchmarks)
-include both hosts, JSON/Astro, first-use timings and committed raw reports.
+## See your first result in Node.js
 
-A separate [Blacksmith memory capture](https://ferriki.dev/evidence/benchmarks#process-memory)
-recorded **27–31% lower whole-process RSS than Shiki/WASM** after 600 rendered
-documents in a shared 12-file cohort. The generated large TypeScript case was
-**64–68% lower**. Tables show all engines, medians and full ranges over six fresh
-processes per engine and workload; macOS repository ranges overlap with
-Shiki/JS. These figures include native and WASM memory and describe these
-workloads and hosts, without a claim about allocation counts or service capacity.
+Ferriki requires Node.js 22.13.0 or newer and uses ESM. npm installs the
+matching optional native package for Linux x64/arm64 (glibc or musl), macOS
+Apple Silicon, or Windows x64/arm64; keep optional dependencies enabled.
 
-Keep the default regex prefilter for repeated work. For a short-lived process,
-`regexPrefilter: false` in Node or `.with_regex_prefilter(false)` in Rust avoids
-prefilter construction. In the recorded Node full-corpus run, repeated
-highlighting took 31–48% longer without it, while first use was 25–28% shorter. See
-[choosing the prefilter](docs/ferriki-api.md#choosing-the-regex-prefilter) for
-the timing boundary and the singleton's reuse behavior.
-
-## Install and highlight
+Install the package in your project:
 
 ```sh
-npm install @ferriki/core                  # Node.js
-npm install @ferriki/core @ferriki/vite    # Vite 8, one shared version
-cargo add ferriki --features remote        # Rust
+npm install @ferriki/core
 ```
+
+Language and theme payloads download from the release-pinned CDN on first use,
+are verified with SHA-256, and are cached locally. For offline builds, populate
+the cache ahead of time or use a mirror. See [asset loading](docs/asset-loading.md).
+
+Save this complete ESM file as `highlight.mjs`, then run `node highlight.mjs`:
 
 ```js
+import { writeFile } from "node:fs/promises";
 import { codeToHtml } from "@ferriki/core";
 
-const html = await codeToHtml("const answer = 42;", { lang: "typescript", theme: "github-dark" });
+const html = await codeToHtml("const answer = 42;", {
+  lang: "javascript",
+  theme: "github-dark",
+});
+
+await writeFile("highlighted.html", html);
+console.log("Saved highlighted.html. Open it in a browser to preview your code.");
 ```
 
+## Reuse one highlighter for repeat work
+
+For a documentation build or CMS worker, create a highlighter with the
+languages and themes you need, then keep it around for the blocks you render.
+Calls with loaded languages and themes are synchronous. Create one highlighter
+per worker, and dispose it when that worker shuts down.
+
+```js
+import { createHighlighter } from "@ferriki/core";
+
+const highlighter = await createHighlighter({
+  langs: ["typescript", "rust", "css"],
+  themes: ["github-light", "github-dark"],
+});
+
+try {
+  const html = highlighter.codeToHtml("const answer: number = 42;", {
+    lang: "typescript",
+    theme: "github-dark",
+  });
+  console.log(html);
+} finally {
+  highlighter.dispose();
+}
+```
+
+On our measured 14-file Blacksmith corpus, a reused highlighter produced the
+same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
+faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
+for hosts, conditions, first-use timings, and raw results.
+
+A separate six-process capture measured **27–31% lower whole-process RSS than
+Shiki/WASM** after 600 documents in a shared 12-file cohort. See the
+[memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
+
+## More ways to use Ferriki
+
+| Need | Ferriki provides |
+| --- | --- |
+| Shiki-shaped HTML | `codeToHtml`, highlighters, singleton helpers, and transformer callbacks for Node.js |
+| Stylesheet-driven themes | Nested TextMate scope classes, generated CSS, and theme maps that switch without highlighting again |
+| A grammar of your own | Ferriki's curated catalog plus custom TextMate grammars, aliases, and injections; see the [grammar guide](docs/grammars.md) |
+| Code in Vite components | `code()` and React `<Code />` macros that prepare highlighted output at build time on Vite 8 |
+| Native Rust highlighting | The [`ferriki` crate](https://docs.rs/ferriki): tokens, line HTML, and class-based HTML |
+
+Import `@ferriki/core/macro` or `@ferriki/core/react/macro` in the modules whose
+examples you want prepared. The build delivers highlighted output, and React
+`<Code />` uses a small framework-free presentation module in the browser.
+Grammar payloads stay on the build side; see the [Vite guide](node/vite/README.md)
+for the quickstart, SSR behavior, and limits.
+
+## Start with Rust
+
+Enable the remote asset catalog with `cargo add ferriki --features remote`.
+This small program highlights a Rust function and prints HTML:
+
 ```rust
-use ferriki::{Highlighter, RemoteAssets, RenderOptions, StandardAssetCatalogs, render_html};
+use ferriki::{
+    Highlighter, RemoteAssets, RenderOptions, StandardAssetCatalogs, render_html,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut highlighter = Highlighter::builder()
@@ -99,57 +131,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-```tsx
-// vite.config.ts
-import react from "@vitejs/plugin-react";
-import { ferriki } from "@ferriki/vite";
-
-export default { plugins: [ferriki({ theme: "github-dark" }), react()] };
-
-// Example.tsx: the build replaces <Code /> with highlighted HTML and its CSS.
-import { Code } from "@ferriki/core/react/macro";
-
-export const Example = () => <Code language="ts" source={`const answer = 42;`} />;
-```
-
-The first use of a language or theme downloads it, verifies it and caches it;
-[asset loading](docs/asset-loading.md) covers mirrors and offline builds.
-
-## What you get
-
-| Feature | Details |
-| --- | --- |
-| HTML output | `codeToHtml` with Shiki's markup, inline styles and escaped source |
-| Class-based CSS output | `styleMode: "classes"`, or `codeToHtmlWithCss` for `{ html, css }` |
-| Single and multi-theme | `theme`, or a `themes` map switched by CSS variables or `data-ferriki-theme` |
-| Transformers | Shiki's hooks and decorations, including the `@shikijs/transformers` notation |
-| Curated grammars, 65 themes | Commit-pinned sources; loaded on demand and cached; a mirror or warm cache serves offline builds |
-| Custom grammars and themes | TextMate JSON with aliases and injections; import external sources with `ferriki grammar fetch` ([guide](docs/grammars.md)) |
-| Rust crate and Ferromark | [`ferriki`](https://docs.rs/ferriki): tokens, line HTML, class HTML; Ferromark's `ferriki` feature |
-| Vite build-time macros | [`@ferriki/vite`](node/vite/README.md): `code()` and `<Code />` on Vite 8 |
-| Platforms | Node.js 22.13.0 or newer, ESM-only; Linux x64/arm64 (glibc, musl), macOS arm64, Windows x64/arm64 |
-
 ## Compatibility
 
-Ferriki pins one release of each upstream, currently Shiki v4.4.3 and
-vscode-textmate v9.3.2. Both are mirrored unmodified and checked in CI, and
-every Shiki test is classified as supported, deferred or out of scope. HTML is
-the Node output: transformer callbacks receive token and HAST data, and the
-Rust crate returns tokens. Ferriki runs in Node.js and Rust; browsers get its
-build-time output. See the [compatibility policy](docs/compatibility.md) and
-the [migration guide](docs/migrations/shiki-to-ferriki.md).
+Ferriki follows semantic versioning: breaking changes to its public API
+require a major version; see the [changelog](node/ferriki/CHANGELOG.md). It
+pins Shiki v4.4.3 and vscode-textmate v9.3.2 as behavioral references.
+Shiki's tests run unchanged from a pinned mirror, each classified as supported,
+deferred, or out of scope; the tokenizer is checked against the full
+vscode-textmate oracle. Node's public output is HTML, while transformer
+callbacks can inspect token and HAST data. The Rust crate exposes tokens and
+HTML rendering. See the [compatibility policy](docs/compatibility.md) and
+[Shiki migration guide](docs/migrations/shiki-to-ferriki.md).
 
 ## Documentation
 
 - [ferriki.dev](https://ferriki.dev): guides and [benchmarks](https://ferriki.dev/evidence/benchmarks)
-- [API reference](docs/ferriki-api.md), [class-based highlighting](docs/class-highlighting.md), [asset loading](docs/asset-loading.md)
-- [Inline code macros](docs/inline-code-macros.md), [code example authoring](docs/code-example-authoring.md)
-- [Rust API and Ferromark](docs/rust-api.md), [troubleshooting](docs/troubleshooting.md)
+- [API reference](docs/ferriki-api.md), [class-based highlighting](docs/class-highlighting.md), and [asset loading](docs/asset-loading.md)
+- [Inline code macros](docs/inline-code-macros.md) and [code example authoring](docs/code-example-authoring.md)
+- [Rust API and Ferromark](docs/rust-api.md), plus [troubleshooting](docs/troubleshooting.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, the test lanes and the
-repository layout, and [`adr/`](adr/README.md) for the decisions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, test lanes, and repository
+layout, and [`adr/`](adr/README.md) for the decisions behind the project.
 
 ## License
 
