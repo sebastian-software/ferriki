@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.2.0](https://github.com/sebastian-software/ferriki/compare/v1.1.2...v1.2.0) (2026-10-22)
+
+
+### Features
+
+* **homepage:** clarify value and show prepared output ([122383e](https://github.com/sebastian-software/ferriki/commit/122383e557d8b9abb28bcc1e8f514150d24beafe))
+* **node:** identify asset downloads with a ferriki user agent ([27067f5](https://github.com/sebastian-software/ferriki/commit/27067f589303813544e523fb5c7e3c40991851c9))
+* **textmate:** export and attach precompiled scanner archives ([0926a73](https://github.com/sebastian-software/ferriki/commit/0926a7397159cd856995974def3c15fb56210d7e))
+
+
+### Bug Fixes
+
+* bound YAML grammar variable expansion ([3e66ae5](https://github.com/sebastian-software/ferriki/commit/3e66ae5330ee6c12e3c003de9c8c0c0f0921ae90))
+* **deps:** enforce patched TLS minimums for consumers ([74c70d4](https://github.com/sebastian-software/ferriki/commit/74c70d474db2f4835397e517fc64cc9339fa1733))
+* **deps:** update ferroni to 2.5.2 with the precompiled feature ([e81bab1](https://github.com/sebastian-software/ferriki/commit/e81bab1fa5e7b25fd61f1681007bec77ba44ef16))
+* **deps:** update patched TLS dependencies ([b1c8ae8](https://github.com/sebastian-software/ferriki/commit/b1c8ae8fd7efff8727de9989bb77567109714225))
+* **docs:** align examples with lint and package checks ([6fd5e0c](https://github.com/sebastian-software/ferriki/commit/6fd5e0cd47b2eb725300ee0e640a964a17c55ef5))
+* **docs:** satisfy drift regex lint ([419c656](https://github.com/sebastian-software/ferriki/commit/419c6563660fb3689e663674c44ab361f8e78535))
+* **docs:** scope memory headline checks by scenario ([1b37ac0](https://github.com/sebastian-software/ferriki/commit/1b37ac018abba53e9b1e8e2e12989d4f2b0b5dff))
+* **docs:** simplify release status matcher ([f8161fa](https://github.com/sebastian-software/ferriki/commit/f8161fab2e5c2adc4ba7e83b2135043f61e15181))
+* **fuzz:** include sha2 in fuzz lockfile ([bf6c0d1](https://github.com/sebastian-software/ferriki/commit/bf6c0d149adeeefed65b79ed54768202a7e56333))
+* **highlighter:** advance state on empty lines ([fa7b61d](https://github.com/sebastian-software/ferriki/commit/fa7b61d2c1aecf75bd25e1ab7f4f76dcf13c5ba6))
+* **node:** bound standard-asset cache reads ([f5ece6a](https://github.com/sebastian-software/ferriki/commit/f5ece6a8fc8608416aba1416a531aee45d8578c5))
+* **node:** honor embedded language prefetch precedence ([9f9775f](https://github.com/sebastian-software/ferriki/commit/9f9775f4dfa73dd4ea81e6f01f08560249021b09))
+* **node:** prefetch custom registration dependencies ([c20d379](https://github.com/sebastian-software/ferriki/commit/c20d37992e55dd519859438bc05e53ffade3a5dc))
+* **node:** support npm 12 pack metadata ([#299](https://github.com/sebastian-software/ferriki/issues/299)) ([063df81](https://github.com/sebastian-software/ferriki/commit/063df819ba06919143ea39ddfc921fdbcc23a263))
+* **remote:** bound cached asset reads by manifest size ([771cb3d](https://github.com/sebastian-software/ferriki/commit/771cb3d3e471265142660ce6a997efe9f79d3643))
+* **remote:** close cache files before recovery ([69a321d](https://github.com/sebastian-software/ferriki/commit/69a321dd8b14539a7d6c8b4b648bcc49c34a5d80))
+* **remote:** return an error for missing prefetch metadata ([f9659ac](https://github.com/sebastian-software/ferriki/commit/f9659ac528678e49eb9ed9f02d189add90dfbd59))
+* **textmate:** report tokenizer budget overruns after scans ([5dae175](https://github.com/sebastian-software/ferriki/commit/5dae175f0cdf5861ffc9bdf56288f3d5cd242eb1))
+* **workflows:** scope runner temp to steps ([b56f145](https://github.com/sebastian-software/ferriki/commit/b56f145edb11ac3919381d6ce5c0df83a4c61745))
+
+
+### Performance Improvements
+
+* avoid full-source replay for grammar-state continuation ([8fe1a02](https://github.com/sebastian-software/ferriki/commit/8fe1a025753156456f853c530a10783ad69d7e03))
+* **textmate:** keep compiled grammars a registration doesn't affect ([39bdc9d](https://github.com/sebastian-software/ferriki/commit/39bdc9d1ed4f42291ace4815825ae71aa195e713))
+* **textmate:** share static backreference patterns through the scanner cache ([2beec03](https://github.com/sebastian-software/ferriki/commit/2beec031750f3c0c00bbf9518546399ab82d6bcc))
+* **textmate:** stop copying repositories and hashing sources during grammar builds ([3a4afa3](https://github.com/sebastian-software/ferriki/commit/3a4afa34d76044a0650890fbc9f61734ab7152c5))
+
 ## [1.1.2](https://github.com/sebastian-software/ferriki/compare/v1.1.1...v1.1.2) (2026-10-20)
 
 
