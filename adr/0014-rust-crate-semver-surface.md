@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-10-22
 
 ## Context
 
@@ -74,6 +74,14 @@ Each crate publishes a deliberate, curated surface.
   without exposing Ferroni types, and report only scanners compiled so far by
   lazy tokenization; they do not provide a complete grammar lint. Both
   `ferriki-textmate::Grammar` and `ferriki::Highlighter` expose a snapshot.
+- **Precompiled scanner archives.** `SyncRegistry::export_precompiled_patterns`,
+  `SyncRegistry::add_precompiled_patterns` and `Grammar::compile_all_scanners`
+  are documented `ferriki-textmate` extensions with the usual semver
+  guarantee; `ferriki-asset-gen` and `ferriki` will call them (#325). The
+  archive bytes are Ferroni's format: `PRECOMPILED_PATTERNS_FORMAT_VERSION`
+  names it and may change in any release, and readers reject other versions
+  instead of migrating them. Errors surface as the crate-owned
+  `PrecompiledPatternsError`, so no Ferroni type enters a public signature.
 - **Common traits.** Public types implement `Debug`, and `Clone` and
   `PartialEq` where the data allows; types that hold large payloads implement
   `Debug` by hand without printing them.
@@ -150,3 +158,4 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
 - 2026-10-11: Adds the released Rust semver baseline and explicit major-release policy (#254).
 - 2026-10-21: Adds the versioned serializable TextMate continuation snapshot API used by Node grammar state (#291).
+- 2026-10-22: Adds the precompiled scanner archive API to `ferriki-textmate` (#325).

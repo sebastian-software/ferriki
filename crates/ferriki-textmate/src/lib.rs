@@ -96,3 +96,31 @@ impl std::error::Error for RegexError {
         Some(&self.source)
     }
 }
+
+/// Version of the precompiled scanner archive format that
+/// [`SyncRegistry::export_precompiled_patterns`] writes and
+/// [`SyncRegistry::add_precompiled_patterns`] reads. It changes independently
+/// of the crate version; an archive with another version is rejected.
+pub const PRECOMPILED_PATTERNS_FORMAT_VERSION: u32 = ferroni::scanner::PRECOMPILED_FORMAT_VERSION;
+
+/// A precompiled scanner archive that could not be written or opened,
+/// independent of the regex engine's API.
+#[derive(Debug)]
+pub struct PrecompiledPatternsError {
+    source: ferroni::scanner::PrecompiledError,
+}
+impl PrecompiledPatternsError {
+    pub(crate) fn new(source: ferroni::scanner::PrecompiledError) -> Self {
+        Self { source }
+    }
+}
+impl std::fmt::Display for PrecompiledPatternsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.source.fmt(f)
+    }
+}
+impl std::error::Error for PrecompiledPatternsError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.source)
+    }
+}

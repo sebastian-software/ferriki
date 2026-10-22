@@ -24,3 +24,10 @@ does not break consumers. Input and result types are `#[non_exhaustive]`:
 build input types from `Default` with their `with_*` setters and read results
 through their public fields. The `__oracle` module exists only for the
 vscode-textmate oracle tests and carries no semver guarantee.
+
+Ferriki extensions beyond upstream include precompiled scanner archives:
+`SyncRegistry::export_precompiled_patterns` writes the patterns a registry has
+compiled, `Grammar::compile_all_scanners` compiles a whole grammar first, and
+`SyncRegistry::add_precompiled_patterns` attaches an archive that later
+registries consult before compiling. A missing or incompatible entry compiles
+from its text, so tokens never depend on an archive.
