@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
-import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, open, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ import { createHighlighter, createHighlighterCoreSync } from "../ferriki/index.m
 
 import { loadFerrikiNativeBinding } from "../ferriki/native.mjs";
 import { payloadPath } from "../ferriki/scripts/asset-path.mjs";
-import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
+import { createAssetDownloader, matchesCachedAsset } from "../ferriki/src/asset-download.mjs";
 
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
 const repoAssets = fileURLToPath(new URL("../../assets/standard/", import.meta.url));
@@ -104,6 +104,43 @@ try {
   const cacheDir = join(tempRoot, "cache");
   const native = createNative({ remote: true, baseUrl, cacheDir });
   const download = createAssetDownloader(native);
+
+  const collisionAsset = release.assets["themes/nord.fktheme"];
+  const collisionDescriptor = {
+    size: collisionAsset.size,
+    digest: collisionAsset.sha256,
+  };
+  const collisionPath = join(tempRoot, "collision-cache-entry");
+  const collisionBytes = await readFile(join(repoAssets, "themes/nord.fktheme"));
+  await writeFile(collisionPath, collisionBytes);
+  assert.equal(
+    await matchesCachedAsset(collisionPath, collisionDescriptor),
+    true,
+    "a valid concurrent cache winner passes digest verification",
+  );
+  const wrongSizeBytes = Buffer.from(collisionBytes);
+  wrongSizeBytes[0] ^= 0xff;
+  await writeFile(collisionPath, wrongSizeBytes);
+  assert.equal(
+    await matchesCachedAsset(collisionPath, collisionDescriptor),
+    false,
+    "a same-size corrupt cache winner fails digest verification",
+  );
+  await writeFile(collisionPath, collisionBytes.subarray(0, collisionBytes.length - 1));
+  assert.equal(
+    await matchesCachedAsset(collisionPath, collisionDescriptor),
+    false,
+    "a truncated cache winner fails its size check",
+  );
+  const sparseCollisionPath = join(tempRoot, "sparse-collision-cache-entry");
+  const sparseCollision = await open(sparseCollisionPath, "w");
+  await sparseCollision.truncate(collisionAsset.size + 64 * 1024 * 1024);
+  await sparseCollision.close();
+  assert.equal(
+    await matchesCachedAsset(sparseCollisionPath, collisionDescriptor),
+    false,
+    "an oversized sparse cache winner is rejected from metadata without reading it",
+  );
 
   assert.throws(
     () => native.loadStandardGrammar("vue"),

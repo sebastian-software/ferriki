@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -9,8 +10,7 @@ use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_
 
 use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_asset_settings};
 use crate::{
-    AssetDigest, AssetMetadata, AssetSource, DirectoryAssetSource, Error, ErrorKind, Result,
-    StandardAssetCatalogs,
+    AssetDigest, AssetMetadata, AssetSource, Error, ErrorKind, Result, StandardAssetCatalogs,
 };
 
 /// Settings supplied by the private N-API host. Unset fields use the same
@@ -118,19 +118,27 @@ impl NodeAssetHost {
     /// Catalogs read only the verified digest-addressed cache. Missing bytes
     /// stay an `AssetUnavailable` error on synchronous Node paths.
     pub fn catalogs(&self) -> Result<StandardAssetCatalogs> {
-        let paths_by_digest = self
+        let assets_by_digest = self
             .release
             .assets
             .iter()
-            .map(|(path, asset)| Ok((asset.sha256.parse::<AssetDigest>()?, path.clone())))
+            .map(|(path, asset)| {
+                Ok((
+                    asset.sha256.parse::<AssetDigest>()?,
+                    NodeCachedAsset {
+                        path: path.clone(),
+                        size: asset.size,
+                    },
+                ))
+            })
             .collect::<Result<HashMap<_, _>>>()?;
         StandardAssetCatalogs::from_release_manifest(
             &self.language_manifest,
             &self.theme_manifest,
             &self.release,
             NodeAssetSource {
-                directory: DirectoryAssetSource::new(self.settings.cache_dir.clone()),
-                paths_by_digest,
+                cache_dir: self.settings.cache_dir.clone(),
+                assets_by_digest,
             },
         )
     }
@@ -175,22 +183,16 @@ impl NodeAssetHost {
             let digest = AssetDigest::from_str(&asset.sha256)?;
             let metadata = AssetMetadata::new(digest.clone(), asset.size, asset.format_version);
             let cache_path = self.settings.cache_dir.join(digest.as_str());
-            match std::fs::read(&cache_path) {
-                Ok(bytes) => match metadata.verify(&bytes) {
+            match read_cache_entry(&cache_path, digest.as_str(), asset.size)? {
+                CacheRead::Bytes(bytes) => match metadata.verify(&bytes) {
                     Ok(()) => continue,
                     Err(error) if error.kind() == ErrorKind::AssetIntegrity => {
                         remove_corrupt_cache_entry(&cache_path)?;
                     }
                     Err(error) => return Err(error),
                 },
-                Err(source) if source.kind() == std::io::ErrorKind::NotFound => {}
-                Err(source) => {
-                    return Err(Error::new(
-                        ErrorKind::AssetIo,
-                        format!("Cannot read asset {} from the cache.", digest.as_str()),
-                    )
-                    .with_source(source));
-                }
+                CacheRead::Missing => {}
+                CacheRead::WrongSize => remove_corrupt_cache_entry(&cache_path)?,
             }
 
             if !self.settings.remote {
@@ -219,32 +221,115 @@ impl NodeAssetHost {
     }
 }
 
+struct NodeCachedAsset {
+    path: String,
+    size: u64,
+}
+
 struct NodeAssetSource {
-    directory: DirectoryAssetSource,
-    paths_by_digest: HashMap<AssetDigest, String>,
+    cache_dir: PathBuf,
+    assets_by_digest: HashMap<AssetDigest, NodeCachedAsset>,
 }
 
 impl AssetSource for NodeAssetSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
-        match self.directory.read(digest) {
-            Ok(bytes) => Ok(bytes),
-            Err(error) if error.kind() == ErrorKind::AssetUnavailable => {
-                let path = self
-                    .paths_by_digest
-                    .get(digest)
-                    .map_or(digest.as_str(), String::as_str);
-                Err(Error::new(
-                    ErrorKind::AssetUnavailable,
-                    format!(
-                        "Asset {path} is not cached in {}. Load it through the asynchronous \
-                         createHighlighter, loadLanguage or loadTheme path first, or pre-populate the cache.",
-                        self.directory.root().display()
-                    ),
-                ))
-            }
-            Err(error) => Err(error),
+        let Some(asset) = self.assets_by_digest.get(digest) else {
+            return Err(Error::new(
+                ErrorKind::AssetUnavailable,
+                format!("Asset {} is not part of this release.", digest.as_str()),
+            ));
+        };
+        let cache_path = self.cache_dir.join(digest.as_str());
+        match read_cache_entry(&cache_path, digest.as_str(), asset.size)? {
+            CacheRead::Bytes(bytes) => Ok(Cow::Owned(bytes)),
+            CacheRead::WrongSize => Err(Error::new(
+                ErrorKind::AssetIntegrity,
+                format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    digest.as_str()
+                ),
+            )),
+            CacheRead::Missing => Err(Error::new(
+                ErrorKind::AssetUnavailable,
+                format!(
+                    "Asset {} is not cached in {}. Load it through the asynchronous \
+                     createHighlighter, loadLanguage or loadTheme path first, or pre-populate the cache.",
+                    asset.path,
+                    self.cache_dir.display()
+                ),
+            )),
         }
     }
+}
+
+enum CacheRead {
+    Missing,
+    WrongSize,
+    Bytes(Vec<u8>),
+}
+
+/// Checks the opened file's manifest-pinned size before allocating its bytes,
+/// then caps the read in case the cache entry grows after the metadata check.
+fn read_cache_entry(path: &Path, digest: &str, expected_size: u64) -> Result<CacheRead> {
+    let file = match std::fs::File::open(path) {
+        Ok(file) => file,
+        Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(CacheRead::Missing);
+        }
+        Err(source) => {
+            return Err(Error::new(
+                ErrorKind::AssetIo,
+                format!("Cannot read asset {digest} from the cache."),
+            )
+            .with_source(source));
+        }
+    };
+    let file_metadata = file.metadata().map_err(|source| {
+        Error::new(
+            ErrorKind::AssetIo,
+            format!("Cannot read asset {digest} from the cache."),
+        )
+        .with_source(source)
+    })?;
+    if !file_metadata.is_file() {
+        return Err(Error::new(
+            ErrorKind::AssetIo,
+            format!("Cannot read asset {digest} from the cache: expected a regular file."),
+        ));
+    }
+    if file_metadata.len() != expected_size {
+        drop(file);
+        return Ok(CacheRead::WrongSize);
+    }
+
+    let capacity = usize::try_from(expected_size).map_err(|source| {
+        Error::new(
+            ErrorKind::AssetIo,
+            format!("Cannot read asset {digest} from the cache."),
+        )
+        .with_source(source)
+    })?;
+    let mut bytes = Vec::new();
+    bytes.try_reserve_exact(capacity).map_err(|source| {
+        Error::new(
+            ErrorKind::AssetIo,
+            format!("Cannot allocate cached asset {digest}."),
+        )
+        .with_source(source)
+    })?;
+    let mut reader = file.take(expected_size.saturating_add(1));
+    reader.read_to_end(&mut bytes).map_err(|source| {
+        Error::new(
+            ErrorKind::AssetIo,
+            format!("Cannot read asset {digest} from the cache."),
+        )
+        .with_source(source)
+    })?;
+    drop(reader);
+    if bytes.len() as u64 != expected_size {
+        return Ok(CacheRead::WrongSize);
+    }
+    Ok(CacheRead::Bytes(bytes))
 }
 
 fn catalog_path(catalog: &str, file: &str) -> Result<String> {
@@ -380,5 +465,108 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&cache);
+    }
+
+    #[test]
+    fn planner_rejects_wrong_size_cache_entries_before_reading_them() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("wrong-size-cache");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let host = host(&root, &cache);
+        let asset = host
+            .release
+            .assets
+            .get("themes/nord.fktheme")
+            .expect("nord metadata");
+        let cache_path = cache.join(&asset.sha256);
+
+        let sparse = std::fs::File::create(&cache_path).expect("cache entry");
+        sparse
+            .set_len(asset.size + 64 * 1024 * 1024)
+            .expect("sparse oversized cache entry");
+        drop(sparse);
+
+        let plan = host
+            .plan(&[], &["nord".to_owned()])
+            .expect("oversized cache entry becomes a miss");
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].path, "themes/nord.fktheme");
+        assert!(
+            !cache_path.exists(),
+            "oversized entry is removed for refetch"
+        );
+
+        let expected = std::fs::read(source.join("themes/nord.fktheme")).expect("theme bytes");
+        std::fs::write(&cache_path, &expected[..expected.len() - 1])
+            .expect("truncated cache entry");
+        let plan = host
+            .plan(&[], &["nord".to_owned()])
+            .expect("truncated cache entry becomes a miss");
+        assert_eq!(plan.len(), 1);
+        assert!(
+            !cache_path.exists(),
+            "truncated entry is removed for refetch"
+        );
+
+        let mut same_size_corrupt = expected;
+        same_size_corrupt[0] ^= 0xff;
+        std::fs::write(&cache_path, &same_size_corrupt).expect("same-size corrupt cache entry");
+        let plan = host
+            .plan(&[], &["nord".to_owned()])
+            .expect("digest mismatch becomes a miss");
+        assert_eq!(plan.len(), 1);
+        assert!(
+            !cache_path.exists(),
+            "digest-mismatched entry is removed for refetch"
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&cache);
+    }
+
+    #[test]
+    fn synchronous_node_cache_reads_bound_size_and_load_valid_assets() {
+        let (source, root) = fixture_root();
+        let valid_cache = temp_dir("sync-valid-cache");
+        std::fs::create_dir_all(&valid_cache).expect("valid cache directory");
+        let asset_path = "themes/nord.fktheme";
+        let bytes = std::fs::read(source.join(asset_path)).expect("theme bytes");
+        let asset = host(&root, &valid_cache)
+            .release
+            .assets
+            .get(asset_path)
+            .expect("nord metadata")
+            .clone();
+        std::fs::write(valid_cache.join(&asset.sha256), &bytes).expect("valid cache entry");
+
+        let catalogs = host(&root, &valid_cache).catalogs().expect("catalogs");
+        catalogs
+            .themes
+            .load_asset("nord")
+            .expect("verified cached theme");
+
+        let oversized_cache = temp_dir("sync-oversized-cache");
+        std::fs::create_dir_all(&oversized_cache).expect("oversized cache directory");
+        let cache_path = oversized_cache.join(&asset.sha256);
+        let sparse = std::fs::File::create(&cache_path).expect("cache entry");
+        sparse
+            .set_len(asset.size + 64 * 1024 * 1024)
+            .expect("sparse oversized cache entry");
+        drop(sparse);
+
+        let catalogs = host(&root, &oversized_cache).catalogs().expect("catalogs");
+        let error = catalogs
+            .themes
+            .load_asset("nord")
+            .expect_err("oversized cache entry fails before decoding");
+        assert_eq!(error.kind(), ErrorKind::AssetIntegrity);
+        assert!(
+            cache_path.exists(),
+            "synchronous loads leave cache repair to planning"
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&valid_cache);
+        let _ = std::fs::remove_dir_all(&oversized_cache);
     }
 }

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, readFile, rename, rm } from "node:fs/promises";
+import { mkdir, open, rename, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { Readable, Transform } from "node:stream";
@@ -110,9 +110,7 @@ async function downloadAsset(asset, target) {
       // Another process can finish the same immutable digest between planning
       // and rename. Reuse it only if it is the exact pinned payload.
       if (!isAlreadyPresent(error)) throw error;
-      const cached = await readFile(target);
-      const cachedDigest = createHash("sha256").update(cached).digest("hex");
-      if (cached.byteLength !== asset.size || cachedDigest !== asset.digest) {
+      if (!(await matchesCachedAsset(target, asset))) {
         await rm(target, { force: true });
         await rename(temporary, target);
       }
@@ -121,6 +119,31 @@ async function downloadAsset(asset, target) {
     // A successful rename consumes the temporary path. On a concurrent-cache
     // hit, this also removes the redundant file left by our completed download.
     await rm(temporary, { force: true });
+  }
+}
+
+/** Checks a concurrent cache winner without reading beyond its pinned size. */
+export async function matchesCachedAsset(target, asset) {
+  const file = await open(target, "r");
+  try {
+    const metadata = await file.stat();
+    if (!metadata.isFile() || metadata.size !== asset.size) return false;
+
+    const hash = createHash("sha256");
+    let size = 0;
+    const stream = file.createReadStream({
+      start: 0,
+      end: asset.size,
+      autoClose: false,
+    });
+    for await (const chunk of stream) {
+      size += chunk.byteLength;
+      if (size > asset.size) return false;
+      hash.update(chunk);
+    }
+    return size === asset.size && hash.digest("hex") === asset.digest;
+  } finally {
+    await file.close();
   }
 }
 
