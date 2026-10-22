@@ -151,7 +151,7 @@ export function createHighlighterCoreSync(options = {}) {
     const registrations = await resolveRegistrations(inputs);
     const names = registrations.flatMap((registration) =>
       isCustomLanguageRegistration(registration)
-        ? [...(registration.embeddedLangs || []), ...(registration.embeddedLanguages || [])]
+        ? (registration.embeddedLanguages ?? registration.embeddedLangs ?? [])
         : [resolveAlias(registrationName(registration))],
     );
     await prefetchAssets(names, []);
