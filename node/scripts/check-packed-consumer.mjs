@@ -277,10 +277,9 @@ void oneShot
     join(consumer, "node_modules", "@ferriki", "core", "README.md"),
     "utf8",
   );
-  const { description } = packageManifest;
   assert(
-    installedReadme.replace(/\s+/g, " ").includes(`Ferriki is ${description}`),
-    `packed README was not installed, or its tagline no longer matches the package description: ${description}`,
+    installedReadme === (await readFile(join(packageRoot, "README.md"), "utf8")),
+    "packed README does not match the package source README",
   );
   console.log(
     `Ferriki packed consumer verified (${metadata.filename}, ${metadata.unpackedSize} bytes unpacked, ${files.size} files)`,

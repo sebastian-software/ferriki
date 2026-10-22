@@ -28,9 +28,9 @@ lowered:
 
 ```js
 // vite.config.js
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import { ferriki } from "@ferriki/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [ferriki({ theme: "github-dark-default" }), react()],
@@ -146,8 +146,8 @@ It receives `{ code, className, theme, maxLines }` and runs during application
 rendering, not compilation:
 
 ```tsx
-import { Code } from "@ferriki/core/react/macro";
 import type { CodeRenderProps } from "@ferriki/core/react/macro";
+import { Code } from "@ferriki/core/react/macro";
 
 function CodeBlock({ code, className }: CodeRenderProps) {
   return (
@@ -186,7 +186,6 @@ the notation helpers from `@shikijs/transformers` work with `transformers`:
 
 ```js
 // vite.config.js
-import { defineConfig } from "vite";
 import { ferriki } from "@ferriki/vite";
 import {
   transformerNotationDiff,
@@ -194,6 +193,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
