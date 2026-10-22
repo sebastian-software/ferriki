@@ -864,10 +864,7 @@ impl HighlighterCore {
         let mut output_lines = Vec::new();
 
         for (line, line_offset) in split_lines(code) {
-            if line.is_empty() {
-                output_lines.push(Vec::new());
-                continue;
-            }
+            // Empty lines still advance TextMate rules, even though they emit no output tokens.
             let line_length = line.encode_utf16().count();
             if options.max_line_length > 0 && line_length >= options.max_line_length {
                 output_lines.push(vec![HighlightToken {
@@ -1442,6 +1439,49 @@ mod tests {
         assert_eq!(result.tokens[0][0].color, None);
         assert_eq!(result.tokens[0][0].font_style, None);
         assert!(result.tokens[1].is_empty());
+    }
+
+    #[test]
+    fn continuation_after_empty_line_matches_textmate_state_advancement() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        highlighter
+            .register_theme(parse_theme_data("blank-end-theme", "{}").expect("theme"))
+            .expect("theme registration");
+        let raw = parse_raw_grammar(
+            r#"{"scopeName":"source.blank-end","patterns":[{"begin":"BEGIN","end":"^$","name":"meta.block"}]}"#,
+            Some("blank-end.json"),
+        )
+        .expect("grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("blank-end", raw))
+            .expect("grammar registration");
+        let grammar = highlighter
+            .grammar_for_language("blank-end")
+            .expect("compiled grammar")
+            .expect("registered grammar");
+
+        let opened = grammar
+            .tokenize_line2("BEGIN", None, 0)
+            .expect("begin line");
+        let expected = grammar
+            .tokenize_line2("", Some(opened.rule_stack), 0)
+            .expect("empty line")
+            .rule_stack;
+        let expected = grammar
+            .serialize_state_stack(Some(&expected))
+            .expect("serialized lower-level state");
+
+        let (_, actual) = highlighter
+            .tokenize_with_grammar_state(
+                "BEGIN\n",
+                "blank-end",
+                "blank-end-theme",
+                &unlimited_tokenize_options(),
+                None,
+                true,
+            )
+            .expect("high-level continuation");
+        assert_eq!(actual.as_deref(), Some(expected.as_str()));
     }
 
     #[test]
