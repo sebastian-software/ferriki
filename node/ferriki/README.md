@@ -67,10 +67,11 @@ Run `node highlight.mjs`, then open `highlighted.html`. The one-shot API loads
 the language and theme on first use and reuses a process-local highlighter on
 later calls.
 
-## Measured results
+## Retained Shiki comparisons
 
-On our measured 14-file Blacksmith corpus, a reused Ferriki highlighter produced
-the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
+These captures used Ferriki 1.1.1 and Ferroni 2.2.2, before prepared regex
+packages. On that 14-file Blacksmith corpus, a reused Ferriki highlighter
+produced the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
 faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
 for hosts, conditions, first-use timings, and raw results.
 

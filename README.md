@@ -103,8 +103,9 @@ try {
 }
 ```
 
-On our measured 14-file Blacksmith corpus, a reused highlighter produced the
-same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
+The retained Shiki comparisons below used Ferriki 1.1.1 and Ferroni 2.2.2,
+before prepared regex packages. On that 14-file Blacksmith corpus, a reused
+highlighter produced the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
 faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
 for hosts, conditions, first-use timings, and raw results.
 
