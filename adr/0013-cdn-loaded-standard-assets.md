@@ -141,6 +141,9 @@ local build artifacts, not committed repository data.
 
 ## History
 
+- 2026-10-24: Allow assets-only publication to rebuild new payloads from pinned
+  sources, verifying the reviewed lock before uploading missing CDN objects.
+
 - 2026-10-24: Version the optional program/Eager container independently;
   standard CDN objects carry prepared Eager groups in Zstd containers (ADR 0021).
 

@@ -430,6 +430,46 @@ impl Grammar {
         }
     }
 
+    /// Ferriki extension: compiles the scanners of every rule this grammar
+    /// can reach, in every `\A`/`\G` variant, without tokenizing. Use it
+    /// before [`SyncRegistry::export_precompiled_patterns`] so an archive
+    /// covers the whole grammar rather than the input seen so far.
+    ///
+    /// Lists that end or continue with a pattern resolved from begin captures
+    /// are skipped: they bypass the shared cache and are rebuilt per match.
+    /// Every other list is attempted even after a failure; the first regex
+    /// error is returned. Backtracking warnings of the compiled scanners are
+    /// recorded as tokenization would record them.
+    ///
+    /// [`SyncRegistry::export_precompiled_patterns`]: crate::SyncRegistry::export_precompiled_patterns
+    pub fn compile_all_scanners(&self) -> Result<(), RegexError> {
+        let mut first_error = None;
+        for rule in self.registry.rules() {
+            if matches!(rule, Rule::Capture(_))
+                || matches!(rule, Rule::BeginEnd(begin_end) if begin_end.end_has_back_references)
+            {
+                continue;
+            }
+            for (allow_a, allow_g) in [(true, true), (true, false), (false, true), (false, false)] {
+                if let Err(error) = rule.compile_ag(&self.registry, None, allow_a, allow_g) {
+                    first_error.get_or_insert(error);
+                }
+                if let Rule::BeginWhile(begin_while) = rule
+                    && !begin_while.while_has_back_references
+                    && let Err(error) = begin_while.compile_while_ag_and_record(
+                        &self.registry,
+                        None,
+                        allow_a,
+                        allow_g,
+                    )
+                {
+                    first_error.get_or_insert(error);
+                }
+            }
+        }
+        first_error.map_or(Ok(()), Err)
+    }
+
     #[must_use]
     pub fn root_scope_name(&self) -> &str {
         &self.root_scope_name

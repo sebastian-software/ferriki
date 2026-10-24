@@ -40,3 +40,11 @@ groups. Empty samples prepare all statically known scanner lists instead.
 Standard Ferriki sidecars use this complete static preparation and Zstd transport.
 Captured end/while expansions retain their runtime behavior. Measure loading,
 first use and execution separately; search scratch and transition caches stay local.
+
+The ordinary program-only API remains available:
+`Grammar::compile_all_scanners()` prepares reachable rules,
+`SyncRegistry::export_precompiled_patterns()` exports raw programs, and
+`SyncRegistry::add_precompiled_patterns()` accepts the resulting bytes or an
+`Arc<[u8]>`. `PRECOMPILED_PATTERNS_FORMAT_VERSION` describes that raw format;
+`PRECOMPILED_PATTERNS_VERSION` separately describes the prepared container.
+Raw imports preserve the caller's acceleration policy.

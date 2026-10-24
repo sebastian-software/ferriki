@@ -50,7 +50,10 @@ Each crate publishes a deliberate, curated surface.
   remain crate-owned; Ferroni types stay private. Archive compatibility is
   independently versioned and source compilation remains available (ADR 0021).
   `SyncRegistry::precompile_patterns` additionally prepares static or sample-driven Eager
-  groups through the same owned byte/error boundary.
+  groups through the same owned byte/error boundary. The existing
+  `Grammar::compile_all_scanners`, `SyncRegistry::export_precompiled_patterns`,
+  raw `PRECOMPILED_PATTERNS_FORMAT_VERSION`, and `Into<Arc<[u8]>>` import contract
+  remain available alongside the prepared container API.
 - **Non-exhaustive by default.** Input types that callers build are
   `#[non_exhaustive]` and come with `Default` and `with_*` setters; a setter
   takes the field's type, `Option` included. Result types are
@@ -82,6 +85,14 @@ Each crate publishes a deliberate, curated surface.
   without exposing Ferroni types, and report only scanners compiled so far by
   lazy tokenization; they do not provide a complete grammar lint. Both
   `ferriki-textmate::Grammar` and `ferriki::Highlighter` expose a snapshot.
+- **Precompiled scanner archives.** `SyncRegistry::export_precompiled_patterns`,
+  `SyncRegistry::add_precompiled_patterns` and `Grammar::compile_all_scanners`
+  are documented `ferriki-textmate` extensions with the usual semver
+  guarantee; `ferriki-asset-gen` and `ferriki` will call them (#325). The
+  archive bytes are Ferroni's format: `PRECOMPILED_PATTERNS_FORMAT_VERSION`
+  names it and may change in any release, and readers reject other versions
+  instead of migrating them. Errors surface as the crate-owned
+  `PrecompiledPatternsError`, so no Ferroni type enters a public signature.
 - **Common traits.** Public types implement `Debug`, and `Clone` and
   `PartialEq` where the data allows; types that hold large payloads implement
   `Debug` by hand without printing them.
@@ -146,6 +157,9 @@ Each crate publishes a deliberate, curated surface.
 
 ## History
 
+- 2026-10-24: Preserve the ordinary raw archive API while accepting prepared
+  Eager containers through the same registry import method.
+
 - 2026-10-24: Define empty preparation samples as complete static scanner-list
   enumeration; nonempty samples retain encountered-group preparation.
 
@@ -167,3 +181,4 @@ Each crate publishes a deliberate, curated surface.
 - 2026-10-10: Records the complete native declarative HTML lane without changing callback or stable Rust API commitments.
 - 2026-10-11: Adds the released Rust semver baseline and explicit major-release policy (#254).
 - 2026-10-21: Adds the versioned serializable TextMate continuation snapshot API used by Node grammar state (#291).
+- 2026-10-22: Adds the precompiled scanner archive API to `ferriki-textmate` (#325).

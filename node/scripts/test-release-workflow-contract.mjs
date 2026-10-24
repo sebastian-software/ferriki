@@ -63,6 +63,20 @@ assert.throws(
   /workspace must use pnpm 10/,
 );
 
+assert.throws(
+  () =>
+    assertReleaseWorkflow({
+      workflow: workflow.replace(
+        "run: node scripts/rebuild-locked-assets.mjs",
+        "run: node --version",
+      ),
+      checklist,
+      releaseConfig,
+      nodePackage,
+    }),
+  /asset rebuild must verify the reviewed lock before upload/,
+);
+
 const concurrencyGroup = `  group: publish-\${{ github.repository }}\n`;
 assert.equal(workflow.split(concurrencyGroup).length - 1, 1);
 assert.throws(

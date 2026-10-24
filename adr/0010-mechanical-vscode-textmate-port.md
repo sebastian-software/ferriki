@@ -58,7 +58,8 @@ named `ferriki-textmate`.
   distribution contract.
   Prepared Eager pairs use the same cache with a root-specific group source;
   changing roots preserves decoded programs and groups. Standard sidecars enable
-  Eager from the first static scanner. Resolved dynamic lists still bypass sharing.
+  Eager from the first static scanner. Raw program archives remain registry-wide
+  and retain the caller's acceleration policy. Resolved dynamic lists still bypass sharing.
 - Upstream registers every grammar before it compiles one. Ferriki registers
   languages on demand, so `SyncRegistry` records which scopes and injection
   lists each compiled grammar read while compiling, including lookups that
@@ -158,3 +159,4 @@ this decision.
 - 2026-10-10: Shares Ferroni's scanner pattern cache across each `SyncRegistry`, while keeping resolved backreference patterns out of its retaining cache and recording the all-or-nothing API limitation (#230).
 - 2026-10-22: Narrows the cache bypass to lists holding a resolved end or while pattern; static backreference patterns now share the cache, cutting first-use time for grammars such as C++, PHP and Swift.
 - 2026-10-22: Registering a grammar or changing an injection list drops only the compiled grammars that read that scope, and the shared scanner pattern cache survives invalidation.
+- 2026-10-22: Adds precompiled scanner archive export and attach to `SyncRegistry`, and `Grammar::compile_all_scanners` (#325).

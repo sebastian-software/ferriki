@@ -69,6 +69,12 @@ checksummed Zstd level-19 frame with an 8 MiB maximum window. Its decoded layout
 | Programs         | Ferroni program archive v2                |
 | Groups           | Matched Ferroni portable Eager archive v3 |
 
+`SyncRegistry::add_precompiled_patterns` also accepts ordinary uncompressed
+program archives from `export_precompiled_patterns`; their raw version is
+`PRECOMPILED_PATTERNS_FORMAT_VERSION`. They retain registry-wide program reuse
+without selecting prepared Eager groups. Standard `.fkbc` objects use the
+versioned container described here.
+
 The payload uses direct byte slices, without postcard's element-by-element byte
 vector codec. The runtime opens the matched pair once and lets Ferroni lazily
 validate and decode requested records. It bounds the decoded payload to 512 MiB,

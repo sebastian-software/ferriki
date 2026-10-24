@@ -27,8 +27,11 @@ pub(crate) struct PreparedArchive {
     pub(crate) eager: PrecompiledEager,
 }
 
-pub(crate) fn open_archive(bytes: Vec<u8>) -> Result<PreparedArchive, PrecompiledPatternsError> {
-    let size = zstd::zstd_safe::get_frame_content_size(&bytes)
+pub(crate) fn open_archive(
+    bytes: impl AsRef<[u8]>,
+) -> Result<PreparedArchive, PrecompiledPatternsError> {
+    let bytes = bytes.as_ref();
+    let size = zstd::zstd_safe::get_frame_content_size(bytes)
         .map_err(|_| PrecompiledPatternsError::new("invalid Zstd frame"))?
         .filter(|size| *size <= MAX_ARCHIVE_BYTES)
         .ok_or_else(|| PrecompiledPatternsError::new("missing or excessive archive size"))?;
@@ -49,7 +52,7 @@ pub(crate) fn open_archive(bytes: Vec<u8>) -> Result<PreparedArchive, Precompile
             "Zstd archive window exceeds 8 MiB",
         ));
     }
-    if zstd::zstd_safe::find_frame_compressed_size(&bytes).map_err(PrecompiledPatternsError::new)?
+    if zstd::zstd_safe::find_frame_compressed_size(bytes).map_err(PrecompiledPatternsError::new)?
         != bytes.len()
     {
         return Err(PrecompiledPatternsError::new(
@@ -61,7 +64,7 @@ pub(crate) fn open_archive(bytes: Vec<u8>) -> Result<PreparedArchive, Precompile
         .set_parameter(zstd::zstd_safe::DParameter::WindowLogMax(23))
         .map_err(PrecompiledPatternsError::new)?;
     let decoded = decoder
-        .decompress(&bytes, size as usize)
+        .decompress(bytes, size as usize)
         .map_err(PrecompiledPatternsError::new)?;
     if decoded.len() as u64 != size || decoded.len() < 32 || &decoded[..8] != MAGIC {
         return Err(PrecompiledPatternsError::new(
@@ -88,25 +91,51 @@ pub(crate) fn open_archive(bytes: Vec<u8>) -> Result<PreparedArchive, Precompile
         .to_owned();
     let eager =
         PrecompiledEager::from_bytes(&decoded[scope_end..program_end], &decoded[program_end..])
-            .map_err(PrecompiledPatternsError::new)?;
+            .map_err(PrecompiledPatternsError::from_engine)?;
     Ok(PreparedArchive { scope, eager })
 }
 
 /// A failure to generate or open a precompiled pattern archive.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PrecompiledPatternsError(String);
+#[derive(Clone, Debug)]
+pub struct PrecompiledPatternsError {
+    message: String,
+    source: Option<Arc<ferroni::scanner::PrecompiledError>>,
+}
+
+impl PartialEq for PrecompiledPatternsError {
+    fn eq(&self, other: &Self) -> bool {
+        self.message == other.message
+    }
+}
+impl Eq for PrecompiledPatternsError {}
 
 impl std::fmt::Display for PrecompiledPatternsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        self.message.fmt(f)
     }
 }
 
-impl std::error::Error for PrecompiledPatternsError {}
+impl std::error::Error for PrecompiledPatternsError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source
+            .as_deref()
+            .map(|source| source as &dyn std::error::Error)
+    }
+}
 
 impl PrecompiledPatternsError {
     pub(crate) fn new(error: impl std::fmt::Display) -> Self {
-        Self(error.to_string())
+        Self {
+            message: error.to_string(),
+            source: None,
+        }
+    }
+
+    pub(crate) fn from_engine(error: ferroni::scanner::PrecompiledError) -> Self {
+        Self {
+            message: error.to_string(),
+            source: Some(Arc::new(error)),
+        }
     }
 }
 
@@ -175,7 +204,7 @@ pub(crate) fn prepare(
     let prepared = cache.export_prepared()?;
     prepared
         .validate_groups()
-        .map_err(PrecompiledPatternsError::new)?;
+        .map_err(PrecompiledPatternsError::from_engine)?;
     let scope = raw.scope_name.as_bytes();
     let mut bytes = Vec::with_capacity(
         32 + scope.len() + prepared.program_bytes().len() + prepared.group_bytes().len(),
@@ -510,7 +539,7 @@ mod tests {
         let middle = corrupt.len() / 2;
         corrupt[middle] ^= 0xff;
         assert!(open_archive(corrupt).is_err());
-        assert!(open_archive(archive[..archive.len() - 1].to_vec()).is_err());
+        assert!(open_archive(&archive[..archive.len() - 1]).is_err());
     }
 
     #[test]

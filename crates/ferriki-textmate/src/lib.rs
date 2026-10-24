@@ -102,3 +102,9 @@ impl std::error::Error for RegexError {
         Some(&self.source)
     }
 }
+
+/// Version of the precompiled scanner archive format that
+/// [`SyncRegistry::export_precompiled_patterns`] writes and
+/// [`SyncRegistry::add_precompiled_patterns`] reads. It changes independently
+/// of the crate version; an archive with another version is rejected.
+pub const PRECOMPILED_PATTERNS_FORMAT_VERSION: u32 = ferroni::scanner::PRECOMPILED_FORMAT_VERSION;

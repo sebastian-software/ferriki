@@ -806,6 +806,10 @@ impl RuleRegistry {
         *slot = Some(rule);
     }
 
+    pub(crate) fn rules(&self) -> impl Iterator<Item = &Rule> {
+        self.rules.iter().flatten()
+    }
+
     #[must_use]
     pub(crate) fn get_rule(&self, id: RuleId) -> &Rule {
         self.try_get_rule(id)

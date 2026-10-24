@@ -64,7 +64,9 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   when samples are empty; nonempty samples prepare only encountered lists.
   Attaching a pair selects Eager for that root when prefiltering is enabled;
   missing groups use ordinary Eager fallback. Off remains Off. Program and group
-  types stay private behind stable `PrecompiledEager` APIs.
+  types stay private behind stable `PrecompiledEager` APIs. The registry importer
+  also retains ordinary raw-program archives and the existing `Into<Arc<[u8]>>`
+  signature, raw format constant, export method and full-scanner preparation API.
 - The objective is to reuse Eager preparation across fresh registries and
   processes, including successive builds and deployments. Generation performs
   reusable optimization once; a new consumer restores the prepared data instead

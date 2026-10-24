@@ -158,6 +158,23 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
   ])
     assert(workflow.includes(required), `release workflow is missing ${required}`);
 
+  const assetsJob = workflowJob(workflow, "publish-locked-assets");
+  assert.match(
+    workflow,
+    /rebuild-assets:/,
+    "asset publication must support rebuilding new locked payloads",
+  );
+  assert.match(
+    assetsJob,
+    /if: inputs\.rebuild-assets[\s\S]*run: node scripts\/rebuild-locked-assets\.mjs/,
+    "asset rebuild must verify the reviewed lock before upload",
+  );
+  assert(
+    assetsJob.indexOf("run: node scripts/rebuild-locked-assets.mjs") <
+      assetsJob.indexOf("run: node scripts/publish-assets.mjs"),
+    "locked asset rebuilding must precede publication",
+  );
+
   const cratesJob = workflowJob(workflow, "publish-crates");
   const gateJob = workflowJob(workflow, "verify-release-source");
   assert.match(

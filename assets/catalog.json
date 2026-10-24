@@ -41,13 +41,9 @@
         "asset_file": "angular-inline-style.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "scss"
-        ],
+        "embedded_langs": ["scss"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "source.ts.ng"
-        ]
+        "inject_to": ["source.ts.ng"]
       },
       {
         "id": "angular-inline-template",
@@ -55,14 +51,9 @@
         "asset_file": "angular-inline-template.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "angular-html",
-          "angular-template"
-        ],
+        "embedded_langs": ["angular-html", "angular-template"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "source.ts.ng"
-        ]
+        "inject_to": ["source.ts.ng"]
       },
       {
         "id": "angular-let-declaration",
@@ -70,15 +61,9 @@
         "asset_file": "angular-let-declaration.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "angular-expression"
-        ],
+        "embedded_langs": ["angular-expression"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "text.html.derivative",
-          "text.html.derivative.ng",
-          "source.ts.ng"
-        ]
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
       },
       {
         "id": "angular-template",
@@ -86,15 +71,9 @@
         "asset_file": "angular-template.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "angular-expression"
-        ],
+        "embedded_langs": ["angular-expression"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "text.html.derivative",
-          "text.html.derivative.ng",
-          "source.ts.ng"
-        ]
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
       },
       {
         "id": "angular-template-blocks",
@@ -102,16 +81,9 @@
         "asset_file": "angular-template-blocks.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "angular-expression",
-          "angular-template"
-        ],
+        "embedded_langs": ["angular-expression", "angular-template"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "text.html.derivative",
-          "text.html.derivative.ng",
-          "source.ts.ng"
-        ]
+        "inject_to": ["text.html.derivative", "text.html.derivative.ng", "source.ts.ng"]
       },
       {
         "id": "angular-ts",
@@ -148,19 +120,8 @@
         "asset_file": "astro.fkgram",
         "display_name": "Astro",
         "aliases": [],
-        "embedded_langs": [
-          "json",
-          "javascript",
-          "typescript",
-          "css",
-          "postcss",
-          "tsx"
-        ],
-        "embedded_langs_lazy": [
-          "sass",
-          "scss",
-          "less"
-        ],
+        "embedded_langs": ["json", "javascript", "typescript", "css", "postcss", "tsx"],
+        "embedded_langs_lazy": ["sass", "scss", "less"],
         "inject_to": []
       },
       {
@@ -178,9 +139,7 @@
         "scope_name": "source.clojure",
         "asset_file": "clojure.fkgram",
         "display_name": "Clojure",
-        "aliases": [
-          "clj"
-        ],
+        "aliases": ["clj"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -200,13 +159,8 @@
         "scope_name": "source.cpp",
         "asset_file": "cpp.fkgram",
         "display_name": "C++",
-        "aliases": [
-          "c++"
-        ],
-        "embedded_langs": [
-          "cpp-macro",
-          "regexp"
-        ],
+        "aliases": ["c++"],
+        "embedded_langs": ["cpp-macro", "regexp"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -216,10 +170,7 @@
         "asset_file": "cpp-macro.fkgram",
         "display_name": "C++",
         "aliases": [],
-        "embedded_langs": [
-          "regexp",
-          "cpp"
-        ],
+        "embedded_langs": ["regexp", "cpp"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -228,10 +179,7 @@
         "scope_name": "source.cs",
         "asset_file": "csharp.fkgram",
         "display_name": "C#",
-        "aliases": [
-          "c#",
-          "cs"
-        ],
+        "aliases": ["c#", "cs"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -252,10 +200,7 @@
         "asset_file": "css-styled.fkgram",
         "display_name": "CSS-in-JS declaration support",
         "aliases": [],
-        "embedded_langs": [
-          "css",
-          "typescript"
-        ],
+        "embedded_langs": ["css", "typescript"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -284,9 +229,7 @@
         "scope_name": "source.dockerfile",
         "asset_file": "docker.fkgram",
         "display_name": "Dockerfile",
-        "aliases": [
-          "dockerfile"
-        ],
+        "aliases": ["dockerfile"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -306,14 +249,8 @@
         "scope_name": "source.elixir",
         "asset_file": "elixir.fkgram",
         "display_name": "Elixir",
-        "aliases": [
-          "ex",
-          "exs"
-        ],
-        "embedded_langs": [
-          "eex",
-          "html"
-        ],
+        "aliases": ["ex", "exs"],
+        "embedded_langs": ["eex", "html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -323,10 +260,7 @@
         "asset_file": "es-tag-css.fkgram",
         "display_name": "CSS-in-JS",
         "aliases": [],
-        "embedded_langs": [
-          "typescript",
-          "css-styled"
-        ],
+        "embedded_langs": ["typescript", "css-styled"],
         "embedded_langs_lazy": [],
         "inject_to": [
           "source.js",
@@ -350,10 +284,7 @@
         "asset_file": "es-tag-html.fkgram",
         "display_name": "HTML and SVG tagged templates",
         "aliases": [],
-        "embedded_langs": [
-          "typescript",
-          "html"
-        ],
+        "embedded_langs": ["typescript", "html"],
         "embedded_langs_lazy": [],
         "inject_to": [
           "source.js",
@@ -376,9 +307,7 @@
         "scope_name": "source.gdscript",
         "asset_file": "gdscript.fkgram",
         "display_name": "GDScript",
-        "aliases": [
-          "gd"
-        ],
+        "aliases": ["gd"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -398,15 +327,8 @@
         "scope_name": "source.gjs",
         "asset_file": "glimmer-js.fkgram",
         "display_name": "Glimmer JS",
-        "aliases": [
-          "gjs"
-        ],
-        "embedded_langs": [
-          "javascript",
-          "css",
-          "html",
-          "typescript"
-        ],
+        "aliases": ["gjs"],
+        "embedded_langs": ["javascript", "css", "html", "typescript"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -415,15 +337,8 @@
         "scope_name": "source.gts",
         "asset_file": "glimmer-ts.fkgram",
         "display_name": "Glimmer TS",
-        "aliases": [
-          "gts"
-        ],
-        "embedded_langs": [
-          "typescript",
-          "css",
-          "html",
-          "javascript"
-        ],
+        "aliases": ["gts"],
+        "embedded_langs": ["typescript", "css", "html", "javascript"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -442,15 +357,8 @@
         "scope_name": "source.graphql",
         "asset_file": "graphql.fkgram",
         "display_name": "GraphQL",
-        "aliases": [
-          "gql"
-        ],
-        "embedded_langs": [
-          "javascript",
-          "typescript",
-          "jsx",
-          "tsx"
-        ],
+        "aliases": ["gql"],
+        "embedded_langs": ["javascript", "typescript", "jsx", "tsx"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -460,15 +368,8 @@
         "asset_file": "haml.fkgram",
         "display_name": "Ruby Haml",
         "aliases": [],
-        "embedded_langs": [
-          "javascript",
-          "css"
-        ],
-        "embedded_langs_lazy": [
-          "ruby",
-          "sass",
-          "markdown"
-        ],
+        "embedded_langs": ["javascript", "css"],
+        "embedded_langs_lazy": ["ruby", "sass", "markdown"],
         "inject_to": []
       },
       {
@@ -476,16 +377,8 @@
         "scope_name": "text.html.handlebars",
         "asset_file": "handlebars.fkgram",
         "display_name": "Handlebars",
-        "aliases": [
-          "hbs",
-          "hjs"
-        ],
-        "embedded_langs": [
-          "html",
-          "css",
-          "javascript",
-          "yaml"
-        ],
+        "aliases": ["hbs", "hjs"],
+        "embedded_langs": ["html", "css", "javascript", "yaml"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -494,12 +387,8 @@
         "scope_name": "source.haskell",
         "asset_file": "haskell.fkgram",
         "display_name": "Haskell",
-        "aliases": [
-          "hs"
-        ],
-        "embedded_langs": [
-          "annotation-liquidhaskell-haskell"
-        ],
+        "aliases": ["hs"],
+        "embedded_langs": ["annotation-liquidhaskell-haskell"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -519,10 +408,7 @@
         "asset_file": "html.fkgram",
         "display_name": "HTML",
         "aliases": [],
-        "embedded_langs": [
-          "javascript",
-          "css"
-        ],
+        "embedded_langs": ["javascript", "css"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -532,9 +418,7 @@
         "asset_file": "html-derivative.fkgram",
         "display_name": "HTML (Derivative)",
         "aliases": [],
-        "embedded_langs": [
-          "html"
-        ],
+        "embedded_langs": ["html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -543,9 +427,7 @@
         "scope_name": "source.ini",
         "asset_file": "ini.fkgram",
         "display_name": "INI",
-        "aliases": [
-          "properties"
-        ],
+        "aliases": ["properties"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -565,15 +447,8 @@
         "scope_name": "source.js",
         "asset_file": "javascript.fkgram",
         "display_name": "JavaScript",
-        "aliases": [
-          "js",
-          "cjs",
-          "mjs"
-        ],
-        "embedded_langs": [
-          "es-tag-css",
-          "es-tag-html"
-        ],
+        "aliases": ["js", "cjs", "mjs"],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -593,9 +468,7 @@
         "asset_file": "jsdoc.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "javascript"
-        ],
+        "embedded_langs": ["javascript"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -615,13 +488,7 @@
         "asset_file": "json5.fkgram",
         "display_name": "JSON5",
         "aliases": [],
-        "embedded_langs": [
-          "graphql",
-          "html",
-          "js-regexp",
-          "jsdoc",
-          "sql"
-        ],
+        "embedded_langs": ["graphql", "html", "js-regexp", "jsdoc", "sql"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -641,10 +508,7 @@
         "asset_file": "jsx.fkgram",
         "display_name": "JSX",
         "aliases": [],
-        "embedded_langs": [
-          "es-tag-css",
-          "es-tag-html"
-        ],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -653,16 +517,8 @@
         "scope_name": "source.julia",
         "asset_file": "julia.fkgram",
         "display_name": "Julia",
-        "aliases": [
-          "jl"
-        ],
-        "embedded_langs": [
-          "cpp",
-          "python",
-          "javascript",
-          "r",
-          "sql"
-        ],
+        "aliases": ["jl"],
+        "embedded_langs": ["cpp", "python", "javascript", "r", "sql"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -671,10 +527,7 @@
         "scope_name": "source.kotlin",
         "asset_file": "kotlin.fkgram",
         "display_name": "Kotlin",
-        "aliases": [
-          "kt",
-          "kts"
-        ],
+        "aliases": ["kt", "kts"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -695,13 +548,7 @@
         "asset_file": "liquid.fkgram",
         "display_name": "Liquid",
         "aliases": [],
-        "embedded_langs": [
-          "html",
-          "css",
-          "json",
-          "javascript",
-          "liquid-injection"
-        ],
+        "embedded_langs": ["html", "css", "json", "javascript", "liquid-injection"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -711,16 +558,9 @@
         "asset_file": "liquid-injection.fkgram",
         "display_name": "Liquid embedded syntax",
         "aliases": [],
-        "embedded_langs": [
-          "html",
-          "css",
-          "json",
-          "javascript"
-        ],
+        "embedded_langs": ["html", "css", "json", "javascript"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "text.html.liquid"
-        ]
+        "inject_to": ["text.html.liquid"]
       },
       {
         "id": "lua",
@@ -728,9 +568,7 @@
         "asset_file": "lua.fkgram",
         "display_name": "Lua",
         "aliases": [],
-        "embedded_langs": [
-          "c"
-        ],
+        "embedded_langs": ["c"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -749,9 +587,7 @@
         "scope_name": "source.makefile",
         "asset_file": "make.fkgram",
         "display_name": "Makefile",
-        "aliases": [
-          "makefile"
-        ],
+        "aliases": ["makefile"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -761,9 +597,7 @@
         "scope_name": "text.html.markdown",
         "asset_file": "markdown.fkgram",
         "display_name": "Markdown",
-        "aliases": [
-          "md"
-        ],
+        "aliases": ["md"],
         "embedded_langs": [],
         "embedded_langs_lazy": [
           "css",
@@ -813,13 +647,9 @@
         "asset_file": "markdown-vue.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "vue"
-        ],
+        "embedded_langs": ["vue"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "text.html.markdown"
-        ]
+        "inject_to": ["text.html.markdown"]
       },
       {
         "id": "mdx",
@@ -884,13 +714,7 @@
         "asset_file": "perl.fkgram",
         "display_name": "Perl",
         "aliases": [],
-        "embedded_langs": [
-          "html",
-          "xml",
-          "css",
-          "javascript",
-          "sql"
-        ],
+        "embedded_langs": ["html", "xml", "css", "javascript", "sql"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -900,14 +724,7 @@
         "asset_file": "php.fkgram",
         "display_name": "PHP",
         "aliases": [],
-        "embedded_langs": [
-          "html",
-          "xml",
-          "sql",
-          "javascript",
-          "json",
-          "css"
-        ],
+        "embedded_langs": ["html", "xml", "sql", "javascript", "json", "css"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -926,11 +743,7 @@
         "scope_name": "source.powershell",
         "asset_file": "powershell.fkgram",
         "display_name": "PowerShell",
-        "aliases": [
-          "ps",
-          "ps1",
-          "pwsh"
-        ],
+        "aliases": ["ps", "ps1", "pwsh"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -940,18 +753,9 @@
         "scope_name": "text.pug",
         "asset_file": "pug.fkgram",
         "display_name": "Pug",
-        "aliases": [
-          "jade"
-        ],
-        "embedded_langs": [
-          "javascript",
-          "css",
-          "html"
-        ],
-        "embedded_langs_lazy": [
-          "sass",
-          "scss"
-        ],
+        "aliases": ["jade"],
+        "embedded_langs": ["javascript", "css", "html"],
+        "embedded_langs_lazy": ["sass", "scss"],
         "inject_to": []
       },
       {
@@ -959,9 +763,7 @@
         "scope_name": "source.python",
         "asset_file": "python.fkgram",
         "display_name": "Python",
-        "aliases": [
-          "py"
-        ],
+        "aliases": ["py"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -981,9 +783,7 @@
         "scope_name": "source.regexp.python",
         "asset_file": "regexp.fkgram",
         "display_name": "RegExp",
-        "aliases": [
-          "regex"
-        ],
+        "aliases": ["regex"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -993,9 +793,7 @@
         "scope_name": "source.ruby",
         "asset_file": "ruby.fkgram",
         "display_name": "Ruby",
-        "aliases": [
-          "rb"
-        ],
+        "aliases": ["rb"],
         "embedded_langs": [
           "html",
           "haml",
@@ -1018,9 +816,7 @@
         "scope_name": "source.rust",
         "asset_file": "rust.fkgram",
         "display_name": "Rust",
-        "aliases": [
-          "rs"
-        ],
+        "aliases": ["rs"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -1031,10 +827,7 @@
         "asset_file": "sass.fkgram",
         "display_name": "Sass",
         "aliases": [],
-        "embedded_langs": [
-          "css",
-          "sassdoc"
-        ],
+        "embedded_langs": ["css", "sassdoc"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1044,10 +837,7 @@
         "asset_file": "sassdoc.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "javascript",
-          "scss"
-        ],
+        "embedded_langs": ["javascript", "scss"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1067,10 +857,7 @@
         "asset_file": "scss.fkgram",
         "display_name": "SCSS",
         "aliases": [],
-        "embedded_langs": [
-          "css",
-          "sassdoc"
-        ],
+        "embedded_langs": ["css", "sassdoc"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1079,12 +866,7 @@
         "scope_name": "source.shell",
         "asset_file": "shellscript.fkgram",
         "display_name": "Shell",
-        "aliases": [
-          "bash",
-          "sh",
-          "shell",
-          "zsh"
-        ],
+        "aliases": ["bash", "sh", "shell", "zsh"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -1105,19 +887,8 @@
         "asset_file": "svelte.fkgram",
         "display_name": "Svelte",
         "aliases": [],
-        "embedded_langs": [
-          "javascript",
-          "typescript",
-          "css",
-          "postcss"
-        ],
-        "embedded_langs_lazy": [
-          "sass",
-          "scss",
-          "less",
-          "pug",
-          "markdown"
-        ],
+        "embedded_langs": ["javascript", "typescript", "css", "postcss"],
+        "embedded_langs_lazy": ["sass", "scss", "less", "pug", "markdown"],
         "inject_to": []
       },
       {
@@ -1135,10 +906,7 @@
         "scope_name": "source.hcl.terraform",
         "asset_file": "terraform.fkgram",
         "display_name": "Terraform",
-        "aliases": [
-          "tf",
-          "tfvars"
-        ],
+        "aliases": ["tf", "tfvars"],
         "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -1159,10 +927,7 @@
         "asset_file": "tsx.fkgram",
         "display_name": "TSX",
         "aliases": [],
-        "embedded_langs": [
-          "es-tag-css",
-          "es-tag-html"
-        ],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1171,15 +936,8 @@
         "scope_name": "source.ts",
         "asset_file": "typescript.fkgram",
         "display_name": "TypeScript",
-        "aliases": [
-          "ts",
-          "cts",
-          "mts"
-        ],
-        "embedded_langs": [
-          "es-tag-css",
-          "es-tag-html"
-        ],
+        "aliases": ["ts", "cts", "mts"],
+        "embedded_langs": ["es-tag-css", "es-tag-html"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1223,16 +981,9 @@
         "asset_file": "vue-directives.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "vue"
-        ],
+        "embedded_langs": ["vue"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "source.vue",
-          "text.html.markdown",
-          "text.html.derivative",
-          "text.pug"
-        ]
+        "inject_to": ["source.vue", "text.html.markdown", "text.html.derivative", "text.pug"]
       },
       {
         "id": "vue-interpolations",
@@ -1240,16 +991,9 @@
         "asset_file": "vue-interpolations.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "vue"
-        ],
+        "embedded_langs": ["vue"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "source.vue",
-          "text.html.markdown",
-          "text.html.derivative",
-          "text.pug"
-        ]
+        "inject_to": ["source.vue", "text.html.markdown", "text.html.derivative", "text.pug"]
       },
       {
         "id": "vue-sfc-style-variable-injection",
@@ -1257,13 +1001,9 @@
         "asset_file": "vue-sfc-style-variable-injection.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "javascript"
-        ],
+        "embedded_langs": ["javascript"],
         "embedded_langs_lazy": [],
-        "inject_to": [
-          "source.vue"
-        ]
+        "inject_to": ["source.vue"]
       },
       {
         "id": "wasm",
@@ -1291,9 +1031,7 @@
         "asset_file": "xml.fkgram",
         "display_name": "XML",
         "aliases": [],
-        "embedded_langs": [
-          "java"
-        ],
+        "embedded_langs": ["java"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1302,13 +1040,8 @@
         "scope_name": "source.yaml",
         "asset_file": "yaml.fkgram",
         "display_name": "YAML",
-        "aliases": [
-          "yml"
-        ],
-        "embedded_langs": [
-          "yaml-1-2",
-          "yaml-embedded"
-        ],
+        "aliases": ["yml"],
+        "embedded_langs": ["yaml-1-2", "yaml-embedded"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1318,12 +1051,7 @@
         "asset_file": "yaml-1-0.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "yaml",
-          "yaml-1-1",
-          "yaml-1-2",
-          "yaml-1-3"
-        ],
+        "embedded_langs": ["yaml", "yaml-1-1", "yaml-1-2", "yaml-1-3"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1333,12 +1061,7 @@
         "asset_file": "yaml-1-1.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "yaml",
-          "yaml-1-0",
-          "yaml-1-2",
-          "yaml-1-3"
-        ],
+        "embedded_langs": ["yaml", "yaml-1-0", "yaml-1-2", "yaml-1-3"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1348,12 +1071,7 @@
         "asset_file": "yaml-1-2.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "yaml",
-          "yaml-1-0",
-          "yaml-1-1",
-          "yaml-1-3"
-        ],
+        "embedded_langs": ["yaml", "yaml-1-0", "yaml-1-1", "yaml-1-3"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1363,10 +1081,7 @@
         "asset_file": "yaml-1-3.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "yaml",
-          "yaml-1-2"
-        ],
+        "embedded_langs": ["yaml", "yaml-1-2"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -1376,10 +1091,7 @@
         "asset_file": "yaml-embedded.fkgram",
         "display_name": null,
         "aliases": [],
-        "embedded_langs": [
-          "yaml",
-          "yaml-1-2"
-        ],
+        "embedded_langs": ["yaml", "yaml-1-2"],
         "embedded_langs_lazy": [],
         "inject_to": []
       },

@@ -9,12 +9,13 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use crate::RegexError;
+use crate::{PrecompiledPatternsError, RegexError};
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
 pub(crate) use ferroni::scanner::{OnigString, ScannerFindOptions};
 use ferroni::scanner::{
-    Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache, ScannerSyntax,
+    PrecompiledPatterns, Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache,
+    ScannerSyntax,
 };
 
 /// Shared compiled patterns for the grammars owned by one registry.
@@ -34,6 +35,7 @@ pub(crate) struct ScannerPatternCache {
 struct PatternCacheState {
     cache: FerroniScannerPatternCache,
     sources: BTreeMap<String, crate::precompiled::PreparedArchive>,
+    ordinary_sources: Vec<PrecompiledPatterns>,
     active_scope: Option<String>,
     #[cfg(test)]
     assembly_fallbacks: usize,
@@ -51,6 +53,7 @@ impl ScannerPatternCache {
             shared: Arc::new(Mutex::new(PatternCacheState {
                 cache: FerroniScannerPatternCache::new(),
                 sources: BTreeMap::new(),
+                ordinary_sources: Vec::new(),
                 active_scope: None,
                 #[cfg(test)]
                 assembly_fallbacks: 0,
@@ -74,6 +77,7 @@ impl ScannerPatternCache {
         }
     }
 
+    /// Drops compiled patterns and attached archives.
     pub(crate) fn clear(&self) {
         let mut state = self
             .shared
@@ -82,6 +86,7 @@ impl ScannerPatternCache {
         state.cache.clear();
         state.cache.clear_precompiled();
         state.sources.clear();
+        state.ordinary_sources.clear();
         state.active_scope = None;
         #[cfg(test)]
         {
@@ -89,20 +94,46 @@ impl ScannerPatternCache {
         }
     }
 
+    /// Raw ordinary program archives retain the registry-wide import contract.
+    /// Prepared containers additionally select a root-specific Eager group source.
     pub(crate) fn add_precompiled(
         &self,
-        bytes: Vec<u8>,
-    ) -> Result<(), crate::PrecompiledPatternsError> {
-        let source = crate::precompiled::open_archive(bytes)?;
+        archive: impl Into<Arc<[u8]>>,
+    ) -> Result<(), PrecompiledPatternsError> {
+        let archive = archive.into();
+        let (ordinary, prepared) = if archive.starts_with(b"FERRONI\0") {
+            (
+                Some(
+                    PrecompiledPatterns::from_bytes(archive)
+                        .map_err(PrecompiledPatternsError::from_engine)?,
+                ),
+                None,
+            )
+        } else {
+            (None, Some(crate::precompiled::open_archive(archive)?))
+        };
         let mut state = self
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
-        state.sources.insert(source.scope.clone(), source);
+        if let Some(source) = ordinary {
+            state.ordinary_sources.push(source);
+        }
+        if let Some(source) = prepared {
+            state.sources.insert(source.scope.clone(), source);
+        }
         state.active_scope = None;
-        // Reattach on the next construction without dropping decoded programs.
         state.cache.clear_precompiled();
         Ok(())
+    }
+
+    pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
+        self.shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .cache
+            .export_precompiled()
+            .map_err(PrecompiledPatternsError::from_engine)
     }
 
     pub(crate) fn export_prepared(
@@ -113,7 +144,7 @@ impl ScannerPatternCache {
             .expect("scanner pattern cache lock poisoned")
             .cache
             .export_precompiled_eager()
-            .map_err(crate::PrecompiledPatternsError::new)
+            .map_err(crate::PrecompiledPatternsError::from_engine)
     }
 
     pub(crate) fn compile_static(
@@ -152,6 +183,9 @@ impl ScannerPatternCache {
             // Ferroni's stable API selects one group source. Bind it to the root
             // grammar while keeping every language's programs and decoded groups.
             state.cache.clear_precompiled();
+            for source in state.ordinary_sources.clone() {
+                state.cache.add_precompiled(source);
+            }
             let sources: Vec<_> = state
                 .sources
                 .iter()
@@ -207,6 +241,15 @@ impl ScannerPatternCache {
             .cache
             .len()
     }
+}
+
+/// The settings every TextMate scanner compiles with. Precompiled archives
+/// are keyed by them, so a pattern loads only for the same prefilter mode.
+pub(crate) fn scanner_config(regex_prefilter: bool) -> ScannerConfig {
+    ScannerConfig::default()
+        .options(ONIG_OPTION_CAPTURE_GROUP)
+        .syntax(ScannerSyntax::Oniguruma)
+        .prefilter(regex_prefilter)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -984,13 +1027,6 @@ impl<T: Copy> CompiledRule<T> {
                 .collect(),
         })
     }
-}
-
-pub(crate) fn scanner_config(regex_prefilter: bool) -> ScannerConfig {
-    ScannerConfig::default()
-        .options(ONIG_OPTION_CAPTURE_GROUP)
-        .syntax(ScannerSyntax::Oniguruma)
-        .prefilter(regex_prefilter)
 }
 
 pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
