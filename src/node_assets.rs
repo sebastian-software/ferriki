@@ -209,20 +209,24 @@ impl NodeAssetHost {
                 Err(_) if optional => continue,
                 Err(error) => return Err(error),
             };
-            match cached {
+            let corrupt = match cached {
                 CacheRead::Bytes(bytes) => match if optional {
                     metadata.verify_bytes(&bytes)
                 } else {
                     metadata.verify(&bytes)
                 } {
                     Ok(()) => continue,
-                    Err(error) if error.kind() == ErrorKind::AssetIntegrity => {
-                        remove_corrupt_cache_entry(&cache_path)?;
-                    }
+                    Err(error) if error.kind() == ErrorKind::AssetIntegrity => true,
                     Err(error) => return Err(error),
                 },
-                CacheRead::Missing => {}
-                CacheRead::WrongSize => remove_corrupt_cache_entry(&cache_path)?,
+                CacheRead::Missing => false,
+                CacheRead::WrongSize => true,
+            };
+            if corrupt && let Err(error) = remove_corrupt_cache_entry(&cache_path) {
+                if optional {
+                    continue;
+                }
+                return Err(error);
             }
 
             if !self.settings.remote {
@@ -523,6 +527,46 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&cache);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn optional_corruption_in_a_read_only_cache_keeps_valid_grammar_usable() {
+        use std::os::unix::fs::PermissionsExt;
+        let (source, root) = fixture_root();
+        let cache = temp_dir("read-only-optional");
+        std::fs::create_dir_all(&cache).unwrap();
+        let host = host(&root, &cache);
+        let grammar = &host.release.assets["languages/json.fkgram"];
+        let bytecode = &host.release.assets["languages/json.fkbc"];
+        std::fs::copy(
+            source.join("languages/json.fkgram"),
+            cache.join(&grammar.sha256),
+        )
+        .unwrap();
+        let expected = std::fs::read(source.join("languages/json.fkbc")).unwrap();
+        let mut same_size_corrupt = expected;
+        same_size_corrupt[0] ^= 0xff;
+        for invalid in [b"truncated".to_vec(), same_size_corrupt] {
+            let entry = cache.join(&bytecode.sha256);
+            std::fs::write(&entry, invalid).unwrap();
+            std::fs::set_permissions(&cache, std::fs::Permissions::from_mode(0o555)).unwrap();
+            let result = host.plan(&["json".to_owned()], &[]);
+            std::fs::set_permissions(&cache, std::fs::Permissions::from_mode(0o755)).unwrap();
+            let plan = result.expect("an unusable optional entry must not block a valid grammar");
+            if entry.exists() {
+                assert!(
+                    plan.is_empty(),
+                    "an unrepairable optional entry falls back to source"
+                );
+            } else {
+                // Privileged test processes can repair even mode-0555 directories.
+                assert_eq!(plan.len(), 1);
+                assert!(plan[0].path.ends_with(".fkbc"));
+            }
+        }
+        std::fs::remove_dir_all(cache).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
