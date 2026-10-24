@@ -4,6 +4,7 @@ import path from "node:path";
 const args = parseArgs(process.argv.slice(2));
 const cmd = [
   "run",
+  "--release",
   "-p",
   "ferriki-asset-gen",
   "--",

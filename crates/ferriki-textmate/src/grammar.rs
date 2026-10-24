@@ -36,7 +36,8 @@ pub struct GrammarConfiguration {
     pub token_types: Vec<(String, StandardTokenType)>,
     pub balanced_bracket_selectors: Option<Vec<String>>,
     pub unbalanced_bracket_selectors: Vec<String>,
-    /// Enables the regex scanner's automatic prefilter. Defaults to `true`.
+    /// Enables the scanner prefilter. Defaults to `true`; prepared archives use
+    /// Eager for static scanners, while source-only scanners retain Auto.
     /// Disable it to avoid prefilter construction for one-shot highlighting.
     pub regex_prefilter: bool,
 }
@@ -296,6 +297,37 @@ impl ThemeProvider {
 }
 
 impl Grammar {
+    pub(crate) fn prepare_static_scanners(&self) -> Result<(), crate::RegexError> {
+        // Only stack states, injection roots and capture-retokenization roots
+        // become scanners. Ordinary match/include rules are flattened into their
+        // parent's ordered list; preparing them separately serializes automata
+        // the tokenizer can never request.
+        let mut entries = HashSet::from([self.root_id]);
+        entries.extend(self.injections.iter().map(|injection| injection.rule_id));
+        for id in 1..=self.registry.len() {
+            if let Some(Rule::Capture(rule)) = self.registry.try_get_rule(RuleId::new(id as u32)) {
+                entries.extend(rule.retokenize_captured_with_rule_id);
+            }
+        }
+        for id in 1..=self.registry.len() {
+            if let Some(rule) = self.registry.try_get_rule(RuleId::new(id as u32))
+                && (entries.contains(&rule.id())
+                    || matches!(rule, Rule::BeginEnd(_) | Rule::BeginWhile(_)))
+            {
+                rule.prepare_static_scanners(&self.registry)?;
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn prefilter_stats(&self) -> Vec<ferroni::scanner::PrefilterStats> {
+        (1..=self.registry.len())
+            .filter_map(|id| self.registry.try_get_rule(RuleId::new(id as u32)))
+            .flat_map(Rule::prefilter_stats)
+            .collect()
+    }
+
     /// Compiles a grammar directly. Applications obtain grammars from
     /// [`crate::SyncRegistry::grammar_for_scope_name`].
     #[doc(hidden)]

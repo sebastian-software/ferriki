@@ -216,6 +216,38 @@ try {
   missing.clear();
   tampered.dispose();
 
+  for (const failure of ["missing", "corrupt"]) {
+    const sidecarCache = join(tempRoot, `bytecode-${failure}`);
+    if (failure === "missing") missing.add("languages/rust.fkbc");
+    else replaced.set("languages/rust.fkbc", Buffer.from("invalid bytecode"));
+    const fallback = await createHighlighter({
+      langs: ["rust"],
+      themes: ["nord"],
+      assets: { remote: true, baseUrl, cacheDir: sidecarCache },
+    });
+    assert.match(fallback.codeToHtml("fn main() {}", { lang: "rust", theme: "nord" }), /<span/);
+    fallback.dispose();
+    assert.equal(
+      await readFile(join(sidecarCache, release.assets["languages/rust.fkbc"].sha256)).catch(
+        () => undefined,
+      ),
+      undefined,
+      "failed optional bytecode is never cached",
+    );
+    missing.delete("languages/rust.fkbc");
+    replaced.delete("languages/rust.fkbc");
+    const offlineFallback = await createHighlighter({
+      langs: ["rust"],
+      themes: ["nord"],
+      assets: { remote: false, cacheDir: sidecarCache },
+    });
+    assert.match(
+      offlineFallback.codeToHtml("fn main() {}", { lang: "rust", theme: "nord" }),
+      /<span/,
+    );
+    offlineFallback.dispose();
+  }
+
   const settleCache = join(tempRoot, "settle-cache");
   const settling = createNative({ remote: true, baseUrl, cacheDir: settleCache });
   const settlePlan = await settling.planAssets(["vue"], ["dracula"]);
@@ -286,9 +318,9 @@ try {
   const singleRequests = requests.slice(singleOffset);
   assert.deepEqual(
     new Set(singleRequests.map((url) => remotePaths.get(url))),
-    new Set(["languages/json.fkgram", "themes/nord.fktheme"]),
+    new Set(["languages/json.fkgram", "languages/json.fkbc", "themes/nord.fktheme"]),
   );
-  assert.equal(singleRequests.length, 2, "warm CSS shorthand calls do not redownload assets");
+  assert.equal(singleRequests.length, 3, "warm CSS shorthand calls do not redownload assets");
 
   const embeddedCache = join(tempRoot, "one-shot-embedded-cache");
   const embeddedOffset = requests.length;
@@ -330,7 +362,11 @@ try {
   const retryOffset = requests.length;
   await runOneShotProbe("singleton-retry", retryCache);
   const retryRequests = requests.slice(retryOffset);
-  assert.equal(retryRequests.length, 2, "only the explicit retry downloads the two assets");
+  assert.equal(
+    retryRequests.length,
+    3,
+    "only the explicit retry downloads grammar, bytecode and theme",
+  );
 
   const empty = { remote: false, cacheDir: join(tempRoot, "facade-empty") };
   await assert.rejects(createHighlighter({ assets: empty, langs: ["rust"] }), {

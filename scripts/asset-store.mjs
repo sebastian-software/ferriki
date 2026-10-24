@@ -8,6 +8,15 @@ export const digest = (bytes) => createHash("sha256").update(bytes).digest("hex"
 
 export { objectPath, payloadPath, shortHash } from "../node/ferriki/scripts/asset-path.mjs";
 
+// A format change must rebuild every sidecar even when grammar sources did not move.
+export function needsBytecodeRefresh(lock, version) {
+  if (!Number.isSafeInteger(version) || version < 1) throw new Error("Invalid bytecode version");
+  return lock.languages.entries.some((entry) => {
+    const path = `languages/${entry.asset_file.replace(/\.fkgram$/, ".fkbc")}`;
+    return lock.release.assets[path]?.formatVersion !== version;
+  });
+}
+
 export async function verifiedRead(file, hash, size) {
   try {
     const bytes = await readFile(file);

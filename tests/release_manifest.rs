@@ -40,7 +40,15 @@ fn release_manifest_matches_the_committed_payloads() {
             "{path} changed without regenerating the release manifest"
         );
         assert_eq!(bytes.len() as u64, asset.size, "{path} size");
-        assert_eq!(asset.format_version, FORMAT_VERSION, "{path} format");
+        assert_eq!(
+            asset.format_version,
+            if path.ends_with(".fkbc") {
+                ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+            } else {
+                FORMAT_VERSION
+            },
+            "{path} format"
+        );
     }
     assert_eq!(
         {
@@ -68,7 +76,15 @@ fn release_manifest_pins_every_catalog_entry() {
     let referenced: BTreeSet<String> = languages
         .entries
         .iter()
-        .map(|entry| format!("languages/{}", entry.asset_file))
+        .flat_map(|entry| {
+            [
+                format!("languages/{}", entry.asset_file),
+                format!(
+                    "languages/{}.fkbc",
+                    entry.asset_file.strip_suffix(".fkgram").unwrap()
+                ),
+            ]
+        })
         .chain(
             themes
                 .entries

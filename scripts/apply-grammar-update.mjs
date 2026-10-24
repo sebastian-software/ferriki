@@ -119,6 +119,7 @@ for (const entry of old.languages)
   if (!ids.has(entry.id)) {
     await rm(path.join(root, "assets/upstream/curated/grammars", entry.grammar_file));
     await rm(path.join(root, "assets/standard/languages", `${entry.id}.fkgram`), { force: true });
+    await rm(path.join(root, "assets/standard/languages", `${entry.id}.fkbc`), { force: true });
   }
 // Rebuild local artifacts and update the small reviewed catalog lock.
 execFileSync(process.execPath, ["scripts/generate-ferriki-assets.mjs"], {

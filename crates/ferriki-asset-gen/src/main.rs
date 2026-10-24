@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 const USAGE: &str = "\
 Usage:
+  ferriki-asset-gen bytecode-version
   ferriki-asset-gen generate --upstream-dir <path> --output-dir <path> [--source-name <name>] [--source-version <version>] [--source-commit <commit>]
 ";
 
@@ -19,6 +20,10 @@ fn run(args: Vec<String>) -> Result<(), String> {
         .first()
         .map(String::as_str)
         .ok_or_else(|| USAGE.to_owned())?;
+    if command == "bytecode-version" && args.len() == 1 {
+        println!("{}", ferriki_textmate::PRECOMPILED_PATTERNS_VERSION);
+        return Ok(());
+    }
     if command != "generate" {
         return Err(format!("unknown command: {command}\n\n{USAGE}"));
     }

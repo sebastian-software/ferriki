@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-10-24
 
 ## Context
 
@@ -28,7 +28,8 @@ therefore exceed the configured duration; Ferriki reports the overrun through
 stopped-early tokenization.
 
 The factory-only `regexPrefilter` boolean defaults to `true`, allowing the
-native scanner's automatic warm-up policy. `false` disables prefilter
+native scanner's prefilter. Prepared standard assets use Eager for static groups
+from first use; source-only and captured dynamic scanners retain Auto. `false` disables prefilter
 construction for all grammars in that highlighter. It changes performance
 policy without exposing Ferroni types or changing highlighting semantics.
 
@@ -92,6 +93,9 @@ being mistaken for parity.
   lifecycle behavior are required work rather than accidental extensions.
 
 ## History
+
+- 2026-10-24: Clarify that enabled prefiltering consumes prepared standard static
+  groups in Eager mode; source-only and dynamic scanners retain Auto (ADR 0021).
 
 - 2026-09-05: Accepted.
 - 2026-09-30: Lists the ADR 0013 options and the type conformance check the contract must cover before the freeze.

@@ -20,15 +20,16 @@ export function objectPath(kind, id, hash, layout = "language-hash-v2") {
   const name = layout === "language-hash-v1" ? hash : shortHash(hash);
   if (kind === "language") return `${id}/${name}`;
   if (kind === "theme") return `themes/${id}/${name}`;
+  if (kind === "bytecode") return `${id}/${name}`;
   throw new Error(`Unknown asset kind: ${kind}`);
 }
 
 export function payloadPath(key, asset, layout = "language-hash-v2") {
-  const match = /^(languages|themes)\/([a-z0-9-]+)\.(fkgram|fktheme)$/.exec(key);
-  if (!match || (match[1] === "languages") !== (match[3] === "fkgram"))
+  const match = /^(languages|themes)\/([a-z0-9-]+)\.(fkgram|fktheme|fkbc)$/.exec(key);
+  if (!match || (match[1] === "themes") !== (match[3] === "fktheme"))
     throw new Error(`Invalid catalog payload path: ${key}`);
   return objectPath(
-    match[1] === "languages" ? "language" : "theme",
+    match[3] === "fkbc" ? "bytecode" : match[1] === "languages" ? "language" : "theme",
     match[2],
     asset.sha256,
     layout,

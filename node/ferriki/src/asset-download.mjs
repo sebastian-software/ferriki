@@ -37,6 +37,9 @@ async function downloadAssets(plan, cacheDir) {
       try {
         await downloadOnce(asset, cacheDir);
       } catch (error) {
+        // A missing or corrupt optional bytecode sidecar falls back to compiling
+        // the grammar source. Required grammar and theme downloads still fail.
+        if (/^languages\/[a-z0-9-]+\.fkbc$/.test(asset.path)) continue;
         firstError ??= error;
       }
     }

@@ -8,12 +8,29 @@ import {
   objectPath,
   payloadPath,
   shortHash,
+  needsBytecodeRefresh,
 } from "./asset-store.mjs";
 import { uploadImmutable } from "./bunny-storage.mjs";
+
+test("bytecode regeneration detects missing languages and engine format changes", () => {
+  const lock = {
+    languages: { entries: [{ asset_file: "rust.fkgram" }, { asset_file: "cpp.fkgram" }] },
+    release: { assets: { "languages/rust.fkbc": { formatVersion: 2 } } },
+  };
+  assert.equal(needsBytecodeRefresh(lock, 2), true);
+  lock.release.assets["languages/cpp.fkbc"] = { formatVersion: 2 };
+  assert.equal(needsBytecodeRefresh(lock, 2), false);
+  assert.equal(needsBytecodeRefresh(lock, 3), true);
+  lock.release.assets["languages/rust.fkbc"].formatVersion = 1;
+  assert.equal(needsBytecodeRefresh(lock, 2), true);
+  assert.throws(() => needsBytecodeRefresh(lock, NaN));
+});
 
 test("short object names preserve full digest integrity and legacy full-hash paths", () => {
   const hash = digest(Buffer.from("payload"));
   assert.equal(payloadPath("languages/rust.fkgram", { sha256: hash }), `rust/${shortHash(hash)}`);
+  assert.equal(payloadPath("languages/rust.fkbc", { sha256: hash }), `rust/${shortHash(hash)}`);
+  assert.throws(() => payloadPath("themes/rust.fkbc", { sha256: hash }));
   assert.equal(
     payloadPath("themes/nord.fktheme", { sha256: hash }),
     `themes/nord/${shortHash(hash)}`,

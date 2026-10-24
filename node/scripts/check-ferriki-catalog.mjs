@@ -86,9 +86,10 @@ assert.deepEqual(languageFiles, ["manifest.fkindex"], "the package must not bund
 assert.deepEqual(themeFiles, ["manifest.fkindex"], "the package must not bundle themes");
 assert.equal(
   Object.keys(release.assets).length,
-  languageCatalog.length + themeCatalog.length,
+  languageCatalog.length * 2 + themeCatalog.length,
   "the release manifest pins exactly the catalog payloads",
 );
+for (const entry of languageCatalog) assertPinned(`languages/${entry.id}.fkbc`);
 
 console.log(
   `Ferriki catalogs verified: ${languageCatalog.length} languages, ${themeCatalog.length} themes, ${Object.keys(bundledLanguagesAlias).length} aliases`,

@@ -15,6 +15,7 @@ core a stable generator/loader contract.
   - `.fkgram`: one language asset
   - `.fktheme`: one theme asset
   - `.fkindex`: one manifest for a catalog
+  - `.fkbc`: optional Zstd-compressed Ferroni prepared archive (separate format)
 - Encoding: `serde` + [`postcard`](https://docs.rs/postcard): unsigned
   integers and lengths are LEB128 varints, strings are length-prefixed UTF-8,
   `Option` is a `0`/`1` tag followed by the value
@@ -24,7 +25,7 @@ core a stable generator/loader contract.
   - [`crates/ferriki-asset-gen/src/schema.rs`](../crates/ferriki-asset-gen/src/schema.rs)
   - [`src/asset_catalog.rs`](../src/asset_catalog.rs)
 
-There is no magic header. Every manifest and asset starts with its
+The postcard files have no magic header. Every postcard manifest and asset starts with its
 `format_version`, so the decoder reads that varint first and reports a file
 from another format version as `unsupported asset format version N` before it
 looks at the payload. A format `2` file starts with `02 00 00 00`, whose first
@@ -38,6 +39,7 @@ Language catalog:
 
 - `assets/standard/languages/manifest.fkindex`
 - one `.fkgram` file per language
+- one optional `.fkbc` file per language
 
 Theme catalog:
 
@@ -50,6 +52,64 @@ separate from the binary payloads so catalog enumeration remains lazy.
 
 The manifest is loaded first. It maps logical IDs to asset filenames and carries
 enough metadata for lazy lookup.
+
+## Optional Precompiled Patterns
+
+The generator writes `<id>.fkbc` alongside each grammar. This is a deterministic,
+checksummed Zstd level-19 frame with an 8 MiB maximum window. Its decoded layout is:
+
+| Field            | Encoding                                  |
+| ---------------- | ----------------------------------------- |
+| Magic            | `FKBC002\0` (8 bytes)                     |
+| Combined version | `u32`, little endian                      |
+| Scope length     | `u32`, little endian                      |
+| Program length   | `u64`, little endian                      |
+| Group length     | `u64`, little endian                      |
+| Scope            | UTF-8 bytes                               |
+| Programs         | Ferroni program archive v2                |
+| Groups           | Matched Ferroni portable Eager archive v3 |
+
+The payload uses direct byte slices, without postcard's element-by-element byte
+vector codec. The runtime opens the matched pair once and lets Ferroni lazily
+validate and decode requested records. It bounds the decoded payload to 512 MiB,
+the decoder window to 8 MiB, and rejects inconsistent sizes or trailing frames.
+The trusted release manifest pins the compressed bytes by SHA-256 and size.
+`ReleaseAsset::format_version` identifies
+`ferriki_textmate::PRECOMPILED_PATTERNS_VERSION`; its 8/12/12-bit fields identify
+the container, program and group formats. Grammar/theme/catalog postcard schemas
+remain at format 3.
+
+Standard generation prepares statically known ordered scanner lists with Eager,
+including dependencies, external injections, end placement and anchor variants.
+`SyncRegistry::precompile_patterns(scope, samples)` uses the same producer; empty
+samples enumerate static lists, while nonempty samples prepare encountered lists
+only. Attaching a pair selects Eager for that root when prefiltering is enabled.
+Missing groups use ordinary Eager preparation. Per-pattern helpers, scratch space
+and input-dependent transition caches remain local. The performance objective is
+lower startup cost than rebuilding source Eager, with ordinary Eager execution
+from first use. Restoring the archive has an accepted cost; source Off provides
+a diagnostic reference rather than a loading-parity requirement. A persistent
+digest-addressed cache reuses downloaded packages across builds and deployments.
+Each fresh process restores its runtime state from those packages. Existing
+in-process caches already reuse scanners across repeated highlights and edits.
+
+Both prefilter settings and every anchor variant are generated from the same
+normalization as runtime scanners. Captured end/while patterns remain dynamic.
+With prefiltering enabled, only explicitly requested roots download/open sidecars;
+Node Off mode skips their download and every Off highlighter skips their opening; each root pair already
+includes its dependency scanner groups. Missing, corrupt or incompatible sidecars,
+and scanner assembly failures with mixed decoded/source programs, fall back to
+source compilation. The [current diagnostic](benchmarks/precompiled-patterns/prepared-eager.md)
+confirms lower startup cost than source Eager and comparable Eager execution on
+the measured workloads. It excludes network/file I/O and complete build processes.
+Bytecode must come from a trusted producer; validation cannot prove that a
+program implements its claimed pattern. See [ADR 0021](../adr/0021-precompiled-pattern-sidecars.md).
+
+Regenerate with `node scripts/generate-ferriki-assets.mjs`, then update the lock
+with `node scripts/write-asset-lock.mjs`. Run
+`cargo test --release --test precompiled_assets` and the mandatory native
+compatibility gate before publishing new immutable objects. The grammar updater
+also runs when tokenizer/dependency changes introduce a new bytecode version.
 
 ## Common Metadata
 

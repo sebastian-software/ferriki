@@ -299,6 +299,7 @@ pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHi
     let assets = Arc::new(native(NodeAssetHost::from_root(
         Path::new(&root),
         &NodeAssetOptions {
+            regex_prefilter: Some(regex_prefilter),
             remote: options.remote,
             base_url: options.base_url,
             cache_dir: options.cache_dir.map(PathBuf::from),
@@ -671,6 +672,7 @@ pub(crate) mod tests {
             NodeAssetHost::from_root(
                 &planned_root,
                 &NodeAssetOptions {
+                    regex_prefilter: None,
                     remote: Some(true),
                     cache_dir: Some(cache.clone()),
                     base_url: Some("https://example.test/assets".into()),

@@ -16,6 +16,8 @@ const THEME_MANIFEST_FILE: &str = "manifest.fkindex";
 pub struct GeneratedCatalog {
     pub manifest_path: PathBuf,
     pub asset_paths: Vec<PathBuf>,
+    /// Optional bytecode sidecars written for a language catalog; empty for themes.
+    pub precompiled_paths: Vec<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,7 +48,29 @@ pub(crate) fn write_language_catalog(
     fs::create_dir_all(output_dir)?;
     let mut entries = Vec::with_capacity(records.len());
     let mut asset_paths = Vec::with_capacity(records.len());
+    let mut precompiled_paths = Vec::with_capacity(records.len());
 
+    let mut producer = ferriki_textmate::SyncRegistry::new(None, None)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    for record in records {
+        let grammar =
+            ferriki_textmate::parse_raw_grammar(&record.grammar_json, Some("grammar.json"))
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let injections = records
+            .iter()
+            .filter(|candidate| {
+                candidate.inject_to.iter().any(|target| {
+                    target == &record.scope_name
+                        || record
+                            .scope_name
+                            .strip_prefix(target.as_str())
+                            .is_some_and(|suffix| suffix.starts_with('.'))
+                })
+            })
+            .map(|candidate| candidate.scope_name.clone())
+            .collect();
+        producer.add_grammar(grammar, injections);
+    }
     for record in records {
         let asset_file = format!("{}.fkgram", sanitize_asset_id(&record.id));
         let asset = LanguageAsset {
@@ -65,6 +89,19 @@ pub(crate) fn write_language_catalog(
         let asset_path = output_dir.join(&asset_file);
         fs::write(&asset_path, bytes)?;
         asset_paths.push(asset_path);
+
+        let bytecode = producer
+            .precompile_patterns(&record.scope_name, &[])
+            .map_err(|error| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("{}: {error}", record.id),
+                )
+            })?
+            .expect("catalog grammar was registered");
+        let precompiled_path = output_dir.join(format!("{}.fkbc", sanitize_asset_id(&record.id)));
+        fs::write(&precompiled_path, bytecode)?;
+        precompiled_paths.push(precompiled_path);
 
         entries.push(LanguageAssetEntry {
             id: record.id.clone(),
@@ -92,6 +129,7 @@ pub(crate) fn write_language_catalog(
     Ok(GeneratedCatalog {
         manifest_path,
         asset_paths,
+        precompiled_paths,
     })
 }
 
@@ -141,6 +179,7 @@ pub(crate) fn write_theme_catalog(
     Ok(GeneratedCatalog {
         manifest_path,
         asset_paths,
+        precompiled_paths: Vec::new(),
     })
 }
 

@@ -24,3 +24,19 @@ does not break consumers. Input and result types are `#[non_exhaustive]`:
 build input types from `Default` with their `with_*` setters and read results
 through their public fields. The `__oracle` module exists only for the
 vscode-textmate oracle tests and carries no semver guarantee.
+
+`precompile_grammar_patterns` generates deterministic compressed archives of a
+grammar's static patterns. Attach trusted bytes with
+`SyncRegistry::add_precompiled_patterns` before tokenization. Patterns load
+lazily; missing or incompatible programs compile from source. Dynamic end/while
+patterns retain their runtime behavior. `PrecompiledPatternsError` keeps engine
+details private, and `PRECOMPILED_PATTERNS_VERSION` identifies the archive version.
+
+`SyncRegistry::precompile_patterns(scope, samples)` prepares Ferroni 2.7's stable
+Eager group/program pairs using the registry's dependencies and injections.
+Attaching such a pair opts that root into Eager acceleration when prefiltering
+is enabled. Sample coverage is partial, with ordinary Eager fallback for missing
+groups. Empty samples prepare all statically known scanner lists instead.
+Standard Ferriki sidecars use this complete static preparation and Zstd transport.
+Captured end/while expansions retain their runtime behavior. Measure loading,
+first use and execution separately; search scratch and transition caches stay local.

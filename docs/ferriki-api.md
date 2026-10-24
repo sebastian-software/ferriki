@@ -102,14 +102,14 @@ highlighter is no longer needed.
 
 ### Highlighter options
 
-| Option           | Type                                 | Meaning                                                                                                   |
-| ---------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                                        |
-| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                                           |
-| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                             |
-| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                              |
-| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                                  |
-| `regexPrefilter` | `boolean`                            | Automatic regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
+| Option           | Type                                 | Meaning                                                                                         |
+| ---------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `langs`          | `RegistrationInput<LanguageInput>[]` | Languages or loader functions to load before the factory resolves.                              |
+| `themes`         | `RegistrationInput<ThemeInput>[]`    | Themes or loader functions to load before the factory resolves.                                 |
+| `langAlias`      | `Record<string, string>`             | Per-highlighter aliases. Circular aliases throw `ShikiError`.                                   |
+| `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                    |
+| `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                        |
+| `regexPrefilter` | `boolean`                            | Regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
@@ -119,8 +119,10 @@ contract and compatibility coverage.
 ### Choosing the regex prefilter
 
 For a CMS, documentation server or site build, reuse a highlighter and keep
-the default `regexPrefilter: true`. Its automatic warm-up counts scanner
-searches, not highlighting calls. The top-level `codeToHtml()` shorthand also
+the default `regexPrefilter: true`. Standard prepared assets provide static
+scanner groups in Eager mode from first use. Source-only and captured dynamic
+scanners retain Auto; its warm-up counts scanner searches, not highlighting calls.
+The top-level `codeToHtml()` shorthand also
 reuses a process-local singleton; one call per block does not mean one
 highlighter per block.
 
@@ -130,7 +132,7 @@ including the singleton's first creation; it is not a per-call
 `HighlightOptions` setting. Matching and colors remain the same.
 
 The [Blacksmith run](benchmarks/blacksmith/2026-10-16-sharded/README.md)
-recorded 31–48% longer warm repository highlighting with the prefilter disabled,
+predates prepared Eager assets and recorded 31–48% longer warm repository highlighting with the prefilter disabled,
 but 25–28% shorter first use. First use includes imports, setup and rendering
 all 14 corpus files, excluding process creation and downloads. These Node HTML
 measurements do not predict one isolated snippet. Engine order rotates within

@@ -18,6 +18,7 @@ name = "ferriki_asset_gen"
 path = "src/lib.rs"
 
 [dependencies]
+ferriki-textmate = { version = "1.1.2", path = "../ferriki-textmate" }
 postcard = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

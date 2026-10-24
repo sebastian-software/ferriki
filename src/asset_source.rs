@@ -81,6 +81,10 @@ impl AssetMetadata {
 
     pub(crate) fn verify(&self, bytes: &[u8]) -> Result<()> {
         self.validate_format()?;
+        self.verify_bytes(bytes)
+    }
+
+    pub(crate) fn verify_bytes(&self, bytes: &[u8]) -> Result<()> {
         if bytes.len() as u64 != self.size || AssetDigest::of(bytes) != self.digest {
             return Err(Error::new(
                 ErrorKind::AssetIntegrity,
