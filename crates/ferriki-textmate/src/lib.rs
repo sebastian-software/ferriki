@@ -20,6 +20,9 @@ mod line_output;
 mod matcher;
 mod parse_raw_grammar;
 mod plist;
+mod precompiled;
+#[cfg(test)]
+mod precompiled_bench;
 mod raw_grammar;
 mod regexp;
 mod registry;
@@ -44,6 +47,9 @@ pub use grammar::{
 pub use line_output::{FontInfo, Token};
 pub use parse_raw_grammar::{ParseRawGrammarError, parse_raw_grammar};
 pub use plist::PlistError;
+pub use precompiled::{
+    PRECOMPILED_PATTERNS_VERSION, PrecompiledPatternsError, precompile_grammar_patterns,
+};
 pub use raw_grammar::RawGrammar;
 pub use registry::SyncRegistry;
 pub use state_stack::StateStack;
@@ -102,25 +108,3 @@ impl std::error::Error for RegexError {
 /// [`SyncRegistry::add_precompiled_patterns`] reads. It changes independently
 /// of the crate version; an archive with another version is rejected.
 pub const PRECOMPILED_PATTERNS_FORMAT_VERSION: u32 = ferroni::scanner::PRECOMPILED_FORMAT_VERSION;
-
-/// A precompiled scanner archive that could not be written or opened,
-/// independent of the regex engine's API.
-#[derive(Debug)]
-pub struct PrecompiledPatternsError {
-    source: ferroni::scanner::PrecompiledError,
-}
-impl PrecompiledPatternsError {
-    pub(crate) fn new(source: ferroni::scanner::PrecompiledError) -> Self {
-        Self { source }
-    }
-}
-impl std::fmt::Display for PrecompiledPatternsError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.source.fmt(f)
-    }
-}
-impl std::error::Error for PrecompiledPatternsError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.source)
-    }
-}

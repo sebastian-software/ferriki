@@ -17,6 +17,7 @@ use crate::{
 /// environment and platform defaults as the Rust `remote` feature.
 #[derive(Clone, Debug, Default)]
 pub struct NodeAssetOptions {
+    pub regex_prefilter: Option<bool>,
     pub remote: Option<bool>,
     pub base_url: Option<String>,
     pub cache_dir: Option<PathBuf>,
@@ -33,6 +34,7 @@ pub struct PlannedAsset {
 /// Manifest-backed Node asset host. It only plans downloads and reads the
 /// digest-addressed cache; JavaScript owns transport and cache writes.
 pub struct NodeAssetHost {
+    precompiled: bool,
     release: ReleaseManifest,
     settings: ResolvedAssetSettings,
     language_manifest: Vec<u8>,
@@ -105,6 +107,7 @@ impl NodeAssetHost {
         )?;
 
         Ok(Self {
+            precompiled: options.regex_prefilter.unwrap_or(true),
             release,
             settings,
             language_manifest,
@@ -149,6 +152,14 @@ impl NodeAssetHost {
 
     /// Plans cache misses without network access or payload decoding.
     pub fn plan(&self, languages: &[String], themes: &[String]) -> Result<Vec<PlannedAsset>> {
+        let prepared_roots: BTreeSet<&str> = languages
+            .iter()
+            .map(|requested| {
+                self.language_aliases
+                    .get(requested.as_str())
+                    .map_or(requested.as_str(), String::as_str)
+            })
+            .collect();
         let mut paths = BTreeSet::new();
         let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
         let mut visited = BTreeSet::new();
@@ -163,18 +174,28 @@ impl NodeAssetHost {
             if !visited.insert(id) {
                 continue;
             }
-            paths.insert(path.as_str());
+            paths.insert(path.clone());
+            let bytecode = path.replace(".fkgram", ".fkbc");
+            if self.precompiled
+                && prepared_roots.contains(id)
+                && self.release.assets.get(&bytecode).is_some_and(|asset| {
+                    asset.format_version == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+                })
+            {
+                paths.insert(bytecode);
+            }
             pending.extend(embedded.iter().map(String::as_str));
         }
         paths.extend(
             themes
                 .iter()
-                .filter_map(|theme| self.themes.get(theme).map(String::as_str)),
+                .filter_map(|theme| self.themes.get(theme).cloned()),
         );
 
         let mut result = Vec::new();
         for path in paths {
-            let asset = self.release.assets.get(path).ok_or_else(|| {
+            let optional = path.ends_with(".fkbc");
+            let asset = self.release.assets.get(&path).ok_or_else(|| {
                 Error::new(
                     ErrorKind::AssetFormat,
                     format!("Release metadata is missing `{path}`."),
@@ -183,19 +204,35 @@ impl NodeAssetHost {
             let digest = AssetDigest::from_str(&asset.sha256)?;
             let metadata = AssetMetadata::new(digest.clone(), asset.size, asset.format_version);
             let cache_path = self.settings.cache_dir.join(digest.as_str());
-            match read_cache_entry(&cache_path, digest.as_str(), asset.size)? {
-                CacheRead::Bytes(bytes) => match metadata.verify(&bytes) {
+            let cached = match read_cache_entry(&cache_path, digest.as_str(), asset.size) {
+                Ok(cached) => cached,
+                Err(_) if optional => continue,
+                Err(error) => return Err(error),
+            };
+            let corrupt = match cached {
+                CacheRead::Bytes(bytes) => match if optional {
+                    metadata.verify_bytes(&bytes)
+                } else {
+                    metadata.verify(&bytes)
+                } {
                     Ok(()) => continue,
-                    Err(error) if error.kind() == ErrorKind::AssetIntegrity => {
-                        remove_corrupt_cache_entry(&cache_path)?;
-                    }
+                    Err(error) if error.kind() == ErrorKind::AssetIntegrity => true,
                     Err(error) => return Err(error),
                 },
-                CacheRead::Missing => {}
-                CacheRead::WrongSize => remove_corrupt_cache_entry(&cache_path)?,
+                CacheRead::Missing => false,
+                CacheRead::WrongSize => true,
+            };
+            if corrupt && let Err(error) = remove_corrupt_cache_entry(&cache_path) {
+                if optional {
+                    continue;
+                }
+                return Err(error);
             }
 
             if !self.settings.remote {
+                if optional {
+                    continue;
+                }
                 return Err(Error::new(
                     ErrorKind::AssetUnavailable,
                     format!(
@@ -212,7 +249,7 @@ impl NodeAssetHost {
                 url: crate::asset_settings::asset_url(
                     self.release.storage_layout.as_deref(),
                     &self.settings,
-                    path,
+                    &path,
                     digest.as_str(),
                 )?,
             });
@@ -398,6 +435,7 @@ mod tests {
         NodeAssetHost::from_root(
             root,
             &NodeAssetOptions {
+                regex_prefilter: None,
                 remote: Some(true),
                 base_url: Some("https://mirror.example/".to_owned()),
                 cache_dir: Some(cache_dir.to_path_buf()),
@@ -434,9 +472,33 @@ mod tests {
             )
             .expect("download plan");
         let paths: BTreeSet<_> = plan.iter().map(|asset| asset.path.as_str()).collect();
+        let mut disabled = self::host(&root, &cache);
+        disabled.precompiled = false;
+        assert!(
+            disabled
+                .plan(&["vue".to_owned()], &[])
+                .unwrap()
+                .iter()
+                .all(|asset| !asset.path.ends_with(".fkbc")),
+            "Off should not download unused Eager group images"
+        );
 
         assert!(paths.contains("languages/vue.fkgram"));
         assert!(paths.contains("languages/typescript.fkgram"));
+        let vue_only = host.plan(&["vue".to_owned()], &[]).expect("root-only plan");
+        assert!(
+            vue_only
+                .iter()
+                .any(|asset| asset.path == "languages/typescript.fkgram")
+        );
+        assert!(
+            !vue_only
+                .iter()
+                .any(|asset| asset.path == "languages/typescript.fkbc"),
+            "the root archive already carries dependency groups"
+        );
+        assert!(paths.contains("languages/vue.fkbc"));
+        assert!(paths.contains("languages/typescript.fkbc"));
         assert!(!paths.contains("themes/nord.fktheme"));
         assert_eq!(
             plan.len(),
@@ -448,16 +510,16 @@ mod tests {
             "corrupt bytes are removed for refetch"
         );
         for asset in &plan {
-            let id = asset
-                .path
-                .strip_prefix("languages/")
-                .unwrap()
-                .strip_suffix(".fkgram")
-                .unwrap();
+            let file = asset.path.strip_prefix("languages/").unwrap();
+            let (prefix, id) = if let Some(id) = file.strip_suffix(".fkbc") {
+                ("", id)
+            } else {
+                ("", file.strip_suffix(".fkgram").unwrap())
+            };
             assert_eq!(
                 asset.url,
                 format!(
-                    "https://mirror.example/{id}/{}",
+                    "https://mirror.example/{prefix}{id}/{}",
                     crate::asset_settings::short_hash(&asset.digest).unwrap()
                 )
             );
@@ -465,6 +527,46 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&cache);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn optional_corruption_in_a_read_only_cache_keeps_valid_grammar_usable() {
+        use std::os::unix::fs::PermissionsExt;
+        let (source, root) = fixture_root();
+        let cache = temp_dir("read-only-optional");
+        std::fs::create_dir_all(&cache).unwrap();
+        let host = host(&root, &cache);
+        let grammar = &host.release.assets["languages/json.fkgram"];
+        let bytecode = &host.release.assets["languages/json.fkbc"];
+        std::fs::copy(
+            source.join("languages/json.fkgram"),
+            cache.join(&grammar.sha256),
+        )
+        .unwrap();
+        let expected = std::fs::read(source.join("languages/json.fkbc")).unwrap();
+        let mut same_size_corrupt = expected;
+        same_size_corrupt[0] ^= 0xff;
+        for invalid in [b"truncated".to_vec(), same_size_corrupt] {
+            let entry = cache.join(&bytecode.sha256);
+            std::fs::write(&entry, invalid).unwrap();
+            std::fs::set_permissions(&cache, std::fs::Permissions::from_mode(0o555)).unwrap();
+            let result = host.plan(&["json".to_owned()], &[]);
+            std::fs::set_permissions(&cache, std::fs::Permissions::from_mode(0o755)).unwrap();
+            let plan = result.expect("an unusable optional entry must not block a valid grammar");
+            if entry.exists() {
+                assert!(
+                    plan.is_empty(),
+                    "an unrepairable optional entry falls back to source"
+                );
+            } else {
+                // Privileged test processes can repair even mode-0555 directories.
+                assert_eq!(plan.len(), 1);
+                assert!(plan[0].path.ends_with(".fkbc"));
+            }
+        }
+        std::fs::remove_dir_all(cache).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

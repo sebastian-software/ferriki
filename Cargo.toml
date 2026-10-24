@@ -94,9 +94,8 @@ keywords = [ "syntax-highlighting", "textmate", "shiki", "tokenizer", "ferrament
 categories = [ "text-processing", "parser-implementations", "development-tools" ]
 
 [workspace.dependencies]
-# `precompiled` loads Ferroni scanner archives (Ferroni ADR-018); it adds no
-# dependencies and leaves scanners built from pattern text unchanged.
-ferroni = { version = "2.5.2", features = [ "precompiled" ] }
+ferroni = { version = "2.7.0", features = ["precompiled-eager"] }
+zstd = { version = "0.13.3", default-features = false }
 napi = { version = "3.14.2", default-features = false, features = [ "napi8" ] }
 napi-build = "2.6"
 napi-derive = "3.6.12"

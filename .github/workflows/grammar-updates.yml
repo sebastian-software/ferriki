@@ -1,6 +1,13 @@
 name: Grammar updates
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - crates/ferriki-textmate/**
+      - crates/ferriki-asset-gen/**
   workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1"
@@ -47,7 +54,8 @@ jobs:
           CANDIDATE: ${{ runner.temp }}/grammar-candidate
         run: |
           node scripts/prepare-grammar-update.mjs --output-dir "$CANDIDATE"
-          node --input-type=module -e 'import fs from "node:fs"; const report = JSON.parse(fs.readFileSync(process.env.CANDIDATE + "/report.json")); fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + report.changed + "\n")'
+          bytecode_version=$(cargo run --quiet --release -p ferriki-asset-gen -- bytecode-version)
+          BYTECODE_VERSION="$bytecode_version" node --input-type=module -e 'import fs from "node:fs"; import { needsBytecodeRefresh } from "./scripts/asset-store.mjs"; const report = JSON.parse(fs.readFileSync(process.env.CANDIDATE + "/report.json")); const lock = JSON.parse(fs.readFileSync("assets/catalog.json")); const refresh = needsBytecodeRefresh(lock, Number(process.env.BYTECODE_VERSION)); fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + (report.changed || refresh) + "\n")'
       - name: Build the native candidate validator
         if: steps.prepare.outputs.changed == 'true'
         run: pnpm -C node run build:native
@@ -61,7 +69,9 @@ jobs:
           node scripts/apply-grammar-update.mjs "$CANDIDATE"
       - name: Verify native compatibility
         if: steps.prepare.outputs.changed == 'true'
-        run: pnpm -C node run test:ferriki-compat:core
+        run: |
+          cargo test --release --test precompiled_assets
+          pnpm -C node run test:ferriki-compat:core
       - name: Verify grammar output agreement
         if: steps.prepare.outputs.changed == 'true'
         run: |

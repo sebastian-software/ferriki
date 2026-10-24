@@ -229,6 +229,17 @@ impl AssetStore {
                         format!("Release metadata is missing `{prefix}/{file}`."),
                     )
                 })?;
+                if file.ends_with(".fkbc") {
+                    if metadata.format_version() != ferriki_textmate::PRECOMPILED_PATTERNS_VERSION {
+                        return Err(Error::new(
+                            ErrorKind::AssetFormat,
+                            "Unsupported precompiled pattern version.",
+                        ));
+                    }
+                    let bytes = source.read(metadata.digest())?;
+                    metadata.verify_bytes(&bytes)?;
+                    return Ok(bytes);
+                }
                 let bytes = source.read(metadata.digest())?;
                 metadata.verify(&bytes)?;
                 Ok(bytes)
@@ -257,6 +268,17 @@ pub(crate) struct LanguageAssetCatalog {
 }
 
 impl LanguageAssetCatalog {
+    /// Bytecode is an optional optimization. Missing or unverifiable bytes leave
+    /// the source grammar usable, including with older catalogs and offline caches.
+    pub(crate) fn load_precompiled(&self, id: &str) -> Option<Vec<u8>> {
+        let entry = self.entries_by_id.get(id)?;
+        let stem = entry.asset_file.strip_suffix(".fkgram")?;
+        self.asset_store
+            .read(&format!("{stem}.fkbc"))
+            .ok()
+            .map(Cow::into_owned)
+    }
+
     pub(crate) fn load_from_dir(asset_dir: &Path) -> Result<Self> {
         let manifest_path = asset_dir.join("manifest.fkindex");
         let manifest = decode_language_manifest(&read_bytes(&manifest_path)?).map_err(|err| {

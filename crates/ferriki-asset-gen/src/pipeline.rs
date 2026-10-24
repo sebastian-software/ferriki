@@ -93,7 +93,15 @@ mod tests {
         let expected: Vec<String> = language_manifest
             .entries
             .iter()
-            .map(|entry| format!("languages/{}", entry.asset_file))
+            .flat_map(|entry| {
+                [
+                    format!("languages/{}", entry.asset_file),
+                    format!(
+                        "languages/{}.fkbc",
+                        entry.asset_file.strip_suffix(".fkgram").unwrap()
+                    ),
+                ]
+            })
             .chain(
                 theme_manifest
                     .entries
@@ -101,7 +109,14 @@ mod tests {
                     .map(|entry| format!("themes/{}", entry.asset_file)),
             )
             .collect();
-        assert_eq!(release.assets.keys().cloned().collect::<Vec<_>>(), expected);
+        assert_eq!(
+            release
+                .assets
+                .keys()
+                .cloned()
+                .collect::<std::collections::BTreeSet<_>>(),
+            expected.into_iter().collect()
+        );
         assert_eq!(release.commit, None);
 
         fs::remove_dir_all(output_dir).expect("cleanup");

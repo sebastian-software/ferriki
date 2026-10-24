@@ -454,6 +454,56 @@ pub(crate) enum Rule {
 }
 
 impl Rule {
+    pub(crate) fn prepare_static_scanners(
+        &self,
+        registry: &RuleRegistry,
+    ) -> Result<(), RegexError> {
+        // Reuse runtime list construction: order, duplicate patterns, end placement,
+        // includes, and all anchor variants must have the same cache keys.
+        for allow_a in [false, true] {
+            for allow_g in [false, true] {
+                if !matches!(
+                    self,
+                    Self::Capture(_)
+                        | Self::BeginEnd(BeginEndRule {
+                            end_has_back_references: true,
+                            ..
+                        })
+                ) {
+                    self.compile_ag(registry, None, allow_a, allow_g)?;
+                }
+                if let Self::BeginWhile(rule) = self
+                    && !rule.while_has_back_references
+                {
+                    rule.compile_while_ag(registry, None, allow_a, allow_g)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn prefilter_stats(&self) -> Vec<ferroni::scanner::PrefilterStats> {
+        let stats = |cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>| {
+            cache
+                .lock()
+                .expect("compiled pattern cache lock poisoned")
+                .as_ref()
+                .map_or_else(Vec::new, RegExpSourceList::prefilter_stats)
+        };
+        match self {
+            Self::Capture(_) => Vec::new(),
+            Self::Match(rule) => stats(&rule.cached_compiled_patterns),
+            Self::IncludeOnly(rule) => stats(&rule.cached_compiled_patterns),
+            Self::BeginEnd(rule) => stats(&rule.cached_compiled_patterns),
+            Self::BeginWhile(rule) => {
+                let mut result = stats(&rule.cached_compiled_patterns);
+                result.extend(stats(&rule.cached_compiled_while_patterns));
+                result
+            }
+        }
+    }
+
     #[must_use]
     pub(crate) fn id(&self) -> RuleId {
         self.data().id

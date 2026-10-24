@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-20
+Last updated: 2026-10-24
 
 ## Context
 
@@ -66,6 +66,11 @@ local build artifacts, not committed repository data.
   records release provenance and does not choose the new object's location.
   The absent layout still resolves legacy `<commit>/assets/shiki/<path>` URLs
   for custom mirrors; the public CDN no longer hosts them.
+- **Optional bytecode.** Each language also has a compressed `.fkbc` sidecar
+  in the same immutable language namespace, pinned independently by digest,
+  size and the combined sidecar version. Node and Rust load it alongside the grammar;
+  failures fall back to compiling the verified source. No sidecar is required
+  for offline use ([ADR 0021](0021-precompiled-pattern-sidecars.md)).
 - **Offline compilation.** Rust's build script encodes the reviewed catalog
   metadata into `OUT_DIR` through `ferriki-asset-gen`. Compiling a crate requires
   neither Node nor downloads. Node generates the same tiny indexes from the
@@ -129,11 +134,21 @@ local build artifacts, not committed repository data.
 - The fixed source/payload snapshots can be reproduced and checked independently
   of current upstream heads. Developer tests materialize data before execution;
   ordinary Rust compilation remains network-free.
-- No language/theme packages or extra runtime dependencies are introduced.
+- No language/theme packages are introduced. Bytecode decompression uses
+  flate2's Rust backend through `ferriki-textmate`.
   First use still downloads only the requested languages, dependencies, and
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-10-24: Allow assets-only publication to rebuild new payloads from pinned
+  sources, verifying the reviewed lock before uploading missing CDN objects.
+
+- 2026-10-24: Version the optional program/Eager container independently;
+  standard CDN objects carry prepared Eager groups in Zstd containers (ADR 0021).
+
+- 2026-10-24: Include optional compressed bytecode in immutable publication,
+  download planning and verified catalog loading (#325).
 
 - 2026-09-28: Proposed.
 - 2026-09-29: Accepted.

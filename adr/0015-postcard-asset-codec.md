@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-09-30
+Last updated: 2026-10-24
 
 ## Context
 
@@ -39,6 +39,11 @@ version error.
   regenerated.
 - The format stays internal, not a public interchange format.
   [`docs/asset-format.md`](../docs/asset-format.md) documents the details.
+- Optional `.fkbc` files are Zstd-compressed, independently versioned containers
+  of matched Ferroni programs and Eager groups. Their internal payload uses
+  fixed-width lengths and byte slices behind a separate magic/version boundary,
+  avoiding per-byte postcard encoding. This does not change the
+  grammar/theme/catalog format 3 ([ADR 0021](0021-precompiled-pattern-sidecars.md)).
 
 ## Considered options
 
@@ -66,5 +71,14 @@ version error.
   removed.
 
 ## History
+
+- 2026-10-24: Use Zstd and direct byte slices for prepared scanner sidecars;
+  retain postcard for grammar, theme and catalog data.
+
+- 2026-10-24: Version the optional bound program/Eager container separately
+  from the unchanged grammar and theme schemas (ADR 0021).
+
+- 2026-10-24: Distinguish optional Ferroni bytecode sidecars from the unchanged
+  postcard grammar, theme and catalog schema (#325).
 
 - 2026-09-30: Accepted. Format 3, shipped in 0.6.0 (#135, #159).

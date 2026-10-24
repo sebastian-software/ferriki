@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-22
+Last updated: 2026-10-24
 
 ## Context
 
@@ -34,7 +34,7 @@ named `ferriki-textmate`.
 - Ferroni remains the external regex implementation from ADR 0005.
   `ferriki-textmate` adapts vscode-textmate's Oniguruma calls to Ferroni's
   Scanner API and does not add another regex engine.
-- `GrammarConfiguration::with_regex_prefilter` selects automatic prefiltering
+- `GrammarConfiguration::with_regex_prefilter` enables scanner prefiltering
   (default) or disables it before a grammar's scanners compile. This tuning
   extension preserves matching, capture, and TextMate traversal behavior.
 - Each `SyncRegistry` shares one Ferroni `ScannerPatternCache` across its
@@ -51,14 +51,15 @@ named `ferriki-textmate`.
   follow-up.
   The rule-local cache still retains at most one compiled scanner for each
   anchor variant and clears those entries when a source changes.
-- A registry can export its pattern cache as a Ferroni precompiled archive and
-  attach archives that the cache consults before compiling a pattern
-  (`export_precompiled_patterns`, `add_precompiled_patterns`).
-  `Grammar::compile_all_scanners` compiles every reachable rule in every
-  `\A`/`\G` variant so an archive covers a whole grammar. It skips lists
-  that end or continue with a resolved pattern, since those bypass the cache.
-  Disposing a registry drops attached archives. Upstream has no counterpart;
-  tokens are unchanged, because a missing or invalid entry compiles from text.
+- Standard asset loading attaches optional precompiled pattern archives to
+  that cache. Static patterns load lazily from trusted bytecode, with source
+  compilation on a miss; dynamic scanners keep the cache bypass above.
+  [ADR 0021](0021-precompiled-pattern-sidecars.md) owns the preparation and
+  distribution contract.
+  Prepared Eager pairs use the same cache with a root-specific group source;
+  changing roots preserves decoded programs and groups. Standard sidecars enable
+  Eager from the first static scanner. Raw program archives remain registry-wide
+  and retain the caller's acceleration policy. Resolved dynamic lists still bypass sharing.
 - Upstream registers every grammar before it compiles one. Ferriki registers
   languages on demand, so `SyncRegistry` records which scopes and injection
   lists each compiled grammar read while compiling, including lookups that
@@ -139,6 +140,15 @@ the interpreter boundary or the zero-structural-failure gate established by
 this decision.
 
 ## History
+
+- 2026-10-24: Prepare standard static scanner groups offline and consume them in
+  Eager mode from first use, rather than waiting for Auto thresholds.
+
+- 2026-10-24: Bind stable optional Eager group sources to their root grammar
+  while retaining shared programs and dynamic lifetimes.
+
+- 2026-10-24: Attach optional precompiled static patterns to the registry cache,
+  preserving dynamic scanner lifetimes and source fallback (#325).
 
 - 2026-07-26: Accepted.
 - 2026-09-26: Catalogs and rendering moved from `ferriki-core` to the `ferriki` crate (ADR 0012).

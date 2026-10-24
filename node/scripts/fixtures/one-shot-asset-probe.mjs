@@ -64,7 +64,11 @@ switch (scenario) {
       codeToHtmlWithCss('{"x":1}', { lang: "json", theme: "nord" }),
     ]);
     globalThis.fetch = originalFetch;
-    assert.equal(failedFetches, 1, "concurrent first calls share one failed download attempt");
+    assert.equal(
+      failedFetches,
+      2,
+      "concurrent first calls share one failed grammar/bytecode download batch",
+    );
     assert(attempts.every((attempt) => attempt.status === "rejected"));
     assert.strictEqual(attempts[0].reason, attempts[1].reason);
     isAssetError(attempts[0].reason);

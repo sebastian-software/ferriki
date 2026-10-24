@@ -5,7 +5,7 @@
 //! TextMate regular-expression sources compiled onto ferroni's Scanner API.
 
 use std::array;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -26,7 +26,20 @@ use ferroni::scanner::{
 /// captured end or while patterns change. Static patterns that merely contain
 /// a backreference to their own groups have fixed text and share the cache.
 #[derive(Clone)]
-pub(crate) struct ScannerPatternCache(Arc<Mutex<FerroniScannerPatternCache>>);
+pub(crate) struct ScannerPatternCache {
+    shared: Arc<Mutex<PatternCacheState>>,
+    scope: String,
+    preparing: bool,
+}
+
+struct PatternCacheState {
+    cache: FerroniScannerPatternCache,
+    sources: BTreeMap<String, crate::precompiled::PreparedArchive>,
+    ordinary_sources: Vec<PrecompiledPatterns>,
+    active_scope: Option<String>,
+    #[cfg(test)]
+    assembly_fallbacks: usize,
+}
 
 impl Default for ScannerPatternCache {
     fn default() -> Self {
@@ -36,39 +49,120 @@ impl Default for ScannerPatternCache {
 
 impl ScannerPatternCache {
     pub(crate) fn new() -> Self {
-        Self(Arc::new(Mutex::new(FerroniScannerPatternCache::new())))
+        Self {
+            shared: Arc::new(Mutex::new(PatternCacheState {
+                cache: FerroniScannerPatternCache::new(),
+                sources: BTreeMap::new(),
+                ordinary_sources: Vec::new(),
+                active_scope: None,
+                #[cfg(test)]
+                assembly_fallbacks: 0,
+            })),
+            scope: String::new(),
+            preparing: false,
+        }
+    }
+
+    pub(crate) fn for_preparation() -> Self {
+        Self {
+            preparing: true,
+            ..Self::new()
+        }
+    }
+
+    pub(crate) fn for_scope(&self, scope: &str) -> Self {
+        Self {
+            scope: scope.to_owned(),
+            ..self.clone()
+        }
     }
 
     /// Drops compiled patterns and attached archives.
     pub(crate) fn clear(&self) {
-        let mut cache = self.0.lock().expect("scanner pattern cache lock poisoned");
-        cache.clear();
-        cache.clear_precompiled();
-    }
-
-    /// Ferriki extension: exports every pattern compiled through this cache.
-    /// Scanners holding resolved end or while patterns bypass the cache, so
-    /// their patterns are never exported.
-    pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
-        self.0
+        let mut state = self
+            .shared
             .lock()
-            .expect("scanner pattern cache lock poisoned")
-            .export_precompiled()
-            .map_err(PrecompiledPatternsError::new)
+            .expect("scanner pattern cache lock poisoned");
+        state.cache.clear();
+        state.cache.clear_precompiled();
+        state.sources.clear();
+        state.ordinary_sources.clear();
+        state.active_scope = None;
+        #[cfg(test)]
+        {
+            state.assembly_fallbacks = 0;
+        }
     }
 
-    /// Ferriki extension: consults `archive` before compiling a pattern.
+    /// Raw ordinary program archives retain the registry-wide import contract.
+    /// Prepared containers additionally select a root-specific Eager group source.
     pub(crate) fn add_precompiled(
         &self,
         archive: impl Into<Arc<[u8]>>,
     ) -> Result<(), PrecompiledPatternsError> {
-        let source =
-            PrecompiledPatterns::from_bytes(archive).map_err(PrecompiledPatternsError::new)?;
-        self.0
+        let archive = archive.into();
+        let (ordinary, prepared) = if archive.starts_with(b"FERRONI\0") {
+            (
+                Some(
+                    PrecompiledPatterns::from_bytes(archive)
+                        .map_err(PrecompiledPatternsError::from_engine)?,
+                ),
+                None,
+            )
+        } else {
+            (None, Some(crate::precompiled::open_archive(archive)?))
+        };
+        let mut state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        if let Some(source) = ordinary {
+            state.ordinary_sources.push(source);
+        }
+        if let Some(source) = prepared {
+            state.sources.insert(source.scope.clone(), source);
+        }
+        state.active_scope = None;
+        state.cache.clear_precompiled();
+        Ok(())
+    }
+
+    pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
+        self.shared
             .lock()
             .expect("scanner pattern cache lock poisoned")
-            .add_precompiled(source);
-        Ok(())
+            .cache
+            .export_precompiled()
+            .map_err(PrecompiledPatternsError::from_engine)
+    }
+
+    pub(crate) fn export_prepared(
+        &self,
+    ) -> Result<ferroni::scanner::PrecompiledEager, crate::PrecompiledPatternsError> {
+        self.shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .cache
+            .export_precompiled_eager()
+            .map_err(crate::PrecompiledPatternsError::from_engine)
+    }
+
+    pub(crate) fn compile_static(
+        &self,
+        pattern: &str,
+        prefilter: bool,
+    ) -> Result<(), crate::PrecompiledPatternsError> {
+        Scanner::with_pattern_cache(
+            &[pattern],
+            &scanner_config(prefilter),
+            &mut self
+                .shared
+                .lock()
+                .expect("scanner pattern cache lock poisoned")
+                .cache,
+        )
+        .map(|_| ())
+        .map_err(crate::PrecompiledPatternsError::new)
     }
 
     fn compile(
@@ -76,23 +170,75 @@ impl ScannerPatternCache {
         patterns: &[&str],
         config: &ScannerConfig,
         share_patterns: bool,
+        prefilter: bool,
     ) -> Result<Scanner, ferroni::error::RegexError> {
-        if share_patterns {
-            Scanner::with_pattern_cache(
-                patterns,
-                config,
-                &mut self.0.lock().expect("scanner pattern cache lock poisoned"),
-            )
-        } else {
-            Scanner::with_config(patterns, config)
+        if !share_patterns {
+            return Scanner::with_config(patterns, config);
         }
+        let mut state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        if state.active_scope.as_deref() != Some(&self.scope) {
+            // Ferroni's stable API selects one group source. Bind it to the root
+            // grammar while keeping every language's programs and decoded groups.
+            state.cache.clear_precompiled();
+            for source in state.ordinary_sources.clone() {
+                state.cache.add_precompiled(source);
+            }
+            let sources: Vec<_> = state
+                .sources
+                .iter()
+                .filter(|(scope, _)| *scope != &self.scope)
+                .chain(state.sources.get_key_value(&self.scope))
+                .map(|(_, source)| source.eager.clone())
+                .collect();
+            for source in sources {
+                state.cache.add_precompiled_eager(source);
+            }
+            state.active_scope = Some(self.scope.clone());
+        }
+        let prepared = self.preparing || state.sources.contains_key(&self.scope);
+        let config = if prepared && prefilter {
+            config
+                .clone()
+                .acceleration(ferroni::AccelerationMode::Eager)
+        } else {
+            config.clone()
+        };
+        // An optional archive must not turn a source-valid scanner into a
+        // load error, including a mixed decoded/source program set. Retry the
+        // complete list through the ordinary constructor on an assembly error.
+        Scanner::with_pattern_cache(patterns, &config, &mut state.cache).or_else(|_| {
+            #[cfg(test)]
+            {
+                state.assembly_fallbacks += 1;
+            }
+            Scanner::with_config(patterns, &config)
+        })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn assembly_fallbacks(&self) -> usize {
+        self.shared.lock().unwrap().assembly_fallbacks
+    }
+
+    #[cfg(test)]
+    pub(crate) fn prepared_stats(&self, scope: &str) -> (usize, usize) {
+        let state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        let stats = state.sources.get(scope).unwrap().eager.stats();
+        (stats.loaded_groups, stats.invalid_groups)
     }
 
     #[cfg(test)]
     pub(crate) fn len(&self) -> usize {
-        self.0
+        self.shared
             .lock()
             .expect("scanner pattern cache lock poisoned")
+            .cache
             .len()
     }
 }
@@ -635,6 +781,20 @@ impl<T> Default for RegExpSourceList<T> {
 }
 
 impl<T> RegExpSourceList<T> {
+    #[cfg(test)]
+    pub(crate) fn prefilter_stats(&self) -> Vec<ferroni::scanner::PrefilterStats> {
+        self.cached
+            .iter()
+            .chain(self.anchor_cache.iter().flatten())
+            .map(|rule| {
+                rule.scanner
+                    .lock()
+                    .expect("compiled scanner lock poisoned")
+                    .prefilter_stats()
+            })
+            .collect()
+    }
+
     #[must_use]
     pub(crate) fn new() -> Self {
         Self::with_regex_prefilter(true)
@@ -791,7 +951,7 @@ impl<T: Copy> CompiledRule<T> {
         // numbered backreferences stay valid in patterns with named groups.
         let config = scanner_config(regex_prefilter);
         let scanner = pattern_cache
-            .compile(&scanner_reg_exps, &config, share_patterns)
+            .compile(&scanner_reg_exps, &config, share_patterns, regex_prefilter)
             .map_err(RegexError::new)?;
         let mut backtracking_warnings = Vec::new();
         for (index, warnings) in scanner.warnings().iter().enumerate() {
@@ -869,7 +1029,7 @@ impl<T: Copy> CompiledRule<T> {
     }
 }
 
-fn normalize_ferroni_pattern(pattern: &str) -> String {
+pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
     let mut result = String::with_capacity(pattern.len());
     let bytes = pattern.as_bytes();
     let mut position = 0;

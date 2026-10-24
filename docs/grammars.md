@@ -273,6 +273,12 @@ gh workflow run publish.yml --repo sebastian-software/ferriki \
   --ref <reviewed-ref> -f assets-only=true
 ```
 
+When the reviewed ref introduces payloads that are not on the CDN yet, add
+`-f rebuild-assets=true`. That mode reconstructs pinned grammar/theme sources,
+builds the prepared packages, and checks every generated payload against the
+existing catalog lock before upload. It never rewrites the lock to accept
+producer differences. This is also the recovery path for missing prepared assets.
+
 For the initial migration only, also pass `-f bootstrap-assets=true`.
 The explicit `-f cleanup-bootstrap-assets=true` option removes verified
 full-hash migration objects and the temporary `ferriki-bunny-assets/` directory

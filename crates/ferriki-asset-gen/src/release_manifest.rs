@@ -16,7 +16,7 @@ pub const RELEASE_MANIFEST_VERSION: u32 = 1;
 
 const CATALOGS: [(&str, &str); 2] = [("languages", "fkgram"), ("themes", "fktheme")];
 
-/// Digest, size and format version of every grammar and theme payload.
+/// Digest, size and format version of every grammar, bytecode and theme payload.
 ///
 /// Keys are payload paths relative to the catalog directory, such as
 /// `languages/typescript.fkgram`. The repository copy carries no `commit`; the
@@ -45,7 +45,8 @@ pub struct ReleaseAsset {
     pub sha256: String,
     /// Payload size in bytes.
     pub size: u64,
-    /// Binary asset format version of the payload.
+    /// Postcard asset version, or the combined container/program/group version
+    /// for `.fkbc` sidecars.
     pub format_version: u32,
 }
 
@@ -56,7 +57,11 @@ impl ReleaseManifest {
         for (catalog, extension) in CATALOGS {
             for entry in fs::read_dir(catalog_dir.join(catalog))? {
                 let path = entry?.path();
-                if path.extension().and_then(|value| value.to_str()) != Some(extension) {
+                let is_bytecode = catalog == "languages"
+                    && path.extension().and_then(|value| value.to_str()) == Some("fkbc");
+                if !is_bytecode
+                    && path.extension().and_then(|value| value.to_str()) != Some(extension)
+                {
                     continue;
                 }
                 let file_name = path
@@ -74,7 +79,11 @@ impl ReleaseManifest {
                     ReleaseAsset {
                         sha256: sha256_hex(&bytes),
                         size: bytes.len() as u64,
-                        format_version: FORMAT_VERSION,
+                        format_version: if is_bytecode {
+                            ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+                        } else {
+                            FORMAT_VERSION
+                        },
                     },
                 );
             }

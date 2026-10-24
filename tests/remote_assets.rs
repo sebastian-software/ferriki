@@ -103,10 +103,10 @@ fn cdn_path(path: &str) -> String {
         value /= 62;
     }
     let hash: String = chars.into_iter().collect();
-    if let Some(id) = path
-        .strip_prefix("languages/")
-        .and_then(|s| s.strip_suffix(".fkgram"))
-    {
+    if let Some(id) = path.strip_prefix("languages/").and_then(|s| {
+        s.strip_suffix(".fkgram")
+            .or_else(|| s.strip_suffix(".fkbc"))
+    }) {
         format!("/{id}/{hash}")
     } else {
         let id = path

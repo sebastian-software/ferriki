@@ -14,10 +14,10 @@ pub(crate) fn asset_url(
         storage_layout,
         Some("language-hash-v1" | "language-hash-v2")
     ) {
-        let (prefix, id) = if let Some(id) = path
-            .strip_prefix("languages/")
-            .and_then(|p| p.strip_suffix(".fkgram"))
-        {
+        let (prefix, id) = if let Some(id) = path.strip_prefix("languages/").and_then(|p| {
+            p.strip_suffix(".fkgram")
+                .or_else(|| p.strip_suffix(".fkbc"))
+        }) {
             ("", id)
         } else if let Some(id) = path
             .strip_prefix("themes/")

@@ -25,6 +25,8 @@ pub struct HighlighterCore {
     registry: SyncRegistry,
     aliases: BTreeMap<String, String>,
     loaded_language_ids: BTreeSet<String>,
+    prepared_language_scopes: BTreeSet<String>,
+    attempted_precompiled_scopes: BTreeSet<String>,
     loaded_custom_language_ids: BTreeSet<String>,
     loaded_language_order: Vec<String>,
     language_aliases: BTreeMap<String, Vec<String>>,
@@ -297,9 +299,9 @@ impl Highlighter {
 }
 
 impl HighlighterBuilder {
-    /// Enables automatic regex prefiltering (the default), or disables it to
-    /// avoid prefilter construction for one-shot highlighting. This choice
-    /// applies to all grammars loaded by the highlighter.
+    /// Enables regex prefiltering (the default), or disables its construction.
+    /// Prepared standard assets use Eager for static scanners; source-only and
+    /// captured dynamic scanners retain Auto. Applies to every loaded grammar.
     pub fn with_regex_prefilter(mut self, enabled: bool) -> Self {
         self.regex_prefilter = Some(enabled);
         self
@@ -372,6 +374,8 @@ impl HighlighterCore {
             registry: SyncRegistry::new(None, None).map_err(theme_error)?,
             aliases: BTreeMap::new(),
             loaded_language_ids: BTreeSet::new(),
+            prepared_language_scopes: BTreeSet::new(),
+            attempted_precompiled_scopes: BTreeSet::new(),
             loaded_custom_language_ids: BTreeSet::new(),
             loaded_language_order: Vec::new(),
             language_aliases: BTreeMap::new(),
@@ -404,6 +408,8 @@ impl HighlighterCore {
         self.standard_assets = None;
         self.aliases.clear();
         self.loaded_language_ids.clear();
+        self.prepared_language_scopes.clear();
+        self.attempted_precompiled_scopes.clear();
         self.loaded_custom_language_ids.clear();
         self.loaded_language_order.clear();
         self.language_aliases.clear();
@@ -450,8 +456,36 @@ impl HighlighterCore {
     }
 
     pub fn load_standard_language(&mut self, requested: &str) -> Result<Option<String>> {
+        self.load_standard_language_with_retry(requested, true)
+    }
+
+    fn load_standard_language_with_retry(
+        &mut self,
+        requested: &str,
+        retry_optional: bool,
+    ) -> Result<Option<String>> {
         let mut visiting = BTreeSet::new();
-        self.load_standard_language_inner(requested, &mut visiting)
+        let scope = self.load_standard_language_inner(requested, &mut visiting)?;
+        if retry_optional && let Some(scope) = &scope {
+            // An explicit load can follow a host prefetch that made a previously
+            // absent optional file available. Tokenization does not retry I/O.
+            self.attempted_precompiled_scopes.remove(scope);
+        }
+        if let Some(scope) = &scope
+            && self.regex_prefilter
+            && !self.prepared_language_scopes.contains(scope)
+            && self.attempted_precompiled_scopes.insert(scope.clone())
+            && let Some(catalogs) = &self.standard_assets
+            && let Some(id) = catalogs.languages.resolve_id(scope)
+            && let Some(bytecode) = catalogs.languages.load_precompiled(id)
+        {
+            // The root's pair already includes its dependency scanner groups.
+            // Do not also open every dependency's standalone archive.
+            if self.registry.add_precompiled_patterns(bytecode).is_ok() {
+                self.prepared_language_scopes.insert(scope.clone());
+            }
+        }
+        Ok(scope)
     }
 
     /// Register a user-provided TextMate grammar without pretending it is a
@@ -767,7 +801,7 @@ impl HighlighterCore {
         &mut self,
         requested: &str,
     ) -> Result<Option<std::rc::Rc<ferriki_textmate::Grammar>>> {
-        let Some(scope_name) = self.load_standard_language(requested)? else {
+        let Some(scope_name) = self.load_standard_language_with_retry(requested, false)? else {
             return Ok(None);
         };
         self.registry
@@ -1209,6 +1243,24 @@ mod tests {
                 .iter()
                 .any(|scope| scope == "meta.structure.dictionary.json")
         );
+    }
+
+    #[test]
+    fn opens_only_requested_root_archives_and_can_promote_a_dependency() {
+        let mut highlighter = standard_highlighter();
+        highlighter.load_standard_language("vue").unwrap();
+        assert_eq!(
+            highlighter.prepared_language_scopes,
+            BTreeSet::from(["text.html.vue".to_owned()])
+        );
+        assert!(highlighter.resolve_scope("typescript").is_some());
+        highlighter.load_standard_language("ts").unwrap();
+        assert_eq!(
+            highlighter.prepared_language_scopes,
+            BTreeSet::from(["text.html.vue".to_owned(), "source.ts".to_owned()])
+        );
+        highlighter.dispose();
+        assert!(highlighter.prepared_language_scopes.is_empty());
     }
 
     #[test]

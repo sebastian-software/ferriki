@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-22
+Last updated: 2026-10-24
 
 ## Context
 
@@ -43,6 +43,17 @@ Each crate publishes a deliberate, curated surface.
   behind crate-owned errors (`RegexError`, `CodecError`). `serde` and
   `serde_json` are the accepted exception: they are stable 1.x crates, and
   serde derives are part of the documented serialized shape.
+- **Precompiled patterns.** `precompile_grammar_patterns`,
+  `PRECOMPILED_PATTERNS_VERSION`, `PrecompiledPatternsError` and
+  `SyncRegistry::add_precompiled_patterns` are documented public extensions
+  used between the published generator and tokenizer crates. Errors and bytes
+  remain crate-owned; Ferroni types stay private. Archive compatibility is
+  independently versioned and source compilation remains available (ADR 0021).
+  `SyncRegistry::precompile_patterns` additionally prepares static or sample-driven Eager
+  groups through the same owned byte/error boundary. The existing
+  `Grammar::compile_all_scanners`, `SyncRegistry::export_precompiled_patterns`,
+  raw `PRECOMPILED_PATTERNS_FORMAT_VERSION`, and `Into<Arc<[u8]>>` import contract
+  remain available alongside the prepared container API.
 - **Non-exhaustive by default.** Input types that callers build are
   `#[non_exhaustive]` and come with `Default` and `with_*` setters; a setter
   takes the field's type, `Option` included. Result types are
@@ -145,6 +156,18 @@ Each crate publishes a deliberate, curated surface.
   release tooling starts preserving exact requirements.
 
 ## History
+
+- 2026-10-24: Preserve the ordinary raw archive API while accepting prepared
+  Eager containers through the same registry import method.
+
+- 2026-10-24: Define empty preparation samples as complete static scanner-list
+  enumeration; nonempty samples retain encountered-group preparation.
+
+- 2026-10-24: Add the stable sample-driven Eager preparation API while keeping
+  Ferroni's program and group types private (ADR 0021).
+
+- 2026-10-24: Document the owned public bridge for generating and attaching
+  optional bytecode across published crate boundaries (#325).
 
 - 2026-09-30: Accepted. Implemented in 0.6.0 (#135, #159).
 - 2026-10-01: Includes the documented combined scope/binary result used by the highlighter (#172).

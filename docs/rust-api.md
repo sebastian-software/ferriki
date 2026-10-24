@@ -126,14 +126,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 For a CMS worker or site build, keep one highlighter and the default prefilter.
 For a short-lived process, add `.with_regex_prefilter(false)` to the builder
-to prevent regex prefilter construction. The default uses the scanner's automatic
-warm-up policy, which counts scanner searches rather than highlighted documents.
+to prevent regex prefilter construction. With the default enabled, standard
+prepared assets use Eager for static scanner groups from first use. Source-only
+and captured dynamic scanners retain Auto, whose warm-up counts scanner searches
+rather than highlighted documents.
 This is a creation-time choice for every grammar, including embedded languages
 and injections, and does not change matching or colors. Direct TextMate consumers
 can set `GrammarConfiguration::with_regex_prefilter(false)` when first compiling
 a grammar.
 
-The [Blacksmith measurements](benchmarks/blacksmith/2026-10-16-sharded/README.md)
+The [Blacksmith measurements](benchmarks/blacksmith/2026-10-16-sharded/README.md),
+which predate prepared Eager assets,
 recorded faster repeated work with the prefilter enabled and shorter full-corpus
 first use with it disabled. Those measurements exercise the Node HTML path;
 they are not Rust API speedup factors or isolated-snippet latency promises.

@@ -395,6 +395,14 @@ impl RemoteAssetHost {
     /// these themes need, unless they are cached. Unknown names are skipped;
     /// loading them reports the error. Blocking; call it off the main thread.
     pub fn prefetch(&self, languages: &[String], themes: &[String]) -> Result<()> {
+        let prepared_roots: BTreeSet<&str> = languages
+            .iter()
+            .map(|requested| {
+                self.language_aliases
+                    .get(requested.as_str())
+                    .map_or(requested.as_str(), String::as_str)
+            })
+            .collect();
         let mut paths = BTreeSet::new();
         let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
         let mut visited = BTreeSet::new();
@@ -409,24 +417,35 @@ impl RemoteAssetHost {
             if !visited.insert(id) {
                 continue;
             }
-            paths.insert(path.as_str());
+            paths.insert(path.clone());
+            let bytecode = path.replace(".fkgram", ".fkbc");
+            if prepared_roots.contains(id)
+                && self.release.assets.get(&bytecode).is_some_and(|asset| {
+                    asset.format_version == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+                })
+            {
+                paths.insert(bytecode);
+            }
             pending.extend(embedded.iter().map(String::as_str));
         }
         paths.extend(
             themes
                 .iter()
-                .filter_map(|theme| self.themes.get(theme).map(String::as_str)),
+                .filter_map(|theme| self.themes.get(theme).cloned()),
         );
         let digests = paths
             .into_iter()
             .map(|path| {
-                let asset = self.release.assets.get(path).ok_or_else(|| {
+                let asset = self.release.assets.get(&path).ok_or_else(|| {
                     Error::new(
                         ErrorKind::AssetFormat,
                         format!("Release metadata is missing `{path}`."),
                     )
                 })?;
-                asset.sha256.parse::<AssetDigest>()
+                Ok((
+                    asset.sha256.parse::<AssetDigest>()?,
+                    path.ends_with(".fkbc"),
+                ))
             })
             .collect::<Result<Vec<_>>>()?;
         // A language with its embedded languages is a dozen small files; fetch
@@ -439,10 +458,14 @@ impl RemoteAssetHost {
                     scope.spawn(|| {
                         loop {
                             let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                            let Some(digest) = digests.get(index) else {
+                            let Some((digest, optional)) = digests.get(index) else {
                                 return Ok(());
                             };
-                            self.source.fetch(digest)?;
+                            if let Err(error) = self.source.fetch(digest)
+                                && !optional
+                            {
+                                return Err(error);
+                            }
                         }
                     })
                 })

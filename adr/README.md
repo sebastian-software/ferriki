@@ -26,6 +26,7 @@ changes the record first.
 | [0018](0018-inline-highlighting-macros.md)                | Prepare inline highlighting macros at build time                  | Accepted |
 | [0019](0019-shadow-dom-code-elements.md)                  | Present prepared React code in a Shadow DOM element               | Accepted |
 | [0020](0020-curated-grammar-sources.md)                   | Own a curated standard grammar catalog                            | Accepted |
+| [0021](0021-precompiled-pattern-sidecars.md)              | Ship optional precompiled pattern sidecars                        | Accepted |
 
 Other decision records:
 
