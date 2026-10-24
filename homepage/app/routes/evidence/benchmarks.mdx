@@ -30,6 +30,46 @@ These factors are Shiki's time divided by Ferriki's time. They describe this
 corpus and these machines; they do not measure total build time or guarantee
 the same factor for another workload.
 
+## Prepared regex
+
+Ferriki can carry regex preparation across process restarts. With Ferroni 2.7,
+standard grammars arrive with precompiled programs and prepared Eager scanner
+automata. A fresh highlighter restores that work instead of rebuilding the
+serialized automata from source. The digest-addressed disk cache lets later
+builds reuse the download when their cache persists.
+
+An October 24, 2026 local diagnostic compares source Eager with full static
+preparation on macOS ARM64, using Ferroni 2.7.0 and Rust 1.99.0. Two runs
+rotate four lanes through 20 fresh-registry samples after one discarded round.
+The table reports startup medians in milliseconds as run A / run B.
+
+| Grammar    |      Source Eager |  Prepared Eager |
+| ---------- | ----------------: | --------------: |
+| C++        | 143.699 / 144.585 | 67.955 / 68.083 |
+| Swift      |   33.564 / 34.004 | 15.511 / 15.648 |
+| Rust       |     3.629 / 3.605 |   1.680 / 1.677 |
+| Python     |   12.986 / 13.074 |   6.559 / 6.613 |
+| JSON       |     0.464 / 0.468 |   0.387 / 0.383 |
+| CSS        |   36.163 / 36.587 | 12.889 / 12.987 |
+| TypeScript |   72.606 / 72.024 | 23.682 / 23.360 |
+
+For C++, that is **about 53% lower tokenizer startup**, from roughly 144 ms to
+68 ms. Prepared execution stays comparable to ordinary Eager across these
+workloads. All lanes must produce identical token arrays; prepared lanes also
+verify that real groups load without falling back to source scanner assembly.
+
+Startup includes compressed SHA-256 verification, copying, bounded
+decompression, archive opening, theme and grammar construction, and the first
+document. Network, file I/O, grammar JSON parsing, HTML rendering, and complete
+builds are outside the timer. This measures tokenizer restoration versus
+preparation, not end-to-end CDN startup or deployment speed. Restoration still
+costs more than source Off. CPU placement and thermals were uncontrolled.
+
+The [full diagnostic and both raw captures](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/prepared-eager.md)
+record execution timings, fixture hashes, package sizes, source provenance,
+and limits. These local prepared-package results are separate from the older
+Shiki comparisons below; they are not a new Shiki speedup measurement.
+
 ## Reused highlighters on two hosts
 
 <BlacksmithSummary />
@@ -114,11 +154,13 @@ before generating its tables. See the
 
 ## First use and the regex prefilter
 
-Keep the default prefilter for a CMS, documentation server or site build that
-reuses its highlighter. For a short-lived process, `regexPrefilter: false`
-avoids building the regex prefilter. Choose it when creating the highlighter;
-it is not a per-render option. Rust exposes the same choice through
-`.with_regex_prefilter(false)`.
+The older Blacksmith run below used Ferroni 2.2.2, before prepared packages.
+It compares locally prepared regex optimizations with the prefilter disabled.
+Current standard grammars restore prepared optimizations by default; see the
+[prepared-package diagnostic](#prepared-regex) for that startup comparison.
+`regexPrefilter: false` disables the prefilter and skips prepared packages.
+Choose it when creating the highlighter; it is not a per-render option. Rust
+exposes the same choice through `.with_regex_prefilter(false)`.
 
 <RegexModeBenchmarks />
 

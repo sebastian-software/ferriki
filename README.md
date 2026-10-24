@@ -12,12 +12,31 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-**Beautiful code. Ready for your page.** Ferriki brings editor-grade TextMate
+**Beautiful code. Optimization, delivered.** Ferriki brings editor-grade TextMate
 highlighting to documentation, CMS content, and site builds. Its native Rust
 engine works from Node.js and Rust, while Vite 8 macros prepare literal
 component examples during the build. The Node API keeps
 Shiki's familiar HTML call shape, backed by Ferriki's own curated grammar
 catalog.
+
+## Compile once. Start optimized.
+
+Regex optimization can travel with your grammar. Powered by Ferroni 2.7,
+Ferriki prepares regex programs and static scanner automata ahead of time and
+delivers them as packages from the CDN. Your highlighter restores that work
+and starts with Eager optimizations from the first static scan.
+
+Keep the asset cache between builds and the same download serves fresh
+processes, rebuilds, and deployments. Each process restores the prepared
+automata instead of rebuilding them from regex source. Standard grammars use
+these packages by default when prefiltering is on, with source fallback when
+a package is unavailable. Dynamic patterns remain local.
+
+In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
+**about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
+Startup includes restoration and the first document; network, file I/O, and
+complete builds are outside the timer. See the
+[measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
 ## Choose your path
 

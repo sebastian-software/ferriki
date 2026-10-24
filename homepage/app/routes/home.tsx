@@ -15,6 +15,7 @@ import {
   CoverageSection,
   MacroSection,
 } from "../components/home-sections";
+import { PreparedRegexSection } from "../components/prepared-regex";
 import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
 import { grammarCount } from "../data/grammar-catalog";
 import sample from "../data/sample.json";
@@ -25,12 +26,12 @@ function HeroSection() {
     <ProjectHero
       icon="ferriki"
       title="Ferriki"
-      what="Beautiful code. Ready for your page."
-      lede="Native TextMate highlighting for docs, CMS pages, and site builds. Use familiar Shiki-style HTML calls in Node.js, call the same native engine from Rust, or prepare React examples during Vite 8 builds."
+      what="Beautiful code. Optimization, delivered."
+      lede="Native TextMate highlighting for Node.js and Rust, with regex optimizations prepared before your build starts. Load standard grammars from the CDN, restore their optimized scanners, and get straight to highlighting."
       facts={[
         { label: "Runtime", value: "Native Rust" },
         { label: "Grammars", value: String(grammarCount) },
-        { label: "Output", value: "HTML + CSS" },
+        { label: "Regex", value: "Prepared ahead" },
       ]}
       actions={
         <>
@@ -135,6 +136,7 @@ export default function HomePage() {
     <RegistryFacts>
       <div className="fam-page ferriki-home">
         <HeroSection />
+        <PreparedRegexSection />
         <SampleSection />
         <CodeSection />
         <MacroSection />

@@ -48,13 +48,13 @@ export const meta: MetaFunction = ({ location }) => {
   const page = section?.pages.find(([, to]) => to === path);
   const title = page
     ? `${page[0]} · ${section?.label} · Ferriki`
-    : "Ferriki — Beautiful code, ready for your page";
+    : "Ferriki — Beautiful code. Optimization, delivered.";
   return [
     { title },
     {
       name: "description",
       content:
-        "Native TextMate syntax highlighting for Node.js and Rust. Use familiar Shiki-style HTML calls in Node.js, or prepare React examples during Vite 8 builds.",
+        "Native TextMate highlighting for Node.js and Rust. Prepared regex packages bring Eager optimizations to your first highlight and carry them across builds.",
     },
   ];
 };
