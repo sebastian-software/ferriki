@@ -4,10 +4,29 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
-Ship polished code examples in your docs, CMS, or site build. Ferriki runs its
+**Beautiful code. Optimization, delivered.** Ship polished code examples in your
+docs, CMS, or site build. Ferriki runs its
 curated TextMate grammar catalog on a native Rust engine and keeps familiar
 Shiki-shaped HTML calls for Node.js. Prepare examples as static HTML, or keep
 one highlighter ready for a stream of blocks.
+
+## Compile once. Start optimized.
+
+Your next process can pick up the regex work already done. Powered by Ferroni
+2.7, Ferriki delivers precompiled regex programs and optimized static scanner
+automata with its standard grammars. They arrive from the CDN, are verified
+and cached on disk, and restore Eager optimizations from the first static scan.
+
+Keep the cache between builds to reuse the same downloads across rebuilds and
+deployments. Each fresh process restores the prepared automata instead of
+rebuilding them from source. This is the default with prefiltering on;
+unavailable packages fall back to source, and dynamic patterns remain local.
+
+In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
+**about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
+Startup includes restoration and the first document; network, file I/O, and
+complete builds are outside the timer. See the
+[measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
 ## Requirements and install
 
@@ -48,10 +67,11 @@ Run `node highlight.mjs`, then open `highlighted.html`. The one-shot API loads
 the language and theme on first use and reuses a process-local highlighter on
 later calls.
 
-## Measured results
+## Retained Shiki comparisons
 
-On our measured 14-file Blacksmith corpus, a reused Ferriki highlighter produced
-the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
+These captures used Ferriki 1.1.1 and Ferroni 2.2.2, before prepared regex
+packages. On that 14-file Blacksmith corpus, a reused Ferriki highlighter
+produced the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
 faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
 for hosts, conditions, first-use timings, and raw results.
 

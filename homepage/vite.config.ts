@@ -45,7 +45,7 @@ export default defineConfig({
     ardo({
       title: "Ferriki",
       description:
-        "Beautiful, ready-to-display code for docs and site builds, with native TextMate highlighting for Node.js and Rust.",
+        "Native TextMate highlighting for Node.js and Rust, with prepared regex optimizations delivered from the CDN and reused across builds.",
       githubPages: false,
       siteUrl: "https://ferriki.dev",
     }),

@@ -2,6 +2,7 @@
 
 use ferriki::{
     AssetDigest, AssetMetadata, EmbeddedAssetSource, Highlighter, StandardAssetCatalogs,
+    TokenizeOptions,
 };
 use ferriki_asset_gen::ReleaseManifest;
 use std::borrow::Cow;
@@ -57,6 +58,9 @@ fn highlighter(mode: &str, prefilter: bool) -> Highlighter {
 
 #[test]
 fn standard_bytecode_matches_source_for_curated_and_tiobe_fixtures() {
+    // Compare complete tokenization. A wall-clock cutoff can stop only one
+    // lane on a loaded debug runner; budget behavior has separate coverage.
+    let options = TokenizeOptions::default().with_time_limit_millis(0);
     for prefilter in [false, true] {
         let mut source = highlighter("source", prefilter);
         let mut prepared = highlighter("prepared", prefilter);
@@ -92,8 +96,12 @@ fn standard_bytecode_matches_source_for_curated_and_tiobe_fixtures() {
                         .join(fixture["file"].as_str().unwrap()),
                 )
                 .unwrap();
-                let expected = source.highlight(&code, language, "nord").unwrap();
-                let actual = prepared.highlight(&code, language, "nord").unwrap();
+                let expected = source
+                    .highlight_with_options(&code, language, "nord", &options)
+                    .unwrap();
+                let actual = prepared
+                    .highlight_with_options(&code, language, "nord", &options)
+                    .unwrap();
                 assert_eq!(
                     serde_json::to_value(actual).unwrap(),
                     serde_json::to_value(expected).unwrap(),
