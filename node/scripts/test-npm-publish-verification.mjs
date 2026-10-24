@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -12,6 +13,7 @@ import {
   runPublicNpmInstall,
   verifyCdnPayloads,
   verifyNpmPublication,
+  verifyPublicAssetCache,
 } from "./verify-npm-publish.mjs";
 
 let npmVersionProbes = 0;
@@ -210,6 +212,46 @@ await assert.rejects(
   /publish-npm concluded failure/,
 );
 assert.equal(failedPublishAttempts, 1, "a failed publish must not wait out the retry window");
+
+const assetCache = await mkdtemp(join(tmpdir(), "ferriki-public-cache-contract-"));
+const cachePayloads = ["rust grammar", "prepared regex", "nord theme"].map((value) =>
+  new TextEncoder().encode(value),
+);
+const cachePaths = ["languages/rust.fkgram", "languages/rust.fkbc", "themes/nord.fktheme"];
+const cacheManifest = {
+  assets: Object.fromEntries(
+    cachePaths.map((path, index) => [
+      path,
+      {
+        sha256: createHash("sha256").update(cachePayloads[index]).digest("hex"),
+        size: cachePayloads[index].length,
+      },
+    ]),
+  ),
+};
+try {
+  for (const [index, path] of cachePaths.entries()) {
+    await writeFile(join(assetCache, cacheManifest.assets[path].sha256), cachePayloads[index]);
+  }
+  await verifyPublicAssetCache(cacheManifest, assetCache);
+  const prepared = cacheManifest.assets["languages/rust.fkbc"];
+  const preparedFile = join(assetCache, prepared.sha256);
+  await rm(preparedFile);
+  await assert.rejects(verifyPublicAssetCache(cacheManifest, assetCache), /prepared regex package/);
+  const corrupt = cachePayloads[1].slice();
+  corrupt[0] ^= 1;
+  await writeFile(preparedFile, corrupt);
+  await assert.rejects(verifyPublicAssetCache(cacheManifest, assetCache), /cached SHA-256 differs/);
+  await writeFile(preparedFile, "truncated");
+  await assert.rejects(verifyPublicAssetCache(cacheManifest, assetCache), /cached size differs/);
+  const { "languages/rust.fkbc": _prepared, ...withoutPrepared } = cacheManifest.assets;
+  await assert.rejects(
+    verifyPublicAssetCache({ assets: withoutPrepared }, assetCache),
+    /manifest is missing languages\/rust.fkbc/,
+  );
+} finally {
+  await rm(assetCache, { recursive: true, force: true });
+}
 
 console.log("Ferriki npm publication verification contract passed");
 

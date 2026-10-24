@@ -255,6 +255,30 @@ export async function verifyCdnPayloads(releaseManifest, { fetchImpl = fetch } =
   console.log(`CDN serves all ${entries.length} payloads of ${commit} with their pinned digests`);
 }
 
+/** Verify the cold-install probe cached all three pinned default assets. */
+export async function verifyPublicAssetCache(releaseManifest, cacheDir) {
+  const paths = ["languages/rust.fkgram", "languages/rust.fkbc", "themes/nord.fktheme"];
+  const expected = paths.map((path) => {
+    const asset = releaseManifest.assets[path];
+    assert(asset, `the release manifest is missing ${path}`);
+    return { path, ...asset };
+  });
+  assert.deepEqual(
+    (await readdir(cacheDir)).sort(),
+    expected.map((asset) => asset.sha256).sort(),
+    "the public install must cache the rust grammar, prepared regex package, and nord theme",
+  );
+  for (const asset of expected) {
+    const bytes = await readFile(join(cacheDir, asset.sha256));
+    assert.equal(bytes.length, asset.size, `${asset.path}: cached size differs`);
+    assert.equal(
+      createHash("sha256").update(bytes).digest("hex"),
+      asset.sha256,
+      `${asset.path}: cached SHA-256 differs`,
+    );
+  }
+}
+
 async function verifyPublicInstall(packageName, version) {
   const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-public-install-"));
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -322,11 +346,7 @@ async function verifyPublicInstall(packageName, version) {
       throw new Error(
         `public Ferriki install probe failed:\n${nodeResult.stdout}\n${nodeResult.stderr}`,
       );
-    const cached = await readdir(cacheDir);
-    if (cached.length !== 2)
-      throw new Error(
-        `expected the rust grammar and nord theme in the cache, found ${cached.length} files`,
-      );
+    await verifyPublicAssetCache(releaseManifest, cacheDir);
     console.log(
       `public npm install verified for ${packageName}@${version}, highlighting from the CDN`,
     );
