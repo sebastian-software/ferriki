@@ -143,6 +143,18 @@ impl SyncRegistry {
             .add_precompiled_from_slice(archive)
     }
 
+    /// Attach an owned archive without copying its decoded program/group sections.
+    ///
+    /// Accepts the same archives as [`Self::add_precompiled_patterns`]. The
+    /// registry retains shared views of the owned allocation; lazy validation
+    /// and optional-source fallback remain unchanged.
+    pub fn add_precompiled_patterns_owned(
+        &mut self,
+        archive: Vec<u8>,
+    ) -> Result<(), PrecompiledPatternsError> {
+        self.scanner_pattern_cache.add_precompiled_owned(archive)
+    }
+
     /// Prepare static programs and the ordered Eager groups exercised by `samples`.
     ///
     /// Resolves the registry's current includes and injections in a temporary
@@ -911,6 +923,21 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(archive_tokens(&target_grammar, &lines), expected);
+    }
+
+    #[test]
+    fn owned_raw_program_archive_preserves_registry_import_results() {
+        let lines = ["fn x = word", "let y"];
+        let (source, grammar) = archive_registry(true);
+        let expected = archive_tokens(&grammar, &lines);
+        let archive = source.export_precompiled_patterns().unwrap();
+        let (mut target, _) = archive_registry(true);
+        target.add_precompiled_patterns_owned(archive).unwrap();
+        let grammar = target
+            .grammar_for_scope_name("source.archive", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+        assert_eq!(archive_tokens(&grammar, &lines), expected);
     }
 
     #[test]
