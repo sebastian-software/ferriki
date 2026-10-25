@@ -14,7 +14,7 @@ mod schema;
 pub use generate::GeneratedCatalog;
 pub use pipeline::{GeneratedCatalogSet, generate_catalogs_from_upstream};
 pub use release_manifest::{
-    RELEASE_MANIFEST_FILE, RELEASE_MANIFEST_VERSION, ReleaseAsset, ReleaseManifest,
+    DecodedAsset, RELEASE_MANIFEST_FILE, RELEASE_MANIFEST_VERSION, ReleaseAsset, ReleaseManifest,
 };
 pub use schema::{
     AssetSourceRef, CodecError, FORMAT_VERSION, LanguageAsset, LanguageAssetEntry,

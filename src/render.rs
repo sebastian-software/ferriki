@@ -1,8 +1,8 @@
 use ferriki_textmate::FontStyle;
 use serde_json::{Map, Value, json};
 
+use crate::asset_source::sha256_hex;
 use crate::{HighlightToken, HighlightTokensResult};
-use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 
@@ -296,7 +296,7 @@ fn extract_styles(node: &mut Value, rules: &mut BTreeMap<String, String>) {
             .remove("style")
             .and_then(|value| value.as_str().map(str::to_owned))
     {
-        let name = format!("ferriki-style-{:x}", Sha256::digest(style.as_bytes()));
+        let name = format!("ferriki-style-{}", sha256_hex(style.as_bytes()));
         let class = properties
             .get("class")
             .and_then(Value::as_str)

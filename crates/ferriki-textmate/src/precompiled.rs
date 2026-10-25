@@ -1,5 +1,6 @@
 //! Build-time preparation of static TextMate patterns.
 
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 
 use crate::RawGrammar;
@@ -27,10 +28,25 @@ pub(crate) struct PreparedArchive {
     pub(crate) eager: PrecompiledEager,
 }
 
-pub(crate) fn open_archive(
-    bytes: impl AsRef<[u8]>,
-) -> Result<PreparedArchive, PrecompiledPatternsError> {
-    let bytes = bytes.as_ref();
+/// Decompress a prepared container for a persistent, verified asset cache.
+///
+/// Checks transport limits and container boundaries. The caller must still
+/// authenticate the bytes against trusted metadata. Programs and groups retain
+/// their normal lazy validation when attached to a registry. Already decoded
+/// containers are accepted as well.
+pub fn decompress_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>, PrecompiledPatternsError> {
+    let decoded = decode_archive(bytes)?;
+    archive_layout(&decoded)?;
+    Ok(decoded.into_owned())
+}
+
+fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsError> {
+    if bytes.starts_with(MAGIC) {
+        if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
+            return Err(PrecompiledPatternsError::new("excessive archive size"));
+        }
+        return Ok(Cow::Borrowed(bytes));
+    }
     let size = zstd::zstd_safe::get_frame_content_size(bytes)
         .map_err(|_| PrecompiledPatternsError::new("invalid Zstd frame"))?
         .filter(|size| *size <= MAX_ARCHIVE_BYTES)
@@ -66,7 +82,16 @@ pub(crate) fn open_archive(
     let decoded = decoder
         .decompress(bytes, size as usize)
         .map_err(PrecompiledPatternsError::new)?;
-    if decoded.len() as u64 != size || decoded.len() < 32 || &decoded[..8] != MAGIC {
+    if decoded.len() as u64 != size {
+        return Err(PrecompiledPatternsError::new(
+            "invalid decoded archive size",
+        ));
+    }
+    Ok(Cow::Owned(decoded))
+}
+
+fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
+    if decoded.len() < 32 || &decoded[..8] != MAGIC {
         return Err(PrecompiledPatternsError::new(
             "unsupported Ferriki prepared archive",
         ));
@@ -79,13 +104,20 @@ pub(crate) fn open_archive(
         .checked_add(scope_len as u64)
         .and_then(|n| n.checked_add(program_len))
         .and_then(|n| n.checked_add(group_len));
-    if version != PRECOMPILED_PATTERNS_VERSION || total != Some(size) {
+    if version != PRECOMPILED_PATTERNS_VERSION || total != Some(decoded.len() as u64) {
         return Err(PrecompiledPatternsError::new(
             "unsupported archive version or invalid lengths",
         ));
     }
     let scope_end = 32 + scope_len;
-    let program_end = scope_end + program_len as usize;
+    Ok((scope_end, scope_end + program_len as usize))
+}
+
+pub(crate) fn open_archive(
+    bytes: impl AsRef<[u8]>,
+) -> Result<PreparedArchive, PrecompiledPatternsError> {
+    let decoded = decode_archive(bytes.as_ref())?;
+    let (scope_end, program_end) = archive_layout(&decoded)?;
     let scope = std::str::from_utf8(&decoded[32..scope_end])
         .map_err(PrecompiledPatternsError::new)?
         .to_owned();
@@ -311,6 +343,37 @@ mod tests {
     }
 
     #[test]
+    fn decoded_containers_outlive_the_input_and_preserve_tokens() {
+        let raw = grammar();
+        let mut prepared = SyncRegistry::new(None, None).unwrap();
+        {
+            let compressed = precompile_grammar_patterns(&raw).unwrap();
+            let decoded = decompress_precompiled_patterns(&compressed).unwrap();
+            assert!(decoded.starts_with(MAGIC));
+            prepared
+                .add_precompiled_patterns_from_slice(&decoded)
+                .unwrap();
+        }
+        let mut source = SyncRegistry::new(None, None).unwrap();
+        for registry in [&mut source, &mut prepared] {
+            registry.add_grammar(raw.clone(), vec![]);
+        }
+        let tokenize = |registry: &mut SyncRegistry| {
+            registry
+                .grammar_for_scope_name(&raw.scope_name, GrammarConfiguration::default())
+                .unwrap()
+                .unwrap()
+                .tokenize_line("first word TODO", None, 0)
+                .unwrap()
+                .tokens
+        };
+        assert_eq!(tokenize(&mut source), tokenize(&mut prepared));
+        let (loaded, invalid) = prepared.prepared_stats(&raw.scope_name);
+        assert!(loaded > 0);
+        assert_eq!(invalid, 0);
+    }
+
+    #[test]
     fn preparation_does_not_export_unreachable_standalone_match_scanners() {
         let raw = parse_raw_grammar(
             r#"{"scopeName":"source.flat","patterns":[{"match":"alpha"},{"match":"beta"}]}"#,
@@ -530,6 +593,8 @@ mod tests {
         for range in [8..12, 12..16, 16..24, 24..32] {
             let mut invalid = decoded.clone();
             invalid[range].fill(0xff);
+            assert!(decompress_precompiled_patterns(&invalid).is_err());
+            assert!(open_archive(&invalid).is_err());
             assert!(open_archive(zstd::bulk::compress(&invalid, 1).unwrap()).is_err());
         }
         let mut trailing = archive.clone();

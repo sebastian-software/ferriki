@@ -48,6 +48,18 @@ pub struct ReleaseAsset {
     /// Postcard asset version, or the combined container/program/group version
     /// for `.fkbc` sidecars.
     pub format_version: u32,
+    /// Trusted bytes after transport decompression, when a decoded cache is supported.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decoded: Option<DecodedAsset>,
+}
+
+/// Release-pinned identity of a decoded prepared container.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct DecodedAsset {
+    pub sha256: String,
+    pub size: u64,
 }
 
 impl ReleaseManifest {
@@ -83,6 +95,16 @@ impl ReleaseManifest {
                             ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
                         } else {
                             FORMAT_VERSION
+                        },
+                        decoded: if is_bytecode {
+                            let decoded = ferriki_textmate::decompress_precompiled_patterns(&bytes)
+                                .map_err(io::Error::other)?;
+                            Some(DecodedAsset {
+                                sha256: sha256_hex(&decoded),
+                                size: decoded.len() as u64,
+                            })
+                        } else {
+                            None
                         },
                     },
                 );
@@ -159,6 +181,7 @@ mod tests {
                 sha256: sha256_hex(b"nord"),
                 size: 4,
                 format_version: FORMAT_VERSION,
+                decoded: None,
             },
         );
         let manifest = ReleaseManifest {

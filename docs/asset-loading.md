@@ -11,6 +11,19 @@ the release-pinned size, hashes them as they arrive, and installs verified
 files through a temporary file and rename. The native catalog verifies cached bytes
 again when it reads them. Failed downloads are not retried.
 
+Prepared regex packages also cache their uncompressed containers under
+`decoded/<sha256>`. The first load decompresses and verifies the container,
+then saves it atomically. A fresh process reads and verifies those bytes
+directly, without repeating decompression or checking the compressed file.
+The release manifest pins both representations. A damaged decoded entry is
+rebuilt from the verified download when available; an unwritable cache keeps
+highlighting usable without persistence. Older releases keep their original
+compressed-only behavior.
+
+Keep the complete cache directory between builds to reuse this work. Decoded
+containers take more disk space. Each process still needs file I/O, integrity
+checks and runtime restoration; precompilation does not remove those costs.
+
 ## Configuration
 
 `assets.remote`, `assets.baseUrl` and `assets.cacheDir` override the matching

@@ -1,0 +1,162 @@
+{
+  "hardware": {
+    "cpu": "Apple M1 Ultra",
+    "cores": 20,
+    "memoryGiB": 64,
+    "platform": "darwin-arm64",
+    "darwin": "27.0.0"
+  },
+  "baseline": {
+    "builtAt": "2026-10-25T07:43:59.081Z",
+    "binarySha256": "947a12e0bac93ff845776a44d91d216dec88cdad9256860817af44e6dd69967b",
+    "ferriki": {
+      "commit": "bcceeeaba360a08597c7e595d632c448337c29b6",
+      "status": ""
+    },
+    "rustSourceSha256": "2ed8d316f8c870ddb1dd5244b8fbc700f3f7742c0225cdb3b2a664440c9d4c90",
+    "ferroni": {
+      "version": "2.7.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "<cargo-registry>/ferroni-2.7.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter",
+        "precompiled",
+        "precompiled-eager",
+        "scanner-group-nfa-prototype"
+      ]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "<checkout>/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "7c361ad167791d46b656909ed4cf01b6a12757fc27a472f6b56962b5faf9cfc4"
+  },
+  "candidate": {
+    "builtAt": "2026-10-25T13:21:05.855Z",
+    "binarySha256": "3f0b4a587df0a4e239d75a9bfb9523233100b88832e1e6fcc8b9c9988ac3bd19",
+    "ferriki": {
+      "commit": "6f159d0bc0cb058e65991ce75a866e6577ad399d",
+      "status": "M Cargo.lock\n M Cargo.toml\n M README.md\n M README.md.src\n M adr/0013-cdn-loaded-standard-assets.md\n M adr/0014-rust-crate-semver-surface.md\n M adr/0021-precompiled-pattern-sidecars.md\n M assets/catalog.json\n M crates/ferriki-asset-gen/src/lib.rs\n M crates/ferriki-asset-gen/src/release_manifest.rs\n M crates/ferriki-textmate/src/lib.rs\n M crates/ferriki-textmate/src/precompiled.rs\n M crates/ferriki-textmate/src/precompiled_bench.rs\n M crates/ferriki-textmate/src/regexp.rs\n M crates/ferriki-textmate/src/registry.rs\n M docs/asset-loading.md\n M homepage/app/components/prepared-regex.tsx\n M node/ferriki/README.md\n M node/scripts/bench-shiki-comparison.mjs\n M src/asset_catalog.rs\n M src/asset_source.rs\n M src/highlighter.rs\n M src/lib.rs\n M src/node_assets.rs\n M src/remote.rs\n M src/render.rs\n?? docs/benchmarks/precompiled-patterns/decoded-cache/\n?? src/precompiled_cache.rs"
+    },
+    "rustSourceSha256": "86ea73c5aca7344d492f9955eae6f8b19b3f94de490bc959fa81ab4c507ec659",
+    "ferroni": {
+      "version": "2.7.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "<cargo-registry>/ferroni-2.7.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter",
+        "precompiled",
+        "precompiled-eager",
+        "scanner-group-nfa-prototype"
+      ]
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "<checkout>/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "ef1d90dddd86de904528f7447dee5c5e2b1d93c190a88d28846b89598a8e645c"
+  },
+  "runnerSha256": "535c56f42063019c0bfd56eaee66b5f672fb15c3b6ecb773cac8fbcb893e97f6",
+  "facadeFiles": [
+    {
+      "path": "assets/standard/GRAMMAR-NOTICES.md",
+      "sha256": "e31975d7c5978b17fccbe632fbff94e0df74644ae15c3a803d9d34a42e7f9a74"
+    },
+    {
+      "path": "assets/standard/catalog.mjs",
+      "sha256": "f92413132e1371d75f5dfd1a5b160f4054339b697a29413a20a9f549d0b50ab3"
+    },
+    {
+      "path": "assets/standard/languages/manifest.fkindex",
+      "sha256": "0e091672304500426f3556f4418fb013bb2e13a572b3b0a265498070a94f1017"
+    },
+    {
+      "path": "assets/standard/release-manifest.json",
+      "sha256": "735482be233369c4189f88e69a98c87b8e09c159c789dcee91a92a1d6408a87d"
+    },
+    {
+      "path": "assets/standard/themes/manifest.fkindex",
+      "sha256": "ab61c36285cf8400cb9e68bb52bbeef48f9c22273c1b1bdbb1fd7c10823e392f"
+    },
+    {
+      "path": "classes.mjs",
+      "sha256": "335b12e3806464989ffc8c3ad642ebf485155de1c8d4d9973e2006cb208d227e"
+    },
+    {
+      "path": "grammar.mjs",
+      "sha256": "95b4262416138605ef7483aeadf7b72a427690f1738e5de5062f099da35240cf"
+    },
+    {
+      "path": "index.mjs",
+      "sha256": "f2a82d184924ec60fdeb48c289e570c8bfd4ca5b869933b766656567176dc623"
+    },
+    {
+      "path": "macro.mjs",
+      "sha256": "8f5cf56d2c19827853b221d27f5420fc02eef6085fd5ee4f252eaaa0402ee9d2"
+    },
+    {
+      "path": "native.mjs",
+      "sha256": "65ba28ad4f698024f998d471f0c01734fd82d69a8fefd6a4e15bdde8ec2fe3f7"
+    },
+    {
+      "path": "package.json",
+      "sha256": "db8421b3bd9e606fe19a3f0e6cb9718bd093d353e2d00778cddb065843984b53"
+    },
+    {
+      "path": "platforms.mjs",
+      "sha256": "511a9fa9e1c6f45c128c9c921ecb9f3a094d1b7529cbd66c22ad57b256378657"
+    },
+    {
+      "path": "react-macro.mjs",
+      "sha256": "c5d13f15797ac6bf03444d195899aeeedbd824b111bad60b622353e36c139d01"
+    },
+    {
+      "path": "src/api.d.mts",
+      "sha256": "8926b614b82c670632381f961f604beb7691087a7137361034967863bada6fee"
+    },
+    {
+      "path": "src/api.mts",
+      "sha256": "43a699683757f4e9bc40f521a6cc0629520468fa47baac88c07d0752ddd6ab4a"
+    },
+    {
+      "path": "src/asset-download.mjs",
+      "sha256": "7eee58de74fc213a4056cb172f8f0ab49cd21356aac029f616a13c63a06eed2f"
+    },
+    {
+      "path": "src/index.mjs",
+      "sha256": "6ef10bd9b37a9812fd494f5ca9e0936e85c96bc11262c731b5ec024df27e7978"
+    },
+    {
+      "path": "transformers.mjs",
+      "sha256": "2fef933631acccd63921e81a5f09bea1b0c512ef383446ada6752b4ee76f7a89"
+    },
+    {
+      "path": "web-component-server.mjs",
+      "sha256": "157d0179fb7766908b3eabfb7d2665b411d0bbfd3e7cdff526718d61300a95b1"
+    },
+    {
+      "path": "web-component.mjs",
+      "sha256": "ac17cb7216481678756ce6c4a5a9313469ec16db3f95c48284c8823195c65033"
+    }
+  ]
+}

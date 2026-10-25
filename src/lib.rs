@@ -12,6 +12,7 @@ mod error;
 mod highlighter;
 mod multi_render;
 mod node_assets;
+mod precompiled_cache;
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
 mod remote;
 mod render;
@@ -23,7 +24,7 @@ pub use asset_source::{
     AssetDigest, AssetMetadata, AssetSource, DirectoryAssetSource, EmbeddedAssetSource,
 };
 pub use error::{Error, ErrorKind, Result};
-pub use ferriki_asset_gen::{ReleaseAsset, ReleaseManifest};
+pub use ferriki_asset_gen::{DecodedAsset, ReleaseAsset, ReleaseManifest};
 pub use ferriki_textmate::{
     BacktrackingRisk, BacktrackingWarning, FontStyle, ParseRawGrammarError, RawGrammar, RawTheme,
     RawThemeScope, RawThemeSetting, RawThemeStyle, RegexMode, StandardTokenType, parse_raw_grammar,

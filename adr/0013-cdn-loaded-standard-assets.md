@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Context
 
@@ -114,6 +114,14 @@ local build artifacts, not committed repository data.
   built-in fetch with six workers and a 60-second timeout; the optional Rust
   `remote` feature uses ureq/rustls and the platform trust store. Existing
   proxy, certificate, cache-location, and download-limit behavior is unchanged.
+  Prepared sidecars additionally pin the decoded container's SHA-256 and size.
+  Their first load writes verified, uncompressed bytes atomically under
+  `decoded/<sha256>`. Later processes read and verify that container directly,
+  avoiding repeated Zstd decompression. Planning only checks its file size;
+  verification happens on the actual read. Invalid derived files are discarded
+  and rebuilt from the verified transport when available. Persistence failure
+  keeps preparation usable without a decoded cache; old manifests keep the
+  compressed-only path. Directory and embedded catalogs never create a disk cache.
 - **Offline use.** Synchronous loading reads only the populated cache. Prewarm
   the cache, supply a mirror through `FERRIKI_ASSETS_BASE_URL`, or use Rust's
   directory/embedded asset sources. Remote loading is enabled by default in
@@ -135,11 +143,14 @@ local build artifacts, not committed repository data.
   of current upstream heads. Developer tests materialize data before execution;
   ordinary Rust compilation remains network-free.
 - No language/theme packages are introduced. Bytecode decompression uses
-  flate2's Rust backend through `ferriki-textmate`.
+  Zstd through `ferriki-textmate`.
   First use still downloads only the requested languages, dependencies, and
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-10-25: Persist release-verified decoded prepared containers across builds,
+  eliminating repeated transport decompression while retaining read-time integrity.
 
 - 2026-10-24: Allow assets-only publication to rebuild new payloads from pinned
   sources, verifying the reviewed lock before uploading missing CDN objects.

@@ -54,6 +54,11 @@ Each crate publishes a deliberate, curated surface.
   `Grammar::compile_all_scanners`, `SyncRegistry::export_precompiled_patterns`,
   raw `PRECOMPILED_PATTERNS_FORMAT_VERSION`, and `Into<Arc<[u8]>>` import contract
   remain available alongside the prepared container API.
+  `decompress_precompiled_patterns` exposes bounded container decoding for the
+  generator and verified cache. `SyncRegistry::add_precompiled_patterns_from_slice`
+  accepts compressed or decoded containers without a temporary whole-input Arc;
+  the registry retains its own program/group bytes after the slice is dropped.
+  Release metadata's optional `DecodedAsset` is an additive owned result type.
 - **Non-exhaustive by default.** Input types that callers build are
   `#[non_exhaustive]` and come with `Default` and `with_*` setters; a setter
   takes the field's type, `Option` included. Result types are
@@ -164,6 +169,9 @@ without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#r
 owns policy semantics and the limits of those counters.
 
 ## History
+
+- 2026-10-25: Add owned decoded-container metadata and bounded decoding/slice
+  import APIs for persistent prepared caches without leaking engine types.
 
 - 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
   benchmark contenders; retain default and legacy boolean behavior. Record

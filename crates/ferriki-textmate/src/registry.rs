@@ -129,6 +129,20 @@ impl SyncRegistry {
         self.scanner_pattern_cache.add_precompiled(archive)
     }
 
+    /// Attach borrowed archive bytes without first copying the whole container.
+    ///
+    /// Accepts the same archives as [`Self::add_precompiled_patterns`], including
+    /// decoded prepared containers from a verified disk cache. The registry owns
+    /// the program and group records it retains; the input may be dropped after
+    /// this call. Validation and optional-source fallback are unchanged.
+    pub fn add_precompiled_patterns_from_slice(
+        &mut self,
+        archive: &[u8],
+    ) -> Result<(), PrecompiledPatternsError> {
+        self.scanner_pattern_cache
+            .add_precompiled_from_slice(archive)
+    }
+
     /// Prepare static programs and the ordered Eager groups exercised by `samples`.
     ///
     /// Resolves the registry's current includes and injections in a temporary

@@ -389,6 +389,7 @@ impl RemoteAssetHost {
             &self.release,
             SharedRemoteSource(Arc::clone(&self.source)),
         )
+        .map(|catalogs| catalogs.with_decoded_cache(self.source.settings.cache_dir.clone()))
     }
 
     /// Downloads the payloads these languages, their embedded languages and
@@ -435,6 +436,17 @@ impl RemoteAssetHost {
         );
         let digests = paths
             .into_iter()
+            .filter(|path| {
+                !path.ends_with(".fkbc")
+                    || !self.release.assets.get(path).is_some_and(|asset| {
+                        crate::AssetMetadata::from_release_asset(asset).is_ok_and(|metadata| {
+                            crate::precompiled_cache::available(
+                                &self.source.settings.cache_dir,
+                                &metadata,
+                            )
+                        })
+                    })
+            })
             .map(|path| {
                 let asset = self.release.assets.get(&path).ok_or_else(|| {
                     Error::new(

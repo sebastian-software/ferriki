@@ -507,7 +507,11 @@ impl HighlighterCore {
         {
             // The root's pair already includes its dependency scanner groups.
             // Do not also open every dependency's standalone archive.
-            if self.registry.add_precompiled_patterns(bytecode).is_ok() {
+            if self
+                .registry
+                .add_precompiled_patterns_from_slice(&bytecode)
+                .is_ok()
+            {
                 self.prepared_language_scopes.insert(scope.clone());
             }
         }
