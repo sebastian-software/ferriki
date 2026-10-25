@@ -789,6 +789,12 @@ mod tests {
         let mut tampered = decoded.clone();
         *tampered.last_mut().unwrap() ^= 1;
         fs::write(&cached, tampered).unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&cached)
+            .unwrap()
+            .set_modified(std::time::SystemTime::now() - std::time::Duration::from_secs(60))
+            .unwrap();
         assert!(
             crate::precompiled_cache::available(&root, &metadata),
             "planning only checks size"

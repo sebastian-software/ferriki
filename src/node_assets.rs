@@ -553,7 +553,7 @@ mod tests {
     }
 
     #[test]
-    fn decoded_cache_skips_transport_but_is_verified_when_loaded() {
+    fn decoded_cache_reuses_file_state_and_rejects_changed_bytes() {
         let (source, root) = fixture_root();
         let cache = temp_dir("decoded-plan");
         let host = host(&root, &cache);
@@ -589,6 +589,12 @@ mod tests {
         let mut invalid = decoded;
         *invalid.last_mut().unwrap() ^= 1;
         std::fs::write(&cached, invalid).unwrap();
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&cached)
+            .unwrap()
+            .set_modified(std::time::SystemTime::now() - std::time::Duration::from_secs(60))
+            .unwrap();
         assert!(
             host.catalogs()
                 .unwrap()

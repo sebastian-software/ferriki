@@ -12,7 +12,7 @@ const steps = [
   ],
   [
     "Restore next time",
-    "A fresh process reads and verifies the unpacked cache, then restores the prepared automata.",
+    "A fresh process checks the cached file's size and modification time, then restores the prepared automata without hashing unchanged files again.",
   ],
   ["Start optimized", "Static scanners use Eager optimizations from their first execution."],
 ];

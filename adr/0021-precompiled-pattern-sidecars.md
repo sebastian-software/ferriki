@@ -36,8 +36,13 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   The postcard grammar and catalog schemas stay at format 3.
   An additive `decoded` descriptor also pins the uncompressed container's
   SHA-256 and size. Node and Rust remote catalogs persist it on first load in
-  the shared asset cache. Fresh processes verify and open those bytes directly;
-  they do not repeat transport decompression or compressed-file verification.
+  the shared asset cache. A local verification receipt records the file's size
+  and modification time. Fresh processes compare this state before and after
+  reading and open unchanged
+  bytes without repeating SHA-256, transport decompression or compressed-file
+  verification. Changed/unrecorded files require SHA-256 before receipt renewal.
+  The cache directory and its receipts are trusted local state, not a boundary
+  against malicious local modification; engine validation remains unchanged.
   Old manifests remain supported. A damaged decoded entry is rebuilt from the
   verified compressed payload, and cache write failures remain optional.
 - Catalog loading attaches the matching sidecar to the registry's pattern
@@ -99,7 +104,7 @@ Custom grammars continue to compile from source.
 
 Keep the asset cache between builds to reuse both downloaded and decoded data.
 Decoded files use more disk space than compressed downloads. Each new
-process still reads and verifies the container and restores its runtime state. Prepared
+process still reads the container, checks its file state and restores its runtime state. Prepared
 assets remain valid while their content and format are compatible; editing the
 highlighted document does not require regenerating the grammar package.
 
@@ -130,6 +135,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-25: Remove repeated SHA-256 from unchanged decoded-cache reads. Persist
+  a verified file stamp and rehash only changed/unrecorded files; retain engine
+  validation, optional fallback and complete static coverage.
 
 - 2026-10-25: Require Ferroni 2.7.1 for portable prefilter efficiency fallback
   after the isolated runtime regression in upstream #465. Keep the existing
