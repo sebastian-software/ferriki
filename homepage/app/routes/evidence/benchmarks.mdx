@@ -38,11 +38,11 @@ the same factor for another workload.
 
 ## Four regex policies
 
-These retained Blacksmith results predate the persistent decoded cache.
-The [decoded-cache startup diagnostic](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/precompiled-patterns/decoded-cache)
-measures that follow-up separately, including first cache fill and fresh
-processes that reuse unpacked packages. It is a local ARM64 comparison and
-does not replace the tables below.
+The timing tables now use the [decoded-cache Blacksmith capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-decoded-cache).
+Fresh processes reuse unpacked packages populated before timing. The separate
+[local startup diagnostic](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/precompiled-patterns/decoded-cache)
+also measures the first cache fill and setup without rendering. The earlier
+Blacksmith capture and its memory measurements remain available below.
 
 The October 25 repository build measures **Source Off**, **Source Auto (lazy
 DFA)**, **Source Eager**, and **Prepared** as separate contenders. The source
@@ -55,13 +55,12 @@ keys to compare every column.
 
 <RegexPolicySummary />
 
-These measurements expose a Prepared-specific SQL slowdown. Prepared also
-uses more process memory and takes longer on full-corpus first use than
-Source Eager in this capture. Most language cases have similar warm execution
+Prepared still takes longer on full-corpus first use than Source Eager in this
+capture. The SQL execution slowdown also remains. Most language cases have similar warm execution
 times to Source Eager. The isolated tokenizer startup gains below therefore
 do not establish a startup advantage for a complete standard-package workload.
 
-The [mode capture and original evidence](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-regex-modes)
+Both the new timing capture and the [earlier mode capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-regex-modes)
 retain all samples, policy diagnostics and per-corpus machines. Each timing
 comparison uses one VM. Cold setup loads the 14 requested corpus languages and
 their dependencies, rather than the entire catalog. Downloads and process
@@ -77,6 +76,10 @@ on narrow screens, focus the table and use the arrow keys to reach all columns.
 <RegexPolicyLanguages />
 
 ### Process memory by policy
+
+These memory measurements predate the decoded cache and come from the earlier
+workflow. They are retained as historical observations; the timing-only rerun
+does not establish a change in memory use.
 
 These independent memory VMs use the same 12-file and large-TypeScript workloads
 described below. All native policies and both Shiki engines pass exact HTML

@@ -1,5 +1,6 @@
 import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
 
+import timingReport from "../../../docs/benchmarks/decoded-cache-comparison.json";
 import report from "../../../docs/benchmarks/regex-modes-comparison.json";
 import { formatMs } from "../data/benchmarks";
 
@@ -24,7 +25,7 @@ const values = (timings: Record<string, number | undefined>) =>
   );
 
 export function RegexPolicySummary() {
-  const rows: ComparisonRow[] = report.profiles.flatMap((profile) =>
+  const rows: ComparisonRow[] = timingReport.profiles.flatMap((profile) =>
     ["warm", "cold"].map((phase) => ({
       label: `${profile.label} · ${phase === "warm" ? "reused" : "first use"}`,
       values: values(phase === "warm" ? profile.warm : profile.cold),
@@ -32,7 +33,7 @@ export function RegexPolicySummary() {
   );
   return (
     <ComparisonTable
-      caption="Regex policies on the same 14-file repository corpus. Milliseconds; lower is faster. First use includes imports, setup and rendering in a fresh process; cached assets, no downloads or process creation. Warm values sum document medians."
+      caption="Regex policies on the same 14-file repository corpus, with persistent decoded caches. Milliseconds; lower is faster. First use includes imports, setup and rendering in a fresh process; unpacked assets already cached, no downloads or process creation. Warm values sum document medians."
       subject="Host / use"
       contenders={contenders.filter(({ id }) => id !== "prism")}
       rows={rows}
@@ -42,11 +43,12 @@ export function RegexPolicySummary() {
 }
 
 type Profile = (typeof report.profiles)[number];
+type TimingProfile = (typeof timingReport.profiles)[number];
 function PolicyLanguageCorpus({
   profile,
   corpus,
 }: {
-  profile: Profile;
+  profile: TimingProfile;
   corpus: "curated" | "tiobe";
 }) {
   const rows: ComparisonRow[] = profile.workloads
@@ -70,7 +72,7 @@ function PolicyLanguageCorpus({
 export function RegexPolicyLanguages() {
   return (
     <>
-      {report.profiles.flatMap((profile) =>
+      {timingReport.profiles.flatMap((profile) =>
         (["curated", "tiobe"] as const).map((corpus) => (
           <PolicyLanguageCorpus key={`${profile.id}-${corpus}`} profile={profile} corpus={corpus} />
         )),

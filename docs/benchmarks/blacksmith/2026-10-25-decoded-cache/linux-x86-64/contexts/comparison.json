@@ -1,0 +1,68 @@
+{
+  "measuredAt": "2026-10-25T13:35:09.492Z",
+  "regexModes": {
+    "ferriki-off": "off",
+    "ferriki": "auto",
+    "ferriki-eager": "eager",
+    "ferriki-precompiled": "prepared"
+  },
+  "corpora": [
+    "comparison"
+  ],
+  "comparators": {
+    "shiki": "4.5.0",
+    "prismjs": "1.30.0"
+  },
+  "profile": "linux-x86-64",
+  "runnerLabel": "blacksmith-4vcpu-ubuntu-2404",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40198189046",
+  "runAttempt": "1",
+  "commit": "ff25d172e86137e8f88a123fcebd409f5e4d2c3c",
+  "tree": "5304468eb886edca0e220c500d2f888c9b09d390",
+  "status": "",
+  "cpu": "AMD EPYC",
+  "cores": 4,
+  "platform": "linux-x64",
+  "os": "Linux 6.6.141",
+  "memoryBytes": 16555134976,
+  "node": "v24.21.0",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1",
+  "nativeBuild": {
+    "builtAt": "2026-10-25T13:35:09.185Z",
+    "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345",
+    "ferriki": {
+      "commit": "ff25d172e86137e8f88a123fcebd409f5e4d2c3c",
+      "status": ""
+    },
+    "rustSourceSha256": "86ea73c5aca7344d492f9955eae6f8b19b3f94de490bc959fa81ab4c507ec659",
+    "ferroni": {
+      "version": "2.7.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.7.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter",
+        "precompiled",
+        "precompiled-eager",
+        "scanner-group-nfa-prototype"
+      ]
+    },
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/home/runner/_work/ferriki/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "ef1d90dddd86de904528f7447dee5c5e2b1d93c190a88d28846b89598a8e645c"
+  },
+  "cargoLockSha256": "ef1d90dddd86de904528f7447dee5c5e2b1d93c190a88d28846b89598a8e645c",
+  "pnpmLockSha256": "3842349bd79ccfa399a876d2d98d1af350941377a8ecb1830dc1be900f2e2e1a",
+  "schedule": "Selected corpora execute serially on this VM; prefilter on then off per corpus; warm and cold engine order rotates within each report. Both modes use the same addon."
+}

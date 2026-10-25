@@ -354,6 +354,12 @@ async function verifyLanguageTables(page) {
 }
 
 async function verifyRegexPolicyTables(page) {
+  const timing = JSON.parse(
+    await readFile(
+      new URL("../../docs/benchmarks/decoded-cache-comparison.json", import.meta.url),
+      "utf8",
+    ),
+  );
   const report = JSON.parse(
     await readFile(
       new URL("../../docs/benchmarks/regex-modes-comparison.json", import.meta.url),
@@ -364,8 +370,10 @@ async function verifyRegexPolicyTables(page) {
   const overview = page.getByRole("region", { name: /^Regex policies on the same/ });
   assert.equal(await overview.getByRole("row").count(), 5);
   for (const profile of report.profiles) {
+    const current = timing.profiles.find((value) => value.id === profile.id);
+    assert.ok(current, "Missing current timing capture");
     for (const corpus of ["curated", "tiobe"])
-      await verifyRegexPolicyLanguage({ page, profile, corpus, engines });
+      await verifyRegexPolicyLanguage({ page, profile: current, corpus, engines });
     await verifyRegexPolicyMemory(page, profile, engines);
   }
   console.log(

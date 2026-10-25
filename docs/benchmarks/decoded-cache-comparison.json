@@ -1,0 +1,2433 @@
+{
+  "measured": "2026-10-25",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40198189046",
+  "commit": "ff25d172e86137e8f88a123fcebd409f5e4d2c3c",
+  "suite": "timings",
+  "archive": "docs/benchmarks/blacksmith/2026-10-25-decoded-cache",
+  "engines": [
+    {
+      "id": "ferriki-off",
+      "label": "Ferriki source Off"
+    },
+    {
+      "id": "ferriki",
+      "label": "Ferriki source Auto (lazy DFA)"
+    },
+    {
+      "id": "ferriki-eager",
+      "label": "Ferriki source Eager"
+    },
+    {
+      "id": "ferriki-precompiled",
+      "label": "Ferriki prepared Eager"
+    },
+    {
+      "id": "shiki-wasm",
+      "label": "Shiki WASM"
+    },
+    {
+      "id": "shiki-js",
+      "label": "Shiki JS"
+    },
+    {
+      "id": "prism",
+      "label": "Prism (independent grammars)"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "linux-x86-64",
+      "label": "Linux x86-64",
+      "corpusMachines": {
+        "comparison": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+        },
+        "curated": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+        },
+        "tiobe": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+        }
+      },
+      "warm": {
+        "ferriki-off": 149.1306485000623,
+        "ferriki": 106.70719900001859,
+        "ferriki-eager": 106.27629649997652,
+        "ferriki-precompiled": 192.48584550000123,
+        "shiki-wasm": 376.53603049997037
+      },
+      "cold": {
+        "ferriki-off": 253.79801550000002,
+        "ferriki": 449.868476,
+        "ferriki-eager": 558.463241,
+        "ferriki-precompiled": 954.9523165,
+        "shiki-wasm": 1170.8323695
+      },
+      "workloads": [
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "example",
+          "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
+          "timings": {
+            "ferriki-off": 1.738807000000179,
+            "ferriki": 0.7562110000003486,
+            "ferriki-eager": 0.7263450000000375,
+            "ferriki-precompiled": 0.7120380000001205,
+            "shiki-wasm": 3.548389000000043,
+            "shiki-js": 4.4021020000000135,
+            "prism": 0.19853299999999763
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "large",
+          "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
+          "timings": {
+            "ferriki-off": 26.029301499999747,
+            "ferriki": 10.907528500000353,
+            "ferriki-eager": 10.729624499999773,
+            "ferriki-precompiled": 10.671529499999906,
+            "shiki-wasm": 54.8874679999999,
+            "shiki-js": 67.67590100000052,
+            "prism": 2.1321819999998297
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "example",
+          "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
+          "timings": {
+            "ferriki-off": 1.9063730000000305,
+            "ferriki": 0.9077359999998862,
+            "ferriki-eager": 0.8762669999998707,
+            "ferriki-precompiled": 0.8628420000000006,
+            "shiki-wasm": 4.098131000000194,
+            "shiki-js": 3.8944890000000214,
+            "prism": 0.3096020000000408
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "large",
+          "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
+          "timings": {
+            "ferriki-off": 28.568979000000127,
+            "ferriki": 13.256627000000208,
+            "ferriki-eager": 13.163708500000212,
+            "ferriki-precompiled": 13.155602500000441,
+            "shiki-wasm": 64.2229970000003,
+            "shiki-js": 60.32558250000011,
+            "prism": 3.584966500000064
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.25207399999999325,
+            "ferriki": 0.19738599999993767,
+            "ferriki-eager": 0.18658050000004778,
+            "ferriki-precompiled": 0.18238249999998857,
+            "shiki-wasm": 1.259426499999904,
+            "shiki-js": 0.5849839999998494,
+            "prism": 0.1025325000000521
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 3.296352499999557,
+            "ferriki": 2.7802429999999276,
+            "ferriki-eager": 2.759630000000243,
+            "ferriki-precompiled": 2.7172400000001744,
+            "shiki-wasm": 18.88570699999991,
+            "shiki-js": 8.02700649999997,
+            "prism": 1.067815999999766
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "example",
+          "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
+          "timings": {
+            "ferriki-off": 0.33090100000003986,
+            "ferriki": 0.3194899999998597,
+            "ferriki-eager": 0.3037010000002738,
+            "ferriki-precompiled": 0.2909260000001268,
+            "shiki-wasm": 2.4325190000000703,
+            "shiki-js": 0.6519049999999424,
+            "prism": 0.08085200000004988
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "large",
+          "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
+          "timings": {
+            "ferriki-off": 4.082690000000184,
+            "ferriki": 4.29912800000011,
+            "ferriki-eager": 4.27969099999973,
+            "ferriki-precompiled": 4.105914000000212,
+            "shiki-wasm": 37.22809299999972,
+            "shiki-js": 9.47595199999978,
+            "prism": 0.9930860000004031
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "example",
+          "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
+          "timings": {
+            "ferriki-off": 1.1034074999998893,
+            "ferriki": 0.6667174999998906,
+            "ferriki-eager": 0.6540834999998424,
+            "ferriki-precompiled": 0.6294725000000199,
+            "shiki-wasm": 3.2955969999999297,
+            "shiki-js": 2.5150750000000244,
+            "prism": 0.21730349999995724
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "large",
+          "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
+          "timings": {
+            "ferriki-off": 15.95025250000026,
+            "ferriki": 9.66262899999947,
+            "ferriki-eager": 9.708455500000127,
+            "ferriki-precompiled": 9.532940999999937,
+            "shiki-wasm": 52.161820499999976,
+            "shiki-js": 38.87187649999987,
+            "prism": 2.8034920000000056
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 1.1215870000000905,
+            "ferriki": 0.4995089999997617,
+            "ferriki-eager": 0.47999099999969985,
+            "ferriki-precompiled": 0.44888300000002346,
+            "shiki-wasm": 2.7061140000000705,
+            "shiki-js": 2.7049019999999473,
+            "prism": 0.10706200000004173
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 15.744962000000214,
+            "ferriki": 6.7026979999996,
+            "ferriki-eager": 6.620233000000098,
+            "ferriki-precompiled": 6.43996449999986,
+            "shiki-wasm": 40.34062600000016,
+            "shiki-js": 38.69110699999965,
+            "prism": 1.1267924999997376
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.43580899999994926,
+            "ferriki": 0.26529900000002726,
+            "ferriki-eager": 0.2470739999999978,
+            "ferriki-precompiled": 0.23478099999999813,
+            "shiki-wasm": 1.45341099999996,
+            "shiki-js": 0.8888400000000729,
+            "prism": 0.08633199999985663
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 5.442475000000286,
+            "ferriki": 3.3696709999999257,
+            "ferriki-eager": 3.256648499999983,
+            "ferriki-precompiled": 3.1260930000000826,
+            "shiki-wasm": 21.362830999999915,
+            "shiki-js": 12.098289999999679,
+            "prism": 0.9831070000002455
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.32549099999999953,
+            "ferriki": 0.22417100000001255,
+            "ferriki-eager": 0.20855199999994056,
+            "ferriki-precompiled": 0.2036920000000464,
+            "shiki-wasm": 1.111407999999983,
+            "shiki-js": 0.7340300000000752,
+            "prism": 0.10314399999998614
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.8848634999997103,
+            "ferriki": 2.8364890000000287,
+            "ferriki-eager": 2.7954869999998664,
+            "ferriki-precompiled": 2.7634164999999484,
+            "shiki-wasm": 16.179331999999704,
+            "shiki-js": 10.16268799999989,
+            "prism": 1.2770490000000336
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "example",
+          "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
+          "timings": {
+            "ferriki-off": 0.4816250000001219,
+            "ferriki": 0.3383955000001606,
+            "ferriki-eager": 0.3175765000003139,
+            "ferriki-precompiled": 0.3011105000000498,
+            "shiki-wasm": 1.162900000000036,
+            "shiki-js": 1.559684999999945,
+            "prism": 0.14597900000012487
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "large",
+          "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
+          "timings": {
+            "ferriki-off": 5.956662000000506,
+            "ferriki": 4.368046000000504,
+            "ferriki-eager": 4.263480999999956,
+            "ferriki-precompiled": 4.13305500000024,
+            "shiki-wasm": 16.730173000000832,
+            "shiki-js": 23.025848999999653,
+            "prism": 1.3814149999998335
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "example",
+          "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
+          "timings": {
+            "ferriki-off": 0.09267399999998815,
+            "ferriki": 0.08515999999997348,
+            "ferriki-eager": 0.08737399999995432,
+            "ferriki-precompiled": 0.0864674999999977,
+            "shiki-wasm": 0.21570500000001402,
+            "shiki-js": 0.17186800000001767,
+            "prism": 0.03070750000000544
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "large",
+          "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
+          "timings": {
+            "ferriki-off": 1.2881399999998848,
+            "ferriki": 1.2495570000000953,
+            "ferriki-eager": 1.2871079999999893,
+            "ferriki-precompiled": 1.2632539999999608,
+            "shiki-wasm": 3.228856000000178,
+            "shiki-js": 2.6001750000000357,
+            "prism": 0.44121900000004644
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "example",
+          "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
+          "timings": {
+            "ferriki-off": 1.2087410000001455,
+            "ferriki": 1.510567999999921,
+            "ferriki-eager": 1.494568000000072,
+            "ferriki-precompiled": 1.478968000000009,
+            "shiki-wasm": 1.2786420000001044,
+            "prism": 0.0610749999999598
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "large",
+          "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
+          "timings": {
+            "ferriki-off": 17.88339400000018,
+            "ferriki": 23.830497500000092,
+            "ferriki-eager": 23.79964949999976,
+            "ferriki-precompiled": 23.762970499999483,
+            "shiki-wasm": 18.873264500000005,
+            "prism": 0.5709074999997483
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "example",
+          "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
+          "timings": {
+            "ferriki-off": 0.14339950000004364,
+            "ferriki": 0.136391500000002,
+            "ferriki-eager": 0.15671449999996412,
+            "ferriki-precompiled": 0.1531880000000001,
+            "shiki-wasm": 0.3528679999999724,
+            "shiki-js": 0.2996029999999905,
+            "prism": 0.049412500000016735
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "large",
+          "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
+          "timings": {
+            "ferriki-off": 2.2341969999997673,
+            "ferriki": 2.1658390000002328,
+            "ferriki-eager": 2.470621999999821,
+            "ferriki-precompiled": 2.4235630000002857,
+            "shiki-wasm": 5.405627000000095,
+            "shiki-js": 4.649355000000014,
+            "prism": 0.7283490000004349
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "example",
+          "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
+          "timings": {
+            "ferriki-off": 2.0016359999999622,
+            "ferriki": 1.3308255000001736,
+            "ferriki-eager": 1.586024999999836,
+            "ferriki-precompiled": 1.2401450000002114,
+            "shiki-wasm": 4.371772999999848,
+            "shiki-js": 3.939335999999912
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "large",
+          "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
+          "timings": {
+            "ferriki-off": 22.80644799999982,
+            "ferriki": 15.48860999999988,
+            "ferriki-eager": 20.10320900000079,
+            "ferriki-precompiled": 15.329165499999817,
+            "shiki-wasm": 53.38496549999945,
+            "shiki-js": 51.166651000000456
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "example",
+          "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
+          "timings": {
+            "ferriki-off": 2.0618635000000722,
+            "ferriki": 1.2008019999999533,
+            "ferriki-eager": 1.3462695000000622,
+            "ferriki-precompiled": 1.1338570000000345,
+            "shiki-wasm": 4.506358500000033,
+            "shiki-js": 4.650653000000034
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "large",
+          "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
+          "timings": {
+            "ferriki-off": 30.184535500000038,
+            "ferriki": 16.741263999999774,
+            "ferriki-eager": 19.45056349999959,
+            "ferriki-precompiled": 16.71605199999931,
+            "shiki-wasm": 68.68755900000042,
+            "shiki-js": 71.52793849999944
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "example",
+          "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
+          "timings": {
+            "ferriki-off": 0.31156850000002123,
+            "ferriki": 0.20104099999980463,
+            "ferriki-eager": 0.19511499999998705,
+            "ferriki-precompiled": 0.18854799999996885,
+            "shiki-wasm": 1.6021335000000363,
+            "shiki-js": 0.8124904999999671,
+            "prism": 0.11393899999995938
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "large",
+          "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
+          "timings": {
+            "ferriki-off": 3.7029300000003786,
+            "ferriki": 2.693290000000161,
+            "ferriki-eager": 2.726411999999982,
+            "ferriki-precompiled": 2.677730999999767,
+            "shiki-wasm": 24.37773900000002,
+            "shiki-js": 10.851487000000361,
+            "prism": 1.2862369999993462
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.4067110000000298,
+            "ferriki": 0.29971549999982017,
+            "ferriki-eager": 0.2820930000000885,
+            "ferriki-precompiled": 0.27278000000001157,
+            "shiki-wasm": 1.6216100000000893,
+            "shiki-js": 0.9737969999999905,
+            "prism": 0.1301780000000008
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 5.003261999999268,
+            "ferriki": 4.054978000000119,
+            "ferriki-eager": 3.9938839999995253,
+            "ferriki-precompiled": 3.9280009999993126,
+            "shiki-wasm": 24.18042000000014,
+            "shiki-js": 13.427106999999978,
+            "prism": 1.5019300000003568
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "example",
+          "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
+          "timings": {
+            "ferriki-off": 1.2088119999998526,
+            "ferriki": 0.6324840000002041,
+            "ferriki-eager": 0.6043909999998505,
+            "ferriki-precompiled": 0.5900839999999334,
+            "shiki-wasm": 2.0373829999998634,
+            "shiki-js": 2.121208999999908
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "large",
+          "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
+          "timings": {
+            "ferriki-off": 17.834554500000195,
+            "ferriki": 9.10934700000007,
+            "ferriki-eager": 8.914952500000254,
+            "ferriki-precompiled": 8.795934999999645,
+            "shiki-wasm": 32.264959499999804,
+            "shiki-js": 33.2267139999999
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "example",
+          "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
+          "timings": {
+            "ferriki-off": 0.682336999999734,
+            "ferriki": 0.41774199999986195,
+            "ferriki-eager": 0.3904609999999593,
+            "ferriki-precompiled": 0.3694709999999759,
+            "shiki-wasm": 1.7689510000000155,
+            "shiki-js": 2.3807749999996304
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "large",
+          "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
+          "timings": {
+            "ferriki-off": 8.934358999999631,
+            "ferriki": 5.65389950000008,
+            "ferriki-eager": 5.446532500000103,
+            "ferriki-precompiled": 5.23483699999997,
+            "shiki-wasm": 26.545530499999813,
+            "shiki-js": 36.4880720000001
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "example",
+          "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
+          "timings": {
+            "ferriki-off": 0.3385840000000826,
+            "ferriki": 0.2547869999998511,
+            "ferriki-eager": 0.23960799999986193,
+            "ferriki-precompiled": 0.22651399999995192,
+            "shiki-wasm": 2.5598509999999806,
+            "shiki-js": 0.6473610000000463,
+            "prism": 0.1294119999997747
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "large",
+          "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
+          "timings": {
+            "ferriki-off": 4.045079999999871,
+            "ferriki": 3.2750689999993483,
+            "ferriki-eager": 3.2312760000004346,
+            "ferriki-precompiled": 3.074873999999909,
+            "shiki-wasm": 39.11525800000072,
+            "shiki-js": 8.721090000000004,
+            "prism": 1.5282700000007026
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "example",
+          "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
+          "timings": {
+            "ferriki-off": 0.3977239999999256,
+            "ferriki": 0.3033980000000156,
+            "ferriki-eager": 0.28872099999989587,
+            "ferriki-precompiled": 0.28054400000019086,
+            "shiki-wasm": 0.9791730000001735,
+            "shiki-js": 0.6974950000000035,
+            "prism": 0.11930299999994531
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "large",
+          "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
+          "timings": {
+            "ferriki-off": 4.884310499999856,
+            "ferriki": 4.049602499999764,
+            "ferriki-eager": 4.007850500000131,
+            "ferriki-precompiled": 3.9521059999997306,
+            "shiki-wasm": 13.705267000000049,
+            "shiki-js": 9.807368499999939,
+            "prism": 1.3000630000001365
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.4073350000001028,
+            "ferriki": 0.3025280000001658,
+            "ferriki-eager": 0.2849950000000945,
+            "ferriki-precompiled": 0.2751069999999345,
+            "shiki-wasm": 1.6363309999997,
+            "shiki-js": 0.9786659999999756,
+            "prism": 0.1295430000000124
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 5.047242000000097,
+            "ferriki": 4.1327259999998205,
+            "ferriki-eager": 4.0659200000000055,
+            "ferriki-precompiled": 4.009834999999839,
+            "shiki-wasm": 24.280227999999624,
+            "shiki-js": 13.5891730000003,
+            "prism": 1.5151130000003832
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "example",
+          "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
+          "timings": {
+            "ferriki-off": 0.48206449999992174,
+            "ferriki": 0.244658999999956,
+            "ferriki-eager": 0.2276720000000978,
+            "ferriki-precompiled": 0.22177099999998973,
+            "shiki-wasm": 1.680223000000069,
+            "shiki-js": 1.0045355000000882,
+            "prism": 0.09219299999998043
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "large",
+          "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
+          "timings": {
+            "ferriki-off": 6.198452999999972,
+            "ferriki": 3.224591000000146,
+            "ferriki-eager": 3.1853790000000117,
+            "ferriki-precompiled": 3.1416250000002037,
+            "shiki-wasm": 24.984748999999738,
+            "shiki-js": 14.307741000000078,
+            "prism": 1.1189000000003944
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 1.1315040000004046,
+            "ferriki": 0.5034550000000309,
+            "ferriki-eager": 0.48370799999975134,
+            "ferriki-precompiled": 0.454443000000083,
+            "shiki-wasm": 2.7114990000000034,
+            "shiki-js": 2.6997769999998127,
+            "prism": 0.10781199999973978
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 15.739569000000301,
+            "ferriki": 6.698786499999642,
+            "ferriki-eager": 6.67773249999982,
+            "ferriki-precompiled": 6.468719499999679,
+            "shiki-wasm": 40.495718500000294,
+            "shiki-js": 39.71749899999986,
+            "prism": 1.1036609999996472
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.32497200000011617,
+            "ferriki": 0.22503200000005563,
+            "ferriki-eager": 0.21029399999997622,
+            "ferriki-precompiled": 0.20460499999990134,
+            "shiki-wasm": 1.1170740000000023,
+            "shiki-js": 0.7315480000002026,
+            "prism": 0.10435500000005504
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.874994999999899,
+            "ferriki": 2.8446040000001176,
+            "ferriki-eager": 2.8094474999998056,
+            "ferriki-precompiled": 2.769501999999875,
+            "shiki-wasm": 16.382530999999744,
+            "shiki-js": 10.118546500000093,
+            "prism": 1.2972935000000234
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "example",
+          "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
+          "timings": {
+            "ferriki-off": 0.9193520000003446,
+            "ferriki": 0.3326070000000527,
+            "ferriki-eager": 0.31510299999996505,
+            "ferriki-precompiled": 0.3057060000001002,
+            "shiki-wasm": 1.231559999999945,
+            "shiki-js": 1.6657579999998688,
+            "prism": 0.22097600000006423
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "large",
+          "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
+          "timings": {
+            "ferriki-off": 12.942100500000151,
+            "ferriki": 4.349238499999956,
+            "ferriki-eager": 4.296593499999972,
+            "ferriki-precompiled": 4.195257999999967,
+            "shiki-wasm": 17.40120049999996,
+            "shiki-js": 23.818228500000032,
+            "prism": 2.4618724999997994
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "example",
+          "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
+          "timings": {
+            "ferriki-off": 2.0647590000000946,
+            "ferriki": 0.8415849999996681,
+            "ferriki-eager": 0.8114080000000286,
+            "ferriki-precompiled": 0.7954689999999118,
+            "shiki-wasm": 4.430836999999883,
+            "shiki-js": 4.575540000000274,
+            "prism": 0.23701600000003964
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "large",
+          "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
+          "timings": {
+            "ferriki-off": 30.862914499999988,
+            "ferriki": 11.995120999999926,
+            "ferriki-eager": 11.767202500000167,
+            "ferriki-precompiled": 11.828552500000114,
+            "shiki-wasm": 68.95363000000043,
+            "shiki-js": 70.20016299999997,
+            "prism": 2.258784999999534
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "example",
+          "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
+          "timings": {
+            "ferriki-off": 0.3180499999998574,
+            "ferriki": 0.2941839999999729,
+            "ferriki-eager": 0.2901170000000093,
+            "ferriki-precompiled": 0.27530799999999545,
+            "shiki-wasm": 1.0008649999999761,
+            "shiki-js": 0.4160029999998187,
+            "prism": 0.0583800000000565
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "large",
+          "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
+          "timings": {
+            "ferriki-off": 4.286654999999882,
+            "ferriki": 4.121102999999948,
+            "ferriki-eager": 4.200712999999723,
+            "ferriki-precompiled": 4.072411999999531,
+            "shiki-wasm": 14.742561999999907,
+            "shiki-js": 5.810946999999942,
+            "prism": 0.7127330000002985
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "example",
+          "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
+          "timings": {
+            "ferriki-off": 0.33578299999999217,
+            "ferriki": 0.2844249999999988,
+            "ferriki-eager": 0.2713819999999032,
+            "ferriki-precompiled": 5.412356000000273,
+            "shiki-wasm": 2.03603499999997,
+            "shiki-js": 0.4942509999998492,
+            "prism": 0.07568199999968783
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "large",
+          "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
+          "timings": {
+            "ferriki-off": 3.994158999999854,
+            "ferriki": 3.778978500000221,
+            "ferriki-eager": 3.7726714999998876,
+            "ferriki-precompiled": 83.68805649999967,
+            "shiki-wasm": 30.787482499999896,
+            "shiki-js": 6.56103450000046,
+            "prism": 0.895622000000003
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "example",
+          "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
+          "timings": {
+            "ferriki-off": 0.2685759999999391,
+            "ferriki": 0.19560900000010406,
+            "ferriki-eager": 0.18699200000003202,
+            "ferriki-precompiled": 0.18075999999996384,
+            "shiki-wasm": 1.44543299999998,
+            "shiki-js": 0.7433200000000397,
+            "prism": 0.05539400000020578
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "large",
+          "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
+          "timings": {
+            "ferriki-off": 3.388242999999875,
+            "ferriki": 2.712590000000091,
+            "ferriki-eager": 2.7061469999998735,
+            "ferriki-precompiled": 2.6367470000004687,
+            "shiki-wasm": 21.975828000000092,
+            "shiki-js": 10.593695999999909,
+            "prism": 0.720527000000402
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.25101299999997195,
+            "ferriki": 0.19593399999996564,
+            "ferriki-eager": 0.18539399999997386,
+            "ferriki-precompiled": 0.18253350000020419,
+            "shiki-wasm": 1.2436774999999898,
+            "shiki-js": 0.5790960000000496,
+            "prism": 0.10054900000000089
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 3.292301999999836,
+            "ferriki": 2.7790250000002743,
+            "ferriki-eager": 2.7553399999997055,
+            "ferriki-precompiled": 2.7153659999999036,
+            "shiki-wasm": 18.741735000000062,
+            "shiki-js": 8.16101400000025,
+            "prism": 1.0669800000005125
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "example",
+          "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
+          "timings": {
+            "ferriki-off": 0.6289649999998801,
+            "ferriki": 0.4334360000000288,
+            "ferriki-eager": 0.41766599999982645,
+            "ferriki-precompiled": 0.40527300000007926,
+            "shiki-wasm": 1.749655999999959,
+            "shiki-js": 1.1592339999999695,
+            "prism": 0.071936000000278
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "large",
+          "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
+          "timings": {
+            "ferriki-off": 8.236786999999822,
+            "ferriki": 6.134681000000228,
+            "ferriki-eager": 6.01448500000015,
+            "ferriki-precompiled": 5.958119000000124,
+            "shiki-wasm": 26.436250499999687,
+            "shiki-js": 16.79553450000003,
+            "prism": 0.801615499999798
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "example",
+          "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
+          "timings": {
+            "ferriki-off": 0.4454445000000078,
+            "ferriki": 0.28590849999994816,
+            "ferriki-eager": 0.2666925000000333,
+            "ferriki-precompiled": 0.25516049999987445,
+            "shiki-wasm": 1.363933999999972,
+            "shiki-js": 0.6849755000000641,
+            "prism": 0.06817399999999907
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "large",
+          "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
+          "timings": {
+            "ferriki-off": 5.579400999999962,
+            "ferriki": 3.5970960000004197,
+            "ferriki-eager": 3.535190000000057,
+            "ferriki-precompiled": 3.351433999999699,
+            "shiki-wasm": 19.9385699999998,
+            "shiki-js": 9.056872000000112,
+            "prism": 0.806999999999789
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "example",
+          "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
+          "timings": {
+            "ferriki-off": 0.14363600000012866,
+            "ferriki": 0.17906200000004446,
+            "ferriki-eager": 0.1680870000000141,
+            "ferriki-precompiled": 0.16064199999999573,
+            "shiki-wasm": 0.767821500000025,
+            "shiki-js": 0.2632660000000442,
+            "prism": 0.07368849999988925
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "large",
+          "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
+          "timings": {
+            "ferriki-off": 1.96330799999987,
+            "ferriki": 2.405522000000019,
+            "ferriki-eager": 2.3495759999996153,
+            "ferriki-precompiled": 2.302177000000029,
+            "shiki-wasm": 11.57569599999988,
+            "shiki-js": 3.723124000000098,
+            "prism": 0.8640980000000127
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "example",
+          "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
+          "timings": {
+            "ferriki-off": 0.3909419999998818,
+            "ferriki": 0.23455649999993966,
+            "ferriki-eager": 0.21875699999998233,
+            "ferriki-precompiled": 0.2081525000000397,
+            "shiki-wasm": 1.6719744999999193,
+            "shiki-js": 0.7726760000002741,
+            "prism": 0.1658474999999271
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "large",
+          "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
+          "timings": {
+            "ferriki-off": 4.84116449999965,
+            "ferriki": 3.0429524999999558,
+            "ferriki-eager": 3.006583999999748,
+            "ferriki-precompiled": 2.910837999999785,
+            "shiki-wasm": 25.265459999999848,
+            "shiki-js": 9.880939000000126,
+            "prism": 1.506733499999882
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "example",
+          "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
+          "timings": {
+            "ferriki-off": 0.31142700000009427,
+            "ferriki": 0.1363370000000259,
+            "ferriki-eager": 0.11922400000003108,
+            "ferriki-precompiled": 0.11329299999988507,
+            "shiki-wasm": 2.229759999999942,
+            "shiki-js": 0.8770620000000235,
+            "prism": 0.0375610000000961
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "large",
+          "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
+          "timings": {
+            "ferriki-off": 3.703246000000263,
+            "ferriki": 1.6103524999998626,
+            "ferriki-eager": 1.54889650000041,
+            "ferriki-precompiled": 1.5180534999999509,
+            "shiki-wasm": 34.05930450000005,
+            "shiki-js": 11.813466999999946,
+            "prism": 0.36594750000017484
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "example",
+          "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
+          "timings": {
+            "ferriki-off": 0.26412600000003295,
+            "ferriki": 0.2320959999999559,
+            "ferriki-eager": 0.22286799999994855,
+            "ferriki-precompiled": 0.21009400000002643,
+            "shiki-wasm": 0.754895999999917,
+            "shiki-js": 0.5166699999999764,
+            "prism": 0.076624000000038
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "large",
+          "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
+          "timings": {
+            "ferriki-off": 3.3040749999997843,
+            "ferriki": 3.0798889999998664,
+            "ferriki-eager": 3.052687999999989,
+            "ferriki-precompiled": 2.976595499999803,
+            "shiki-wasm": 10.710321499999964,
+            "shiki-js": 7.0627715000000535,
+            "prism": 0.9883844999999383
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.4321309999997993,
+            "ferriki": 0.2658840000000282,
+            "ferriki-eager": 0.24734399999999823,
+            "ferriki-precompiled": 0.2344900000000507,
+            "shiki-wasm": 1.4472655000000145,
+            "shiki-js": 0.884544999999946,
+            "prism": 0.08544500000004973
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 5.500320500000271,
+            "ferriki": 3.4589100000005146,
+            "ferriki-eager": 3.3689114999999674,
+            "ferriki-precompiled": 3.212212000000136,
+            "shiki-wasm": 21.363415499999746,
+            "shiki-js": 12.121349000000237,
+            "prism": 0.9716430000000855
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "example",
+          "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
+          "timings": {
+            "ferriki-off": 0.4671469999998408,
+            "ferriki": 0.24645200000009027,
+            "ferriki-eager": 0.23205600000005688,
+            "ferriki-precompiled": 0.21911099999988437,
+            "shiki-wasm": 1.7403959999999188,
+            "shiki-js": 0.9188740000001872,
+            "prism": 0.07673399999998765
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "large",
+          "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
+          "timings": {
+            "ferriki-off": 5.999717499999861,
+            "ferriki": 3.2861054999998487,
+            "ferriki-eager": 3.2256524999997964,
+            "ferriki-precompiled": 3.156918999999789,
+            "shiki-wasm": 26.41909650000025,
+            "shiki-js": 12.849334500000396,
+            "prism": 0.8766744999998082
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "example",
+          "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
+          "timings": {
+            "ferriki-off": 0.803041500000063,
+            "ferriki": 0.7189439999999649,
+            "ferriki-eager": 0.7058644999999615,
+            "ferriki-precompiled": 0.6982660000001033,
+            "shiki-wasm": 3.5415155000000595,
+            "shiki-js": 0.7384610000000293,
+            "prism": 0.07891300000005685
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "large",
+          "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
+          "timings": {
+            "ferriki-off": 11.040845999999874,
+            "ferriki": 10.705321499999854,
+            "ferriki-eager": 10.594955999999911,
+            "ferriki-precompiled": 10.668363000000227,
+            "shiki-wasm": 54.90141350000022,
+            "shiki-js": 9.933198000000175,
+            "prism": 0.9878085000002557
+          }
+        }
+      ]
+    },
+    {
+      "id": "macos-arm64",
+      "label": "macOS ARM64",
+      "corpusMachines": {
+        "comparison": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+        },
+        "curated": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+        },
+        "tiobe": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+        }
+      },
+      "warm": {
+        "ferriki-off": 117.16808200002379,
+        "ferriki": 78.0765625000231,
+        "ferriki-eager": 77.18277200000557,
+        "ferriki-precompiled": 111.23947850001605,
+        "shiki-wasm": 324.7763135000023
+      },
+      "cold": {
+        "ferriki-off": 212.247146,
+        "ferriki": 327.011334,
+        "ferriki-eager": 404.8238335,
+        "ferriki-precompiled": 501.928792,
+        "shiki-wasm": 1102.9310624999998
+      },
+      "workloads": [
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "example",
+          "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
+          "timings": {
+            "ferriki-off": 1.859708499999897,
+            "ferriki": 0.8992705000000569,
+            "ferriki-eager": 0.8259170000001177,
+            "ferriki-precompiled": 0.8191460000000461,
+            "shiki-wasm": 3.971187500000042,
+            "shiki-js": 5.694916499999977,
+            "prism": 0.22316699999987577
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "large",
+          "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
+          "timings": {
+            "ferriki-off": 24.907104000000345,
+            "ferriki": 9.838228999999956,
+            "ferriki-eager": 9.683791500000552,
+            "ferriki-precompiled": 9.564875000000029,
+            "shiki-wasm": 54.45079149999992,
+            "shiki-js": 80.66758300000038,
+            "prism": 2.287832999999864
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "example",
+          "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
+          "timings": {
+            "ferriki-off": 1.902832999999987,
+            "ferriki": 0.9168119999997089,
+            "ferriki-eager": 0.8809170000001814,
+            "ferriki-precompiled": 0.8847915000000057,
+            "shiki-wasm": 4.321520499999963,
+            "shiki-js": 4.557583500000078,
+            "prism": 0.32360400000004574
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "large",
+          "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
+          "timings": {
+            "ferriki-off": 29.78910450000012,
+            "ferriki": 12.66018750000012,
+            "ferriki-eager": 12.391124499999933,
+            "ferriki-precompiled": 12.710104500000398,
+            "shiki-wasm": 69.51429150000013,
+            "shiki-js": 73.93199999999979,
+            "prism": 4.110708999999588
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.1955630000000781,
+            "ferriki": 0.15566649999999527,
+            "ferriki-eager": 0.15174999999999272,
+            "ferriki-precompiled": 0.15337500000003956,
+            "shiki-wasm": 1.193604499999978,
+            "shiki-js": 0.4970000000001278,
+            "prism": 0.09010400000005347
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 2.924937,
+            "ferriki": 2.434708499999715,
+            "ferriki-eager": 2.373207999999977,
+            "ferriki-precompiled": 2.397916500000065,
+            "shiki-wasm": 18.494354000000158,
+            "shiki-js": 7.424833499999977,
+            "prism": 1.2363335000000006
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "example",
+          "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
+          "timings": {
+            "ferriki-off": 0.2732499999999618,
+            "ferriki": 0.30237499999998363,
+            "ferriki-eager": 0.3015409999999292,
+            "ferriki-precompiled": 0.29950000000008004,
+            "shiki-wasm": 2.8115419999999176,
+            "shiki-js": 0.578708000000006,
+            "prism": 0.08116699999999355
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "large",
+          "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
+          "timings": {
+            "ferriki-off": 3.6256249999999,
+            "ferriki": 3.8500624999996944,
+            "ferriki-eager": 3.818958000000066,
+            "ferriki-precompiled": 3.6767710000003717,
+            "shiki-wasm": 42.74816699999974,
+            "shiki-js": 8.227791499999967,
+            "prism": 1.002020999999786
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "example",
+          "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
+          "timings": {
+            "ferriki-off": 1.0030420000000504,
+            "ferriki": 0.5990000000001601,
+            "ferriki-eager": 0.591666000000032,
+            "ferriki-precompiled": 0.5975419999999758,
+            "shiki-wasm": 3.4181659999999283,
+            "shiki-js": 2.4662499999999454,
+            "prism": 0.1978750000000673
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "large",
+          "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
+          "timings": {
+            "ferriki-off": 14.532458500000303,
+            "ferriki": 8.048646499999904,
+            "ferriki-eager": 8.081625500000428,
+            "ferriki-precompiled": 8.093333499999972,
+            "shiki-wasm": 53.08206250000012,
+            "shiki-js": 38.15956299999971,
+            "prism": 2.404041500000403
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 0.9511249999998199,
+            "ferriki": 0.41735400000015943,
+            "ferriki-eager": 0.40666650000002846,
+            "ferriki-precompiled": 0.40231299999982184,
+            "shiki-wasm": 2.7660624999998618,
+            "shiki-js": 2.2659170000001723,
+            "prism": 0.1020210000001498
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 13.507520999999997,
+            "ferriki": 5.498916500000178,
+            "ferriki-eager": 5.498208000000432,
+            "ferriki-precompiled": 5.3035414999999375,
+            "shiki-wasm": 42.72974999999997,
+            "shiki-js": 36.38868750000029,
+            "prism": 1.1906460000000152
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.32868750000005775,
+            "ferriki": 0.1956874999999627,
+            "ferriki-eager": 0.18795799999998053,
+            "ferriki-precompiled": 0.18608350000005203,
+            "shiki-wasm": 1.3831670000000145,
+            "shiki-js": 0.7234369999999899,
+            "prism": 0.07358299999987139
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 4.885250499999984,
+            "ferriki": 2.92975000000024,
+            "ferriki-eager": 2.8547909999999774,
+            "ferriki-precompiled": 2.8220000000001164,
+            "shiki-wasm": 22.17264600000044,
+            "shiki-js": 11.08581200000026,
+            "prism": 1.017770500000097
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.2518339999999739,
+            "ferriki": 0.1849170000000413,
+            "ferriki-eager": 0.18162499999993997,
+            "ferriki-precompiled": 0.18216699999999264,
+            "shiki-wasm": 1.0632499999999254,
+            "shiki-js": 0.6743329999999332,
+            "prism": 0.10104100000000926
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.698583000000326,
+            "ferriki": 2.6599169999999503,
+            "ferriki-eager": 2.635124999999789,
+            "ferriki-precompiled": 2.759624999999687,
+            "shiki-wasm": 16.249958000000333,
+            "shiki-js": 10.579999999999927,
+            "prism": 1.4152919999996811
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "example",
+          "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
+          "timings": {
+            "ferriki-off": 0.40770800000018426,
+            "ferriki": 0.29731249999997544,
+            "ferriki-eager": 0.2855414999999084,
+            "ferriki-precompiled": 0.2794584999999188,
+            "shiki-wasm": 1.1880210000000488,
+            "shiki-js": 1.6838334999998779,
+            "prism": 0.13247950000015862
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "large",
+          "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
+          "timings": {
+            "ferriki-off": 4.750979500000085,
+            "ferriki": 3.4676039999999375,
+            "ferriki-eager": 3.3954789999997956,
+            "ferriki-precompiled": 3.343208500000401,
+            "shiki-wasm": 15.591979000000265,
+            "shiki-js": 22.69518749999952,
+            "prism": 1.4569374999996398
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "example",
+          "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
+          "timings": {
+            "ferriki-off": 0.07747950000003812,
+            "ferriki": 0.07447950000002379,
+            "ferriki-eager": 0.0762499999999875,
+            "ferriki-precompiled": 0.07629149999996798,
+            "shiki-wasm": 0.19281199999997511,
+            "shiki-js": 0.14181250000001455,
+            "prism": 0.031520499999999174
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "large",
+          "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
+          "timings": {
+            "ferriki-off": 1.2567090000000007,
+            "ferriki": 1.2408329999998386,
+            "ferriki-eager": 1.2631669999998394,
+            "ferriki-precompiled": 1.2587499999999636,
+            "shiki-wasm": 3.2493749999998727,
+            "shiki-js": 2.3358330000000933,
+            "prism": 0.554459000000179
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "example",
+          "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
+          "timings": {
+            "ferriki-off": 1.0165209999999547,
+            "ferriki": 1.2678544999999986,
+            "ferriki-eager": 1.257874500000014,
+            "ferriki-precompiled": 1.2561044999999922,
+            "shiki-wasm": 1.3471460000000661,
+            "prism": 0.052708499999994274
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "large",
+          "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
+          "timings": {
+            "ferriki-off": 15.500416499999574,
+            "ferriki": 19.186208000000306,
+            "ferriki-eager": 19.50727049999955,
+            "ferriki-precompiled": 19.553270999999768,
+            "shiki-wasm": 19.922645500000044,
+            "prism": 0.6574789999999666
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "example",
+          "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
+          "timings": {
+            "ferriki-off": 0.12154150000000641,
+            "ferriki": 0.11887500000000273,
+            "ferriki-eager": 0.1335204999999462,
+            "ferriki-precompiled": 0.13350000000002638,
+            "shiki-wasm": 0.3094995000001006,
+            "shiki-js": 0.24887499999999818,
+            "prism": 0.0508750000000191
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "large",
+          "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
+          "timings": {
+            "ferriki-off": 1.8624790000003486,
+            "ferriki": 1.8092710000000807,
+            "ferriki-eager": 2.019708499999979,
+            "ferriki-precompiled": 2.0110835000000407,
+            "shiki-wasm": 4.757562499999949,
+            "shiki-js": 3.8543964999997797,
+            "prism": 0.8077710000000025
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "example",
+          "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
+          "timings": {
+            "ferriki-off": 1.8790409999996882,
+            "ferriki": 1.1778749999998581,
+            "ferriki-eager": 1.342417000000296,
+            "ferriki-precompiled": 1.1097089999998389,
+            "shiki-wasm": 4.556666999999834,
+            "shiki-js": 4.28570899999977
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "large",
+          "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
+          "timings": {
+            "ferriki-off": 20.70858350000026,
+            "ferriki": 12.688333500000226,
+            "ferriki-eager": 15.446020499999577,
+            "ferriki-precompiled": 12.535020499999973,
+            "shiki-wasm": 53.87452050000047,
+            "shiki-js": 53.05985400000009
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "example",
+          "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
+          "timings": {
+            "ferriki-off": 1.9845419999998057,
+            "ferriki": 1.1137499999998681,
+            "ferriki-eager": 1.2046044999999594,
+            "ferriki-precompiled": 1.082645500000126,
+            "shiki-wasm": 4.668770499999937,
+            "shiki-js": 5.229270499999984
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "large",
+          "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
+          "timings": {
+            "ferriki-off": 27.805271000000175,
+            "ferriki": 14.004770500000632,
+            "ferriki-eager": 15.643833500000255,
+            "ferriki-precompiled": 14.145313000000442,
+            "shiki-wasm": 69.12439549999999,
+            "shiki-js": 77.90475000000015
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "example",
+          "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
+          "timings": {
+            "ferriki-off": 0.2075419999996484,
+            "ferriki": 0.14583300000003874,
+            "ferriki-eager": 0.14658300000019153,
+            "ferriki-precompiled": 0.14545899999995981,
+            "shiki-wasm": 1.5455420000000686,
+            "shiki-js": 0.6624589999998989,
+            "prism": 0.08520799999996598
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "large",
+          "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
+          "timings": {
+            "ferriki-off": 3.1246249999999236,
+            "ferriki": 2.2059379999998328,
+            "ferriki-eager": 2.2467915000001994,
+            "ferriki-precompiled": 2.227374999999938,
+            "shiki-wasm": 24.021853499999906,
+            "shiki-js": 10.216938000000027,
+            "prism": 1.2864579999998114
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.2848750000000564,
+            "ferriki": 0.2256460000000402,
+            "ferriki-eager": 0.2202914999999166,
+            "ferriki-precompiled": 0.21954150000010486,
+            "shiki-wasm": 1.4096454999999821,
+            "shiki-js": 0.7787500000000591,
+            "prism": 0.1035000000001105
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 4.236582999999882,
+            "ferriki": 3.4379579999999805,
+            "ferriki-eager": 3.391374999999698,
+            "ferriki-precompiled": 3.3916250000002037,
+            "shiki-wasm": 21.649333000000297,
+            "shiki-js": 11.69900000000007,
+            "prism": 1.4883749999999054
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "example",
+          "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
+          "timings": {
+            "ferriki-off": 1.1249159999999847,
+            "ferriki": 0.5808329999999842,
+            "ferriki-eager": 0.5609999999996944,
+            "ferriki-precompiled": 0.5625420000001213,
+            "shiki-wasm": 2.075666000000183,
+            "shiki-js": 2.2607080000000224
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "large",
+          "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
+          "timings": {
+            "ferriki-off": 16.8732500000001,
+            "ferriki": 7.904041499999948,
+            "ferriki-eager": 7.8169999999995525,
+            "ferriki-precompiled": 7.906957999999577,
+            "shiki-wasm": 31.22247950000019,
+            "shiki-js": 34.86918700000024
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "example",
+          "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
+          "timings": {
+            "ferriki-off": 0.7193750000001273,
+            "ferriki": 0.4773329999998168,
+            "ferriki-eager": 0.4444170000001577,
+            "ferriki-precompiled": 0.42991600000004837,
+            "shiki-wasm": 2.0450000000000728,
+            "shiki-js": 3.077833000000055
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "large",
+          "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
+          "timings": {
+            "ferriki-off": 7.34387500000048,
+            "ferriki": 4.767041500000005,
+            "ferriki-eager": 4.518166500000007,
+            "ferriki-precompiled": 4.472916500000565,
+            "shiki-wasm": 25.732770499999788,
+            "shiki-js": 39.49335449999944
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "example",
+          "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
+          "timings": {
+            "ferriki-off": 0.25487499999997,
+            "ferriki": 0.22420800000008967,
+            "ferriki-eager": 0.2178750000002765,
+            "ferriki-precompiled": 0.20945900000003803,
+            "shiki-wasm": 2.7552080000000387,
+            "shiki-js": 0.5298749999999472,
+            "prism": 0.1457910000000311
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "large",
+          "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
+          "timings": {
+            "ferriki-off": 3.6519374999998035,
+            "ferriki": 3.0289374999999836,
+            "ferriki-eager": 2.9769169999999576,
+            "ferriki-precompiled": 2.824437499999931,
+            "shiki-wasm": 43.9584789999999,
+            "shiki-js": 7.716833500000121,
+            "prism": 1.99993749999976
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "example",
+          "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
+          "timings": {
+            "ferriki-off": 0.2838749999999095,
+            "ferriki": 0.23745849999994562,
+            "ferriki-eager": 0.23408299999994142,
+            "ferriki-precompiled": 0.23556250000001455,
+            "shiki-wasm": 0.8678955000000315,
+            "shiki-js": 0.5755420000000413,
+            "prism": 0.09831249999996317
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "large",
+          "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
+          "timings": {
+            "ferriki-off": 4.229207999999744,
+            "ferriki": 3.6300420000002305,
+            "ferriki-eager": 3.5522089999994932,
+            "ferriki-precompiled": 3.5168750000002547,
+            "shiki-wasm": 13.161124999999629,
+            "shiki-js": 8.547292000000198,
+            "prism": 1.419625000000451
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.3748755000000017,
+            "ferriki": 0.30312500000002274,
+            "ferriki-eager": 0.28841699999998127,
+            "ferriki-precompiled": 0.2861454999999751,
+            "shiki-wasm": 1.6714795000000038,
+            "shiki-js": 0.971917000000019,
+            "prism": 0.13645850000000337
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 4.735250000000178,
+            "ferriki": 3.8979369999999562,
+            "ferriki-eager": 3.747916000000032,
+            "ferriki-precompiled": 3.832666000000245,
+            "shiki-wasm": 25.27620849999994,
+            "shiki-js": 13.906937499999913,
+            "prism": 1.670958500000097
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "example",
+          "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
+          "timings": {
+            "ferriki-off": 0.42249999999989996,
+            "ferriki": 0.2329159999999888,
+            "ferriki-eager": 0.22079199999996035,
+            "ferriki-precompiled": 0.22499999999990905,
+            "shiki-wasm": 1.77374999999995,
+            "shiki-js": 0.9626660000000129,
+            "prism": 0.09633300000007239
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "large",
+          "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
+          "timings": {
+            "ferriki-off": 5.539084000000003,
+            "ferriki": 2.9561249999997017,
+            "ferriki-eager": 2.850916999999754,
+            "ferriki-precompiled": 2.872041999999965,
+            "shiki-wasm": 26.41216600000007,
+            "shiki-js": 14.322625000000698,
+            "prism": 1.2102089999998498
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 1.3427085000000716,
+            "ferriki": 0.6988334999998642,
+            "ferriki-eager": 0.6578744999999344,
+            "ferriki-precompiled": 0.6529374999997799,
+            "shiki-wasm": 3.4896664999998848,
+            "shiki-js": 3.09683350000023,
+            "prism": 0.1331035000000611
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 14.26864549999982,
+            "ferriki": 5.805750000000444,
+            "ferriki-eager": 6.005813000000217,
+            "ferriki-precompiled": 5.867562500000076,
+            "shiki-wasm": 46.824854000000414,
+            "shiki-js": 38.681457999999566,
+            "prism": 1.2519999999999527
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.27737500000012005,
+            "ferriki": 0.20974999999998545,
+            "ferriki-eager": 0.20195799999999053,
+            "ferriki-precompiled": 0.20616699999982302,
+            "shiki-wasm": 1.0857089999999516,
+            "shiki-js": 0.690958000000137,
+            "prism": 0.10708399999998619
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.680583999999726,
+            "ferriki": 2.7497920000000704,
+            "ferriki-eager": 2.745708999999806,
+            "ferriki-precompiled": 2.727665999999772,
+            "shiki-wasm": 16.182958999999755,
+            "shiki-js": 10.000625000000127,
+            "prism": 1.3848750000001928
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "example",
+          "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
+          "timings": {
+            "ferriki-off": 0.8541249999999536,
+            "ferriki": 0.319374999999809,
+            "ferriki-eager": 0.30674999999996544,
+            "ferriki-precompiled": 0.3079170000000886,
+            "shiki-wasm": 1.2908749999999145,
+            "shiki-js": 1.969916000000012,
+            "prism": 0.21029199999998127
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "large",
+          "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
+          "timings": {
+            "ferriki-off": 11.959541500000114,
+            "ferriki": 3.890666999999894,
+            "ferriki-eager": 3.8901875000001382,
+            "ferriki-precompiled": 3.7862709999999424,
+            "shiki-wasm": 17.558062499999778,
+            "shiki-js": 28.48012449999942,
+            "prism": 2.565270499999997
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "example",
+          "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
+          "timings": {
+            "ferriki-off": 2.345811999999796,
+            "ferriki": 1.1358749999999418,
+            "ferriki-eager": 1.0678540000000112,
+            "ferriki-precompiled": 1.0728954999999587,
+            "shiki-wasm": 5.43370850000008,
+            "shiki-js": 6.647583000000054,
+            "prism": 0.28193799999996827
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "large",
+          "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
+          "timings": {
+            "ferriki-off": 32.26500000000033,
+            "ferriki": 11.79654199999959,
+            "ferriki-eager": 11.787249999999403,
+            "ferriki-precompiled": 11.58910399999968,
+            "shiki-wasm": 79.5546460000005,
+            "shiki-js": 94.84375,
+            "prism": 2.5807494999999108
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "example",
+          "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
+          "timings": {
+            "ferriki-off": 0.2690420000000131,
+            "ferriki": 0.2765835000000152,
+            "ferriki-eager": 0.2746875000000273,
+            "ferriki-precompiled": 0.267020500000001,
+            "shiki-wasm": 1.0841045000000804,
+            "shiki-js": 0.3882294999999658,
+            "prism": 0.05970800000000054
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "large",
+          "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
+          "timings": {
+            "ferriki-off": 3.9989374999997835,
+            "ferriki": 3.9948959999996987,
+            "ferriki-eager": 4.093207999999777,
+            "ferriki-precompiled": 3.9254375000000437,
+            "shiki-wasm": 16.179687999999942,
+            "shiki-js": 5.4472084999997605,
+            "prism": 0.7721460000000206
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "example",
+          "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
+          "timings": {
+            "ferriki-off": 0.30966699999999037,
+            "ferriki": 0.2758330000001479,
+            "ferriki-eager": 0.2644999999999982,
+            "ferriki-precompiled": 4.478707999999983,
+            "shiki-wasm": 2.523584000000028,
+            "shiki-js": 0.4743750000000091,
+            "prism": 0.08970799999997325
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "large",
+          "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
+          "timings": {
+            "ferriki-off": 4.340999499999953,
+            "ferriki": 4.090562499999578,
+            "ferriki-eager": 4.043417000000318,
+            "ferriki-precompiled": 76.79104199999983,
+            "shiki-wasm": 42.286583500000006,
+            "shiki-js": 6.793312500000184,
+            "prism": 1.1256045000000086
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "example",
+          "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
+          "timings": {
+            "ferriki-off": 0.18643750000001091,
+            "ferriki": 0.14293799999990142,
+            "ferriki-eager": 0.14250000000015461,
+            "ferriki-precompiled": 0.14254200000002015,
+            "shiki-wasm": 1.474666999999954,
+            "shiki-js": 0.642187500000091,
+            "prism": 0.048124999999856755
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "large",
+          "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
+          "timings": {
+            "ferriki-off": 2.8623329999995804,
+            "ferriki": 2.208125000000109,
+            "ferriki-eager": 2.2174999999997453,
+            "ferriki-precompiled": 2.2153339999995296,
+            "shiki-wasm": 23.439458000000286,
+            "shiki-js": 10.09524999999985,
+            "prism": 0.7372919999997976
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.1772080000000642,
+            "ferriki": 0.14391599999999016,
+            "ferriki-eager": 0.14120900000000347,
+            "ferriki-precompiled": 0.1425409999999374,
+            "shiki-wasm": 1.0967909999999392,
+            "shiki-js": 0.4494159999999283,
+            "prism": 0.08120800000006057
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 2.7965209999999843,
+            "ferriki": 2.27518699999996,
+            "ferriki-eager": 2.236167000000023,
+            "ferriki-precompiled": 2.2370000000003074,
+            "shiki-wasm": 17.11760400000003,
+            "shiki-js": 6.787375000000111,
+            "prism": 1.1712914999998247
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "example",
+          "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
+          "timings": {
+            "ferriki-off": 0.4495005000001697,
+            "ferriki": 0.33612499999998136,
+            "ferriki-eager": 0.3438545000000204,
+            "ferriki-precompiled": 0.3198125000000118,
+            "shiki-wasm": 1.6086875000000873,
+            "shiki-js": 1.0181040000000223,
+            "prism": 0.06891699999982848
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "large",
+          "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
+          "timings": {
+            "ferriki-off": 6.21954149999965,
+            "ferriki": 4.584562999999889,
+            "ferriki-eager": 4.788791500000343,
+            "ferriki-precompiled": 4.514271000000235,
+            "shiki-wasm": 23.484333500000048,
+            "shiki-js": 14.399270500000057,
+            "prism": 0.8864170000006197
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "example",
+          "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
+          "timings": {
+            "ferriki-off": 0.31604200000015226,
+            "ferriki": 0.19829200000003766,
+            "ferriki-eager": 0.1948749999999677,
+            "ferriki-precompiled": 0.18724999999994907,
+            "shiki-wasm": 1.1899170000000368,
+            "shiki-js": 0.5017920000000231,
+            "prism": 0.054124999999885404
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "large",
+          "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
+          "timings": {
+            "ferriki-off": 4.734249499999805,
+            "ferriki": 3.0419584999999643,
+            "ferriki-eager": 3.029978999999912,
+            "ferriki-precompiled": 2.8621665000000576,
+            "shiki-wasm": 18.24958349999997,
+            "shiki-js": 7.3212085000000116,
+            "prism": 0.7952294999997775
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "example",
+          "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
+          "timings": {
+            "ferriki-off": 0.10470850000001519,
+            "ferriki": 0.12683300000003328,
+            "ferriki-eager": 0.12774999999999181,
+            "ferriki-precompiled": 0.12654199999997218,
+            "shiki-wasm": 0.7087080000000014,
+            "shiki-js": 0.18868800000007013,
+            "prism": 0.057332999999971435
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "large",
+          "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
+          "timings": {
+            "ferriki-off": 1.6225420000000668,
+            "ferriki": 2.011959000000388,
+            "ferriki-eager": 2.0127080000002024,
+            "ferriki-precompiled": 2.0067909999997937,
+            "shiki-wasm": 11.373916999999892,
+            "shiki-js": 2.830417000000125,
+            "prism": 0.8955829999999878
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "example",
+          "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
+          "timings": {
+            "ferriki-off": 0.25520799999992505,
+            "ferriki": 0.15404199999989032,
+            "ferriki-eager": 0.1517079999998714,
+            "ferriki-precompiled": 0.15220800000008694,
+            "shiki-wasm": 1.5025410000002921,
+            "shiki-js": 0.5388749999999618,
+            "prism": 0.11108300000000781
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "large",
+          "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
+          "timings": {
+            "ferriki-off": 3.7412709999998697,
+            "ferriki": 2.3333955000000515,
+            "ferriki-eager": 2.3183125000000473,
+            "ferriki-precompiled": 2.3277499999996962,
+            "shiki-wasm": 23.43416699999989,
+            "shiki-js": 8.032542000000149,
+            "prism": 1.622729500000105
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "example",
+          "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
+          "timings": {
+            "ferriki-off": 0.22800000000006548,
+            "ferriki": 0.0880830000000401,
+            "ferriki-eager": 0.0849170000000754,
+            "ferriki-precompiled": 0.08474999999998545,
+            "shiki-wasm": 2.1181245000000217,
+            "shiki-js": 0.6985415000001751,
+            "prism": 0.027291999999988548
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "large",
+          "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
+          "timings": {
+            "ferriki-off": 3.307749999999942,
+            "ferriki": 1.2882494999998926,
+            "ferriki-eager": 1.2556460000000698,
+            "ferriki-precompiled": 1.2615204999999605,
+            "shiki-wasm": 33.039145499999904,
+            "shiki-js": 10.071603500000037,
+            "prism": 0.3722704999995585
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "example",
+          "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
+          "timings": {
+            "ferriki-off": 0.16858300000012605,
+            "ferriki": 0.16066699999998946,
+            "ferriki-eager": 0.16095800000002214,
+            "ferriki-precompiled": 0.15612499999997453,
+            "shiki-wasm": 0.5876875000000155,
+            "shiki-js": 0.36435399999999163,
+            "prism": 0.06425000000001546
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "large",
+          "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
+          "timings": {
+            "ferriki-off": 2.52862499999992,
+            "ferriki": 2.4858330000001843,
+            "ferriki-eager": 2.4876249999997526,
+            "ferriki-precompiled": 2.4298330000001442,
+            "shiki-wasm": 9.159999999999854,
+            "shiki-js": 5.5334170000000995,
+            "prism": 0.9870829999999842
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.30150000000003274,
+            "ferriki": 0.17862500000001091,
+            "ferriki-eager": 0.1736670000000231,
+            "ferriki-precompiled": 0.1728330000000824,
+            "shiki-wasm": 1.296833000000106,
+            "shiki-js": 0.6713749999998981,
+            "prism": 0.06758300000001327
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 4.503167000000303,
+            "ferriki": 2.7470000000002983,
+            "ferriki-eager": 2.6817919999998594,
+            "ferriki-precompiled": 2.6451670000001286,
+            "shiki-wasm": 19.711583999999675,
+            "shiki-js": 9.991375000000062,
+            "prism": 0.9507090000001881
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "example",
+          "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
+          "timings": {
+            "ferriki-off": 0.32822950000013407,
+            "ferriki": 0.17008350000003247,
+            "ferriki-eager": 0.16706249999992906,
+            "ferriki-precompiled": 0.16383400000006532,
+            "shiki-wasm": 1.6291664999999966,
+            "shiki-js": 0.6985414999999762,
+            "prism": 0.0625835000000734
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "large",
+          "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
+          "timings": {
+            "ferriki-off": 5.329417000000376,
+            "ferriki": 2.9401660000003176,
+            "ferriki-eager": 2.872957999999926,
+            "ferriki-precompiled": 2.7960830000001806,
+            "shiki-wasm": 26.993083999999726,
+            "shiki-js": 11.546374999999898,
+            "prism": 0.9614160000000993
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "example",
+          "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
+          "timings": {
+            "ferriki-off": 0.9220209999999724,
+            "ferriki": 0.8554579999999987,
+            "ferriki-eager": 0.8290420000000154,
+            "ferriki-precompiled": 0.8242500000000064,
+            "shiki-wasm": 5.201083500000095,
+            "shiki-js": 0.8253955000000417,
+            "prism": 0.10752150000007532
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "large",
+          "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
+          "timings": {
+            "ferriki-off": 12.754771000000346,
+            "ferriki": 12.428396000000248,
+            "ferriki-eager": 12.826374499999929,
+            "ferriki-precompiled": 12.606165999999575,
+            "shiki-wasm": 82.82577100000026,
+            "shiki-js": 10.869895499999984,
+            "prism": 1.183583500000168
+          }
+        }
+      ]
+    }
+  ]
+}
