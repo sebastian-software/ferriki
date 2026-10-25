@@ -8,11 +8,11 @@ const steps = [
   ],
   [
     "Download your grammars",
-    "Ferriki fetches the prepared packages you need, verifies them, and caches them on disk.",
+    "Ferriki fetches the packages you need. The first load verifies, unpacks, and caches them on disk.",
   ],
   [
     "Restore next time",
-    "A fresh process restores the cached optimizations instead of rebuilding the automata.",
+    "A fresh process reads and verifies the unpacked cache, then restores the prepared automata.",
   ],
   ["Start optimized", "Static scanners use Eager optimizations from their first execution."],
 ];
@@ -27,8 +27,8 @@ export function PreparedRegexSection() {
       note={
         <>
           Enabled by default for standard grammars. Keep the disk cache between builds to reuse
-          downloads. Restoration still takes time; dynamic patterns remain local, and unavailable
-          packages fall back to source.{" "}
+          downloads and unpacked packages. Restoration still takes time; dynamic patterns remain
+          local, and unavailable packages fall back to source.{" "}
           <Link to="/evidence/benchmarks#prepared-regex">Read the measurements and limits.</Link>
         </>
       }

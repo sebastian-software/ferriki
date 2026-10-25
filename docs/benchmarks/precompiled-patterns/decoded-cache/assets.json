@@ -1,0 +1,241 @@
+[
+  {
+    "scenario": "repository",
+    "documents": [
+      {
+        "lang": "rust",
+        "path": "src/highlighter.rs",
+        "copies": 1,
+        "bytes": 58957,
+        "sha256": "625bd8c565b063733dfe37c06b8e0975795e81c494f2649054eb2c7dd2bf689a"
+      },
+      {
+        "lang": "typescript",
+        "path": "node/ferriki/src/api.mts",
+        "copies": 1,
+        "bytes": 12052,
+        "sha256": "43a699683757f4e9bc40f521a6cc0629520468fa47baac88c07d0752ddd6ab4a"
+      },
+      {
+        "lang": "javascript",
+        "path": "node/ferriki/src/index.mjs",
+        "copies": 1,
+        "bytes": 65198,
+        "sha256": "6ef10bd9b37a9812fd494f5ca9e0936e85c96bc11262c731b5ec024df27e7978"
+      },
+      {
+        "lang": "markdown",
+        "path": "docs/ferriki-api.md",
+        "copies": 1,
+        "bytes": 37247,
+        "sha256": "6efebdde18bef5b464a1ccce1c3a268a0a0467bf775e6f1bf825ca073ca2a088"
+      },
+      {
+        "lang": "css",
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "copies": 1,
+        "bytes": 8014,
+        "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+      },
+      {
+        "lang": "json",
+        "path": "node/package.json",
+        "copies": 1,
+        "bytes": 7713,
+        "sha256": "4be276291552d5d916249c6abc1c63cd3006ca387cfe3147e82b41235cea5569"
+      },
+      {
+        "lang": "toml",
+        "path": "Cargo.toml",
+        "copies": 1,
+        "bytes": 4793,
+        "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+      },
+      {
+        "lang": "python",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "copies": 1,
+        "bytes": 2119,
+        "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+      },
+      {
+        "lang": "html",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "copies": 1,
+        "bytes": 1200,
+        "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+      },
+      {
+        "lang": "go",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "copies": 1,
+        "bytes": 572,
+        "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+      },
+      {
+        "lang": "php",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "copies": 1,
+        "bytes": 802,
+        "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+      },
+      {
+        "lang": "shellscript",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "copies": 1,
+        "bytes": 634,
+        "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+      }
+    ],
+    "assets": [
+      {
+        "path": "languages/rust.fkbc",
+        "sha256": "905646214e94e03e1e9779fc6809efa0d876ca405666d9abdb834f36b0dc883a",
+        "size": 40359,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "b989142256a7294f05a3189043672dca6ee3283a6135d189b14648f19a431c71",
+          "size": 256168
+        }
+      },
+      {
+        "path": "languages/typescript.fkbc",
+        "sha256": "3dbd3fa23915ce4cf4248759df3f0b7e469baa647180b1947477d0d9bdb7fccd",
+        "size": 3363625,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "df5409bda56ff09f95500ea27653d02d9235440c615504261fbef90f49143f6e",
+          "size": 53986011
+        }
+      },
+      {
+        "path": "languages/javascript.fkbc",
+        "sha256": "9342bbbb46df644a058701997f3fe04a007a3888ebca77b76ea2af8efbdde067",
+        "size": 3327367,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "7f3fa928e3d20a154936d4d93fec595c6174c240d65470348638b8d06d283e20",
+          "size": 53374194
+        }
+      },
+      {
+        "path": "languages/markdown.fkbc",
+        "sha256": "e14346bf00618116ee8fe6a5b0108597bece35db54b4fca5c47779b8c922aad1",
+        "size": 25906632,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "30451894ff0bbf1d03daba513d50cdeeeecc2c3ec9d8927370a1a3245820cebd",
+          "size": 273910351
+        }
+      },
+      {
+        "path": "languages/css.fkbc",
+        "sha256": "26d0c46b20560a7cdfbad22ca4d93c41599a60409aa36af75ff3c60bbbde36da",
+        "size": 639264,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "191ece12cd7ac22c81391e46a91e7a223fc82a65a601c101e73aa13115a011d5",
+          "size": 7775721
+        }
+      },
+      {
+        "path": "languages/json.fkbc",
+        "sha256": "a4a6655ccc71e1ed793467b173744a00c884375d0c6c896171e9861026cc576a",
+        "size": 4706,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "b5e8df419431adf16a4d1ff04446668a713ddb176adc56557c3d4a3c1fa12627",
+          "size": 33669
+        }
+      },
+      {
+        "path": "languages/toml.fkbc",
+        "sha256": "d144f43e85d6dfacff1bf744ead7c28f7dcb5b0a345969c507074fae3f201231",
+        "size": 15590,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "fbb546039be3dcb22e3f6ef3cdd9778b4762f032149617a1c690febb4c32b25f",
+          "size": 125635
+        }
+      },
+      {
+        "path": "languages/python.fkbc",
+        "sha256": "faad0f49ce14f1556326b3e133e12026fcd6754a6e6c82835eb701285af3d39f",
+        "size": 249943,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "462881fd4b32c1a46b4cc9fe582f6602486f6fb70e4534869db5217571d71688",
+          "size": 2565834
+        }
+      },
+      {
+        "path": "languages/html.fkbc",
+        "sha256": "e0220bf179c535d5a84010b0a671eea603c495407bbbfa3e14c850de5184f3e6",
+        "size": 3377856,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "6a62fb1792a0dca5f9e3ad3f39b6f7d8f7efdc2d1c7c4e2a0d15797d045a1684",
+          "size": 48539259
+        }
+      },
+      {
+        "path": "languages/go.fkbc",
+        "sha256": "37a9582805f0c8e13872b579c39855e667d8c3c9aabfa305d4bcc7a36499a7d7",
+        "size": 209297,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "85033d033bcb630f1ff27b6c937eb42820077e08fd1f9b5ce258e9968d9081e3",
+          "size": 3580419
+        }
+      },
+      {
+        "path": "languages/php.fkbc",
+        "sha256": "a222a26531768e35cc5886fc2de5d1d4c1e0c93c8971d070024e733b5ab8c27c",
+        "size": 3575225,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "ba64ff43812b6f21cd425403821b3851276e109c71a8a70e1ee829abbdc4fb20",
+          "size": 45143170
+        }
+      },
+      {
+        "path": "languages/shellscript.fkbc",
+        "sha256": "9c8ebbfacd4da405b8fad617c0ed54515b60917a2e8e03fb1a8068f08be3dae1",
+        "size": 106674,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "ddd085462a393c1b503ab1757a618abd25153b3af02280836db39e08502aa170",
+          "size": 843870
+        }
+      }
+    ],
+    "compressedBytes": 40816538,
+    "decodedBytes": 490134301
+  },
+  {
+    "scenario": "large-typescript",
+    "documents": [
+      {
+        "lang": "typescript",
+        "path": "node/ferriki/src/api.mts",
+        "copies": 22,
+        "bytes": 265165,
+        "sha256": "764ed3cb071fa4733086d65d54950a673ecad6e46e9fb83575a5edfc30acd160"
+      }
+    ],
+    "assets": [
+      {
+        "path": "languages/typescript.fkbc",
+        "sha256": "3dbd3fa23915ce4cf4248759df3f0b7e469baa647180b1947477d0d9bdb7fccd",
+        "size": 3363625,
+        "formatVersion": 33562627,
+        "decoded": {
+          "sha256": "df5409bda56ff09f95500ea27653d02d9235440c615504261fbef90f49143f6e",
+          "size": 53986011
+        }
+      }
+    ],
+    "compressedBytes": 3363625,
+    "decodedBytes": 53986011
+  }
+]

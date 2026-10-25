@@ -38,6 +38,12 @@ the same factor for another workload.
 
 ## Four regex policies
 
+These retained Blacksmith results predate the persistent decoded cache.
+The [decoded-cache startup diagnostic](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/precompiled-patterns/decoded-cache)
+measures that follow-up separately, including first cache fill and fresh
+processes that reuse unpacked packages. It is a local ARM64 comparison and
+does not replace the tables below.
+
 The October 25 repository build measures **Source Off**, **Source Auto (lazy
 DFA)**, **Source Eager**, and **Prepared** as separate contenders. The source
 paths do not open prepared archives. Prepared remains the product default;

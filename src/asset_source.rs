@@ -17,12 +17,21 @@ pub struct AssetDigest(String);
 
 impl AssetDigest {
     pub fn of(bytes: &[u8]) -> Self {
-        Self(format!("{:x}", Sha256::digest(bytes)))
+        Self(sha256_hex(bytes))
     }
 
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    Sha256::digest(bytes)
+        .into_iter()
+        .flat_map(|byte| [HEX[usize::from(byte >> 4)], HEX[usize::from(byte & 15)]])
+        .map(char::from)
+        .collect()
 }
 
 impl FromStr for AssetDigest {
@@ -45,6 +54,7 @@ pub struct AssetMetadata {
     digest: AssetDigest,
     size: u64,
     format_version: u32,
+    decoded: Option<Box<AssetMetadata>>,
 }
 
 impl AssetMetadata {
@@ -53,7 +63,28 @@ impl AssetMetadata {
             digest,
             size,
             format_version,
+            decoded: None,
         }
+    }
+
+    pub(crate) fn from_release_asset(asset: &ferriki_asset_gen::ReleaseAsset) -> Result<Self> {
+        let mut metadata = Self::new(asset.sha256.parse()?, asset.size, asset.format_version);
+        metadata.decoded = asset
+            .decoded
+            .as_ref()
+            .map(|decoded| {
+                Ok(Box::new(Self::new(
+                    decoded.sha256.parse()?,
+                    decoded.size,
+                    asset.format_version,
+                )))
+            })
+            .transpose()?;
+        Ok(metadata)
+    }
+
+    pub(crate) fn decoded(&self) -> Option<&Self> {
+        self.decoded.as_deref()
     }
 
     pub fn digest(&self) -> &AssetDigest {
@@ -160,5 +191,35 @@ impl AssetSource for EmbeddedAssetSource {
                 "Asset {} is unavailable offline. Provide embedded bytes or a pre-populated cache.", digest.as_str()
             ))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decoded_metadata_authenticates_persisted_bytes() {
+        let bytes = b"decoded";
+        let mut asset = serde_json::json!({
+            "sha256": AssetDigest::of(b"transport").as_str(), "size": 9, "formatVersion": 1,
+            "decoded": { "sha256": AssetDigest::of(bytes).as_str(), "size": bytes.len() }
+        });
+        let metadata =
+            AssetMetadata::from_release_asset(&serde_json::from_value(asset.clone()).unwrap())
+                .unwrap();
+        let decoded = metadata.decoded().unwrap();
+        assert!(decoded.verify_bytes(bytes).is_ok());
+        assert_eq!(
+            decoded.verify_bytes(b"changed").unwrap_err().kind(),
+            ErrorKind::AssetIntegrity
+        );
+        asset["decoded"]["sha256"] = "invalid".into();
+        assert_eq!(
+            AssetMetadata::from_release_asset(&serde_json::from_value(asset).unwrap())
+                .unwrap_err()
+                .kind(),
+            ErrorKind::AssetFormat
+        );
     }
 }

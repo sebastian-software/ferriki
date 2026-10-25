@@ -34,6 +34,12 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   Objects reuse `<language-id>/<short-hash>` in the existing immutable CDN
   namespace; their complete digests distinguish bytecode from grammar data.
   The postcard grammar and catalog schemas stay at format 3.
+  An additive `decoded` descriptor also pins the uncompressed container's
+  SHA-256 and size. Node and Rust remote catalogs persist it on first load in
+  the shared asset cache. Fresh processes verify and open those bytes directly;
+  they do not repeat transport decompression or compressed-file verification.
+  Old manifests remain supported. A damaged decoded entry is rebuilt from the
+  verified compressed payload, and cache write failures remain optional.
 - Catalog loading attaches the matching sidecar to the registry's pattern
   cache. Programs decode only on a cache miss. Prepared group sources are bound
   to the root grammar: Ferroni selects one group source per cache, so switching
@@ -91,8 +97,9 @@ a zero-copy snapshot. Prepared instructions avoid rebuilding group automata;
 per-pattern helpers, scratch and input-dependent search caches remain local.
 Custom grammars continue to compile from source.
 
-Keep the asset cache between builds when downloads should be reused. Each new
-process still restores its own runtime state from the cached package. Prepared
+Keep the asset cache between builds to reuse both downloaded and decoded data.
+Decoded files use more disk space than compressed downloads. Each new
+process still reads and verifies the container and restores its runtime state. Prepared
 assets remain valid while their content and format are compatible; editing the
 highlighted document does not require regenerating the grammar package.
 
@@ -123,6 +130,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-25: Persist decoded containers with release-pinned identities, verify
+  them once on actual use, and avoid the temporary whole-container Arc copy.
+  Retain compressed transport and complete static coverage.
 
 - 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
   benchmark contenders; retain default and legacy boolean behavior. Record

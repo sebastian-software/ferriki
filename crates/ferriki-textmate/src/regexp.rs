@@ -118,27 +118,34 @@ impl ScannerPatternCache {
         archive: impl Into<Arc<[u8]>>,
     ) -> Result<(), PrecompiledPatternsError> {
         let archive = archive.into();
-        let (ordinary, prepared) = if archive.starts_with(b"FERRONI\0") {
-            (
-                Some(
-                    PrecompiledPatterns::from_bytes(archive)
-                        .map_err(PrecompiledPatternsError::from_engine)?,
-                ),
-                None,
-            )
-        } else {
-            (None, Some(crate::precompiled::open_archive(archive)?))
-        };
+        if !archive.starts_with(b"FERRONI\0") {
+            return self.add_precompiled_from_slice(&archive);
+        }
+        let source = PrecompiledPatterns::from_bytes(archive)
+            .map_err(PrecompiledPatternsError::from_engine)?;
         let mut state = self
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
-        if let Some(source) = ordinary {
-            state.ordinary_sources.push(source);
+        state.ordinary_sources.push(source);
+        state.active_scope = None;
+        state.cache.clear_precompiled();
+        Ok(())
+    }
+
+    pub(crate) fn add_precompiled_from_slice(
+        &self,
+        archive: &[u8],
+    ) -> Result<(), PrecompiledPatternsError> {
+        if archive.starts_with(b"FERRONI\0") {
+            return self.add_precompiled(archive);
         }
-        if let Some(source) = prepared {
-            state.sources.insert(source.scope.clone(), source);
-        }
+        let source = crate::precompiled::open_archive(archive)?;
+        let mut state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        state.sources.insert(source.scope.clone(), source);
         state.active_scope = None;
         state.cache.clear_precompiled();
         Ok(())

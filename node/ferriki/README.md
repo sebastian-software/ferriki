@@ -22,6 +22,9 @@ deployments. Each fresh process restores the prepared automata instead of
 rebuilding them from source. This is the default with prefiltering on;
 unavailable packages fall back to source, and dynamic patterns remain local.
 
+The first load also caches the unpacked package. Later processes skip
+decompression and read, verify, and restore that cached data directly.
+
 In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
 **about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
 Startup includes restoration and the first document; network, file I/O, and

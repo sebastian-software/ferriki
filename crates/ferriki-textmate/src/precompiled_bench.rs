@@ -37,6 +37,13 @@ fn summary(mut samples: Vec<f64>) -> serde_json::Value {
     json!({"median_ms": median, "min_ms": samples[0], "max_ms": samples[samples.len()-1], "samples_ms": raw})
 }
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
 #[test]
 #[ignore = "explicit release-mode performance diagnostic"]
 fn prepared_eager_startup() {
@@ -161,7 +168,7 @@ fn prepared_eager_startup() {
                 .collect::<Vec<_>>()
                 .join("; ")
         );
-        cases.push(json!({"language":language,"fixture":file,"fixture_sha256":format!("{:x}",Sha256::digest(code.as_bytes())),"grammar_sha256":format!("{:x}",Sha256::digest(source.as_bytes())),"bytes":code.len(),"sampled_archive_bytes":sampled.len(),"static_archive_bytes":complete.len(),"results":results}));
+        cases.push(json!({"language":language,"fixture":file,"fixture_sha256":sha256_hex(code.as_bytes()),"grammar_sha256":sha256_hex(source.as_bytes()),"bytes":code.len(),"sampled_archive_bytes":sampled.len(),"static_archive_bytes":complete.len(),"results":results}));
     }
     let report = json!({"ferroni":"2.7.0","transport":"Zstd 19 / FKBC002 / Ferroni program v2 + group v3", "os":std::env::consts::OS,"arch":std::env::consts::ARCH,"profile":"release fat LTO, one codegen unit", "startup_pairs":20, "warmup_documents":3,"minimum_execution_rounds":30,"maximum_execution_rounds":5000,"budget_ms_per_case":800,"order":"rotate lanes each round", "boundary":"setup includes compressed SHA256, buffer copy, bounded decompression, pair opening, theme and grammar construction; startup adds first full tokenize_line2 document; execution retains grammar and resets document stack; excludes file/network I/O, grammar JSON parsing and teardown", "cases":cases});
     if let Ok(path) = std::env::var("FERRIKI_BENCH_OUTPUT") {

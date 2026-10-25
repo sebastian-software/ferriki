@@ -72,12 +72,7 @@ impl StandardAssetCatalogs {
         let metadata = release
             .assets
             .iter()
-            .map(|(path, asset)| {
-                Ok((
-                    path.clone(),
-                    AssetMetadata::new(asset.sha256.parse()?, asset.size, asset.format_version),
-                ))
-            })
+            .map(|(path, asset)| Ok((path.clone(), AssetMetadata::from_release_asset(asset)?)))
             .collect::<Result<Vec<_>>>()?;
         Self::from_source(language_manifest, theme_manifest, metadata, source)
     }
@@ -102,8 +97,10 @@ impl StandardAssetCatalogs {
             .with_source(source)
         })?;
         let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
+        let cache_dir = resolved.cache_dir.clone();
         let source = RemoteAssetSource::new(&release, resolved, true)?;
         Self::from_release_manifest(LANGUAGES, THEMES, &release, source)
+            .map(|catalogs| catalogs.with_decoded_cache(cache_dir))
     }
 
     /// Creates lazy, verified catalogs from binary manifests and a digest-addressed source.
@@ -158,6 +155,7 @@ impl StandardAssetCatalogs {
                     prefix: "languages",
                     metadata: Arc::clone(&metadata),
                     source: Arc::clone(&source),
+                    decoded_cache: None,
                 },
             )?,
             themes: ThemeAssetCatalog::from_manifest(
@@ -166,9 +164,17 @@ impl StandardAssetCatalogs {
                     prefix: "themes",
                     metadata,
                     source,
+                    decoded_cache: None,
                 },
             )?,
         })
+    }
+
+    pub(crate) fn with_decoded_cache(mut self, root: PathBuf) -> Self {
+        if let AssetStore::Verified { decoded_cache, .. } = &mut self.languages.asset_store {
+            *decoded_cache = Some(root);
+        }
+        self
     }
 
     /// Enumerates bundled language IDs without decoding grammar payloads.
@@ -202,6 +208,7 @@ enum AssetStore {
         prefix: &'static str,
         metadata: Arc<HashMap<String, AssetMetadata>>,
         source: Arc<dyn AssetSource>,
+        decoded_cache: Option<PathBuf>,
     },
 }
 
@@ -222,6 +229,7 @@ impl AssetStore {
                 prefix,
                 metadata,
                 source,
+                decoded_cache,
             } => {
                 let metadata = metadata.get(&format!("{prefix}/{file}")).ok_or_else(|| {
                     Error::new(
@@ -235,6 +243,16 @@ impl AssetStore {
                             ErrorKind::AssetFormat,
                             "Unsupported precompiled pattern version.",
                         ));
+                    }
+                    if let Some((root, decoded)) = decoded_cache.as_deref().zip(metadata.decoded())
+                    {
+                        if let Some(bytes) = crate::precompiled_cache::read(root, decoded) {
+                            return Ok(Cow::Owned(bytes));
+                        }
+                        let bytes = source.read(metadata.digest())?;
+                        metadata.verify_bytes(&bytes)?;
+                        return crate::precompiled_cache::prepare(root, decoded, &bytes)
+                            .map(Cow::Owned);
                     }
                     let bytes = source.read(metadata.digest())?;
                     metadata.verify_bytes(&bytes)?;
@@ -707,5 +725,89 @@ mod tests {
         let loaded = store.read("asset.fkgram").expect("borrowed asset");
         assert!(matches!(loaded, Cow::Borrowed(_)));
         assert_eq!(loaded.as_ptr(), ASSET.as_ptr());
+    }
+
+    #[test]
+    fn decoded_cache_survives_catalogs_and_repairs_tampering() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        struct Source {
+            bytes: Vec<u8>,
+            reads: Arc<AtomicUsize>,
+        }
+        impl AssetSource for Source {
+            fn read(&self, _: &crate::AssetDigest) -> Result<Cow<'_, [u8]>> {
+                self.reads.fetch_add(1, Ordering::Relaxed);
+                Ok(Cow::Borrowed(&self.bytes))
+            }
+        }
+        let raw = ferriki_textmate::parse_raw_grammar(
+            r#"{"scopeName":"source.cache","patterns":[{"match":"word","name":"keyword"}]}"#,
+            Some("cache.json"),
+        )
+        .unwrap();
+        let compressed = ferriki_textmate::precompile_grammar_patterns(&raw).unwrap();
+        let decoded = ferriki_textmate::decompress_precompiled_patterns(&compressed).unwrap();
+        let metadata = AssetMetadata::from_release_asset(
+            &serde_json::from_value(serde_json::json!({
+                "sha256": crate::AssetDigest::of(&compressed).as_str(),
+                "size": compressed.len(),
+                "formatVersion": ferriki_textmate::PRECOMPILED_PATTERNS_VERSION,
+                "decoded": {
+                    "sha256": crate::AssetDigest::of(&decoded).as_str(), "size": decoded.len(),
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let root = temp_output_dir("decoded-cache");
+        let reads = Arc::new(AtomicUsize::new(0));
+        let store = || AssetStore::Verified {
+            prefix: "languages",
+            metadata: Arc::new(HashMap::from([(
+                "languages/cache.fkbc".into(),
+                metadata.clone(),
+            )])),
+            source: Arc::new(Source {
+                bytes: compressed.clone(),
+                reads: Arc::clone(&reads),
+            }),
+            decoded_cache: Some(root.clone()),
+        };
+        assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
+        assert_eq!(reads.load(Ordering::Relaxed), 1);
+        assert!(crate::precompiled_cache::available(&root, &metadata));
+        assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
+        assert_eq!(
+            reads.load(Ordering::Relaxed),
+            1,
+            "a fresh catalog needs no compressed source"
+        );
+
+        let cached = root
+            .join("decoded")
+            .join(metadata.decoded().unwrap().digest().as_str());
+        let mut tampered = decoded.clone();
+        *tampered.last_mut().unwrap() ^= 1;
+        fs::write(&cached, tampered).unwrap();
+        assert!(
+            crate::precompiled_cache::available(&root, &metadata),
+            "planning only checks size"
+        );
+        assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
+        assert_eq!(
+            reads.load(Ordering::Relaxed),
+            2,
+            "a digest failure rebuilds from verified transport"
+        );
+        assert_eq!(fs::read(&cached).unwrap(), decoded);
+        fs::write(&cached, b"short").unwrap();
+        assert!(!crate::precompiled_cache::available(&root, &metadata));
+        assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
+
+        // Failure to persist an optional cache must not break preparation.
+        fs::remove_dir_all(&root).unwrap();
+        fs::write(&root, b"cache root is a file").unwrap();
+        assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
+        fs::remove_file(root).unwrap();
     }
 }

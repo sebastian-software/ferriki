@@ -32,6 +32,9 @@ automata instead of rebuilding them from regex source. Standard grammars use
 these packages by default when prefiltering is on, with source fallback when
 a package is unavailable. Dynamic patterns remain local.
 
+The first load also caches the unpacked package. Later processes skip
+decompression and read, verify, and restore that cached data directly.
+
 In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
 **about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
 Startup includes restoration and the first document; network, file I/O, and

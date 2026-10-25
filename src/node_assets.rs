@@ -147,6 +147,7 @@ impl NodeAssetHost {
                 assets_by_digest,
             },
         )
+        .map(|catalogs| catalogs.with_decoded_cache(self.settings.cache_dir.clone()))
     }
 
     pub fn cache_dir(&self) -> &Path {
@@ -205,7 +206,11 @@ impl NodeAssetHost {
                 )
             })?;
             let digest = AssetDigest::from_str(&asset.sha256)?;
-            let metadata = AssetMetadata::new(digest.clone(), asset.size, asset.format_version);
+            let metadata = AssetMetadata::from_release_asset(asset)?;
+            if optional && crate::precompiled_cache::available(&self.settings.cache_dir, &metadata)
+            {
+                continue;
+            }
             let cache_path = self.settings.cache_dir.join(digest.as_str());
             let cached = match read_cache_entry(&cache_path, digest.as_str(), asset.size) {
                 Ok(cached) => cached,
@@ -545,6 +550,64 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&cache);
+    }
+
+    #[test]
+    fn decoded_cache_skips_transport_but_is_verified_when_loaded() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("decoded-plan");
+        let host = host(&root, &cache);
+        let name = "angular-expression";
+        let path = format!("languages/{name}.fkbc");
+        let asset = &host.release.assets[&path];
+        let metadata = AssetMetadata::from_release_asset(asset).unwrap();
+        let decoded = crate::precompiled_cache::prepare(
+            &cache,
+            metadata.decoded().unwrap(),
+            &std::fs::read(source.join(&path)).unwrap(),
+        )
+        .unwrap();
+        assert!(!cache.join(&asset.sha256).exists());
+        assert!(
+            host.plan(&[name.to_owned()], &[])
+                .unwrap()
+                .iter()
+                .all(|entry| entry.path != path)
+        );
+        assert_eq!(
+            host.catalogs()
+                .unwrap()
+                .languages
+                .load_precompiled(name)
+                .unwrap(),
+            decoded
+        );
+
+        let cached = cache
+            .join("decoded")
+            .join(metadata.decoded().unwrap().digest().as_str());
+        let mut invalid = decoded;
+        *invalid.last_mut().unwrap() ^= 1;
+        std::fs::write(&cached, invalid).unwrap();
+        assert!(
+            host.catalogs()
+                .unwrap()
+                .languages
+                .load_precompiled(name)
+                .is_none()
+        );
+        assert!(
+            !cached.exists(),
+            "the actual read rejects and removes a same-size corrupt entry"
+        );
+        assert!(
+            host.plan(&[name.to_owned()], &[])
+                .unwrap()
+                .iter()
+                .any(|entry| entry.path == path)
+        );
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(cache).unwrap();
     }
 
     #[cfg(unix)]
