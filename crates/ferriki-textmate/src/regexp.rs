@@ -151,6 +151,35 @@ impl ScannerPatternCache {
         Ok(())
     }
 
+    pub(crate) fn add_precompiled_owned(
+        &self,
+        archive: Vec<u8>,
+    ) -> Result<(), PrecompiledPatternsError> {
+        if archive.starts_with(b"FERRONI\0") {
+            let source = PrecompiledPatterns::from_shared_bytes(
+                ferroni::scanner::PrecompiledBytes::new(archive),
+            )
+            .map_err(PrecompiledPatternsError::from_engine)?;
+            let mut state = self
+                .shared
+                .lock()
+                .expect("scanner pattern cache lock poisoned");
+            state.ordinary_sources.push(source);
+            state.active_scope = None;
+            state.cache.clear_precompiled();
+        } else {
+            let source = crate::precompiled::open_owned_archive(archive)?;
+            let mut state = self
+                .shared
+                .lock()
+                .expect("scanner pattern cache lock poisoned");
+            state.sources.insert(source.scope.clone(), source);
+            state.active_scope = None;
+            state.cache.clear_precompiled();
+        }
+        Ok(())
+    }
+
     pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
         self.shared
             .lock()

@@ -58,6 +58,10 @@ Each crate publishes a deliberate, curated surface.
   generator and verified cache. `SyncRegistry::add_precompiled_patterns_from_slice`
   accepts compressed or decoded containers without a temporary whole-input Arc;
   the registry retains its own program/group bytes after the slice is dropped.
+  `SyncRegistry::add_precompiled_patterns_owned` consumes a `Vec<u8>` and retains
+  shared views of its decoded allocation without copying the program/group
+  sections. It accepts the same archives and preserves the existing error and
+  fallback contract; no engine type appears in its signature.
   Release metadata's optional `DecodedAsset` is an additive owned result type.
 - **Non-exhaustive by default.** Input types that callers build are
   `#[non_exhaustive]` and come with `Default` and `with_*` setters; a setter
@@ -169,6 +173,9 @@ without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#r
 owns policy semantics and the limits of those counters.
 
 ## History
+
+- 2026-10-25: Add the owned archive importer using Ferroni 2.7.2 shared byte
+  views, preserving the borrowed and Arc-based import APIs.
 
 - 2026-10-25: Add owned decoded-container metadata and bounded decoding/slice
   import APIs for persistent prepared caches without leaking engine types.

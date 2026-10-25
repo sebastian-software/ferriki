@@ -127,6 +127,35 @@ pub(crate) fn open_archive(
     Ok(PreparedArchive { scope, eager })
 }
 
+pub(crate) fn open_owned_archive(
+    bytes: Vec<u8>,
+) -> Result<PreparedArchive, PrecompiledPatternsError> {
+    use ferroni::scanner::PrecompiledBytes;
+    let decoded = if bytes.starts_with(MAGIC) {
+        bytes
+    } else {
+        decompress_precompiled_patterns(&bytes)?
+    };
+    let (scope_end, program_end) = archive_layout(&decoded)?;
+    if decoded.len() as u64 > MAX_ARCHIVE_BYTES {
+        return Err(PrecompiledPatternsError::new("excessive archive size"));
+    }
+    let scope = std::str::from_utf8(&decoded[32..scope_end])
+        .map_err(PrecompiledPatternsError::new)?
+        .to_owned();
+    let image = PrecompiledBytes::new(decoded);
+    let eager = PrecompiledEager::from_shared_bytes(
+        image
+            .slice(scope_end..program_end)
+            .map_err(PrecompiledPatternsError::from_engine)?,
+        image
+            .slice(program_end..image.len())
+            .map_err(PrecompiledPatternsError::from_engine)?,
+    )
+    .map_err(PrecompiledPatternsError::from_engine)?;
+    Ok(PreparedArchive { scope, eager })
+}
+
 /// A failure to generate or open a precompiled pattern archive.
 #[derive(Clone, Debug)]
 pub struct PrecompiledPatternsError {
@@ -334,6 +363,28 @@ mod tests {
                 "first next last\n<<END\nword TODO 😀\nEND\n>quote\n>continued\naaaa : word\nxxx\nalpha beta gamma",
             ],
         )
+    }
+
+    #[test]
+    fn owned_decoded_archive_retains_program_and_group_sections_without_copying() {
+        let compressed = precompile_grammar_patterns(&grammar()).unwrap();
+        let decoded = decompress_precompiled_patterns(&compressed).unwrap();
+        let (scope_end, program_end) = archive_layout(&decoded).unwrap();
+        let programs = decoded[scope_end..program_end].as_ptr();
+        let groups = decoded[program_end..].as_ptr();
+        let source = open_owned_archive(decoded).unwrap();
+        assert_eq!(source.eager.program_bytes().as_ptr(), programs);
+        assert_eq!(source.eager.group_bytes().as_ptr(), groups);
+        source.eager.validate_groups().unwrap();
+        let compressed_source = open_owned_archive(compressed).unwrap();
+        assert_eq!(
+            source.eager.program_bytes(),
+            compressed_source.eager.program_bytes()
+        );
+        assert_eq!(
+            source.eager.group_bytes(),
+            compressed_source.eager.group_bytes()
+        );
     }
 
     #[test]
