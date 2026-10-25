@@ -24,7 +24,9 @@ unavailable packages fall back to source, and dynamic patterns remain local.
 
 The first load also caches the unpacked package. Later processes skip
 decompression and SHA-256 for unchanged local files, then restore the cached
-data directly. File-state checks detect changes and trigger verification again.
+data directly. Program and group sections share the decoded allocation,
+avoiding separate bulk copies. File-state checks detect changes and trigger
+verification again.
 
 In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
 **about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
@@ -32,11 +34,11 @@ Startup includes restoration and the first document; network, file I/O, and
 complete builds are outside the timer. See the
 [measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
-The October 25 repository comparison measures Source Off, Auto, Eager and
-Prepared separately. Its full Node workload shows higher first-use time and
-memory for Prepared than Source Eager, plus a SQL execution outlier. See the
-[separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
-before applying the isolated tokenizer result to a complete build.
+The current full Node comparison measures Source Off, Auto, Eager and
+Prepared separately. Prepared first use takes **39% less time than Source Eager
+on macOS**, with **5% more time on Linux**. Source Off still starts fastest.
+See the [separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
+for all policies and the historical memory measurements.
 
 ## Requirements and install
 
@@ -79,16 +81,18 @@ later calls.
 
 ## Shiki comparisons
 
-The October 24 Blacksmith capture used Ferriki 1.2.0 with prepared standard
-regex packages and Ferroni 2.7.0. On its 14-file corpus, a reused highlighter
-produced the same HTML as Shiki/WASM and ran **2.4× faster on Linux x86-64**
-and **2.9× faster on macOS ARM64**. See the
+The October 25 Blacksmith capture uses the repository build with Ferroni
+2.7.2 and prepared standard regex packages. On its 14-file corpus, a reused
+highlighter produced the same HTML as Shiki/WASM and ran **3.7× faster on
+Linux x86-64** and **4.3× faster on macOS ARM64**. With the decoded cache
+already populated, first use was **2.0× / 4.4× faster than Shiki/WASM** on
+Linux/macOS. See the
 [benchmark report](https://ferriki.dev/evidence/benchmarks) for hosts,
 first-use timings, raw results, and measurement limits.
 
-Memory depends on the loaded languages. After 600 documents with 12 languages
-loaded together, Ferriki's whole-process RSS was **51–137% higher than
-Shiki/WASM**. With only the large TypeScript workload, it was **33–55% lower**.
+Memory depends on the loaded languages. In the earlier October 24 memory
+capture, after 600 documents with 12 languages loaded together, Ferriki's
+whole-process RSS was **51–137% higher than Shiki/WASM**. With only the large TypeScript workload, it was **33–55% lower**.
 Ferriki loads requested languages and their dependencies; these are separate
 workloads, not measurements of the entire grammar catalog. See the
 [memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
