@@ -131,6 +131,11 @@ and output checks, with no merging of timings across corpus VMs.
 
 ## History
 
+- 2026-10-25: Require Ferroni 2.7.1 for portable prefilter efficiency fallback
+  after the isolated runtime regression in upstream #465. Keep the existing
+  archive format and downloaded packages; retain the dependency comparison in
+  [the 2.7.1 evidence](../docs/benchmarks/precompiled-patterns/ferroni-2.7.1/README.md).
+
 - 2026-10-25: Persist decoded containers with release-pinned identities, verify
   them once on actual use, and avoid the temporary whole-container Arc copy.
   Retain compressed transport and complete static coverage.

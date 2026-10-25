@@ -1,5 +1,9 @@
 # Prepared startup and execution profile
 
+Follow-up: [Ferroni 2.7.1](../ferroni-2.7.1/README.md) fixes the portable
+prefilter efficiency problem. This report and its raw data retain the original
+2.7.0 measurements.
+
 October 25, 2026. The remaining gap has two different causes. Ferriki pays to
 read, authenticate and copy a complete prepared archive at startup. Execution
 loses most of its time in one portable Ferroni prefilter for inline HTML.
