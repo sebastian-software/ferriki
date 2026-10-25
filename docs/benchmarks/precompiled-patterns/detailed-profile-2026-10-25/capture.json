@@ -1,0 +1,71 @@
+{
+  "capturedAt": "2026-10-25T16:02:54.644439+00:00",
+  "kind": "Local diagnostic; not a cross-platform timing claim",
+  "repositoryCommit": "d607f2ed9f6a7820364ddf949d965189f44e76cf",
+  "productionSourcesChanged": false,
+  "ferroniVersion": "2.7.0",
+  "ferroniCrateCommit": "9e6470dfaa4ec7d1ef39a7a3b537c3a3571a0779",
+  "node": "v24.22.0",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "samply": "samply 0.13.1",
+  "host": {
+    "system": "Darwin",
+    "release": "27.0.0",
+    "machine": "arm64",
+    "hardware": "Apple M1 Ultra, 20 cores, 64 GiB"
+  },
+  "build": {
+    "cargoCommand": "CARGO_PROFILE_RELEASE_DEBUG=line-tables-only CARGO_PROFILE_RELEASE_STRIP=none cargo build --release --locked --manifest-path crates/ferriki-core/Cargo.toml",
+    "rustflags": null,
+    "profile": "release, fat LTO, codegen-units=1; symbols retained for profiling",
+    "binarySha256": {
+      "symbolized.node": "dccb6ef6e1ddb42de5fd238a81d7665a8863a2f0629aecae2a0c089496595f7d",
+      "instrumented.node": "51462063047cf527780b2b0b14002559198d93169f2ef2d24ff2ff09ce7bb20b",
+      "ablation.node": "26b509f568b937f7339e379972f561bfe5f56d86986fb9b89ca2ad5864f484e3",
+      "trace.node": "fd585545b8395aa223de2716f7b73426214aa17671dac90a9a941ee8961831f2"
+    },
+    "originalCargoLockSha256": "ef1d90dddd86de904528f7447dee5c5e2b1d93c190a88d28846b89598a8e645c"
+  },
+  "inputs": "../decoded-cache/inputs.json.gz: large-typescript; repository used only for bulk-open phases",
+  "rawProfileCommand": "FERRIKI_BENCH_ADDON=<symbolized.node> FERRIKI_PROFILE_CACHE=<warm cache> samply record --save-only --unstable-presymbolicate --main-thread-only --output <mode>.json.gz node capture-workload.mjs <mode> 15 <mode>-workload.json",
+  "sampling": {
+    "hz": 1000,
+    "warmupPasses": 5,
+    "steadySecondsPerMode": 15,
+    "excluded": "All samples before workload steadyEpochMs",
+    "executedHarness": "capture-workload.mjs"
+  },
+  "ablation": {
+    "freshProcessesPerLane": 5,
+    "warmupPasses": 5,
+    "measuredPassesPerProcess": 10,
+    "processMedian": "upper median",
+    "summary": "median of five process medians",
+    "order": "rotate three lanes each repeat, serial",
+    "harness": "../decoded-cache/reproduce.mjs --worker",
+    "patch": "ablation.patch.gz",
+    "warmCache": true
+  },
+  "replay": {
+    "freshProcessesPerLane": 5,
+    "warmupPasses": 5,
+    "measuredPassesPerProcess": 20,
+    "order": "rotate three lanes each repeat, serial",
+    "subjects": "One preconstructed OnigString per captured query, reused across passes; differs from full tokenizer lifetimes",
+    "queries": 61490,
+    "matchedQueries": 0,
+    "distinctSubjects": 259
+  },
+  "openPhases": {
+    "freshProcessesPerCohort": 5,
+    "filesystemCache": "warm; physical storage cold cache not tested",
+    "measurement": "explicit read/hash/copy timers and Ferroni scanner-load-profile index phases; no decompression"
+  },
+  "ferroniSourceSha256": {
+    "src/dfa_prefilter.rs": "3b5ed01e9c679603e41a968887c05abdd346a55d73aff4c4a31b1b3954105cf0",
+    "src/dfa_prefilter/portable.rs": "36872b914cc84946e863d8b8a205ed1da5fbb97e8356760e990ad642eba2be6f",
+    "src/scanner/precompiled.rs": "592fe070a0cb9649ef0025a3520db464669f27f3b30d2ee9a83a4c2977ceef22",
+    "src/scanner/load_profile.rs": "ac5f51ae4402b46e064d4699e6387ef1446ee5dbfd7ad42263b90d318fde9523"
+  },
+  "restoredProductionAddonSha256": "3f0b4a587df0a4e239d75a9bfb9523233100b88832e1e6fcc8b9c9988ac3bd19"
+}

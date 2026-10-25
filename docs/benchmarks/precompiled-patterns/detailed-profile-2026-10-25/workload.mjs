@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
+const [mode, seconds = "15", report, scenario = "large-typescript"] = process.argv.slice(2);
+const root =
+  process.env.FERRIKI_PROFILE_FROZEN_ROOT ?? "/private/tmp/ferriki-prepared-load-20261025";
+const { documents } = JSON.parse(readFileSync(`${root}/inputs.json`)).find(
+  (x) => x.id === scenario,
+);
+const { createHighlighter } = await import(pathToFileURL(`${root}/facade/index.mjs`));
+const start = performance.now();
+const h = await createHighlighter({
+  langs: [...new Set(documents.map((d) => d.lang))],
+  themes: ["github-dark"],
+  regexMode: mode,
+  assets: { remote: false, cacheDir: process.env.FERRIKI_PROFILE_CACHE },
+});
+const setupMs = performance.now() - start;
+const hash = (x) => createHash("sha256").update(x).digest("hex");
+const run = () =>
+  documents.map((d) => h.codeToHtml(d.code, { lang: d.lang, theme: "github-dark" }));
+let t = performance.now();
+const first = run();
+const firstMs = performance.now() - t;
+for (let i = 0; i < 5; i++) run();
+const outputHashes = first.map(hash);
+console.error(`STEADY ${Date.now()} pid=${process.pid} mode=${mode}`);
+const steadyStart = performance.now();
+const times = [];
+let last;
+while (performance.now() - steadyStart < Number(seconds) * 1000) {
+  t = performance.now();
+  last = run();
+  times.push(performance.now() - t);
+}
+assert.deepEqual(last.map(hash), outputHashes);
+const result = {
+  mode,
+  scenario,
+  setupMs,
+  firstMs,
+  steadyEpochMs: Date.now() - (performance.now() - steadyStart),
+  times,
+  outputHashes,
+  diagnostics: h.getRegexDiagnostics(),
+};
+if (report) writeFileSync(report, JSON.stringify(result, null, 2) + "\n");
+console.error(
+  `DONE ${times.length} calls, ${times.reduce((a, b) => a + b, 0) / times.length} ms/call`,
+);
+h.dispose();

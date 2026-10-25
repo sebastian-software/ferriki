@@ -1,0 +1,17 @@
+{
+  "validatedAt": "2026-10-25T16:09:06.924234+00:00",
+  "checks": {
+    "fullApplicationComparisons": "15 processes; identical full HTML SHA-256, no invalid groups or assembly fallbacks; 32 prepared groups or 31 in the ablation",
+    "scannerParity": "All 35 ordered pattern lists and per-document search counts agree between modes",
+    "ferroniReplay": "15 processes; 61,490 expected results checked in each; exactly one prepared group and no invalid groups; ordinary Eager retires, Prepared remains active",
+    "retainedStandaloneProject": "cargo run --release --locked --offline ... --bin replay -- prepared completed after copying and formatting the retained source",
+    "analysis": "Retained analyzer reproduces 15,062 Eager / 15,227 Prepared samples and category counts",
+    "formatting": "cargo fmt --all --check, standalone cargo fmt --check, and git diff --check pass",
+    "nodeSyntax": "node --check on both capture and configurable workloads passes",
+    "existingEvidence": "publish-decoded-cache-evidence.mjs --check and check-adrs.mjs pass",
+    "restoredNativeBuild": "pnpm run build:native from node/ passes; normal release addon SHA-256 equals the existing production candidate"
+  },
+  "productionAddonSha256": "3f0b4a587df0a4e239d75a9bfb9523233100b88832e1e6fcc8b9c9988ac3bd19",
+  "productionSourcesChanged": false,
+  "notRun": "No new full compatibility or Blacksmith run: final changes contain only profiling evidence, reproduction tools and documentation."
+}
