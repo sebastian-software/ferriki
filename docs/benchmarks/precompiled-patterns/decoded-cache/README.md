@@ -4,6 +4,11 @@ Local diagnostic, October 25, 2026. This measures whether preserving decoded
 packages makes a new process cheaper to initialize. It does not replace the
 retained [Blacksmith policy comparison](../../blacksmith/2026-10-25-regex-modes/README.md).
 
+The later [detailed profile](../detailed-profile-2026-10-25/README.md) attributes
+the remaining startup costs and isolates the TypeScript execution gap to one
+portable Ferroni prefilter, with a standalone reproduction and a full-application
+control experiment.
+
 The old cache kept compressed downloads. Every process read and verified them,
 decompressed their full contents, and then opened Ferroni's program/group pair.
 The Node planner also verified compressed bytes before the catalog verified
