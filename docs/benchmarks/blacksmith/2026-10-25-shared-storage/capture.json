@@ -1,0 +1,7 @@
+{
+  "measured": "2026-10-25",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40235606997",
+  "commit": "0477eed2bd6f7a7e3fdf148937fd6dde42e7b3d8",
+  "suite": "timings",
+  "ferroni": "2.7.2"
+}
