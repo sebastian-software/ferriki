@@ -1,0 +1,110 @@
+{
+  "measured": "2026-10-25",
+  "commit": "ec2ff1d76536a992da26979d3913f82bb26862d1",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40238997955",
+  "decodedBytes": 492142659,
+  "inputsSha256": "eaf6a6110c2c9a2c74652c0bf7f5c0cb85a8331bca465f4c535208c81387acd6",
+  "rustSourceSha256": "58e3693d5961a6e8d70e3bb17f7fa365c35803df60d0af62557319002d348969",
+  "artifacts": [
+    {
+      "id": 12616620117,
+      "name": "startup-profile-linux-x86-64-40238997955",
+      "digest": "sha256:1fd538b18ec15fd10e8d1f54b983444f80dcc55a4ea979ca12a72508e28417b2",
+      "bytes": 68987
+    },
+    {
+      "id": 12615714884,
+      "name": "startup-profile-macos-arm64-40238997955",
+      "digest": "sha256:04cd0201f99a4e14d695e65e84f3c58e9a832c81e08c06c990313851b1a335b4",
+      "bytes": 64265
+    }
+  ],
+  "summary": {
+    "linux-x86-64": {
+      "cpu": "AMD EPYC",
+      "node": {
+        "off": {
+          "importMs": 6.687021999999999,
+          "setupMs": 16.406435000000002,
+          "firstMs": 271.809432,
+          "startupMs": 304.49593400000003
+        },
+        "auto": {
+          "importMs": 6.774877,
+          "setupMs": 15.904580999999993,
+          "firstMs": 521.276019,
+          "startupMs": 541.2519040000001
+        },
+        "eager": {
+          "importMs": 6.233278000000002,
+          "setupMs": 13.952732000000001,
+          "firstMs": 618.6945479999999,
+          "startupMs": 640.1738499999999
+        },
+        "prepared": {
+          "importMs": 9.554503999999998,
+          "setupMs": 230.01969499999998,
+          "firstMs": 347.057091,
+          "startupMs": 606.005409
+        }
+      },
+      "readers": {
+        "take": {
+          "readMs": 148.38248899999996,
+          "openMs": 13.639341
+        },
+        "file": {
+          "readMs": 157.670581,
+          "openMs": 15.143806000000003
+        },
+        "exact": {
+          "readMs": 153.794986,
+          "openMs": 15.090046
+        }
+      }
+    },
+    "macos-arm64": {
+      "cpu": "Apple M4 Pro (Virtual)",
+      "node": {
+        "off": {
+          "importMs": 5.257417,
+          "setupMs": 9.410791,
+          "firstMs": 206.678792,
+          "startupMs": 221.34699999999998
+        },
+        "auto": {
+          "importMs": 4.763667000000002,
+          "setupMs": 9.157333999999999,
+          "firstMs": 313.84837500000003,
+          "startupMs": 327.351834
+        },
+        "eager": {
+          "importMs": 4.970041999999999,
+          "setupMs": 9.582541000000003,
+          "firstMs": 394.239334,
+          "startupMs": 408.547792
+        },
+        "prepared": {
+          "importMs": 4.969166999999999,
+          "setupMs": 70.423417,
+          "firstMs": 175.54399999999998,
+          "startupMs": 250.93658399999998
+        }
+      },
+      "readers": {
+        "take": {
+          "readMs": 48.430334,
+          "openMs": 11.519623999999999
+        },
+        "file": {
+          "readMs": 50.72375100000001,
+          "openMs": 11.750665999999999
+        },
+        "exact": {
+          "readMs": 48.147167,
+          "openMs": 11.597084000000002
+        }
+      }
+    }
+  }
+}
