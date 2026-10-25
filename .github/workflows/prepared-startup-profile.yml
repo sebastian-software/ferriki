@@ -1,0 +1,60 @@
+name: Prepared startup profile
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [linux-x86-64, macos-arm64]
+    runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: blacksmith-comparison-${{ matrix.profile }}
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24.21.0
+      - name: Build ordinary native addon
+        working-directory: node
+        run: pnpm install --frozen-lockfile --ignore-scripts && pnpm run build:native
+      - name: Build separate archive probe
+        run: cargo build --release --locked --manifest-path benchmarks/prepared-startup-profile/Cargo.toml
+      - name: Measure ordinary entry points and archive reader variants
+        run: node node/scripts/profile-prepared-startup.mjs "$RUNNER_TEMP/profile"
+      - name: Collect separate Linux OS diagnostics when available
+        if: runner.os == 'Linux'
+        run: |
+          probe=benchmarks/prepared-startup-profile/target/release/ferriki-prepared-startup-profile
+          for reader in take file exact; do
+            if [ -x /usr/bin/time ]; then
+              /usr/bin/time -v "$probe" "$RUNNER_TEMP/profile/archives.json" "$reader" > "$RUNNER_TEMP/profile/os-$reader.json" 2> "$RUNNER_TEMP/profile/time-$reader.txt"
+            fi
+            if command -v strace >/dev/null; then
+              strace -c -e read,pread64 -o "$RUNNER_TEMP/profile/strace-$reader.txt" "$probe" "$RUNNER_TEMP/profile/archives.json" "$reader" > /dev/null
+            fi
+          done
+      - name: Build and run opt-in archive phase clocks
+        run: |
+          cargo build --release --locked --manifest-path benchmarks/prepared-startup-profile/Cargo.toml --features phases
+          benchmarks/prepared-startup-profile/target/release/ferriki-prepared-startup-profile "$RUNNER_TEMP/profile/archives.json" take > "$RUNNER_TEMP/profile/engine-phases.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: startup-profile-${{ matrix.profile }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/profile/
+          retention-days: 90

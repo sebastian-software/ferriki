@@ -9,7 +9,7 @@ on:
       suite:
         description: Measurement suite
         type: choice
-        options: [timings, memory, all]
+        options: [timings, memory, all, startup-profile]
         default: timings
       platform:
         description: Runner profile
@@ -34,9 +34,13 @@ env:
   RUSTUP_TOOLCHAIN: stable
 
 jobs:
+  startup-profile:
+    if: github.repository == 'sebastian-software/ferriki' && inputs.suite == 'startup-profile'
+    uses: ./.github/workflows/prepared-startup-profile.yml
+
   compare:
     name: ${{ matrix.profile }} / ${{ matrix.corpus }}
-    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory'
+    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory' && inputs.suite != 'startup-profile'
     runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 60
     strategy:
@@ -86,7 +90,7 @@ jobs:
 
   merge:
     name: merge ${{ matrix.profile }}
-    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory'
+    if: github.repository == 'sebastian-software/ferriki' && inputs.suite != 'memory' && inputs.suite != 'startup-profile'
     needs: compare
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -1,0 +1,19 @@
+[package]
+name = "ferriki-prepared-startup-profile"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+phases = ["ferroni/scanner-load-profile"]
+
+[dependencies]
+ferroni = { version = "=2.7.2", features = ["precompiled-eager"] }
+serde_json = "1"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
