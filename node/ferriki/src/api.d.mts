@@ -58,9 +58,26 @@ export interface AssetOptions {
   /** Cache directory. Default: `node_modules/.cache/ferriki`, then the platform cache. */
   cacheDir?: string;
 }
+/** Explicit source modes remain independent of optional prepared assets. */
+export type RegexMode = "off" | "auto" | "eager" | "prepared";
+/** Construction counters, not search-loop counters or complete archive-coverage proof. */
+export interface RegexDiagnostics {
+  mode: RegexMode;
+  staticScanners: number;
+  dynamicScanners: number;
+  offScanners: number;
+  autoScanners: number;
+  eagerScanners: number;
+  assemblyFallbacks: number;
+  preparedArchives: number;
+  loadedPreparedGroups: number;
+  invalidPreparedGroups: number;
+}
 export interface HighlighterOptions {
   /** Automatic regex prefiltering (default: true). Disable to avoid construction for one-shot use. */
   regexPrefilter?: boolean;
+  /** Prepared by default; auto/eager/off use source standard grammars. Mutually exclusive with regexPrefilter. */
+  regexMode?: RegexMode;
   langs?: readonly RegistrationInput<LanguageInput>[];
   themes?: readonly RegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
@@ -71,6 +88,8 @@ export interface HighlighterOptions {
 export interface HighlighterSyncOptions {
   /** Automatic regex prefiltering (default: true). Disable to avoid construction for one-shot use. */
   regexPrefilter?: boolean;
+  /** Prepared by default; auto/eager/off use source standard grammars. Mutually exclusive with regexPrefilter. */
+  regexMode?: RegexMode;
   langs?: readonly SyncRegistrationInput<LanguageInput>[];
   themes?: readonly SyncRegistrationInput<ThemeInput>[];
   langAlias?: Readonly<Record<string, string>>;
@@ -232,6 +251,8 @@ export interface Highlighter {
   };
   getLoadedLanguages: () => string[];
   getLoadedThemes: () => string[];
+  /** Observes regex policy, construction counters and actual prepared-group loads. */
+  getRegexDiagnostics: () => RegexDiagnostics;
   loadLanguage: (...languages: RegistrationInput<LanguageInput>[]) => Promise<void>;
   loadLanguageSync: (...languages: SyncRegistrationInput<LanguageInput>[]) => void;
   loadTheme: (...themes: RegistrationInput<ThemeInput>[]) => Promise<void>;

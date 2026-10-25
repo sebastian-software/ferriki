@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { digest, memoryEngines, memoryScenarios } from "./memory-workloads.mjs";
+import { digest, memoryEngines, memoryModeEngines, memoryScenarios } from "./memory-workloads.mjs";
 import {
   memorySummary,
   validateMemoryContext,
@@ -26,21 +26,26 @@ export function readMemoryEvidence(directory) {
   assert.deepEqual(json("validation.json"), { ok: true, errors: [] }, "Failed memory capture");
   const context = json("context.json");
   const report = json("memory.json");
+  const measuredEngines = report.schemaVersion === 2 ? memoryModeEngines : memoryEngines;
   validateMemoryContext(context);
   validateMemoryReport(report);
+  assert.deepEqual(context.regexModes, report.method.regexModes, "Memory policy metadata differs");
   for (const value of [context.commit, context.tree]) assert.match(value, /^[a-f0-9]{40}$/);
   for (const value of [context.binarySha256, context.cargoLockSha256, context.pnpmLockSha256])
     assert.match(value, /^[a-f0-9]{64}$/);
   assert.match(context.comparators.shiki, /^\d+\.\d+\.\d+$/);
   const expectedNames = new Set(["context.json", "memory.json", "validation.json", "summary.md"]);
   for (const scenario of report.scenarios) {
-    for (const engine of memoryEngines) {
+    for (const engine of measuredEngines) {
       const name = `${scenario.id}-validate-${engine}-0`;
       const value = json(`${name}.json`);
       assert.equal(value.engine, engine);
       assert.deepEqual(value.workload, scenario.workload);
       assert.deepEqual(value.outputs, scenario.validation[engine]);
-      assert.equal(value.nativeBinarySha256, engine === "ferriki" ? context.binarySha256 : null);
+      assert.equal(
+        value.nativeBinarySha256,
+        engine.startsWith("ferriki") ? context.binarySha256 : null,
+      );
       expectedNames.add(`${name}.json`);
       expectedNames.add(`${name}.stderr.log`);
     }
@@ -53,7 +58,7 @@ export function readMemoryEvidence(directory) {
       );
       assert.equal(
         sample.nativeBinarySha256,
-        sample.engine === "ferriki" ? context.binarySha256 : null,
+        sample.engine.startsWith("ferriki") ? context.binarySha256 : null,
       );
       expectedNames.add(`${name}.json`);
       expectedNames.add(`${name}.stderr.log`);

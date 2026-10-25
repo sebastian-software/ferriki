@@ -22,8 +22,8 @@ gh workflow run blacksmith-comparison.yml --ref main -f platform=both
 
 Paid runners are only started by manual dispatch. A complete run starts six
 measurement VMs: one per profile and corpus. Each builds its release addon and
-materializes locked grammar/theme sources. The engines and both prefilter modes
-for one corpus run serially on that same VM. Independent corpora run concurrently;
+materializes locked grammar/theme sources. All four native regex policies
+and the comparator engines for one corpus run serially on that same VM. Independent corpora run concurrently;
 they never contend for one VM's CPU. Two ordinary Linux jobs then validate and
 join the reports by profile, without combining timings from different VMs.
 This adapts [Ferroni's independent shard and merge approach](https://github.com/sebastian-software/ferroni/commit/a51a2fd917eb4eacd679d565842b0ec695e3d2e6)
@@ -64,15 +64,17 @@ as custom grammars in both. No comparator workspace build is needed.
   PHP or Composer; availability and skips are reported explicitly. Phiki output
   differences do not weaken the required Node HTML gate.
 
-Artifacts expire after 90 days and contain six JSON reports, raw samples, logs,
-runner contexts, validation outcome, a Markdown summary and SHA256SUMS. The
+Artifacts expire after 90 days and contain three mode-comparison JSON reports,
+raw samples, logs, runner contexts, validation outcome, a Markdown summary and SHA256SUMS. The
 merged artifact keeps each corpus VM's original context and build receipt.
 Merging rejects missing or failed shards, edited reports, dirty builds, and
 different source revisions, toolchains, locks, build flags or runner profiles. Preserve
-downloaded artifacts with any performance claim. The summary highlights JSON
-and Astro and reports warm and cold results separately. The fixed on/off report
-order can introduce drift; repeat small differences before attributing them to
-the option. These runs compare current engines and prefilter modes, not earlier
+downloaded artifacts with any performance claim. Mode captures retain each
+corpus VM's CPU and core count independently; different CPUs across corpora are allowed
+because no timing totals span those VMs. Legacy on/off merges retain their
+original stricter hardware guard. The summary includes all curated and TIOBE
+cases and reports warm and cold results separately. Repeat small differences
+before attributing them to a policy. These runs compare current regex modes, not earlier
 Ferroni releases. An upgrade comparison requires a baseline measured on the same
 profile with identical fixtures, harness and compiler.
 
@@ -91,8 +93,8 @@ All six timing jobs and both memory jobs passed. The macOS merge passed; the
 Linux merge rejected different CPUs across corpus VMs, marking the overall
 workflow failed. Linux's repository VM was Intel Xeon; its curated and TIOBE
 VMs were AMD EPYC. The archive publishes the successful shards independently
-with original contexts and hashes, and no cross-VM aggregate. The workflow's
-merge guard is unchanged. macOS VMs used Apple M4 Pro (Virtual).
+with original contexts and hashes, and no cross-VM aggregate. That capture used
+the legacy merge guard. macOS VMs used Apple M4 Pro (Virtual).
 
 The [website](https://ferriki.dev/evidence/benchmarks) presents these observations,
 first-use and reuse results, JSON/Astro controls and memory ranges. The older
@@ -114,7 +116,7 @@ To reproduce locally, after dependency installation and the native build:
 ```sh
 cd node
 node ../scripts/materialize-assets.mjs --sources
-node scripts/run-blacksmith-comparison.mjs /tmp/ferriki-comparison
+node scripts/run-blacksmith-comparison.mjs /tmp/ferriki-comparison --regex-modes
 ```
 
 Use `--corpus comparison`, `--corpus curated` or `--corpus tiobe` on the local
@@ -146,11 +148,11 @@ then run:
 
 ```sh
 cd node
-node scripts/run-blacksmith-memory.mjs /tmp/ferriki-memory
+node scripts/run-blacksmith-memory.mjs /tmp/ferriki-memory --regex-modes
 ```
 
-The memory harness compares Ferriki with the default prefilter, current
-Shiki/Oniguruma WASM and Shiki's JavaScript engine. All use the same theme and
+The memory harness compares Ferriki source Off, Auto, Eager and Prepared with
+current Shiki/Oniguruma WASM and Shiki's JavaScript engine. All use the same theme and
 locked grammar sources. There are two fixed sequential workloads:
 
 - **Repository:** the timing corpus's 12 shared files, excluding YAML and SQL for every
@@ -223,3 +225,33 @@ TypeScript workload, Ferriki used 151.4 and 205.6 MiB, versus 333.8 and 304.9 Mi
 and min–max ranges. Requested languages and dependencies are loaded, not the
 whole catalog. The previous capture's repository memory saving does not hold
 in this capture; attributing that change requires a controlled A/B experiment.
+
+## Explicit regex-mode contenders
+
+The current workflow uses `--regex-modes` for both timing and memory suites.
+One report per corpus contains Ferriki source Off, source Auto (lazy DFA),
+source Eager, and prepared Eager alongside the unchanged Shiki/Prism controls.
+All source contenders skip standard prepared archives. Prepared remains the
+product default; the benchmark's classic `ferriki` identity is explicitly Auto.
+The legacy on/off CLI remains available and records its source policy. Dated
+reports without a policy field keep their original documented meaning.
+
+```sh
+cd node
+node scripts/bench-tiobe.mjs --regex-modes --language sql --write /tmp/sql-modes.json
+node scripts/run-blacksmith-comparison.mjs /tmp/modes --corpus curated --regex-modes
+node scripts/run-blacksmith-memory.mjs /tmp/memory-modes --regex-modes
+```
+
+Mode reports preserve the four policies as separate table columns. Runtime
+snapshots validate the requested mode, source/archival separation, and actual
+group decoding where prepared standard resources are expected. Snapshot work
+is outside timers. Counts do not establish complete archive coverage or detect
+every local rebuild. Exact HTML agreement and original timing budgets remain
+required. Memory v2 uses six isolated engine processes per repetition instead
+of mixing several Ferriki modes into one process.
+
+A source-mode regression must compare the same source policy, fixtures,
+grammars, output and machine. Replacing Source/Auto with Prepared and calling
+the difference a source regression is invalid. Keep both separate, investigate
+unexpected source differences, and measure prepared startup against Source/Eager.

@@ -8,10 +8,12 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
+import { regexModeEngines, regexModes } from "./regex-benchmark-modes.mjs";
+
 import {
   createEngine,
-  engines,
   engineUnsupportedReason,
+  engines as legacyEngines,
   loadCases,
   loadCorpus,
   plain,
@@ -33,6 +35,7 @@ const options = {
   rounds: { type: "string", default: "30" },
   "max-rounds": { type: "string", default: "1000" },
   "timeout-ms": { type: "string", default: "120000" },
+  "regex-modes": { type: "boolean", default: false },
   "regex-prefilter": { type: "string", default: "on" },
   help: { type: "boolean" },
   worker: { type: "string" },
@@ -40,10 +43,13 @@ const options = {
 const { values } = parseArgs({ options });
 if (values.help) {
   console.log(
-    "Usage: pnpm bench:tiobe [--corpus tiobe|curated] [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000] [--regex-prefilter on|off]",
+    "Usage: pnpm bench:tiobe [--corpus tiobe|curated] [--write report.json] [--language rust] [--sizes example,large] [--budget-ms 300] [--rounds 30] [--max-rounds 1000] [--timeout-ms 120000] [--regex-prefilter on|off] [--regex-modes]",
   );
   process.exit(0);
 }
+const engines = values["regex-modes"] ? regexModeEngines : legacyEngines;
+if (values["regex-modes"] && values["regex-prefilter"] !== "on")
+  throw new Error("--regex-modes selects fixed contenders; omit --regex-prefilter off");
 const manifest = loadCorpus(values.corpus);
 if (!["on", "off"].includes(values["regex-prefilter"]))
   throw new Error("--regex-prefilter must be on or off");
@@ -54,7 +60,10 @@ const integer = (name, min, max) => {
   return number;
 };
 const method = {
-  regexPrefilter: values["regex-prefilter"] === "on",
+  ...(!values["regex-modes"] ? { regexPrefilter: values["regex-prefilter"] === "on" } : {}),
+  ...(values["regex-modes"]
+    ? { regexModes }
+    : { regexMode: values["regex-prefilter"] === "on" ? "auto" : "off" }),
   theme,
   apis: ["html"],
   sizes: values.sizes.split(","),
@@ -152,7 +161,14 @@ async function worker(language) {
       }
       cases.push({ ...entry, results });
     }
-    return { ...language, cases, consumed };
+    const regexDiagnostics = values["regex-modes"]
+      ? Object.fromEntries(
+          Object.entries(highlighters)
+            .filter(([, engine]) => engine.diagnostics)
+            .map(([id, engine]) => [id, engine.diagnostics()]),
+        )
+      : undefined;
+    return { ...language, cases, consumed, ...(regexDiagnostics ? { regexDiagnostics } : {}) };
   } finally {
     for (const highlighter of Object.values(highlighters)) highlighter.dispose();
   }
@@ -208,7 +224,7 @@ const selected = manifest.languages.filter(
 if (!selected.length) throw new Error(`Unknown --language ${values.language}`);
 const native = nativeBuild();
 const report = {
-  schema: 1,
+  schema: values["regex-modes"] ? 2 : 1,
   measuredAt: new Date().toISOString(),
   revision: { commit: git("rev-parse", "HEAD"), status: git("status", "--porcelain") },
   nativeBuild: native,
@@ -253,7 +269,9 @@ for (const language of selected) {
     process.stderr.write(`${language.rank}. ${language.name}\n`);
     const childArgs = Object.entries(values)
       .filter(([key]) => !["write", "language", "worker"].includes(key))
-      .flatMap(([key, value]) => [`--${key}`, value]);
+      .flatMap(([key, value]) =>
+        typeof value === "boolean" ? (value ? [`--${key}`] : []) : [`--${key}`, value],
+      );
     const child = spawnSync(
       process.execPath,
       [script, "--worker", String(language.rank), ...childArgs],

@@ -26,7 +26,7 @@ pub use error::{Error, ErrorKind, Result};
 pub use ferriki_asset_gen::{ReleaseAsset, ReleaseManifest};
 pub use ferriki_textmate::{
     BacktrackingRisk, BacktrackingWarning, FontStyle, ParseRawGrammarError, RawGrammar, RawTheme,
-    RawThemeScope, RawThemeSetting, RawThemeStyle, StandardTokenType, parse_raw_grammar,
+    RawThemeScope, RawThemeSetting, RawThemeStyle, RegexMode, StandardTokenType, parse_raw_grammar,
 };
 /// Implementation bridge for Ferriki's N-API host, exempt from semver guarantees.
 #[doc(hidden)]

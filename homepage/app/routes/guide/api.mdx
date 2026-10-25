@@ -44,6 +44,14 @@ packages and disable the prefilter. Matching and colors stay the same.
 This is a creation-time option, including the singleton's first creation;
 it is not a `HighlightOptions` field.
 
+Repository builds also expose explicit `regexMode` values: `off`, `auto`,
+`eager`, and `prepared`. Auto/Eager select the classic source paths; Prepared
+restores standard packages where available. These additive options and
+`getRegexDiagnostics()` are not part of the published 1.2.0 package yet.
+Choose either `regexMode` or `regexPrefilter`. New benchmark contenders use
+explicit modes and record diagnostics outside timing. The October 24 tables
+retain their original prepared-default "on" meaning.
+
 The [prepared-package measurements](/evidence/benchmarks#prepared-regex) separate
 restoration from execution. Top-level shorthand functions reuse the
 singleton and do not create a fresh highlighter for each code block.

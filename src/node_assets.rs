@@ -18,6 +18,7 @@ use crate::{
 #[derive(Clone, Debug, Default)]
 pub struct NodeAssetOptions {
     pub regex_prefilter: Option<bool>,
+    pub regex_mode: Option<crate::RegexMode>,
     pub remote: Option<bool>,
     pub base_url: Option<String>,
     pub cache_dir: Option<PathBuf>,
@@ -107,7 +108,9 @@ impl NodeAssetHost {
         )?;
 
         Ok(Self {
-            precompiled: options.regex_prefilter.unwrap_or(true),
+            precompiled: options.regex_mode.unwrap_or_else(|| {
+                crate::RegexMode::from_prefilter(options.regex_prefilter.unwrap_or(true))
+            }) == crate::RegexMode::Prepared,
             release,
             settings,
             language_manifest,
@@ -436,6 +439,7 @@ mod tests {
             root,
             &NodeAssetOptions {
                 regex_prefilter: None,
+                regex_mode: None,
                 remote: Some(true),
                 base_url: Some("https://mirror.example/".to_owned()),
                 cache_dir: Some(cache_dir.to_path_buf()),
@@ -472,16 +476,30 @@ mod tests {
             )
             .expect("download plan");
         let paths: BTreeSet<_> = plan.iter().map(|asset| asset.path.as_str()).collect();
-        let mut disabled = self::host(&root, &cache);
-        disabled.precompiled = false;
-        assert!(
-            disabled
-                .plan(&["vue".to_owned()], &[])
-                .unwrap()
-                .iter()
-                .all(|asset| !asset.path.ends_with(".fkbc")),
-            "Off should not download unused Eager group images"
-        );
+        for mode in [
+            crate::RegexMode::Off,
+            crate::RegexMode::Auto,
+            crate::RegexMode::Eager,
+        ] {
+            let disabled = NodeAssetHost::from_root(
+                &root,
+                &NodeAssetOptions {
+                    regex_mode: Some(mode),
+                    remote: Some(true),
+                    cache_dir: Some(cache.clone()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(
+                disabled
+                    .plan(&["vue".to_owned()], &[])
+                    .unwrap()
+                    .iter()
+                    .all(|asset| !asset.path.ends_with(".fkbc")),
+                "source modes must not download prepared images"
+            );
+        }
 
         assert!(paths.contains("languages/vue.fkgram"));
         assert!(paths.contains("languages/typescript.fkgram"));

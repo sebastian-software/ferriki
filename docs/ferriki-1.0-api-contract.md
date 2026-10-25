@@ -289,3 +289,12 @@ navigation. The macro uses Vite's SSR mode flag to select the output. See
 and migration details. The marker and import are erased before React's JSX
 transform. React is only required by consumers of this entry's type declarations
 and generated JSX, not by the core runtime.
+
+## Repository additions after 1.2.0
+
+`regexMode` explicitly selects classic source Off/Auto/Eager or Prepared.
+Prepared remains the default; `regexPrefilter` keeps its published behavior.
+Use one option, not both. `getRegexDiagnostics()` observes construction and
+archive use outside timed calls. These additive APIs are available in the
+repository build and are not included in npm 1.2.0 yet. See
+[explicit policies](ferriki-api.md#explicit-regex-policies).

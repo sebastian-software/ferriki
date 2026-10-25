@@ -8,10 +8,12 @@ import { setImmediate } from "node:timers/promises";
 import {
   digest,
   memoryEngines,
+  memoryModeEngines,
   memoryTheme,
   memoryWorkload,
   workloadIdentity,
 } from "./memory-workloads.mjs";
+import { ferrikiRegexOptions, validateRegexDiagnostics } from "./regex-benchmark-modes.mjs";
 import {
   standardGrammarRegistrations,
   standardThemeRegistrations,
@@ -20,14 +22,15 @@ import "./test-asset-env.mjs";
 
 const [engine, scenario, mode] = process.argv.slice(2);
 const require = createRequire(import.meta.url);
+const regexOptions = ferrikiRegexOptions(engine);
 function nativeBinarySha256() {
-  if (engine !== "ferriki") return null;
+  if (!regexOptions) return null;
   const binaries = Object.keys(require.cache).filter((path) => path.endsWith(".node"));
   assert.equal(binaries.length, 1, "Expected exactly one loaded native addon");
   return digest(readFileSync(binaries[0]));
 }
 
-assert.ok(memoryEngines.includes(engine), "Unknown memory engine");
+assert.ok([...memoryEngines, ...memoryModeEngines].includes(engine), "Unknown memory engine");
 assert.ok(["validate", "measure"].includes(mode), "Unknown worker mode");
 assert.equal(typeof globalThis.gc, "function", "Run the worker with --expose-gc");
 const workload = memoryWorkload(scenario);
@@ -48,12 +51,12 @@ function snapshot() {
 await collect();
 const phases = { baseline: snapshot() };
 let highlighter;
-if (engine === "ferriki") {
+if (regexOptions) {
   const ferriki = await import("../ferriki/index.mjs");
   highlighter = await ferriki.createHighlighter({
     langs,
     themes: [memoryTheme],
-    regexPrefilter: true,
+    ...regexOptions,
   });
 } else {
   const shiki = await import("shiki-benchmark");
@@ -69,11 +72,19 @@ if (engine === "ferriki") {
 await collect();
 phases.initialized = snapshot();
 
+function diagnostics() {
+  if (!regexOptions) return undefined;
+  const value = highlighter.getRegexDiagnostics();
+  validateRegexDiagnostics(value, regexOptions.regexMode, regexOptions.regexMode === "prepared");
+  return value;
+}
+
 if (mode === "validate") {
   const outputs = workload.documents.map((doc) => {
     const html = highlighter.codeToHtml(doc.code, { lang: doc.lang, theme: memoryTheme });
     return { path: doc.path, sha256: digest(html), bytes: Buffer.byteLength(html) };
   });
+  const regexDiagnostics = diagnostics();
   highlighter.dispose();
   process.stdout.write(
     JSON.stringify({
@@ -81,6 +92,7 @@ if (mode === "validate") {
       nativeBinarySha256: nativeBinarySha256(),
       workload: workloadIdentity(workload),
       outputs,
+      ...(regexDiagnostics ? { regexDiagnostics } : {}),
     }),
   );
 } else {
@@ -101,6 +113,7 @@ if (mode === "validate") {
       checkpoints.push({ passes: pass, beforeGc, afterGc: snapshot(), outputBytes });
     }
   }
+  const regexDiagnostics = diagnostics();
   highlighter.dispose();
   highlighter = null;
   await collect();
@@ -112,6 +125,7 @@ if (mode === "validate") {
       workload: workloadIdentity(workload),
       phases,
       checkpoints,
+      ...(regexDiagnostics ? { regexDiagnostics } : {}),
     }),
   );
 }

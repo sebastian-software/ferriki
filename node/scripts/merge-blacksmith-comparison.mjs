@@ -55,10 +55,11 @@ export function readShard(directory) {
   const [corpus] = context.corpora;
   assert.ok(comparisonCorpora.includes(corpus), "Unknown corpus shard");
   const reports = {};
-  for (const mode of ["on", "off"]) {
+  for (const mode of context.regexModes ? ["modes"] : ["on", "off"]) {
     const name = `${corpus}-${mode}`;
     const report = json(original.get(`${name}.json`));
-    validateReport(report, corpus, mode === "on");
+    assert.deepEqual(report.method.regexModes, context.regexModes, "Shard policy metadata differs");
+    validateReport(report, corpus, mode !== "off");
     validateCorpusProvenance(report, corpus, context);
     assert.ok(original.has(`logs/${name}.log`), "Missing process log");
     reports[name] = report;
@@ -77,8 +78,7 @@ function sharedInputs(context) {
         "runAttempt",
         "commit",
         "tree",
-        "cpu",
-        "cores",
+        ...(!context.regexModes ? ["cpu", "cores"] : []),
         "platform",
         "os",
         "node",
@@ -86,6 +86,7 @@ function sharedInputs(context) {
         "cargoLockSha256",
         "pnpmLockSha256",
         "comparators",
+        "regexModes",
       ].map((key) => [key, context[key]]),
     ),
     rustSourceSha256: nativeBuild.rustSourceSha256,
@@ -125,7 +126,7 @@ export function mergeShards(directory, sources) {
     corpora: comparisonCorpora,
     corpusContexts,
     schedule:
-      "Separate VM per corpus; all engines and both prefilter modes share that corpus VM. No cross-VM or cross-corpus timing aggregate.",
+      "Separate VM per corpus; all contenders share that corpus VM. No cross-VM or cross-corpus timing aggregate. Per-corpus contexts identify the actual hardware.",
   };
   const reports = Object.assign({}, ...shards.map((shard) => shard.reports));
   mkdirSync(join(directory, "contexts"), { recursive: true });
@@ -133,7 +134,7 @@ export function mergeShards(directory, sources) {
   writeFileSync(join(directory, "context.json"), `${JSON.stringify(context, null, 2)}\n`);
   for (const { corpus, original } of shards) {
     writeFileSync(join(directory, "contexts", `${corpus}.json`), original.get("context.json"));
-    for (const mode of ["on", "off"]) {
+    for (const mode of context.regexModes ? ["modes"] : ["on", "off"]) {
       for (const name of [`${corpus}-${mode}.json`, `logs/${corpus}-${mode}.log`])
         writeFileSync(join(directory, name), original.get(name));
     }

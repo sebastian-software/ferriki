@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Context
 
@@ -104,7 +104,29 @@ grammar API and have no standard sidecars. The native compatibility gate remains
 mandatory. A reproducible fresh-registry comparison is available through the
 `ferriki-textmate` example `precompiled_startup`.
 
+## Regex-mode isolation (October 25, 2026)
+
+`regexMode` selects source Off, source Auto (lazy DFA), source Eager, or
+Prepared. Prepared remains the default; the existing `regexPrefilter` option
+keeps its behavior. Source policies skip standard sidecar planning and opening.
+The Node options are mutually exclusive; Rust builder setters use the last
+choice. `RegexMode` and `RegexDiagnostics` are owned, non-exhaustive tokenizer
+extensions. Diagnostics count construction and actual archive-group decoding,
+not search calls or complete archive coverage; ordinary missing-group fallback
+is not an assembly-error retry.
+
+The benchmark gives these policies separate contenders. Historical captures
+are retained with their original meaning: the October 24 standard "on" lane
+used prepared packages and is not a source-Auto regression baseline. New mode
+reports record configuration and runtime diagnostic snapshots outside timers;
+source contenders must not open archives. Comparisons preserve identical input
+and output checks, with no merging of timings across corpus VMs.
+
 ## History
+
+- 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
+  benchmark contenders; retain default and legacy boolean behavior. Record
+  policy and archive-use diagnostics without claiming complete coverage.
 
 - 2026-10-24: Clarify acceptance as cheaper startup than source Eager with Eager
   execution and reusable packages across processes. Accept restoration overhead;

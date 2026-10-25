@@ -77,6 +77,7 @@ export function createHighlighterCoreSync(options = {}) {
       standardAssetRoot,
       assets,
       regexPrefilter: options.regexPrefilter,
+      regexMode: options.regexMode,
     });
   } catch (cause) {
     if (cause instanceof FerrikiError) throw cause;
@@ -633,6 +634,9 @@ export function createHighlighterCoreSync(options = {}) {
         .map(([alias]) => alias);
       return [...new Set([...nativeLanguages, ...configuredAliases])];
     },
+    getRegexDiagnostics() {
+      return JSON.parse(native.getRegexDiagnosticsJson());
+    },
     getLoadedThemes() {
       return [...loadedThemes];
     },
@@ -898,6 +902,15 @@ function validateHighlighterOptions(options) {
     throw new ShikiError("Highlighter options must be an object", "ERR_USAGE");
   if (options.regexPrefilter !== undefined && typeof options.regexPrefilter !== "boolean")
     throw new ShikiError("Highlighter option `regexPrefilter` must be a boolean", "ERR_USAGE");
+  if (options.regexMode !== undefined) {
+    if (!["off", "auto", "eager", "prepared"].includes(options.regexMode))
+      throw new ShikiError(
+        "Highlighter option `regexMode` must be off, auto, eager, or prepared",
+        "ERR_USAGE",
+      );
+    if (options.regexPrefilter !== undefined)
+      throw new ShikiError("Choose either `regexMode` or `regexPrefilter`, not both", "ERR_USAGE");
+  }
   for (const field of ["langs", "themes", "transformers"]) {
     if (options[field] !== undefined && !Array.isArray(options[field]))
       throw new ShikiError(`Highlighter option \`${field}\` must be an array`, "ERR_USAGE");

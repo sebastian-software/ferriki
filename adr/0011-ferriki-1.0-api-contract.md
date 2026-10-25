@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Context
 
@@ -92,7 +92,18 @@ being mistaken for parity.
 - Multi-theme output, enumerable catalogs, custom registrations, errors, and
   lifecycle behavior are required work rather than accidental extensions.
 
+## Explicit regex policies
+
+Repository builds add `regexMode` and `getRegexDiagnostics()` as additive
+configuration/diagnostic extensions. The existing boolean option and product
+default retain their behavior. [ADR 0021](0021-precompiled-pattern-sidecars.md#regex-mode-isolation-october-25-2026)
+owns the mode semantics and benchmark separation.
+
 ## History
+
+- 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
+  benchmark contenders; retain default and legacy boolean behavior. Record
+  policy and archive-use diagnostics without claiming complete coverage.
 
 - 2026-10-24: Clarify that enabled prefiltering consumes prepared standard static
   groups in Eager mode; source-only and dynamic scanners retain Auto (ADR 0021).
