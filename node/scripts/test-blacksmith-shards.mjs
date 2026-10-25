@@ -5,10 +5,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import os from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { gunzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { coldSamples } from "./benchmark-schedule.mjs";
 import { checkCurrentComparators } from "./check-benchmark-versions.mjs";
-import { mergeShards } from "./merge-blacksmith-comparison.mjs";
+import { mergeShards, readShard } from "./merge-blacksmith-comparison.mjs";
 import { comparisonCorpora } from "./run-blacksmith-comparison.mjs";
 
 const archive = new URL(
@@ -139,6 +139,9 @@ test("merge rejects mismatched builds, failed shards and output changes even wit
       context.rustc = "different compiler";
     },
     (_corpus, context) => {
+      context.cpu = "different CPU";
+    },
+    (_corpus, context) => {
       context.nativeBuild.rustflags = "-C target-cpu=native";
     },
     (_corpus, context) => {
@@ -178,4 +181,19 @@ test("each corpus keeps its own binary receipt when identical inputs produce dif
     assert.equal(context.corpusContexts.curated.nativeBuild.binarySha256, binarySha256);
     assert.equal(reports["curated-on"].nativeBuild.binarySha256, binarySha256);
     assert.notEqual(context.nativeBuild.binarySha256, binarySha256);
+  }));
+
+test("archived compressed shards preserve original checksums and reject edited bytes", () =>
+  temporary((directory) => {
+    const [path] = fixtures(directory);
+    const original = readShard(path);
+    writeFileSync(join(path, "ORIGINAL_SHA256SUMS"), readFileSync(join(path, "SHA256SUMS")));
+    rmSync(join(path, "SHA256SUMS"));
+    for (const [name, bytes] of original.original) {
+      writeFileSync(join(path, `${name}.gz`), gzipSync(bytes));
+      rmSync(join(path, name));
+    }
+    assert.deepEqual(readShard(path), original);
+    writeFileSync(join(path, "comparison-on.json.gz"), gzipSync(Buffer.from("edited")));
+    assert.throws(() => readShard(path), /Artifact changed/);
   }));

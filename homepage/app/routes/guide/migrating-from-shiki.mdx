@@ -7,8 +7,9 @@ order: 3
 
 Keep a loaded highlighter for the lifetime of your CMS worker or site build.
 That reuse is the workload behind Ferriki's [two-host measurements](/evidence/benchmarks):
-3.3× faster than Shiki/WASM on the recorded Linux corpus and 4.1× on macOS,
-with identical HTML. Keep the default regex prefilter for repeated work;
+2.4× faster than Shiki/WASM on the recorded Linux corpus and 2.9× on macOS,
+with identical HTML. Prepared standard regex packages are enabled by default;
+startup and memory depend on the languages you load. The
 [factory options](/guide/api#highlighter-options) cover the alternative for
 short-lived highlighters.
 

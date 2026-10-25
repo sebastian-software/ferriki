@@ -14,6 +14,7 @@ import {
   RegexModeBenchmarks,
   JsonAstroBenchmarks,
   JsonAstroModeDifferences,
+  LanguageBenchmarks,
 } from "../../components/blacksmith-benchmarks";
 
 import { MemoryBenchmarks } from "../../components/memory-benchmarks";
@@ -22,7 +23,7 @@ import { MemoryBenchmarks } from "../../components/memory-benchmarks";
 
 A CMS or site build can highlight hundreds of blocks with one loaded
 highlighter. That repeated work is the headline here: on our 14-file corpus,
-Ferriki was **3.3× faster than Shiki/WASM on Linux x86-64** and **4.1× faster
+Ferriki was **2.4× faster than Shiki/WASM on Linux x86-64** and **2.9× faster
 on macOS ARM64**. Ferriki and Shiki/WASM produced identical HTML for
 every repository file on both hosts.
 
@@ -67,30 +68,39 @@ costs more than source Off. CPU placement and thermals were uncontrolled.
 
 The [full diagnostic and both raw captures](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/prepared-eager.md)
 record execution timings, fixture hashes, package sizes, source provenance,
-and limits. These local prepared-package results are separate from the older
-Shiki comparisons below; they are not a new Shiki speedup measurement.
+and limits. This diagnostic measures isolated primary grammars; production
+packages also carry dependency and injection scanner groups. The Blacksmith
+comparisons below measure the full Node HTML path with prepared standard
+packages, independently of this source-Eager diagnostic.
 
 ## Reused highlighters on two hosts
 
 <BlacksmithSummary />
 
-Linux ran on an AMD EPYC with the `blacksmith-4vcpu-ubuntu-2404` profile;
-macOS ran on an Apple M4 Pro virtual machine with
-`blacksmith-6vcpu-macos-26`. These are the same runner profiles used by
-Ferroni. Both profiles used Ferriki 1.1.1, Shiki 4.5.0, Node 24.21.0, Rust
-1.99.1 and Ferroni 2.2.2, with identical source, theme and fixture inputs.
-The machines are reported separately.
+The October 24, 2026 capture used Ferriki 1.2.0, Shiki 4.5.0, Node 24.21.0,
+Rust 1.99.1 and Ferroni 2.7.0. Prepared standard regex packages were enabled in
+the default lane. Linux's repository VM used Intel Xeon; its curated and TIOBE
+VMs used AMD EPYC. macOS used Apple M4 Pro virtual machines. The
+`blacksmith-4vcpu-ubuntu-2404` and `blacksmith-6vcpu-macos-26` runner profiles
+match Ferroni's profiles, but do not promise a particular CPU vendor.
 
-The [October 16, 2026 workflow run](https://github.com/sebastian-software/ferriki/actions/runs/38971164540)
-passed on both hosts. All twelve reports, logs, build receipts and original
-checksums are preserved in the
-[committed measurement archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16-sharded).
-The website reads compact reports generated from that archive; its build checks
-their provenance and values. The measured revision uses the current Ferriki
-runtime from `main` at `2d04039`, with the benchmark workflow and comparator
-updates. Shiki is the current stable npm release, independently of the pinned
-compatibility suite; a registry check rejects stale comparator pins before a run.
-This compares current engines; it does not isolate the effect of a Ferroni upgrade.
+All six timing jobs and both memory jobs passed in the
+[recorded workflow run](https://github.com/sebastian-software/ferriki/actions/runs/40135588303).
+The macOS merge passed. The Linux merge rejected different CPU models across
+corpus VMs, so the overall workflow is marked failed. Each table here compares
+engines on one original VM; it never combines Linux corpus timings or presents
+a successful Linux merged artifact. Every successful shard, log, build receipt
+and original checksum is preserved in the
+[committed measurement archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-24-prepared-eager).
+The website validates the original shards before generating its compact data.
+
+The measured revision is the 1.2.0 release commit `2b16844`. The previous
+[October 16 capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16-sharded)
+recorded 3.3× on Linux and 4.1× on macOS. These new factors are smaller.
+Source files and runtime revisions changed, and Linux hardware changed; this
+is not a controlled before/after experiment isolating prepared regex packages.
+Shiki's registry freshness check passed before measurement, independently of
+the pinned compatibility mirror.
 
 ## Process memory
 
@@ -109,13 +119,19 @@ workload repeats the TypeScript API source with newline separators to at least
 and byte-length agreement for both measured workloads before measurement.
 Each HTML result is consumed and released before the next document.
 
-In this capture, Ferriki's median RSS after the repository workload was
-**27–31% lower than Shiki/WASM** across the two hosts. For the generated large
-TypeScript case it was **64–68% lower**. Against Shiki/JS, the repository values
-were closer: macOS ranges overlap, while Linux recorded a lower Ferriki range.
-The tables show all engines and full ranges rather than a universal memory
-factor. Both hosts used Ferriki 1.1.1, Shiki 4.5.0, Ferroni 2.2.2, Node 24.21.0
-and Rust 1.99.1, at measured revision `77bd492`.
+In this capture, Ferriki's median RSS after the 12-language repository workload
+was **51–137% higher than Shiki/WASM**: 689.0 versus 454.8 MiB on Linux and
+1,071.3 versus 451.9 MiB on macOS. For the generated large TypeScript case,
+with only TypeScript requested, it was **33–55% lower**. These workloads do not
+load the entire grammar catalog. Ferriki loads the requested languages and
+needed dependencies; a package can include embedded and injected grammars.
+
+The previous capture's 27–31% repository memory saving does not hold in this
+capture. Both hosts used Ferriki 1.2.0, Shiki 4.5.0, Ferroni 2.7.0, Node 24.21.0
+and Rust 1.99.1 at revision `2b16844`. The tables retain every engine,
+initialization and peak values, and min–max ranges. These observations describe
+the recorded workloads; a controlled A/B run is needed to attribute changes to
+one runtime feature.
 
 ### After initialization
 
@@ -145,8 +161,8 @@ they do not measure allocation counts, concurrent capacity or a production
 memory limit. Compare engines within each host; the two operating systems
 account for memory differently.
 
-The [memory capture](https://github.com/sebastian-software/ferriki/actions/runs/38973585782)
-and [committed memory archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-16-memory)
+The [memory capture](https://github.com/sebastian-software/ferriki/actions/runs/40135588303)
+and [committed memory archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-24-prepared-eager/memory)
 retain the source revision, engine versions, hardware, build receipts, every
 worker result and original checksums. The homepage build validates this archive
 before generating its tables. See the
@@ -154,22 +170,24 @@ before generating its tables. See the
 
 ## First use and the regex prefilter
 
-The older Blacksmith run below used Ferroni 2.2.2, before prepared packages.
-It compares locally prepared regex optimizations with the prefilter disabled.
-Current standard grammars restore prepared optimizations by default; see the
-[prepared-package diagnostic](#prepared-regex) for that startup comparison.
-`regexPrefilter: false` disables the prefilter and skips prepared packages.
-Choose it when creating the highlighter; it is not a per-render option. Rust
-exposes the same choice through `.with_regex_prefilter(false)`.
+<BlacksmithSummary firstUse />
+
+The default lane restores prepared regex packages. `regexPrefilter: false`
+disables the prefilter and skips those packages. Choose it when creating the
+highlighter; it is not a per-render option. Rust exposes the same choice through
+`.with_regex_prefilter(false)`.
 
 <RegexModeBenchmarks />
 
-In this run, disabling the prefilter made repeated repository highlighting take
-**31–48% longer**, while full-corpus first use was **25–28% shorter**.
-First use includes package imports, highlighter setup and one render of all
-14 files. It excludes process creation and asset downloads, and does not
-measure the latency of one isolated snippet. The on/off reports ran in
-separate, fixed-order windows, so their raw differences are observations.
+In this run, disabling the prefilter made repeated repository highlighting
+**2.8% shorter on Linux** and **1.4% longer on macOS**. Full-corpus first use
+was **66–74% shorter** with it disabled. First use includes package imports,
+highlighter setup and one render of all 14 files. All 14 languages are loaded
+up front; this is not the startup latency of one isolated snippet. Process
+creation and asset downloads are excluded. The on/off reports ran in separate,
+fixed-order windows, so their differences are observations, not isolated
+configuration effects. Prepared optimization still has substantial restoration
+cost in this many-language workload.
 
 The top-level `codeToHtml()` shorthand uses a shared singleton. Calling that
 function once per block does not create a fresh highlighter for every block.
@@ -189,13 +207,36 @@ agreement for every cell.
 
 <JsonAstroModeDifferences />
 
-On Linux, Ferriki's JSON off timings were 2–6% longer. Astro's example was 17%
-shorter and its large input 38% longer. The unchanged Shiki controls ranged from
-28% faster to 11% slower across these cells. On macOS, Ferriki's JSON timings
-were 7–19% shorter and Astro's 32–34% longer, while the Shiki controls were
-4–16% faster. The reports run in separate fixed-order windows, and the controls
-also move; these are observations rather than isolated configuration effects.
-A causal comparison needs repeated, alternating runs on one host.
+The Linux curated VM used AMD EPYC, separately from the Intel repository VM.
+Ferriki's JSON off timings were about 11% shorter on Linux and 19–21% shorter
+on macOS. Astro's off timings were about 45% longer on Linux and 5–43% longer
+on macOS. The unchanged Shiki controls moved by roughly −2% to +1% across
+Linux cells and −25% to −12% across macOS cells. The reports run in separate
+fixed-order windows; a causal comparison needs repeated, alternating runs on
+one host. The [archive](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-24-prepared-eager)
+also retains complete per-language curated and TIOBE tables, including Prism's
+independent-grammar timings without a TextMate parity claim.
+
+## All curated and TIOBE workloads
+
+The tables below retain every supported language's default-mode warm HTML
+medians. Each table compares engines on one original VM. TIOBE's Scratch rank
+is unsupported and is not replaced by JSON. Custom TIOBE grammar sources do
+not have standard prepared packages. Unsupported engine/grammar combinations
+are labeled rather than included in timing totals. Prism's independent grammar
+output is checked for source preservation, without a TextMate parity claim.
+
+SQL is a clear outlier in this capture: the large TIOBE fixture took Ferriki
+95.3 ms on Linux and 83.7 ms on macOS, versus Shiki/WASM's 34.6 and 44.5 ms.
+The October 16 Ferriki medians were 5.3 and 4.9 ms for the same fixture bytes.
+These captures do not isolate the cause of that change. Across the curated
+corpus, 74 of 80 Ferriki medians were shorter than in the older capture; TIOBE
+results were mixed. These are individual observations, not a universal speedup
+or a statistical regression gate. The complete
+[old/new language tables](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/blacksmith/2026-10-24-prepared-eager/comparison-with-october-16.md)
+retain both engines' medians and fixture identity checks.
+
+<LanguageBenchmarks />
 
 ## Method
 
@@ -221,8 +262,9 @@ A causal comparison needs repeated, alternating runs on one host.
 5. **Independent corpus VMs.** Each profile uses one VM per corpus. All engines
    and both prefilter modes for that corpus run serially on the same VM, with
    prefilter on then off. Independent corpora run concurrently on separate VMs.
-   A merge validates every report, checksum and build input before joining the
-   evidence. Repository totals and JSON/Astro are separate corpus observations;
+   A merge validates every report, checksum, build input and CPU model before
+   joining the evidence. The Linux merge failed the CPU check in this capture;
+   successful corpus shards are published separately with their own context. Repository totals and JSON/Astro are separate corpus observations;
    timings from different VMs are never combined into one comparison. Each VM's
    compiler, addon hash, source revision and fixture hashes are retained.
 
@@ -267,7 +309,7 @@ node scripts/run-blacksmith-memory.mjs /tmp/ferriki-memory
 ```
 
 To reproduce the recorded inputs, check out the measured revision
-`aea84dc7b911c79a86dd3631c698c991c36184b8` first. A current checkout measures
+`2b16844ed26da3d58a8198e362cd467f777bea7d` first. A current checkout measures
 the current sources. Omit the registry freshness check when reproducing a dated
 archive with its recorded comparator pins. Reports describe workspace builds; they do not certify
 registry artifacts. The [workflow guide](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/blacksmith.md)

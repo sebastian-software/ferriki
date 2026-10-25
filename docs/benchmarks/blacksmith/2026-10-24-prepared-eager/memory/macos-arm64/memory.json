@@ -1,0 +1,5698 @@
+{
+  "schemaVersion": 1,
+  "method": {
+    "repetitions": 6,
+    "theme": "github-dark",
+    "regexPrefilter": true,
+    "excludedRepositoryLanguages": {
+      "yaml": "Shiki/JS cannot translate the current multi-codepoint hex escape.",
+      "sql": "Shiki/JS differs from native/WASM on the SQL fixture in a fresh isolated process. Excluded from every engine in this shared memory cohort."
+    },
+    "engineOrder": "Serial fresh processes; rotate engines once per repetition, separately per scenario.",
+    "baseline": "Inputs loaded; two explicit V8 collections before engine-specific imports.",
+    "checkpoints": "After initialization and passes 1/10/50 (repository) or 1/5/10 (large TypeScript). Two explicit V8 collections at each checkpoint; no forced GC between documents.",
+    "output": "Consume UTF-8 HTML byte length and discard each result. Exact HTML SHA-256 agreement is checked in separate validation processes before measuring.",
+    "peak": "OS process-lifetime high-water RSS through the final render checkpoint, in bytes (Node maxRSS KiB multiplied by 1024). Includes startup, inputs, imports, setup, rendering and explicit GC; no baseline subtraction.",
+    "limits": "RSS includes the Node runtime, native code, WASM and allocator retention. V8 heap/external/ArrayBuffer fields are diagnostic subsets, not native allocation counters. Forced GC does not force native allocators or WASM to return pages to the OS. Fixed sequential workloads are not a leak, concurrency or capacity test. Compare within a host, not across operating systems."
+  },
+  "scenarios": [
+    {
+      "id": "repository",
+      "workload": {
+        "id": "repository",
+        "checkpoints": [
+          1,
+          10,
+          50
+        ],
+        "documents": [
+          {
+            "lang": "rust",
+            "path": "src/highlighter.rs",
+            "copies": 1,
+            "bytes": 57811,
+            "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+          },
+          {
+            "lang": "typescript",
+            "path": "node/ferriki/src/api.mts",
+            "copies": 1,
+            "bytes": 11101,
+            "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+          },
+          {
+            "lang": "javascript",
+            "path": "node/ferriki/src/index.mjs",
+            "copies": 1,
+            "bytes": 64664,
+            "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+          },
+          {
+            "lang": "markdown",
+            "path": "docs/ferriki-api.md",
+            "copies": 1,
+            "bytes": 36135,
+            "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+          },
+          {
+            "lang": "css",
+            "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+            "copies": 1,
+            "bytes": 8014,
+            "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+          },
+          {
+            "lang": "json",
+            "path": "node/package.json",
+            "copies": 1,
+            "bytes": 7674,
+            "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+          },
+          {
+            "lang": "toml",
+            "path": "Cargo.toml",
+            "copies": 1,
+            "bytes": 4793,
+            "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+          },
+          {
+            "lang": "python",
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+            "copies": 1,
+            "bytes": 2119,
+            "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+          },
+          {
+            "lang": "html",
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+            "copies": 1,
+            "bytes": 1200,
+            "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+          },
+          {
+            "lang": "go",
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+            "copies": 1,
+            "bytes": 572,
+            "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+          },
+          {
+            "lang": "php",
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+            "copies": 1,
+            "bytes": 802,
+            "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+          },
+          {
+            "lang": "shellscript",
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+            "copies": 1,
+            "bytes": 634,
+            "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+          }
+        ]
+      },
+      "validation": {
+        "ferriki": [
+          {
+            "path": "src/highlighter.rs",
+            "sha256": "ec412e12126f26644eb44898002947b6ff98412dd5629bca218c028283c78688",
+            "bytes": 345157
+          },
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "14ca9fe5c871a71ca0ca32c7384d6fdc2ccb01e11361e78b7bfce2ea0e60902f",
+            "bytes": 73519
+          },
+          {
+            "path": "node/ferriki/src/index.mjs",
+            "sha256": "ee8cb5120c7fb4c896c28fcc1c59f6f8d1c6bb5155c0d1c6125586dfa4124cd0",
+            "bytes": 383223
+          },
+          {
+            "path": "docs/ferriki-api.md",
+            "sha256": "925893e12aa86802a722cd2dfb9829e7422e84c7de27e490a14a1f60ad36b6f1",
+            "bytes": 101271
+          },
+          {
+            "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+            "sha256": "2d7838725e7aa1c30733669f76c6a16f8747412100c1c0e69a60f25c555455fc",
+            "bytes": 52528
+          },
+          {
+            "path": "node/package.json",
+            "sha256": "8038ec62e2b4712284bbbd21c258c5bc48fd884f45f2cbd9b71f5b8294181f7e",
+            "bytes": 26617
+          },
+          {
+            "path": "Cargo.toml",
+            "sha256": "3fc6ffb4b09f4a24f5c2336ad1a67024ddf93a08f27610bc6f9e8d07bd02ef4b",
+            "bytes": 19126
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+            "sha256": "1218a75ec8a4848393553605377f9d9ba3dfd2539cca1f0c58b84b7c78b6a42a",
+            "bytes": 16467
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+            "sha256": "89e51ccf73d684feedfdde8a7abd23416caf03fca87973b41332527341a3757a",
+            "bytes": 8222
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+            "sha256": "96cd7f5cf23566843f902f1aec433716de9b6c4600ce88af12abf5e017d851c2",
+            "bytes": 3446
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+            "sha256": "261e5e12db28c79c88124816b768e4c40f1163f94e920504dcfadcf3f5dbbb9a",
+            "bytes": 7463
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+            "sha256": "e305883733db3ff8c5a676b77cafc74fd7541d14061314af7e65705584a8ae59",
+            "bytes": 5795
+          }
+        ],
+        "shiki-wasm": [
+          {
+            "path": "src/highlighter.rs",
+            "sha256": "ec412e12126f26644eb44898002947b6ff98412dd5629bca218c028283c78688",
+            "bytes": 345157
+          },
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "14ca9fe5c871a71ca0ca32c7384d6fdc2ccb01e11361e78b7bfce2ea0e60902f",
+            "bytes": 73519
+          },
+          {
+            "path": "node/ferriki/src/index.mjs",
+            "sha256": "ee8cb5120c7fb4c896c28fcc1c59f6f8d1c6bb5155c0d1c6125586dfa4124cd0",
+            "bytes": 383223
+          },
+          {
+            "path": "docs/ferriki-api.md",
+            "sha256": "925893e12aa86802a722cd2dfb9829e7422e84c7de27e490a14a1f60ad36b6f1",
+            "bytes": 101271
+          },
+          {
+            "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+            "sha256": "2d7838725e7aa1c30733669f76c6a16f8747412100c1c0e69a60f25c555455fc",
+            "bytes": 52528
+          },
+          {
+            "path": "node/package.json",
+            "sha256": "8038ec62e2b4712284bbbd21c258c5bc48fd884f45f2cbd9b71f5b8294181f7e",
+            "bytes": 26617
+          },
+          {
+            "path": "Cargo.toml",
+            "sha256": "3fc6ffb4b09f4a24f5c2336ad1a67024ddf93a08f27610bc6f9e8d07bd02ef4b",
+            "bytes": 19126
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+            "sha256": "1218a75ec8a4848393553605377f9d9ba3dfd2539cca1f0c58b84b7c78b6a42a",
+            "bytes": 16467
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+            "sha256": "89e51ccf73d684feedfdde8a7abd23416caf03fca87973b41332527341a3757a",
+            "bytes": 8222
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+            "sha256": "96cd7f5cf23566843f902f1aec433716de9b6c4600ce88af12abf5e017d851c2",
+            "bytes": 3446
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+            "sha256": "261e5e12db28c79c88124816b768e4c40f1163f94e920504dcfadcf3f5dbbb9a",
+            "bytes": 7463
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+            "sha256": "e305883733db3ff8c5a676b77cafc74fd7541d14061314af7e65705584a8ae59",
+            "bytes": 5795
+          }
+        ],
+        "shiki-js": [
+          {
+            "path": "src/highlighter.rs",
+            "sha256": "ec412e12126f26644eb44898002947b6ff98412dd5629bca218c028283c78688",
+            "bytes": 345157
+          },
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "14ca9fe5c871a71ca0ca32c7384d6fdc2ccb01e11361e78b7bfce2ea0e60902f",
+            "bytes": 73519
+          },
+          {
+            "path": "node/ferriki/src/index.mjs",
+            "sha256": "ee8cb5120c7fb4c896c28fcc1c59f6f8d1c6bb5155c0d1c6125586dfa4124cd0",
+            "bytes": 383223
+          },
+          {
+            "path": "docs/ferriki-api.md",
+            "sha256": "925893e12aa86802a722cd2dfb9829e7422e84c7de27e490a14a1f60ad36b6f1",
+            "bytes": 101271
+          },
+          {
+            "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+            "sha256": "2d7838725e7aa1c30733669f76c6a16f8747412100c1c0e69a60f25c555455fc",
+            "bytes": 52528
+          },
+          {
+            "path": "node/package.json",
+            "sha256": "8038ec62e2b4712284bbbd21c258c5bc48fd884f45f2cbd9b71f5b8294181f7e",
+            "bytes": 26617
+          },
+          {
+            "path": "Cargo.toml",
+            "sha256": "3fc6ffb4b09f4a24f5c2336ad1a67024ddf93a08f27610bc6f9e8d07bd02ef4b",
+            "bytes": 19126
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+            "sha256": "1218a75ec8a4848393553605377f9d9ba3dfd2539cca1f0c58b84b7c78b6a42a",
+            "bytes": 16467
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+            "sha256": "89e51ccf73d684feedfdde8a7abd23416caf03fca87973b41332527341a3757a",
+            "bytes": 8222
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+            "sha256": "96cd7f5cf23566843f902f1aec433716de9b6c4600ce88af12abf5e017d851c2",
+            "bytes": 3446
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+            "sha256": "261e5e12db28c79c88124816b768e4c40f1163f94e920504dcfadcf3f5dbbb9a",
+            "bytes": 7463
+          },
+          {
+            "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+            "sha256": "e305883733db3ff8c5a676b77cafc74fd7541d14061314af7e65705584a8ae59",
+            "bytes": 5795
+          }
+        ]
+      },
+      "samples": [
+        {
+          "repetition": 1,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55984128,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55984128
+            },
+            "initialized": {
+              "rss": 983482368,
+              "heapTotal": 11091968,
+              "heapUsed": 6054552,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983482368
+            },
+            "disposed": {
+              "rss": 756187136,
+              "heapTotal": 11354112,
+              "heapUsed": 6161376,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125498880
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1120878592,
+                "heapTotal": 12402688,
+                "heapUsed": 7637568,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1120878592
+              },
+              "afterGc": {
+                "rss": 1119764480,
+                "heapTotal": 11091968,
+                "heapUsed": 6111192,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121042432
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1124171776,
+                "heapTotal": 13008896,
+                "heapUsed": 8488328,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124270080
+              },
+              "afterGc": {
+                "rss": 1122254848,
+                "heapTotal": 11091968,
+                "heapUsed": 6112176,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124270080
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124630528,
+                "heapTotal": 12664832,
+                "heapUsed": 7705448,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125335040
+              },
+              "afterGc": {
+                "rss": 1123336192,
+                "heapTotal": 11354112,
+                "heapUsed": 6186168,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125335040
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 1,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55738368,
+              "heapTotal": 10567680,
+              "heapUsed": 5382488,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55754752
+            },
+            "initialized": {
+              "rss": 91045888,
+              "heapTotal": 30425088,
+              "heapUsed": 12452464,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 97828864
+            },
+            "disposed": {
+              "rss": 470106112,
+              "heapTotal": 146292736,
+              "heapUsed": 8865736,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 475824128
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 289226752,
+                "heapTotal": 91242496,
+                "heapUsed": 30681024,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 289226752
+              },
+              "afterGc": {
+                "rss": 290455552,
+                "heapTotal": 92815360,
+                "heapUsed": 23375064,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 290455552
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 443711488,
+                "heapTotal": 212221952,
+                "heapUsed": 82668224,
+                "external": 153462087,
+                "arrayBuffers": 613680,
+                "maxRssBytes": 445382656
+              },
+              "afterGc": {
+                "rss": 442613760,
+                "heapTotal": 159662080,
+                "heapUsed": 23471928,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 445382656
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 472039424,
+                "heapTotal": 210501632,
+                "heapUsed": 114088512,
+                "external": 153523839,
+                "arrayBuffers": 675432,
+                "maxRssBytes": 475824128
+              },
+              "afterGc": {
+                "rss": 470106112,
+                "heapTotal": 159924224,
+                "heapUsed": 23602016,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 475824128
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 1,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55967744,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55967744
+            },
+            "initialized": {
+              "rss": 88358912,
+              "heapTotal": 29704192,
+              "heapUsed": 11163464,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88997888
+            },
+            "disposed": {
+              "rss": 346374144,
+              "heapTotal": 146096128,
+              "heapUsed": 8546312,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 353173504
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 265863168,
+                "heapTotal": 195100672,
+                "heapUsed": 80750272,
+                "external": 2459848,
+                "arrayBuffers": 145139,
+                "maxRssBytes": 265863168
+              },
+              "afterGc": {
+                "rss": 262799360,
+                "heapTotal": 190660608,
+                "heapUsed": 52240824,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 265879552
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 344621056,
+                "heapTotal": 207421440,
+                "heapUsed": 120121880,
+                "external": 2468056,
+                "arrayBuffers": 153347,
+                "maxRssBytes": 346341376
+              },
+              "afterGc": {
+                "rss": 342818816,
+                "heapTotal": 191447040,
+                "heapUsed": 52205752,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 346341376
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 350371840,
+                "heapTotal": 232243200,
+                "heapUsed": 132136592,
+                "external": 2464730,
+                "arrayBuffers": 152515,
+                "maxRssBytes": 353173504
+              },
+              "afterGc": {
+                "rss": 346357760,
+                "heapTotal": 191447040,
+                "heapUsed": 51311520,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 353173504
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56131584,
+              "heapTotal": 10829824,
+              "heapUsed": 5382488,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56131584
+            },
+            "initialized": {
+              "rss": 91799552,
+              "heapTotal": 30425088,
+              "heapUsed": 12492616,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 98287616
+            },
+            "disposed": {
+              "rss": 473874432,
+              "heapTotal": 146292736,
+              "heapUsed": 8866288,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 479232000
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 295960576,
+                "heapTotal": 91242496,
+                "heapUsed": 30617048,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 295976960
+              },
+              "afterGc": {
+                "rss": 297566208,
+                "heapTotal": 92553216,
+                "heapUsed": 23393400,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 297566208
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 444039168,
+                "heapTotal": 212484096,
+                "heapUsed": 83854936,
+                "external": 153462087,
+                "arrayBuffers": 613680,
+                "maxRssBytes": 445644800
+              },
+              "afterGc": {
+                "rss": 442843136,
+                "heapTotal": 159924224,
+                "heapUsed": 23479008,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 445644800
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 476758016,
+                "heapTotal": 203292672,
+                "heapUsed": 110114056,
+                "external": 153523672,
+                "arrayBuffers": 675265,
+                "maxRssBytes": 479232000
+              },
+              "afterGc": {
+                "rss": 473825280,
+                "heapTotal": 159924224,
+                "heapUsed": 23597312,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 479232000
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55934976,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55934976
+            },
+            "initialized": {
+              "rss": 87949312,
+              "heapTotal": 29704192,
+              "heapUsed": 11195504,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88113152
+            },
+            "disposed": {
+              "rss": 346537984,
+              "heapTotal": 146358272,
+              "heapUsed": 8542152,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 352763904
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 265568256,
+                "heapTotal": 195624960,
+                "heapUsed": 80712168,
+                "external": 2459848,
+                "arrayBuffers": 145139,
+                "maxRssBytes": 265568256
+              },
+              "afterGc": {
+                "rss": 262275072,
+                "heapTotal": 190660608,
+                "heapUsed": 52226848,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 265601024
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 345718784,
+                "heapTotal": 206553088,
+                "heapUsed": 121038112,
+                "external": 2468352,
+                "arrayBuffers": 153643,
+                "maxRssBytes": 346095616
+              },
+              "afterGc": {
+                "rss": 343031808,
+                "heapTotal": 190660608,
+                "heapUsed": 52206096,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 346095616
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 347619328,
+                "heapTotal": 216662016,
+                "heapUsed": 84160096,
+                "external": 2459074,
+                "arrayBuffers": 146859,
+                "maxRssBytes": 352763904
+              },
+              "afterGc": {
+                "rss": 346537984,
+                "heapTotal": 190660608,
+                "heapUsed": 51298608,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 352763904
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55902208,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55902208
+            },
+            "initialized": {
+              "rss": 983498752,
+              "heapTotal": 11091968,
+              "heapUsed": 6054552,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983498752
+            },
+            "disposed": {
+              "rss": 756170752,
+              "heapTotal": 11354112,
+              "heapUsed": 6161376,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125482496
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1121042432,
+                "heapTotal": 12402688,
+                "heapUsed": 7637568,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121042432
+              },
+              "afterGc": {
+                "rss": 1119977472,
+                "heapTotal": 11091968,
+                "heapUsed": 6111192,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121206272
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1124319232,
+                "heapTotal": 13008896,
+                "heapUsed": 8488328,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124417536
+              },
+              "afterGc": {
+                "rss": 1122402304,
+                "heapTotal": 11091968,
+                "heapUsed": 6112176,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124417536
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124614144,
+                "heapTotal": 12664832,
+                "heapUsed": 7705448,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125318656
+              },
+              "afterGc": {
+                "rss": 1123303424,
+                "heapTotal": 11354112,
+                "heapUsed": 6186168,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125318656
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56000512,
+              "heapTotal": 10305536,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56000512
+            },
+            "initialized": {
+              "rss": 88178688,
+              "heapTotal": 29179904,
+              "heapUsed": 11195208,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88440832
+            },
+            "disposed": {
+              "rss": 352436224,
+              "heapTotal": 145047552,
+              "heapUsed": 8539920,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 358400000
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 268304384,
+                "heapTotal": 197705728,
+                "heapUsed": 74936320,
+                "external": 2459496,
+                "arrayBuffers": 144787,
+                "maxRssBytes": 268304384
+              },
+              "afterGc": {
+                "rss": 265682944,
+                "heapTotal": 191971328,
+                "heapUsed": 52244272,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 268320768
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 353533952,
+                "heapTotal": 210223104,
+                "heapUsed": 118729008,
+                "external": 2467296,
+                "arrayBuffers": 152587,
+                "maxRssBytes": 354828288
+              },
+              "afterGc": {
+                "rss": 351043584,
+                "heapTotal": 191447040,
+                "heapUsed": 52213032,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 354828288
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 353992704,
+                "heapTotal": 208470016,
+                "heapUsed": 94130032,
+                "external": 2463322,
+                "arrayBuffers": 151107,
+                "maxRssBytes": 358400000
+              },
+              "afterGc": {
+                "rss": 352960512,
+                "heapTotal": 191184896,
+                "heapUsed": 51283840,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 358400000
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55902208,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55902208
+            },
+            "initialized": {
+              "rss": 983498752,
+              "heapTotal": 11091968,
+              "heapUsed": 6054480,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983498752
+            },
+            "disposed": {
+              "rss": 756154368,
+              "heapTotal": 11354112,
+              "heapUsed": 6161304,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125482496
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1121353728,
+                "heapTotal": 12402688,
+                "heapUsed": 7637496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121353728
+              },
+              "afterGc": {
+                "rss": 1120239616,
+                "heapTotal": 11091968,
+                "heapUsed": 6111120,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121501184
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1124319232,
+                "heapTotal": 13008896,
+                "heapUsed": 8488256,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124417536
+              },
+              "afterGc": {
+                "rss": 1122402304,
+                "heapTotal": 11091968,
+                "heapUsed": 6112104,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124417536
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124614144,
+                "heapTotal": 12926976,
+                "heapUsed": 7705376,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125318656
+              },
+              "afterGc": {
+                "rss": 1123319808,
+                "heapTotal": 11616256,
+                "heapUsed": 6186096,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125318656
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55885824,
+              "heapTotal": 10567680,
+              "heapUsed": 5382488,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55885824
+            },
+            "initialized": {
+              "rss": 89931776,
+              "heapTotal": 30162944,
+              "heapUsed": 12457528,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 98091008
+            },
+            "disposed": {
+              "rss": 476938240,
+              "heapTotal": 146292736,
+              "heapUsed": 8867728,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 481099776
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 320192512,
+                "heapTotal": 91766784,
+                "heapUsed": 30601528,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 320192512
+              },
+              "afterGc": {
+                "rss": 321814528,
+                "heapTotal": 92553216,
+                "heapUsed": 23390560,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 321814528
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 444153856,
+                "heapTotal": 211828736,
+                "heapUsed": 81322000,
+                "external": 153461441,
+                "arrayBuffers": 613034,
+                "maxRssBytes": 445841408
+              },
+              "afterGc": {
+                "rss": 444203008,
+                "heapTotal": 160186368,
+                "heapUsed": 23486408,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 445841408
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 480804864,
+                "heapTotal": 207110144,
+                "heapUsed": 111215408,
+                "external": 153523672,
+                "arrayBuffers": 675265,
+                "maxRssBytes": 481099776
+              },
+              "afterGc": {
+                "rss": 476938240,
+                "heapTotal": 160186368,
+                "heapUsed": 23605336,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 481099776
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55902208,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55902208
+            },
+            "initialized": {
+              "rss": 983416832,
+              "heapTotal": 11091968,
+              "heapUsed": 6054480,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983416832
+            },
+            "disposed": {
+              "rss": 756269056,
+              "heapTotal": 11354112,
+              "heapUsed": 6161304,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125580800
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1121255424,
+                "heapTotal": 12402688,
+                "heapUsed": 7637496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121255424
+              },
+              "afterGc": {
+                "rss": 1120157696,
+                "heapTotal": 11091968,
+                "heapUsed": 6111120,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121452032
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1124335616,
+                "heapTotal": 13008896,
+                "heapUsed": 8488256,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124433920
+              },
+              "afterGc": {
+                "rss": 1122418688,
+                "heapTotal": 11091968,
+                "heapUsed": 6112104,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124433920
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124696064,
+                "heapTotal": 12664832,
+                "heapUsed": 7705376,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125400576
+              },
+              "afterGc": {
+                "rss": 1123401728,
+                "heapTotal": 11354112,
+                "heapUsed": 6186096,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125400576
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56115200,
+              "heapTotal": 10305536,
+              "heapUsed": 5382560,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56115200
+            },
+            "initialized": {
+              "rss": 91144192,
+              "heapTotal": 30425088,
+              "heapUsed": 12460432,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 97746944
+            },
+            "disposed": {
+              "rss": 476364800,
+              "heapTotal": 145768448,
+              "heapUsed": 8866080,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 481984512
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 319553536,
+                "heapTotal": 91504640,
+                "heapUsed": 30585376,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 319553536
+              },
+              "afterGc": {
+                "rss": 321077248,
+                "heapTotal": 92815360,
+                "heapUsed": 23393096,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 321077248
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 444366848,
+                "heapTotal": 211959808,
+                "heapUsed": 83734488,
+                "external": 153462087,
+                "arrayBuffers": 613680,
+                "maxRssBytes": 446005248
+              },
+              "afterGc": {
+                "rss": 443416576,
+                "heapTotal": 159662080,
+                "heapUsed": 23479784,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 446005248
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 479346688,
+                "heapTotal": 211681280,
+                "heapUsed": 114382320,
+                "external": 153523672,
+                "arrayBuffers": 675265,
+                "maxRssBytes": 481984512
+              },
+              "afterGc": {
+                "rss": 476348416,
+                "heapTotal": 159924224,
+                "heapUsed": 23599664,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 481984512
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55885824,
+              "heapTotal": 10567680,
+              "heapUsed": 5382552,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55885824
+            },
+            "initialized": {
+              "rss": 88473600,
+              "heapTotal": 29442048,
+              "heapUsed": 11193072,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88653824
+            },
+            "disposed": {
+              "rss": 354828288,
+              "heapTotal": 146358272,
+              "heapUsed": 8544848,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 361054208
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 273842176,
+                "heapTotal": 203784192,
+                "heapUsed": 86922256,
+                "external": 2459320,
+                "arrayBuffers": 144611,
+                "maxRssBytes": 273842176
+              },
+              "afterGc": {
+                "rss": 268877824,
+                "heapTotal": 190136320,
+                "heapUsed": 52276728,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 273956864
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 346357760,
+                "heapTotal": 209960960,
+                "heapUsed": 122451456,
+                "external": 2468600,
+                "arrayBuffers": 153891,
+                "maxRssBytes": 346472448
+              },
+              "afterGc": {
+                "rss": 343834624,
+                "heapTotal": 190398464,
+                "heapUsed": 52208952,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 346472448
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 354811904,
+                "heapTotal": 206651392,
+                "heapUsed": 66151960,
+                "external": 2460450,
+                "arrayBuffers": 148235,
+                "maxRssBytes": 361054208
+              },
+              "afterGc": {
+                "rss": 354811904,
+                "heapTotal": 189612032,
+                "heapUsed": 51289616,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 361054208
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55934976,
+              "heapTotal": 10567680,
+              "heapUsed": 5382560,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55934976
+            },
+            "initialized": {
+              "rss": 92962816,
+              "heapTotal": 46940160,
+              "heapUsed": 12459944,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 98713600
+            },
+            "disposed": {
+              "rss": 473530368,
+              "heapTotal": 146030592,
+              "heapUsed": 8860816,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 479248384
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 310394880,
+                "heapTotal": 91504640,
+                "heapUsed": 30611840,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 310394880
+              },
+              "afterGc": {
+                "rss": 311803904,
+                "heapTotal": 93077504,
+                "heapUsed": 23390208,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 311803904
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 438140928,
+                "heapTotal": 203964416,
+                "heapUsed": 85801736,
+                "external": 153478889,
+                "arrayBuffers": 630482,
+                "maxRssBytes": 440041472
+              },
+              "afterGc": {
+                "rss": 436289536,
+                "heapTotal": 159924224,
+                "heapUsed": 23464104,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 440041472
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 474824704,
+                "heapTotal": 178257920,
+                "heapUsed": 61751920,
+                "external": 153480036,
+                "arrayBuffers": 631629,
+                "maxRssBytes": 479248384
+              },
+              "afterGc": {
+                "rss": 473530368,
+                "heapTotal": 160186368,
+                "heapUsed": 23595288,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 479248384
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55967744,
+              "heapTotal": 10567680,
+              "heapUsed": 5382552,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55967744
+            },
+            "initialized": {
+              "rss": 88424448,
+              "heapTotal": 29179904,
+              "heapUsed": 11163568,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88752128
+            },
+            "disposed": {
+              "rss": 347095040,
+              "heapTotal": 146358272,
+              "heapUsed": 8542664,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 353501184
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 266059776,
+                "heapTotal": 195624960,
+                "heapUsed": 80334432,
+                "external": 2459944,
+                "arrayBuffers": 145235,
+                "maxRssBytes": 266059776
+              },
+              "afterGc": {
+                "rss": 262602752,
+                "heapTotal": 190660608,
+                "heapUsed": 52473608,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 266108928
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 344276992,
+                "heapTotal": 206635008,
+                "heapUsed": 120146792,
+                "external": 2467896,
+                "arrayBuffers": 153187,
+                "maxRssBytes": 346390528
+              },
+              "afterGc": {
+                "rss": 342310912,
+                "heapTotal": 190922752,
+                "heapUsed": 52206376,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 346390528
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 348372992,
+                "heapTotal": 216924160,
+                "heapUsed": 83373656,
+                "external": 2458498,
+                "arrayBuffers": 146283,
+                "maxRssBytes": 353501184
+              },
+              "afterGc": {
+                "rss": 347078656,
+                "heapTotal": 190660608,
+                "heapUsed": 51289344,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 353501184
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56016896,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56016896
+            },
+            "initialized": {
+              "rss": 983482368,
+              "heapTotal": 11091968,
+              "heapUsed": 6054480,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983482368
+            },
+            "disposed": {
+              "rss": 756269056,
+              "heapTotal": 11354112,
+              "heapUsed": 6161304,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125580800
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1120862208,
+                "heapTotal": 12402688,
+                "heapUsed": 7637496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1120862208
+              },
+              "afterGc": {
+                "rss": 1119764480,
+                "heapTotal": 11091968,
+                "heapUsed": 6111120,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1121042432
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1124253696,
+                "heapTotal": 13008896,
+                "heapUsed": 8488256,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124352000
+              },
+              "afterGc": {
+                "rss": 1122336768,
+                "heapTotal": 11091968,
+                "heapUsed": 6112104,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124352000
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124728832,
+                "heapTotal": 12664832,
+                "heapUsed": 7705376,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125433344
+              },
+              "afterGc": {
+                "rss": 1123418112,
+                "heapTotal": 11354112,
+                "heapUsed": 6186096,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125433344
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55934976,
+              "heapTotal": 10567680,
+              "heapUsed": 5382552,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55934976
+            },
+            "initialized": {
+              "rss": 87293952,
+              "heapTotal": 29966336,
+              "heapUsed": 11160152,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 88162304
+            },
+            "disposed": {
+              "rss": 352567296,
+              "heapTotal": 145833984,
+              "heapUsed": 8546352,
+              "external": 2455826,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 358678528
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 268517376,
+                "heapTotal": 197492736,
+                "heapUsed": 78169056,
+                "external": 2459688,
+                "arrayBuffers": 144979,
+                "maxRssBytes": 268517376
+              },
+              "afterGc": {
+                "rss": 266240000,
+                "heapTotal": 188825600,
+                "heapUsed": 52257728,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 268648448
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 343080960,
+                "heapTotal": 205733888,
+                "heapUsed": 79048776,
+                "external": 2463120,
+                "arrayBuffers": 148411,
+                "maxRssBytes": 346718208
+              },
+              "afterGc": {
+                "rss": 342458368,
+                "heapTotal": 189349888,
+                "heapUsed": 52207512,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 346718208
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 354189312,
+                "heapTotal": 226557952,
+                "heapUsed": 106417992,
+                "external": 2460442,
+                "arrayBuffers": 148227,
+                "maxRssBytes": 358678528
+              },
+              "afterGc": {
+                "rss": 352567296,
+                "heapTotal": 189349888,
+                "heapUsed": 51300192,
+                "external": 2455826,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 358678528
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55951360,
+              "heapTotal": 10567680,
+              "heapUsed": 5382480,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55951360
+            },
+            "initialized": {
+              "rss": 983433216,
+              "heapTotal": 11091968,
+              "heapUsed": 6054480,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 983433216
+            },
+            "disposed": {
+              "rss": 756056064,
+              "heapTotal": 11354112,
+              "heapUsed": 6161304,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 1125367808
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 1120731136,
+                "heapTotal": 12402688,
+                "heapUsed": 7637496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1120731136
+              },
+              "afterGc": {
+                "rss": 1119518720,
+                "heapTotal": 11091968,
+                "heapUsed": 6111120,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1120796672
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 1123991552,
+                "heapTotal": 13008896,
+                "heapUsed": 8488256,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124089856
+              },
+              "afterGc": {
+                "rss": 1122074624,
+                "heapTotal": 11091968,
+                "heapUsed": 6112104,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1124089856
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 1124499456,
+                "heapTotal": 12664832,
+                "heapUsed": 7705376,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125203968
+              },
+              "afterGc": {
+                "rss": 1123188736,
+                "heapTotal": 11354112,
+                "heapUsed": 6186096,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 1125203968
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "repository",
+            "checkpoints": [
+              1,
+              10,
+              50
+            ],
+            "documents": [
+              {
+                "lang": "rust",
+                "path": "src/highlighter.rs",
+                "copies": 1,
+                "bytes": 57811,
+                "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+              },
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 1,
+                "bytes": 11101,
+                "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+              },
+              {
+                "lang": "javascript",
+                "path": "node/ferriki/src/index.mjs",
+                "copies": 1,
+                "bytes": 64664,
+                "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+              },
+              {
+                "lang": "markdown",
+                "path": "docs/ferriki-api.md",
+                "copies": 1,
+                "bytes": 36135,
+                "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+              },
+              {
+                "lang": "css",
+                "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+                "copies": 1,
+                "bytes": 8014,
+                "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+              },
+              {
+                "lang": "json",
+                "path": "node/package.json",
+                "copies": 1,
+                "bytes": 7674,
+                "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+              },
+              {
+                "lang": "toml",
+                "path": "Cargo.toml",
+                "copies": 1,
+                "bytes": 4793,
+                "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+              },
+              {
+                "lang": "python",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+                "copies": 1,
+                "bytes": 2119,
+                "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+              },
+              {
+                "lang": "html",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+                "copies": 1,
+                "bytes": 1200,
+                "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+              },
+              {
+                "lang": "go",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+                "copies": 1,
+                "bytes": 572,
+                "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+              },
+              {
+                "lang": "php",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+                "copies": 1,
+                "bytes": 802,
+                "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+              },
+              {
+                "lang": "shellscript",
+                "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+                "copies": 1,
+                "bytes": 634,
+                "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55853056,
+              "heapTotal": 10829824,
+              "heapUsed": 5382488,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55853056
+            },
+            "initialized": {
+              "rss": 90603520,
+              "heapTotal": 30425088,
+              "heapUsed": 12458264,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 98140160
+            },
+            "disposed": {
+              "rss": 473841664,
+              "heapTotal": 146292736,
+              "heapUsed": 8858968,
+              "external": 153458636,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 479182848
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 318570496,
+                "heapTotal": 91504640,
+                "heapUsed": 30701712,
+                "external": 153706292,
+                "arrayBuffers": 857885,
+                "maxRssBytes": 318570496
+              },
+              "afterGc": {
+                "rss": 319913984,
+                "heapTotal": 93077504,
+                "heapUsed": 23390744,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 319913984
+              },
+              "outputBytes": 1042834
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 444694528,
+                "heapTotal": 212795392,
+                "heapUsed": 89070096,
+                "external": 153471280,
+                "arrayBuffers": 622873,
+                "maxRssBytes": 446087168
+              },
+              "afterGc": {
+                "rss": 442728448,
+                "heapTotal": 159924224,
+                "heapUsed": 23472192,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 446087168
+              },
+              "outputBytes": 10428340
+            },
+            {
+              "passes": 50,
+              "beforeGc": {
+                "rss": 476086272,
+                "heapTotal": 206487552,
+                "heapUsed": 80479336,
+                "external": 153468921,
+                "arrayBuffers": 620514,
+                "maxRssBytes": 479182848
+              },
+              "afterGc": {
+                "rss": 473825280,
+                "heapTotal": 160186368,
+                "heapUsed": 23591176,
+                "external": 153458636,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 479182848
+              },
+              "outputBytes": 52141700
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "large-typescript",
+      "workload": {
+        "id": "large-typescript",
+        "checkpoints": [
+          1,
+          5,
+          10
+        ],
+        "documents": [
+          {
+            "lang": "typescript",
+            "path": "node/ferriki/src/api.mts",
+            "copies": 24,
+            "bytes": 266447,
+            "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+          }
+        ]
+      },
+      "validation": {
+        "ferriki": [
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "6e898e14d32712efbb11615a1fd9acf59a949e9a7a7426a2103a4f8a46164e50",
+            "bytes": 1761949
+          }
+        ],
+        "shiki-wasm": [
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "6e898e14d32712efbb11615a1fd9acf59a949e9a7a7426a2103a4f8a46164e50",
+            "bytes": 1761949
+          }
+        ],
+        "shiki-js": [
+          {
+            "path": "node/ferriki/src/api.mts",
+            "sha256": "6e898e14d32712efbb11615a1fd9acf59a949e9a7a7426a2103a4f8a46164e50",
+            "bytes": 1761949
+          }
+        ]
+      },
+      "samples": [
+        {
+          "repetition": 1,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55918592,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55918592
+            },
+            "initialized": {
+              "rss": 180535296,
+              "heapTotal": 11108352,
+              "heapUsed": 5984120,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180535296
+            },
+            "disposed": {
+              "rss": 215564288,
+              "heapTotal": 7962624,
+              "heapUsed": 6059216,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217284608
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 217038848,
+                "heapTotal": 12877824,
+                "heapUsed": 7790424,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217038848
+              },
+              "afterGc": {
+                "rss": 215400448,
+                "heapTotal": 11108352,
+                "heapUsed": 6012264,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217153536
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217251840,
+                "heapTotal": 9732096,
+                "heapUsed": 7809920,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217251840
+              },
+              "afterGc": {
+                "rss": 215498752,
+                "heapTotal": 7962624,
+                "heapUsed": 6027904,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217268224
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217284608,
+                "heapTotal": 9732096,
+                "heapUsed": 7827992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "afterGc": {
+                "rss": 215515136,
+                "heapTotal": 7962624,
+                "heapUsed": 6059296,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 1,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55934976,
+              "heapTotal": 10584064,
+              "heapUsed": 5330192,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55934976
+            },
+            "initialized": {
+              "rss": 83148800,
+              "heapTotal": 28606464,
+              "heapUsed": 10608952,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 95780864
+            },
+            "disposed": {
+              "rss": 319340544,
+              "heapTotal": 145260544,
+              "heapUsed": 8630728,
+              "external": 27170764,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 334807040
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 214122496,
+                "heapTotal": 115048448,
+                "heapUsed": 54625464,
+                "external": 27263821,
+                "arrayBuffers": 700792,
+                "maxRssBytes": 214122496
+              },
+              "afterGc": {
+                "rss": 208338944,
+                "heapTotal": 82083840,
+                "heapUsed": 13221816,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 214122496
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 322994176,
+                "heapTotal": 193888256,
+                "heapUsed": 109592680,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 322994176
+              },
+              "afterGc": {
+                "rss": 311590912,
+                "heapTotal": 148930560,
+                "heapUsed": 13217368,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 322994176
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 325697536,
+                "heapTotal": 188383232,
+                "heapUsed": 116002968,
+                "external": 27181994,
+                "arrayBuffers": 611415,
+                "maxRssBytes": 334807040
+              },
+              "afterGc": {
+                "rss": 319815680,
+                "heapTotal": 149192704,
+                "heapUsed": 12298368,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 334807040
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 1,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56033280,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56033280
+            },
+            "initialized": {
+              "rss": 73924608,
+              "heapTotal": 19234816,
+              "heapUsed": 9308392,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 74072064
+            },
+            "disposed": {
+              "rss": 315293696,
+              "heapTotal": 145850368,
+              "heapUsed": 9035904,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 321847296
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177913856,
+                "heapTotal": 115490816,
+                "heapUsed": 49353064,
+                "external": 2459008,
+                "arrayBuffers": 144299,
+                "maxRssBytes": 177913856
+              },
+              "afterGc": {
+                "rss": 171065344,
+                "heapTotal": 84885504,
+                "heapUsed": 16231352,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177995776
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 293994496,
+                "heapTotal": 178405376,
+                "heapUsed": 49340232,
+                "external": 2459504,
+                "arrayBuffers": 144795,
+                "maxRssBytes": 293994496
+              },
+              "afterGc": {
+                "rss": 288063488,
+                "heapTotal": 152256512,
+                "heapUsed": 16121832,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 293994496
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 321060864,
+                "heapTotal": 183386112,
+                "heapUsed": 54707944,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 321847296
+              },
+              "afterGc": {
+                "rss": 315293696,
+                "heapTotal": 152518656,
+                "heapUsed": 16201128,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 321847296
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55869440,
+              "heapTotal": 10584064,
+              "heapUsed": 5330192,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55869440
+            },
+            "initialized": {
+              "rss": 87195648,
+              "heapTotal": 28344320,
+              "heapUsed": 10608872,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 100188160
+            },
+            "disposed": {
+              "rss": 319569920,
+              "heapTotal": 144998400,
+              "heapUsed": 8620024,
+              "external": 27170764,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 336543744
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 214892544,
+                "heapTotal": 114524160,
+                "heapUsed": 47983928,
+                "external": 27235597,
+                "arrayBuffers": 672568,
+                "maxRssBytes": 214892544
+              },
+              "afterGc": {
+                "rss": 208814080,
+                "heapTotal": 81559552,
+                "heapUsed": 13225880,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 214925312
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 312066048,
+                "heapTotal": 189956096,
+                "heapUsed": 96857432,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 312066048
+              },
+              "afterGc": {
+                "rss": 306167808,
+                "heapTotal": 149192704,
+                "heapUsed": 13268464,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 312066048
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 325943296,
+                "heapTotal": 188121088,
+                "heapUsed": 112257256,
+                "external": 27179524,
+                "arrayBuffers": 611197,
+                "maxRssBytes": 336543744
+              },
+              "afterGc": {
+                "rss": 319553536,
+                "heapTotal": 148668416,
+                "heapUsed": 12290976,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 336543744
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56131584,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56131584
+            },
+            "initialized": {
+              "rss": 74088448,
+              "heapTotal": 18972672,
+              "heapUsed": 9319656,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 74301440
+            },
+            "disposed": {
+              "rss": 309231616,
+              "heapTotal": 145326080,
+              "heapUsed": 9049320,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 315555840
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177618944,
+                "heapTotal": 115490816,
+                "heapUsed": 50442360,
+                "external": 2458800,
+                "arrayBuffers": 144091,
+                "maxRssBytes": 177618944
+              },
+              "afterGc": {
+                "rss": 170786816,
+                "heapTotal": 84885504,
+                "heapUsed": 16230976,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177700864
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 299843584,
+                "heapTotal": 184958976,
+                "heapUsed": 63580624,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 300236800
+              },
+              "afterGc": {
+                "rss": 293928960,
+                "heapTotal": 152256512,
+                "heapUsed": 16115792,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 300236800
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 314998784,
+                "heapTotal": 180502528,
+                "heapUsed": 80809424,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 315555840
+              },
+              "afterGc": {
+                "rss": 309231616,
+                "heapTotal": 152256512,
+                "heapUsed": 16199080,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 315555840
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 2,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55771136,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55771136
+            },
+            "initialized": {
+              "rss": 180273152,
+              "heapTotal": 11108352,
+              "heapUsed": 5984120,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180273152
+            },
+            "disposed": {
+              "rss": 215449600,
+              "heapTotal": 7962624,
+              "heapUsed": 6059216,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217202688
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 216989696,
+                "heapTotal": 12877824,
+                "heapUsed": 7790424,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 216989696
+              },
+              "afterGc": {
+                "rss": 215302144,
+                "heapTotal": 11108352,
+                "heapUsed": 6012264,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217055232
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217186304,
+                "heapTotal": 9732096,
+                "heapUsed": 7809920,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217186304
+              },
+              "afterGc": {
+                "rss": 215416832,
+                "heapTotal": 7962624,
+                "heapUsed": 6027904,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217186304
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217202688,
+                "heapTotal": 9732096,
+                "heapUsed": 7827992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217202688
+              },
+              "afterGc": {
+                "rss": 215433216,
+                "heapTotal": 7962624,
+                "heapUsed": 6063208,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217202688
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56131584,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56131584
+            },
+            "initialized": {
+              "rss": 74088448,
+              "heapTotal": 19496960,
+              "heapUsed": 9319656,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 74186752
+            },
+            "disposed": {
+              "rss": 303153152,
+              "heapTotal": 147423232,
+              "heapUsed": 9050416,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 314671104
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177913856,
+                "heapTotal": 116277248,
+                "heapUsed": 50586456,
+                "external": 2459104,
+                "arrayBuffers": 144395,
+                "maxRssBytes": 177913856
+              },
+              "afterGc": {
+                "rss": 171655168,
+                "heapTotal": 84885504,
+                "heapUsed": 16231376,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177995776
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 288243712,
+                "heapTotal": 178143232,
+                "heapUsed": 73213896,
+                "external": 2458992,
+                "arrayBuffers": 144283,
+                "maxRssBytes": 293847040
+              },
+              "afterGc": {
+                "rss": 282542080,
+                "heapTotal": 152518656,
+                "heapUsed": 16123512,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 293847040
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 308658176,
+                "heapTotal": 174473216,
+                "heapUsed": 95533616,
+                "external": 2459440,
+                "arrayBuffers": 144731,
+                "maxRssBytes": 314671104
+              },
+              "afterGc": {
+                "rss": 303153152,
+                "heapTotal": 152518656,
+                "heapUsed": 16201368,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 314671104
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56082432,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56082432
+            },
+            "initialized": {
+              "rss": 180322304,
+              "heapTotal": 11108352,
+              "heapUsed": 5984120,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180322304
+            },
+            "disposed": {
+              "rss": 215646208,
+              "heapTotal": 7962624,
+              "heapUsed": 6059216,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217399296
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 217202688,
+                "heapTotal": 12877824,
+                "heapUsed": 7790424,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217202688
+              },
+              "afterGc": {
+                "rss": 215515136,
+                "heapTotal": 11108352,
+                "heapUsed": 6012264,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217382912,
+                "heapTotal": 9732096,
+                "heapUsed": 7809920,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217382912
+              },
+              "afterGc": {
+                "rss": 215613440,
+                "heapTotal": 7962624,
+                "heapUsed": 6027904,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217382912
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217399296,
+                "heapTotal": 9732096,
+                "heapUsed": 7827992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217399296
+              },
+              "afterGc": {
+                "rss": 215629824,
+                "heapTotal": 7962624,
+                "heapUsed": 6063208,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217399296
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 3,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56049664,
+              "heapTotal": 10321920,
+              "heapUsed": 5330192,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56049664
+            },
+            "initialized": {
+              "rss": 83394560,
+              "heapTotal": 28606464,
+              "heapUsed": 10609024,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 96059392
+            },
+            "disposed": {
+              "rss": 322535424,
+              "heapTotal": 144998400,
+              "heapUsed": 8630288,
+              "external": 27170764,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 335282176
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 214286336,
+                "heapTotal": 115834880,
+                "heapUsed": 51130848,
+                "external": 27262863,
+                "arrayBuffers": 699834,
+                "maxRssBytes": 214286336
+              },
+              "afterGc": {
+                "rss": 208633856,
+                "heapTotal": 81559552,
+                "heapUsed": 13223368,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 214368256
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 310837248,
+                "heapTotal": 202801152,
+                "heapUsed": 97987856,
+                "external": 27173562,
+                "arrayBuffers": 610533,
+                "maxRssBytes": 310837248
+              },
+              "afterGc": {
+                "rss": 299401216,
+                "heapTotal": 149192704,
+                "heapUsed": 13275144,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 310837248
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 328941568,
+                "heapTotal": 192839680,
+                "heapUsed": 100465904,
+                "external": 27174186,
+                "arrayBuffers": 611157,
+                "maxRssBytes": 335282176
+              },
+              "afterGc": {
+                "rss": 322519040,
+                "heapTotal": 148668416,
+                "heapUsed": 12276400,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 335282176
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56049664,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56049664
+            },
+            "initialized": {
+              "rss": 180305920,
+              "heapTotal": 11108352,
+              "heapUsed": 5984192,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180305920
+            },
+            "disposed": {
+              "rss": 215547904,
+              "heapTotal": 7962624,
+              "heapUsed": 6059288,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217284608
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 217038848,
+                "heapTotal": 12877824,
+                "heapUsed": 7790496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217038848
+              },
+              "afterGc": {
+                "rss": 215367680,
+                "heapTotal": 11108352,
+                "heapUsed": 6012336,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217120768
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217251840,
+                "heapTotal": 9732096,
+                "heapUsed": 7809992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217251840
+              },
+              "afterGc": {
+                "rss": 215482368,
+                "heapTotal": 7962624,
+                "heapUsed": 6027976,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217251840
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217284608,
+                "heapTotal": 9732096,
+                "heapUsed": 7828064,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "afterGc": {
+                "rss": 215515136,
+                "heapTotal": 7962624,
+                "heapUsed": 6063280,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56131584,
+              "heapTotal": 10584064,
+              "heapUsed": 5330192,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56131584
+            },
+            "initialized": {
+              "rss": 83623936,
+              "heapTotal": 28344320,
+              "heapUsed": 10608808,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 95944704
+            },
+            "disposed": {
+              "rss": 317554688,
+              "heapTotal": 144736256,
+              "heapUsed": 8638880,
+              "external": 27170764,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 333889536
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 214466560,
+                "heapTotal": 116359168,
+                "heapUsed": 53186056,
+                "external": 27266480,
+                "arrayBuffers": 703451,
+                "maxRssBytes": 214466560
+              },
+              "afterGc": {
+                "rss": 208666624,
+                "heapTotal": 82083840,
+                "heapUsed": 13222416,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 214466560
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 309592064,
+                "heapTotal": 189169664,
+                "heapUsed": 98646800,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 309690368
+              },
+              "afterGc": {
+                "rss": 303169536,
+                "heapTotal": 148668416,
+                "heapUsed": 12212960,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 309690368
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 323584000,
+                "heapTotal": 194936832,
+                "heapUsed": 62554344,
+                "external": 27170844,
+                "arrayBuffers": 610309,
+                "maxRssBytes": 333889536
+              },
+              "afterGc": {
+                "rss": 317538304,
+                "heapTotal": 148668416,
+                "heapUsed": 12288568,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 333889536
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 4,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55902208,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55902208
+            },
+            "initialized": {
+              "rss": 73908224,
+              "heapTotal": 18448384,
+              "heapUsed": 9319656,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 74252288
+            },
+            "disposed": {
+              "rss": 299270144,
+              "heapTotal": 146898944,
+              "heapUsed": 9049152,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 310673408
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177602560,
+                "heapTotal": 115490816,
+                "heapUsed": 50275816,
+                "external": 2458712,
+                "arrayBuffers": 144003,
+                "maxRssBytes": 177602560
+              },
+              "afterGc": {
+                "rss": 171196416,
+                "heapTotal": 84623360,
+                "heapUsed": 16230232,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177717248
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 276480000,
+                "heapTotal": 189612032,
+                "heapUsed": 116139720,
+                "external": 2463000,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 276480000
+              },
+              "afterGc": {
+                "rss": 270745600,
+                "heapTotal": 151732224,
+                "heapUsed": 16112216,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 276643840
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 310673408,
+                "heapTotal": 200097792,
+                "heapUsed": 70429416,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 310673408
+              },
+              "afterGc": {
+                "rss": 299270144,
+                "heapTotal": 151994368,
+                "heapUsed": 16147872,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 310673408
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55918592,
+              "heapTotal": 10584064,
+              "heapUsed": 5330264,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55918592
+            },
+            "initialized": {
+              "rss": 83443712,
+              "heapTotal": 28344320,
+              "heapUsed": 10608992,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 95764480
+            },
+            "disposed": {
+              "rss": 319209472,
+              "heapTotal": 145522688,
+              "heapUsed": 8632560,
+              "external": 27170764,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 334643200
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 214990848,
+                "heapTotal": 117145600,
+                "heapUsed": 52969784,
+                "external": 27267421,
+                "arrayBuffers": 704392,
+                "maxRssBytes": 214990848
+              },
+              "afterGc": {
+                "rss": 209289216,
+                "heapTotal": 81821696,
+                "heapUsed": 13222648,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 215040000
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 310099968,
+                "heapTotal": 202276864,
+                "heapUsed": 103232424,
+                "external": 27174299,
+                "arrayBuffers": 611270,
+                "maxRssBytes": 310099968
+              },
+              "afterGc": {
+                "rss": 298467328,
+                "heapTotal": 149192704,
+                "heapUsed": 13275176,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 310099968
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 330874880,
+                "heapTotal": 202801152,
+                "heapUsed": 81287528,
+                "external": 27174055,
+                "arrayBuffers": 611026,
+                "maxRssBytes": 334643200
+              },
+              "afterGc": {
+                "rss": 319193088,
+                "heapTotal": 148930560,
+                "heapUsed": 12276168,
+                "external": 27170764,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 334643200
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55771136,
+              "heapTotal": 10321920,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55771136
+            },
+            "initialized": {
+              "rss": 73777152,
+              "heapTotal": 19496960,
+              "heapUsed": 9319632,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 73957376
+            },
+            "disposed": {
+              "rss": 299024384,
+              "heapTotal": 145063936,
+              "heapUsed": 9050784,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 310968320
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177012736,
+                "heapTotal": 114966528,
+                "heapUsed": 79101608,
+                "external": 2458992,
+                "arrayBuffers": 144283,
+                "maxRssBytes": 177012736
+              },
+              "afterGc": {
+                "rss": 171081728,
+                "heapTotal": 85147648,
+                "heapUsed": 16230792,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177750016
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 299941888,
+                "heapTotal": 183123968,
+                "heapUsed": 63559928,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 300318720
+              },
+              "afterGc": {
+                "rss": 294240256,
+                "heapTotal": 152518656,
+                "heapUsed": 16116920,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 300318720
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 304726016,
+                "heapTotal": 177356800,
+                "heapUsed": 76905888,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 310968320
+              },
+              "afterGc": {
+                "rss": 299024384,
+                "heapTotal": 152518656,
+                "heapUsed": 16202616,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 310968320
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 5,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55853056,
+              "heapTotal": 10321920,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55853056
+            },
+            "initialized": {
+              "rss": 180142080,
+              "heapTotal": 10846208,
+              "heapUsed": 5984120,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180142080
+            },
+            "disposed": {
+              "rss": 215760896,
+              "heapTotal": 7962624,
+              "heapUsed": 6059216,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217513984
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 217169920,
+                "heapTotal": 12615680,
+                "heapUsed": 7790424,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217169920
+              },
+              "afterGc": {
+                "rss": 215498752,
+                "heapTotal": 10846208,
+                "heapUsed": 6012264,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217268224
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217464832,
+                "heapTotal": 9469952,
+                "heapUsed": 7809920,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217464832
+              },
+              "afterGc": {
+                "rss": 215695360,
+                "heapTotal": 7700480,
+                "heapUsed": 6027904,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217464832
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217497600,
+                "heapTotal": 9469952,
+                "heapUsed": 7827992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217497600
+              },
+              "afterGc": {
+                "rss": 215744512,
+                "heapTotal": 7962624,
+                "heapUsed": 6063208,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217513984
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "shiki-js",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 56131584,
+              "heapTotal": 10584064,
+              "heapUsed": 5330184,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 56131584
+            },
+            "initialized": {
+              "rss": 74186752,
+              "heapTotal": 19496960,
+              "heapUsed": 9319656,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 74301440
+            },
+            "disposed": {
+              "rss": 309329920,
+              "heapTotal": 144801792,
+              "heapUsed": 9067200,
+              "external": 2458320,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 321159168
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 177586176,
+                "heapTotal": 115490816,
+                "heapUsed": 50170192,
+                "external": 2458712,
+                "arrayBuffers": 144003,
+                "maxRssBytes": 177586176
+              },
+              "afterGc": {
+                "rss": 171048960,
+                "heapTotal": 84885504,
+                "heapUsed": 16230976,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 177651712
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 320061440,
+                "heapTotal": 253444096,
+                "heapUsed": 142204376,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 320061440
+              },
+              "afterGc": {
+                "rss": 308264960,
+                "heapTotal": 151994368,
+                "heapUsed": 16111776,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 320077824
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 315031552,
+                "heapTotal": 178667520,
+                "heapUsed": 57576512,
+                "external": 2459760,
+                "arrayBuffers": 145051,
+                "maxRssBytes": 321159168
+              },
+              "afterGc": {
+                "rss": 309329920,
+                "heapTotal": 152256512,
+                "heapUsed": 16203936,
+                "external": 2458320,
+                "arrayBuffers": 143611,
+                "maxRssBytes": 321159168
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "ferriki",
+          "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55885824,
+              "heapTotal": 10584064,
+              "heapUsed": 5330256,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55885824
+            },
+            "initialized": {
+              "rss": 180486144,
+              "heapTotal": 11108352,
+              "heapUsed": 5984192,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 180486144
+            },
+            "disposed": {
+              "rss": 215711744,
+              "heapTotal": 7962624,
+              "heapUsed": 6059288,
+              "external": 2540477,
+              "arrayBuffers": 143615,
+              "maxRssBytes": 217464832
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 217284608,
+                "heapTotal": 12877824,
+                "heapUsed": 7790496,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217284608
+              },
+              "afterGc": {
+                "rss": 215580672,
+                "heapTotal": 11108352,
+                "heapUsed": 6012336,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217350144
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 217448448,
+                "heapTotal": 9732096,
+                "heapUsed": 7809992,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217448448
+              },
+              "afterGc": {
+                "rss": 215678976,
+                "heapTotal": 7962624,
+                "heapUsed": 6027976,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217448448
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 217464832,
+                "heapTotal": 9732096,
+                "heapUsed": 7828064,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217464832
+              },
+              "afterGc": {
+                "rss": 215695360,
+                "heapTotal": 7962624,
+                "heapUsed": 6063280,
+                "external": 2540477,
+                "arrayBuffers": 143615,
+                "maxRssBytes": 217464832
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        },
+        {
+          "repetition": 6,
+          "engine": "shiki-wasm",
+          "nativeBinarySha256": null,
+          "workload": {
+            "id": "large-typescript",
+            "checkpoints": [
+              1,
+              5,
+              10
+            ],
+            "documents": [
+              {
+                "lang": "typescript",
+                "path": "node/ferriki/src/api.mts",
+                "copies": 24,
+                "bytes": 266447,
+                "sha256": "eae56cf76f1d421dd850acb8f5f778de10e032b68c80c256c64943a29c3adab9"
+              }
+            ]
+          },
+          "phases": {
+            "baseline": {
+              "rss": 55951360,
+              "heapTotal": 10321920,
+              "heapUsed": 5330264,
+              "external": 2458280,
+              "arrayBuffers": 143611,
+              "maxRssBytes": 55951360
+            },
+            "initialized": {
+              "rss": 83230720,
+              "heapTotal": 28344320,
+              "heapUsed": 10609024,
+              "external": 19702154,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 95748096
+            },
+            "disposed": {
+              "rss": 346456064,
+              "heapTotal": 145784832,
+              "heapUsed": 9682816,
+              "external": 27173258,
+              "arrayBuffers": 610229,
+              "maxRssBytes": 357990400
+            }
+          },
+          "checkpoints": [
+            {
+              "passes": 1,
+              "beforeGc": {
+                "rss": 211681280,
+                "heapTotal": 113737728,
+                "heapUsed": 49472736,
+                "external": 27231524,
+                "arrayBuffers": 668495,
+                "maxRssBytes": 211681280
+              },
+              "afterGc": {
+                "rss": 205930496,
+                "heapTotal": 81559552,
+                "heapUsed": 13226336,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 211730432
+              },
+              "outputBytes": 1761949
+            },
+            {
+              "passes": 5,
+              "beforeGc": {
+                "rss": 326762496,
+                "heapTotal": 195723264,
+                "heapUsed": 83747728,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 326762496
+              },
+              "afterGc": {
+                "rss": 315408384,
+                "heapTotal": 148668416,
+                "heapUsed": 13219944,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 326811648
+              },
+              "outputBytes": 8809745
+            },
+            {
+              "passes": 10,
+              "beforeGc": {
+                "rss": 352141312,
+                "heapTotal": 178749440,
+                "heapUsed": 74402928,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 357990400
+              },
+              "afterGc": {
+                "rss": 346439680,
+                "heapTotal": 148668416,
+                "heapUsed": 13350992,
+                "external": 27173258,
+                "arrayBuffers": 610229,
+                "maxRssBytes": 357990400
+              },
+              "outputBytes": 17619490
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
