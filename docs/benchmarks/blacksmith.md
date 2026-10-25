@@ -78,26 +78,32 @@ profile with identical fixtures, harness and compiler.
 
 ## Published measurements
 
-The [October 16, 2026 archive](blacksmith/2026-10-16-sharded/README.md) preserves all
-twelve successful reports from both profiles with Ferriki 1.1.1, Shiki 4.5.0
-and Ferroni 2.2.2. On the same
-14 repository files, default reused Ferriki highlighters were 3.3× faster
-than Shiki/WASM on Linux x86-64 and 4.1× faster on macOS ARM64, with identical
-HTML against Shiki/WASM. Shiki/JS matched the other 13 files; its full-corpus
-total is unavailable because it cannot translate the current YAML grammar.
-Linux's observed processor was AMD EPYC; macOS used an Apple M4 Pro
-virtual machine. The Linux profile is x86-64, not a promise of Intel hardware.
+The [October 24, 2026 archive](blacksmith/2026-10-24-prepared-eager/README.md)
+preserves all twelve successful timing reports and both complete memory
+captures for Ferriki 1.2.0, Ferroni 2.7.0 and Shiki 4.5.0. Prepared standard
+regex packages are enabled in the default lane. Reused highlighters on the
+14-file repository corpus were 2.4× faster than Shiki/WASM on Linux and 2.9×
+on macOS, with identical HTML. Full-corpus first use was 876.6 versus 1,027.2 ms
+on Linux and 618.3 versus 1,084.9 ms on macOS, excluding downloads and process
+creation. All 14 languages are loaded up front; this is not one-snippet startup.
 
-The [website](https://ferriki.dev/evidence/benchmarks) presents these runner profiles,
-first-use and reuse results, and JSON/Astro with the unchanged Shiki controls.
-Unchanged controls moved between on/off windows on both profiles. These
-observations do not isolate the prefilter's effect on first use or JSON/Astro. The archive records the full scope
-and interpretation alongside the raw samples.
+All six timing jobs and both memory jobs passed. The macOS merge passed; the
+Linux merge rejected different CPUs across corpus VMs, marking the overall
+workflow failed. Linux's repository VM was Intel Xeon; its curated and TIOBE
+VMs were AMD EPYC. The archive publishes the successful shards independently
+with original contexts and hashes, and no cross-VM aggregate. The workflow's
+merge guard is unchanged. macOS VMs used Apple M4 Pro (Virtual).
+
+The [website](https://ferriki.dev/evidence/benchmarks) presents these observations,
+first-use and reuse results, JSON/Astro controls and memory ranges. The older
+[October 16 archive](blacksmith/2026-10-16-sharded/README.md) remains available.
+Its 3.3× / 4.1× factors were larger, but revisions, source inputs and hardware
+changed; this is not a controlled measurement of the prepared-package effect.
 
 The workflow does not replace the published homepage report automatically.
 Review machine provenance and output agreement before publishing new figures.
 Preserve a dated archive and point `scripts/publish-blacksmith-evidence.mjs`
-at it. Run the generator to refresh compact reports, review the copy, and run
+at its separately retained corpus shards. Run the generator to refresh compact reports, review the copy, and run
 `node scripts/publish-blacksmith-evidence.mjs --check`. This verifies original
 artifact hashes, all report gates and published data; the homepage build runs
 the same check. Update `README.md.src` and regenerate the root README with
@@ -208,12 +214,12 @@ HTML agreement, native binary receipts and the compact published values; the
 homepage build runs this check. The publication does not replace timing reports
 or combine the 12-file memory cohort with 14-file timing totals.
 
-The [October 16 memory capture](blacksmith/2026-10-16-memory/README.md) passed on
-both profiles. After the shared repository workload, median whole-process RSS
-was 316.8 MiB for Ferriki, 458.8 MiB for Shiki/WASM and 361.2 MiB for Shiki/JS
-on Linux. macOS recorded 330.5, 451.6 and 332.0 MiB respectively; Ferriki's and
-Shiki/JS's macOS ranges overlap. For the generated large TypeScript case,
-Ferriki used 108.2 MiB on Linux and 109.5 MiB on macOS, versus 334.3 and
-306.9 MiB for Shiki/WASM. The summaries retain every engine, initialization and
-peak values, and min–max ranges. These observations support a lower RSS than
-WASM for these workloads; they do not establish a universal memory ratio.
+The [October 24 memory capture](blacksmith/2026-10-24-prepared-eager/README.md#process-memory)
+passed on both profiles. With 12 languages loaded for the repository workload,
+Ferriki's median RSS was 689.0 MiB on Linux and 1,071.3 MiB on macOS, versus
+454.8 and 451.9 MiB for Shiki/WASM: 51–137% higher. With only the large
+TypeScript workload, Ferriki used 151.4 and 205.6 MiB, versus 333.8 and 304.9 MiB:
+33–55% lower. The summaries retain all engines, initialization and peak values,
+and min–max ranges. Requested languages and dependencies are loaded, not the
+whole catalog. The previous capture's repository memory saving does not hold
+in this capture; attributing that change requires a controlled A/B experiment.

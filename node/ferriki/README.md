@@ -67,17 +67,20 @@ Run `node highlight.mjs`, then open `highlighted.html`. The one-shot API loads
 the language and theme on first use and reuses a process-local highlighter on
 later calls.
 
-## Retained Shiki comparisons
+## Shiki comparisons
 
-These captures used Ferriki 1.1.1 and Ferroni 2.2.2, before prepared regex
-packages. On that 14-file Blacksmith corpus, a reused Ferriki highlighter
-produced the same HTML as Shiki/WASM and ran **3.3× faster on Linux x86-64** and **4.1×
-faster on macOS ARM64**. See the [benchmark report](https://ferriki.dev/evidence/benchmarks)
-for hosts, conditions, first-use timings, and raw results.
+The October 24 Blacksmith capture used Ferriki 1.2.0 with prepared standard
+regex packages and Ferroni 2.7.0. On its 14-file corpus, a reused highlighter
+produced the same HTML as Shiki/WASM and ran **2.4× faster on Linux x86-64**
+and **2.9× faster on macOS ARM64**. See the
+[benchmark report](https://ferriki.dev/evidence/benchmarks) for hosts,
+first-use timings, raw results, and measurement limits.
 
-A separate capture with six fresh processes per engine and workload on each
-host measured **27–31% lower whole-process RSS than Shiki/WASM** after 600
-documents in a shared 12-file cohort. See the
+Memory depends on the loaded languages. After 600 documents with 12 languages
+loaded together, Ferriki's whole-process RSS was **51–137% higher than
+Shiki/WASM**. With only the large TypeScript workload, it was **33–55% lower**.
+Ferriki loads requested languages and their dependencies; these are separate
+workloads, not measurements of the entire grammar catalog. See the
 [memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
 
 ## Reuse a highlighter

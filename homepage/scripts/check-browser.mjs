@@ -106,6 +106,8 @@ try {
     "Verified process-memory medians, full ranges and keyboard scrolling on narrow screens.",
   );
 
+  await verifyLanguageTables(page);
+
   const prismSamples = JSON.parse(
     await readFile(new URL("../app/data/prism-comparison.json", import.meta.url), "utf8"),
   );
@@ -297,6 +299,53 @@ try {
 } finally {
   await browser?.close();
   await previewServer?.close();
+}
+
+async function verifyLanguageRow(details, entry) {
+  const row = details
+    .getByRole("rowheader", { name: `${entry.language} · ${entry.size}`, exact: true })
+    .locator("..");
+  const text = await row.textContent();
+  for (const id of ["ferriki", "shiki-wasm", "shiki-js", "prism"]) {
+    const value = entry.timings[id];
+    const expected =
+      value === undefined
+        ? "Unsupported"
+        : `${value < 10 ? value.toFixed(2) : value.toFixed(1)} ms`;
+    assert(text.includes(expected), `${entry.language}/${entry.size}/${id}: stale language table`);
+  }
+}
+
+async function verifyLanguageTable(page, profile, corpus) {
+  const title = `${profile.label} · ${corpus === "curated" ? "Curated: 20 formats" : "TIOBE: 19 supported ranks"}`;
+  const details = page
+    .locator("details")
+    .filter({ has: page.locator("summary", { hasText: title }) });
+  await details.locator("summary").click();
+  const entries = profile.workloads.filter((entry) => entry.corpus === corpus);
+  assert.equal(await details.getByRole("row").count(), entries.length + 1);
+  for (const entry of entries) await verifyLanguageRow(details, entry);
+  const table = details.getByRole("region");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await table.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.activeElement.scrollLeft > 0);
+  await details.locator("summary").click();
+}
+
+async function verifyLanguageTables(page) {
+  const { profiles } = JSON.parse(
+    await readFile(
+      new URL("../../docs/benchmarks/blacksmith-comparison.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  for (const profile of profiles) {
+    for (const corpus of ["curated", "tiobe"]) await verifyLanguageTable(page, profile, corpus);
+  }
+  console.log(
+    "Verified all 156 curated/TIOBE rows, unsupported states and narrow-screen table scrolling.",
+  );
 }
 
 async function verifyViewport({ page, pageFile, viewport, origin }) {

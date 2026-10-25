@@ -6,7 +6,7 @@ import { readMemoryEvidence } from "../node/scripts/memory-evidence.mjs";
 import { summarizeMemory } from "../node/scripts/run-blacksmith-memory.mjs";
 
 const root = new URL("../", import.meta.url);
-const archive = "docs/benchmarks/blacksmith/2026-10-16-memory";
+const archive = "docs/benchmarks/blacksmith/2026-10-24-prepared-eager/memory";
 const profiles = ["linux-x86-64", "macos-arm64"].map((id) => {
   const directory = `${archive}/${id}`;
   const { context, report } = readMemoryEvidence(fileURLToPath(new URL(directory, root)));
@@ -64,28 +64,28 @@ if (process.argv.includes("--check"))
   );
 else writeFileSync(target, output);
 if (process.argv.includes("--check")) {
-  // Entry-point READMEs show the primary repository cohort. Keep the separate
-  // large-TypeScript result on the detailed evidence page with its workload context.
-  const headlinePathsByScenario = {
-    repository: [
-      "README.md.src",
-      "README.md",
-      "node/ferriki/README.md",
-      "homepage/app/routes/evidence/benchmarks.mdx",
-    ],
-    "large-typescript": ["homepage/app/routes/evidence/benchmarks.mdx"],
-  };
-  for (const [scenario, paths] of Object.entries(headlinePathsByScenario)) {
-    const reductions = profiles
-      .map((profile) => {
-        const { engines } = profile.scenarios.find((entry) => entry.id === scenario);
-        return Math.round(
-          100 * (1 - engines.ferriki.finalRss.median / engines["shiki-wasm"].finalRss.median),
-        );
-      })
-      .sort((a, b) => a - b);
-    const range = `${reductions[0]}–${reductions[1]}%`;
-    for (const path of paths)
+  // Both workloads appear in the READMEs and detailed page. Check each
+  // scenario's magnitude and direction wherever the copy repeats it.
+  const headlinePaths = [
+    "README.md.src",
+    "README.md",
+    "node/ferriki/README.md",
+    "homepage/app/routes/evidence/benchmarks.mdx",
+  ];
+  for (const scenario of ["repository", "large-typescript"]) {
+    const changes = profiles.map((profile) => {
+      const { engines } = profile.scenarios.find((entry) => entry.id === scenario);
+      return Math.round(
+        100 * (engines.ferriki.finalRss.median / engines["shiki-wasm"].finalRss.median - 1),
+      );
+    });
+    assert.ok(
+      changes.every((value) => value > 0) || changes.every((value) => value < 0),
+      "Mixed memory directions need host-specific copy",
+    );
+    const magnitudes = changes.map(Math.abs).sort((a, b) => a - b);
+    const range = `${magnitudes[0]}–${magnitudes[1]}% ${changes[0] > 0 ? "higher" : "lower"}`;
+    for (const path of headlinePaths)
       assert.ok(
         readFileSync(new URL(path, root), "utf8").includes(range),
         `${path}: stale ${scenario} memory headline (${range})`,

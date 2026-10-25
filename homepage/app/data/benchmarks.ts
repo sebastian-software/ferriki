@@ -12,9 +12,16 @@ type BlacksmithProfile = {
   label: string;
   runner: string;
   machine: { cpu: string };
+  corpusMachines: Record<string, { cpu: string }>;
   ferroni: string;
   warm: { on: Timings; off: Timings };
   cold: { on: Timings; off: Timings };
+  workloads: Array<{
+    corpus: string;
+    language: string;
+    size: string;
+    timings: Partial<Record<"prism" | NodeEngineId, number>>;
+  }>;
   jsonAstro: Array<{
     language: string;
     size: string;

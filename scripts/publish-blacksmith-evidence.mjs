@@ -1,58 +1,57 @@
 // Publish compact website data from the preserved, checksummed measurements.
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
-import { validateCorpusProvenance } from "../node/scripts/merge-blacksmith-comparison.mjs";
-import { validateReport } from "../node/scripts/run-blacksmith-comparison.mjs";
+import { readShard } from "../node/scripts/merge-blacksmith-comparison.mjs";
 
 const root = new URL("../", import.meta.url);
-const archive = "docs/benchmarks/blacksmith/2026-10-16-sharded";
+const archive = "docs/benchmarks/blacksmith/2026-10-24-prepared-eager/timings";
 const check = process.argv.includes("--check");
 const profiles = [];
-const json = (bytes) => JSON.parse(bytes.toString("utf8"));
 const read = (path) => readFileSync(new URL(path, root));
 const outputs = new Map();
 
 for (const id of ["linux-x86-64", "macos-arm64"]) {
   const directory = `${archive}/${id}/`;
-  const original = new Map();
-  for (const line of read(`${directory}ORIGINAL_SHA256SUMS`).toString("utf8").trim().split("\n")) {
-    const match = /^([a-f0-9]{64})  (.+)$/.exec(line);
-    assert.ok(match, "Invalid artifact checksum record");
-    const [, expected, path] = match;
-    assert.ok(!path.startsWith("/") && !path.split("/").includes(".."));
-    const url = new URL(`${directory}${path}`, root);
-    const bytes = existsSync(url)
-      ? readFileSync(url)
-      : gunzipSync(readFileSync(`${fileURLToPath(url)}.gz`));
-    assert.equal(
-      createHash("sha256").update(bytes).digest("hex"),
-      expected,
-      `Artifact changed: ${id}/${path}`,
-    );
-    original.set(path, bytes);
+  const shards = Object.fromEntries(
+    ["comparison", "curated", "tiobe"].map((corpus) => {
+      const shard = readShard(fileURLToPath(new URL(`${directory}${corpus}/`, root)));
+      assert.equal(shard.corpus, corpus);
+      assert.equal(shard.context.profile, id);
+      assert.equal(shard.context.platform, id === "macos-arm64" ? "darwin-arm64" : "linux-x64");
+      return [corpus, shard];
+    }),
+  );
+  const context = shards.comparison.context;
+  // Each table compares engines within its original VM. Keep heterogeneous
+  // corpus machines explicit; this does not create a successful merged CI artifact.
+  for (const { context: other } of Object.values(shards)) {
+    for (const key of [
+      "commit",
+      "tree",
+      "node",
+      "rustc",
+      "cargoLockSha256",
+      "pnpmLockSha256",
+      "comparators",
+    ])
+      assert.deepEqual(other[key], context[key], `Different corpus ${key}`);
+    for (const key of [
+      "rustSourceSha256",
+      "rustflags",
+      "encodedRustflags",
+      "targetRustflags",
+      "cargoProfileEnv",
+    ])
+      assert.deepEqual(other.nativeBuild[key], context.nativeBuild[key], `Different build ${key}`);
+    for (const key of ["version", "source", "features", "revision", "sourceSha256"])
+      assert.deepEqual(
+        other.nativeBuild.ferroni[key],
+        context.nativeBuild.ferroni[key],
+        `Different Ferroni ${key}`,
+      );
   }
-  const context = json(original.get("context.json"));
-  assert.equal(json(original.get("validation.json")).ok, true);
-  assert.equal(context.profile, id);
-  assert.equal(context.platform, id === "macos-arm64" ? "darwin-arm64" : "linux-x64");
-  assert.equal(context.status, "");
-  assert.equal(context.nativeBuild.ferriki.status, "");
-  assert.equal(context.nativeBuild.ferriki.commit, context.commit);
-  const reports = {};
-  for (const corpus of ["comparison", "curated", "tiobe"]) {
-    for (const mode of ["on", "off"]) {
-      const report = json(original.get(`${corpus}-${mode}.json`));
-      validateReport(report, corpus, mode === "on");
-      const corpusContext = context.corpusContexts?.[corpus] ?? context;
-      if (context.corpusContexts)
-        assert.deepEqual(corpusContext, json(original.get(`contexts/${corpus}.json`)));
-      validateCorpusProvenance(report, corpus, corpusContext);
-      reports[`${corpus}-${mode}`] = report;
-    }
-  }
+  const reports = Object.assign({}, ...Object.values(shards).map((shard) => shard.reports));
   const on = reports["comparison-on"];
   const off = reports["comparison-off"];
   assert.deepEqual(
@@ -65,15 +64,43 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
     runner: context.runnerLabel,
     machine: on.machine,
     revision: context.commit,
+    ferriki: on.versions.ferriki,
     ferroni: context.nativeBuild.ferroni.version,
     rustc: context.rustc.split("\n")[0],
     nativeBinarySha256: context.nativeBuild.binarySha256,
     archive: directory,
+    corpusMachines: Object.fromEntries(
+      Object.entries(shards).map(([corpus, shard]) => [
+        corpus,
+        {
+          cpu: shard.context.cpu,
+          os: shard.context.os,
+          nativeBinarySha256: shard.context.nativeBuild.binarySha256,
+          archive: `${directory}${corpus}/`,
+        },
+      ]),
+    ),
     warm: { on: on.warmTotalMs.codeToHtml, off: off.warmTotalMs.codeToHtml },
     cold: {
       on: Object.fromEntries(Object.entries(on.cold).map(([id, value]) => [id, value.medianMs])),
       off: Object.fromEntries(Object.entries(off.cold).map(([id, value]) => [id, value.medianMs])),
     },
+    workloads: ["curated", "tiobe"].flatMap((corpus) =>
+      reports[`${corpus}-on`].languages.flatMap((language) =>
+        (language.cases ?? []).map((entry) => ({
+          corpus,
+          language: language.name,
+          size: entry.size,
+          bytes: entry.bytes,
+          sha256: entry.sha256,
+          timings: Object.fromEntries(
+            Object.entries(entry.results)
+              .filter(([, result]) => result.html)
+              .map(([id, result]) => [id, result.html.medianMs]),
+          ),
+        })),
+      ),
+    ),
     jsonAstro: reports["curated-on"].languages
       .filter((row) => ["JSON", "Astro"].includes(row.name))
       .flatMap((row) =>
@@ -107,7 +134,7 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
     profile: id,
     runUrl: context.runUrl,
     ferroni: summary.ferroni,
-    archive: directory,
+    archive: `${directory}comparison/`,
   };
   outputs.set(
     id === "linux-x86-64"
@@ -119,8 +146,8 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
 assert.equal(profiles[0].revision, profiles[1].revision);
 assert.equal(profiles[0].ferroni, profiles[1].ferroni);
 outputs.set("docs/benchmarks/blacksmith-comparison.json", {
-  measured: "2026-10-16",
-  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/38971164540",
+  measured: "2026-10-24",
+  runUrl: "https://github.com/sebastian-software/ferriki/actions/runs/40135588303",
   corpusDocuments: 14,
   profiles,
 });

@@ -7,165 +7,165 @@
       "cpu": "AMD EPYC",
       "os": "Linux 6.6.141",
       "node": "v24.21.0",
-      "revision": "77bd49284792fea290fcd8d6a6bfe079dee256fb",
-      "tree": "40a10f6dd550bb1933522f30b0e2826c923c8d81",
-      "ferriki": "1.1.1",
+      "revision": "2b16844ed26da3d58a8198e362cd467f777bea7d",
+      "tree": "0119727f8ce8e0e1933cfd29884bb92f44e34bf5",
+      "ferriki": "1.2.0",
       "shiki": "4.5.0",
-      "ferroni": "2.2.2",
+      "ferroni": "2.7.0",
       "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
-      "pnpmLockSha256": "20f083d910c85a20ec9d7199ff182d18bd7133d13d4339c088c58c6031cfd115",
-      "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47",
-      "nativeBinarySha256": "00cc879dd786d94ba1e62bd6163dd75dbb0bde69db4559bae2bdef51595ecaac",
-      "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/38973585782",
-      "measuredAt": "2026-10-16T22:06:22.756Z",
-      "archive": "docs/benchmarks/blacksmith/2026-10-16-memory/linux-x86-64",
+      "pnpmLockSha256": "3842349bd79ccfa399a876d2d98d1af350941377a8ecb1830dc1be900f2e2e1a",
+      "cargoLockSha256": "7c361ad167791d46b656909ed4cf01b6a12757fc27a472f6b56962b5faf9cfc4",
+      "nativeBinarySha256": "7e1aac9a123ce3a948129eaf45f6eb747d9f2609cfc503bcf66ede8bae9d5fa6",
+      "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40135588303",
+      "measuredAt": "2026-10-24T21:46:07.607Z",
+      "archive": "docs/benchmarks/blacksmith/2026-10-24-prepared-eager/memory/linux-x86-64",
       "scenarios": [
         {
           "id": "repository",
           "documents": 12,
-          "inputBytes": 182371,
+          "inputBytes": 195519,
           "passes": 50,
           "engines": {
             "ferriki": {
               "baselineRss": {
-                "min": 56418304,
-                "median": 56549376,
-                "max": 56553472
+                "min": 56360960,
+                "median": 56483840,
+                "max": 56684544
               },
               "initializedRss": {
-                "min": 68739072,
-                "median": 68937728,
-                "max": 69001216
+                "min": 579153920,
+                "median": 579373056,
+                "max": 579518464
               },
               "finalRss": {
-                "min": 332042240,
-                "median": 332234752,
-                "max": 332328960
+                "min": 722313216,
+                "median": 722429952,
+                "max": 722628608
               },
               "peakRss": {
-                "min": 333746176,
-                "median": 333889536,
-                "max": 334016512
+                "min": 787050496,
+                "median": 787136512,
+                "max": 787456000
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 270655488,
-                    "median": 270792704,
-                    "max": 270913536
+                    "min": 719052800,
+                    "median": 719161344,
+                    "max": 719413248
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 319377408,
-                    "median": 319545344,
-                    "max": 319770624
+                    "min": 721588224,
+                    "median": 721657856,
+                    "max": 721907712
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 332042240,
-                    "median": 332234752,
-                    "max": 332328960
+                    "min": 722313216,
+                    "median": 722429952,
+                    "max": 722628608
                   }
                 }
               ]
             },
             "shiki-wasm": {
               "baselineRss": {
-                "min": 56418304,
-                "median": 56549376,
-                "max": 56623104
+                "min": 56287232,
+                "median": 56483840,
+                "max": 56942592
               },
               "initializedRss": {
-                "min": 91701248,
-                "median": 97445888,
-                "max": 109600768
+                "min": 92053504,
+                "median": 100818944,
+                "max": 112054272
               },
               "finalRss": {
-                "min": 466210816,
-                "median": 481062912,
-                "max": 491929600
+                "min": 469340160,
+                "median": 476897280,
+                "max": 497930240
               },
               "peakRss": {
-                "min": 470736896,
-                "median": 485584896,
-                "max": 497459200
+                "min": 475000832,
+                "median": 482115584,
+                "max": 502943744
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 277303296,
-                    "median": 292229120,
-                    "max": 309936128
+                    "min": 279429120,
+                    "median": 285730816,
+                    "max": 292986880
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 421081088,
-                    "median": 423917568,
-                    "max": 452575232
+                    "min": 425881600,
+                    "median": 426641408,
+                    "max": 431460352
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 466210816,
-                    "median": 481062912,
-                    "max": 491929600
+                    "min": 469340160,
+                    "median": 476897280,
+                    "max": 497930240
                   }
                 }
               ]
             },
             "shiki-js": {
               "baselineRss": {
-                "min": 56418304,
+                "min": 56360960,
                 "median": 56483840,
-                "max": 56684544
+                "max": 56549376
               },
               "initializedRss": {
-                "min": 86384640,
-                "median": 87490560,
-                "max": 88985600
+                "min": 86441984,
+                "median": 87291904,
+                "max": 88621056
               },
               "finalRss": {
-                "min": 367636480,
-                "median": 378724352,
-                "max": 400920576
+                "min": 373268480,
+                "median": 376156160,
+                "max": 387710976
               },
               "peakRss": {
-                "min": 372473856,
-                "median": 383522816,
-                "max": 404340736
+                "min": 378318848,
+                "median": 380303360,
+                "max": 393375744
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 199241728,
-                    "median": 261003264,
-                    "max": 267313152
+                    "min": 202498048,
+                    "median": 267495424,
+                    "max": 270397440
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 346374144,
-                    "median": 355575808,
-                    "max": 356982784
+                    "min": 361054208,
+                    "median": 361742336,
+                    "max": 362307584
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 367636480,
-                    "median": 378724352,
-                    "max": 400920576
+                    "min": 373268480,
+                    "median": 376156160,
+                    "max": 387710976
                   }
                 }
               ]
@@ -175,149 +175,149 @@
         {
           "id": "large-typescript",
           "documents": 1,
-          "inputBytes": 263063,
+          "inputBytes": 266447,
           "passes": 10,
           "engines": {
             "ferriki": {
               "baselineRss": {
-                "min": 55762944,
-                "median": 56338432,
-                "max": 56389632
+                "min": 55771136,
+                "median": 55853056,
+                "max": 56459264
               },
               "initializedRss": {
-                "min": 65286144,
-                "median": 65574912,
-                "max": 65785856
+                "min": 127115264,
+                "median": 127344640,
+                "max": 127508480
               },
               "finalRss": {
-                "min": 113270784,
-                "median": 113418240,
-                "max": 113672192
+                "min": 158584832,
+                "median": 158711808,
+                "max": 158818304
               },
               "peakRss": {
-                "min": 115838976,
-                "median": 115980288,
-                "max": 116191232
+                "min": 180609024,
+                "median": 180875264,
+                "max": 181108736
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 112398336,
-                    "median": 112529408,
-                    "max": 112746496
+                    "min": 158347264,
+                    "median": 158578688,
+                    "max": 158666752
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 113258496,
-                    "median": 113408000,
-                    "max": 113668096
+                    "min": 158556160,
+                    "median": 158668800,
+                    "max": 158793728
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 113270784,
-                    "median": 113418240,
-                    "max": 113672192
+                    "min": 158584832,
+                    "median": 158711808,
+                    "max": 158818304
                   }
                 }
               ]
             },
             "shiki-wasm": {
               "baselineRss": {
-                "min": 55582720,
-                "median": 55994368,
-                "max": 56537088
+                "min": 55894016,
+                "median": 56107008,
+                "max": 56643584
               },
               "initializedRss": {
-                "min": 83947520,
-                "median": 88952832,
-                "max": 93609984
+                "min": 93233152,
+                "median": 93483008,
+                "max": 94085120
               },
               "finalRss": {
-                "min": 323186688,
-                "median": 350578688,
-                "max": 351887360
+                "min": 337469440,
+                "median": 349986816,
+                "max": 350883840
               },
               "peakRss": {
-                "min": 334766080,
-                "median": 365297664,
-                "max": 368435200
+                "min": 349073408,
+                "median": 361840640,
+                "max": 362737664
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 191930368,
-                    "median": 220194816,
-                    "max": 222965760
+                    "min": 192884736,
+                    "median": 207554560,
+                    "max": 208953344
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 302084096,
-                    "median": 349925376,
-                    "max": 351252480
+                    "min": 307064832,
+                    "median": 349167616,
+                    "max": 350601216
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 323186688,
-                    "median": 350578688,
-                    "max": 351887360
+                    "min": 337469440,
+                    "median": 349986816,
+                    "max": 350883840
                   }
                 }
               ]
             },
             "shiki-js": {
               "baselineRss": {
-                "min": 55771136,
-                "median": 56195072,
-                "max": 56385536
+                "min": 55898112,
+                "median": 56406016,
+                "max": 56598528
               },
               "initializedRss": {
-                "min": 76038144,
-                "median": 76214272,
-                "max": 76853248
+                "min": 75931648,
+                "median": 76232704,
+                "max": 76525568
               },
               "finalRss": {
-                "min": 321089536,
-                "median": 322504704,
-                "max": 348372992
+                "min": 321212416,
+                "median": 324327424,
+                "max": 325242880
               },
               "peakRss": {
-                "min": 332853248,
-                "median": 334249984,
-                "max": 357273600
+                "min": 332992512,
+                "median": 336152576,
+                "max": 337113088
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 173637632,
-                    "median": 175060992,
-                    "max": 187695104
+                    "min": 172625920,
+                    "median": 173895680,
+                    "max": 176054272
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 295661568,
-                    "median": 296749056,
-                    "max": 341938176
+                    "min": 293249024,
+                    "median": 294787072,
+                    "max": 298074112
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 321089536,
-                    "median": 322504704,
-                    "max": 348372992
+                    "min": 321212416,
+                    "median": 324327424,
+                    "max": 325242880
                   }
                 }
               ]
@@ -333,165 +333,165 @@
       "cpu": "Apple M4 Pro (Virtual)",
       "os": "Darwin 25.3.0",
       "node": "v24.21.0",
-      "revision": "77bd49284792fea290fcd8d6a6bfe079dee256fb",
-      "tree": "40a10f6dd550bb1933522f30b0e2826c923c8d81",
-      "ferriki": "1.1.1",
+      "revision": "2b16844ed26da3d58a8198e362cd467f777bea7d",
+      "tree": "0119727f8ce8e0e1933cfd29884bb92f44e34bf5",
+      "ferriki": "1.2.0",
       "shiki": "4.5.0",
-      "ferroni": "2.2.2",
+      "ferroni": "2.7.0",
       "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
-      "pnpmLockSha256": "20f083d910c85a20ec9d7199ff182d18bd7133d13d4339c088c58c6031cfd115",
-      "cargoLockSha256": "766c67ad1a68e29a5813d7bdeaa5addb69c47532248764804090f746b9726e47",
-      "nativeBinarySha256": "633942a5bd2813f472b5f1bcf5dc4de67b877a460e59a90470184f523849397a",
-      "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/38973585782",
-      "measuredAt": "2026-10-16T22:06:26.527Z",
-      "archive": "docs/benchmarks/blacksmith/2026-10-16-memory/macos-arm64",
+      "pnpmLockSha256": "3842349bd79ccfa399a876d2d98d1af350941377a8ecb1830dc1be900f2e2e1a",
+      "cargoLockSha256": "7c361ad167791d46b656909ed4cf01b6a12757fc27a472f6b56962b5faf9cfc4",
+      "nativeBinarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+      "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40135588303",
+      "measuredAt": "2026-10-24T21:46:15.854Z",
+      "archive": "docs/benchmarks/blacksmith/2026-10-24-prepared-eager/memory/macos-arm64",
       "scenarios": [
         {
           "id": "repository",
           "documents": 12,
-          "inputBytes": 182371,
+          "inputBytes": 195519,
           "passes": 50,
           "engines": {
             "ferriki": {
               "baselineRss": {
-                "min": 55721984,
-                "median": 55853056,
-                "max": 56033280
+                "min": 55902208,
+                "median": 55926784,
+                "max": 56016896
               },
               "initializedRss": {
-                "min": 68009984,
-                "median": 68108288,
-                "max": 68239360
+                "min": 983416832,
+                "median": 983482368,
+                "max": 983498752
               },
               "finalRss": {
-                "min": 346177536,
-                "median": 346587136,
-                "max": 347619328
+                "min": 1123188736,
+                "median": 1123328000,
+                "max": 1123418112
               },
               "peakRss": {
-                "min": 347996160,
-                "median": 348364800,
-                "max": 349356032
+                "min": 1125203968,
+                "median": 1125326848,
+                "max": 1125433344
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 273727488,
-                    "median": 274227200,
-                    "max": 275218432
+                    "min": 1119518720,
+                    "median": 1119870976,
+                    "max": 1120239616
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 331726848,
-                    "median": 331972608,
-                    "max": 333217792
+                    "min": 1122074624,
+                    "median": 1122369536,
+                    "max": 1122418688
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 346177536,
-                    "median": 346587136,
-                    "max": 347619328
+                    "min": 1123188736,
+                    "median": 1123328000,
+                    "max": 1123418112
                   }
                 }
               ]
             },
             "shiki-wasm": {
               "baselineRss": {
-                "min": 55853056,
-                "median": 55959552,
-                "max": 56098816
+                "min": 55738368,
+                "median": 55910400,
+                "max": 56131584
               },
               "initializedRss": {
-                "min": 90193920,
-                "median": 91291648,
-                "max": 94928896
+                "min": 89931776,
+                "median": 91095040,
+                "max": 92962816
               },
               "finalRss": {
-                "min": 469139456,
-                "median": 473497600,
-                "max": 482541568
+                "min": 470106112,
+                "median": 473825280,
+                "max": 476938240
               },
               "peakRss": {
-                "min": 474628096,
-                "median": 478617600,
-                "max": 487538688
+                "min": 475824128,
+                "median": 479240192,
+                "max": 481984512
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 291749888,
-                    "median": 294830080,
-                    "max": 320749568
+                    "min": 290455552,
+                    "median": 315858944,
+                    "max": 321814528
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 434110464,
-                    "median": 440844288,
-                    "max": 448905216
+                    "min": 436289536,
+                    "median": 442785792,
+                    "max": 444203008
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 469139456,
-                    "median": 473497600,
-                    "max": 482541568
+                    "min": 470106112,
+                    "median": 473825280,
+                    "max": 476938240
                   }
                 }
               ]
             },
             "shiki-js": {
               "baselineRss": {
-                "min": 55853056,
-                "median": 55902208,
+                "min": 55885824,
+                "median": 55951360,
                 "max": 56000512
               },
               "initializedRss": {
-                "min": 86343680,
-                "median": 87695360,
-                "max": 88571904
+                "min": 87293952,
+                "median": 88268800,
+                "max": 88473600
               },
               "finalRss": {
-                "min": 345718784,
-                "median": 348143616,
-                "max": 355975168
+                "min": 346357760,
+                "median": 349822976,
+                "max": 354811904
               },
               "peakRss": {
-                "min": 350240768,
-                "median": 352854016,
-                "max": 360792064
+                "min": 352763904,
+                "median": 355950592,
+                "max": 361054208
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 263913472,
-                    "median": 267149312,
-                    "max": 267272192
+                    "min": 262275072,
+                    "median": 264241152,
+                    "max": 268877824
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 339017728,
-                    "median": 342507520,
-                    "max": 347996160
+                    "min": 342310912,
+                    "median": 342925312,
+                    "max": 351043584
                   }
                 },
                 {
                   "passes": 50,
                   "rss": {
-                    "min": 345718784,
-                    "median": 348143616,
-                    "max": 355975168
+                    "min": 346357760,
+                    "median": 349822976,
+                    "max": 354811904
                   }
                 }
               ]
@@ -501,149 +501,149 @@
         {
           "id": "large-typescript",
           "documents": 1,
-          "inputBytes": 263063,
+          "inputBytes": 266447,
           "passes": 10,
           "engines": {
             "ferriki": {
               "baselineRss": {
-                "min": 55853056,
-                "median": 55975936,
-                "max": 56115200
+                "min": 55771136,
+                "median": 55902208,
+                "max": 56082432
               },
               "initializedRss": {
-                "min": 63995904,
-                "median": 64413696,
-                "max": 64585728
+                "min": 180142080,
+                "median": 180314112,
+                "max": 180535296
               },
               "finalRss": {
-                "min": 114507776,
-                "median": 114827264,
-                "max": 115228672
+                "min": 215433216,
+                "median": 215572480,
+                "max": 215744512
               },
               "peakRss": {
-                "min": 116260864,
-                "median": 116580352,
-                "max": 116981760
+                "min": 217202688,
+                "median": 217341952,
+                "max": 217513984
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 114376704,
-                    "median": 114696192,
-                    "max": 115113984
+                    "min": 215302144,
+                    "median": 215449600,
+                    "max": 215580672
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 114475008,
-                    "median": 114802688,
-                    "max": 115212288
+                    "min": 215416832,
+                    "median": 215556096,
+                    "max": 215695360
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 114507776,
-                    "median": 114827264,
-                    "max": 115228672
+                    "min": 215433216,
+                    "median": 215572480,
+                    "max": 215744512
                   }
                 }
               ]
             },
             "shiki-wasm": {
               "baselineRss": {
-                "min": 55541760,
-                "median": 56057856,
-                "max": 56180736
+                "min": 55869440,
+                "median": 55943168,
+                "max": 56131584
               },
               "initializedRss": {
-                "min": 82952192,
-                "median": 83173376,
-                "max": 83886080
+                "min": 83148800,
+                "median": 83419136,
+                "max": 87195648
               },
               "finalRss": {
-                "min": 317292544,
-                "median": 321839104,
-                "max": 338722816
+                "min": 317538304,
+                "median": 319684608,
+                "max": 346439680
               },
               "peakRss": {
-                "min": 333971456,
-                "median": 334774272,
-                "max": 354959360
+                "min": 333889536,
+                "median": 335044608,
+                "max": 357990400
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 202653696,
-                    "median": 205496320,
-                    "max": 208109568
+                    "min": 205930496,
+                    "median": 208650240,
+                    "max": 209289216
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 302153728,
-                    "median": 305422336,
-                    "max": 317898752
+                    "min": 298467328,
+                    "median": 304668672,
+                    "max": 315408384
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 317292544,
-                    "median": 321839104,
-                    "max": 338722816
+                    "min": 317538304,
+                    "median": 319684608,
+                    "max": 346439680
                   }
                 }
               ]
             },
             "shiki-js": {
               "baselineRss": {
-                "min": 55377920,
-                "median": 55771136,
-                "max": 56000512
+                "min": 55771136,
+                "median": 56082432,
+                "max": 56131584
               },
               "initializedRss": {
-                "min": 73465856,
-                "median": 73900032,
-                "max": 73973760
+                "min": 73777152,
+                "median": 74006528,
+                "max": 74186752
               },
               "finalRss": {
-                "min": 299532288,
-                "median": 304283648,
-                "max": 310460416
+                "min": 299024384,
+                "median": 306192384,
+                "max": 315293696
               },
               "peakRss": {
-                "min": 310837248,
-                "median": 314040320,
-                "max": 316555264
+                "min": 310673408,
+                "median": 315113472,
+                "max": 321847296
               },
               "checkpoints": [
                 {
                   "passes": 1,
                   "rss": {
-                    "min": 169951232,
-                    "median": 170754048,
-                    "max": 171425792
+                    "min": 170786816,
+                    "median": 171073536,
+                    "max": 171655168
                   }
                 },
                 {
                   "passes": 5,
                   "rss": {
-                    "min": 271204352,
-                    "median": 284327936,
-                    "max": 294354944
+                    "min": 270745600,
+                    "median": 290996224,
+                    "max": 308264960
                   }
                 },
                 {
                   "passes": 10,
                   "rss": {
-                    "min": 299532288,
-                    "median": 304283648,
-                    "max": 310460416
+                    "min": 299024384,
+                    "median": 306192384,
+                    "max": 315293696
                   }
                 }
               ]

@@ -1,10 +1,11 @@
 // Join independent corpus VMs without mixing the engines within a comparison.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 import { comparisonCorpora, validateReport, writeEvidence } from "./run-blacksmith-comparison.mjs";
 
 const json = (bytes) => JSON.parse(bytes.toString("utf8"));
@@ -27,15 +28,20 @@ export function validateCorpusProvenance(report, corpus, context) {
   }
 }
 
-function readShard(directory) {
+export function readShard(directory) {
   const original = new Map();
-  for (const line of readFileSync(join(directory, "SHA256SUMS"), "utf8").trim().split("\n")) {
+  const checksums = join(
+    directory,
+    existsSync(join(directory, "SHA256SUMS")) ? "SHA256SUMS" : "ORIGINAL_SHA256SUMS",
+  );
+  for (const line of readFileSync(checksums, "utf8").trim().split("\n")) {
     const match = /^([a-f0-9]{64}) {2}(.+)$/.exec(line);
     assert.ok(match, "Invalid shard checksum record");
     const [, hash, name] = match;
     assert.ok(!name.startsWith("/") && !name.split("/").includes(".."));
     assert.ok(!original.has(name), `Duplicate shard file: ${name}`);
-    const bytes = readFileSync(join(directory, name));
+    const path = join(directory, name);
+    const bytes = existsSync(path) ? readFileSync(path) : gunzipSync(readFileSync(`${path}.gz`));
     assert.equal(
       createHash("sha256").update(bytes).digest("hex"),
       hash,

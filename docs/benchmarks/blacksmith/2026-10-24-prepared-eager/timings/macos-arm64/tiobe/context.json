@@ -1,0 +1,62 @@
+{
+  "measuredAt": "2026-10-24T21:46:26.053Z",
+  "corpora": [
+    "tiobe"
+  ],
+  "comparators": {
+    "shiki": "4.5.0",
+    "prismjs": "1.30.0"
+  },
+  "profile": "macos-arm64",
+  "runnerLabel": "blacksmith-6vcpu-macos-26",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40135588303",
+  "runAttempt": "1",
+  "commit": "2b16844ed26da3d58a8198e362cd467f777bea7d",
+  "tree": "0119727f8ce8e0e1933cfd29884bb92f44e34bf5",
+  "status": "",
+  "cpu": "Apple M4 Pro (Virtual)",
+  "cores": 6,
+  "platform": "darwin-arm64",
+  "os": "Darwin 25.3.0",
+  "memoryBytes": 25769803776,
+  "node": "v24.21.0",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+  "nativeBuild": {
+    "builtAt": "2026-10-24T21:46:25.783Z",
+    "binarySha256": "a19d2468b4c74ddbba3831585f11edd17fc706683927351cf114f13c95249d1c",
+    "ferriki": {
+      "commit": "2b16844ed26da3d58a8198e362cd467f777bea7d",
+      "status": ""
+    },
+    "rustSourceSha256": "b3cbf15342b7de8d82ebfac413b4dc224155789392ed3b7225e3081c35653de1",
+    "ferroni": {
+      "version": "2.7.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifestPath": "/Users/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ferroni-2.7.0/Cargo.toml",
+      "revision": null,
+      "sourceSha256": null,
+      "features": [
+        "default",
+        "dfa-prefilter",
+        "precompiled",
+        "precompiled-eager",
+        "scanner-group-nfa-prototype"
+      ]
+    },
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "cargoArgs": [
+      "build",
+      "--release",
+      "--manifest-path",
+      "/Users/runner/_work/ferriki/ferriki/crates/ferriki-core/Cargo.toml"
+    ],
+    "rustflags": null,
+    "encodedRustflags": null,
+    "targetRustflags": {},
+    "cargoProfileEnv": {},
+    "cargoLockSha256": "7c361ad167791d46b656909ed4cf01b6a12757fc27a472f6b56962b5faf9cfc4"
+  },
+  "cargoLockSha256": "7c361ad167791d46b656909ed4cf01b6a12757fc27a472f6b56962b5faf9cfc4",
+  "pnpmLockSha256": "3842349bd79ccfa399a876d2d98d1af350941377a8ecb1830dc1be900f2e2e1a",
+  "schedule": "Selected corpora execute serially on this VM; prefilter on then off per corpus; warm and cold engine order rotates within each report. Both modes use the same addon."
+}
