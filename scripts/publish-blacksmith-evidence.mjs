@@ -161,19 +161,8 @@ for (const [path, report] of outputs) {
     );
   else writeFileSync(new URL(path, root), contents);
 }
-// The authored README owns its wording; check its repeated headline figures.
-if (check) {
-  for (const path of ["README.md.src", "node/ferriki/README.md"]) {
-    const text = read(path).toString("utf8");
-    for (const profile of profiles) {
-      const factor = `${(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki).toFixed(1)}×`;
-      assert.ok(
-        text.includes(factor),
-        `${path} must state the current ${profile.label} factor (${factor})`,
-      );
-    }
-  }
-}
+// Current README figures are checked against the latest capture by
+// publish-decoded-cache-evidence.mjs; this capture remains historical.
 console.log(
   `${check ? "Verified" : "Published"} two profiles from twelve checksummed Blacksmith reports.`,
 );

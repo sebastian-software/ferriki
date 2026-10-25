@@ -1,9 +1,10 @@
 {
   "measured": "2026-10-25",
-  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40198189046",
-  "commit": "ff25d172e86137e8f88a123fcebd409f5e4d2c3c",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40235606997",
+  "commit": "0477eed2bd6f7a7e3fdf148937fd6dde42e7b3d8",
   "suite": "timings",
-  "archive": "docs/benchmarks/blacksmith/2026-10-25-decoded-cache",
+  "ferroni": "2.7.2",
+  "archive": "docs/benchmarks/blacksmith/2026-10-25-shared-storage",
   "engines": [
     {
       "id": "ferriki-off",
@@ -42,32 +43,32 @@
         "comparison": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+          "binarySha256": "e41921b3713c6ecfe8d701be84b9d48ed91e9ef6bb2af40a00a8d639523ced5a"
         },
         "curated": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+          "binarySha256": "e41921b3713c6ecfe8d701be84b9d48ed91e9ef6bb2af40a00a8d639523ced5a"
         },
         "tiobe": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "ab13eb561f40bd01307d2cba611879ae274eb7c319204a13f995aafcae114345"
+          "binarySha256": "e41921b3713c6ecfe8d701be84b9d48ed91e9ef6bb2af40a00a8d639523ced5a"
         }
       },
       "warm": {
-        "ferriki-off": 149.1306485000623,
-        "ferriki": 106.70719900001859,
-        "ferriki-eager": 106.27629649997652,
-        "ferriki-precompiled": 192.48584550000123,
-        "shiki-wasm": 376.53603049997037
+        "ferriki-off": 120.02764249998108,
+        "ferriki": 84.02259650002452,
+        "ferriki-eager": 84.4102399999847,
+        "ferriki-precompiled": 79.95563750003112,
+        "shiki-wasm": 297.82929600001444
       },
       "cold": {
-        "ferriki-off": 253.79801550000002,
-        "ferriki": 449.868476,
-        "ferriki-eager": 558.463241,
-        "ferriki-precompiled": 954.9523165,
-        "shiki-wasm": 1170.8323695
+        "ferriki-off": 215.55519099999998,
+        "ferriki": 357.0297895,
+        "ferriki-eager": 446.017407,
+        "ferriki-precompiled": 469.831679,
+        "shiki-wasm": 947.0185695
       },
       "workloads": [
         {
@@ -76,13 +77,13 @@
           "size": "example",
           "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
           "timings": {
-            "ferriki-off": 1.738807000000179,
-            "ferriki": 0.7562110000003486,
-            "ferriki-eager": 0.7263450000000375,
-            "ferriki-precompiled": 0.7120380000001205,
-            "shiki-wasm": 3.548389000000043,
-            "shiki-js": 4.4021020000000135,
-            "prism": 0.19853299999999763
+            "ferriki-off": 1.724103500000183,
+            "ferriki": 0.7524475000000166,
+            "ferriki-eager": 0.7277409999999236,
+            "ferriki-precompiled": 0.7196410000000242,
+            "shiki-wasm": 3.6003334999999197,
+            "shiki-js": 4.402640000000019,
+            "prism": 0.19774249999989024
           }
         },
         {
@@ -91,13 +92,13 @@
           "size": "large",
           "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
           "timings": {
-            "ferriki-off": 26.029301499999747,
-            "ferriki": 10.907528500000353,
-            "ferriki-eager": 10.729624499999773,
-            "ferriki-precompiled": 10.671529499999906,
-            "shiki-wasm": 54.8874679999999,
-            "shiki-js": 67.67590100000052,
-            "prism": 2.1321819999998297
+            "ferriki-off": 25.760610499999984,
+            "ferriki": 10.953993499999797,
+            "ferriki-eager": 10.760294000000158,
+            "ferriki-precompiled": 10.759476499999437,
+            "shiki-wasm": 55.76479199999949,
+            "shiki-js": 67.74520450000045,
+            "prism": 2.149519999999029
           }
         },
         {
@@ -106,13 +107,13 @@
           "size": "example",
           "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
           "timings": {
-            "ferriki-off": 1.9063730000000305,
-            "ferriki": 0.9077359999998862,
-            "ferriki-eager": 0.8762669999998707,
-            "ferriki-precompiled": 0.8628420000000006,
-            "shiki-wasm": 4.098131000000194,
-            "shiki-js": 3.8944890000000214,
-            "prism": 0.3096020000000408
+            "ferriki-off": 1.8980260000000726,
+            "ferriki": 0.9087520000000495,
+            "ferriki-eager": 0.8789970000000267,
+            "ferriki-precompiled": 0.8719730000000254,
+            "shiki-wasm": 4.092380000000048,
+            "shiki-js": 3.9037450000000717,
+            "prism": 0.30853100000013
           }
         },
         {
@@ -121,13 +122,13 @@
           "size": "large",
           "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
           "timings": {
-            "ferriki-off": 28.568979000000127,
-            "ferriki": 13.256627000000208,
-            "ferriki-eager": 13.163708500000212,
-            "ferriki-precompiled": 13.155602500000441,
-            "shiki-wasm": 64.2229970000003,
-            "shiki-js": 60.32558250000011,
-            "prism": 3.584966500000064
+            "ferriki-off": 28.54614900000024,
+            "ferriki": 13.363378000000012,
+            "ferriki-eager": 13.217889499999274,
+            "ferriki-precompiled": 13.300564500000291,
+            "shiki-wasm": 64.16530000000012,
+            "shiki-js": 60.42110950000006,
+            "prism": 3.6115694999998595
           }
         },
         {
@@ -136,13 +137,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.25207399999999325,
-            "ferriki": 0.19738599999993767,
-            "ferriki-eager": 0.18658050000004778,
-            "ferriki-precompiled": 0.18238249999998857,
-            "shiki-wasm": 1.259426499999904,
-            "shiki-js": 0.5849839999998494,
-            "prism": 0.1025325000000521
+            "ferriki-off": 0.25239600000031714,
+            "ferriki": 0.1967010000000755,
+            "ferriki-eager": 0.18654100000003382,
+            "ferriki-precompiled": 0.18094099999984792,
+            "shiki-wasm": 1.2444150000000036,
+            "shiki-js": 0.5825670000001537,
+            "prism": 0.1032350000000406
           }
         },
         {
@@ -151,13 +152,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 3.296352499999557,
-            "ferriki": 2.7802429999999276,
-            "ferriki-eager": 2.759630000000243,
-            "ferriki-precompiled": 2.7172400000001744,
-            "shiki-wasm": 18.88570699999991,
-            "shiki-js": 8.02700649999997,
-            "prism": 1.067815999999766
+            "ferriki-off": 3.269033000000036,
+            "ferriki": 2.7478799999998955,
+            "ferriki-eager": 2.7376319999998486,
+            "ferriki-precompiled": 2.694058000000041,
+            "shiki-wasm": 18.705441999999948,
+            "shiki-js": 8.10672199999999,
+            "prism": 1.0919690000000628
           }
         },
         {
@@ -166,13 +167,13 @@
           "size": "example",
           "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
           "timings": {
-            "ferriki-off": 0.33090100000003986,
-            "ferriki": 0.3194899999998597,
-            "ferriki-eager": 0.3037010000002738,
-            "ferriki-precompiled": 0.2909260000001268,
-            "shiki-wasm": 2.4325190000000703,
-            "shiki-js": 0.6519049999999424,
-            "prism": 0.08085200000004988
+            "ferriki-off": 0.3319109999999341,
+            "ferriki": 0.3230740000000196,
+            "ferriki-eager": 0.30924799999991137,
+            "ferriki-precompiled": 0.2909235000000763,
+            "shiki-wasm": 2.4254320000000007,
+            "shiki-js": 0.6583259999999882,
+            "prism": 0.08074750000014319
           }
         },
         {
@@ -181,13 +182,13 @@
           "size": "large",
           "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
           "timings": {
-            "ferriki-off": 4.082690000000184,
-            "ferriki": 4.29912800000011,
-            "ferriki-eager": 4.27969099999973,
-            "ferriki-precompiled": 4.105914000000212,
-            "shiki-wasm": 37.22809299999972,
-            "shiki-js": 9.47595199999978,
-            "prism": 0.9930860000004031
+            "ferriki-off": 4.162948000000142,
+            "ferriki": 4.455429000000549,
+            "ferriki-eager": 4.461561000000074,
+            "ferriki-precompiled": 4.224444000000403,
+            "shiki-wasm": 37.136397000000215,
+            "shiki-js": 9.292437999999947,
+            "prism": 0.9285209999998187
           }
         },
         {
@@ -196,13 +197,13 @@
           "size": "example",
           "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
           "timings": {
-            "ferriki-off": 1.1034074999998893,
-            "ferriki": 0.6667174999998906,
-            "ferriki-eager": 0.6540834999998424,
-            "ferriki-precompiled": 0.6294725000000199,
-            "shiki-wasm": 3.2955969999999297,
-            "shiki-js": 2.5150750000000244,
-            "prism": 0.21730349999995724
+            "ferriki-off": 1.0989009999999553,
+            "ferriki": 0.680227000000059,
+            "ferriki-eager": 0.6632154999999784,
+            "ferriki-precompiled": 0.6349019999998973,
+            "shiki-wasm": 3.277809000000161,
+            "shiki-js": 2.503704999999968,
+            "prism": 0.2193529999999555
           }
         },
         {
@@ -211,13 +212,13 @@
           "size": "large",
           "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
           "timings": {
-            "ferriki-off": 15.95025250000026,
-            "ferriki": 9.66262899999947,
-            "ferriki-eager": 9.708455500000127,
-            "ferriki-precompiled": 9.532940999999937,
-            "shiki-wasm": 52.161820499999976,
-            "shiki-js": 38.87187649999987,
-            "prism": 2.8034920000000056
+            "ferriki-off": 15.861205499999414,
+            "ferriki": 9.702255499999865,
+            "ferriki-eager": 9.815484499999911,
+            "ferriki-precompiled": 9.616378000000168,
+            "shiki-wasm": 52.07636649999995,
+            "shiki-js": 39.139628999999786,
+            "prism": 2.833230999999614
           }
         },
         {
@@ -226,13 +227,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 1.1215870000000905,
-            "ferriki": 0.4995089999997617,
-            "ferriki-eager": 0.47999099999969985,
-            "ferriki-precompiled": 0.44888300000002346,
-            "shiki-wasm": 2.7061140000000705,
-            "shiki-js": 2.7049019999999473,
-            "prism": 0.10706200000004173
+            "ferriki-off": 1.1299699999999575,
+            "ferriki": 0.5005684999998721,
+            "ferriki-eager": 0.49144649999993817,
+            "ferriki-precompiled": 0.4558790000000954,
+            "shiki-wasm": 2.7231590000001233,
+            "shiki-js": 2.7383219999999255,
+            "prism": 0.10677599999985432
           }
         },
         {
@@ -241,13 +242,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 15.744962000000214,
-            "ferriki": 6.7026979999996,
-            "ferriki-eager": 6.620233000000098,
-            "ferriki-precompiled": 6.43996449999986,
-            "shiki-wasm": 40.34062600000016,
-            "shiki-js": 38.69110699999965,
-            "prism": 1.1267924999997376
+            "ferriki-off": 15.843392000000222,
+            "ferriki": 6.7784935000004225,
+            "ferriki-eager": 6.742760999999973,
+            "ferriki-precompiled": 6.49942800000008,
+            "shiki-wasm": 40.18209900000011,
+            "shiki-js": 39.26256049999938,
+            "prism": 1.1099675000000389
           }
         },
         {
@@ -256,13 +257,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.43580899999994926,
-            "ferriki": 0.26529900000002726,
-            "ferriki-eager": 0.2470739999999978,
-            "ferriki-precompiled": 0.23478099999999813,
-            "shiki-wasm": 1.45341099999996,
-            "shiki-js": 0.8888400000000729,
-            "prism": 0.08633199999985663
+            "ferriki-off": 0.4321749999999156,
+            "ferriki": 0.2685559999999896,
+            "ferriki-eager": 0.24777700000004188,
+            "ferriki-precompiled": 0.23538400000006732,
+            "shiki-wasm": 1.451375999999982,
+            "shiki-js": 0.8895169999999553,
+            "prism": 0.0858819999999696
           }
         },
         {
@@ -271,13 +272,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 5.442475000000286,
-            "ferriki": 3.3696709999999257,
-            "ferriki-eager": 3.256648499999983,
-            "ferriki-precompiled": 3.1260930000000826,
-            "shiki-wasm": 21.362830999999915,
-            "shiki-js": 12.098289999999679,
-            "prism": 0.9831070000002455
+            "ferriki-off": 5.378179000000273,
+            "ferriki": 3.4554290000000947,
+            "ferriki-eager": 3.309959499999877,
+            "ferriki-precompiled": 3.137920500000064,
+            "shiki-wasm": 21.452881500000103,
+            "shiki-js": 12.269700000000057,
+            "prism": 1.0237749999996595
           }
         },
         {
@@ -286,13 +287,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.32549099999999953,
-            "ferriki": 0.22417100000001255,
-            "ferriki-eager": 0.20855199999994056,
-            "ferriki-precompiled": 0.2036920000000464,
-            "shiki-wasm": 1.111407999999983,
-            "shiki-js": 0.7340300000000752,
-            "prism": 0.10314399999998614
+            "ferriki-off": 0.3226979999998889,
+            "ferriki": 0.22389750000002095,
+            "ferriki-eager": 0.2083880000000704,
+            "ferriki-precompiled": 0.20379499999992845,
+            "shiki-wasm": 1.1093270000000075,
+            "shiki-js": 0.725402000000031,
+            "prism": 0.10280900000003612
           }
         },
         {
@@ -301,13 +302,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.8848634999997103,
-            "ferriki": 2.8364890000000287,
-            "ferriki-eager": 2.7954869999998664,
-            "ferriki-precompiled": 2.7634164999999484,
-            "shiki-wasm": 16.179331999999704,
-            "shiki-js": 10.16268799999989,
-            "prism": 1.2770490000000336
+            "ferriki-off": 3.8505084999999326,
+            "ferriki": 2.8538500000004206,
+            "ferriki-eager": 2.798435500000096,
+            "ferriki-precompiled": 2.7736444999998184,
+            "shiki-wasm": 16.16587999999956,
+            "shiki-js": 10.00617850000026,
+            "prism": 1.2539839999999458
           }
         },
         {
@@ -316,13 +317,13 @@
           "size": "example",
           "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
           "timings": {
-            "ferriki-off": 0.4816250000001219,
-            "ferriki": 0.3383955000001606,
-            "ferriki-eager": 0.3175765000003139,
-            "ferriki-precompiled": 0.3011105000000498,
-            "shiki-wasm": 1.162900000000036,
-            "shiki-js": 1.559684999999945,
-            "prism": 0.14597900000012487
+            "ferriki-off": 0.48511499999995067,
+            "ferriki": 0.3385285000000522,
+            "ferriki-eager": 0.31941699999993034,
+            "ferriki-precompiled": 0.3012730000000374,
+            "shiki-wasm": 1.162396000000058,
+            "shiki-js": 1.5681164999997463,
+            "prism": 0.1468720000000303
           }
         },
         {
@@ -331,13 +332,13 @@
           "size": "large",
           "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
           "timings": {
-            "ferriki-off": 5.956662000000506,
-            "ferriki": 4.368046000000504,
-            "ferriki-eager": 4.263480999999956,
-            "ferriki-precompiled": 4.13305500000024,
-            "shiki-wasm": 16.730173000000832,
-            "shiki-js": 23.025848999999653,
-            "prism": 1.3814149999998335
+            "ferriki-off": 6.038784999999734,
+            "ferriki": 4.40093700000034,
+            "ferriki-eager": 4.324883000000227,
+            "ferriki-precompiled": 4.175572000000102,
+            "shiki-wasm": 16.7782100000004,
+            "shiki-js": 23.01859400000012,
+            "prism": 1.3897200000001249
           }
         },
         {
@@ -346,13 +347,13 @@
           "size": "example",
           "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
           "timings": {
-            "ferriki-off": 0.09267399999998815,
-            "ferriki": 0.08515999999997348,
-            "ferriki-eager": 0.08737399999995432,
-            "ferriki-precompiled": 0.0864674999999977,
-            "shiki-wasm": 0.21570500000001402,
-            "shiki-js": 0.17186800000001767,
-            "prism": 0.03070750000000544
+            "ferriki-off": 0.09291500000006181,
+            "ferriki": 0.08551599999998416,
+            "ferriki-eager": 0.08759049999997615,
+            "ferriki-precompiled": 0.08611200000001418,
+            "shiki-wasm": 0.213111500000025,
+            "shiki-js": 0.16738050000003568,
+            "prism": 0.030949000000020987
           }
         },
         {
@@ -361,13 +362,13 @@
           "size": "large",
           "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
           "timings": {
-            "ferriki-off": 1.2881399999998848,
-            "ferriki": 1.2495570000000953,
-            "ferriki-eager": 1.2871079999999893,
-            "ferriki-precompiled": 1.2632539999999608,
-            "shiki-wasm": 3.228856000000178,
-            "shiki-js": 2.6001750000000357,
-            "prism": 0.44121900000004644
+            "ferriki-off": 1.286384999999882,
+            "ferriki": 1.2580619999998817,
+            "ferriki-eager": 1.2985180000000582,
+            "ferriki-precompiled": 1.2594349999999395,
+            "shiki-wasm": 3.10890100000006,
+            "shiki-js": 2.4423940000001494,
+            "prism": 0.4389669999998205
           }
         },
         {
@@ -376,12 +377,12 @@
           "size": "example",
           "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
           "timings": {
-            "ferriki-off": 1.2087410000001455,
-            "ferriki": 1.510567999999921,
-            "ferriki-eager": 1.494568000000072,
-            "ferriki-precompiled": 1.478968000000009,
-            "shiki-wasm": 1.2786420000001044,
-            "prism": 0.0610749999999598
+            "ferriki-off": 1.2077970000000278,
+            "ferriki": 1.5089340000000675,
+            "ferriki-eager": 1.492193000000043,
+            "ferriki-precompiled": 1.478366000000051,
+            "shiki-wasm": 1.2960130000000163,
+            "prism": 0.061175000000048385
           }
         },
         {
@@ -390,12 +391,12 @@
           "size": "large",
           "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
           "timings": {
-            "ferriki-off": 17.88339400000018,
-            "ferriki": 23.830497500000092,
-            "ferriki-eager": 23.79964949999976,
-            "ferriki-precompiled": 23.762970499999483,
-            "shiki-wasm": 18.873264500000005,
-            "prism": 0.5709074999997483
+            "ferriki-off": 17.761703500000067,
+            "ferriki": 23.75213050000002,
+            "ferriki-eager": 23.793498999999883,
+            "ferriki-precompiled": 23.72657349999963,
+            "shiki-wasm": 19.22425999999996,
+            "prism": 0.5615334999999959
           }
         },
         {
@@ -404,13 +405,13 @@
           "size": "example",
           "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
           "timings": {
-            "ferriki-off": 0.14339950000004364,
-            "ferriki": 0.136391500000002,
-            "ferriki-eager": 0.15671449999996412,
-            "ferriki-precompiled": 0.1531880000000001,
-            "shiki-wasm": 0.3528679999999724,
-            "shiki-js": 0.2996029999999905,
-            "prism": 0.049412500000016735
+            "ferriki-off": 0.1428644999999733,
+            "ferriki": 0.13480899999998996,
+            "ferriki-eager": 0.15707099999997354,
+            "ferriki-precompiled": 0.15241250000002537,
+            "shiki-wasm": 0.3500500000000102,
+            "shiki-js": 0.2964289999999892,
+            "prism": 0.04967400000003863
           }
         },
         {
@@ -419,13 +420,13 @@
           "size": "large",
           "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
           "timings": {
-            "ferriki-off": 2.2341969999997673,
-            "ferriki": 2.1658390000002328,
-            "ferriki-eager": 2.470621999999821,
-            "ferriki-precompiled": 2.4235630000002857,
-            "shiki-wasm": 5.405627000000095,
-            "shiki-js": 4.649355000000014,
-            "prism": 0.7283490000004349
+            "ferriki-off": 2.2250349999999344,
+            "ferriki": 2.1503139999999803,
+            "ferriki-eager": 2.4863970000001245,
+            "ferriki-precompiled": 2.4136600000001636,
+            "shiki-wasm": 5.419546999999966,
+            "shiki-js": 4.653542000000016,
+            "prism": 0.7404159999996409
           }
         },
         {
@@ -434,12 +435,12 @@
           "size": "example",
           "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
           "timings": {
-            "ferriki-off": 2.0016359999999622,
-            "ferriki": 1.3308255000001736,
-            "ferriki-eager": 1.586024999999836,
-            "ferriki-precompiled": 1.2401450000002114,
-            "shiki-wasm": 4.371772999999848,
-            "shiki-js": 3.939335999999912
+            "ferriki-off": 2.0038575000000947,
+            "ferriki": 1.357349000000113,
+            "ferriki-eager": 1.6099905000000945,
+            "ferriki-precompiled": 1.259900000000016,
+            "shiki-wasm": 4.447644500000251,
+            "shiki-js": 3.9461399999999003
           }
         },
         {
@@ -448,12 +449,12 @@
           "size": "large",
           "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
           "timings": {
-            "ferriki-off": 22.80644799999982,
-            "ferriki": 15.48860999999988,
-            "ferriki-eager": 20.10320900000079,
-            "ferriki-precompiled": 15.329165499999817,
-            "shiki-wasm": 53.38496549999945,
-            "shiki-js": 51.166651000000456
+            "ferriki-off": 22.801078499999676,
+            "ferriki": 15.538577500000429,
+            "ferriki-eager": 20.16732850000062,
+            "ferriki-precompiled": 15.349380999999994,
+            "shiki-wasm": 54.466086500000074,
+            "shiki-js": 51.475924000000305
           }
         },
         {
@@ -462,12 +463,12 @@
           "size": "example",
           "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
           "timings": {
-            "ferriki-off": 2.0618635000000722,
-            "ferriki": 1.2008019999999533,
-            "ferriki-eager": 1.3462695000000622,
-            "ferriki-precompiled": 1.1338570000000345,
-            "shiki-wasm": 4.506358500000033,
-            "shiki-js": 4.650653000000034
+            "ferriki-off": 2.058136500000046,
+            "ferriki": 1.2220519999999624,
+            "ferriki-eager": 1.346938499999851,
+            "ferriki-precompiled": 1.1429630000000088,
+            "shiki-wasm": 4.567018999999959,
+            "shiki-js": 4.670078500000045
           }
         },
         {
@@ -476,12 +477,12 @@
           "size": "large",
           "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
           "timings": {
-            "ferriki-off": 30.184535500000038,
-            "ferriki": 16.741263999999774,
-            "ferriki-eager": 19.45056349999959,
-            "ferriki-precompiled": 16.71605199999931,
-            "shiki-wasm": 68.68755900000042,
-            "shiki-js": 71.52793849999944
+            "ferriki-off": 29.91194649999943,
+            "ferriki": 16.6610854999999,
+            "ferriki-eager": 19.373086499999772,
+            "ferriki-precompiled": 16.63440999999966,
+            "shiki-wasm": 69.33710749999955,
+            "shiki-js": 71.22333899999967
           }
         },
         {
@@ -490,13 +491,13 @@
           "size": "example",
           "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
           "timings": {
-            "ferriki-off": 0.31156850000002123,
-            "ferriki": 0.20104099999980463,
-            "ferriki-eager": 0.19511499999998705,
-            "ferriki-precompiled": 0.18854799999996885,
-            "shiki-wasm": 1.6021335000000363,
-            "shiki-js": 0.8124904999999671,
-            "prism": 0.11393899999995938
+            "ferriki-off": 0.30828200000007655,
+            "ferriki": 0.20134550000011586,
+            "ferriki-eager": 0.1950329999999667,
+            "ferriki-precompiled": 0.18717900000012833,
+            "shiki-wasm": 1.6156609999999318,
+            "shiki-js": 0.8087570000000142,
+            "prism": 0.11417000000017197
           }
         },
         {
@@ -505,13 +506,13 @@
           "size": "large",
           "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
           "timings": {
-            "ferriki-off": 3.7029300000003786,
-            "ferriki": 2.693290000000161,
-            "ferriki-eager": 2.726411999999982,
-            "ferriki-precompiled": 2.677730999999767,
-            "shiki-wasm": 24.37773900000002,
-            "shiki-js": 10.851487000000361,
-            "prism": 1.2862369999993462
+            "ferriki-off": 3.6435409999999138,
+            "ferriki": 2.669920999999704,
+            "ferriki-eager": 2.7122019999997065,
+            "ferriki-precompiled": 2.6254479999997784,
+            "shiki-wasm": 24.58078599999999,
+            "shiki-js": 10.79510399999981,
+            "prism": 1.3301320000000487
           }
         },
         {
@@ -520,13 +521,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.4067110000000298,
-            "ferriki": 0.29971549999982017,
-            "ferriki-eager": 0.2820930000000885,
-            "ferriki-precompiled": 0.27278000000001157,
-            "shiki-wasm": 1.6216100000000893,
-            "shiki-js": 0.9737969999999905,
-            "prism": 0.1301780000000008
+            "ferriki-off": 0.4050545000000625,
+            "ferriki": 0.30008600000007846,
+            "ferriki-eager": 0.2808100000000877,
+            "ferriki-precompiled": 0.2709370000000604,
+            "shiki-wasm": 1.6223534999999742,
+            "shiki-js": 0.9788034999999127,
+            "prism": 0.1292190000000346
           }
         },
         {
@@ -535,13 +536,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 5.003261999999268,
-            "ferriki": 4.054978000000119,
-            "ferriki-eager": 3.9938839999995253,
-            "ferriki-precompiled": 3.9280009999993126,
-            "shiki-wasm": 24.18042000000014,
-            "shiki-js": 13.427106999999978,
-            "prism": 1.5019300000003568
+            "ferriki-off": 4.964764999999716,
+            "ferriki": 4.052372999999989,
+            "ferriki-eager": 3.986036999999669,
+            "ferriki-precompiled": 3.914933000000019,
+            "shiki-wasm": 24.164198000000397,
+            "shiki-js": 13.551339000000098,
+            "prism": 1.5185780000001614
           }
         },
         {
@@ -550,12 +551,12 @@
           "size": "example",
           "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
           "timings": {
-            "ferriki-off": 1.2088119999998526,
-            "ferriki": 0.6324840000002041,
-            "ferriki-eager": 0.6043909999998505,
-            "ferriki-precompiled": 0.5900839999999334,
-            "shiki-wasm": 2.0373829999998634,
-            "shiki-js": 2.121208999999908
+            "ferriki-off": 1.2035674999997354,
+            "ferriki": 0.6371235000001434,
+            "ferriki-eager": 0.6157124999999724,
+            "ferriki-precompiled": 0.5926145000000815,
+            "shiki-wasm": 2.094109499999945,
+            "shiki-js": 2.1947240000000647
           }
         },
         {
@@ -564,12 +565,12 @@
           "size": "large",
           "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
           "timings": {
-            "ferriki-off": 17.834554500000195,
-            "ferriki": 9.10934700000007,
-            "ferriki-eager": 8.914952500000254,
-            "ferriki-precompiled": 8.795934999999645,
-            "shiki-wasm": 32.264959499999804,
-            "shiki-js": 33.2267139999999
+            "ferriki-off": 17.661520499999824,
+            "ferriki": 9.111965999999484,
+            "ferriki-eager": 8.968133999999736,
+            "ferriki-precompiled": 8.808743999999933,
+            "shiki-wasm": 32.16988649999985,
+            "shiki-js": 33.470842500000344
           }
         },
         {
@@ -578,12 +579,12 @@
           "size": "example",
           "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
           "timings": {
-            "ferriki-off": 0.682336999999734,
-            "ferriki": 0.41774199999986195,
-            "ferriki-eager": 0.3904609999999593,
-            "ferriki-precompiled": 0.3694709999999759,
-            "shiki-wasm": 1.7689510000000155,
-            "shiki-js": 2.3807749999996304
+            "ferriki-off": 0.6853639999999359,
+            "ferriki": 0.4174780000003011,
+            "ferriki-eager": 0.39487599999984013,
+            "ferriki-precompiled": 0.372372999999925,
+            "shiki-wasm": 1.785912000000053,
+            "shiki-js": 2.387728000000152
           }
         },
         {
@@ -592,12 +593,12 @@
           "size": "large",
           "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
           "timings": {
-            "ferriki-off": 8.934358999999631,
-            "ferriki": 5.65389950000008,
-            "ferriki-eager": 5.446532500000103,
-            "ferriki-precompiled": 5.23483699999997,
-            "shiki-wasm": 26.545530499999813,
-            "shiki-js": 36.4880720000001
+            "ferriki-off": 9.137428999999884,
+            "ferriki": 5.684919499999978,
+            "ferriki-eager": 5.508430999999746,
+            "ferriki-precompiled": 5.336958500000037,
+            "shiki-wasm": 26.82325000000037,
+            "shiki-js": 36.54774299999963
           }
         },
         {
@@ -606,13 +607,13 @@
           "size": "example",
           "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
           "timings": {
-            "ferriki-off": 0.3385840000000826,
-            "ferriki": 0.2547869999998511,
-            "ferriki-eager": 0.23960799999986193,
-            "ferriki-precompiled": 0.22651399999995192,
-            "shiki-wasm": 2.5598509999999806,
-            "shiki-js": 0.6473610000000463,
-            "prism": 0.1294119999997747
+            "ferriki-off": 0.3390509999999267,
+            "ferriki": 0.2612129999999979,
+            "ferriki-eager": 0.24436100000002625,
+            "ferriki-precompiled": 0.22812100000010105,
+            "shiki-wasm": 2.5401659999999993,
+            "shiki-js": 0.6450690000001487,
+            "prism": 0.12862300000006144
           }
         },
         {
@@ -621,13 +622,13 @@
           "size": "large",
           "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
           "timings": {
-            "ferriki-off": 4.045079999999871,
-            "ferriki": 3.2750689999993483,
-            "ferriki-eager": 3.2312760000004346,
-            "ferriki-precompiled": 3.074873999999909,
-            "shiki-wasm": 39.11525800000072,
-            "shiki-js": 8.721090000000004,
-            "prism": 1.5282700000007026
+            "ferriki-off": 4.074193000000378,
+            "ferriki": 3.353467499999624,
+            "ferriki-eager": 3.2922164999997676,
+            "ferriki-precompiled": 3.0710944999996173,
+            "shiki-wasm": 39.771630500000356,
+            "shiki-js": 8.778606500000024,
+            "prism": 1.5565540000000055
           }
         },
         {
@@ -636,13 +637,13 @@
           "size": "example",
           "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
           "timings": {
-            "ferriki-off": 0.3977239999999256,
-            "ferriki": 0.3033980000000156,
-            "ferriki-eager": 0.28872099999989587,
-            "ferriki-precompiled": 0.28054400000019086,
-            "shiki-wasm": 0.9791730000001735,
-            "shiki-js": 0.6974950000000035,
-            "prism": 0.11930299999994531
+            "ferriki-off": 0.3947255000000496,
+            "ferriki": 0.3031224999998585,
+            "ferriki-eager": 0.2892259999999851,
+            "ferriki-precompiled": 0.2799729999999272,
+            "shiki-wasm": 0.9894535000000815,
+            "shiki-js": 0.7019755000000032,
+            "prism": 0.1208484999999655
           }
         },
         {
@@ -651,13 +652,13 @@
           "size": "large",
           "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
           "timings": {
-            "ferriki-off": 4.884310499999856,
-            "ferriki": 4.049602499999764,
-            "ferriki-eager": 4.007850500000131,
-            "ferriki-precompiled": 3.9521059999997306,
-            "shiki-wasm": 13.705267000000049,
-            "shiki-js": 9.807368499999939,
-            "prism": 1.3000630000001365
+            "ferriki-off": 4.810905000000048,
+            "ferriki": 4.021668999999747,
+            "ferriki-eager": 4.026412500000106,
+            "ferriki-precompiled": 3.9613605000001826,
+            "shiki-wasm": 13.790495000000192,
+            "shiki-js": 9.734406000000035,
+            "prism": 1.304518000000371
           }
         },
         {
@@ -666,13 +667,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.4073350000001028,
-            "ferriki": 0.3025280000001658,
-            "ferriki-eager": 0.2849950000000945,
-            "ferriki-precompiled": 0.2751069999999345,
-            "shiki-wasm": 1.6363309999997,
-            "shiki-js": 0.9786659999999756,
-            "prism": 0.1295430000000124
+            "ferriki-off": 0.436920500000042,
+            "ferriki": 0.3226500000000101,
+            "ferriki-eager": 0.30155500000000757,
+            "ferriki-precompiled": 0.2936354999999935,
+            "shiki-wasm": 1.733575999999914,
+            "shiki-js": 1.0876259999998865,
+            "prism": 0.14474049999989802
           }
         },
         {
@@ -681,13 +682,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 5.047242000000097,
-            "ferriki": 4.1327259999998205,
-            "ferriki-eager": 4.0659200000000055,
-            "ferriki-precompiled": 4.009834999999839,
-            "shiki-wasm": 24.280227999999624,
-            "shiki-js": 13.5891730000003,
-            "prism": 1.5151130000003832
+            "ferriki-off": 5.481380000000172,
+            "ferriki": 4.437803999999915,
+            "ferriki-eager": 4.359094000000368,
+            "ferriki-precompiled": 4.276589000000058,
+            "shiki-wasm": 25.532673499999873,
+            "shiki-js": 15.02864899999986,
+            "prism": 1.7472414999999728
           }
         },
         {
@@ -696,13 +697,13 @@
           "size": "example",
           "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
           "timings": {
-            "ferriki-off": 0.48206449999992174,
-            "ferriki": 0.244658999999956,
-            "ferriki-eager": 0.2276720000000978,
-            "ferriki-precompiled": 0.22177099999998973,
-            "shiki-wasm": 1.680223000000069,
-            "shiki-js": 1.0045355000000882,
-            "prism": 0.09219299999998043
+            "ferriki-off": 0.5157255000000305,
+            "ferriki": 0.2593350000000214,
+            "ferriki-eager": 0.242354999999975,
+            "ferriki-precompiled": 0.2358159999999998,
+            "shiki-wasm": 1.7970264999999017,
+            "shiki-js": 1.1057359999998653,
+            "prism": 0.10342999999994618
           }
         },
         {
@@ -711,13 +712,13 @@
           "size": "large",
           "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
           "timings": {
-            "ferriki-off": 6.198452999999972,
-            "ferriki": 3.224591000000146,
-            "ferriki-eager": 3.1853790000000117,
-            "ferriki-precompiled": 3.1416250000002037,
-            "shiki-wasm": 24.984748999999738,
-            "shiki-js": 14.307741000000078,
-            "prism": 1.1189000000003944
+            "ferriki-off": 6.754406999999674,
+            "ferriki": 3.4215580000000045,
+            "ferriki-eager": 3.3931485000002795,
+            "ferriki-precompiled": 3.310003499999766,
+            "shiki-wasm": 26.704790000000003,
+            "shiki-js": 15.795039999999972,
+            "prism": 1.375475999999935
           }
         },
         {
@@ -726,13 +727,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 1.1315040000004046,
-            "ferriki": 0.5034550000000309,
-            "ferriki-eager": 0.48370799999975134,
-            "ferriki-precompiled": 0.454443000000083,
-            "shiki-wasm": 2.7114990000000034,
-            "shiki-js": 2.6997769999998127,
-            "prism": 0.10781199999973978
+            "ferriki-off": 1.20886100000007,
+            "ferriki": 0.5441200000000208,
+            "ferriki-eager": 0.5288800000002993,
+            "ferriki-precompiled": 0.4926999999997861,
+            "shiki-wasm": 2.915551999999934,
+            "shiki-js": 2.931152999999995,
+            "prism": 0.1192100000002938
           }
         },
         {
@@ -741,13 +742,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 15.739569000000301,
-            "ferriki": 6.698786499999642,
-            "ferriki-eager": 6.67773249999982,
-            "ferriki-precompiled": 6.468719499999679,
-            "shiki-wasm": 40.495718500000294,
-            "shiki-js": 39.71749899999986,
-            "prism": 1.1036609999996472
+            "ferriki-off": 16.869105999999647,
+            "ferriki": 7.172911999999542,
+            "ferriki-eager": 7.198496499999692,
+            "ferriki-precompiled": 6.946885999999722,
+            "shiki-wasm": 42.280980000000454,
+            "shiki-js": 41.43069400000013,
+            "prism": 1.199760999999853
           }
         },
         {
@@ -756,13 +757,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.32497200000011617,
-            "ferriki": 0.22503200000005563,
-            "ferriki-eager": 0.21029399999997622,
-            "ferriki-precompiled": 0.20460499999990134,
-            "shiki-wasm": 1.1170740000000023,
-            "shiki-js": 0.7315480000002026,
-            "prism": 0.10435500000005504
+            "ferriki-off": 0.3443699999997989,
+            "ferriki": 0.2379899999996269,
+            "ferriki-eager": 0.22186999999996715,
+            "ferriki-precompiled": 0.21810000000004948,
+            "shiki-wasm": 1.1751520000002529,
+            "shiki-js": 0.8036620000000312,
+            "prism": 0.1129999999999427
           }
         },
         {
@@ -771,13 +772,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.874994999999899,
-            "ferriki": 2.8446040000001176,
-            "ferriki-eager": 2.8094474999998056,
-            "ferriki-precompiled": 2.769501999999875,
-            "shiki-wasm": 16.382530999999744,
-            "shiki-js": 10.118546500000093,
-            "prism": 1.2972935000000234
+            "ferriki-off": 4.272572999999966,
+            "ferriki": 3.1213105000001633,
+            "ferriki-eager": 3.0946805000003224,
+            "ferriki-precompiled": 3.0553604999997788,
+            "shiki-wasm": 17.027244999999994,
+            "shiki-js": 11.086399500000198,
+            "prism": 1.344072000000324
           }
         },
         {
@@ -786,13 +787,13 @@
           "size": "example",
           "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
           "timings": {
-            "ferriki-off": 0.9193520000003446,
-            "ferriki": 0.3326070000000527,
-            "ferriki-eager": 0.31510299999996505,
-            "ferriki-precompiled": 0.3057060000001002,
-            "shiki-wasm": 1.231559999999945,
-            "shiki-js": 1.6657579999998688,
-            "prism": 0.22097600000006423
+            "ferriki-off": 0.9707559999999376,
+            "ferriki": 0.3516309999999976,
+            "ferriki-eager": 0.33673549999997476,
+            "ferriki-precompiled": 0.32381099999997787,
+            "shiki-wasm": 1.3104070000001116,
+            "shiki-js": 1.7899029999999811,
+            "prism": 0.23252999999988333
           }
         },
         {
@@ -801,13 +802,13 @@
           "size": "large",
           "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
           "timings": {
-            "ferriki-off": 12.942100500000151,
-            "ferriki": 4.349238499999956,
-            "ferriki-eager": 4.296593499999972,
-            "ferriki-precompiled": 4.195257999999967,
-            "shiki-wasm": 17.40120049999996,
-            "shiki-js": 23.818228500000032,
-            "prism": 2.4618724999997994
+            "ferriki-off": 13.875544499999933,
+            "ferriki": 4.728783499999736,
+            "ferriki-eager": 4.668758000000025,
+            "ferriki-precompiled": 4.557557999999972,
+            "shiki-wasm": 18.865798999999924,
+            "shiki-js": 25.771120500000052,
+            "prism": 2.6070844999994733
           }
         },
         {
@@ -816,13 +817,13 @@
           "size": "example",
           "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
           "timings": {
-            "ferriki-off": 2.0647590000000946,
-            "ferriki": 0.8415849999996681,
-            "ferriki-eager": 0.8114080000000286,
-            "ferriki-precompiled": 0.7954689999999118,
-            "shiki-wasm": 4.430836999999883,
-            "shiki-js": 4.575540000000274,
-            "prism": 0.23701600000003964
+            "ferriki-off": 2.204818999999816,
+            "ferriki": 0.8988064999999779,
+            "ferriki-eager": 0.8651665000001003,
+            "ferriki-precompiled": 0.8534565000001066,
+            "shiki-wasm": 4.7158430000000635,
+            "shiki-js": 4.975508999999988,
+            "prism": 0.2576850000000377
           }
         },
         {
@@ -831,13 +832,13 @@
           "size": "large",
           "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
           "timings": {
-            "ferriki-off": 30.862914499999988,
-            "ferriki": 11.995120999999926,
-            "ferriki-eager": 11.767202500000167,
-            "ferriki-precompiled": 11.828552500000114,
-            "shiki-wasm": 68.95363000000043,
-            "shiki-js": 70.20016299999997,
-            "prism": 2.258784999999534
+            "ferriki-off": 33.11643349999986,
+            "ferriki": 12.80052249999926,
+            "ferriki-eager": 12.66277749999972,
+            "ferriki-precompiled": 12.728637499999422,
+            "shiki-wasm": 73.19371850000061,
+            "shiki-js": 76.34355899999991,
+            "prism": 2.3632990000000973
           }
         },
         {
@@ -846,13 +847,13 @@
           "size": "example",
           "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
           "timings": {
-            "ferriki-off": 0.3180499999998574,
-            "ferriki": 0.2941839999999729,
-            "ferriki-eager": 0.2901170000000093,
-            "ferriki-precompiled": 0.27530799999999545,
-            "shiki-wasm": 1.0008649999999761,
-            "shiki-js": 0.4160029999998187,
-            "prism": 0.0583800000000565
+            "ferriki-off": 0.33938100000000304,
+            "ferriki": 0.31585100000006605,
+            "ferriki-eager": 0.31036999999992076,
+            "ferriki-precompiled": 0.2970300000000634,
+            "shiki-wasm": 1.0593920000000026,
+            "shiki-js": 0.4604810000000725,
+            "prism": 0.06269000000020242
           }
         },
         {
@@ -861,13 +862,13 @@
           "size": "large",
           "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
           "timings": {
-            "ferriki-off": 4.286654999999882,
-            "ferriki": 4.121102999999948,
-            "ferriki-eager": 4.200712999999723,
-            "ferriki-precompiled": 4.072411999999531,
-            "shiki-wasm": 14.742561999999907,
-            "shiki-js": 5.810946999999942,
-            "prism": 0.7127330000002985
+            "ferriki-off": 4.614508000000114,
+            "ferriki": 4.438388000000032,
+            "ferriki-eager": 4.491867000000184,
+            "ferriki-precompiled": 4.387017999999898,
+            "shiki-wasm": 15.624227000000246,
+            "shiki-js": 6.398471000000427,
+            "prism": 0.7953619999998409
           }
         },
         {
@@ -876,13 +877,13 @@
           "size": "example",
           "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
           "timings": {
-            "ferriki-off": 0.33578299999999217,
-            "ferriki": 0.2844249999999988,
-            "ferriki-eager": 0.2713819999999032,
-            "ferriki-precompiled": 5.412356000000273,
-            "shiki-wasm": 2.03603499999997,
-            "shiki-js": 0.4942509999998492,
-            "prism": 0.07568199999968783
+            "ferriki-off": 0.34451549999994313,
+            "ferriki": 0.2954254999999648,
+            "ferriki-eager": 0.28391049999993356,
+            "ferriki-precompiled": 0.2745309999999961,
+            "shiki-wasm": 2.1342039999999542,
+            "shiki-js": 0.5400004999999339,
+            "prism": 0.0796600000000467
           }
         },
         {
@@ -891,13 +892,13 @@
           "size": "large",
           "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
           "timings": {
-            "ferriki-off": 3.994158999999854,
-            "ferriki": 3.778978500000221,
-            "ferriki-eager": 3.7726714999998876,
-            "ferriki-precompiled": 83.68805649999967,
-            "shiki-wasm": 30.787482499999896,
-            "shiki-js": 6.56103450000046,
-            "prism": 0.895622000000003
+            "ferriki-off": 4.249617999999828,
+            "ferriki": 4.009187000000111,
+            "ferriki-eager": 4.005046999999649,
+            "ferriki-precompiled": 3.991946999999982,
+            "shiki-wasm": 32.36837699999978,
+            "shiki-js": 7.2818929999998545,
+            "prism": 1.0589319999999134
           }
         },
         {
@@ -906,13 +907,13 @@
           "size": "example",
           "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
           "timings": {
-            "ferriki-off": 0.2685759999999391,
-            "ferriki": 0.19560900000010406,
-            "ferriki-eager": 0.18699200000003202,
-            "ferriki-precompiled": 0.18075999999996384,
-            "shiki-wasm": 1.44543299999998,
-            "shiki-js": 0.7433200000000397,
-            "prism": 0.05539400000020578
+            "ferriki-off": 0.2865200000001096,
+            "ferriki": 0.20643000000001166,
+            "ferriki-eager": 0.198575500000004,
+            "ferriki-precompiled": 0.19170499999995627,
+            "shiki-wasm": 1.558072999999922,
+            "shiki-js": 0.8123114999999643,
+            "prism": 0.0592249999999126
           }
         },
         {
@@ -921,13 +922,13 @@
           "size": "large",
           "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
           "timings": {
-            "ferriki-off": 3.388242999999875,
-            "ferriki": 2.712590000000091,
-            "ferriki-eager": 2.7061469999998735,
-            "ferriki-precompiled": 2.6367470000004687,
-            "shiki-wasm": 21.975828000000092,
-            "shiki-js": 10.593695999999909,
-            "prism": 0.720527000000402
+            "ferriki-off": 3.6481659999999465,
+            "ferriki": 2.8976450000000114,
+            "ferriki-eager": 2.9054550000000745,
+            "ferriki-precompiled": 2.8266550000007555,
+            "shiki-wasm": 23.59014100000013,
+            "shiki-js": 11.597679999999855,
+            "prism": 0.7859010000001945
           }
         },
         {
@@ -936,13 +937,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.25101299999997195,
-            "ferriki": 0.19593399999996564,
-            "ferriki-eager": 0.18539399999997386,
-            "ferriki-precompiled": 0.18253350000020419,
-            "shiki-wasm": 1.2436774999999898,
-            "shiki-js": 0.5790960000000496,
-            "prism": 0.10054900000000089
+            "ferriki-off": 0.2695954999999799,
+            "ferriki": 0.20946050000003424,
+            "ferriki-eager": 0.19889499999993632,
+            "ferriki-precompiled": 0.19378499999999121,
+            "shiki-wasm": 1.3300724999999716,
+            "shiki-js": 0.6357160000000022,
+            "prism": 0.10978000000000065
           }
         },
         {
@@ -951,13 +952,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 3.292301999999836,
-            "ferriki": 2.7790250000002743,
-            "ferriki-eager": 2.7553399999997055,
-            "ferriki-precompiled": 2.7153659999999036,
-            "shiki-wasm": 18.741735000000062,
-            "shiki-js": 8.16101400000025,
-            "prism": 1.0669800000005125
+            "ferriki-off": 3.5813060000000405,
+            "ferriki": 2.9869549999998526,
+            "ferriki-eager": 2.990555999999742,
+            "ferriki-precompiled": 2.957614999999805,
+            "shiki-wasm": 19.96067499999981,
+            "shiki-js": 8.918016000000534,
+            "prism": 1.1317519999993237
           }
         },
         {
@@ -966,13 +967,13 @@
           "size": "example",
           "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
           "timings": {
-            "ferriki-off": 0.6289649999998801,
-            "ferriki": 0.4334360000000288,
-            "ferriki-eager": 0.41766599999982645,
-            "ferriki-precompiled": 0.40527300000007926,
-            "shiki-wasm": 1.749655999999959,
-            "shiki-js": 1.1592339999999695,
-            "prism": 0.071936000000278
+            "ferriki-off": 0.664440999999897,
+            "ferriki": 0.4568899999999303,
+            "ferriki-eager": 0.44410999999990963,
+            "ferriki-precompiled": 0.4302310000000489,
+            "shiki-wasm": 1.852043999999978,
+            "shiki-js": 1.2595720000000483,
+            "prism": 0.07649999999989632
           }
         },
         {
@@ -981,13 +982,13 @@
           "size": "large",
           "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
           "timings": {
-            "ferriki-off": 8.236786999999822,
-            "ferriki": 6.134681000000228,
-            "ferriki-eager": 6.01448500000015,
-            "ferriki-precompiled": 5.958119000000124,
-            "shiki-wasm": 26.436250499999687,
-            "shiki-js": 16.79553450000003,
-            "prism": 0.801615499999798
+            "ferriki-off": 8.778760499999407,
+            "ferriki": 6.577576500000305,
+            "ferriki-eager": 6.472641499999554,
+            "ferriki-precompiled": 6.427216000000044,
+            "shiki-wasm": 27.534108500000002,
+            "shiki-js": 18.558727499999804,
+            "prism": 0.8516210000000228
           }
         },
         {
@@ -996,13 +997,13 @@
           "size": "example",
           "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
           "timings": {
-            "ferriki-off": 0.4454445000000078,
-            "ferriki": 0.28590849999994816,
-            "ferriki-eager": 0.2666925000000333,
-            "ferriki-precompiled": 0.25516049999987445,
-            "shiki-wasm": 1.363933999999972,
-            "shiki-js": 0.6849755000000641,
-            "prism": 0.06817399999999907
+            "ferriki-off": 0.47117099999991296,
+            "ferriki": 0.30124099999989085,
+            "ferriki-eager": 0.28266099999996186,
+            "ferriki-precompiled": 0.27191099999993185,
+            "shiki-wasm": 1.4449529999999413,
+            "shiki-js": 0.7504810000000361,
+            "prism": 0.0735700000000179
           }
         },
         {
@@ -1011,13 +1012,13 @@
           "size": "large",
           "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
           "timings": {
-            "ferriki-off": 5.579400999999962,
-            "ferriki": 3.5970960000004197,
-            "ferriki-eager": 3.535190000000057,
-            "ferriki-precompiled": 3.351433999999699,
-            "shiki-wasm": 19.9385699999998,
-            "shiki-js": 9.056872000000112,
-            "prism": 0.806999999999789
+            "ferriki-off": 5.974875000000111,
+            "ferriki": 3.816801499999883,
+            "ferriki-eager": 3.7749814999997398,
+            "ferriki-precompiled": 3.588555999999926,
+            "shiki-wasm": 21.10083699999973,
+            "shiki-js": 10.009377500000028,
+            "prism": 0.8622164999999313
           }
         },
         {
@@ -1026,13 +1027,13 @@
           "size": "example",
           "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
           "timings": {
-            "ferriki-off": 0.14363600000012866,
-            "ferriki": 0.17906200000004446,
-            "ferriki-eager": 0.1680870000000141,
-            "ferriki-precompiled": 0.16064199999999573,
-            "shiki-wasm": 0.767821500000025,
-            "shiki-js": 0.2632660000000442,
-            "prism": 0.07368849999988925
+            "ferriki-off": 0.1524350000000254,
+            "ferriki": 0.18836049999993065,
+            "ferriki-eager": 0.1777255000000082,
+            "ferriki-precompiled": 0.16956549999997605,
+            "shiki-wasm": 0.8159815000000208,
+            "shiki-js": 0.2993759999998815,
+            "prism": 0.08062000000003877
           }
         },
         {
@@ -1041,13 +1042,13 @@
           "size": "large",
           "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
           "timings": {
-            "ferriki-off": 1.96330799999987,
-            "ferriki": 2.405522000000019,
-            "ferriki-eager": 2.3495759999996153,
-            "ferriki-precompiled": 2.302177000000029,
-            "shiki-wasm": 11.57569599999988,
-            "shiki-js": 3.723124000000098,
-            "prism": 0.8640980000000127
+            "ferriki-off": 2.1096890000001167,
+            "ferriki": 2.4974694999996245,
+            "ferriki-eager": 2.4420090000000982,
+            "ferriki-precompiled": 2.396394500000042,
+            "shiki-wasm": 12.381626499999811,
+            "shiki-js": 4.450043000000278,
+            "prism": 0.9786619999997583
           }
         },
         {
@@ -1056,13 +1057,13 @@
           "size": "example",
           "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
           "timings": {
-            "ferriki-off": 0.3909419999998818,
-            "ferriki": 0.23455649999993966,
-            "ferriki-eager": 0.21875699999998233,
-            "ferriki-precompiled": 0.2081525000000397,
-            "shiki-wasm": 1.6719744999999193,
-            "shiki-js": 0.7726760000002741,
-            "prism": 0.1658474999999271
+            "ferriki-off": 0.4138909999999214,
+            "ferriki": 0.24561100000005354,
+            "ferriki-eager": 0.23111100000005536,
+            "ferriki-precompiled": 0.21934100000009948,
+            "shiki-wasm": 1.7775630000001001,
+            "shiki-js": 0.8523909999998978,
+            "prism": 0.17234000000007654
           }
         },
         {
@@ -1071,13 +1072,13 @@
           "size": "large",
           "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
           "timings": {
-            "ferriki-off": 4.84116449999965,
-            "ferriki": 3.0429524999999558,
-            "ferriki-eager": 3.006583999999748,
-            "ferriki-precompiled": 2.910837999999785,
-            "shiki-wasm": 25.265459999999848,
-            "shiki-js": 9.880939000000126,
-            "prism": 1.506733499999882
+            "ferriki-off": 5.086198999999851,
+            "ferriki": 3.1463859999994384,
+            "ferriki-eager": 3.120725000000675,
+            "ferriki-precompiled": 2.9939350000004197,
+            "shiki-wasm": 26.473496999999952,
+            "shiki-js": 11.040219999999863,
+            "prism": 1.6866330000002563
           }
         },
         {
@@ -1086,13 +1087,13 @@
           "size": "example",
           "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
           "timings": {
-            "ferriki-off": 0.31142700000009427,
-            "ferriki": 0.1363370000000259,
-            "ferriki-eager": 0.11922400000003108,
-            "ferriki-precompiled": 0.11329299999988507,
-            "shiki-wasm": 2.229759999999942,
-            "shiki-js": 0.8770620000000235,
-            "prism": 0.0375610000000961
+            "ferriki-off": 0.33100100000001476,
+            "ferriki": 0.14406000000008135,
+            "ferriki-eager": 0.1268400000000156,
+            "ferriki-precompiled": 0.1210799999998926,
+            "shiki-wasm": 2.3224239999999554,
+            "shiki-js": 0.9521219999999175,
+            "prism": 0.04164000000014312
           }
         },
         {
@@ -1101,13 +1102,13 @@
           "size": "large",
           "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
           "timings": {
-            "ferriki-off": 3.703246000000263,
-            "ferriki": 1.6103524999998626,
-            "ferriki-eager": 1.54889650000041,
-            "ferriki-precompiled": 1.5180534999999509,
-            "shiki-wasm": 34.05930450000005,
-            "shiki-js": 11.813466999999946,
-            "prism": 0.36594750000017484
+            "ferriki-off": 3.981514999999945,
+            "ferriki": 1.6857890000003408,
+            "ferriki-eager": 1.6368285000000924,
+            "ferriki-precompiled": 1.6342334999999366,
+            "shiki-wasm": 35.349496000000045,
+            "shiki-js": 12.810151999999562,
+            "prism": 0.3966410000000451
           }
         },
         {
@@ -1116,13 +1117,13 @@
           "size": "example",
           "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
           "timings": {
-            "ferriki-off": 0.26412600000003295,
-            "ferriki": 0.2320959999999559,
-            "ferriki-eager": 0.22286799999994855,
-            "ferriki-precompiled": 0.21009400000002643,
-            "shiki-wasm": 0.754895999999917,
-            "shiki-js": 0.5166699999999764,
-            "prism": 0.076624000000038
+            "ferriki-off": 0.2808310000000347,
+            "ferriki": 0.24555099999997765,
+            "ferriki-eager": 0.23700099999996382,
+            "ferriki-precompiled": 0.22425999999995838,
+            "shiki-wasm": 0.8229620000001887,
+            "shiki-js": 0.5853010000000722,
+            "prism": 0.08355000000000246
           }
         },
         {
@@ -1131,13 +1132,13 @@
           "size": "large",
           "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
           "timings": {
-            "ferriki-off": 3.3040749999997843,
-            "ferriki": 3.0798889999998664,
-            "ferriki-eager": 3.052687999999989,
-            "ferriki-precompiled": 2.976595499999803,
-            "shiki-wasm": 10.710321499999964,
-            "shiki-js": 7.0627715000000535,
-            "prism": 0.9883844999999383
+            "ferriki-off": 3.5122244999997747,
+            "ferriki": 3.281488500000023,
+            "ferriki-eager": 3.262838000000329,
+            "ferriki-precompiled": 3.1801084999999603,
+            "shiki-wasm": 11.724893999999722,
+            "shiki-js": 8.145965499999875,
+            "prism": 1.092922999999928
           }
         },
         {
@@ -1146,13 +1147,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.4321309999997993,
-            "ferriki": 0.2658840000000282,
-            "ferriki-eager": 0.24734399999999823,
-            "ferriki-precompiled": 0.2344900000000507,
-            "shiki-wasm": 1.4472655000000145,
-            "shiki-js": 0.884544999999946,
-            "prism": 0.08544500000004973
+            "ferriki-off": 0.45618100000001505,
+            "ferriki": 0.2779010000000426,
+            "ferriki-eager": 0.2575259999999844,
+            "ferriki-precompiled": 0.24950049999995372,
+            "shiki-wasm": 1.537524000000019,
+            "shiki-js": 0.9661174999999957,
+            "prism": 0.09318000000007487
           }
         },
         {
@@ -1161,13 +1162,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 5.500320500000271,
-            "ferriki": 3.4589100000005146,
-            "ferriki-eager": 3.3689114999999674,
-            "ferriki-precompiled": 3.212212000000136,
-            "shiki-wasm": 21.363415499999746,
-            "shiki-js": 12.121349000000237,
-            "prism": 0.9716430000000855
+            "ferriki-off": 5.812484999999469,
+            "ferriki": 3.628269999999702,
+            "ferriki-eager": 3.477487999999994,
+            "ferriki-precompiled": 3.369427999999971,
+            "shiki-wasm": 22.975728000000345,
+            "shiki-js": 13.441663999999946,
+            "prism": 1.0737030000000232
           }
         },
         {
@@ -1176,13 +1177,13 @@
           "size": "example",
           "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
           "timings": {
-            "ferriki-off": 0.4671469999998408,
-            "ferriki": 0.24645200000009027,
-            "ferriki-eager": 0.23205600000005688,
-            "ferriki-precompiled": 0.21911099999988437,
-            "shiki-wasm": 1.7403959999999188,
-            "shiki-js": 0.9188740000001872,
-            "prism": 0.07673399999998765
+            "ferriki-off": 0.5096715000000813,
+            "ferriki": 0.26418100000000777,
+            "ferriki-eager": 0.2505354999999554,
+            "ferriki-precompiled": 0.2363149999999905,
+            "shiki-wasm": 1.8815349999999853,
+            "shiki-js": 1.0260669999997845,
+            "prism": 0.08549999999996771
           }
         },
         {
@@ -1191,13 +1192,13 @@
           "size": "large",
           "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
           "timings": {
-            "ferriki-off": 5.999717499999861,
-            "ferriki": 3.2861054999998487,
-            "ferriki-eager": 3.2256524999997964,
-            "ferriki-precompiled": 3.156918999999789,
-            "shiki-wasm": 26.41909650000025,
-            "shiki-js": 12.849334500000396,
-            "prism": 0.8766744999998082
+            "ferriki-off": 6.503206000000091,
+            "ferriki": 3.524939500000528,
+            "ferriki-eager": 3.5143139999997857,
+            "ferriki-precompiled": 3.39662350000026,
+            "shiki-wasm": 28.765217999999777,
+            "shiki-js": 14.31763650000039,
+            "prism": 1.0469279999997525
           }
         },
         {
@@ -1206,13 +1207,13 @@
           "size": "example",
           "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
           "timings": {
-            "ferriki-off": 0.803041500000063,
-            "ferriki": 0.7189439999999649,
-            "ferriki-eager": 0.7058644999999615,
-            "ferriki-precompiled": 0.6982660000001033,
-            "shiki-wasm": 3.5415155000000595,
-            "shiki-js": 0.7384610000000293,
-            "prism": 0.07891300000005685
+            "ferriki-off": 0.8560519999998633,
+            "ferriki": 0.7696720000000141,
+            "ferriki-eager": 0.7559820000000173,
+            "ferriki-precompiled": 0.7437919999999849,
+            "shiki-wasm": 3.7125489999998535,
+            "shiki-js": 0.8159120000000257,
+            "prism": 0.08866999999997915
           }
         },
         {
@@ -1221,13 +1222,13 @@
           "size": "large",
           "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
           "timings": {
-            "ferriki-off": 11.040845999999874,
-            "ferriki": 10.705321499999854,
-            "ferriki-eager": 10.594955999999911,
-            "ferriki-precompiled": 10.668363000000227,
-            "shiki-wasm": 54.90141350000022,
-            "shiki-js": 9.933198000000175,
-            "prism": 0.9878085000002557
+            "ferriki-off": 11.940610000000106,
+            "ferriki": 11.54944899999964,
+            "ferriki-eager": 11.490824500000144,
+            "ferriki-precompiled": 11.357609499999853,
+            "shiki-wasm": 57.064129000000094,
+            "shiki-js": 10.716946999999891,
+            "prism": 1.0047875000000204
           }
         }
       ]
@@ -1239,32 +1240,32 @@
         "comparison": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+          "binarySha256": "61089743759cdd779e6ffb7acc1be64f1a658acc88f9e2de71dbafd24b1e5ac5"
         },
         "curated": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+          "binarySha256": "61089743759cdd779e6ffb7acc1be64f1a658acc88f9e2de71dbafd24b1e5ac5"
         },
         "tiobe": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "217c96515dc3b22c4123228b6f4f453fc4bb32b28a69084435dd7ff841a30a80"
+          "binarySha256": "61089743759cdd779e6ffb7acc1be64f1a658acc88f9e2de71dbafd24b1e5ac5"
         }
       },
       "warm": {
-        "ferriki-off": 117.16808200002379,
-        "ferriki": 78.0765625000231,
-        "ferriki-eager": 77.18277200000557,
-        "ferriki-precompiled": 111.23947850001605,
-        "shiki-wasm": 324.7763135000023
+        "ferriki-off": 121.73095750001994,
+        "ferriki": 82.33141499999329,
+        "ferriki-eager": 82.83266400000593,
+        "ferriki-precompiled": 78.52493799997546,
+        "shiki-wasm": 338.21362499999486
       },
       "cold": {
-        "ferriki-off": 212.247146,
-        "ferriki": 327.011334,
-        "ferriki-eager": 404.8238335,
-        "ferriki-precompiled": 501.928792,
-        "shiki-wasm": 1102.9310624999998
+        "ferriki-off": 242.731021,
+        "ferriki": 369.4269375,
+        "ferriki-eager": 452.5020835,
+        "ferriki-precompiled": 277.1983545,
+        "shiki-wasm": 1224.8931254999998
       },
       "workloads": [
         {
@@ -1273,13 +1274,13 @@
           "size": "example",
           "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
           "timings": {
-            "ferriki-off": 1.859708499999897,
-            "ferriki": 0.8992705000000569,
-            "ferriki-eager": 0.8259170000001177,
-            "ferriki-precompiled": 0.8191460000000461,
-            "shiki-wasm": 3.971187500000042,
-            "shiki-js": 5.694916499999977,
-            "prism": 0.22316699999987577
+            "ferriki-off": 2.1148330000000897,
+            "ferriki": 1.1349170000000868,
+            "ferriki-eager": 1.0761669999999413,
+            "ferriki-precompiled": 1.1046249999999418,
+            "shiki-wasm": 4.606374999999844,
+            "shiki-js": 6.630165999999917,
+            "prism": 0.2855420000000777
           }
         },
         {
@@ -1288,13 +1289,13 @@
           "size": "large",
           "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
           "timings": {
-            "ferriki-off": 24.907104000000345,
-            "ferriki": 9.838228999999956,
-            "ferriki-eager": 9.683791500000552,
-            "ferriki-precompiled": 9.564875000000029,
-            "shiki-wasm": 54.45079149999992,
-            "shiki-js": 80.66758300000038,
-            "prism": 2.287832999999864
+            "ferriki-off": 25.34420850000015,
+            "ferriki": 9.784896500000286,
+            "ferriki-eager": 9.587687499999902,
+            "ferriki-precompiled": 9.688687500000015,
+            "shiki-wasm": 57.47164549999934,
+            "shiki-js": 82.66702149999992,
+            "prism": 2.5350005000000237
           }
         },
         {
@@ -1303,13 +1304,13 @@
           "size": "example",
           "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
           "timings": {
-            "ferriki-off": 1.902832999999987,
-            "ferriki": 0.9168119999997089,
-            "ferriki-eager": 0.8809170000001814,
-            "ferriki-precompiled": 0.8847915000000057,
-            "shiki-wasm": 4.321520499999963,
-            "shiki-js": 4.557583500000078,
-            "prism": 0.32360400000004574
+            "ferriki-off": 1.8899169999999685,
+            "ferriki": 0.9184169999999767,
+            "ferriki-eager": 0.8748960000000352,
+            "ferriki-precompiled": 0.8972715000002154,
+            "shiki-wasm": 4.348270999999841,
+            "shiki-js": 4.616228999999976,
+            "prism": 0.32368750000000546
           }
         },
         {
@@ -1318,13 +1319,13 @@
           "size": "large",
           "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
           "timings": {
-            "ferriki-off": 29.78910450000012,
-            "ferriki": 12.66018750000012,
-            "ferriki-eager": 12.391124499999933,
-            "ferriki-precompiled": 12.710104500000398,
-            "shiki-wasm": 69.51429150000013,
-            "shiki-js": 73.93199999999979,
-            "prism": 4.110708999999588
+            "ferriki-off": 31.587395999999444,
+            "ferriki": 13.813333500000226,
+            "ferriki-eager": 13.590686999999889,
+            "ferriki-precompiled": 13.392041499999777,
+            "shiki-wasm": 73.16010399999959,
+            "shiki-js": 79.52329149999969,
+            "prism": 4.402145499999278
           }
         },
         {
@@ -1333,13 +1334,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.1955630000000781,
-            "ferriki": 0.15566649999999527,
-            "ferriki-eager": 0.15174999999999272,
-            "ferriki-precompiled": 0.15337500000003956,
-            "shiki-wasm": 1.193604499999978,
-            "shiki-js": 0.4970000000001278,
-            "prism": 0.09010400000005347
+            "ferriki-off": 0.21358299999997143,
+            "ferriki": 0.1738750000000664,
+            "ferriki-eager": 0.16904199999999037,
+            "ferriki-precompiled": 0.165958000000046,
+            "shiki-wasm": 1.2496249999999236,
+            "shiki-js": 0.5225410000000466,
+            "prism": 0.10054199999990487
           }
         },
         {
@@ -1348,13 +1349,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 2.924937,
-            "ferriki": 2.434708499999715,
-            "ferriki-eager": 2.373207999999977,
-            "ferriki-precompiled": 2.397916500000065,
-            "shiki-wasm": 18.494354000000158,
-            "shiki-js": 7.424833499999977,
-            "prism": 1.2363335000000006
+            "ferriki-off": 3.176665999999841,
+            "ferriki": 2.656750000000102,
+            "ferriki-eager": 2.598333999999795,
+            "ferriki-precompiled": 2.5824580000003152,
+            "shiki-wasm": 20.0481249999998,
+            "shiki-js": 8.389000000000124,
+            "prism": 1.408292000000074
           }
         },
         {
@@ -1363,13 +1364,13 @@
           "size": "example",
           "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
           "timings": {
-            "ferriki-off": 0.2732499999999618,
-            "ferriki": 0.30237499999998363,
-            "ferriki-eager": 0.3015409999999292,
-            "ferriki-precompiled": 0.29950000000008004,
-            "shiki-wasm": 2.8115419999999176,
-            "shiki-js": 0.578708000000006,
-            "prism": 0.08116699999999355
+            "ferriki-off": 0.4255620000001272,
+            "ferriki": 0.5325624999999263,
+            "ferriki-eager": 0.5125209999999356,
+            "ferriki-precompiled": 0.5215835000000197,
+            "shiki-wasm": 3.6156250000001364,
+            "shiki-js": 0.788688000000036,
+            "prism": 0.11591649999991205
           }
         },
         {
@@ -1378,13 +1379,13 @@
           "size": "large",
           "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
           "timings": {
-            "ferriki-off": 3.6256249999999,
-            "ferriki": 3.8500624999996944,
-            "ferriki-eager": 3.818958000000066,
-            "ferriki-precompiled": 3.6767710000003717,
-            "shiki-wasm": 42.74816699999974,
-            "shiki-js": 8.227791499999967,
-            "prism": 1.002020999999786
+            "ferriki-off": 4.454353999999967,
+            "ferriki": 4.68597950000003,
+            "ferriki-eager": 4.747292000000016,
+            "ferriki-precompiled": 4.5798120000001745,
+            "shiki-wasm": 52.5993334999996,
+            "shiki-js": 9.926229000000149,
+            "prism": 1.3103750000000218
           }
         },
         {
@@ -1393,13 +1394,13 @@
           "size": "example",
           "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
           "timings": {
-            "ferriki-off": 1.0030420000000504,
-            "ferriki": 0.5990000000001601,
-            "ferriki-eager": 0.591666000000032,
-            "ferriki-precompiled": 0.5975419999999758,
-            "shiki-wasm": 3.4181659999999283,
-            "shiki-js": 2.4662499999999454,
-            "prism": 0.1978750000000673
+            "ferriki-off": 1.1600000000003092,
+            "ferriki": 0.8018750000001091,
+            "ferriki-eager": 0.777042000000165,
+            "ferriki-precompiled": 0.7971669999997175,
+            "shiki-wasm": 3.762333000000126,
+            "shiki-js": 2.810958000000028,
+            "prism": 0.23424999999997453
           }
         },
         {
@@ -1408,13 +1409,13 @@
           "size": "large",
           "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
           "timings": {
-            "ferriki-off": 14.532458500000303,
-            "ferriki": 8.048646499999904,
-            "ferriki-eager": 8.081625500000428,
-            "ferriki-precompiled": 8.093333499999972,
-            "shiki-wasm": 53.08206250000012,
-            "shiki-js": 38.15956299999971,
-            "prism": 2.404041500000403
+            "ferriki-off": 15.158125000000382,
+            "ferriki": 8.55581250000023,
+            "ferriki-eager": 8.638145999999779,
+            "ferriki-precompiled": 8.481666499999847,
+            "shiki-wasm": 56.46683350000012,
+            "shiki-js": 40.10856250000006,
+            "prism": 2.6847084999999424
           }
         },
         {
@@ -1423,13 +1424,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 0.9511249999998199,
-            "ferriki": 0.41735400000015943,
-            "ferriki-eager": 0.40666650000002846,
-            "ferriki-precompiled": 0.40231299999982184,
-            "shiki-wasm": 2.7660624999998618,
-            "shiki-js": 2.2659170000001723,
-            "prism": 0.1020210000001498
+            "ferriki-off": 1.1204999999999927,
+            "ferriki": 0.5176665000001321,
+            "ferriki-eager": 0.5176879999999073,
+            "ferriki-precompiled": 0.49556250000000546,
+            "shiki-wasm": 3.1813964999998916,
+            "shiki-js": 2.674750000000131,
+            "prism": 0.12024999999994179
           }
         },
         {
@@ -1438,13 +1439,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 13.507520999999997,
-            "ferriki": 5.498916500000178,
-            "ferriki-eager": 5.498208000000432,
-            "ferriki-precompiled": 5.3035414999999375,
-            "shiki-wasm": 42.72974999999997,
-            "shiki-js": 36.38868750000029,
-            "prism": 1.1906460000000152
+            "ferriki-off": 15.125853999999435,
+            "ferriki": 6.21756250000044,
+            "ferriki-eager": 6.038979500000096,
+            "ferriki-precompiled": 6.133771000000252,
+            "shiki-wasm": 47.47989600000028,
+            "shiki-js": 40.34358349999957,
+            "prism": 1.2976664999996501
           }
         },
         {
@@ -1453,13 +1454,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.32868750000005775,
-            "ferriki": 0.1956874999999627,
-            "ferriki-eager": 0.18795799999998053,
-            "ferriki-precompiled": 0.18608350000005203,
-            "shiki-wasm": 1.3831670000000145,
-            "shiki-js": 0.7234369999999899,
-            "prism": 0.07358299999987139
+            "ferriki-off": 0.3922294999999849,
+            "ferriki": 0.2490210000000843,
+            "ferriki-eager": 0.23947950000001583,
+            "ferriki-precompiled": 0.23910400000011123,
+            "shiki-wasm": 1.6595625000000496,
+            "shiki-js": 0.8772709999999506,
+            "prism": 0.09174999999981992
           }
         },
         {
@@ -1468,13 +1469,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 4.885250499999984,
-            "ferriki": 2.92975000000024,
-            "ferriki-eager": 2.8547909999999774,
-            "ferriki-precompiled": 2.8220000000001164,
-            "shiki-wasm": 22.17264600000044,
-            "shiki-js": 11.08581200000026,
-            "prism": 1.017770500000097
+            "ferriki-off": 5.362040999999863,
+            "ferriki": 3.350040999999692,
+            "ferriki-eager": 3.3833749999994325,
+            "ferriki-precompiled": 3.117290999999568,
+            "shiki-wasm": 24.455875000000106,
+            "shiki-js": 12.726458000000093,
+            "prism": 1.2180420000004233
           }
         },
         {
@@ -1483,13 +1484,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.2518339999999739,
-            "ferriki": 0.1849170000000413,
-            "ferriki-eager": 0.18162499999993997,
-            "ferriki-precompiled": 0.18216699999999264,
-            "shiki-wasm": 1.0632499999999254,
-            "shiki-js": 0.6743329999999332,
-            "prism": 0.10104100000000926
+            "ferriki-off": 0.28016699999989214,
+            "ferriki": 0.20691600000009203,
+            "ferriki-eager": 0.19991600000003018,
+            "ferriki-precompiled": 0.20070900000001757,
+            "shiki-wasm": 1.1707079999999905,
+            "shiki-js": 0.7484999999999218,
+            "prism": 0.1129160000000411
           }
         },
         {
@@ -1498,13 +1499,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.698583000000326,
-            "ferriki": 2.6599169999999503,
-            "ferriki-eager": 2.635124999999789,
-            "ferriki-precompiled": 2.759624999999687,
-            "shiki-wasm": 16.249958000000333,
-            "shiki-js": 10.579999999999927,
-            "prism": 1.4152919999996811
+            "ferriki-off": 4.212665999999899,
+            "ferriki": 3.1118329999999332,
+            "ferriki-eager": 3.0280000000002474,
+            "ferriki-precompiled": 3.0655420000002778,
+            "shiki-wasm": 18.059749999999894,
+            "shiki-js": 11.568291999999929,
+            "prism": 1.6042919999999867
           }
         },
         {
@@ -1513,13 +1514,13 @@
           "size": "example",
           "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
           "timings": {
-            "ferriki-off": 0.40770800000018426,
-            "ferriki": 0.29731249999997544,
-            "ferriki-eager": 0.2855414999999084,
-            "ferriki-precompiled": 0.2794584999999188,
-            "shiki-wasm": 1.1880210000000488,
-            "shiki-js": 1.6838334999998779,
-            "prism": 0.13247950000015862
+            "ferriki-off": 0.33750000000009095,
+            "ferriki": 0.2491659999998319,
+            "ferriki-eager": 0.2393329999999878,
+            "ferriki-precompiled": 0.23279199999979028,
+            "shiki-wasm": 1.0218339999998989,
+            "shiki-js": 1.4247079999995549,
+            "prism": 0.11583400000017718
           }
         },
         {
@@ -1528,13 +1529,13 @@
           "size": "large",
           "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
           "timings": {
-            "ferriki-off": 4.750979500000085,
-            "ferriki": 3.4676039999999375,
-            "ferriki-eager": 3.3954789999997956,
-            "ferriki-precompiled": 3.343208500000401,
-            "shiki-wasm": 15.591979000000265,
-            "shiki-js": 22.69518749999952,
-            "prism": 1.4569374999996398
+            "ferriki-off": 4.595542000000023,
+            "ferriki": 3.310583999999835,
+            "ferriki-eager": 3.2359999999998763,
+            "ferriki-precompiled": 3.2371250000005602,
+            "shiki-wasm": 15.236167000000023,
+            "shiki-js": 22.029333999999835,
+            "prism": 1.4269580000000133
           }
         },
         {
@@ -1543,13 +1544,13 @@
           "size": "example",
           "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
           "timings": {
-            "ferriki-off": 0.07747950000003812,
-            "ferriki": 0.07447950000002379,
-            "ferriki-eager": 0.0762499999999875,
-            "ferriki-precompiled": 0.07629149999996798,
-            "shiki-wasm": 0.19281199999997511,
-            "shiki-js": 0.14181250000001455,
-            "prism": 0.031520499999999174
+            "ferriki-off": 0.07366700000000037,
+            "ferriki": 0.07177050000004215,
+            "ferriki-eager": 0.0732919999999524,
+            "ferriki-precompiled": 0.07329200000002345,
+            "shiki-wasm": 0.17718799999994417,
+            "shiki-js": 0.13272950000003902,
+            "prism": 0.03000000000002956
           }
         },
         {
@@ -1558,13 +1559,13 @@
           "size": "large",
           "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
           "timings": {
-            "ferriki-off": 1.2567090000000007,
-            "ferriki": 1.2408329999998386,
-            "ferriki-eager": 1.2631669999998394,
-            "ferriki-precompiled": 1.2587499999999636,
-            "shiki-wasm": 3.2493749999998727,
-            "shiki-js": 2.3358330000000933,
-            "prism": 0.554459000000179
+            "ferriki-off": 1.0594374999998308,
+            "ferriki": 1.0505415000001221,
+            "ferriki-eager": 1.0758330000001024,
+            "ferriki-precompiled": 1.0731460000000084,
+            "shiki-wasm": 2.704499999999939,
+            "shiki-js": 1.9677294999999049,
+            "prism": 0.47620850000009796
           }
         },
         {
@@ -1573,12 +1574,12 @@
           "size": "example",
           "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
           "timings": {
-            "ferriki-off": 1.0165209999999547,
-            "ferriki": 1.2678544999999986,
-            "ferriki-eager": 1.257874500000014,
-            "ferriki-precompiled": 1.2561044999999922,
-            "shiki-wasm": 1.3471460000000661,
-            "prism": 0.052708499999994274
+            "ferriki-off": 0.9774795000000722,
+            "ferriki": 1.2126459999999497,
+            "ferriki-eager": 1.2063539999999762,
+            "ferriki-precompiled": 1.2083749999999895,
+            "shiki-wasm": 1.2355625000000146,
+            "prism": 0.045020500000049424
           }
         },
         {
@@ -1587,12 +1588,12 @@
           "size": "large",
           "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
           "timings": {
-            "ferriki-off": 15.500416499999574,
-            "ferriki": 19.186208000000306,
-            "ferriki-eager": 19.50727049999955,
-            "ferriki-precompiled": 19.553270999999768,
-            "shiki-wasm": 19.922645500000044,
-            "prism": 0.6574789999999666
+            "ferriki-off": 14.929354500000045,
+            "ferriki": 18.701833000000306,
+            "ferriki-eager": 18.866791499999863,
+            "ferriki-precompiled": 18.824562500000184,
+            "shiki-wasm": 19.613541499999883,
+            "prism": 0.63868750000006
           }
         },
         {
@@ -1601,13 +1602,13 @@
           "size": "example",
           "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
           "timings": {
-            "ferriki-off": 0.12154150000000641,
-            "ferriki": 0.11887500000000273,
-            "ferriki-eager": 0.1335204999999462,
-            "ferriki-precompiled": 0.13350000000002638,
-            "shiki-wasm": 0.3094995000001006,
-            "shiki-js": 0.24887499999999818,
-            "prism": 0.0508750000000191
+            "ferriki-off": 0.13181250000002365,
+            "ferriki": 0.12672900000001164,
+            "ferriki-eager": 0.14262499999998113,
+            "ferriki-precompiled": 0.14245799999997644,
+            "shiki-wasm": 0.3283539999999334,
+            "shiki-js": 0.2690630000000169,
+            "prism": 0.05539600000008704
           }
         },
         {
@@ -1616,13 +1617,13 @@
           "size": "large",
           "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
           "timings": {
-            "ferriki-off": 1.8624790000003486,
-            "ferriki": 1.8092710000000807,
-            "ferriki-eager": 2.019708499999979,
-            "ferriki-precompiled": 2.0110835000000407,
-            "shiki-wasm": 4.757562499999949,
-            "shiki-js": 3.8543964999997797,
-            "prism": 0.8077710000000025
+            "ferriki-off": 2.2130204999999705,
+            "ferriki": 2.1210420000001022,
+            "ferriki-eager": 2.3371875000000273,
+            "ferriki-precompiled": 2.3358954999998787,
+            "shiki-wasm": 5.662520499999914,
+            "shiki-js": 4.56118749999996,
+            "prism": 0.928395999999907
           }
         },
         {
@@ -1631,12 +1632,12 @@
           "size": "example",
           "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
           "timings": {
-            "ferriki-off": 1.8790409999996882,
-            "ferriki": 1.1778749999998581,
-            "ferriki-eager": 1.342417000000296,
-            "ferriki-precompiled": 1.1097089999998389,
-            "shiki-wasm": 4.556666999999834,
-            "shiki-js": 4.28570899999977
+            "ferriki-off": 2.4312290000000303,
+            "ferriki": 1.6413544999998066,
+            "ferriki-eager": 1.856187499999919,
+            "ferriki-precompiled": 1.6179374999999254,
+            "shiki-wasm": 5.9747919999999795,
+            "shiki-js": 6.0232290000001285
           }
         },
         {
@@ -1645,12 +1646,12 @@
           "size": "large",
           "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
           "timings": {
-            "ferriki-off": 20.70858350000026,
-            "ferriki": 12.688333500000226,
-            "ferriki-eager": 15.446020499999577,
-            "ferriki-precompiled": 12.535020499999973,
-            "shiki-wasm": 53.87452050000047,
-            "shiki-js": 53.05985400000009
+            "ferriki-off": 22.623188000000027,
+            "ferriki": 14.516749999999774,
+            "ferriki-eager": 18.07724999999982,
+            "ferriki-precompiled": 15.170896000000539,
+            "shiki-wasm": 61.83302050000066,
+            "shiki-js": 62.7861254999998
           }
         },
         {
@@ -1659,12 +1660,12 @@
           "size": "example",
           "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
           "timings": {
-            "ferriki-off": 1.9845419999998057,
-            "ferriki": 1.1137499999998681,
-            "ferriki-eager": 1.2046044999999594,
-            "ferriki-precompiled": 1.082645500000126,
-            "shiki-wasm": 4.668770499999937,
-            "shiki-js": 5.229270499999984
+            "ferriki-off": 2.359083999999939,
+            "ferriki": 1.4060829999998532,
+            "ferriki-eager": 1.4777920000001359,
+            "ferriki-precompiled": 1.3539160000000265,
+            "shiki-wasm": 5.66662499999984,
+            "shiki-js": 6.38129200000003
           }
         },
         {
@@ -1673,12 +1674,12 @@
           "size": "large",
           "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
           "timings": {
-            "ferriki-off": 27.805271000000175,
-            "ferriki": 14.004770500000632,
-            "ferriki-eager": 15.643833500000255,
-            "ferriki-precompiled": 14.145313000000442,
-            "shiki-wasm": 69.12439549999999,
-            "shiki-js": 77.90475000000015
+            "ferriki-off": 30.478896000000532,
+            "ferriki": 15.809187500000007,
+            "ferriki-eager": 17.9488539999993,
+            "ferriki-precompiled": 15.957041999999092,
+            "shiki-wasm": 77.3858124999997,
+            "shiki-js": 88.10245799999984
           }
         },
         {
@@ -1687,13 +1688,13 @@
           "size": "example",
           "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
           "timings": {
-            "ferriki-off": 0.2075419999996484,
-            "ferriki": 0.14583300000003874,
-            "ferriki-eager": 0.14658300000019153,
-            "ferriki-precompiled": 0.14545899999995981,
-            "shiki-wasm": 1.5455420000000686,
-            "shiki-js": 0.6624589999998989,
-            "prism": 0.08520799999996598
+            "ferriki-off": 0.24616599999990285,
+            "ferriki": 0.17545800000016243,
+            "ferriki-eager": 0.1715000000000373,
+            "ferriki-precompiled": 0.17166599999995924,
+            "shiki-wasm": 1.7137920000000122,
+            "shiki-js": 0.7712910000000193,
+            "prism": 0.10537499999963984
           }
         },
         {
@@ -1702,13 +1703,13 @@
           "size": "large",
           "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
           "timings": {
-            "ferriki-off": 3.1246249999999236,
-            "ferriki": 2.2059379999998328,
-            "ferriki-eager": 2.2467915000001994,
-            "ferriki-precompiled": 2.227374999999938,
-            "shiki-wasm": 24.021853499999906,
-            "shiki-js": 10.216938000000027,
-            "prism": 1.2864579999998114
+            "ferriki-off": 3.6196249999998145,
+            "ferriki": 2.585707999999613,
+            "ferriki-eager": 2.5422499999995125,
+            "ferriki-precompiled": 2.587833000000046,
+            "shiki-wasm": 28.38062499999978,
+            "shiki-js": 12.558332999999948,
+            "prism": 1.4585409999999683
           }
         },
         {
@@ -1717,13 +1718,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.2848750000000564,
-            "ferriki": 0.2256460000000402,
-            "ferriki-eager": 0.2202914999999166,
-            "ferriki-precompiled": 0.21954150000010486,
-            "shiki-wasm": 1.4096454999999821,
-            "shiki-js": 0.7787500000000591,
-            "prism": 0.1035000000001105
+            "ferriki-off": 0.2969590000000153,
+            "ferriki": 0.23737499999992906,
+            "ferriki-eager": 0.22995899999978064,
+            "ferriki-precompiled": 0.2324590000000626,
+            "shiki-wasm": 1.4860409999998865,
+            "shiki-js": 0.8287090000001172,
+            "prism": 0.11187500000005457
           }
         },
         {
@@ -1732,13 +1733,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 4.236582999999882,
-            "ferriki": 3.4379579999999805,
-            "ferriki-eager": 3.391374999999698,
-            "ferriki-precompiled": 3.3916250000002037,
-            "shiki-wasm": 21.649333000000297,
-            "shiki-js": 11.69900000000007,
-            "prism": 1.4883749999999054
+            "ferriki-off": 4.4161245000000235,
+            "ferriki": 3.5435004999999364,
+            "ferriki-eager": 3.460728999999901,
+            "ferriki-precompiled": 3.5637915000002067,
+            "shiki-wasm": 23.44722950000005,
+            "shiki-js": 12.711978999999701,
+            "prism": 1.5429165000000467
           }
         },
         {
@@ -1747,12 +1748,12 @@
           "size": "example",
           "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
           "timings": {
-            "ferriki-off": 1.1249159999999847,
-            "ferriki": 0.5808329999999842,
-            "ferriki-eager": 0.5609999999996944,
-            "ferriki-precompiled": 0.5625420000001213,
-            "shiki-wasm": 2.075666000000183,
-            "shiki-js": 2.2607080000000224
+            "ferriki-off": 1.2076454999998987,
+            "ferriki": 0.6364375000000564,
+            "ferriki-eager": 0.6072920000000295,
+            "ferriki-precompiled": 0.622020500000076,
+            "shiki-wasm": 2.1940419999999676,
+            "shiki-js": 2.4256255000000237
           }
         },
         {
@@ -1761,12 +1762,12 @@
           "size": "large",
           "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
           "timings": {
-            "ferriki-off": 16.8732500000001,
-            "ferriki": 7.904041499999948,
-            "ferriki-eager": 7.8169999999995525,
-            "ferriki-precompiled": 7.906957999999577,
-            "shiki-wasm": 31.22247950000019,
-            "shiki-js": 34.86918700000024
+            "ferriki-off": 17.979583000000275,
+            "ferriki": 8.508520999999746,
+            "ferriki-eager": 8.479916499999945,
+            "ferriki-precompiled": 8.547958499999822,
+            "shiki-wasm": 33.347104500000114,
+            "shiki-js": 38.14495850000003
           }
         },
         {
@@ -1775,12 +1776,12 @@
           "size": "example",
           "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
           "timings": {
-            "ferriki-off": 0.7193750000001273,
-            "ferriki": 0.4773329999998168,
-            "ferriki-eager": 0.4444170000001577,
-            "ferriki-precompiled": 0.42991600000004837,
-            "shiki-wasm": 2.0450000000000728,
-            "shiki-js": 3.077833000000055
+            "ferriki-off": 0.5504999999999427,
+            "ferriki": 0.3612500000001546,
+            "ferriki-eager": 0.3453750000001037,
+            "ferriki-precompiled": 0.343854499999793,
+            "shiki-wasm": 1.7454374999998663,
+            "shiki-js": 2.5396460000000616
           }
         },
         {
@@ -1789,12 +1790,12 @@
           "size": "large",
           "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
           "timings": {
-            "ferriki-off": 7.34387500000048,
-            "ferriki": 4.767041500000005,
-            "ferriki-eager": 4.518166500000007,
-            "ferriki-precompiled": 4.472916500000565,
-            "shiki-wasm": 25.732770499999788,
-            "shiki-js": 39.49335449999944
+            "ferriki-off": 7.38799999999992,
+            "ferriki": 4.80947900000001,
+            "ferriki-eager": 4.52783350000027,
+            "ferriki-precompiled": 4.407187500000418,
+            "shiki-wasm": 25.33895849999999,
+            "shiki-js": 39.50777049999988
           }
         },
         {
@@ -1803,13 +1804,13 @@
           "size": "example",
           "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
           "timings": {
-            "ferriki-off": 0.25487499999997,
-            "ferriki": 0.22420800000008967,
-            "ferriki-eager": 0.2178750000002765,
-            "ferriki-precompiled": 0.20945900000003803,
-            "shiki-wasm": 2.7552080000000387,
-            "shiki-js": 0.5298749999999472,
-            "prism": 0.1457910000000311
+            "ferriki-off": 0.29316699999998264,
+            "ferriki": 0.27450000000004593,
+            "ferriki-eager": 0.26218800000009423,
+            "ferriki-precompiled": 0.2611454999999978,
+            "shiki-wasm": 2.912249999999858,
+            "shiki-js": 0.5800829999998314,
+            "prism": 0.15241699999990033
           }
         },
         {
@@ -1818,13 +1819,13 @@
           "size": "large",
           "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
           "timings": {
-            "ferriki-off": 3.6519374999998035,
-            "ferriki": 3.0289374999999836,
-            "ferriki-eager": 2.9769169999999576,
-            "ferriki-precompiled": 2.824437499999931,
-            "shiki-wasm": 43.9584789999999,
-            "shiki-js": 7.716833500000121,
-            "prism": 1.99993749999976
+            "ferriki-off": 3.6478750000001128,
+            "ferriki": 3.0279579999998987,
+            "ferriki-eager": 2.976353999999901,
+            "ferriki-precompiled": 2.8855625000001055,
+            "shiki-wasm": 44.23652099999981,
+            "shiki-js": 7.790562499999851,
+            "prism": 1.936208500000248
           }
         },
         {
@@ -1833,13 +1834,13 @@
           "size": "example",
           "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
           "timings": {
-            "ferriki-off": 0.2838749999999095,
-            "ferriki": 0.23745849999994562,
-            "ferriki-eager": 0.23408299999994142,
-            "ferriki-precompiled": 0.23556250000001455,
-            "shiki-wasm": 0.8678955000000315,
-            "shiki-js": 0.5755420000000413,
-            "prism": 0.09831249999996317
+            "ferriki-off": 0.28072949999989305,
+            "ferriki": 0.23720849999995153,
+            "ferriki-eager": 0.23156249999999545,
+            "ferriki-precompiled": 0.23345800000004147,
+            "shiki-wasm": 0.8590630000000488,
+            "shiki-js": 0.5666874999999436,
+            "prism": 0.09102049999995643
           }
         },
         {
@@ -1848,13 +1849,13 @@
           "size": "large",
           "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
           "timings": {
-            "ferriki-off": 4.229207999999744,
-            "ferriki": 3.6300420000002305,
-            "ferriki-eager": 3.5522089999994932,
-            "ferriki-precompiled": 3.5168750000002547,
-            "shiki-wasm": 13.161124999999629,
-            "shiki-js": 8.547292000000198,
-            "prism": 1.419625000000451
+            "ferriki-off": 4.312875000000304,
+            "ferriki": 3.6809375000002547,
+            "ferriki-eager": 3.6382499999997435,
+            "ferriki-precompiled": 3.6500209999999242,
+            "shiki-wasm": 13.341187499999705,
+            "shiki-js": 8.821707999999717,
+            "prism": 1.389958000000206
           }
         },
         {
@@ -1863,13 +1864,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.3748755000000017,
-            "ferriki": 0.30312500000002274,
-            "ferriki-eager": 0.28841699999998127,
-            "ferriki-precompiled": 0.2861454999999751,
-            "shiki-wasm": 1.6714795000000038,
-            "shiki-js": 0.971917000000019,
-            "prism": 0.13645850000000337
+            "ferriki-off": 0.3182914999999866,
+            "ferriki": 0.2532494999999244,
+            "ferriki-eager": 0.24804149999999936,
+            "ferriki-precompiled": 0.24585449999995035,
+            "shiki-wasm": 1.5516039999999975,
+            "shiki-js": 0.8897500000000491,
+            "prism": 0.1224374999999327
           }
         },
         {
@@ -1878,13 +1879,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 4.735250000000178,
-            "ferriki": 3.8979369999999562,
-            "ferriki-eager": 3.747916000000032,
-            "ferriki-precompiled": 3.832666000000245,
-            "shiki-wasm": 25.27620849999994,
-            "shiki-js": 13.906937499999913,
-            "prism": 1.670958500000097
+            "ferriki-off": 4.272479500000145,
+            "ferriki": 3.463813000000073,
+            "ferriki-eager": 3.3671250000002146,
+            "ferriki-precompiled": 3.3618124999998145,
+            "shiki-wasm": 22.01043750000008,
+            "shiki-js": 11.991188000000193,
+            "prism": 1.4913540000002286
           }
         },
         {
@@ -1893,13 +1894,13 @@
           "size": "example",
           "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
           "timings": {
-            "ferriki-off": 0.42249999999989996,
-            "ferriki": 0.2329159999999888,
-            "ferriki-eager": 0.22079199999996035,
-            "ferriki-precompiled": 0.22499999999990905,
-            "shiki-wasm": 1.77374999999995,
-            "shiki-js": 0.9626660000000129,
-            "prism": 0.09633300000007239
+            "ferriki-off": 0.344916000000012,
+            "ferriki": 0.17479100000002745,
+            "ferriki-eager": 0.1714999999999236,
+            "ferriki-precompiled": 0.1740839999997661,
+            "shiki-wasm": 1.5649160000000393,
+            "shiki-js": 0.8524999999999636,
+            "prism": 0.078583999999978
           }
         },
         {
@@ -1908,13 +1909,13 @@
           "size": "large",
           "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
           "timings": {
-            "ferriki-off": 5.539084000000003,
-            "ferriki": 2.9561249999997017,
-            "ferriki-eager": 2.850916999999754,
-            "ferriki-precompiled": 2.872041999999965,
-            "shiki-wasm": 26.41216600000007,
-            "shiki-js": 14.322625000000698,
-            "prism": 1.2102089999998498
+            "ferriki-off": 5.191916499999934,
+            "ferriki": 2.7288335000002917,
+            "ferriki-eager": 2.712958500000468,
+            "ferriki-precompiled": 2.7085005000001274,
+            "shiki-wasm": 24.43770849999987,
+            "shiki-js": 13.2982085000001,
+            "prism": 1.127896000000419
           }
         },
         {
@@ -1923,13 +1924,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 1.3427085000000716,
-            "ferriki": 0.6988334999998642,
-            "ferriki-eager": 0.6578744999999344,
-            "ferriki-precompiled": 0.6529374999997799,
-            "shiki-wasm": 3.4896664999998848,
-            "shiki-js": 3.09683350000023,
-            "prism": 0.1331035000000611
+            "ferriki-off": 0.8973755000001802,
+            "ferriki": 0.3809374999998454,
+            "ferriki-eager": 0.3693545000000995,
+            "ferriki-precompiled": 0.36010400000009213,
+            "shiki-wasm": 2.6475624999998217,
+            "shiki-js": 2.175604000000021,
+            "prism": 0.09818749999999454
           }
         },
         {
@@ -1938,13 +1939,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 14.26864549999982,
-            "ferriki": 5.805750000000444,
-            "ferriki-eager": 6.005813000000217,
-            "ferriki-precompiled": 5.867562500000076,
-            "shiki-wasm": 46.824854000000414,
-            "shiki-js": 38.681457999999566,
-            "prism": 1.2519999999999527
+            "ferriki-off": 13.090854000000036,
+            "ferriki": 5.41906199999994,
+            "ferriki-eager": 5.3107294999999795,
+            "ferriki-precompiled": 5.270458000000417,
+            "shiki-wasm": 40.59204150000005,
+            "shiki-js": 33.61937499999976,
+            "prism": 1.1676664999999957
           }
         },
         {
@@ -1953,13 +1954,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.27737500000012005,
-            "ferriki": 0.20974999999998545,
-            "ferriki-eager": 0.20195799999999053,
-            "ferriki-precompiled": 0.20616699999982302,
-            "shiki-wasm": 1.0857089999999516,
-            "shiki-js": 0.690958000000137,
-            "prism": 0.10708399999998619
+            "ferriki-off": 0.22254100000009203,
+            "ferriki": 0.16116699999997763,
+            "ferriki-eager": 0.15787500000001842,
+            "ferriki-precompiled": 0.15983400000004622,
+            "shiki-wasm": 0.9732500000000073,
+            "shiki-js": 0.6061670000000277,
+            "prism": 0.08679199999983211
           }
         },
         {
@@ -1968,13 +1969,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.680583999999726,
-            "ferriki": 2.7497920000000704,
-            "ferriki-eager": 2.745708999999806,
-            "ferriki-precompiled": 2.727665999999772,
-            "shiki-wasm": 16.182958999999755,
-            "shiki-js": 10.000625000000127,
-            "prism": 1.3848750000001928
+            "ferriki-off": 3.7454170000000886,
+            "ferriki": 2.81262500000048,
+            "ferriki-eager": 2.861750000000029,
+            "ferriki-precompiled": 2.7488130000001547,
+            "shiki-wasm": 17.032729000000018,
+            "shiki-js": 10.614104500000167,
+            "prism": 1.4197705000001406
           }
         },
         {
@@ -1983,13 +1984,13 @@
           "size": "example",
           "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
           "timings": {
-            "ferriki-off": 0.8541249999999536,
-            "ferriki": 0.319374999999809,
-            "ferriki-eager": 0.30674999999996544,
-            "ferriki-precompiled": 0.3079170000000886,
-            "shiki-wasm": 1.2908749999999145,
-            "shiki-js": 1.969916000000012,
-            "prism": 0.21029199999998127
+            "ferriki-off": 0.887833999999998,
+            "ferriki": 0.31120800000007875,
+            "ferriki-eager": 0.3022920000000795,
+            "ferriki-precompiled": 0.29729100000031394,
+            "shiki-wasm": 1.352542000000085,
+            "shiki-js": 2.058415999999852,
+            "prism": 0.2184589999999389
           }
         },
         {
@@ -1998,13 +1999,13 @@
           "size": "large",
           "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
           "timings": {
-            "ferriki-off": 11.959541500000114,
-            "ferriki": 3.890666999999894,
-            "ferriki-eager": 3.8901875000001382,
-            "ferriki-precompiled": 3.7862709999999424,
-            "shiki-wasm": 17.558062499999778,
-            "shiki-js": 28.48012449999942,
-            "prism": 2.565270499999997
+            "ferriki-off": 13.698187500000131,
+            "ferriki": 4.506542000000081,
+            "ferriki-eager": 4.4363545000005615,
+            "ferriki-precompiled": 4.384646500000372,
+            "shiki-wasm": 20.183333500000117,
+            "shiki-js": 34.01412449999998,
+            "prism": 2.9043124999998327
           }
         },
         {
@@ -2013,13 +2014,13 @@
           "size": "example",
           "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
           "timings": {
-            "ferriki-off": 2.345811999999796,
-            "ferriki": 1.1358749999999418,
-            "ferriki-eager": 1.0678540000000112,
-            "ferriki-precompiled": 1.0728954999999587,
-            "shiki-wasm": 5.43370850000008,
-            "shiki-js": 6.647583000000054,
-            "prism": 0.28193799999996827
+            "ferriki-off": 2.420375000000149,
+            "ferriki": 1.0998749999998836,
+            "ferriki-eager": 1.046542000000045,
+            "ferriki-precompiled": 1.0672499999999445,
+            "shiki-wasm": 5.5711670000000595,
+            "shiki-js": 6.81837500000006,
+            "prism": 0.2826249999998254
           }
         },
         {
@@ -2028,13 +2029,13 @@
           "size": "large",
           "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
           "timings": {
-            "ferriki-off": 32.26500000000033,
-            "ferriki": 11.79654199999959,
-            "ferriki-eager": 11.787249999999403,
-            "ferriki-precompiled": 11.58910399999968,
-            "shiki-wasm": 79.5546460000005,
-            "shiki-js": 94.84375,
-            "prism": 2.5807494999999108
+            "ferriki-off": 33.78016650000063,
+            "ferriki": 11.799145500000577,
+            "ferriki-eager": 11.843792000000121,
+            "ferriki-precompiled": 12.173061999999845,
+            "shiki-wasm": 78.92964600000096,
+            "shiki-js": 96.43256249999968,
+            "prism": 2.654437499999858
           }
         },
         {
@@ -2043,13 +2044,13 @@
           "size": "example",
           "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
           "timings": {
-            "ferriki-off": 0.2690420000000131,
-            "ferriki": 0.2765835000000152,
-            "ferriki-eager": 0.2746875000000273,
-            "ferriki-precompiled": 0.267020500000001,
-            "shiki-wasm": 1.0841045000000804,
-            "shiki-js": 0.3882294999999658,
-            "prism": 0.05970800000000054
+            "ferriki-off": 0.23554150000006757,
+            "ferriki": 0.23241700000005494,
+            "ferriki-eager": 0.233791999999994,
+            "ferriki-precompiled": 0.23077100000011797,
+            "shiki-wasm": 0.9649370000000772,
+            "shiki-js": 0.31647900000012896,
+            "prism": 0.04937500000005457
           }
         },
         {
@@ -2058,13 +2059,13 @@
           "size": "large",
           "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
           "timings": {
-            "ferriki-off": 3.9989374999997835,
-            "ferriki": 3.9948959999996987,
-            "ferriki-eager": 4.093207999999777,
-            "ferriki-precompiled": 3.9254375000000437,
-            "shiki-wasm": 16.179687999999942,
-            "shiki-js": 5.4472084999997605,
-            "prism": 0.7721460000000206
+            "ferriki-off": 3.694166500000165,
+            "ferriki": 3.740958000000319,
+            "ferriki-eager": 3.748896000000286,
+            "ferriki-precompiled": 3.694562499999847,
+            "shiki-wasm": 15.177187000000004,
+            "shiki-js": 4.888291499999923,
+            "prism": 0.7460209999999279
           }
         },
         {
@@ -2073,13 +2074,13 @@
           "size": "example",
           "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
           "timings": {
-            "ferriki-off": 0.30966699999999037,
-            "ferriki": 0.2758330000001479,
-            "ferriki-eager": 0.2644999999999982,
-            "ferriki-precompiled": 4.478707999999983,
-            "shiki-wasm": 2.523584000000028,
-            "shiki-js": 0.4743750000000091,
-            "prism": 0.08970799999997325
+            "ferriki-off": 0.2284589999999298,
+            "ferriki": 0.22070850000011433,
+            "ferriki-eager": 0.21839599999998427,
+            "ferriki-precompiled": 0.21683300000012196,
+            "shiki-wasm": 2.271020999999905,
+            "shiki-js": 0.364479499999959,
+            "prism": 0.06266700000006153
           }
         },
         {
@@ -2088,13 +2089,13 @@
           "size": "large",
           "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
           "timings": {
-            "ferriki-off": 4.340999499999953,
-            "ferriki": 4.090562499999578,
-            "ferriki-eager": 4.043417000000318,
-            "ferriki-precompiled": 76.79104199999983,
-            "shiki-wasm": 42.286583500000006,
-            "shiki-js": 6.793312500000184,
-            "prism": 1.1256045000000086
+            "ferriki-off": 3.6133749999999054,
+            "ferriki": 3.4802920000001905,
+            "ferriki-eager": 3.437750000000051,
+            "ferriki-precompiled": 3.445125000000189,
+            "shiki-wasm": 36.37166699999989,
+            "shiki-js": 5.623499999999694,
+            "prism": 0.931999999999789
           }
         },
         {
@@ -2103,13 +2104,13 @@
           "size": "example",
           "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
           "timings": {
-            "ferriki-off": 0.18643750000001091,
-            "ferriki": 0.14293799999990142,
-            "ferriki-eager": 0.14250000000015461,
-            "ferriki-precompiled": 0.14254200000002015,
-            "shiki-wasm": 1.474666999999954,
-            "shiki-js": 0.642187500000091,
-            "prism": 0.048124999999856755
+            "ferriki-off": 0.1805420000000595,
+            "ferriki": 0.14020849999985785,
+            "ferriki-eager": 0.1398340000000644,
+            "ferriki-precompiled": 0.13999999999992951,
+            "shiki-wasm": 1.4475414999999998,
+            "shiki-js": 0.6263959999999997,
+            "prism": 0.0466670000000704
           }
         },
         {
@@ -2118,13 +2119,13 @@
           "size": "large",
           "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
           "timings": {
-            "ferriki-off": 2.8623329999995804,
-            "ferriki": 2.208125000000109,
-            "ferriki-eager": 2.2174999999997453,
-            "ferriki-precompiled": 2.2153339999995296,
-            "shiki-wasm": 23.439458000000286,
-            "shiki-js": 10.09524999999985,
-            "prism": 0.7372919999997976
+            "ferriki-off": 2.731333500000119,
+            "ferriki": 2.149854000000005,
+            "ferriki-eager": 2.1582080000000587,
+            "ferriki-precompiled": 2.1539374999997563,
+            "shiki-wasm": 22.589042000000063,
+            "shiki-js": 9.500312000000122,
+            "prism": 0.705270500000097
           }
         },
         {
@@ -2133,13 +2134,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.1772080000000642,
-            "ferriki": 0.14391599999999016,
-            "ferriki-eager": 0.14120900000000347,
-            "ferriki-precompiled": 0.1425409999999374,
-            "shiki-wasm": 1.0967909999999392,
-            "shiki-js": 0.4494159999999283,
-            "prism": 0.08120800000006057
+            "ferriki-off": 0.17074999999999818,
+            "ferriki": 0.13989550000005124,
+            "ferriki-eager": 0.13816600000018298,
+            "ferriki-precompiled": 0.1399579999999787,
+            "shiki-wasm": 1.042583000000036,
+            "shiki-js": 0.4207499999999982,
+            "prism": 0.07466699999997672
           }
         },
         {
@@ -2148,13 +2149,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 2.7965209999999843,
-            "ferriki": 2.27518699999996,
-            "ferriki-eager": 2.236167000000023,
-            "ferriki-precompiled": 2.2370000000003074,
-            "shiki-wasm": 17.11760400000003,
-            "shiki-js": 6.787375000000111,
-            "prism": 1.1712914999998247
+            "ferriki-off": 2.669332999999824,
+            "ferriki": 2.215541999999914,
+            "ferriki-eager": 2.1897500000000036,
+            "ferriki-precompiled": 2.213583999999173,
+            "shiki-wasm": 16.594333000000006,
+            "shiki-js": 6.601208000000042,
+            "prism": 1.1320409999998446
           }
         },
         {
@@ -2163,13 +2164,13 @@
           "size": "example",
           "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
           "timings": {
-            "ferriki-off": 0.4495005000001697,
-            "ferriki": 0.33612499999998136,
-            "ferriki-eager": 0.3438545000000204,
-            "ferriki-precompiled": 0.3198125000000118,
-            "shiki-wasm": 1.6086875000000873,
-            "shiki-js": 1.0181040000000223,
-            "prism": 0.06891699999982848
+            "ferriki-off": 0.4832710000000304,
+            "ferriki": 0.37293750000003456,
+            "ferriki-eager": 0.38295800000003055,
+            "ferriki-precompiled": 0.3544375000000173,
+            "shiki-wasm": 1.7329375000000198,
+            "shiki-js": 1.0773540000001276,
+            "prism": 0.0693744999999808
           }
         },
         {
@@ -2178,13 +2179,13 @@
           "size": "large",
           "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
           "timings": {
-            "ferriki-off": 6.21954149999965,
-            "ferriki": 4.584562999999889,
-            "ferriki-eager": 4.788791500000343,
-            "ferriki-precompiled": 4.514271000000235,
-            "shiki-wasm": 23.484333500000048,
-            "shiki-js": 14.399270500000057,
-            "prism": 0.8864170000006197
+            "ferriki-off": 7.636249999999791,
+            "ferriki": 5.799313000000211,
+            "ferriki-eager": 5.855874500000027,
+            "ferriki-precompiled": 5.441895500000101,
+            "shiki-wasm": 29.622104000000036,
+            "shiki-js": 17.88579149999987,
+            "prism": 0.9804579999999987
           }
         },
         {
@@ -2193,13 +2194,13 @@
           "size": "example",
           "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
           "timings": {
-            "ferriki-off": 0.31604200000015226,
-            "ferriki": 0.19829200000003766,
-            "ferriki-eager": 0.1948749999999677,
-            "ferriki-precompiled": 0.18724999999994907,
-            "shiki-wasm": 1.1899170000000368,
-            "shiki-js": 0.5017920000000231,
-            "prism": 0.054124999999885404
+            "ferriki-off": 0.4657919999999649,
+            "ferriki": 0.3231660000001284,
+            "ferriki-eager": 0.3024579999996604,
+            "ferriki-precompiled": 0.29137500000001637,
+            "shiki-wasm": 1.6626659999997173,
+            "shiki-js": 0.7342909999999847,
+            "prism": 0.08495800000002873
           }
         },
         {
@@ -2208,13 +2209,13 @@
           "size": "large",
           "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
           "timings": {
-            "ferriki-off": 4.734249499999805,
-            "ferriki": 3.0419584999999643,
-            "ferriki-eager": 3.029978999999912,
-            "ferriki-precompiled": 2.8621665000000576,
-            "shiki-wasm": 18.24958349999997,
-            "shiki-js": 7.3212085000000116,
-            "prism": 0.7952294999997775
+            "ferriki-off": 6.0695414999997865,
+            "ferriki": 3.897916500000292,
+            "ferriki-eager": 3.8740630000002056,
+            "ferriki-precompiled": 3.6755829999999605,
+            "shiki-wasm": 23.942083499999853,
+            "shiki-js": 9.905500500000016,
+            "prism": 0.9588544999999158
           }
         },
         {
@@ -2223,13 +2224,13 @@
           "size": "example",
           "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
           "timings": {
-            "ferriki-off": 0.10470850000001519,
-            "ferriki": 0.12683300000003328,
-            "ferriki-eager": 0.12774999999999181,
-            "ferriki-precompiled": 0.12654199999997218,
-            "shiki-wasm": 0.7087080000000014,
-            "shiki-js": 0.18868800000007013,
-            "prism": 0.057332999999971435
+            "ferriki-off": 0.14683399999989888,
+            "ferriki": 0.2052920000000995,
+            "ferriki-eager": 0.19850000000019463,
+            "ferriki-precompiled": 0.19445800000016789,
+            "shiki-wasm": 0.9090419999999995,
+            "shiki-js": 0.25908300000014606,
+            "prism": 0.084541999999999
           }
         },
         {
@@ -2238,13 +2239,13 @@
           "size": "large",
           "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
           "timings": {
-            "ferriki-off": 1.6225420000000668,
-            "ferriki": 2.011959000000388,
-            "ferriki-eager": 2.0127080000002024,
-            "ferriki-precompiled": 2.0067909999997937,
-            "shiki-wasm": 11.373916999999892,
-            "shiki-js": 2.830417000000125,
-            "prism": 0.8955829999999878
+            "ferriki-off": 1.9313534999998865,
+            "ferriki": 2.4358954999997877,
+            "ferriki-eager": 2.4246039999998175,
+            "ferriki-precompiled": 2.389729000000216,
+            "shiki-wasm": 13.128333500000053,
+            "shiki-js": 3.478978999999981,
+            "prism": 1.0400620000000345
           }
         },
         {
@@ -2253,13 +2254,13 @@
           "size": "example",
           "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
           "timings": {
-            "ferriki-off": 0.25520799999992505,
-            "ferriki": 0.15404199999989032,
-            "ferriki-eager": 0.1517079999998714,
-            "ferriki-precompiled": 0.15220800000008694,
-            "shiki-wasm": 1.5025410000002921,
-            "shiki-js": 0.5388749999999618,
-            "prism": 0.11108300000000781
+            "ferriki-off": 0.45374999999989996,
+            "ferriki": 0.29466600000000653,
+            "ferriki-eager": 0.27720899999985704,
+            "ferriki-precompiled": 0.27158300000019153,
+            "shiki-wasm": 2.0755840000001626,
+            "shiki-js": 0.8489160000001448,
+            "prism": 0.19420800000034433
           }
         },
         {
@@ -2268,13 +2269,13 @@
           "size": "large",
           "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
           "timings": {
-            "ferriki-off": 3.7412709999998697,
-            "ferriki": 2.3333955000000515,
-            "ferriki-eager": 2.3183125000000473,
-            "ferriki-precompiled": 2.3277499999996962,
-            "shiki-wasm": 23.43416699999989,
-            "shiki-js": 8.032542000000149,
-            "prism": 1.622729500000105
+            "ferriki-off": 4.347542000000431,
+            "ferriki": 2.8048329999992347,
+            "ferriki-eager": 2.7024999999998727,
+            "ferriki-precompiled": 2.6960830000002716,
+            "shiki-wasm": 27.33333300000004,
+            "shiki-js": 10.020416999999725,
+            "prism": 1.8716249999997672
           }
         },
         {
@@ -2283,13 +2284,13 @@
           "size": "example",
           "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
           "timings": {
-            "ferriki-off": 0.22800000000006548,
-            "ferriki": 0.0880830000000401,
-            "ferriki-eager": 0.0849170000000754,
-            "ferriki-precompiled": 0.08474999999998545,
-            "shiki-wasm": 2.1181245000000217,
-            "shiki-js": 0.6985415000001751,
-            "prism": 0.027291999999988548
+            "ferriki-off": 0.2714579999999387,
+            "ferriki": 0.11912500000016735,
+            "ferriki-eager": 0.11200000000008004,
+            "ferriki-precompiled": 0.11120850000008886,
+            "shiki-wasm": 2.354708500000015,
+            "shiki-js": 0.8601045000001477,
+            "prism": 0.036687499999970896
           }
         },
         {
@@ -2298,13 +2299,13 @@
           "size": "large",
           "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
           "timings": {
-            "ferriki-off": 3.307749999999942,
-            "ferriki": 1.2882494999998926,
-            "ferriki-eager": 1.2556460000000698,
-            "ferriki-precompiled": 1.2615204999999605,
-            "shiki-wasm": 33.039145499999904,
-            "shiki-js": 10.071603500000037,
-            "prism": 0.3722704999995585
+            "ferriki-off": 3.7661664999998266,
+            "ferriki": 1.4871254999995926,
+            "ferriki-eager": 1.43356249999988,
+            "ferriki-precompiled": 1.4596874999997453,
+            "shiki-wasm": 37.59481249999999,
+            "shiki-js": 12.085395999999946,
+            "prism": 0.41852049999988594
           }
         },
         {
@@ -2313,13 +2314,13 @@
           "size": "example",
           "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
           "timings": {
-            "ferriki-off": 0.16858300000012605,
-            "ferriki": 0.16066699999998946,
-            "ferriki-eager": 0.16095800000002214,
-            "ferriki-precompiled": 0.15612499999997453,
-            "shiki-wasm": 0.5876875000000155,
-            "shiki-js": 0.36435399999999163,
-            "prism": 0.06425000000001546
+            "ferriki-off": 0.21264600000000655,
+            "ferriki": 0.20195850000004612,
+            "ferriki-eager": 0.20095900000001166,
+            "ferriki-precompiled": 0.194208500000002,
+            "shiki-wasm": 0.7122914999998784,
+            "shiki-js": 0.4533124999998108,
+            "prism": 0.07854200000019773
           }
         },
         {
@@ -2328,13 +2329,13 @@
           "size": "large",
           "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
           "timings": {
-            "ferriki-off": 2.52862499999992,
-            "ferriki": 2.4858330000001843,
-            "ferriki-eager": 2.4876249999997526,
-            "ferriki-precompiled": 2.4298330000001442,
-            "shiki-wasm": 9.159999999999854,
-            "shiki-js": 5.5334170000000995,
-            "prism": 0.9870829999999842
+            "ferriki-off": 3.1629579999998896,
+            "ferriki": 2.962666999999783,
+            "ferriki-eager": 2.930207999999766,
+            "ferriki-precompiled": 3.0400829999998678,
+            "shiki-wasm": 11.301750000000084,
+            "shiki-js": 7.243667000000187,
+            "prism": 1.1815829999995913
           }
         },
         {
@@ -2343,13 +2344,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.30150000000003274,
-            "ferriki": 0.17862500000001091,
-            "ferriki-eager": 0.1736670000000231,
-            "ferriki-precompiled": 0.1728330000000824,
-            "shiki-wasm": 1.296833000000106,
-            "shiki-js": 0.6713749999998981,
-            "prism": 0.06758300000001327
+            "ferriki-off": 0.43695800000023155,
+            "ferriki": 0.2771669999999631,
+            "ferriki-eager": 0.2644999999997708,
+            "ferriki-precompiled": 0.26350000000002183,
+            "shiki-wasm": 1.766458000000057,
+            "shiki-js": 0.9434580000000778,
+            "prism": 0.10183299999994233
           }
         },
         {
@@ -2358,13 +2359,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 4.503167000000303,
-            "ferriki": 2.7470000000002983,
-            "ferriki-eager": 2.6817919999998594,
-            "ferriki-precompiled": 2.6451670000001286,
-            "shiki-wasm": 19.711583999999675,
-            "shiki-js": 9.991375000000062,
-            "prism": 0.9507090000001881
+            "ferriki-off": 5.152292000000671,
+            "ferriki": 3.158042000000023,
+            "ferriki-eager": 3.0572919999995065,
+            "ferriki-precompiled": 3.03650000000016,
+            "shiki-wasm": 23.337000000000444,
+            "shiki-js": 11.59595900000022,
+            "prism": 1.1082080000001042
           }
         },
         {
@@ -2373,13 +2374,13 @@
           "size": "example",
           "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
           "timings": {
-            "ferriki-off": 0.32822950000013407,
-            "ferriki": 0.17008350000003247,
-            "ferriki-eager": 0.16706249999992906,
-            "ferriki-precompiled": 0.16383400000006532,
-            "shiki-wasm": 1.6291664999999966,
-            "shiki-js": 0.6985414999999762,
-            "prism": 0.0625835000000734
+            "ferriki-off": 0.3892920000000686,
+            "ferriki": 0.21408350000012888,
+            "ferriki-eager": 0.20745850000002974,
+            "ferriki-precompiled": 0.19972950000010314,
+            "shiki-wasm": 1.8315000000000055,
+            "shiki-js": 0.8067289999999048,
+            "prism": 0.0770625000001246
           }
         },
         {
@@ -2388,13 +2389,13 @@
           "size": "large",
           "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
           "timings": {
-            "ferriki-off": 5.329417000000376,
-            "ferriki": 2.9401660000003176,
-            "ferriki-eager": 2.872957999999926,
-            "ferriki-precompiled": 2.7960830000001806,
-            "shiki-wasm": 26.993083999999726,
-            "shiki-js": 11.546374999999898,
-            "prism": 0.9614160000000993
+            "ferriki-off": 5.844542000000729,
+            "ferriki": 3.124583000000257,
+            "ferriki-eager": 3.187249999999949,
+            "ferriki-precompiled": 2.9717499999997017,
+            "shiki-wasm": 30.67937499999971,
+            "shiki-js": 13.161082999999962,
+            "prism": 1.0245420000001104
           }
         },
         {
@@ -2403,13 +2404,13 @@
           "size": "example",
           "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
           "timings": {
-            "ferriki-off": 0.9220209999999724,
-            "ferriki": 0.8554579999999987,
-            "ferriki-eager": 0.8290420000000154,
-            "ferriki-precompiled": 0.8242500000000064,
-            "shiki-wasm": 5.201083500000095,
-            "shiki-js": 0.8253955000000417,
-            "prism": 0.10752150000007532
+            "ferriki-off": 0.8586250000000746,
+            "ferriki": 0.7955000000001746,
+            "ferriki-eager": 0.7769579999999223,
+            "ferriki-precompiled": 0.7713750000000346,
+            "shiki-wasm": 4.8243329999999105,
+            "shiki-js": 0.7557499999999209,
+            "prism": 0.098540999999841
           }
         },
         {
@@ -2418,13 +2419,13 @@
           "size": "large",
           "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
           "timings": {
-            "ferriki-off": 12.754771000000346,
-            "ferriki": 12.428396000000248,
-            "ferriki-eager": 12.826374499999929,
-            "ferriki-precompiled": 12.606165999999575,
-            "shiki-wasm": 82.82577100000026,
-            "shiki-js": 10.869895499999984,
-            "prism": 1.183583500000168
+            "ferriki-off": 11.203249499999856,
+            "ferriki": 11.17114599999968,
+            "ferriki-eager": 11.517166999999972,
+            "ferriki-precompiled": 11.145707999999559,
+            "shiki-wasm": 72.77975000000038,
+            "shiki-js": 9.188000000000102,
+            "prism": 1.0444580000003043
           }
         }
       ]

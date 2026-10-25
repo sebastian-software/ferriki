@@ -13,7 +13,7 @@ import {
 import { validateReport } from "../node/scripts/run-blacksmith-comparison.mjs";
 
 const root = new URL("../", import.meta.url);
-const archive = "docs/benchmarks/blacksmith/2026-10-25-decoded-cache";
+const archive = "docs/benchmarks/blacksmith/2026-10-25-shared-storage";
 const read = (path) => readFileSync(new URL(path, root));
 const capture = JSON.parse(read(`${archive}/capture.json`));
 const profiles = [];
@@ -41,6 +41,11 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
   assert.equal(context.commit, capture.commit);
   assert.equal(context.runUrl, capture.runUrl);
   assert.equal(context.profile, id);
+  assert.equal(context.nativeBuild.ferroni.version, capture.ferroni);
+  assert.equal(
+    context.nativeBuild.ferroni.source,
+    "registry+https://github.com/rust-lang/crates.io-index",
+  );
   assert.deepEqual(context.regexModes, regexModes);
   const reports = {};
   for (const corpus of ["comparison", "curated", "tiobe"]) {
@@ -49,6 +54,7 @@ for (const id of ["linux-x86-64", "macos-arm64"]) {
     assert.equal(source.commit, capture.commit);
     assert.equal(source.runUrl, capture.runUrl);
     assert.equal(source.profile, id);
+    assert.deepEqual(source.nativeBuild.ferroni, context.nativeBuild.ferroni);
     assert.equal(source.nativeBuild.rustSourceSha256, context.nativeBuild.rustSourceSha256);
     assert.equal(source.nativeBuild.cargoLockSha256, context.nativeBuild.cargoLockSha256);
     const report = json(`${corpus}-modes.json`);
@@ -105,6 +111,19 @@ const contents = `${JSON.stringify(report, null, 2)}\n`;
 if (process.argv.includes("--check"))
   assert.equal(read(path).toString(), contents, `Regenerate ${path}`);
 else writeFileSync(new URL(path, root), contents);
+// The authored README owns its wording; verify its current headline figures.
+if (process.argv.includes("--check")) {
+  for (const path of ["README.md.src", "node/ferriki/README.md"]) {
+    const text = read(path).toString("utf8");
+    for (const profile of profiles) {
+      const factor = `${(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"]).toFixed(1)}×`;
+      assert.ok(
+        text.includes(factor),
+        `${path} must state the current ${profile.label} factor (${factor})`,
+      );
+    }
+  }
+}
 console.log(
   "Verified decoded-cache timing evidence: six corpus VMs, complete HTML gates and original checksums.",
 );
