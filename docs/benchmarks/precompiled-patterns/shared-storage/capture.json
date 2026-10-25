@@ -1,0 +1,31 @@
+{
+  "baselineFerrikiCommit": "04c447e0eeb71d371e2ee0ab08103e6828913efe",
+  "baselineFerroni": "2.7.1",
+  "ferroniProposalCommit": "3aa3f00611ebfad6cf5352f66f218912463aaec3",
+  "ferroniSourceSha256": "4f34dc3b14a6f79603eb33a62ad1df9f76d4635e901832a2a25c59d0593f6ede",
+  "binarySha256": {
+    "baseline": "c60cc4ca39f30e05a34c7d35a68ae099b4a0fe09e37cd90bdcf11cd1cf7509e9",
+    "legacy": "e6ab106adaada0dbe1f37ee3938bce79ad048423b0ca5c6dc23cdf03373146cb",
+    "shared": "cae98299beb776d502e6dbc7dfdbe4353a296778eea73a8f3a4af1c03646d5cf",
+    "mapped": "fe06d5e325006d6ee328253876f15be83db8dff983f97f8695fe84858462c043"
+  },
+  "inputsSha256": "f00ac747a6ee0e329f1788dcdf41359e61069072e8532d715408ec905dff6d1f",
+  "releaseManifestSha256": "735482be233369c4189f88e69a98c87b8e09c159c789dcee91a92a1d6408a87d",
+  "primaryProcesses": 100,
+  "replicationProcesses": 40,
+  "sourceOffFactoryProcesses": 60,
+  "status": "upstream API proposal and tested downstream patches; production dependency unchanged",
+  "mapping": "diagnostic only, private frozen read-only cache held unchanged for all child lifetimes",
+  "validation": {
+    "ferroniLibraryTests": 577,
+    "ferroniPublicApiTests": 9,
+    "ferroniNoDfaArchiveTests": 12,
+    "ferroniMSRV": "1.94",
+    "wasm": "Node/V8 passed for old and shared importers",
+    "ferrikiRustTests": 280,
+    "ferrikiIgnored": 1,
+    "nativeCoreCompatibility": "passed with local Ferroni override",
+    "benchmarkContracts": "40 passed, one skipped",
+    "clippy": "both projects passed with warnings denied"
+  }
+}
