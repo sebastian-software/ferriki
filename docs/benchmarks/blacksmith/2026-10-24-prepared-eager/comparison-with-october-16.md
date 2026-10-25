@@ -184,4 +184,3 @@ Original methods, samples and build receipts are in the [capture index](README.m
 | Objective-C / large | yes | 3.584 | 3.287 | -8.3% | 32.336 | 30.896 |
 | COBOL / example | yes | 1.119 | 0.855 | -23.6% | 5.112 | 4.664 |
 | COBOL / large | yes | 14.938 | 11.761 | -21.3% | 73.303 | 73.786 |
-
