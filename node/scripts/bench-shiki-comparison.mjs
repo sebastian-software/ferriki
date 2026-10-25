@@ -512,7 +512,7 @@ const report = {
     coldTimingOrder:
       "Ten rounds of fresh processes; eligible engine order rotates each round, serially",
     assetCache:
-      "Downloaded payloads are pre-populated. Prepared mode also reuses decoded containers populated by untimed output validation; cold means a fresh process, not an empty asset cache. First-fill decompression is measured separately in docs/benchmarks/precompiled-patterns/decoded-cache.",
+      "Downloaded payloads are pre-populated. Prepared mode also reuses decoded containers populated by untimed output validation; unchanged files reuse their SHA-256 verification through persisted size/mtime receipts. Cold means a fresh process, not an empty asset cache. First-fill decompression is measured separately in docs/benchmarks/precompiled-patterns/stat-cache.",
     statistic: "median",
     phiki: {
       status: phikiStatus.status,

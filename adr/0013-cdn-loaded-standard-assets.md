@@ -116,9 +116,14 @@ local build artifacts, not committed repository data.
   proxy, certificate, cache-location, and download-limit behavior is unchanged.
   Prepared sidecars additionally pin the decoded container's SHA-256 and size.
   Their first load writes verified, uncompressed bytes atomically under
-  `decoded/<sha256>`. Later processes read and verify that container directly,
-  avoiding repeated Zstd decompression. Planning only checks its file size;
-  verification happens on the actual read. Invalid derived files are discarded
+  `decoded/<sha256>`. A small atomic `.verified` receipt records the verified
+  file's size and modification time.
+  Later processes compare this state before and after reading. An unchanged
+  local file skips SHA-256 and Zstd; a changed file or missing/invalid receipt
+  requires SHA-256 again. The receipt is a local change detector, not an
+  authenticated artifact: the decoded cache directory is trusted local state.
+  Ferroni still validates indexes and requested records. Planning only checks
+  file size. Invalid derived files are discarded
   and rebuilt from the verified transport when available. Persistence failure
   keeps preparation usable without a decoded cache; old manifests keep the
   compressed-only path. Directory and embedded catalogs never create a disk cache.
@@ -148,6 +153,10 @@ local build artifacts, not committed repository data.
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-10-25: Reuse the verified decoded file state across processes. Trust the
+  local cache and use stat-based change detection instead of hashing unchanged
+  archives on every start; keep SHA-256 for fills and changed/unrecorded files.
 
 - 2026-10-25: Persist release-verified decoded prepared containers across builds,
   eliminating repeated transport decompression while retaining read-time integrity.

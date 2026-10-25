@@ -13,15 +13,21 @@ again when it reads them. Failed downloads are not retried.
 
 Prepared regex packages also cache their uncompressed containers under
 `decoded/<sha256>`. The first load decompresses and verifies the container,
-then saves it atomically. A fresh process reads and verifies those bytes
-directly, without repeating decompression or checking the compressed file.
-The release manifest pins both representations. A damaged decoded entry is
+then saves it atomically with a `.verified` receipt of its size and modification
+time. A fresh process compares the recorded state before and after reading.
+Unchanged files skip both
+SHA-256 and decompression. Changed files, legacy entries without a receipt, and
+invalid receipts require a SHA-256 check before recording the current state.
+The local cache and receipts are trusted; these stat checks detect ordinary
+changes rather than authenticate against malicious local modification. Ferroni
+still validates archive indexes and requested records.
+The release manifest pins both representations. A detected damaged entry is
 rebuilt from the verified download when available; an unwritable cache keeps
 highlighting usable without persistence. Older releases keep their original
 compressed-only behavior.
 
 Keep the complete cache directory between builds to reuse this work. Decoded
-containers take more disk space. Each process still needs file I/O, integrity
+containers take more disk space. Each process still needs file I/O, file-state
 checks and runtime restoration; precompilation does not remove those costs.
 
 ## Configuration

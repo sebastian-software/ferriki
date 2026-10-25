@@ -23,7 +23,8 @@ rebuilding them from source. This is the default with prefiltering on;
 unavailable packages fall back to source, and dynamic patterns remain local.
 
 The first load also caches the unpacked package. Later processes skip
-decompression and read, verify, and restore that cached data directly.
+decompression and SHA-256 for unchanged local files, then restore the cached
+data directly. File-state checks detect changes and trigger verification again.
 
 In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
 **about 144 ms to 68 ms**, with execution comparable to ordinary Eager.

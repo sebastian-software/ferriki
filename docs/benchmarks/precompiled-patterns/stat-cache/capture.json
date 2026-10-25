@@ -1,0 +1,38 @@
+{
+  "capturedAt": "2026-10-25T19:16:03.689985+00:00",
+  "node": "v24.22.0",
+  "binarySha256": {
+    "before": "633d1f21671f1cb246026fada89a50fcd97f1925b0d72a5550bc7326df414bb0",
+    "after": "c60cc4ca39f30e05a34c7d35a68ae099b4a0fe09e37cd90bdcf11cd1cf7509e9"
+  },
+  "inputsSha256": "f00ac747a6ee0e329f1788dcdf41359e61069072e8532d715408ec905dff6d1f",
+  "releaseManifestSha256": "735482be233369c4189f88e69a98c87b8e09c159c789dcee91a92a1d6408a87d",
+  "baselineCommit": "05bdea9e755501a3b0df0b2b257f408f6c0e5144",
+  "ferroni": "2.7.1",
+  "measuredProcesses": 100,
+  "warmupPasses": 5,
+  "timedPassesPerProcess": 10,
+  "order": "rotating serial, five fresh processes per lane/workload",
+  "policies": [
+    "off",
+    "auto",
+    "eager",
+    "prepared"
+  ],
+  "cacheStates": [
+    "populated decoded files with receipts",
+    "compressed-only first decoded fill"
+  ],
+  "cacheTrust": "trusted local size and mtime receipts; SHA-256 on fills, changed files, and missing/invalid receipts",
+  "network": "disabled; compressed files seeded outside timers",
+  "coverage": "unchanged complete static grammar packages, twelve requested roots or TypeScript alone",
+  "outputValidation": "all complete HTML hashes equal per workload; zero invalid groups or assembly fallbacks",
+  "validation": {
+    "rustPassed": 278,
+    "rustIgnored": 1,
+    "clippy": "pass, -D warnings",
+    "nativeCompatibility": "pass",
+    "benchmarkContracts": "40 passed, one skipped",
+    "homepage": "build and page/link verification passed"
+  }
+}
