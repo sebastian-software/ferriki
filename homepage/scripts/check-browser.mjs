@@ -107,6 +107,7 @@ try {
   );
 
   await verifyLanguageTables(page);
+  await verifyRegexPolicyTables(page);
 
   const prismSamples = JSON.parse(
     await readFile(new URL("../app/data/prism-comparison.json", import.meta.url), "utf8"),
@@ -301,12 +302,16 @@ try {
   await previewServer?.close();
 }
 
-async function verifyLanguageRow(details, entry) {
+async function verifyLanguageRow(
+  details,
+  entry,
+  engines = ["ferriki", "shiki-wasm", "shiki-js", "prism"],
+) {
   const row = details
     .getByRole("rowheader", { name: `${entry.language} · ${entry.size}`, exact: true })
     .locator("..");
   const text = await row.textContent();
-  for (const id of ["ferriki", "shiki-wasm", "shiki-js", "prism"]) {
+  for (const id of engines) {
     const value = entry.timings[id];
     const expected =
       value === undefined
@@ -346,6 +351,68 @@ async function verifyLanguageTables(page) {
   console.log(
     "Verified all 156 curated/TIOBE rows, unsupported states and narrow-screen table scrolling.",
   );
+}
+
+async function verifyRegexPolicyTables(page) {
+  const report = JSON.parse(
+    await readFile(
+      new URL("../../docs/benchmarks/regex-modes-comparison.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const engines = report.engines.map(({ id }) => id);
+  const overview = page.getByRole("region", { name: /^Regex policies on the same/ });
+  assert.equal(await overview.getByRole("row").count(), 5);
+  for (const profile of report.profiles) {
+    for (const corpus of ["curated", "tiobe"])
+      await verifyRegexPolicyLanguage({ page, profile, corpus, engines });
+    await verifyRegexPolicyMemory(page, profile, engines);
+  }
+  console.log(
+    "Verified all 156 regex-mode rows, seven contenders, memory ranges and keyboard scrolling.",
+  );
+}
+async function verifyRegexPolicyColumns(details, entries, engines) {
+  assert.equal(await details.getByRole("row").count(), entries.length + 1);
+  assert.equal(await details.getByRole("columnheader").count(), engines.length + 1);
+  for (const entry of entries) await verifyLanguageRow(details, entry, engines);
+}
+async function verifyRegexPolicyLanguage({ page, profile, corpus, engines }) {
+  const title = `Regex modes · ${profile.label} · ${corpus === "curated" ? "20 formats" : "TIOBE"}`;
+  const details = page.locator("details").filter({ has: page.getByText(title, { exact: true }) });
+  await details.locator("summary").click();
+  await verifyRegexPolicyColumns(
+    details,
+    profile.workloads.filter((entry) => entry.corpus === corpus),
+    engines,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await details.getByRole("region").focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.activeElement.scrollLeft > 0);
+  await details.locator("summary").click();
+}
+async function verifyRegexPolicyMemory(page, profile, engines) {
+  const title = `Regex modes · ${profile.label} · process memory`;
+  const details = page.locator("details").filter({ has: page.getByText(title, { exact: true }) });
+  await details.locator("summary").click();
+  assert.equal(await details.getByRole("row").count(), 7);
+  for (const scenario of profile.memory.scenarios) {
+    const row = details
+      .getByRole("rowheader", { name: `${scenario.id} · after reuse`, exact: true })
+      .locator("..");
+    const text = await row.textContent();
+    for (const id of engines.filter((id) => id !== "prism")) {
+      const value = scenario.engines[id].finalRss;
+      assert(
+        text.includes(
+          `${(value.median / 2 ** 20).toFixed(1)} [${(value.min / 2 ** 20).toFixed(1)}–${(value.max / 2 ** 20).toFixed(1)}]`,
+        ),
+        `${profile.id}/${id}: wrong mode RSS`,
+      );
+    }
+  }
+  await details.locator("summary").click();
 }
 
 async function verifyViewport({ page, pageFile, viewport, origin }) {

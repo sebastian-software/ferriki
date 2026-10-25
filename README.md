@@ -38,6 +38,12 @@ Startup includes restoration and the first document; network, file I/O, and
 complete builds are outside the timer. See the
 [measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
+The October 25 repository comparison measures Source Off, Auto, Eager and
+Prepared separately. Its full Node workload shows higher first-use time and
+memory for Prepared than Source Eager, plus a SQL execution outlier. See the
+[separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
+before applying the isolated tokenizer result to a complete build.
+
 ## Choose your path
 
 | If you build with… | Start with… | Guide |

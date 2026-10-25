@@ -255,3 +255,8 @@ A source-mode regression must compare the same source policy, fixtures,
 grammars, output and machine. Replacing Source/Auto with Prepared and calling
 the difference a source regression is invalid. Keep both separate, investigate
 unexpected source differences, and measure prepared startup against Source/Eager.
+
+The [October 25 mode capture](blacksmith/2026-10-25-regex-modes/README.md)
+retains the separate policies, full timing and memory evidence, and a repeated
+local release control for the classic paths. The website adds the new mode
+tables alongside the dated October 24 results.

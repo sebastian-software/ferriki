@@ -1,0 +1,3626 @@
+{
+  "measured": "2026-10-25",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40174524561",
+  "commit": "8aba6dd009fa09a3eed895e1764b2f04dbef0f1b",
+  "archive": "docs/benchmarks/blacksmith/2026-10-25-regex-modes",
+  "engines": [
+    {
+      "id": "ferriki-off",
+      "label": "Ferriki source Off"
+    },
+    {
+      "id": "ferriki",
+      "label": "Ferriki source Auto (lazy DFA)"
+    },
+    {
+      "id": "ferriki-eager",
+      "label": "Ferriki source Eager"
+    },
+    {
+      "id": "ferriki-precompiled",
+      "label": "Ferriki prepared Eager"
+    },
+    {
+      "id": "shiki-wasm",
+      "label": "Shiki WASM"
+    },
+    {
+      "id": "shiki-js",
+      "label": "Shiki JS"
+    },
+    {
+      "id": "prism",
+      "label": "Prism (independent grammars)"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "linux-x86-64",
+      "label": "Linux x86-64",
+      "corpusMachines": {
+        "comparison": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+        },
+        "curated": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+        },
+        "tiobe": {
+          "cpu": "AMD EPYC",
+          "os": "Linux 6.6.141",
+          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+        }
+      },
+      "warm": {
+        "ferriki-off": 120.62122600000657,
+        "ferriki": 84.36326400001417,
+        "ferriki-eager": 84.54492449995996,
+        "ferriki-precompiled": 154.58180300000004,
+        "shiki-wasm": 300.9660550000017
+      },
+      "cold": {
+        "ferriki-off": 214.8776015,
+        "ferriki": 354.143271,
+        "ferriki-eager": 445.89436950000004,
+        "ferriki-precompiled": 817.9798880000001,
+        "shiki-wasm": 958.4194135
+      },
+      "workloads": [
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "example",
+          "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
+          "timings": {
+            "ferriki-off": 1.74646400000006,
+            "ferriki": 0.791939000000184,
+            "ferriki-eager": 0.7579459999999472,
+            "ferriki-precompiled": 0.7381769999999506,
+            "shiki-wasm": 3.691822000000002,
+            "shiki-js": 4.464194000000134,
+            "prism": 0.2071490000000722
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "large",
+          "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
+          "timings": {
+            "ferriki-off": 25.990309499999967,
+            "ferriki": 10.921105500000067,
+            "ferriki-eager": 10.845712000000276,
+            "ferriki-precompiled": 10.840307500000108,
+            "shiki-wasm": 56.88252049999983,
+            "shiki-js": 68.91732950000005,
+            "prism": 2.0866585000007944
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "example",
+          "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
+          "timings": {
+            "ferriki-off": 1.8941565000000082,
+            "ferriki": 0.9044654999999011,
+            "ferriki-eager": 0.8830204999999296,
+            "ferriki-precompiled": 0.8680420000000595,
+            "shiki-wasm": 4.036088499999778,
+            "shiki-js": 3.8968880000001036,
+            "prism": 0.305349000000092
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "large",
+          "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
+          "timings": {
+            "ferriki-off": 28.694904500000575,
+            "ferriki": 13.352371499999208,
+            "ferriki-eager": 13.290800500000387,
+            "ferriki-precompiled": 13.274149500000021,
+            "shiki-wasm": 63.31859700000041,
+            "shiki-js": 60.70486699999992,
+            "prism": 3.5290110000000823
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.2538680000000113,
+            "ferriki": 0.19826199999988603,
+            "ferriki-eager": 0.18708200000003217,
+            "ferriki-precompiled": 0.18240300000002208,
+            "shiki-wasm": 1.2450010000002294,
+            "shiki-js": 0.5839780000001156,
+            "prism": 0.10320400000000518
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 3.298091000000568,
+            "ferriki": 2.775488000000223,
+            "ferriki-eager": 2.7546500000003107,
+            "ferriki-precompiled": 2.7156159999999545,
+            "shiki-wasm": 18.426277000000027,
+            "shiki-js": 7.83681500000057,
+            "prism": 1.051738000000114
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "example",
+          "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
+          "timings": {
+            "ferriki-off": 0.3320250000001579,
+            "ferriki": 0.32138400000008005,
+            "ferriki-eager": 0.30736799999999675,
+            "ferriki-precompiled": 0.2901550000001407,
+            "shiki-wasm": 2.409289999999828,
+            "shiki-js": 0.6502729999999701,
+            "prism": 0.0809119999998984
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "large",
+          "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
+          "timings": {
+            "ferriki-off": 4.162667000000511,
+            "ferriki": 4.424028999999791,
+            "ferriki-eager": 4.37121900000011,
+            "ferriki-precompiled": 4.220004999999674,
+            "shiki-wasm": 36.999428999999964,
+            "shiki-js": 9.308352000000014,
+            "prism": 0.9399170000001504
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "example",
+          "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
+          "timings": {
+            "ferriki-off": 1.1096664999998893,
+            "ferriki": 0.6907140000001846,
+            "ferriki-eager": 0.6643940000000157,
+            "ferriki-precompiled": 0.6405239999999139,
+            "shiki-wasm": 3.305785999999898,
+            "shiki-js": 2.5118024999999307,
+            "prism": 0.22201800000016192
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "large",
+          "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
+          "timings": {
+            "ferriki-off": 15.965601999999762,
+            "ferriki": 9.651235499999984,
+            "ferriki-eager": 9.721566999999595,
+            "ferriki-precompiled": 9.558204999999816,
+            "shiki-wasm": 51.39079599999968,
+            "shiki-js": 38.676067500000045,
+            "prism": 2.450001499999871
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 1.119359999999915,
+            "ferriki": 0.500034499999856,
+            "ferriki-eager": 0.4839354999999159,
+            "ferriki-precompiled": 0.45442849999994905,
+            "shiki-wasm": 2.6981530000000475,
+            "shiki-js": 2.6808774999999514,
+            "prism": 0.10742000000004737
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 15.800319500000114,
+            "ferriki": 6.664249000000382,
+            "ferriki-eager": 6.6627709999993385,
+            "ferriki-precompiled": 6.436876000000211,
+            "shiki-wasm": 39.839548999999806,
+            "shiki-js": 38.72704599999997,
+            "prism": 1.079319000000396
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.4335819999999444,
+            "ferriki": 0.2692809999999781,
+            "ferriki-eager": 0.24986200000000736,
+            "ferriki-precompiled": 0.2363234999999122,
+            "shiki-wasm": 1.4576579999999808,
+            "shiki-js": 0.8910965000000601,
+            "prism": 0.08605800000003683
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 5.467301500000076,
+            "ferriki": 3.443650999999818,
+            "ferriki-eager": 3.3282874999999876,
+            "ferriki-precompiled": 3.2156335000001945,
+            "shiki-wasm": 21.63061300000004,
+            "shiki-js": 12.044591500000024,
+            "prism": 0.9600789999999506
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.32491400000003523,
+            "ferriki": 0.22598999999991065,
+            "ferriki-eager": 0.20989099999997052,
+            "ferriki-precompiled": 0.2041710000000876,
+            "shiki-wasm": 1.1070190000000366,
+            "shiki-js": 0.7372440000000324,
+            "prism": 0.10348300000003974
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.916337500000054,
+            "ferriki": 2.9278195000001688,
+            "ferriki-eager": 2.8678529999999682,
+            "ferriki-precompiled": 2.8319945000000644,
+            "shiki-wasm": 16.002237500000092,
+            "shiki-js": 10.083747500000072,
+            "prism": 1.166668999999274
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "example",
+          "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
+          "timings": {
+            "ferriki-off": 0.4836804999999913,
+            "ferriki": 0.338704000000007,
+            "ferriki-eager": 0.31747649999988425,
+            "ferriki-precompiled": 0.30099700000005214,
+            "shiki-wasm": 1.164976499999966,
+            "shiki-js": 1.5593029999997725,
+            "prism": 0.14748149999991256
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "large",
+          "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
+          "timings": {
+            "ferriki-off": 5.972265000000334,
+            "ferriki": 4.35039499999948,
+            "ferriki-eager": 4.301880999999412,
+            "ferriki-precompiled": 4.188218000000234,
+            "shiki-wasm": 16.66566000000057,
+            "shiki-js": 22.97957899999983,
+            "prism": 1.3739209999994273
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "example",
+          "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
+          "timings": {
+            "ferriki-off": 0.09125200000001144,
+            "ferriki": 0.0847199999999475,
+            "ferriki-eager": 0.08701400000001058,
+            "ferriki-precompiled": 0.08567200000004505,
+            "shiki-wasm": 0.20507800000004295,
+            "shiki-js": 0.16249249999998483,
+            "prism": 0.029657500000027426
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "large",
+          "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
+          "timings": {
+            "ferriki-off": 1.285184000000072,
+            "ferriki": 1.2606799999998657,
+            "ferriki-eager": 1.292316000000028,
+            "ferriki-precompiled": 1.2637359999998807,
+            "shiki-wasm": 3.136287999999695,
+            "shiki-js": 2.4783440000001065,
+            "prism": 0.4376040000001922
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "example",
+          "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
+          "timings": {
+            "ferriki-off": 1.2160210000000689,
+            "ferriki": 1.5227984999999364,
+            "ferriki-eager": 1.500714500000015,
+            "ferriki-precompiled": 1.4907719999999927,
+            "shiki-wasm": 1.2838560000000712,
+            "prism": 0.06055200000002969
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "large",
+          "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
+          "timings": {
+            "ferriki-off": 17.936438499999895,
+            "ferriki": 23.945688500000188,
+            "ferriki-eager": 23.93494450000003,
+            "ferriki-precompiled": 23.867525000000114,
+            "shiki-wasm": 19.02492899999993,
+            "prism": 0.5576364999999441
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "example",
+          "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
+          "timings": {
+            "ferriki-off": 0.14312300000005962,
+            "ferriki": 0.13602599999998688,
+            "ferriki-eager": 0.15689249999996946,
+            "ferriki-precompiled": 0.1521690000000433,
+            "shiki-wasm": 0.3428869999999904,
+            "shiki-js": 0.2922820000000286,
+            "prism": 0.049372000000062144
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "large",
+          "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
+          "timings": {
+            "ferriki-off": 2.2275955000000067,
+            "ferriki": 2.1667075000000295,
+            "ferriki-eager": 2.4767715000000408,
+            "ferriki-precompiled": 2.4214640000000145,
+            "shiki-wasm": 5.31476049999992,
+            "shiki-js": 4.581605000000081,
+            "prism": 0.7264205000001311
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "example",
+          "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
+          "timings": {
+            "ferriki-off": 2.004385999999954,
+            "ferriki": 1.3482905000001892,
+            "ferriki-eager": 1.5866214999998647,
+            "ferriki-precompiled": 1.2455530000000863,
+            "shiki-wasm": 4.361977000000138,
+            "shiki-js": 3.8941085000001294
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "large",
+          "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
+          "timings": {
+            "ferriki-off": 23.049101999999493,
+            "ferriki": 15.529611000000386,
+            "ferriki-eager": 20.077425500000118,
+            "ferriki-precompiled": 15.35223249999899,
+            "shiki-wasm": 53.36998350000022,
+            "shiki-js": 51.08207599999969
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "example",
+          "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
+          "timings": {
+            "ferriki-off": 2.0458679999997003,
+            "ferriki": 1.201575000000048,
+            "ferriki-eager": 1.3328980000001138,
+            "ferriki-precompiled": 1.1316219999998793,
+            "shiki-wasm": 4.449290000000019,
+            "shiki-js": 4.610175000000254
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "large",
+          "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
+          "timings": {
+            "ferriki-off": 29.884581499999058,
+            "ferriki": 16.627795000000333,
+            "ferriki-eager": 19.261141499999212,
+            "ferriki-precompiled": 16.6127919999999,
+            "shiki-wasm": 68.24959249999847,
+            "shiki-js": 70.29793050000035
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "example",
+          "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
+          "timings": {
+            "ferriki-off": 0.3113659999999072,
+            "ferriki": 0.20216000000027634,
+            "ferriki-eager": 0.19585799999958908,
+            "ferriki-precompiled": 0.1883740000000671,
+            "shiki-wasm": 1.5919639999999617,
+            "shiki-js": 0.8008159999999407,
+            "prism": 0.11450600000000577
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "large",
+          "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
+          "timings": {
+            "ferriki-off": 3.7065810000003694,
+            "ferriki": 2.7086629999998877,
+            "ferriki-eager": 2.7389200000002347,
+            "ferriki-precompiled": 2.6729459999996834,
+            "shiki-wasm": 24.20577400000002,
+            "shiki-js": 10.749370999999883,
+            "prism": 1.2847000000001572
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.40404399999999896,
+            "ferriki": 0.3010190000001103,
+            "ferriki-eager": 0.2816020000000208,
+            "ferriki-precompiled": 0.27260599999999613,
+            "shiki-wasm": 1.6042949999998655,
+            "shiki-js": 0.958793999999898,
+            "prism": 0.1271199999999908
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 5.039150999999947,
+            "ferriki": 4.069447999999738,
+            "ferriki-eager": 4.019272000000001,
+            "ferriki-precompiled": 3.9395119999999224,
+            "shiki-wasm": 23.921596000000136,
+            "shiki-js": 13.408371000000443,
+            "prism": 1.4894979999999123
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "example",
+          "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
+          "timings": {
+            "ferriki-off": 1.2069275000001198,
+            "ferriki": 0.6362234999999146,
+            "ferriki-eager": 0.6094679999999926,
+            "ferriki-precompiled": 0.5900509999999031,
+            "shiki-wasm": 2.0322340000001304,
+            "shiki-js": 2.1119390000000067
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "large",
+          "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
+          "timings": {
+            "ferriki-off": 17.748069500000156,
+            "ferriki": 9.091080500000317,
+            "ferriki-eager": 8.950794499999574,
+            "ferriki-precompiled": 8.810805000000073,
+            "shiki-wasm": 31.86871849999966,
+            "shiki-js": 32.46162950000007
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "example",
+          "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
+          "timings": {
+            "ferriki-off": 0.693100999999956,
+            "ferriki": 0.42921199999977944,
+            "ferriki-eager": 0.40156450000006316,
+            "ferriki-precompiled": 0.37833549999982097,
+            "shiki-wasm": 1.7752125000001797,
+            "shiki-js": 2.3748420000001715
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "large",
+          "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
+          "timings": {
+            "ferriki-off": 9.161888999999519,
+            "ferriki": 5.764076999999816,
+            "ferriki-eager": 5.577549500000259,
+            "ferriki-precompiled": 5.441201000000092,
+            "shiki-wasm": 27.108970999999656,
+            "shiki-js": 36.675655000000006
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "example",
+          "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
+          "timings": {
+            "ferriki-off": 0.3372025000001031,
+            "ferriki": 0.25489749999997,
+            "ferriki-eager": 0.24047000000001617,
+            "ferriki-precompiled": 0.22688400000009779,
+            "shiki-wasm": 2.521314000000018,
+            "shiki-js": 0.6394199999998591,
+            "prism": 0.1271759999999631
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "large",
+          "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
+          "timings": {
+            "ferriki-off": 4.0341610000002674,
+            "ferriki": 3.265100500000017,
+            "ferriki-eager": 3.214644999999564,
+            "ferriki-precompiled": 3.0543620000005376,
+            "shiki-wasm": 38.92236000000048,
+            "shiki-js": 8.678269,
+            "prism": 1.5446065000001
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "example",
+          "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
+          "timings": {
+            "ferriki-off": 0.3999210000000062,
+            "ferriki": 0.3054730000000063,
+            "ferriki-eager": 0.2910405000000651,
+            "ferriki-precompiled": 0.28318100000007007,
+            "shiki-wasm": 0.9896069999999781,
+            "shiki-js": 0.6983909999999582,
+            "prism": 0.12080850000006649
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "large",
+          "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
+          "timings": {
+            "ferriki-off": 4.922801499999878,
+            "ferriki": 4.097495499999923,
+            "ferriki-eager": 4.085858000000144,
+            "ferriki-precompiled": 4.038563500000009,
+            "shiki-wasm": 13.68226400000026,
+            "shiki-js": 9.737117499999385,
+            "prism": 1.3073729999998704
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.6472040000001016,
+            "ferriki": 0.5630359999995562,
+            "ferriki-eager": 0.5415359999997236,
+            "ferriki-precompiled": 0.5167699999999513,
+            "shiki-wasm": 2.035859999999957,
+            "shiki-js": 1.2808340000001408,
+            "prism": 0.1835839999999962
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 5.926322000000255,
+            "ferriki": 4.855844000000161,
+            "ferriki-eager": 4.683810000000449,
+            "ferriki-precompiled": 4.560469000000012,
+            "shiki-wasm": 28.281185000000278,
+            "shiki-js": 16.89108000000033,
+            "prism": 1.7269210000004023
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "example",
+          "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
+          "timings": {
+            "ferriki-off": 0.7346990000000915,
+            "ferriki": 0.48870800000008785,
+            "ferriki-eager": 0.460303999999951,
+            "ferriki-precompiled": 0.4399949999999535,
+            "shiki-wasm": 2.2000289999999723,
+            "shiki-js": 1.2506470000000718,
+            "prism": 0.1334910000000491
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "large",
+          "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
+          "timings": {
+            "ferriki-off": 7.159571499999856,
+            "ferriki": 3.717141499999798,
+            "ferriki-eager": 3.6668414999999186,
+            "ferriki-precompiled": 3.550733500000206,
+            "shiki-wasm": 28.895773499999905,
+            "shiki-js": 16.56646049999995,
+            "prism": 1.2137625000000298
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 2.0782799999997223,
+            "ferriki": 1.2400975000000471,
+            "ferriki-eager": 1.2525410000000647,
+            "ferriki-precompiled": 1.1486059999999725,
+            "shiki-wasm": 4.571078500000112,
+            "shiki-js": 4.145004000000199,
+            "prism": 0.15721999999982472
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 18.05955750000021,
+            "ferriki": 7.806696000000102,
+            "ferriki-eager": 7.939104500000212,
+            "ferriki-precompiled": 7.569034499999361,
+            "shiki-wasm": 48.86014150000028,
+            "shiki-js": 47.57410349999964,
+            "prism": 1.278434500000003
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.5065810000000965,
+            "ferriki": 0.4266809999999168,
+            "ferriki-eager": 0.39922999999998865,
+            "ferriki-precompiled": 0.37799900000004527,
+            "shiki-wasm": 1.4222489999999652,
+            "shiki-js": 0.9327599999999165,
+            "prism": 0.15029200000003584
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 4.6841199999998935,
+            "ferriki": 3.439785000000029,
+            "ferriki-eager": 3.2952140000002146,
+            "ferriki-precompiled": 3.2372349999996004,
+            "shiki-wasm": 18.6094149999999,
+            "shiki-js": 11.791519000000335,
+            "prism": 1.3645610000003217
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "example",
+          "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
+          "timings": {
+            "ferriki-off": 1.3445279999999684,
+            "ferriki": 0.7334364999999252,
+            "ferriki-eager": 0.7230219999999576,
+            "ferriki-precompiled": 0.6894545000000107,
+            "shiki-wasm": 1.8758854999999812,
+            "shiki-js": 2.30660400000005,
+            "prism": 0.34892500000000837
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "large",
+          "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
+          "timings": {
+            "ferriki-off": 15.076317999999901,
+            "ferriki": 5.276056499999868,
+            "ferriki-eager": 5.109373499999947,
+            "ferriki-precompiled": 4.888524499999903,
+            "shiki-wasm": 21.11588299999994,
+            "shiki-js": 30.81252050000012,
+            "prism": 2.8524029999998675
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "example",
+          "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
+          "timings": {
+            "ferriki-off": 2.8237060000000156,
+            "ferriki": 1.6602859999999282,
+            "ferriki-eager": 1.6054230000002008,
+            "ferriki-precompiled": 1.6223750000000337,
+            "shiki-wasm": 5.851482000000033,
+            "shiki-js": 6.0182005000000345,
+            "prism": 0.3271424999999226
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "large",
+          "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
+          "timings": {
+            "ferriki-off": 34.115882000000056,
+            "ferriki": 13.596865000000435,
+            "ferriki-eager": 13.692535500000304,
+            "ferriki-precompiled": 13.552801499999987,
+            "shiki-wasm": 80.97063050000042,
+            "shiki-js": 83.33766999999989,
+            "prism": 2.6679519999997865
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "example",
+          "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
+          "timings": {
+            "ferriki-off": 0.39810099999976956,
+            "ferriki": 0.4256520000001274,
+            "ferriki-eager": 0.4179980000003525,
+            "ferriki-precompiled": 0.4042819999999665,
+            "shiki-wasm": 1.1902450000000044,
+            "shiki-js": 0.5532339999999749,
+            "prism": 0.08837599999998247
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "large",
+          "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
+          "timings": {
+            "ferriki-off": 4.936070499999914,
+            "ferriki": 4.723343999999997,
+            "ferriki-eager": 4.727256500000294,
+            "ferriki-precompiled": 4.6287655000001,
+            "shiki-wasm": 16.680545500000107,
+            "shiki-js": 6.991692000000057,
+            "prism": 0.8232330000000729
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "example",
+          "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
+          "timings": {
+            "ferriki-off": 0.5341870000002018,
+            "ferriki": 0.44553000000007614,
+            "ferriki-eager": 0.42609300000003714,
+            "ferriki-precompiled": 6.1440379999999095,
+            "shiki-wasm": 2.574796000000333,
+            "shiki-js": 0.7185749999999871,
+            "prism": 0.12125900000000911
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "large",
+          "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
+          "timings": {
+            "ferriki-off": 5.012679499999649,
+            "ferriki": 4.417992999999569,
+            "ferriki-eager": 4.375438000000031,
+            "ferriki-precompiled": 94.55507800000032,
+            "shiki-wasm": 36.40585549999969,
+            "shiki-js": 8.514911000000211,
+            "prism": 1.14725400000043
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "example",
+          "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
+          "timings": {
+            "ferriki-off": 0.3527350000000524,
+            "ferriki": 0.26934349999999085,
+            "ferriki-eager": 0.255657000000042,
+            "ferriki-precompiled": 0.23395100000004732,
+            "shiki-wasm": 1.7392655000000445,
+            "shiki-js": 0.9229210000000876,
+            "prism": 0.07499150000012378
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "large",
+          "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
+          "timings": {
+            "ferriki-off": 4.145238000000063,
+            "ferriki": 3.214023000000452,
+            "ferriki-eager": 3.1437700000001314,
+            "ferriki-precompiled": 3.0213490000001,
+            "shiki-wasm": 25.699592999999822,
+            "shiki-js": 12.934607000000142,
+            "prism": 0.8123319999995147
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.32301950000004354,
+            "ferriki": 0.2653705000000173,
+            "ferriki-eager": 0.24651000000000067,
+            "ferriki-precompiled": 0.2367219999999861,
+            "shiki-wasm": 1.4072145000000091,
+            "shiki-js": 0.6808390000000486,
+            "prism": 0.13204899999993813
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 3.9813045000000784,
+            "ferriki": 3.197069499999998,
+            "ferriki-eager": 3.1244330000004084,
+            "ferriki-precompiled": 3.0694289999999,
+            "shiki-wasm": 21.550126500000033,
+            "shiki-js": 9.789037999999891,
+            "prism": 1.284983499999953
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "example",
+          "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
+          "timings": {
+            "ferriki-off": 1.1659290000000055,
+            "ferriki": 1.154217000000017,
+            "ferriki-eager": 1.1839930000001004,
+            "ferriki-precompiled": 1.1112960000000385,
+            "shiki-wasm": 2.7330950000000485,
+            "shiki-js": 1.7473160000001826,
+            "prism": 0.11046900000019377
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "large",
+          "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
+          "timings": {
+            "ferriki-off": 9.260125499999958,
+            "ferriki": 6.986332500000117,
+            "ferriki-eager": 6.801883999999518,
+            "ferriki-precompiled": 6.726707499999748,
+            "shiki-wasm": 30.86352350000061,
+            "shiki-js": 19.810660499999358,
+            "prism": 0.9369020000003729
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "example",
+          "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
+          "timings": {
+            "ferriki-off": 0.5671450000000959,
+            "ferriki": 0.42005199999994147,
+            "ferriki-eager": 0.40037049999995133,
+            "ferriki-precompiled": 0.3721370000000661,
+            "shiki-wasm": 1.6637284999999338,
+            "shiki-js": 0.8528634999999838,
+            "prism": 0.0944329999999809
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "large",
+          "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
+          "timings": {
+            "ferriki-off": 6.820373999999902,
+            "ferriki": 4.442530000000261,
+            "ferriki-eager": 4.310429999999542,
+            "ferriki-precompiled": 4.0670200000004115,
+            "shiki-wasm": 23.8332419999997,
+            "shiki-js": 11.579690999999912,
+            "prism": 0.939050999999381
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "example",
+          "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
+          "timings": {
+            "ferriki-off": 0.16823699999997643,
+            "ferriki": 0.21385299999997187,
+            "ferriki-eager": 0.19941599999992832,
+            "ferriki-precompiled": 0.18708300000002964,
+            "shiki-wasm": 0.8538299999999026,
+            "shiki-js": 0.31208799999990333,
+            "prism": 0.09205400000001873
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "large",
+          "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
+          "timings": {
+            "ferriki-off": 2.293180499999835,
+            "ferriki": 2.7578064999997878,
+            "ferriki-eager": 2.67496049999977,
+            "ferriki-precompiled": 2.6281920000001264,
+            "shiki-wasm": 12.429473499999858,
+            "shiki-js": 4.188425000000052,
+            "prism": 0.9524814999999762
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "example",
+          "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
+          "timings": {
+            "ferriki-off": 0.6976259999996728,
+            "ferriki": 0.492048000000068,
+            "ferriki-eager": 0.46429600000010396,
+            "ferriki-precompiled": 0.4342700000001969,
+            "shiki-wasm": 2.254622000000154,
+            "shiki-js": 1.1146119999998518,
+            "prism": 0.2355649999999514
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "large",
+          "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
+          "timings": {
+            "ferriki-off": 5.879429500000242,
+            "ferriki": 3.5383379999998397,
+            "ferriki-eager": 3.4496564999999464,
+            "ferriki-precompiled": 3.341422499999908,
+            "shiki-wasm": 30.49074449999989,
+            "shiki-js": 12.178640499999801,
+            "prism": 1.7302334999999402
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "example",
+          "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
+          "timings": {
+            "ferriki-off": 0.4593409999999949,
+            "ferriki": 0.2777240000002621,
+            "ferriki-eager": 0.244230999999985,
+            "ferriki-precompiled": 0.233696000000009,
+            "shiki-wasm": 2.4693474999999125,
+            "shiki-js": 1.0710004999999114,
+            "prism": 0.057738500000255044
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "large",
+          "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
+          "timings": {
+            "ferriki-off": 4.339715000000069,
+            "ferriki": 1.8485359999999673,
+            "ferriki-eager": 1.769256999999925,
+            "ferriki-precompiled": 1.7615829999999733,
+            "shiki-wasm": 36.45623099999966,
+            "shiki-js": 13.285087000000203,
+            "prism": 0.4281879999998637
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "example",
+          "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
+          "timings": {
+            "ferriki-off": 0.344524999999976,
+            "ferriki": 0.31099200000005567,
+            "ferriki-eager": 0.2993094999999357,
+            "ferriki-precompiled": 0.28334449999999833,
+            "shiki-wasm": 0.8947825000000194,
+            "shiki-js": 0.6237115000000699,
+            "prism": 0.09236950000001798
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "large",
+          "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
+          "timings": {
+            "ferriki-off": 4.0664889999998195,
+            "ferriki": 3.6568489999999656,
+            "ferriki-eager": 3.5780989999998383,
+            "ferriki-precompiled": 3.4400989999999183,
+            "shiki-wasm": 12.31793000000016,
+            "shiki-js": 8.33909500000027,
+            "prism": 1.113491999999951
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.7586859999998978,
+            "ferriki": 0.6155659999999443,
+            "ferriki-eager": 0.608011999999917,
+            "ferriki-precompiled": 0.5804200000000037,
+            "shiki-wasm": 2.0849759999999833,
+            "shiki-js": 1.2228769999999258,
+            "prism": 0.1226800000001731
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 6.702189999999746,
+            "ferriki": 4.168545500000164,
+            "ferriki-eager": 3.966014499999801,
+            "ferriki-precompiled": 3.7576339999998254,
+            "shiki-wasm": 25.40684650000003,
+            "shiki-js": 16.217675000000327,
+            "prism": 1.2579929999999422
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "example",
+          "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
+          "timings": {
+            "ferriki-off": 0.6620034999999689,
+            "ferriki": 0.4354324999998198,
+            "ferriki-eager": 0.405576999999937,
+            "ferriki-precompiled": 0.3839059999999108,
+            "shiki-wasm": 2.1855860000000575,
+            "shiki-js": 1.1307235000001583,
+            "prism": 0.10885949999993727
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "large",
+          "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
+          "timings": {
+            "ferriki-off": 7.214632000000165,
+            "ferriki": 3.8482590000003256,
+            "ferriki-eager": 3.7498939999995855,
+            "ferriki-precompiled": 3.579403999999613,
+            "shiki-wasm": 32.25553200000013,
+            "shiki-js": 16.134058000000095,
+            "prism": 1.005117999999129
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "example",
+          "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
+          "timings": {
+            "ferriki-off": 1.3087789999999586,
+            "ferriki": 1.1364949999997407,
+            "ferriki-eager": 1.0929830000000038,
+            "ferriki-precompiled": 1.0642700000000787,
+            "shiki-wasm": 4.290279999999939,
+            "shiki-js": 1.1261960000001636,
+            "prism": 0.14376999999990403
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "large",
+          "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
+          "timings": {
+            "ferriki-off": 12.937317999999777,
+            "ferriki": 12.258793500000365,
+            "ferriki-eager": 11.981211500000427,
+            "ferriki-precompiled": 11.9892719999998,
+            "shiki-wasm": 61.02981450000016,
+            "shiki-js": 12.772207999999864,
+            "prism": 1.1498149999999896
+          }
+        }
+      ],
+      "memory": {
+        "cpu": "AMD EPYC",
+        "scenarios": [
+          {
+            "id": "repository",
+            "documents": 12,
+            "inputBytes": 199301,
+            "passes": 50,
+            "engines": {
+              "ferriki-off": {
+                "baselineRss": {
+                  "min": 56422400,
+                  "median": 56614912,
+                  "max": 56815616
+                },
+                "initializedRss": {
+                  "min": 69263360,
+                  "median": 69459968,
+                  "max": 69660672
+                },
+                "finalRss": {
+                  "min": 146677760,
+                  "median": 147052544,
+                  "max": 147365888
+                },
+                "peakRss": {
+                  "min": 148643840,
+                  "median": 149018624,
+                  "max": 149327872
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 143798272,
+                      "median": 143982592,
+                      "max": 144199680
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 145960960,
+                      "median": 146137088,
+                      "max": 146350080
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 146677760,
+                      "median": 147052544,
+                      "max": 147365888
+                    }
+                  }
+                ]
+              },
+              "ferriki": {
+                "baselineRss": {
+                  "min": 56680448,
+                  "median": 56682496,
+                  "max": 56811520
+                },
+                "initializedRss": {
+                  "min": 69263360,
+                  "median": 69394432,
+                  "max": 69525504
+                },
+                "finalRss": {
+                  "min": 264376320,
+                  "median": 264671232,
+                  "max": 265228288
+                },
+                "peakRss": {
+                  "min": 266342400,
+                  "median": 266635264,
+                  "max": 267194368
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 204869632,
+                      "median": 205084672,
+                      "max": 205201408
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 251846656,
+                      "median": 252092416,
+                      "max": 252182528
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 264376320,
+                      "median": 264671232,
+                      "max": 265228288
+                    }
+                  }
+                ]
+              },
+              "ferriki-eager": {
+                "baselineRss": {
+                  "min": 56553472,
+                  "median": 56680448,
+                  "max": 56684544
+                },
+                "initializedRss": {
+                  "min": 69263360,
+                  "median": 69462016,
+                  "max": 69656576
+                },
+                "finalRss": {
+                  "min": 267071488,
+                  "median": 267151360,
+                  "max": 267292672
+                },
+                "peakRss": {
+                  "min": 269037568,
+                  "median": 269117440,
+                  "max": 269258752
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 265744384,
+                      "median": 266010624,
+                      "max": 266174464
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 266129408,
+                      "median": 266414080,
+                      "max": 266543104
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 267071488,
+                      "median": 267151360,
+                      "max": 267292672
+                    }
+                  }
+                ]
+              },
+              "ferriki-precompiled": {
+                "baselineRss": {
+                  "min": 56680448,
+                  "median": 56680448,
+                  "max": 56811520
+                },
+                "initializedRss": {
+                  "min": 579010560,
+                  "median": 579119104,
+                  "max": 579244032
+                },
+                "finalRss": {
+                  "min": 722513920,
+                  "median": 722573312,
+                  "max": 722628608
+                },
+                "peakRss": {
+                  "min": 786923520,
+                  "median": 787077120,
+                  "max": 787271680
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 719024128,
+                      "median": 719265792,
+                      "max": 719364096
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 721477632,
+                      "median": 721723392,
+                      "max": 721821696
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 722513920,
+                      "median": 722573312,
+                      "max": 722628608
+                    }
+                  }
+                ]
+              },
+              "shiki-wasm": {
+                "baselineRss": {
+                  "min": 56492032,
+                  "median": 56614912,
+                  "max": 56815616
+                },
+                "initializedRss": {
+                  "min": 92135424,
+                  "median": 92868608,
+                  "max": 96075776
+                },
+                "finalRss": {
+                  "min": 459173888,
+                  "median": 459929600,
+                  "max": 462983168
+                },
+                "peakRss": {
+                  "min": 464257024,
+                  "median": 466653184,
+                  "max": 468070400
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 283201536,
+                      "median": 288610304,
+                      "max": 310902784
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 422182912,
+                      "median": 426528768,
+                      "max": 432574464
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 459173888,
+                      "median": 459929600,
+                      "max": 462983168
+                    }
+                  }
+                ]
+              },
+              "shiki-js": {
+                "baselineRss": {
+                  "min": 56549376,
+                  "median": 56680448,
+                  "max": 56811520
+                },
+                "initializedRss": {
+                  "min": 86519808,
+                  "median": 86980608,
+                  "max": 87879680
+                },
+                "finalRss": {
+                  "min": 357302272,
+                  "median": 358320128,
+                  "max": 364707840
+                },
+                "peakRss": {
+                  "min": 362868736,
+                  "median": 364394496,
+                  "max": 370991104
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 267952128,
+                      "median": 268556288,
+                      "max": 272044032
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 355737600,
+                      "median": 357021696,
+                      "max": 362487808
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 357302272,
+                      "median": 358320128,
+                      "max": 364707840
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "large-typescript",
+            "documents": 1,
+            "inputBytes": 265165,
+            "passes": 10,
+            "engines": {
+              "ferriki-off": {
+                "baselineRss": {
+                  "min": 56647680,
+                  "median": 56739840,
+                  "max": 56758272
+                },
+                "initializedRss": {
+                  "min": 65859584,
+                  "median": 66066432,
+                  "max": 66318336
+                },
+                "finalRss": {
+                  "min": 90365952,
+                  "median": 90441728,
+                  "max": 90656768
+                },
+                "peakRss": {
+                  "min": 92336128,
+                  "median": 92411904,
+                  "max": 92672000
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 88985600,
+                      "median": 89069568,
+                      "max": 89296896
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 90316800,
+                      "median": 90404864,
+                      "max": 90607616
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 90365952,
+                      "median": 90441728,
+                      "max": 90656768
+                    }
+                  }
+                ]
+              },
+              "ferriki": {
+                "baselineRss": {
+                  "min": 56573952,
+                  "median": 56700928,
+                  "max": 56758272
+                },
+                "initializedRss": {
+                  "min": 65880064,
+                  "median": 66007040,
+                  "max": 66293760
+                },
+                "finalRss": {
+                  "min": 107069440,
+                  "median": 107171840,
+                  "max": 107520000
+                },
+                "peakRss": {
+                  "min": 109416448,
+                  "median": 109520896,
+                  "max": 109834240
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 106098688,
+                      "median": 106254336,
+                      "max": 106524672
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 107040768,
+                      "median": 107141120,
+                      "max": 107483136
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 107069440,
+                      "median": 107171840,
+                      "max": 107520000
+                    }
+                  }
+                ]
+              },
+              "ferriki-eager": {
+                "baselineRss": {
+                  "min": 56623104,
+                  "median": 56725504,
+                  "max": 56770560
+                },
+                "initializedRss": {
+                  "min": 65802240,
+                  "median": 66195456,
+                  "max": 66207744
+                },
+                "finalRss": {
+                  "min": 108527616,
+                  "median": 108761088,
+                  "max": 108863488
+                },
+                "peakRss": {
+                  "min": 110985216,
+                  "median": 111265792,
+                  "max": 111419392
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 107601920,
+                      "median": 107923456,
+                      "max": 108015616
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 108433408,
+                      "median": 108754944,
+                      "max": 108851200
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 108527616,
+                      "median": 108761088,
+                      "max": 108863488
+                    }
+                  }
+                ]
+              },
+              "ferriki-precompiled": {
+                "baselineRss": {
+                  "min": 56557568,
+                  "median": 56748032,
+                  "max": 56823808
+                },
+                "initializedRss": {
+                  "min": 127279104,
+                  "median": 127387648,
+                  "max": 127496192
+                },
+                "finalRss": {
+                  "min": 158445568,
+                  "median": 158568448,
+                  "max": 158617600
+                },
+                "peakRss": {
+                  "min": 180899840,
+                  "median": 180969472,
+                  "max": 181030912
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 158220288,
+                      "median": 158255104,
+                      "max": 158375936
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 158420992,
+                      "median": 158496768,
+                      "max": 158552064
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 158445568,
+                      "median": 158568448,
+                      "max": 158617600
+                    }
+                  }
+                ]
+              },
+              "shiki-wasm": {
+                "baselineRss": {
+                  "min": 56619008,
+                  "median": 56707072,
+                  "max": 56803328
+                },
+                "initializedRss": {
+                  "min": 84664320,
+                  "median": 84762624,
+                  "max": 84901888
+                },
+                "finalRss": {
+                  "min": 320352256,
+                  "median": 321830912,
+                  "max": 322834432
+                },
+                "peakRss": {
+                  "min": 331161600,
+                  "median": 332361728,
+                  "max": 333778944
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 197644288,
+                      "median": 199280640,
+                      "max": 201383936
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 302198784,
+                      "median": 303380480,
+                      "max": 305225728
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 320352256,
+                      "median": 321830912,
+                      "max": 322834432
+                    }
+                  }
+                ]
+              },
+              "shiki-js": {
+                "baselineRss": {
+                  "min": 56565760,
+                  "median": 56748032,
+                  "max": 56897536
+                },
+                "initializedRss": {
+                  "min": 75902976,
+                  "median": 76410880,
+                  "max": 76664832
+                },
+                "finalRss": {
+                  "min": 301170688,
+                  "median": 301780992,
+                  "max": 319815680
+                },
+                "peakRss": {
+                  "min": 312262656,
+                  "median": 312956928,
+                  "max": 331272192
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 171376640,
+                      "median": 173211648,
+                      "max": 173924352
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 291319808,
+                      "median": 298584064,
+                      "max": 301035520
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 301170688,
+                      "median": 301780992,
+                      "max": 319815680
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "macos-arm64",
+      "label": "macOS ARM64",
+      "corpusMachines": {
+        "comparison": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+        },
+        "curated": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+        },
+        "tiobe": {
+          "cpu": "Apple M4 Pro (Virtual)",
+          "os": "Darwin 25.3.0",
+          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+        }
+      },
+      "warm": {
+        "ferriki-off": 121.39450049999868,
+        "ferriki": 80.63847949999581,
+        "ferriki-eager": 80.4211659999969,
+        "ferriki-precompiled": 115.31085199999688,
+        "shiki-wasm": 335.88208299997405
+      },
+      "cold": {
+        "ferriki-off": 219.73424999999997,
+        "ferriki": 338.45929149999995,
+        "ferriki-eager": 413.72466699999995,
+        "ferriki-precompiled": 619.943104,
+        "shiki-wasm": 1099.913688
+      },
+      "workloads": [
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "example",
+          "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
+          "timings": {
+            "ferriki-off": 1.752478999999994,
+            "ferriki": 0.8323749999999563,
+            "ferriki-eager": 0.7893749999998363,
+            "ferriki-precompiled": 0.8026664999999866,
+            "shiki-wasm": 3.758583499999986,
+            "shiki-js": 5.4502915000000485,
+            "prism": 0.21218750000002728
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TypeScript",
+          "size": "large",
+          "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
+          "timings": {
+            "ferriki-off": 25.676770999999917,
+            "ferriki": 10.173729000000549,
+            "ferriki-eager": 9.929416500000116,
+            "ferriki-precompiled": 10.019771000000219,
+            "shiki-wasm": 56.77125000000024,
+            "shiki-js": 83.79212499999903,
+            "prism": 2.43224999999984
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "example",
+          "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
+          "timings": {
+            "ferriki-off": 1.9594590000001517,
+            "ferriki": 1.0511670000000777,
+            "ferriki-eager": 1.0078750000000127,
+            "ferriki-precompiled": 1.04162499999984,
+            "shiki-wasm": 4.454792000000225,
+            "shiki-js": 4.657791999999972,
+            "prism": 0.3273750000000746
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TSX",
+          "size": "large",
+          "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
+          "timings": {
+            "ferriki-off": 27.662270499999977,
+            "ferriki": 12.043999999999869,
+            "ferriki-eager": 11.954937499999687,
+            "ferriki-precompiled": 12.002958000000035,
+            "shiki-wasm": 65.56210400000009,
+            "shiki-js": 68.72697950000065,
+            "prism": 3.9480005000000347
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.18287550000002284,
+            "ferriki": 0.1482499999999618,
+            "ferriki-eager": 0.14895850000004884,
+            "ferriki-precompiled": 0.14718699999991713,
+            "shiki-wasm": 1.129979500000104,
+            "shiki-js": 0.459833500000002,
+            "prism": 0.08160399999991341
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 2.790208000000348,
+            "ferriki": 2.3026660000000447,
+            "ferriki-eager": 2.315791999999419,
+            "ferriki-precompiled": 2.2867080000000897,
+            "shiki-wasm": 17.609292000000096,
+            "shiki-js": 6.726584000000003,
+            "prism": 1.1676250000000437
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "example",
+          "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
+          "timings": {
+            "ferriki-off": 0.2423749999999245,
+            "ferriki": 0.2605624999999918,
+            "ferriki-eager": 0.2542080000000624,
+            "ferriki-precompiled": 0.25074999999981173,
+            "shiki-wasm": 2.54218800000001,
+            "shiki-js": 0.5188750000000937,
+            "prism": 0.06987499999991087
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "CSS",
+          "size": "large",
+          "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
+          "timings": {
+            "ferriki-off": 3.5394160000005286,
+            "ferriki": 3.729374999999891,
+            "ferriki-eager": 3.699333000000024,
+            "ferriki-precompiled": 3.655416999999943,
+            "shiki-wasm": 39.718415999999706,
+            "shiki-js": 7.740250000000742,
+            "prism": 1.0011670000003505
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "example",
+          "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
+          "timings": {
+            "ferriki-off": 1.0167080000001079,
+            "ferriki": 0.6178330000002461,
+            "ferriki-eager": 0.5991250000001855,
+            "ferriki-precompiled": 0.6012919999998303,
+            "shiki-wasm": 3.409958000000188,
+            "shiki-js": 2.519125000000031,
+            "prism": 0.20670799999970768
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "HTML",
+          "size": "large",
+          "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
+          "timings": {
+            "ferriki-off": 14.58304199999975,
+            "ferriki": 8.14756250000005,
+            "ferriki-eager": 8.1003125000002,
+            "ferriki-precompiled": 8.121646000000055,
+            "shiki-wasm": 52.36158299999988,
+            "shiki-js": 37.65291699999989,
+            "prism": 2.464666500000476
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 0.9271249999997053,
+            "ferriki": 0.40612499999997453,
+            "ferriki-eager": 0.395958999999948,
+            "ferriki-precompiled": 0.390625,
+            "shiki-wasm": 2.72458400000005,
+            "shiki-js": 2.2377080000001115,
+            "prism": 0.09887499999967986
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 13.083729499999663,
+            "ferriki": 5.3780210000004445,
+            "ferriki-eager": 5.263791500000025,
+            "ferriki-precompiled": 5.223811999999725,
+            "shiki-wasm": 40.3913120000002,
+            "shiki-js": 33.74416700000074,
+            "prism": 1.1716670000000704
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.328125,
+            "ferriki": 0.20124999999984539,
+            "ferriki-eager": 0.1951249999999618,
+            "ferriki-precompiled": 0.19099999999980355,
+            "shiki-wasm": 1.3952500000000327,
+            "shiki-js": 0.7232919999996739,
+            "prism": 0.07391699999993762
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 4.8044159999999465,
+            "ferriki": 2.937167000000045,
+            "ferriki-eager": 2.881290999999692,
+            "ferriki-precompiled": 2.7916250000002947,
+            "shiki-wasm": 21.086749999999938,
+            "shiki-js": 10.733042000000296,
+            "prism": 1.0009170000002996
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.22483299999998962,
+            "ferriki": 0.16479100000003655,
+            "ferriki-eager": 0.16108299999996234,
+            "ferriki-precompiled": 0.16287499999998545,
+            "shiki-wasm": 0.9767079999999169,
+            "shiki-js": 0.6180840000000103,
+            "prism": 0.08758299999999508
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.3629999999993743,
+            "ferriki": 2.5090829999999187,
+            "ferriki-eager": 2.4705409999996846,
+            "ferriki-precompiled": 2.507665999999972,
+            "shiki-wasm": 15.106209000000035,
+            "shiki-js": 9.329000000000633,
+            "prism": 1.305667000000085
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "example",
+          "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
+          "timings": {
+            "ferriki-off": 0.34262500000022555,
+            "ferriki": 0.25525000000016007,
+            "ferriki-eager": 0.24687500000027285,
+            "ferriki-precompiled": 0.24291700000003402,
+            "shiki-wasm": 1.0213330000001406,
+            "shiki-js": 1.4262079999998605,
+            "prism": 0.11583399999972244
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Markdown",
+          "size": "large",
+          "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
+          "timings": {
+            "ferriki-off": 4.676000000000386,
+            "ferriki": 3.3827714999997625,
+            "ferriki-eager": 3.336187500000051,
+            "ferriki-precompiled": 3.2996460000003935,
+            "shiki-wasm": 14.934729000000061,
+            "shiki-js": 22.090020999999524,
+            "prism": 1.4332079999999223
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "example",
+          "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
+          "timings": {
+            "ferriki-off": 0.07325000000003001,
+            "ferriki": 0.07154100000002472,
+            "ferriki-eager": 0.07366650000000163,
+            "ferriki-precompiled": 0.07437499999994657,
+            "shiki-wasm": 0.1770624999999768,
+            "shiki-js": 0.13241700000000378,
+            "prism": 0.030457999999967456
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "TOML",
+          "size": "large",
+          "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
+          "timings": {
+            "ferriki-off": 1.0822709999998779,
+            "ferriki": 1.0537289999999757,
+            "ferriki-eager": 1.0899580000001379,
+            "ferriki-precompiled": 1.0928960000001098,
+            "shiki-wasm": 2.6945000000001755,
+            "shiki-js": 1.948812500000031,
+            "prism": 0.47508399999981066
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "example",
+          "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
+          "timings": {
+            "ferriki-off": 0.9657500000000709,
+            "ferriki": 1.2012080000000651,
+            "ferriki-eager": 1.1908750000000055,
+            "ferriki-precompiled": 1.1862920000000088,
+            "shiki-wasm": 1.2275000000000773,
+            "prism": 0.04504099999985556
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "YAML",
+          "size": "large",
+          "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
+          "timings": {
+            "ferriki-off": 15.173875499999895,
+            "ferriki": 19.135729500000025,
+            "ferriki-eager": 18.868146000000024,
+            "ferriki-precompiled": 18.78456250000022,
+            "shiki-wasm": 19.545103999999583,
+            "prism": 0.6422914999998284
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "example",
+          "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
+          "timings": {
+            "ferriki-off": 0.11691700000002925,
+            "ferriki": 0.11487500000001205,
+            "ferriki-eager": 0.12895800000001145,
+            "ferriki-precompiled": 0.12895899999995208,
+            "shiki-wasm": 0.29322899999999663,
+            "shiki-js": 0.237333499999977,
+            "prism": 0.04966699999999946
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "JSON",
+          "size": "large",
+          "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
+          "timings": {
+            "ferriki-off": 1.8537710000000516,
+            "ferriki": 1.8121455000000424,
+            "ferriki-eager": 2.009582999999793,
+            "ferriki-precompiled": 2.0044794999998885,
+            "shiki-wasm": 4.658645500000034,
+            "shiki-js": 3.755896000000007,
+            "prism": 0.8018334999999297
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "example",
+          "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
+          "timings": {
+            "ferriki-off": 1.8806455000001279,
+            "ferriki": 1.1970834999999624,
+            "ferriki-eager": 1.3558750000000828,
+            "ferriki-precompiled": 1.1483755000001565,
+            "shiki-wasm": 4.64193750000004,
+            "shiki-js": 4.300104000000147
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Astro",
+          "size": "large",
+          "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
+          "timings": {
+            "ferriki-off": 21.303437999999915,
+            "ferriki": 13.340437500000007,
+            "ferriki-eager": 16.394395500000428,
+            "ferriki-precompiled": 13.15231300000005,
+            "shiki-wasm": 57.38039549999985,
+            "shiki-js": 55.6514585000009
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "example",
+          "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
+          "timings": {
+            "ferriki-off": 2.1869579999998905,
+            "ferriki": 1.270354000000225,
+            "ferriki-eager": 1.3571459999999433,
+            "ferriki-precompiled": 1.2075205000001006,
+            "shiki-wasm": 5.211708499999872,
+            "shiki-js": 5.861707999999908
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Svelte",
+          "size": "large",
+          "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
+          "timings": {
+            "ferriki-off": 27.87925000000041,
+            "ferriki": 14.19427049999922,
+            "ferriki-eager": 15.936937500000568,
+            "ferriki-precompiled": 14.129874999999629,
+            "shiki-wasm": 69.9052085000003,
+            "shiki-js": 79.21679199999926
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "example",
+          "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
+          "timings": {
+            "ferriki-off": 0.21149950000005902,
+            "ferriki": 0.14947900000009895,
+            "ferriki-eager": 0.1490000000001146,
+            "ferriki-precompiled": 0.14727050000010422,
+            "shiki-wasm": 1.55081250000012,
+            "shiki-js": 0.6646664999998961,
+            "prism": 0.08725000000004002
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Ruby",
+          "size": "large",
+          "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
+          "timings": {
+            "ferriki-off": 3.1666665000000194,
+            "ferriki": 2.241958000000068,
+            "ferriki-eager": 2.271936999999525,
+            "ferriki-precompiled": 2.2620000000003984,
+            "shiki-wasm": 24.275312500000155,
+            "shiki-js": 10.34458299999983,
+            "prism": 1.295624499999576
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.2851670000000013,
+            "ferriki": 0.22433399999999892,
+            "ferriki-eager": 0.21837500000037835,
+            "ferriki-precompiled": 0.21854199999995672,
+            "shiki-wasm": 1.4157500000000027,
+            "shiki-js": 0.7918750000000045,
+            "prism": 0.10424999999997908
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 4.253978999999845,
+            "ferriki": 3.442874999999731,
+            "ferriki-eager": 3.402853999999934,
+            "ferriki-precompiled": 3.4036875000003874,
+            "shiki-wasm": 21.770749499999965,
+            "shiki-js": 11.884479499999998,
+            "prism": 1.4707080000000587
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "example",
+          "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
+          "timings": {
+            "ferriki-off": 1.1207080000001497,
+            "ferriki": 0.5802499999999782,
+            "ferriki-eager": 0.565166999999974,
+            "ferriki-precompiled": 0.5667920000000777,
+            "shiki-wasm": 2.0464169999995647,
+            "shiki-js": 2.251166999999896
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Vue",
+          "size": "large",
+          "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
+          "timings": {
+            "ferriki-off": 18.07516699999951,
+            "ferriki": 8.29647900000009,
+            "ferriki-eager": 8.176896000000397,
+            "ferriki-precompiled": 8.329229499999656,
+            "shiki-wasm": 33.332645500000126,
+            "shiki-js": 36.41395800000009
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "example",
+          "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
+          "timings": {
+            "ferriki-off": 0.6237294999999676,
+            "ferriki": 0.3988329999999678,
+            "ferriki-eager": 0.38131250000014916,
+            "ferriki-precompiled": 0.3803749999997308,
+            "shiki-wasm": 1.9228329999999687,
+            "shiki-js": 2.799103999999943
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "MDX",
+          "size": "large",
+          "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
+          "timings": {
+            "ferriki-off": 7.732062499999756,
+            "ferriki": 4.840520499999911,
+            "ferriki-eager": 4.685374499999853,
+            "ferriki-precompiled": 4.783187500000167,
+            "shiki-wasm": 27.52318749999995,
+            "shiki-js": 42.23027050000019
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "example",
+          "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
+          "timings": {
+            "ferriki-off": 0.2825414999999225,
+            "ferriki": 0.24908300000004147,
+            "ferriki-eager": 0.23727100000007795,
+            "ferriki-precompiled": 0.23168799999984913,
+            "shiki-wasm": 3.0038334999999847,
+            "shiki-js": 0.5708334999998215,
+            "prism": 0.14339599999988195
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "SCSS",
+          "size": "large",
+          "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
+          "timings": {
+            "ferriki-off": 3.8561250000002474,
+            "ferriki": 3.2281875000001037,
+            "ferriki-eager": 3.180895499999906,
+            "ferriki-precompiled": 3.0833959999999934,
+            "shiki-wasm": 47.971020499999895,
+            "shiki-js": 8.108854000000065,
+            "prism": 2.027083500000117
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "example",
+          "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
+          "timings": {
+            "ferriki-off": 0.2665624999999636,
+            "ferriki": 0.22420800000008967,
+            "ferriki-eager": 0.22060400000009395,
+            "ferriki-precompiled": 0.22233350000010432,
+            "shiki-wasm": 0.826124999999962,
+            "shiki-js": 0.5439380000000256,
+            "prism": 0.08766599999989921
+          }
+        },
+        {
+          "corpus": "curated",
+          "language": "Bash",
+          "size": "large",
+          "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
+          "timings": {
+            "ferriki-off": 4.020624999999882,
+            "ferriki": 3.4576665000001867,
+            "ferriki-eager": 3.4323749999998654,
+            "ferriki-precompiled": 3.4329375000002074,
+            "shiki-wasm": 12.435229000000163,
+            "shiki-js": 8.202895500000068,
+            "prism": 1.2958960000000843
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "example",
+          "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
+          "timings": {
+            "ferriki-off": 0.3064170000000104,
+            "ferriki": 0.2476249999999709,
+            "ferriki-eager": 0.24083300000000918,
+            "ferriki-precompiled": 0.24183300000004238,
+            "shiki-wasm": 1.5287920000000668,
+            "shiki-js": 0.8480410000000234,
+            "prism": 0.11541699999997945
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Python",
+          "size": "large",
+          "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
+          "timings": {
+            "ferriki-off": 4.4049589999999625,
+            "ferriki": 3.6007919999997284,
+            "ferriki-eager": 3.513249999999971,
+            "ferriki-precompiled": 3.486417000000074,
+            "shiki-wasm": 22.734042000000045,
+            "shiki-js": 12.403416999999536,
+            "prism": 1.5270410000002812
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "example",
+          "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
+          "timings": {
+            "ferriki-off": 0.39545799999996234,
+            "ferriki": 0.21104200000002038,
+            "ferriki-eager": 0.20187499999997272,
+            "ferriki-precompiled": 0.20804150000003574,
+            "shiki-wasm": 1.7434579999999755,
+            "shiki-js": 0.9788330000000087,
+            "prism": 0.0976660000000038
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C",
+          "size": "large",
+          "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
+          "timings": {
+            "ferriki-off": 5.370542000000569,
+            "ferriki": 2.819582999999966,
+            "ferriki-eager": 2.776666000000205,
+            "ferriki-precompiled": 2.7936249999997926,
+            "shiki-wasm": 24.93783399999984,
+            "shiki-js": 13.506542000000081,
+            "prism": 1.1850409999997282
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "example",
+          "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
+          "timings": {
+            "ferriki-off": 0.9800834999998642,
+            "ferriki": 0.4435000000000855,
+            "ferriki-eager": 0.4356869999999162,
+            "ferriki-precompiled": 0.4288335000001098,
+            "shiki-wasm": 2.799916499999881,
+            "shiki-js": 2.2802914999997483,
+            "prism": 0.10250050000013289
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C++",
+          "size": "large",
+          "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
+          "timings": {
+            "ferriki-off": 13.136103999999705,
+            "ferriki": 5.399458500000037,
+            "ferriki-eager": 5.2378130000001875,
+            "ferriki-precompiled": 5.2491665000002286,
+            "shiki-wasm": 40.996978999999556,
+            "shiki-js": 33.65625,
+            "prism": 1.181270499999755
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "example",
+          "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
+          "timings": {
+            "ferriki-off": 0.22174999999992906,
+            "ferriki": 0.1622500000000855,
+            "ferriki-eager": 0.15816700000004857,
+            "ferriki-precompiled": 0.15875000000005457,
+            "shiki-wasm": 0.9704160000001139,
+            "shiki-js": 0.6067499999999768,
+            "prism": 0.08662500000002638
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Java",
+          "size": "large",
+          "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
+          "timings": {
+            "ferriki-off": 3.4635000000007494,
+            "ferriki": 2.6015409999999974,
+            "ferriki-eager": 2.526999999999589,
+            "ferriki-precompiled": 2.546542000000045,
+            "shiki-wasm": 15.4818750000004,
+            "shiki-js": 9.751624999999876,
+            "prism": 1.3277500000003783
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "example",
+          "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
+          "timings": {
+            "ferriki-off": 0.7639580000000024,
+            "ferriki": 0.2610829999998714,
+            "ferriki-eager": 0.2555409999999938,
+            "ferriki-precompiled": 0.2524590000000444,
+            "shiki-wasm": 1.1471670000000813,
+            "shiki-js": 1.7807920000000195,
+            "prism": 0.17591600000014296
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "C#",
+          "size": "large",
+          "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
+          "timings": {
+            "ferriki-off": 11.593729000000167,
+            "ferriki": 3.807271000000128,
+            "ferriki-eager": 3.7594585000001643,
+            "ferriki-precompiled": 3.686083499999768,
+            "shiki-wasm": 17.040208500000062,
+            "shiki-js": 27.31793749999997,
+            "prism": 2.530771000000186
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "example",
+          "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
+          "timings": {
+            "ferriki-off": 2.0403750000001537,
+            "ferriki": 0.8382084999999506,
+            "ferriki-eager": 0.812166500000103,
+            "ferriki-precompiled": 0.8087285000000293,
+            "shiki-wasm": 4.654978999999912,
+            "shiki-js": 5.427687500000161,
+            "prism": 0.22947950000002493
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "JavaScript",
+          "size": "large",
+          "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
+          "timings": {
+            "ferriki-off": 29.640666000000238,
+            "ferriki": 10.682062499999574,
+            "ferriki-eager": 10.525041999999758,
+            "ferriki-precompiled": 10.558396000000357,
+            "shiki-wasm": 69.9144999999994,
+            "shiki-js": 83.18424999999979,
+            "prism": 2.4017714999999953
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "example",
+          "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
+          "timings": {
+            "ferriki-off": 0.2396249999999327,
+            "ferriki": 0.23854100000016842,
+            "ferriki-eager": 0.23916700000017954,
+            "ferriki-precompiled": 0.23424999999997453,
+            "shiki-wasm": 0.9679590000000076,
+            "shiki-js": 0.32037500000001273,
+            "prism": 0.04920799999990777
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Visual Basic",
+          "size": "large",
+          "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
+          "timings": {
+            "ferriki-off": 3.7470624999998563,
+            "ferriki": 3.80231300000014,
+            "ferriki-eager": 3.834208500000159,
+            "ferriki-precompiled": 3.7673955000000205,
+            "shiki-wasm": 15.259646500000372,
+            "shiki-js": 4.9681250000001,
+            "prism": 0.7637080000001788
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "example",
+          "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
+          "timings": {
+            "ferriki-off": 0.2727919999998676,
+            "ferriki": 0.24899999999999523,
+            "ferriki-eager": 0.2394790000000171,
+            "ferriki-precompiled": 4.3055835000000116,
+            "shiki-wasm": 2.453458499999954,
+            "shiki-js": 0.42981299999996736,
+            "prism": 0.07670850000010887
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "SQL",
+          "size": "large",
+          "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
+          "timings": {
+            "ferriki-off": 3.83902100000023,
+            "ferriki": 3.6781459999997423,
+            "ferriki-eager": 3.680812500000002,
+            "ferriki-precompiled": 69.17249949999996,
+            "shiki-wasm": 38.32233350000001,
+            "shiki-js": 6.01629099999991,
+            "prism": 0.9904375000000982
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "example",
+          "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
+          "timings": {
+            "ferriki-off": 0.19852100000002793,
+            "ferriki": 0.1532079999999496,
+            "ferriki-eager": 0.1524169999999856,
+            "ferriki-precompiled": 0.15189550000002328,
+            "shiki-wasm": 1.5251250000001164,
+            "shiki-js": 0.6713750000000118,
+            "prism": 0.050541500000008455
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "R",
+          "size": "large",
+          "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
+          "timings": {
+            "ferriki-off": 2.893729500000063,
+            "ferriki": 2.268562499999689,
+            "ferriki-eager": 2.2758745000001,
+            "ferriki-precompiled": 2.2388750000000073,
+            "shiki-wasm": 23.46618800000033,
+            "shiki-js": 10.088729000000285,
+            "prism": 0.7365420000005543
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "example",
+          "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
+          "timings": {
+            "ferriki-off": 0.1840209999999729,
+            "ferriki": 0.14885399999991478,
+            "ferriki-eager": 0.1464585000000227,
+            "ferriki-precompiled": 0.1471250000001305,
+            "shiki-wasm": 1.1393129999999587,
+            "shiki-js": 0.45954149999997185,
+            "prism": 0.08287499999994452
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Rust",
+          "size": "large",
+          "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
+          "timings": {
+            "ferriki-off": 2.8227085000000898,
+            "ferriki": 2.3340830000001915,
+            "ferriki-eager": 2.3056874999999764,
+            "ferriki-precompiled": 2.2972079999997277,
+            "shiki-wasm": 18.087250000000267,
+            "shiki-js": 6.946124999999938,
+            "prism": 1.2025830000000042
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "example",
+          "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
+          "timings": {
+            "ferriki-off": 0.450458000000026,
+            "ferriki": 0.3417079999999828,
+            "ferriki-eager": 0.3550000000000182,
+            "ferriki-precompiled": 0.32920800000010786,
+            "shiki-wasm": 1.5830000000000837,
+            "shiki-js": 1.0074999999999363,
+            "prism": 0.06445800000005875
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Fortran",
+          "size": "large",
+          "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
+          "timings": {
+            "ferriki-off": 6.410708500000055,
+            "ferriki": 4.799646000000166,
+            "ferriki-eager": 4.989083500000106,
+            "ferriki-precompiled": 4.693666499999836,
+            "shiki-wasm": 24.218624499999805,
+            "shiki-js": 15.30254200000013,
+            "prism": 0.861625000000231
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "example",
+          "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
+          "timings": {
+            "ferriki-off": 0.329124999999749,
+            "ferriki": 0.21133399999996527,
+            "ferriki-eager": 0.2049170000000231,
+            "ferriki-precompiled": 0.1974999999999909,
+            "shiki-wasm": 1.235208,
+            "shiki-js": 0.5301660000000084,
+            "prism": 0.05837500000006912
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Go",
+          "size": "large",
+          "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
+          "timings": {
+            "ferriki-off": 4.891457999999147,
+            "ferriki": 3.1628749999999854,
+            "ferriki-eager": 3.125250000000051,
+            "ferriki-precompiled": 2.962999999999738,
+            "shiki-wasm": 18.714833,
+            "shiki-js": 7.720792000000074,
+            "prism": 0.8259579999999005
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "example",
+          "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
+          "timings": {
+            "ferriki-off": 0.10791699999992943,
+            "ferriki": 0.13118750000001,
+            "ferriki-eager": 0.13110449999993534,
+            "ferriki-precompiled": 0.1302499999999327,
+            "shiki-wasm": 0.7424170000001027,
+            "shiki-js": 0.1963540000000421,
+            "prism": 0.061332999999990534
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Delphi/Object Pascal",
+          "size": "large",
+          "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
+          "timings": {
+            "ferriki-off": 1.6868125000000873,
+            "ferriki": 2.1574995000000854,
+            "ferriki-eager": 2.139875000000302,
+            "ferriki-precompiled": 2.135146500000019,
+            "shiki-wasm": 11.584958500000084,
+            "shiki-js": 2.937167000000045,
+            "prism": 0.9533335000000989
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "example",
+          "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
+          "timings": {
+            "ferriki-off": 0.2829580000000078,
+            "ferriki": 0.17341599999986101,
+            "ferriki-eager": 0.16775000000006912,
+            "ferriki-precompiled": 0.1673750000002201,
+            "shiki-wasm": 1.5871250000000146,
+            "shiki-js": 0.5838330000001406,
+            "prism": 0.12216699999999037
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "PHP",
+          "size": "large",
+          "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
+          "timings": {
+            "ferriki-off": 3.940541499999881,
+            "ferriki": 2.4645620000001145,
+            "ferriki-eager": 2.4543334999996205,
+            "ferriki-precompiled": 2.436354500000107,
+            "shiki-wasm": 24.53512499999988,
+            "shiki-js": 8.38262500000019,
+            "prism": 1.6636874999999236
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "example",
+          "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
+          "timings": {
+            "ferriki-off": 0.2541875000000289,
+            "ferriki": 0.1069164999998975,
+            "ferriki-eager": 0.10229150000000686,
+            "ferriki-precompiled": 0.0993955000000426,
+            "shiki-wasm": 2.262917000000016,
+            "shiki-js": 0.797583500000087,
+            "prism": 0.034062499999976126
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Assembly language",
+          "size": "large",
+          "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
+          "timings": {
+            "ferriki-off": 3.5867714999999407,
+            "ferriki": 1.4617919999996047,
+            "ferriki-eager": 1.4058954999995876,
+            "ferriki-precompiled": 1.428645500000357,
+            "shiki-wasm": 37.12006250000013,
+            "shiki-js": 11.564916500000209,
+            "prism": 0.4158954999998059
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "example",
+          "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
+          "timings": {
+            "ferriki-off": 0.18758299999990413,
+            "ferriki": 0.17993750000005093,
+            "ferriki-eager": 0.17741650000004938,
+            "ferriki-precompiled": 0.1716874999999618,
+            "shiki-wasm": 0.6344585000000507,
+            "shiki-js": 0.39802050000002964,
+            "prism": 0.06841649999995525
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Ada",
+          "size": "large",
+          "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
+          "timings": {
+            "ferriki-off": 2.815875000000233,
+            "ferriki": 2.735124999999698,
+            "ferriki-eager": 2.7530839999999444,
+            "ferriki-precompiled": 2.670208999999886,
+            "shiki-wasm": 10.045000000000073,
+            "shiki-js": 6.224874999999884,
+            "prism": 1.0552079999997659
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "example",
+          "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
+          "timings": {
+            "ferriki-off": 0.3268750000002001,
+            "ferriki": 0.20066600000018298,
+            "ferriki-eager": 0.19408400000020265,
+            "ferriki-precompiled": 0.19345899999984795,
+            "shiki-wasm": 1.3920420000004015,
+            "shiki-js": 0.7329579999999396,
+            "prism": 0.07633299999997689
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Swift",
+          "size": "large",
+          "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
+          "timings": {
+            "ferriki-off": 4.660165999999663,
+            "ferriki": 2.8504579999998896,
+            "ferriki-eager": 2.7880829999994603,
+            "ferriki-precompiled": 2.744459000000006,
+            "shiki-wasm": 20.682458000000224,
+            "shiki-js": 10.321540999999343,
+            "prism": 1.000999999999749
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "example",
+          "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
+          "timings": {
+            "ferriki-off": 0.347374999999829,
+            "ferriki": 0.18783299999995506,
+            "ferriki-eager": 0.18366600000013023,
+            "ferriki-precompiled": 0.1799999999998363,
+            "shiki-wasm": 1.7046659999999747,
+            "shiki-js": 0.7428340000000162,
+            "prism": 0.0675420000000031
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "Objective-C",
+          "size": "large",
+          "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
+          "timings": {
+            "ferriki-off": 5.021166999999878,
+            "ferriki": 2.757999999999811,
+            "ferriki-eager": 2.7608329999998205,
+            "ferriki-precompiled": 2.7180420000004233,
+            "shiki-wasm": 26.163874999999734,
+            "shiki-js": 11.052666000000045,
+            "prism": 0.915208000000348
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "example",
+          "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
+          "timings": {
+            "ferriki-off": 0.7018545000000813,
+            "ferriki": 0.6785209999999893,
+            "ferriki-eager": 0.6702295000000049,
+            "ferriki-precompiled": 0.6695000000000846,
+            "shiki-wasm": 4.310771000000045,
+            "shiki-js": 0.5929789999999571,
+            "prism": 0.07260450000001129
+          }
+        },
+        {
+          "corpus": "tiobe",
+          "language": "COBOL",
+          "size": "large",
+          "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
+          "timings": {
+            "ferriki-off": 10.599146000000474,
+            "ferriki": 10.37164600000051,
+            "ferriki-eager": 10.304125500000282,
+            "ferriki-precompiled": 10.314584000000195,
+            "shiki-wasm": 67.99550049999971,
+            "shiki-js": 8.66193750000025,
+            "prism": 1.0050834999999552
+          }
+        }
+      ],
+      "memory": {
+        "cpu": "Apple M4 Pro (Virtual)",
+        "scenarios": [
+          {
+            "id": "repository",
+            "documents": 12,
+            "inputBytes": 199301,
+            "passes": 50,
+            "engines": {
+              "ferriki-off": {
+                "baselineRss": {
+                  "min": 56197120,
+                  "median": 56295424,
+                  "max": 56410112
+                },
+                "initializedRss": {
+                  "min": 68157440,
+                  "median": 68362240,
+                  "max": 68435968
+                },
+                "finalRss": {
+                  "min": 148848640,
+                  "median": 149012480,
+                  "max": 149340160
+                },
+                "peakRss": {
+                  "min": 150863872,
+                  "median": 151027712,
+                  "max": 151355392
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 146325504,
+                      "median": 146432000,
+                      "max": 146702336
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 148062208,
+                      "median": 148201472,
+                      "max": 148504576
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 148848640,
+                      "median": 149012480,
+                      "max": 149340160
+                    }
+                  }
+                ]
+              },
+              "ferriki": {
+                "baselineRss": {
+                  "min": 56180736,
+                  "median": 56254464,
+                  "max": 56475648
+                },
+                "initializedRss": {
+                  "min": 68059136,
+                  "median": 68263936,
+                  "max": 68501504
+                },
+                "finalRss": {
+                  "min": 283885568,
+                  "median": 284073984,
+                  "max": 284262400
+                },
+                "peakRss": {
+                  "min": 285900800,
+                  "median": 286056448,
+                  "max": 286261248
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 212844544,
+                      "median": 213041152,
+                      "max": 213368832
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 269713408,
+                      "median": 270016512,
+                      "max": 270106624
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 283885568,
+                      "median": 284073984,
+                      "max": 284262400
+                    }
+                  }
+                ]
+              },
+              "ferriki-eager": {
+                "baselineRss": {
+                  "min": 56197120,
+                  "median": 56410112,
+                  "max": 56459264
+                },
+                "initializedRss": {
+                  "min": 68190208,
+                  "median": 68354048,
+                  "max": 68419584
+                },
+                "finalRss": {
+                  "min": 285687808,
+                  "median": 285859840,
+                  "max": 286392320
+                },
+                "peakRss": {
+                  "min": 287703040,
+                  "median": 287850496,
+                  "max": 288407552
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 282951680,
+                      "median": 283344896,
+                      "max": 283541504
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 284868608,
+                      "median": 285040640,
+                      "max": 285360128
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 285687808,
+                      "median": 285859840,
+                      "max": 286392320
+                    }
+                  }
+                ]
+              },
+              "ferriki-precompiled": {
+                "baselineRss": {
+                  "min": 56164352,
+                  "median": 56262656,
+                  "max": 56410112
+                },
+                "initializedRss": {
+                  "min": 983416832,
+                  "median": 983580672,
+                  "max": 983646208
+                },
+                "finalRss": {
+                  "min": 1123287040,
+                  "median": 1123377152,
+                  "max": 1123565568
+                },
+                "peakRss": {
+                  "min": 1125302272,
+                  "median": 1125367808,
+                  "max": 1125580800
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 1119567872,
+                      "median": 1119797248,
+                      "max": 1119961088
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 1122205696,
+                      "median": 1122328576,
+                      "max": 1122566144
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 1123287040,
+                      "median": 1123377152,
+                      "max": 1123565568
+                    }
+                  }
+                ]
+              },
+              "shiki-wasm": {
+                "baselineRss": {
+                  "min": 56049664,
+                  "median": 56344576,
+                  "max": 56426496
+                },
+                "initializedRss": {
+                  "min": 90406912,
+                  "median": 91529216,
+                  "max": 92422144
+                },
+                "finalRss": {
+                  "min": 465944576,
+                  "median": 474095616,
+                  "max": 481329152
+                },
+                "peakRss": {
+                  "min": 470237184,
+                  "median": 479789056,
+                  "max": 487751680
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 295649280,
+                      "median": 309829632,
+                      "max": 323371008
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 435109888,
+                      "median": 445997056,
+                      "max": 453279744
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 465944576,
+                      "median": 474095616,
+                      "max": 481329152
+                    }
+                  }
+                ]
+              },
+              "shiki-js": {
+                "baselineRss": {
+                  "min": 56098816,
+                  "median": 56287232,
+                  "max": 56328192
+                },
+                "initializedRss": {
+                  "min": 86949888,
+                  "median": 87203840,
+                  "max": 88506368
+                },
+                "finalRss": {
+                  "min": 344129536,
+                  "median": 349257728,
+                  "max": 355778560
+                },
+                "peakRss": {
+                  "min": 349978624,
+                  "median": 356278272,
+                  "max": 361234432
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 229654528,
+                      "median": 261480448,
+                      "max": 263094272
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 342228992,
+                      "median": 346284032,
+                      "max": 349847552
+                    }
+                  },
+                  {
+                    "passes": 50,
+                    "rss": {
+                      "min": 344129536,
+                      "median": 349257728,
+                      "max": 355778560
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "large-typescript",
+            "documents": 1,
+            "inputBytes": 265165,
+            "passes": 10,
+            "engines": {
+              "ferriki-off": {
+                "baselineRss": {
+                  "min": 56344576,
+                  "median": 56442880,
+                  "max": 56524800
+                },
+                "initializedRss": {
+                  "min": 64651264,
+                  "median": 64667648,
+                  "max": 64798720
+                },
+                "finalRss": {
+                  "min": 89587712,
+                  "median": 89743360,
+                  "max": 89931776
+                },
+                "peakRss": {
+                  "min": 91291648,
+                  "median": 91447296,
+                  "max": 91635712
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 89374720,
+                      "median": 89587712,
+                      "max": 89767936
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 89538560,
+                      "median": 89710592,
+                      "max": 89899008
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 89587712,
+                      "median": 89743360,
+                      "max": 89931776
+                    }
+                  }
+                ]
+              },
+              "ferriki": {
+                "baselineRss": {
+                  "min": 56213504,
+                  "median": 56500224,
+                  "max": 56655872
+                },
+                "initializedRss": {
+                  "min": 64520192,
+                  "median": 64708608,
+                  "max": 64847872
+                },
+                "finalRss": {
+                  "min": 108920832,
+                  "median": 109133824,
+                  "max": 109625344
+                },
+                "peakRss": {
+                  "min": 110641152,
+                  "median": 110845952,
+                  "max": 111329280
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 108740608,
+                      "median": 108986368,
+                      "max": 109477888
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 108888064,
+                      "median": 109092864,
+                      "max": 109576192
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 108920832,
+                      "median": 109133824,
+                      "max": 109625344
+                    }
+                  }
+                ]
+              },
+              "ferriki-eager": {
+                "baselineRss": {
+                  "min": 56311808,
+                  "median": 56475648,
+                  "max": 56573952
+                },
+                "initializedRss": {
+                  "min": 64602112,
+                  "median": 64733184,
+                  "max": 64765952
+                },
+                "finalRss": {
+                  "min": 109756416,
+                  "median": 110190592,
+                  "max": 110411776
+                },
+                "peakRss": {
+                  "min": 111460352,
+                  "median": 111894528,
+                  "max": 112132096
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 109543424,
+                      "median": 109993984,
+                      "max": 110264320
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 109707264,
+                      "median": 110149632,
+                      "max": 110346240
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 109756416,
+                      "median": 110190592,
+                      "max": 110411776
+                    }
+                  }
+                ]
+              },
+              "ferriki-precompiled": {
+                "baselineRss": {
+                  "min": 56393728,
+                  "median": 56451072,
+                  "max": 56557568
+                },
+                "initializedRss": {
+                  "min": 180486144,
+                  "median": 180666368,
+                  "max": 180797440
+                },
+                "finalRss": {
+                  "min": 215367680,
+                  "median": 215523328,
+                  "max": 215859200
+                },
+                "peakRss": {
+                  "min": 217071616,
+                  "median": 217227264,
+                  "max": 217563136
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 215203840,
+                      "median": 215359488,
+                      "max": 215728128
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 215318528,
+                      "median": 215482368,
+                      "max": 215810048
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 215367680,
+                      "median": 215523328,
+                      "max": 215859200
+                    }
+                  }
+                ]
+              },
+              "shiki-wasm": {
+                "baselineRss": {
+                  "min": 56393728,
+                  "median": 56467456,
+                  "max": 56606720
+                },
+                "initializedRss": {
+                  "min": 83001344,
+                  "median": 83124224,
+                  "max": 83410944
+                },
+                "finalRss": {
+                  "min": 328482816,
+                  "median": 330964992,
+                  "max": 333004800
+                },
+                "peakRss": {
+                  "min": 339591168,
+                  "median": 342245376,
+                  "max": 344113152
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 205881344,
+                      "median": 208691200,
+                      "max": 209436672
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 296910848,
+                      "median": 297746432,
+                      "max": 315392000
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 328482816,
+                      "median": 330964992,
+                      "max": 333004800
+                    }
+                  }
+                ]
+              },
+              "shiki-js": {
+                "baselineRss": {
+                  "min": 56197120,
+                  "median": 56426496,
+                  "max": 56508416
+                },
+                "initializedRss": {
+                  "min": 73515008,
+                  "median": 73916416,
+                  "max": 74350592
+                },
+                "finalRss": {
+                  "min": 292732928,
+                  "median": 302874624,
+                  "max": 314081280
+                },
+                "peakRss": {
+                  "min": 303841280,
+                  "median": 311492608,
+                  "max": 325779456
+                },
+                "checkpoints": [
+                  {
+                    "passes": 1,
+                    "rss": {
+                      "min": 169869312,
+                      "median": 170770432,
+                      "max": 171393024
+                    }
+                  },
+                  {
+                    "passes": 5,
+                    "rss": {
+                      "min": 268484608,
+                      "median": 276824064,
+                      "max": 294060032
+                    }
+                  },
+                  {
+                    "passes": 10,
+                    "rss": {
+                      "min": 292732928,
+                      "median": 302874624,
+                      "max": 314081280
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
