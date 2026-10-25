@@ -1,0 +1,73 @@
+{
+  "capturedAt": "2026-10-25T18:45:13.875136+00:00",
+  "baseCommit": "5e12c5edab14d2d49d2d90f59e93a70008bbb46f",
+  "versions": [
+    "2.7.0",
+    "2.7.1"
+  ],
+  "upstreamReleaseCommit": "1b587fbcc60eaac3828e9d8d4e21e00c066d1aad",
+  "upstreamFixCommit": "f1e0955a2e9a9a74c3ee635531fe58c4fef32fd2",
+  "issue": "https://github.com/sebastian-software/ferroni/issues/465",
+  "host": "Apple M1 Ultra, 20 cores, 64 GiB; Darwin 27.0.0, ARM64",
+  "node": "v24.22.0",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "profile": "release; fat LTO; one codegen unit; symbols stripped; no custom CPU flags",
+  "fullComparison": {
+    "processes": 80,
+    "perVersionModeScenario": 5,
+    "warmup": 5,
+    "passes": 10,
+    "summary": "median of five process upper medians",
+    "order": "rotate all eight version/mode lanes each repeat and scenario",
+    "harness": "compare.py + ../decoded-cache/reproduce.mjs --worker",
+    "cache": "prepopulated decoded cache; no first fill or downloads measured",
+    "inputs": "../decoded-cache/inputs.json.gz",
+    "fixtureSizes": {
+      "large-typescript": 265165
+    },
+    "excluded": [
+      "SQL",
+      "YAML"
+    ]
+  },
+  "replay": {
+    "processes": 30,
+    "processesPerVersionMode": 5,
+    "warmup": 5,
+    "passes": 20,
+    "queriesPerPass": 61490,
+    "harness": "../detailed-profile-2026-10-25/repro (2.7.0) and repro-271 (2.7.1)",
+    "summary": "median of five process medians",
+    "order": "rotate six version/mode lanes each repeat"
+  },
+  "autoRecheck": {
+    "processes": 10,
+    "perVersion": 5,
+    "warmup": 20,
+    "passes": 30,
+    "order": "alternate baseline/candidate order each pair",
+    "harness": "auto-recheck.mjs",
+    "boundary": "changed warmup and sample count from primary comparison; timed per-document calls retained"
+  },
+  "noConcurrentBuildsOrTestsDuringTimings": true,
+  "archiveCatalogSha256": "5f00805ec62337d66cb7463e0da202aa5c5e91b1efa409669d42fb14df5e9177",
+  "archiveCatalogUnchanged": true,
+  "validation": {
+    "fullHtmlParity": true,
+    "sourceModesOpenNoArchives": true,
+    "invalidGroups": 0,
+    "assemblyFallbacks": 0,
+    "preparedArchiveAndGroupCountsMatch": true,
+    "allExpectedReplayQueriesChecked": true,
+    "cargoTestWorkspaceAllFeatures": true,
+    "clippyAllTargetsAllFeatures": true,
+    "nativeCompatCore": true,
+    "fuzzLockedBins": true,
+    "cargoDeny": "all checks pass using existing local advisory database (--disable-fetch)",
+    "formatWorkspaceAndRetainedRepro": true,
+    "nodeScriptSyntax": true,
+    "existingEvidenceAndAdrs": true,
+    "retainedCandidateReplaySmoke": true,
+    "finalProductionAddonMatchesMeasuredCandidate": true
+  }
+}

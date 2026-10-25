@@ -170,7 +170,18 @@ fn prepared_eager_startup() {
         );
         cases.push(json!({"language":language,"fixture":file,"fixture_sha256":sha256_hex(code.as_bytes()),"grammar_sha256":sha256_hex(source.as_bytes()),"bytes":code.len(),"sampled_archive_bytes":sampled.len(),"static_archive_bytes":complete.len(),"results":results}));
     }
-    let report = json!({"ferroni":"2.7.0","transport":"Zstd 19 / FKBC002 / Ferroni program v2 + group v3", "os":std::env::consts::OS,"arch":std::env::consts::ARCH,"profile":"release fat LTO, one codegen unit", "startup_pairs":20, "warmup_documents":3,"minimum_execution_rounds":30,"maximum_execution_rounds":5000,"budget_ms_per_case":800,"order":"rotate lanes each round", "boundary":"setup includes compressed SHA256, buffer copy, bounded decompression, pair opening, theme and grammar construction; startup adds first full tokenize_line2 document; execution retains grammar and resets document stack; excludes file/network I/O, grammar JSON parsing and teardown", "cases":cases});
+    let lock = std::fs::read_to_string(root.join("Cargo.lock")).unwrap();
+    let ferroni_version = lock
+        .split("[[package]]")
+        .find(|package| package.lines().any(|line| line == "name = \"ferroni\""))
+        .and_then(|package| {
+            package.lines().find_map(|line| {
+                line.strip_prefix("version = \"")
+                    .and_then(|version| version.strip_suffix('"'))
+            })
+        })
+        .expect("Ferroni version in the workspace lockfile");
+    let report = json!({"ferroni":ferroni_version,"transport":"Zstd 19 / FKBC002 / Ferroni program v2 + group v3", "os":std::env::consts::OS,"arch":std::env::consts::ARCH,"profile":"release fat LTO, one codegen unit", "startup_pairs":20, "warmup_documents":3,"minimum_execution_rounds":30,"maximum_execution_rounds":5000,"budget_ms_per_case":800,"order":"rotate lanes each round", "boundary":"setup includes compressed SHA256, buffer copy, bounded decompression, pair opening, theme and grammar construction; startup adds first full tokenize_line2 document; execution retains grammar and resets document stack; excludes file/network I/O, grammar JSON parsing and teardown", "cases":cases});
     if let Ok(path) = std::env::var("FERRIKI_BENCH_OUTPUT") {
         std::fs::write(path, serde_json::to_string(&report).unwrap()).unwrap();
     }
