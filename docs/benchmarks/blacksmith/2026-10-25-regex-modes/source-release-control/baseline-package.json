@@ -1,0 +1,11 @@
+{
+  "name": "@ferriki/darwin-arm64",
+  "version": "1.1.2",
+  "unpackedSize": 2918058,
+  "integrity": "sha512-2CNKui5M88laAJzcgBuLOha5uy2ho3FtGnH59Mj0h6kq8V5cW8ovcGPf56NuIz9CGy66R5kyuAhcD9eDB+q+Rg==",
+  "tarball": "https://registry.npmjs.org/@ferriki/darwin-arm64/-/darwin-arm64-1.1.2.tgz",
+  "addonBytes": 2904992,
+  "sourceReleaseCommit": "d06e8cd8ee5ab5ae82a4a44b4c1f7284d0975566",
+  "ferroniInReleaseLock": "2.2.3",
+  "nativeBinarySha256": "d7625b6220040d1897c7a53487815f60601ae8c1092c46477646e44fa0d4e094"
+}

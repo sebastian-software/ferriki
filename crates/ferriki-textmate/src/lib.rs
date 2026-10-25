@@ -24,6 +24,7 @@ mod precompiled;
 #[cfg(test)]
 mod precompiled_bench;
 mod raw_grammar;
+mod regex_mode;
 mod regexp;
 mod registry;
 mod rule;
@@ -51,6 +52,7 @@ pub use precompiled::{
     PRECOMPILED_PATTERNS_VERSION, PrecompiledPatternsError, precompile_grammar_patterns,
 };
 pub use raw_grammar::RawGrammar;
+pub use regex_mode::{RegexDiagnostics, RegexMode};
 pub use registry::SyncRegistry;
 pub use state_stack::StateStack;
 pub use theme::{FontStyle, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle, ThemeError};

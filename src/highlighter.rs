@@ -33,7 +33,7 @@ pub struct HighlighterCore {
     injections: BTreeMap<String, Vec<String>>,
     themes: BTreeMap<String, ThemeData>,
     active_theme: Option<String>,
-    regex_prefilter: bool,
+    regex_mode: ferriki_textmate::RegexMode,
 }
 
 /// Reusable, synchronous highlighter for Rust consumers.
@@ -102,7 +102,7 @@ pub struct HighlighterBuilder {
     assets: Option<StandardAssetCatalogs>,
     languages: Vec<String>,
     themes: Vec<String>,
-    regex_prefilter: Option<bool>,
+    regex_mode: Option<ferriki_textmate::RegexMode>,
 }
 
 impl Highlighter {
@@ -303,7 +303,14 @@ impl HighlighterBuilder {
     /// Prepared standard assets use Eager for static scanners; source-only and
     /// captured dynamic scanners retain Auto. Applies to every loaded grammar.
     pub fn with_regex_prefilter(mut self, enabled: bool) -> Self {
-        self.regex_prefilter = Some(enabled);
+        self.regex_mode = Some(ferriki_textmate::RegexMode::from_prefilter(enabled));
+        self
+    }
+
+    /// Selects classic source Off/Auto/Eager or optional prepared standard packages.
+    /// The last regex policy setter wins; omitted policy keeps Prepared.
+    pub fn with_regex_mode(mut self, mode: ferriki_textmate::RegexMode) -> Self {
+        self.regex_mode = Some(mode);
         self
     }
 
@@ -340,8 +347,7 @@ impl HighlighterBuilder {
 
     /// Builds one reusable highlighter. Unknown requested assets are errors.
     pub fn build(self) -> Result<Highlighter> {
-        let mut core =
-            HighlighterCore::new_with_regex_prefilter(self.regex_prefilter.unwrap_or(true))?;
+        let mut core = HighlighterCore::new_with_regex_mode(self.regex_mode.unwrap_or_default())?;
         core.standard_assets = self.assets;
         for language in self.languages {
             if core.load_standard_language(&language)?.is_none() {
@@ -369,6 +375,10 @@ impl HighlighterCore {
     }
 
     pub fn new_with_regex_prefilter(regex_prefilter: bool) -> Result<Self> {
+        Self::new_with_regex_mode(ferriki_textmate::RegexMode::from_prefilter(regex_prefilter))
+    }
+
+    pub fn new_with_regex_mode(regex_mode: ferriki_textmate::RegexMode) -> Result<Self> {
         Ok(Self {
             standard_assets: None,
             registry: SyncRegistry::new(None, None).map_err(theme_error)?,
@@ -382,7 +392,7 @@ impl HighlighterCore {
             injections: BTreeMap::new(),
             themes: BTreeMap::new(),
             active_theme: None,
-            regex_prefilter,
+            regex_mode,
         })
     }
 
@@ -401,6 +411,22 @@ impl HighlighterCore {
         let mut highlighter = Self::new_with_regex_prefilter(regex_prefilter)?;
         highlighter.standard_assets = Some(assets);
         Ok(highlighter)
+    }
+
+    pub fn with_assets_and_regex_mode(
+        assets: StandardAssetCatalogs,
+        mode: ferriki_textmate::RegexMode,
+    ) -> Result<Self> {
+        let mut highlighter = Self::new_with_regex_mode(mode)?;
+        highlighter.standard_assets = Some(assets);
+        Ok(highlighter)
+    }
+
+    pub fn regex_diagnostics(&self) -> Value {
+        let mut value =
+            serde_json::to_value(self.registry.regex_diagnostics()).expect("diagnostics serialize");
+        value["mode"] = serde_json::to_value(self.regex_mode).expect("mode serializes");
+        value
     }
 
     pub fn dispose(&mut self) {
@@ -472,7 +498,7 @@ impl HighlighterCore {
             self.attempted_precompiled_scopes.remove(scope);
         }
         if let Some(scope) = &scope
-            && self.regex_prefilter
+            && self.regex_mode == ferriki_textmate::RegexMode::Prepared
             && !self.prepared_language_scopes.contains(scope)
             && self.attempted_precompiled_scopes.insert(scope.clone())
             && let Some(catalogs) = &self.standard_assets
@@ -808,7 +834,7 @@ impl HighlighterCore {
             .grammar_for_scope_name(
                 &scope_name,
                 GrammarConfiguration::default()
-                    .with_regex_prefilter(self.regex_prefilter)
+                    .with_regex_mode(self.regex_mode)
                     .with_initial_language_id(1)
                     .with_balanced_bracket_selectors(Some(vec!["*".to_owned()])),
             )

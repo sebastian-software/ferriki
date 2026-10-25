@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Context
 
@@ -155,7 +155,19 @@ Each crate publishes a deliberate, curated surface.
 - Revisit the `doc(hidden)` rule if the crates stop sharing one version or the
   release tooling starts preserving exact requirements.
 
+## Regex policy and diagnostics
+
+`RegexMode` and `RegexDiagnostics` are documented, owned, non-exhaustive
+`ferriki-textmate` extensions. `ferriki` re-exports `RegexMode` and exposes the
+builder setter. The tokenizer registry returns construction/archive observations
+without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#regex-mode-isolation-october-25-2026)
+owns policy semantics and the limits of those counters.
+
 ## History
+
+- 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
+  benchmark contenders; retain default and legacy boolean behavior. Record
+  policy and archive-use diagnostics without claiming complete coverage.
 
 - 2026-10-24: Preserve the ordinary raw archive API while accepting prepared
   Eager containers through the same registry import method.

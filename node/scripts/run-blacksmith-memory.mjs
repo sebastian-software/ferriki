@@ -10,6 +10,7 @@ import { installedComparators } from "./check-benchmark-versions.mjs";
 import {
   digest,
   memoryEngines,
+  memoryModeEngines,
   memoryRepetitions,
   memoryRoot,
   memoryScenarios,
@@ -17,6 +18,8 @@ import {
   memoryWorkload,
   workloadIdentity,
 } from "./memory-workloads.mjs";
+
+import { regexModeLabels, regexModes, validateRegexDiagnostics } from "./regex-benchmark-modes.mjs";
 
 const nodeRoot = join(memoryRoot, "node");
 const read = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -40,6 +43,12 @@ export const memoryMethod = {
   limits:
     "RSS includes the Node runtime, native code, WASM and allocator retention. V8 heap/external/ArrayBuffer fields are diagnostic subsets, not native allocation counters. Forced GC does not force native allocators or WASM to return pages to the OS. Fixed sequential workloads are not a leak, concurrency or capacity test. Compare within a host, not across operating systems.",
 };
+
+export const memoryModeMethod = {
+  ...Object.fromEntries(Object.entries(memoryMethod).filter(([key]) => key !== "regexPrefilter")),
+  regexModes,
+};
+const reportEngines = (report) => (report.schemaVersion === 2 ? memoryModeEngines : memoryEngines);
 
 function checkSnapshot(snapshot) {
   assert.deepEqual(Object.keys(snapshot).sort(), [...snapshotFields].sort());
@@ -71,8 +80,9 @@ export function validateMemorySample(sample, scenario, engine, identity, bytesPe
 }
 
 export function validateMemoryReport(report) {
-  assert.equal(report.schemaVersion, 1);
-  assert.deepEqual(report.method, memoryMethod);
+  assert.ok([1, 2].includes(report.schemaVersion));
+  assert.deepEqual(report.method, report.schemaVersion === 2 ? memoryModeMethod : memoryMethod);
+  const measuredEngines = reportEngines(report);
   assert.deepEqual(
     report.scenarios.map((scenario) => scenario.id),
     memoryScenarios,
@@ -86,7 +96,7 @@ export function validateMemoryReport(report) {
       assert.match(doc.sha256, /^[a-f0-9]{64}$/);
       assert.ok(doc.bytes > 0 && doc.copies >= 1);
     }
-    assert.deepEqual(Object.keys(scenario.validation), memoryEngines);
+    assert.deepEqual(Object.keys(scenario.validation), measuredEngines);
     const reference = scenario.validation["shiki-wasm"];
     assert.deepEqual(
       reference.map((row) => row.path),
@@ -96,15 +106,21 @@ export function validateMemoryReport(report) {
       assert.match(row.sha256, /^[a-f0-9]{64}$/);
       assert.ok(Number.isSafeInteger(row.bytes) && row.bytes > 0);
     }
-    for (const engine of memoryEngines)
+    for (const engine of measuredEngines)
       assert.deepEqual(scenario.validation[engine], reference, `${engine}: HTML mismatch`);
     const bytesPerPass = reference.reduce((total, row) => total + row.bytes, 0);
-    assert.equal(scenario.samples.length, memoryEngines.length * memoryRepetitions);
+    assert.equal(scenario.samples.length, measuredEngines.length * memoryRepetitions);
     for (let repeat = 0; repeat < memoryRepetitions; repeat++) {
-      for (const [index, engine] of rotate(memoryEngines, repeat).entries()) {
-        const sample = scenario.samples[repeat * memoryEngines.length + index];
+      for (const [index, engine] of rotate(measuredEngines, repeat).entries()) {
+        const sample = scenario.samples[repeat * measuredEngines.length + index];
         assert.equal(sample.repetition, repeat + 1);
         validateMemorySample(sample, scenario.id, engine, identity, bytesPerPass);
+        if (report.schemaVersion === 2 && Object.hasOwn(regexModes, engine))
+          validateRegexDiagnostics(
+            sample.regexDiagnostics,
+            regexModes[engine],
+            regexModes[engine] === "prepared",
+          );
       }
     }
   }
@@ -132,7 +148,7 @@ export function summarizeMemory(report) {
     inputBytes: scenario.workload.documents.reduce((total, doc) => total + doc.bytes, 0),
     passes: scenario.workload.checkpoints.at(-1),
     engines: Object.fromEntries(
-      memoryEngines.map((engine) => {
+      reportEngines(report).map((engine) => {
         const samples = scenario.samples.filter((sample) => sample.engine === engine);
         return [
           engine,
@@ -170,7 +186,7 @@ export function memorySummary(report, context) {
   for (const scenario of summarizeMemory(report))
     for (const [engine, metrics] of Object.entries(scenario.engines))
       lines.push(
-        `| ${scenario.id} | ${engine} | ${format(metrics.initializedRss)} | ${format(metrics.finalRss)} | ${format(metrics.peakRss)} |`,
+        `| ${scenario.id} | ${report.schemaVersion === 2 ? regexModeLabels[engine] : engine} | ${format(metrics.initializedRss)} | ${format(metrics.finalRss)} | ${format(metrics.peakRss)} |`,
       );
   lines.push(
     "",
@@ -182,11 +198,13 @@ export function memorySummary(report, context) {
   return lines.join("\n");
 }
 
-function run(directory) {
+function run(directory, measureRegexModes = false) {
+  const measuredEngines = measureRegexModes ? memoryModeEngines : memoryEngines;
   mkdirSync(directory, { recursive: true });
   const git = (...args) => execFileSync("git", args, { cwd: memoryRoot, encoding: "utf8" }).trim();
   const context = {
     measuredAt: new Date().toISOString(),
+    ...(measureRegexModes ? { regexModes } : {}),
     profile: process.env.PROFILE ?? `${process.platform}-${process.arch}`,
     runnerLabel: process.env.RUNNER_LABEL ?? "local",
     runUrl: process.env.COMPARISON_RUN_URL ?? null,
@@ -225,26 +243,30 @@ function run(directory) {
       const result = JSON.parse(child.stdout);
       assert.equal(
         result.nativeBinarySha256,
-        engine === "ferriki" ? context.binarySha256 : null,
+        Object.hasOwn(regexModes, engine) ? context.binarySha256 : null,
         "Loaded addon differs from its build receipt",
       );
       return result;
     };
-    const report = { schemaVersion: 1, method: memoryMethod, scenarios: [] };
+    const report = {
+      schemaVersion: measureRegexModes ? 2 : 1,
+      method: measureRegexModes ? memoryModeMethod : memoryMethod,
+      scenarios: [],
+    };
     for (const scenario of memoryScenarios) {
       const identity = workloadIdentity(memoryWorkload(scenario));
       const validation = {};
-      for (const engine of memoryEngines) {
+      for (const engine of measuredEngines) {
         const result = worker(engine, scenario, "validate");
         assert.equal(result.engine, engine);
         assert.deepEqual(result.workload, identity);
         validation[engine] = result.outputs;
       }
-      for (const engine of memoryEngines)
+      for (const engine of measuredEngines)
         assert.deepEqual(validation[engine], validation["shiki-wasm"], `${engine}: HTML mismatch`);
       const samples = [];
       for (let repeat = 0; repeat < memoryRepetitions; repeat++) {
-        for (const engine of rotate(memoryEngines, repeat)) {
+        for (const engine of rotate(measuredEngines, repeat)) {
           console.log(`[Memory] ${scenario} / ${repeat + 1} / ${engine}`);
           const result = worker(engine, scenario, "measure", repeat + 1);
           samples.push({ repetition: repeat + 1, ...result });
@@ -277,6 +299,9 @@ function run(directory) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  assert.equal(process.argv.length, 3, "Usage: node scripts/run-blacksmith-memory.mjs OUTPUT");
-  run(resolve(process.argv[2]));
+  assert.ok(
+    process.argv.length === 3 || (process.argv.length === 4 && process.argv[3] === "--regex-modes"),
+    "Usage: node scripts/run-blacksmith-memory.mjs OUTPUT [--regex-modes]",
+  );
+  run(resolve(process.argv[2]), process.argv.includes("--regex-modes"));
 }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { fromHtml } from "hast-util-from-html";
 import { toString } from "hast-util-to-string";
+import { ferrikiRegexOptions, validateRegexDiagnostics } from "./regex-benchmark-modes.mjs";
 import {
   standardGrammarRegistrations,
   standardThemeRegistrations,
@@ -148,19 +149,20 @@ export async function createEngine(id, language, { regexPrefilter = true } = {})
       dispose() {},
     };
   }
-  const module =
-    id === "ferriki" ? await import("../ferriki/index.mjs") : await import("shiki-benchmark");
-  const engine =
-    id === "ferriki"
-      ? undefined
-      : id === "shiki-wasm"
-        ? module.createOnigurumaEngine(import("shiki-benchmark/wasm"))
-        : module.createJavaScriptRegexEngine();
+  const ferrikiOptions = ferrikiRegexOptions(id, regexPrefilter);
+  const module = ferrikiOptions
+    ? await import("../ferriki/index.mjs")
+    : await import("shiki-benchmark");
+  const engine = ferrikiOptions
+    ? undefined
+    : id === "shiki-wasm"
+      ? module.createOnigurumaEngine(import("shiki-benchmark/wasm"))
+      : module.createJavaScriptRegexEngine();
   const languageInputs = await Promise.all(
     [language.textmate, ...(language.embedded ?? [])].map(async (name) => {
       const { bundledLanguages } = await import("../ferriki/index.mjs");
       if (Object.hasOwn(bundledLanguages, name))
-        return id === "ferriki" ? name : standardGrammarRegistrations([name]);
+        return ferrikiOptions ? name : standardGrammarRegistrations([name]);
       // The dated TIOBE corpus includes languages outside Ferriki's standard
       // set. Keep measuring those through the public custom-grammar API.
       const { bundledLanguages: referenceLanguages } = await import("shiki-benchmark");
@@ -171,15 +173,27 @@ export async function createEngine(id, language, { regexPrefilter = true } = {})
   );
   const highlighter = await module.createHighlighter({
     langs: languageInputs,
-    themes: id === "ferriki" ? [theme] : standardThemeRegistrations([theme]),
+    themes: ferrikiOptions ? [theme] : standardThemeRegistrations([theme]),
     engine,
     assets: { remote: false },
-    ...(id === "ferriki" ? { regexPrefilter } : {}),
+    ...(ferrikiOptions ?? {}),
   });
   const options = { lang: language.textmate, theme };
   return {
     html: (code) => highlighter.codeToHtml(code, options),
     dispose: () => highlighter.dispose(),
+    ...(ferrikiOptions
+      ? {
+          diagnostics() {
+            const snapshot = highlighter.getRegexDiagnostics();
+            const requiresPrepared =
+              ferrikiOptions.regexMode === "prepared" &&
+              languageInputs.flat().some((input) => typeof input === "string");
+            validateRegexDiagnostics(snapshot, ferrikiOptions.regexMode, requiresPrepared);
+            return { ...snapshot, requiresPrepared };
+          },
+        }
+      : {}),
   };
 }
 

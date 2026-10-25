@@ -13,6 +13,12 @@ import {
   startPhikiWorker,
 } from "./phiki-benchmark.mjs";
 import { compareHighlightedHtml, phikiStyleCriteria } from "./phiki-html-agreement.mjs";
+import {
+  ferrikiRegexOptions,
+  regexModeEngines,
+  regexModes,
+  validateRegexDiagnostics,
+} from "./regex-benchmark-modes.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 import {
   standardGrammarRegistrations,
@@ -48,18 +54,24 @@ const corpusRoot = process.env.FERRIKI_BENCH_CORPUS_ROOT || repoRoot;
 const corpus = comparisonCorpus;
 const theme = "github-dark";
 const langs = [...new Set(corpus.map(([lang]) => lang))];
-const nodeEngines = ["ferriki", "shiki-wasm", "shiki-js"];
+const measureRegexModes = process.argv.includes("--regex-modes");
+const nodeEngines = measureRegexModes
+  ? regexModeEngines.filter((id) => id !== "prism")
+  : ["ferriki", "shiki-wasm", "shiki-js"];
 const htmlApi = "codeToHtml";
 const prefilterIndex = process.argv.indexOf("--regex-prefilter");
 const prefilter = prefilterIndex === -1 ? "on" : process.argv[prefilterIndex + 1];
 if (!["on", "off"].includes(prefilter)) throw new Error("--regex-prefilter must be on or off");
+if (measureRegexModes && prefilter !== "on")
+  throw new Error("--regex-modes selects fixed contenders; omit --regex-prefilter off");
 const regexPrefilter = prefilter === "on";
 const keepSamples = process.argv.includes("--raw-samples");
 
 async function createEngine(id, selectedLangs = langs) {
-  if (id === "ferriki") {
+  const regexOptions = ferrikiRegexOptions(id, regexPrefilter);
+  if (regexOptions) {
     const ferriki = await import("../ferriki/index.mjs");
-    return ferriki.createHighlighter({ langs: selectedLangs, themes: [theme], regexPrefilter });
+    return ferriki.createHighlighter({ langs: selectedLangs, themes: [theme], ...regexOptions });
   }
   const shiki = await import("shiki-benchmark");
   const engine =
@@ -102,7 +114,18 @@ if (process.argv[2] === "--cold") {
   for (const doc of selectedDocs) {
     highlighter.codeToHtml(doc.code, { lang: doc.lang, theme });
   }
-  process.stdout.write(String(performance.now() - started));
+  const ms = performance.now() - started;
+  const regexDiagnostics =
+    measureRegexModes && ferrikiRegexOptions(process.argv[3])
+      ? highlighter.getRegexDiagnostics()
+      : undefined;
+  if (regexDiagnostics)
+    validateRegexDiagnostics(
+      regexDiagnostics,
+      regexModes[process.argv[3]],
+      regexModes[process.argv[3]] === "prepared",
+    );
+  process.stdout.write(measureRegexModes ? JSON.stringify({ ms, regexDiagnostics }) : String(ms));
   process.exit(0);
 }
 
@@ -328,6 +351,7 @@ if (htmlWorker) {
 }
 if (htmlMeasurementError) throw htmlMeasurementError;
 
+const coldRegexDiagnostics = Object.fromEntries(Object.keys(regexModes).map((id) => [id, []]));
 function runNodeCold(id, selectedPaths) {
   const child = spawnSync(
     process.execPath,
@@ -338,13 +362,18 @@ function runNodeCold(id, selectedPaths) {
       JSON.stringify(selectedPaths ?? null),
       "--regex-prefilter",
       prefilter,
+      ...(measureRegexModes ? ["--regex-modes"] : []),
     ],
     { cwd: nodeRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 },
   );
   if (child.error || child.status !== 0) {
     throw new Error(`Cold run for ${id} failed:\n${child.stderr || child.error?.message}`);
   }
-  return Number(child.stdout);
+  if (!measureRegexModes) return Number(child.stdout);
+  const sample = JSON.parse(child.stdout);
+  if (sample.regexDiagnostics && !selectedPaths)
+    coldRegexDiagnostics[id].push(sample.regexDiagnostics);
+  return sample.ms;
 }
 
 const eligibleColdEngines = nodeEngines.filter((id) =>
@@ -426,6 +455,7 @@ const versions = {
 };
 const workingTreeStatus = git("status", "--porcelain");
 const report = {
+  ...(measureRegexModes ? { schema: 2 } : {}),
   measured: new Date().toISOString().slice(0, 10),
   revision: git("rev-parse", "--short=8", "HEAD"),
   source: {
@@ -457,8 +487,23 @@ const report = {
       : [],
   },
   theme,
+  ...(measureRegexModes
+    ? {
+        regexDiagnostics: Object.fromEntries(
+          Object.entries(highlighters)
+            .filter(([id]) => ferrikiRegexOptions(id))
+            .map(([id, highlighter]) => {
+              const snapshot = highlighter.getRegexDiagnostics();
+              validateRegexDiagnostics(snapshot, regexModes[id], regexModes[id] === "prepared");
+              return [id, snapshot];
+            }),
+        ),
+        coldRegexDiagnostics,
+      }
+    : {}),
   method: {
-    regexPrefilter,
+    ...(!measureRegexModes ? { regexPrefilter } : {}),
+    ...(measureRegexModes ? { regexModes } : { regexMode: regexPrefilter ? "auto" : "off" }),
     apis: [htmlApi],
     warmup,
     minSamples,

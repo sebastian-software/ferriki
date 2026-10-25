@@ -101,6 +101,12 @@ impl SyncRegistry {
         self.color_map.clear();
     }
 
+    /// Observes scanner construction and actual prepared-group decoding.
+    #[must_use]
+    pub fn regex_diagnostics(&self) -> crate::RegexDiagnostics {
+        self.scanner_pattern_cache.diagnostics()
+    }
+
     /// Export compiled scanner programs in the raw format identified by
     /// [`crate::PRECOMPILED_PATTERNS_FORMAT_VERSION`]. Call
     /// [`Grammar::compile_all_scanners`] first to include unvisited rules.
@@ -223,12 +229,13 @@ impl SyncRegistry {
             return Ok(None);
         };
         let provider = RecordingGrammarProvider::new(&self.raw_grammars, scope_name);
+        let pattern_cache = self.scanner_pattern_cache.for_scope(scope_name);
         let grammar = Rc::new(Grammar::with_theme_provider(
             &raw_grammar,
             &provider,
             self.theme.clone(),
             configuration,
-            self.scanner_pattern_cache.for_scope(scope_name),
+            pattern_cache,
         ));
         self.grammars.insert(
             scope_name.to_owned(),

@@ -1,6 +1,7 @@
 // Generated from ferriki-core Rust bindings. Do not edit.
 
 export declare class FerrikiHighlighter {
+  getRegexDiagnosticsJson(): string;
   loadStandardTheme(themeId: string): boolean;
   loadStandardGrammar(language: string): string | null;
   loadCustomGrammar(registrationJson: string): string | null;
@@ -141,6 +142,7 @@ export interface NativeHighlighterOptions {
   standardAssetRoot?: string;
   assets?: NativeAssetOptions;
   regexPrefilter?: boolean;
+  regexMode?: string;
 }
 
 export interface NativeHighlightOptions {

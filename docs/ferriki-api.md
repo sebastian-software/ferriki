@@ -110,6 +110,7 @@ highlighter is no longer needed.
 | `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                    |
 | `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                        |
 | `regexPrefilter` | `boolean`                            | Regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
+| `regexMode` | `RegexMode` | Explicit regex policy; source modes skip prepared standard assets. Mutually exclusive with `regexPrefilter`. Available in repository builds after 1.2.0. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
@@ -519,3 +520,19 @@ the optional classes asset. Both entries
 import no native loader or browser highlighter. The root HTML API and `code()`
 descriptor remain unchanged. See [Shadow code elements](shadow-code-elements.md)
 for registration, the full lifecycle, CSS delivery, and policy limits.
+
+### Explicit regex policies
+
+Repository builds additionally accept `regexMode: 'off' | 'auto' | 'eager' |
+'prepared'`. This additive API is not in the published 1.2.0 package yet.
+Prepared is the unchanged default. Auto and Eager use standard grammar sources
+without opening prepared packages; Off disables prefiltering. Eager prepares
+helpers when each scanner is constructed, not all grammar paths up front.
+Captured dynamic scanners remain Auto under Prepared; explicit Eager also
+applies when those dynamic scanners are constructed.
+
+`highlighter.getRegexDiagnostics()` returns the selected mode, scanner
+construction counters, opened prepared archives, decoded/invalid groups and
+assembly retries. Read it outside benchmark timing. Loaded groups confirm
+archive use, not complete coverage or the absence of ordinary group fallback.
+Rust repository builds expose `Highlighter::builder().with_regex_mode(RegexMode::Auto)`.

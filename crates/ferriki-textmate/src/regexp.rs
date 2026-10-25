@@ -30,6 +30,7 @@ pub(crate) struct ScannerPatternCache {
     shared: Arc<Mutex<PatternCacheState>>,
     scope: String,
     preparing: bool,
+    mode: crate::RegexMode,
 }
 
 struct PatternCacheState {
@@ -37,8 +38,7 @@ struct PatternCacheState {
     sources: BTreeMap<String, crate::precompiled::PreparedArchive>,
     ordinary_sources: Vec<PrecompiledPatterns>,
     active_scope: Option<String>,
-    #[cfg(test)]
-    assembly_fallbacks: usize,
+    diagnostics: crate::RegexDiagnostics,
 }
 
 impl Default for ScannerPatternCache {
@@ -55,11 +55,11 @@ impl ScannerPatternCache {
                 sources: BTreeMap::new(),
                 ordinary_sources: Vec::new(),
                 active_scope: None,
-                #[cfg(test)]
-                assembly_fallbacks: 0,
+                diagnostics: crate::RegexDiagnostics::default(),
             })),
             scope: String::new(),
             preparing: false,
+            mode: crate::RegexMode::default(),
         }
     }
 
@@ -77,6 +77,26 @@ impl ScannerPatternCache {
         }
     }
 
+    pub(crate) fn with_mode(mut self, mode: crate::RegexMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
+    pub(crate) fn diagnostics(&self) -> crate::RegexDiagnostics {
+        let state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        let mut diagnostics = state.diagnostics.clone();
+        diagnostics.prepared_archives = state.sources.len();
+        for source in state.sources.values() {
+            let stats = source.eager.stats();
+            diagnostics.loaded_prepared_groups += stats.loaded_groups;
+            diagnostics.invalid_prepared_groups += stats.invalid_groups;
+        }
+        diagnostics
+    }
+
     /// Drops compiled patterns and attached archives.
     pub(crate) fn clear(&self) {
         let mut state = self
@@ -88,10 +108,7 @@ impl ScannerPatternCache {
         state.sources.clear();
         state.ordinary_sources.clear();
         state.active_scope = None;
-        #[cfg(test)]
-        {
-            state.assembly_fallbacks = 0;
-        }
+        state.diagnostics = crate::RegexDiagnostics::default();
     }
 
     /// Raw ordinary program archives retain the registry-wide import contract.
@@ -172,13 +189,40 @@ impl ScannerPatternCache {
         share_patterns: bool,
         prefilter: bool,
     ) -> Result<Scanner, ferroni::error::RegexError> {
-        if !share_patterns {
-            return Scanner::with_config(patterns, config);
-        }
         let mut state = self
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
+        let enabled = prefilter && self.mode.prefilter();
+        let eager = enabled
+            && (self.preparing
+                || self.mode == crate::RegexMode::Eager
+                || (share_patterns
+                    && self.mode == crate::RegexMode::Prepared
+                    && state.sources.contains_key(&self.scope)));
+        let config = config.clone().acceleration(if !enabled {
+            ferroni::AccelerationMode::Off
+        } else if eager {
+            ferroni::AccelerationMode::Eager
+        } else {
+            ferroni::AccelerationMode::Auto
+        });
+        if share_patterns {
+            state.diagnostics.static_scanners += 1;
+        } else {
+            state.diagnostics.dynamic_scanners += 1;
+        }
+        if !enabled {
+            state.diagnostics.off_scanners += 1;
+        } else if eager {
+            state.diagnostics.eager_scanners += 1;
+        } else {
+            state.diagnostics.auto_scanners += 1;
+        }
+        if !share_patterns {
+            drop(state);
+            return Scanner::with_config(patterns, &config);
+        }
         if state.active_scope.as_deref() != Some(&self.scope) {
             // Ferroni's stable API selects one group source. Bind it to the root
             // grammar while keeping every language's programs and decoded groups.
@@ -198,29 +242,18 @@ impl ScannerPatternCache {
             }
             state.active_scope = Some(self.scope.clone());
         }
-        let prepared = self.preparing || state.sources.contains_key(&self.scope);
-        let config = if prepared && prefilter {
-            config
-                .clone()
-                .acceleration(ferroni::AccelerationMode::Eager)
-        } else {
-            config.clone()
-        };
         // An optional archive must not turn a source-valid scanner into a
         // load error, including a mixed decoded/source program set. Retry the
         // complete list through the ordinary constructor on an assembly error.
         Scanner::with_pattern_cache(patterns, &config, &mut state.cache).or_else(|_| {
-            #[cfg(test)]
-            {
-                state.assembly_fallbacks += 1;
-            }
+            state.diagnostics.assembly_fallbacks += 1;
             Scanner::with_config(patterns, &config)
         })
     }
 
     #[cfg(test)]
     pub(crate) fn assembly_fallbacks(&self) -> usize {
-        self.shared.lock().unwrap().assembly_fallbacks
+        self.shared.lock().unwrap().diagnostics.assembly_fallbacks
     }
 
     #[cfg(test)]
@@ -1129,6 +1162,7 @@ mod tests {
     use super::{
         CaptureIndex, OnigString, RegExpSource, RegExpSourceList, ScannerFindOptions,
         ScannerPatternCache, has_captures, normalize_ferroni_pattern, replace_captures,
+        scanner_config,
     };
 
     #[test]
@@ -1485,6 +1519,36 @@ mod tests {
             r"(?{callout})",
         ] {
             assert_eq!(normalize_ferroni_pattern(pattern), pattern);
+        }
+    }
+
+    #[test]
+    fn explicit_source_modes_preserve_lazy_and_eager_prefilter_preparation() {
+        use crate::RegexMode;
+        let patterns: Vec<_> = (0..32)
+            .map(|index| format!(r"(keyword{index})_[a-z]+"))
+            .collect();
+        let refs: Vec<_> = patterns.iter().map(String::as_str).collect();
+        for mode in [RegexMode::Off, RegexMode::Auto, RegexMode::Eager] {
+            let cache = ScannerPatternCache::new().with_mode(mode);
+            let mut scanner = cache
+                .compile(&refs, &scanner_config(true), true, true)
+                .unwrap();
+            assert_eq!(scanner.prefilter_stats().built, mode == RegexMode::Eager);
+            let line = "keyword19_value";
+            for _ in 0..64 {
+                assert_eq!(
+                    scanner
+                        .find_next_match(line, 0, ScannerFindOptions::NONE)
+                        .unwrap()
+                        .index,
+                    19
+                );
+            }
+            assert_eq!(scanner.prefilter_stats().built, mode != RegexMode::Off);
+            let diagnostics = cache.diagnostics();
+            assert_eq!(diagnostics.prepared_archives, 0);
+            assert_eq!(diagnostics.loaded_prepared_groups, 0);
         }
     }
 

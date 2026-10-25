@@ -16,6 +16,7 @@ pub struct NativeHighlighterOptions {
     pub standard_asset_root: Option<String>,
     pub assets: Option<NativeAssetOptions>,
     pub regex_prefilter: Option<bool>,
+    pub regex_mode: Option<String>,
 }
 
 #[napi(object)]

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { regexModes, usesStandardGrammar } from "./regex-benchmark-modes.mjs";
 import { renderSummary, validateReport } from "./run-blacksmith-comparison.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 import { engines, loadCorpus, yamlJavaScriptUnsupported } from "./tiobe-benchmark.mjs";
@@ -39,6 +40,64 @@ function corpusReport(corpus) {
 
 test("both complete corpora pass, including explicit unsupported grammars", () => {
   for (const corpus of ["curated", "tiobe"]) validateReport(corpusReport(corpus), corpus, true);
+});
+
+test("mode reports require all four native contenders and independently checked archive use", () => {
+  const report = corpusReport("curated");
+  report.schema = 2;
+  report.method = { minRounds: 2, regexModes };
+  for (const language of report.languages) {
+    language.regexDiagnostics = Object.fromEntries(
+      Object.entries(regexModes).map(([id, mode]) => [
+        id,
+        {
+          mode,
+          staticScanners: 1,
+          dynamicScanners: 0,
+          offScanners: Number(mode === "off"),
+          autoScanners: Number(mode === "auto"),
+          eagerScanners: Number(["eager", "prepared"].includes(mode)),
+          assemblyFallbacks: 0,
+          invalidPreparedGroups: 0,
+          preparedArchives: Number(mode === "prepared"),
+          loadedPreparedGroups: Number(mode === "prepared"),
+          requiresPrepared: mode === "prepared" && usesStandardGrammar(language),
+        },
+      ]),
+    );
+    for (const entry of language.cases ?? [])
+      for (const id of Object.keys(regexModes))
+        entry.results[id] = structuredClone(entry.results.ferriki);
+  }
+  validateReport(report, "curated", true);
+  assert.match(
+    renderSummary({ "curated-modes": report }, { profile: "test", regexModes }),
+    /source Auto \(lazy DFA\)/,
+  );
+  for (const mutate of [
+    (value) => {
+      delete value.languages[0].cases[0].results["ferriki-eager"];
+    },
+    (value) => {
+      value.method.regexModes.ferriki = "prepared";
+    },
+    (value) => {
+      value.languages[0].regexDiagnostics.ferriki.preparedArchives = 1;
+    },
+    (value) => {
+      value.languages[0].regexDiagnostics.ferriki.autoScanners = 0;
+      value.languages[0].regexDiagnostics.ferriki.offScanners = 1;
+    },
+    (value) => {
+      const snapshot = value.languages[0].regexDiagnostics["ferriki-precompiled"];
+      snapshot.requiresPrepared = false;
+      snapshot.loadedPreparedGroups = 0;
+    },
+  ]) {
+    const invalid = structuredClone(report);
+    mutate(invalid);
+    assert.throws(() => validateReport(invalid, "curated", true));
+  }
 });
 
 test("only the known YAML JavaScript converter limit may omit corpus timings", () => {

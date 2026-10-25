@@ -1,7 +1,7 @@
 name: Blacksmith comparison
 
 # Same runner profiles as Ferroni. Paid runners are only started by a manual
-# dispatch. Each corpus gets its own VM; its engines and both prefilter modes
+# dispatch. Each corpus gets its own VM; all of its regex modes and comparators
 # stay together. Merge only joins reports, never timings from different VMs.
 on:
   workflow_dispatch:
@@ -74,7 +74,7 @@ jobs:
       - name: Build release addon and local assets
         run: pnpm run build:native
       - name: Validate and measure serially
-        run: node scripts/run-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE" --corpus "$CORPUS"
+        run: node scripts/run-blacksmith-comparison.mjs "$RUNNER_TEMP/compare/$PROFILE" --corpus "$CORPUS" --regex-modes
       - name: Keep the measurements
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -165,7 +165,7 @@ jobs:
       - name: Build release addon and local assets
         run: pnpm run build:native
       - name: Validate HTML and measure isolated processes serially
-        run: node scripts/run-blacksmith-memory.mjs "$RUNNER_TEMP/memory/$PROFILE"
+        run: node scripts/run-blacksmith-memory.mjs "$RUNNER_TEMP/memory/$PROFILE" --regex-modes
       - name: Keep memory evidence and diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -9,6 +9,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { coldSamples } from "./benchmark-schedule.mjs";
 import { checkCurrentComparators } from "./check-benchmark-versions.mjs";
 import { mergeShards, readShard } from "./merge-blacksmith-comparison.mjs";
+import { regexModes, usesStandardGrammar } from "./regex-benchmark-modes.mjs";
 import { comparisonCorpora } from "./run-blacksmith-comparison.mjs";
 
 const archive = new URL(
@@ -128,6 +129,73 @@ test("corpus merge retains every original report and the VM's own context", () =
     );
     writeFileSync(join(sources[0], "comparison-on.json"), "edited");
     assert.throws(() => mergeShards(join(directory, "edited"), sources), /Artifact changed/);
+  }));
+
+test("mode shards retain distinct corpus hardware without combining timings across VMs", () =>
+  temporary((directory) => {
+    const diagnostics = (mode, requiresPrepared = mode === "prepared") => ({
+      mode,
+      staticScanners: 1,
+      dynamicScanners: 0,
+      offScanners: Number(mode === "off"),
+      autoScanners: Number(mode === "auto"),
+      eagerScanners: Number(["eager", "prepared"].includes(mode)),
+      assemblyFallbacks: 0,
+      invalidPreparedGroups: 0,
+      preparedArchives: Number(requiresPrepared),
+      loadedPreparedGroups: Number(requiresPrepared),
+      requiresPrepared,
+    });
+    const sources = fixtures(directory, (corpus, context, files) => {
+      context.regexModes = regexModes;
+      context.cpu = `CPU for ${corpus}`;
+      const report = JSON.parse(files.get(`${corpus}-on.json`));
+      report.schema = 2;
+      delete report.method.regexPrefilter;
+      report.method.regexModes = regexModes;
+      if (corpus === "comparison") {
+        for (const id of Object.keys(regexModes)) {
+          report.cold[id] = structuredClone(report.cold.ferriki);
+          report.agreement[id] = structuredClone(report.agreement.ferriki);
+          report.warmTotalMs.codeToHtml[id] = report.warmTotalMs.codeToHtml.ferriki;
+          for (const row of report.warm.codeToHtml) row.samplesMs[id] = [...row.samplesMs.ferriki];
+        }
+        report.regexDiagnostics = Object.fromEntries(
+          Object.entries(regexModes).map(([id, mode]) => [id, diagnostics(mode)]),
+        );
+        report.coldRegexDiagnostics = Object.fromEntries(
+          Object.entries(regexModes).map(([id, mode]) => [
+            id,
+            Array.from({ length: report.method.coldRuns }, () => diagnostics(mode)),
+          ]),
+        );
+      } else
+        for (const language of report.languages) {
+          if (!language.file) continue;
+          language.regexDiagnostics = Object.fromEntries(
+            Object.entries(regexModes).map(([id, mode]) => [
+              id,
+              diagnostics(mode, mode === "prepared" && usesStandardGrammar(language)),
+            ]),
+          );
+          for (const entry of language.cases)
+            for (const id of Object.keys(regexModes))
+              entry.results[id] = structuredClone(entry.results.ferriki);
+        }
+      for (const mode of ["on", "off"]) {
+        files.delete(`${corpus}-${mode}.json`);
+        files.delete(`logs/${corpus}-${mode}.log`);
+      }
+      files.set(`${corpus}-modes.json`, Buffer.from(JSON.stringify(report)));
+      files.set(`logs/${corpus}-modes.log`, Buffer.from("mode capture log\n"));
+    });
+    const { context, reports } = mergeShards(join(directory, "modes"), sources);
+    assert.equal(Object.keys(reports).length, 3);
+    assert.equal(context.corpusContexts.curated.cpu, "CPU for curated");
+    assert.match(
+      readFileSync(join(directory, "modes", "summary.md"), "utf8"),
+      /curated: CPU for curated/,
+    );
   }));
 
 test("merge rejects mismatched builds, failed shards and output changes even with valid checksums", () => {

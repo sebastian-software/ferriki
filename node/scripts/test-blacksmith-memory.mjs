@@ -10,13 +10,16 @@ import { readMemoryEvidence } from "./memory-evidence.mjs";
 import {
   digest,
   memoryEngines,
+  memoryModeEngines,
   memoryRepetitions,
   memoryScenarios,
   memoryWorkload,
   workloadIdentity,
 } from "./memory-workloads.mjs";
+import { regexModes } from "./regex-benchmark-modes.mjs";
 import {
   memoryMethod,
+  memoryModeMethod,
   memorySummary,
   summarizeMemory,
   validateMemoryContext,
@@ -106,6 +109,51 @@ test("publication rejects missing processes, changed work, output mismatch and i
     mutate(report);
     assert.throws(() => validateMemoryReport(report));
   }
+});
+
+test("memory mode reports require independent samples and policy evidence for every native mode", () => {
+  const report = fixture();
+  report.schemaVersion = 2;
+  report.method = structuredClone(memoryModeMethod);
+  for (const scenario of report.scenarios) {
+    const legacy = scenario.samples;
+    scenario.validation = Object.fromEntries(
+      memoryModeEngines.map((engine) => [
+        engine,
+        structuredClone(scenario.validation["shiki-wasm"]),
+      ]),
+    );
+    scenario.samples = Array.from({ length: memoryRepetitions }, (_, repeat) =>
+      rotate(memoryModeEngines, repeat).map((engine) => {
+        const sample = structuredClone(legacy.find((value) => value.repetition === repeat + 1));
+        sample.engine = engine;
+        const mode = regexModes[engine];
+        if (mode)
+          sample.regexDiagnostics = {
+            mode,
+            staticScanners: 1,
+            dynamicScanners: 0,
+            offScanners: Number(mode === "off"),
+            autoScanners: Number(mode === "auto"),
+            eagerScanners: Number(["eager", "prepared"].includes(mode)),
+            assemblyFallbacks: 0,
+            invalidPreparedGroups: 0,
+            preparedArchives: Number(mode === "prepared"),
+            loadedPreparedGroups: Number(mode === "prepared"),
+          };
+        return sample;
+      }),
+    ).flat();
+  }
+  validateMemoryReport(report);
+  assert.equal(Object.keys(summarizeMemory(report)[0].engines).length, 6);
+  const invalid = structuredClone(report);
+  invalid.scenarios[0].samples.find(
+    (sample) => sample.engine === "ferriki-precompiled",
+  ).regexDiagnostics.loadedPreparedGroups = 0;
+  assert.throws(() => validateMemoryReport(invalid));
+  report.scenarios[0].samples.pop();
+  assert.throws(() => validateMemoryReport(report));
 });
 
 test("archive publication checks every original worker, not only combined report hashes", () => {

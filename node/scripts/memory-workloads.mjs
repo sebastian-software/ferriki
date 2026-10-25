@@ -2,9 +2,11 @@ import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { regexModeEngines } from "./regex-benchmark-modes.mjs";
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 
 export const memoryEngines = ["ferriki", "shiki-wasm", "shiki-js"];
+export const memoryModeEngines = regexModeEngines.filter((id) => id !== "prism");
 export const memoryScenarios = ["repository", "large-typescript"];
 export const memoryRepetitions = 6;
 export const memoryTheme = "github-dark";

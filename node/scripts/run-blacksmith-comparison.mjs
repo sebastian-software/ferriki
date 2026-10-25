@@ -18,6 +18,14 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { installedComparators } from "./check-benchmark-versions.mjs";
+import {
+  regexModeEngines,
+  regexModes,
+  usesStandardGrammar,
+  validateRegexDiagnostics,
+} from "./regex-benchmark-modes.mjs";
+import { renderRegexModeSummary } from "./regex-mode-summary.mjs";
+
 import { comparisonCorpus } from "./shiki-comparison-corpus.mjs";
 import { engines, loadCorpus, repoRoot, yamlJavaScriptUnsupported } from "./tiobe-benchmark.mjs";
 
@@ -34,13 +42,20 @@ function checkSamples(samples, minimum) {
 }
 
 export function validateReport(report, corpus, regexPrefilter) {
-  assert.equal(report.method.regexPrefilter, regexPrefilter, "Wrong prefilter configuration");
+  if (report.schema === 2 || report.method.regexModes) {
+    assert.equal(report.schema, 2, "Regex-mode reports require schema 2");
+    assert.deepEqual(report.method.regexModes, regexModes);
+  }
+  if (!report.method.regexModes)
+    assert.equal(report.method.regexPrefilter, regexPrefilter, "Wrong prefilter configuration");
+  const measuredEngines = report.method.regexModes ? regexModeEngines : engines;
+
   if (corpus === "comparison") {
     assert.deepEqual(
       report.warm.codeToHtml.map((row) => row.path),
       comparisonCorpus.map(([, path]) => path),
     );
-    for (const id of engines.filter((id) => id !== "prism")) {
+    for (const id of measuredEngines.filter((id) => id !== "prism")) {
       const unsupported = [];
       for (const [index, row] of report.warm.codeToHtml.entries()) {
         assert.match(row.sha256, /^[a-f0-9]{64}$/);
@@ -67,6 +82,14 @@ export function validateReport(report, corpus, regexPrefilter) {
         assert.equal(report.warmTotalMs?.codeToHtml?.[id], undefined);
       } else checkSamples(report.cold[id].samplesMs, report.method.coldRuns);
     }
+    if (report.method.regexModes) {
+      for (const [id, mode] of Object.entries(regexModes)) {
+        validateRegexDiagnostics(report.regexDiagnostics[id], mode, mode === "prepared");
+        assert.equal(report.coldRegexDiagnostics[id].length, report.method.coldRuns);
+        for (const snapshot of report.coldRegexDiagnostics[id])
+          validateRegexDiagnostics(snapshot, mode, mode === "prepared");
+      }
+    }
     return;
   }
   const manifest = loadCorpus(corpus);
@@ -87,8 +110,19 @@ export function validateReport(report, corpus, regexPrefilter) {
       row.cases.map((entry) => entry.size),
       ["example", "large"],
     );
+    if (report.method.regexModes)
+      for (const [id, mode] of Object.entries(regexModes)) {
+        const snapshot = row.regexDiagnostics[id];
+        const requiresPrepared = mode === "prepared" && usesStandardGrammar(language);
+        assert.equal(
+          snapshot.requiresPrepared,
+          requiresPrepared,
+          "Wrong prepared coverage expectation",
+        );
+        validateRegexDiagnostics(snapshot, mode, requiresPrepared);
+      }
     for (const entry of row.cases) {
-      for (const id of engines) {
+      for (const id of measuredEngines) {
         const result = entry.results[id];
         if (id === "prism" && !language.prism) {
           assert.equal(result.status, "unsupported");
@@ -114,6 +148,7 @@ export function validateReport(report, corpus, regexPrefilter) {
 }
 
 export function renderSummary(reports, context, errors = []) {
+  if (context.regexModes) return renderRegexModeSummary(reports, context, errors);
   const lines = [
     `# Ferriki Blacksmith comparison: ${context.profile}`,
     "",
@@ -200,11 +235,12 @@ export function renderSummary(reports, context, errors = []) {
 
 export const comparisonCorpora = ["comparison", "curated", "tiobe"];
 
-function run(directory, corpora) {
+function run(directory, corpora, measureRegexModes = false) {
   mkdirSync(join(directory, "logs"), { recursive: true });
   const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "utf8" }).trim();
   const context = {
     measuredAt: new Date().toISOString(),
+    ...(measureRegexModes ? { regexModes } : {}),
     corpora,
     comparators: installedComparators(),
     profile: process.env.PROFILE ?? `${process.platform}-${process.arch}`,
@@ -233,7 +269,7 @@ function run(directory, corpora) {
   let timedOut = false;
   for (const corpus of corpora) {
     if (timedOut) break;
-    for (const mode of ["on", "off"]) {
+    for (const mode of measureRegexModes ? ["modes"] : ["on", "off"]) {
       const name = `${corpus}-${mode}`;
       console.log(`[Blacksmith] ${name}`);
       const path = join(directory, `${name}.json`);
@@ -241,7 +277,9 @@ function run(directory, corpora) {
         corpus === "comparison"
           ? ["scripts/bench-shiki-comparison.mjs", "--raw-samples"]
           : ["scripts/bench-tiobe.mjs", "--corpus", corpus];
-      args.push("--regex-prefilter", mode, "--write", path);
+      if (measureRegexModes) args.push("--regex-modes");
+      else args.push("--regex-prefilter", mode);
+      args.push("--write", path);
       const log = openSync(join(directory, "logs", `${name}.log`), "w");
       let child;
       try {
@@ -256,7 +294,7 @@ function run(directory, corpora) {
           `${child.error?.message ?? "Benchmark process failed"}; see logs/${name}.log`,
         );
         const report = read(path);
-        validateReport(report, corpus, mode === "on");
+        validateReport(report, corpus, mode !== "off");
         reports[name] = report;
       } catch (error) {
         errors.push(`${name}: ${error.message}`);
@@ -300,7 +338,7 @@ export function writeEvidence(directory, reports, context, errors = []) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
-    options: { corpus: { type: "string" } },
+    options: { corpus: { type: "string" }, "regex-modes": { type: "boolean", default: false } },
   });
   assert.equal(
     positionals.length,
@@ -311,5 +349,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     !values.corpus || comparisonCorpora.includes(values.corpus),
     "Unknown comparison corpus",
   );
-  run(resolve(positionals[0]), values.corpus ? [values.corpus] : comparisonCorpora);
+  run(
+    resolve(positionals[0]),
+    values.corpus ? [values.corpus] : comparisonCorpora,
+    values["regex-modes"],
+  );
 }

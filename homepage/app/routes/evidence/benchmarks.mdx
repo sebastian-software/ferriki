@@ -18,11 +18,16 @@ import {
 } from "../../components/blacksmith-benchmarks";
 
 import { MemoryBenchmarks } from "../../components/memory-benchmarks";
+import {
+  RegexPolicySummary,
+  RegexPolicyLanguages,
+  RegexPolicyMemory,
+} from "../../components/regex-policy-benchmarks";
 
 # Benchmarks
 
 A CMS or site build can highlight hundreds of blocks with one loaded
-highlighter. That repeated work is the headline here: on our 14-file corpus,
+highlighter. In the October 24 capture on our 14-file corpus,
 Ferriki was **2.4× faster than Shiki/WASM on Linux x86-64** and **2.9× faster
 on macOS ARM64**. Ferriki and Shiki/WASM produced identical HTML for
 every repository file on both hosts.
@@ -30,6 +35,49 @@ every repository file on both hosts.
 These factors are Shiki's time divided by Ferriki's time. They describe this
 corpus and these machines; they do not measure total build time or guarantee
 the same factor for another workload.
+
+## Four regex policies
+
+The October 25 repository build measures **Source Off**, **Source Auto (lazy
+DFA)**, **Source Eager**, and **Prepared** as separate contenders. The source
+paths do not open prepared archives. Prepared remains the product default;
+these explicit configuration and diagnostic APIs are repository additions
+after npm 1.2.0.
+
+Tables scroll horizontally on narrow screens. Focus a table and use the arrow
+keys to compare every column.
+
+<RegexPolicySummary />
+
+These measurements expose a Prepared-specific SQL slowdown. Prepared also
+uses more process memory and takes longer on full-corpus first use than
+Source Eager in this capture. Most language cases have similar warm execution
+times to Source Eager. The isolated tokenizer startup gains below therefore
+do not establish a startup advantage for a complete standard-package workload.
+
+The [mode capture and original evidence](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-regex-modes)
+retain all samples, policy diagnostics and per-corpus machines. Each timing
+comparison uses one VM. Cold setup loads the 14 requested corpus languages and
+their dependencies, rather than the entire catalog. Downloads and process
+creation are excluded. A comparison between current policies does not establish
+whether a source path regressed against an earlier release.
+
+### Every language, with separate modes
+
+All curated and TIOBE cases keep the Shiki and Prism controls. Unsupported
+combinations remain explicit. Open a table to compare every native policy;
+on narrow screens, focus the table and use the arrow keys to reach all columns.
+
+<RegexPolicyLanguages />
+
+### Process memory by policy
+
+These independent memory VMs use the same 12-file and large-TypeScript workloads
+described below. All native policies and both Shiki engines pass exact HTML
+checks before measurement. Absolute RSS includes Node, Rust, WASM and allocator
+retention. It is a bounded reuse test, not a leak or concurrency test.
+
+<RegexPolicyMemory />
 
 ## Prepared regex
 

@@ -44,6 +44,11 @@ impl Task for PlanAssetsTask {
 
 #[napi]
 impl FerrikiHighlighter {
+    #[napi]
+    pub fn get_regex_diagnostics_json(&self) -> String {
+        self.core.borrow().regex_diagnostics().to_string()
+    }
+
     #[napi(js_name = "loadStandardTheme")]
     pub fn load_standard_theme(&self, theme_id: String) -> Result<bool> {
         native(self.core.borrow_mut().load_standard_theme(&theme_id))
@@ -286,12 +291,17 @@ impl FerrikiHighlighter {
 
 #[napi(js_name = "createHighlighter")]
 pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHighlighter> {
-    let regex_prefilter = options.regex_prefilter.unwrap_or(true);
+    let regex_mode = match options.regex_mode.as_deref() {
+        None => ferriki::RegexMode::from_prefilter(options.regex_prefilter.unwrap_or(true)),
+        Some("off") => ferriki::RegexMode::Off,
+        Some("auto") => ferriki::RegexMode::Auto,
+        Some("eager") => ferriki::RegexMode::Eager,
+        Some("prepared") => ferriki::RegexMode::Prepared,
+        Some(_) => return Err(Error::from_reason("Unknown regex mode")),
+    };
     let Some(root) = options.standard_asset_root else {
         return Ok(FerrikiHighlighter {
-            core: RefCell::new(native(HighlighterCore::new_with_regex_prefilter(
-                regex_prefilter,
-            ))?),
+            core: RefCell::new(native(HighlighterCore::new_with_regex_mode(regex_mode))?),
             assets: None,
         });
     };
@@ -299,15 +309,16 @@ pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHi
     let assets = Arc::new(native(NodeAssetHost::from_root(
         Path::new(&root),
         &NodeAssetOptions {
-            regex_prefilter: Some(regex_prefilter),
+            regex_prefilter: None,
+            regex_mode: Some(regex_mode),
             remote: options.remote,
             base_url: options.base_url,
             cache_dir: options.cache_dir.map(PathBuf::from),
         },
     ))?);
-    let core = native(HighlighterCore::with_assets_and_regex_prefilter(
+    let core = native(HighlighterCore::with_assets_and_regex_mode(
         native(assets.catalogs())?,
-        regex_prefilter,
+        regex_mode,
     ))?;
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
@@ -673,6 +684,7 @@ pub(crate) mod tests {
                 &planned_root,
                 &NodeAssetOptions {
                     regex_prefilter: None,
+                    regex_mode: None,
                     remote: Some(true),
                     cache_dir: Some(cache.clone()),
                     base_url: Some("https://example.test/assets".into()),

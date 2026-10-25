@@ -40,6 +40,8 @@ pub struct GrammarConfiguration {
     /// Eager for static scanners, while source-only scanners retain Auto.
     /// Disable it to avoid prefilter construction for one-shot highlighting.
     pub regex_prefilter: bool,
+    /// Source Auto/Eager/Off, or optional prepared groups (the default).
+    pub regex_mode: crate::RegexMode,
 }
 
 impl Default for GrammarConfiguration {
@@ -51,15 +53,25 @@ impl Default for GrammarConfiguration {
             balanced_bracket_selectors: None,
             unbalanced_bracket_selectors: Vec::new(),
             regex_prefilter: true,
+            regex_mode: crate::RegexMode::default(),
         }
     }
 }
 
 impl GrammarConfiguration {
+    /// Selects a regex policy. The last regex policy setter wins.
+    #[must_use]
+    pub fn with_regex_mode(mut self, mode: crate::RegexMode) -> Self {
+        self.regex_mode = mode;
+        self.regex_prefilter = mode.prefilter();
+        self
+    }
+
     /// Controls prefiltering for all scanners in this grammar, including injections.
     #[must_use]
     pub fn with_regex_prefilter(mut self, enabled: bool) -> Self {
         self.regex_prefilter = enabled;
+        self.regex_mode = crate::RegexMode::from_prefilter(enabled);
         self
     }
 
@@ -353,6 +365,7 @@ impl Grammar {
         configuration: GrammarConfiguration,
         scanner_pattern_cache: ScannerPatternCache,
     ) -> Self {
+        let scanner_pattern_cache = scanner_pattern_cache.with_mode(configuration.regex_mode);
         Self::with_factory(
             grammar_provider,
             theme_provider,
