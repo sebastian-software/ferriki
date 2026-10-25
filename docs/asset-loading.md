@@ -21,6 +21,12 @@ invalid receipts require a SHA-256 check before recording the current state.
 The local cache and receipts are trusted; these stat checks detect ordinary
 changes rather than authenticate against malicious local modification. Ferroni
 still validates archive indexes and requested records.
+
+The registry retains the decoded container and shares its program and group
+sections through Ferroni's owned byte views. It does not copy both sections
+into separate archive buffers. This applies to populated-cache reads and to
+newly decoded downloads.
+
 The release manifest pins both representations. A detected damaged entry is
 rebuilt from the verified download when available; an unwritable cache keeps
 highlighting usable without persistence. Older releases keep their original

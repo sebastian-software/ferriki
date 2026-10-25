@@ -43,6 +43,9 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   verification. Changed/unrecorded files require SHA-256 before receipt renewal.
   The cache directory and its receipts are trusted local state, not a boundary
   against malicious local modification; engine validation remains unchanged.
+  The runtime transfers the decoded allocation to the registry. Ferroni 2.7.2
+  retains checked program/group views of those bytes, avoiding separate bulk
+  copies. File reads, index loading and lazy record restoration remain.
   Old manifests remain supported. A damaged decoded entry is rebuilt from the
   verified compressed payload, and cache write failures remain optional.
 - Catalog loading attaches the matching sidecar to the registry's pattern
@@ -97,8 +100,9 @@ compatible Ferroni, so archived programs cannot be required for correctness.
 ## Consequences
 
 Consumers download extra bytes for a language in exchange for less first-use
-compilation. Compression and index loading still cost time; the archive is not
-a zero-copy snapshot. Prepared instructions avoid rebuilding group automata;
+compilation. Compression and index loading still cost time. Sharing the decoded
+allocation avoids section copies but does not eliminate runtime restoration.
+Prepared instructions avoid rebuilding group automata;
 per-pattern helpers, scratch and input-dependent search caches remain local.
 Custom grammars continue to compile from source.
 
@@ -135,6 +139,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-25: Require published Ferroni 2.7.2 and consume decoded containers
+  through its shared byte views. Keep existing formats, cache verification,
+  complete static coverage and source fallback; add no file mapping.
 
 - 2026-10-25: Remove repeated SHA-256 from unchanged decoded-cache reads. Persist
   a verified file stamp and rehash only changed/unrecorded files; retain engine
