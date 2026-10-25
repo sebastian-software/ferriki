@@ -1,8 +1,41 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import { join } from "node:path";
+import process from "node:process";
 import { test } from "node:test";
 import { createHighlighter, createHighlighterCoreSync } from "../ferriki/index.mjs";
 import { regexModes, validateRegexDiagnostics } from "./regex-benchmark-modes.mjs";
 import "./test-asset-env.mjs";
+
+test("policy evidence can be validated without generated facade assets", () => {
+  const root = mkdtempSync(join(os.tmpdir(), "ferriki-policy-evidence-"));
+  try {
+    mkdirSync(join(root, "node/scripts"), { recursive: true });
+    mkdirSync(join(root, "assets"));
+    copyFileSync(
+      new URL("./regex-benchmark-modes.mjs", import.meta.url),
+      join(root, "node/scripts/modes.mjs"),
+    );
+    copyFileSync(
+      new URL("../../assets/catalog.json", import.meta.url),
+      join(root, "assets/catalog.json"),
+    );
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        "import {usesStandardGrammar} from './node/scripts/modes.mjs'; if (!usesStandardGrammar({textmate:'sql'})) process.exit(1);",
+      ],
+      { cwd: root, encoding: "utf8" },
+    );
+    assert.equal(child.status, 0, child.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("source modes stay independent of prepared standard assets and preserve HTML", async () => {
   let expected;

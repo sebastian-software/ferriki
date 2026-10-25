@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { languageCatalog } from "../ferriki/assets/standard/catalog.mjs";
+import { readFileSync } from "node:fs";
+
+// Evidence-only runners do not build the facade's generated asset catalog.
+const languageCatalog = JSON.parse(
+  readFileSync(new URL("../../assets/catalog.json", import.meta.url), "utf8"),
+).languages.entries;
 
 const standardLanguages = new Set(languageCatalog.flatMap(({ id, aliases }) => [id, ...aliases]));
 export const usesStandardGrammar = (language) =>
