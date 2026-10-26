@@ -8,13 +8,28 @@ const steps = [
   ],
   [
     "Download your grammars",
-    "Ferriki fetches the packages you need. The first load verifies, unpacks, and caches them on disk.",
+    "Embedded languages share their prepared packages across hosts. The first load verifies, unpacks, and caches them on disk.",
   ],
   [
     "Restore next time",
-    "A fresh process checks the cached file's size and modification time, then restores the prepared automata without hashing unchanged files again.",
+    "A fresh process checks the cache and reads only the scanner records your document needs.",
   ],
   ["Start optimized", "Static scanners use Eager optimizations from their first execution."],
+];
+
+const figures = [
+  {
+    label: "Smaller Markdown package",
+    value: "93%",
+    detail: "1.9 MB prepared download · previously 25.9 MB",
+    measure: "Same grammar coverage · October 26, 2026 catalog",
+  },
+  {
+    label: "Lower C++ tokenizer startup",
+    value: "53%",
+    detail: "68 ms prepared · 144 ms source Eager",
+    measure: "Local macOS ARM64 diagnostic · first document included",
+  },
 ];
 
 export function PreparedRegexSection() {
@@ -44,16 +59,13 @@ export function PreparedRegexSection() {
           ))}
         </ol>
       </figure>
-      <EvidenceFigures
-        figures={[
-          {
-            label: "Lower C++ tokenizer startup",
-            value: "53%",
-            detail: "68 ms prepared · 144 ms source Eager",
-            measure: "Local macOS ARM64 diagnostic · first document included",
-          },
-        ]}
-      />
+      <EvidenceFigures figures={figures} />
+      <p className="fam-note">
+        Language packages share embedded scanners instead of shipping each language inside every
+        host. Across the catalog, prepared downloads fall from 274 MB to 35 MB. Optional code-fence
+        languages stay optional.{" "}
+        <Link to="/evidence/benchmarks#shared-language-packages">See the package sizes.</Link>
+      </p>
       <p className="fam-note">
         Prepared execution stayed comparable to ordinary Eager in this seven-grammar diagnostic.
         Startup includes archive restoration and the first document; network, file I/O, and full

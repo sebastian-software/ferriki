@@ -61,3 +61,66 @@ manifests as deterministic gzip wrappers. `sizes.json` contains every before/aft
 descriptor and exact totals. SHA-256 digests authenticate the original compressed
 and decoded payloads. Historical timing captures remain unchanged; these new size
 figures must not be presented as an update to their timing results.
+
+## Startup and reuse checks
+
+[Both production startup profiles passed](https://github.com/sebastian-software/ferriki/actions/runs/40294106961)
+on `a84c87c6488e6f55c53e93d3bcb651d8421c5328`. Five fresh processes per mode
+render the same fourteen requested languages and their required dependencies.
+All forty complete HTML outputs and both input files agree. Prepared opens 24
+cooperating packages out of 94, loads the same 258 prepared groups as the earlier
+complete-root implementation, and reports zero invalid groups or assembly
+fallbacks. Source modes open no prepared packages.
+
+The requested packages now total **123.26 MiB decoded**. Actual indexed payload
+reads are **36.66 MiB**, plus **1.89 MiB** of indexes. Earlier complete roots totaled
+469.34 MiB for the same fourteen requested languages. Required packages are
+counted separately now; optional languages remain absent.
+
+| Host | Mode | Setup (ms) | First render (ms) | Import through first render (ms) | Reuse (ms) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Linux Intel Xeon | Off | 17.49 | 334.65 | 359.17 | 279.62 |
+| Linux Intel Xeon | Auto | 21.81 | 884.10 | 915.34 | 221.26 |
+| Linux Intel Xeon | Eager | 21.88 | 951.48 | 981.79 | 233.59 |
+| Linux Intel Xeon | Prepared | 36.70 | 485.76 | 548.70 | 192.16 |
+| macOS M4 Pro (Virtual) | Off | 10.31 | 211.42 | 226.19 | 125.65 |
+| macOS M4 Pro (Virtual) | Auto | 11.01 | 337.90 | 352.75 | 81.37 |
+| macOS M4 Pro (Virtual) | Eager | 10.11 | 399.95 | 414.33 | 82.29 |
+| macOS M4 Pro (Virtual) | Prepared | 12.75 | 205.48 | 224.79 | 77.57 |
+
+Columns are independent medians; reuse is a median of per-process warm medians.
+Downloads, first fill, input reads and process creation are outside the timers.
+The Linux runner is **Intel Xeon**, whereas the previous profile was AMD EPYC.
+Do not interpret absolute cross-run changes as a regression or improvement.
+These are same-run policy comparisons, not replacement website headline data.
+The separate bulk-reader probe remains a reference, not production indexed I/O.
+
+A frozen-input local comparison uses one baseline facade/catalog and one
+candidate facade/catalog, identical raw grammars, one shared populated cache and
+five rotating fresh-process samples per lane on an Apple M1 Ultra, Darwin
+27.0.0, Node 24.22.0. Every output hash agrees. No local checks ran concurrently.
+
+| Mode | Complete-root first use (ms) | Delegated first use (ms) | Complete-root reuse (ms) | Delegated reuse (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| Off | 284.78 | 287.04 | 158.76 | 158.57 |
+| Auto | 463.51 | 462.41 | 112.98 | 111.44 |
+| Eager | 576.24 | 579.14 | 112.11 | 111.30 |
+| Prepared | 349.33 | 297.75 | 104.69 | 105.14 |
+
+The observed source-lane differences are small; five samples do not establish
+statistical equivalence. Prepared setup falls from 107.45 to 19.54 ms, and total
+first use falls about 15%, with comparable warmed execution in this local case.
+The candidate receipt and both addon hashes are retained in `local/`.
+
+## CDN publication
+
+The [assets-only workflow](https://github.com/sebastian-software/ferriki/actions/runs/40293043184)
+rebuilt the locked objects on Linux, checked their identities, uploaded immutable
+objects and verified the public CDN. Package-release jobs were skipped. The old
+objects remain available to existing consumers.
+
+`capture.json` identifies both successful workflows and the original startup
+artifact ZIP digests. The complete Linux/macOS artifact files are retained as
+deterministic gzip wrappers, including separate bulk-read and phase probes.
+`local/` retains all paired samples, inputs, reproduction code and the candidate
+build receipt. `SHA256SUMS` covers the retained files.
