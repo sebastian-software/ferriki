@@ -1,0 +1,17 @@
+{
+  "commit": "a84c87c6488e6f55c53e93d3bcb651d8421c5328",
+  "startupWorkflow": "https://github.com/sebastian-software/ferriki/actions/runs/40294106961",
+  "assetsWorkflow": "https://github.com/sebastian-software/ferriki/actions/runs/40293043184",
+  "artifacts": [
+    {
+      "profile": "linux-x86-64",
+      "name": "startup-profile-linux-x86-64-40294106961",
+      "zipSha256": "06c07ab6e61ac43159f9fccc4d2ad18b1aafc089bfa23efa22219d3e261c2af8"
+    },
+    {
+      "profile": "macos-arm64",
+      "name": "startup-profile-macos-arm64-40294106961",
+      "zipSha256": "316ae5f190d1a2a5039e49e692850a93c16f3c7596c19fe6abc92d33da5b16aa"
+    }
+  ]
+}

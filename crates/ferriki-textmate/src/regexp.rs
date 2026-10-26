@@ -163,7 +163,7 @@ impl ScannerPatternCache {
     }
 
     /// Raw ordinary program archives retain the registry-wide import contract.
-    /// Prepared containers additionally select a root-specific Eager group source.
+    /// Prepared containers additionally select host or defining-language Eager groups.
     pub(crate) fn add_precompiled(
         &self,
         archive: impl Into<Arc<[u8]>>,
@@ -367,8 +367,8 @@ impl ScannerPatternCache {
             None
         };
         if state.active_scope.as_deref() != Some(selected_scope) || requested_source.is_some() {
-            // Ferroni's stable API selects one group source. Bind it to the root
-            // grammar while keeping every language's programs and decoded groups.
+            // Ferroni selects one group source. Bind the selected host or defining
+            // language while retaining shared programs and decoded groups.
             state.cache.clear_precompiled();
             for source in state.ordinary_sources.clone() {
                 state.cache.add_precompiled(source);

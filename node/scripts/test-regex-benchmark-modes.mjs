@@ -59,6 +59,30 @@ test("source modes stay independent of prepared standard assets and preserve HTM
   }
 });
 
+test("Markdown keeps optional language packages lazy and reuses registered Rust", async () => {
+  const highlighter = await createHighlighter({ langs: ["markdown"], themes: ["nord"] });
+  let reference;
+  try {
+    assert.ok(!highlighter.getLoadedLanguages().includes("rust"));
+    assert.equal(highlighter.getRegexDiagnostics().preparedArchives, 1);
+    await highlighter.loadLanguage("rust");
+    assert.ok(highlighter.getLoadedLanguages().includes("rust"));
+    assert.equal(highlighter.getRegexDiagnostics().preparedArchives, 2);
+    const code = '```rust\nfn main() { let message = "hello"; }\n```';
+    const options = { lang: "markdown", theme: "nord" };
+    reference = await createHighlighter({
+      langs: ["markdown", "rust"],
+      themes: ["nord"],
+      regexMode: "eager",
+    });
+    assert.equal(highlighter.codeToHtml(code, options), reference.codeToHtml(code, options));
+    validateRegexDiagnostics(highlighter.getRegexDiagnostics(), "prepared", true);
+  } finally {
+    reference?.dispose();
+    highlighter.dispose();
+  }
+});
+
 test("dynamic capture scanners obey explicit source policies without requiring archives", async () => {
   const grammar = {
     name: "mode-test",

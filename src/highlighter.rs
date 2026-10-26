@@ -507,8 +507,8 @@ impl HighlighterCore {
             && let Some(catalogs) = &self.standard_assets
             && let Some(id) = catalogs.languages.resolve_id(scope)
         {
-            // The root's pair already includes its dependency scanner groups.
-            // Do not also open every dependency's standalone archive.
+            // Attach the requested root first. Legacy complete roots remain
+            // self-contained; cooperating roots attach registered packages below.
             if let Some(coverage) = catalogs
                 .languages
                 .attach_precompiled(id, &mut self.registry)
