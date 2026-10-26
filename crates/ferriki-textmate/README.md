@@ -48,3 +48,9 @@ The ordinary program-only API remains available:
 `Arc<[u8]>`. `PRECOMPILED_PATTERNS_FORMAT_VERSION` describes that raw format;
 `PRECOMPILED_PATTERNS_VERSION` separately describes the prepared container.
 Raw imports preserve the caller's acceleration policy.
+
+The opt-in `prepared-load-profile` feature adds phase clocks for diagnostic
+builds. Set `FERRIKI_PROFILE_PREPARED_PAIRS=1` to emit JSON lines on stderr for
+indexed pair assembly. Ordinary builds contain no clocks. The separate
+`benchmarks/prepared-startup-profile` probe combines these observations with
+Ferroni's load phases; instrumented timings are not production benchmarks.
