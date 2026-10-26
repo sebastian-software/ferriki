@@ -72,7 +72,7 @@ jobs:
           }))];
           writeFileSync(join(folder, 'paired-inputs.json'), JSON.stringify(scenarios));
           JS
-          node docs/benchmarks/precompiled-patterns/decoded-cache/reproduce.mjs node/ferriki "$RUNNER_TEMP/profile/paired-inputs.json" "$scratch/baseline.node" "$scratch/candidate.node" assets/standard "$RUNNER_TEMP/profile/paired.json"
+          node node/scripts/compare-indexed-readers.mjs "$RUNNER_TEMP/profile/paired-inputs.json" "$scratch/baseline.node" "$scratch/candidate.node" assets/standard "$RUNNER_TEMP/profile/paired.json"
       - name: Collect separate Linux OS diagnostics when available
         if: runner.os == 'Linux'
         run: |
