@@ -20,7 +20,9 @@ fn path(root: &Path, metadata: &AssetMetadata) -> PathBuf {
 }
 
 fn stamp_path(path: &Path) -> PathBuf {
-    path.with_extension("verified")
+    let mut name = path.as_os_str().to_os_string();
+    name.push(".verified");
+    PathBuf::from(name)
 }
 
 /// A change detector for a trusted local cache, not an authentication boundary.
@@ -109,6 +111,64 @@ pub(crate) fn read(root: &Path, decoded: &AssetMetadata) -> Option<Vec<u8>> {
     None
 }
 
+/// Reuse only verified local state and a small derived index at process start.
+/// Missing/changed indexes are rebuilt once from the authenticated container.
+pub(crate) fn read_indexed(root: &Path, decoded: &AssetMetadata) -> Option<(fs::File, Vec<u8>)> {
+    if decoded.size() > MAX_DECODED_BYTES {
+        return None;
+    }
+    let target = path(root, decoded);
+    let index_path = target.with_extension("index-v1");
+    let open = || {
+        let file = fs::File::open(&target).ok()?;
+        let metadata = file.metadata().ok()?;
+        let before = FileStamp::of(&metadata)?;
+        if !metadata.is_file()
+            || metadata.len() != decoded.size()
+            || read_stamp(&target).as_ref() != Some(&before)
+        {
+            return None;
+        }
+        let index_file = fs::File::open(&index_path).ok()?;
+        let index_before = FileStamp::of(&index_file.metadata().ok()?)?;
+        if index_before.size > MAX_INDEX_BYTES
+            || read_stamp(&index_path).as_ref() != Some(&index_before)
+        {
+            return None;
+        }
+        let mut index = Vec::new();
+        (&index_file)
+            .take(MAX_INDEX_BYTES)
+            .read_to_end(&mut index)
+            .ok()?;
+        if FileStamp::of(&index_file.metadata().ok()?).as_ref() != Some(&index_before)
+            || FileStamp::of(&file.metadata().ok()?).as_ref() != Some(&before)
+        {
+            return None;
+        }
+        Some((file, index))
+    };
+    if let Some(source) = open() {
+        return Some(source);
+    }
+    let bytes = read(root, decoded)?;
+    write_index(&target, &bytes).ok()?;
+    open()
+}
+
+const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
+
+fn write_index(target: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let bytes =
+        ferriki_textmate::index_precompiled_patterns(bytes).map_err(std::io::Error::other)?;
+    let target = target.with_extension("index-v1");
+    write_atomic(&target, &bytes)?;
+    if let Some(stamp) = FileStamp::of(&fs::metadata(&target)?) {
+        write_stamp(&target, &stamp)?;
+    }
+    Ok(())
+}
+
 pub(crate) fn prepare(root: &Path, decoded: &AssetMetadata, compressed: &[u8]) -> Result<Vec<u8>> {
     if decoded.size() > MAX_DECODED_BYTES {
         return Err(Error::new(
@@ -125,7 +185,9 @@ pub(crate) fn prepare(root: &Path, decoded: &AssetMetadata, compressed: &[u8]) -
     })?;
     decoded.verify_bytes(&bytes)?;
     // A read-only or full cache must not make the optional optimization required.
-    let _ = write(root, decoded, &bytes);
+    if write(root, decoded, &bytes).is_ok() {
+        let _ = write_index(&path(root, decoded), &bytes);
+    }
     Ok(bytes)
 }
 
@@ -255,6 +317,51 @@ mod tests {
         );
         assert_eq!(read(&root, &metadata), Some(bytes));
         assert_eq!(fs::read(stamp_path(&target)).unwrap(), original_stamp);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn indexed_cache_rebuilds_changed_indexes_and_rejects_changed_containers() {
+        let (root, _, _) = fixture();
+        let raw = ferriki_textmate::parse_raw_grammar(
+            r#"{"scopeName":"source.cache","patterns":[{"match":"word"}]}"#,
+            Some("cache.json"),
+        )
+        .unwrap();
+        let compressed = ferriki_textmate::precompile_grammar_patterns(&raw).unwrap();
+        let bytes = ferriki_textmate::decompress_precompiled_patterns(&compressed).unwrap();
+        let metadata = AssetMetadata::new(
+            crate::AssetDigest::of(&bytes),
+            bytes.len() as u64,
+            ferriki_textmate::PRECOMPILED_PATTERNS_VERSION,
+        );
+        assert_eq!(prepare(&root, &metadata, &compressed).unwrap(), bytes);
+        let target = path(&root, &metadata);
+        let index_path = target.with_extension("index-v1");
+        let (_, expected) = read_indexed(&root, &metadata).unwrap();
+        assert_eq!(fs::read(&index_path).unwrap(), expected);
+        fs::write(&index_path, b"changed index").unwrap();
+        let (file, repaired) = read_indexed(&root, &metadata).unwrap();
+        assert_eq!(repaired, expected);
+        let mut registry = ferriki_textmate::SyncRegistry::new(None, None).unwrap();
+        registry
+            .add_precompiled_patterns_file(file, &repaired)
+            .unwrap();
+        assert_eq!(registry.regex_diagnostics().prepared_bytes_read, 0);
+        registry.dispose();
+        fs::remove_file(&index_path).unwrap();
+        assert_eq!(read_indexed(&root, &metadata).unwrap().1, expected);
+        let mut damaged = bytes;
+        *damaged.last_mut().unwrap() ^= 1;
+        fs::write(&target, damaged).unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&target)
+            .unwrap()
+            .set_modified(SystemTime::UNIX_EPOCH)
+            .unwrap();
+        assert!(read_indexed(&root, &metadata).is_none());
+        assert!(!target.exists());
         fs::remove_dir_all(root).unwrap();
     }
 }

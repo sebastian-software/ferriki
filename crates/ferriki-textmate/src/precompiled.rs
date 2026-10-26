@@ -19,7 +19,7 @@ use std::sync::Arc;
 pub const PRECOMPILED_PATTERNS_VERSION: u32 = (2 << 24)
     | (ferroni::scanner::PRECOMPILED_FORMAT_VERSION << 12)
     | ferroni::scanner::PRECOMPILED_EAGER_FORMAT_VERSION;
-const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
+pub(crate) const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
 const MAGIC: &[u8; 8] = b"FKBC002\0";
 
 #[derive(Clone)]
@@ -90,7 +90,7 @@ fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsErro
     Ok(Cow::Owned(decoded))
 }
 
-fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
+pub(crate) fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
     if decoded.len() < 32 || &decoded[..8] != MAGIC {
         return Err(PrecompiledPatternsError::new(
             "unsupported Ferriki prepared archive",
@@ -391,6 +391,69 @@ mod tests {
     fn standard_archives_prepare_static_groups() {
         let archive = open_archive(precompile_grammar_patterns(&grammar()).unwrap()).unwrap();
         assert!(!archive.eager.is_empty());
+    }
+
+    #[test]
+    fn indexed_archives_load_only_requested_records_and_cover_later_contexts() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let raw = grammar();
+        let decoded =
+            decompress_precompiled_patterns(&precompile_grammar_patterns(&raw).unwrap()).unwrap();
+        let index = crate::index_precompiled_patterns(&decoded).unwrap();
+        let path = std::env::temp_dir().join(format!(
+            "ferriki-indexed-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::write(&path, &decoded).unwrap();
+        let mut prepared = SyncRegistry::new(None, None).unwrap();
+        prepared
+            .add_precompiled_patterns_file(std::fs::File::open(&path).unwrap(), &index)
+            .unwrap();
+        prepared.add_grammar(raw.clone(), vec![]);
+        assert_eq!(prepared.regex_diagnostics().prepared_bytes_read, 0);
+        let mut source = SyncRegistry::new(None, None).unwrap();
+        source.add_grammar(raw.clone(), vec![]);
+        let compare = |source: &mut SyncRegistry, prepared: &mut SyncRegistry, text: &str| {
+            let tokenize = |registry: &mut SyncRegistry| {
+                let grammar = registry
+                    .grammar_for_scope_name(&raw.scope_name, GrammarConfiguration::default())
+                    .unwrap()
+                    .unwrap();
+                let mut stack = None;
+                text.lines()
+                    .map(|line| {
+                        let result = grammar.tokenize_line(line, stack.take(), 0).unwrap();
+                        stack = Some(result.rule_stack);
+                        result.tokens
+                    })
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(tokenize(source), tokenize(prepared));
+        };
+        compare(&mut source, &mut prepared, "first word TODO");
+        let first = prepared.regex_diagnostics();
+        assert!(first.prepared_bytes_read > 0);
+        assert!(first.prepared_bytes_read < decoded.len() as u64);
+        assert!(first.loaded_prepared_groups > 0);
+        assert_eq!(first.invalid_prepared_groups, 0);
+        compare(&mut source, &mut prepared, "first word TODO");
+        assert_eq!(
+            prepared.regex_diagnostics().prepared_bytes_read,
+            first.prepared_bytes_read
+        );
+        compare(
+            &mut source,
+            &mut prepared,
+            "<<END\nword TODO 😀\nEND\n>quote\n>continued\naaaa : word\nxxx\nalpha beta gamma",
+        );
+        let later = prepared.regex_diagnostics();
+        assert!(later.loaded_prepared_groups > first.loaded_prepared_groups);
+        assert_eq!(later.invalid_prepared_groups, 0);
+        assert_eq!(later.assembly_fallbacks, 0);
+        prepared.dispose();
+        std::fs::remove_file(&path).unwrap();
     }
 
     #[test]

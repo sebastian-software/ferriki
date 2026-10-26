@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-25
+Last updated: 2026-10-26
 
 ## Context
 
@@ -43,9 +43,20 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   verification. Changed/unrecorded files require SHA-256 before receipt renewal.
   The cache directory and its receipts are trusted local state, not a boundary
   against malicious local modification; engine validation remains unchanged.
-  The runtime transfers the decoded allocation to the registry. Ferroni 2.7.2
-  retains checked program/group views of those bytes, avoiding separate bulk
-  copies. File reads, index loading and lazy record restoration remain.
+  A derived, versioned local index records the offsets of every program and
+  static group in the complete decoded container. Verified disk caches attach
+  an open file and this small index instead of reading the full container.
+  Scanner construction reads only its requested records into owned buffers,
+  remaps the selected program IDs and rebinds a reduced portable pair. Ferroni
+  checks this pair and validates its requested bytecode/instructions normally.
+  This adapter interprets only the stable v2 program/v3 portable envelopes and
+  their binding checksum; unsupported formats retain the owned-import path.
+  Both cache files use size/mtime receipts; changed or missing indexes are
+  rebuilt from the verified container. File state is checked before and after
+  record reads, with source fallback on changes or I/O errors. No file mapping,
+  unsafe code, archive pruning, new CDN objects or format migration is needed.
+  Borrowed/owned imports, embedded assets, legacy manifests and unwritable
+  caches retain their shared-allocation behavior through Ferroni 2.7.2.
   Old manifests remain supported. A damaged decoded entry is rebuilt from the
   verified compressed payload, and cache write failures remain optional.
 - Catalog loading attaches the matching sidecar to the registry's pattern
@@ -100,15 +111,16 @@ compatible Ferroni, so archived programs cannot be required for correctness.
 ## Consequences
 
 Consumers download extra bytes for a language in exchange for less first-use
-compilation. Compression and index loading still cost time. Sharing the decoded
-allocation avoids section copies but does not eliminate runtime restoration.
+compilation. Compression and index loading still cost time. Indexed disk access
+avoids reading unused records; shared owned imports avoid section copies.
+Neither path eliminates runtime restoration.
 Prepared instructions avoid rebuilding group automata;
 per-pattern helpers, scratch and input-dependent search caches remain local.
 Custom grammars continue to compile from source.
 
 Keep the asset cache between builds to reuse both downloaded and decoded data.
 Decoded files use more disk space than compressed downloads. Each new
-process still reads the container, checks its file state and restores its runtime state. Prepared
+process reads the local index, checks file state and restores requested records. Prepared
 assets remain valid while their content and format are compatible; editing the
 highlighted document does not require regenerating the grammar package.
 
@@ -139,6 +151,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-26: Add indexed, on-demand reads from verified decoded containers.
+  Preserve every static program/group on disk and let Ferroni validate reduced
+  pairs; keep existing imports, source fallback and CDN formats unchanged.
 
 - 2026-10-25: Require published Ferroni 2.7.2 and consume decoded containers
   through its shared byte views. Keep existing formats, cache verification,

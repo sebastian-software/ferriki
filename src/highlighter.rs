@@ -503,14 +503,12 @@ impl HighlighterCore {
             && self.attempted_precompiled_scopes.insert(scope.clone())
             && let Some(catalogs) = &self.standard_assets
             && let Some(id) = catalogs.languages.resolve_id(scope)
-            && let Some(bytecode) = catalogs.languages.load_precompiled(id)
         {
             // The root's pair already includes its dependency scanner groups.
             // Do not also open every dependency's standalone archive.
-            if self
-                .registry
-                .add_precompiled_patterns_owned(bytecode)
-                .is_ok()
+            if catalogs
+                .languages
+                .attach_precompiled(id, &mut self.registry)
             {
                 self.prepared_language_scopes.insert(scope.clone());
             }

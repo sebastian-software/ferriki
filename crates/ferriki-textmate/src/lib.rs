@@ -16,6 +16,7 @@ mod grammar;
 mod grammar_dependencies;
 mod grammar_fingerprint;
 mod include_reference;
+mod indexed_precompiled;
 mod line_output;
 mod matcher;
 mod parse_raw_grammar;
@@ -45,6 +46,7 @@ pub use grammar::{
     Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2,
     TokenizeLineResultWithScopes,
 };
+pub use indexed_precompiled::index_precompiled_patterns;
 pub use line_output::{FontInfo, Token};
 pub use parse_raw_grammar::{ParseRawGrammarError, parse_raw_grammar};
 pub use plist::PlistError;

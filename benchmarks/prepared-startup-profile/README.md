@@ -1,8 +1,9 @@
 # Prepared startup phase diagnostic
 
 This private probe answers why fresh-process Prepared startup differs between
-the Linux x86-64 and macOS ARM64 Blacksmith profiles. It changes no runtime API
-or addon feature. Its lockfile matches the production versions of shared
+the Linux x86-64 and macOS ARM64 Blacksmith profiles. Its separate Rust probe
+retains the former full-file reader as a reference after production adopted
+indexed, on-demand record reads. Its lockfile matches production versions of shared
 dependencies.
 
 The Blacksmith workflow's `startup-profile` suite calls
@@ -14,9 +15,11 @@ files and their size/mtime receipts, then runs these diagnostics serially:
   first render and repeated rendering for the same fourteen-file corpus.
   Five fresh processes per Off/Auto/Eager/Prepared mode rotate their order.
   Complete output hashes must match; archive diagnostics remain required.
+  Prepared must read a nonzero subset of the complete archive payloads; source
+  modes read none. Index identities and receipts are retained separately.
 - A separate Rust process reads and retains only those fourteen decoded
   containers, then opens their shared program/group views through Ferroni.
-  Five processes per reader rotate the production `Take<File>` shape,
+  Five processes per reader rotate the former `Take<File>` shape,
   direct `File::read_to_end`, and a bounded zeroed buffer with `read_exact`.
   Byte counts and unchanged file
   metadata are checked. The probe omits the small receipt reads; the ordinary
