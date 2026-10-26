@@ -1,0 +1,21 @@
+{
+  "commit": "77882ed249ea09aef6b915f63fe9b1352c58474f",
+  "workflowRun": "https://github.com/sebastian-software/ferriki/actions/runs/40284771387",
+  "artifacts": [
+    {
+      "profile": "linux-x86-64",
+      "name": "startup-profile-linux-x86-64-40284771387",
+      "zipSha256": "d4c8f5f8c2882c057ff296523218d03d9d421fa60440fa3397cc43fc67ac4e18"
+    },
+    {
+      "profile": "macos-arm64",
+      "name": "startup-profile-macos-arm64-40284771387",
+      "zipSha256": "9f2ddf90e68e31f946394f447c53a4c0b55ed0645497591b96aff38393cb5793"
+    }
+  ],
+  "local": {
+    "cpu": "Apple M1 Ultra",
+    "os": "darwin 27.0.0",
+    "node": "v24.22.0"
+  }
+}
