@@ -526,6 +526,8 @@ impl IndexedArchive {
     }
 
     fn read_pair(&mut self, ids: &[u32]) -> Result<PrecompiledEager> {
+        #[cfg(feature = "prepared-load-profile")]
+        let started = std::time::Instant::now();
         self.unchanged()?;
         let mut selected = ids.to_vec();
         selected.sort_unstable();
@@ -559,6 +561,8 @@ impl IndexedArchive {
             return Err(invalid());
         }
         programs.reserve(data_len);
+        #[cfg(feature = "prepared-load-profile")]
+        let indexed = started.elapsed().as_nanos();
         for id in &selected {
             let record = &self.programs[*id as usize].record;
             let data = &mut self.program_records[*id as usize];
@@ -570,9 +574,13 @@ impl IndexedArchive {
             }
             programs.extend_from_slice(data.as_ref().expect("the requested program was read"));
         }
+        #[cfg(feature = "prepared-load-profile")]
+        let copied = started.elapsed().as_nanos();
         let mut groups = GROUP_MAGIC.to_vec();
         groups.extend_from_slice(&binding_checksum(&programs).to_le_bytes());
         groups.push(1);
+        #[cfg(feature = "prepared-load-profile")]
+        let bound = started.elapsed().as_nanos();
         if let Some(record) = self.groups.get(ids) {
             number(&mut groups, 1)?;
             number(&mut groups, ids.len())?;
@@ -592,8 +600,23 @@ impl IndexedArchive {
             number(&mut groups, 0)?;
         }
         self.unchanged()?;
-        PrecompiledEager::from_shared_bytes(programs.into(), groups.into())
-            .map_err(PrecompiledPatternsError::from_engine)
+        #[cfg(feature = "prepared-load-profile")]
+        let read = started.elapsed().as_nanos();
+        #[cfg(feature = "prepared-load-profile")]
+        let program_bytes = programs.len();
+        let source = PrecompiledEager::from_shared_bytes(programs.into(), groups.into())
+            .map_err(PrecompiledPatternsError::from_engine);
+        #[cfg(feature = "prepared-load-profile")]
+        if std::env::var_os("FERRIKI_PROFILE_PREPARED_PAIRS").is_some() {
+            eprintln!(
+                "{}",
+                serde_json::json!({"scope": self.scope, "programs": selected.len(),
+                    "programBytes": program_bytes, "indexNs": indexed,
+                    "programReadCopyNs": copied - indexed, "bindingNs": bound - copied,
+                    "groupReadNs": read - bound, "openNs": started.elapsed().as_nanos() - read})
+            );
+        }
+        source
     }
 }
 

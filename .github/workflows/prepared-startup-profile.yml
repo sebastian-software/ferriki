@@ -57,7 +57,7 @@ jobs:
           cache=$(node --input-type=module -e 'import { TEST_ASSET_CACHE_DIR } from "./node/scripts/test-asset-env.mjs"; console.log(process.env.FERRIKI_CACHE_DIR ?? TEST_ASSET_CACHE_DIR)')
           for repeat in 0 1 2; do
             for mode in off auto eager prepared; do
-              benchmarks/prepared-startup-profile/target/release/production-phases assets/standard "$RUNNER_TEMP/profile/inputs.json" "$cache" "$mode" > "$RUNNER_TEMP/profile/production-$mode-$repeat.json"
+              FERRIKI_PROFILE_PREPARED_PAIRS=1 benchmarks/prepared-startup-profile/target/release/production-phases assets/standard "$RUNNER_TEMP/profile/inputs.json" "$cache" "$mode" > "$RUNNER_TEMP/profile/production-$mode-$repeat.json" 2> "$RUNNER_TEMP/profile/pairs-$mode-$repeat.jsonl"
             done
           done
           node --input-type=module - "$RUNNER_TEMP/profile" <<'JS'

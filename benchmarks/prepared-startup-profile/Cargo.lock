@@ -127,6 +127,7 @@ name = "ferriki-prepared-startup-profile"
 version = "0.0.0"
 dependencies = [
  "ferriki",
+ "ferriki-textmate",
  "ferroni",
  "serde_json",
 ]
