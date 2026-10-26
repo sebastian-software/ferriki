@@ -310,6 +310,14 @@ impl ThemeProvider {
 
 impl Grammar {
     pub(crate) fn prepare_static_scanners(&self) -> Result<(), crate::RegexError> {
+        self.prepare_static_scanners_for(None)
+    }
+
+    pub(crate) fn prepare_owned_static_scanners(&self) -> Result<(), crate::RegexError> {
+        self.prepare_static_scanners_for(Some(&self.root_scope_name))
+    }
+
+    fn prepare_static_scanners_for(&self, owner: Option<&str>) -> Result<(), crate::RegexError> {
         // Only stack states, injection roots and capture-retokenization roots
         // become scanners. Ordinary match/include rules are flattened into their
         // parent's ordered list; preparing them separately serializes automata
@@ -323,6 +331,7 @@ impl Grammar {
         }
         for id in 1..=self.registry.len() {
             if let Some(rule) = self.registry.try_get_rule(RuleId::new(id as u32))
+                && owner.is_none_or(|owner| rule.source_scope_name() == owner)
                 && (entries.contains(&rule.id())
                     || matches!(rule, Rule::BeginEnd(_) | Rule::BeginWhile(_)))
             {

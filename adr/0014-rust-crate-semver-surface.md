@@ -61,6 +61,9 @@ Each crate publishes a deliberate, curated surface.
   `index_precompiled_patterns` and `SyncRegistry::add_precompiled_patterns_file`
   additionally expose derived indexes and owned file handles for on-demand
   local reads. The host verifies the cache identity; Ferroni types remain private.
+  `SyncRegistry::precompile_pattern_packages` prepares cooperating catalog
+  packages, and `supports_precompiled_patterns_version` identifies supported
+  complete/delegated formats. Both retain owned bytes and errors (ADR 0022).
   `SyncRegistry::add_precompiled_patterns_owned` consumes a `Vec<u8>` and retains
   shared views of its decoded allocation without copying the program/group
   sections. It accepts the same archives and preserves the existing error and
@@ -176,6 +179,9 @@ without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#r
 owns policy semantics and the limits of those counters.
 
 ## History
+
+- 2026-10-26: Document cooperating package preparation and the supported-format
+  query without exposing origin maps, engine records or dependency types.
 
 - 2026-10-26: Document the additive indexed prepared-file API; keep engine
   envelopes private and retain existing byte import contracts.

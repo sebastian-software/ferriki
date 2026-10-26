@@ -156,18 +156,13 @@ impl NodeAssetHost {
 
     /// Plans cache misses without network access or payload decoding.
     pub fn plan(&self, languages: &[String], themes: &[String]) -> Result<Vec<PlannedAsset>> {
-        let prepared_roots: BTreeSet<&str> = languages
-            .iter()
-            .map(|requested| {
-                self.language_aliases
-                    .get(requested.as_str())
-                    .map_or(requested.as_str(), String::as_str)
-            })
-            .collect();
         let mut paths = BTreeSet::new();
-        let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
+        let mut pending: Vec<(&str, bool)> = languages
+            .iter()
+            .map(|id| (id.as_str(), self.precompiled))
+            .collect();
         let mut visited = BTreeSet::new();
-        while let Some(requested) = pending.pop() {
+        while let Some((requested, prepared)) = pending.pop() {
             let id = self
                 .language_aliases
                 .get(requested)
@@ -175,20 +170,27 @@ impl NodeAssetHost {
             let Some((path, embedded)) = self.languages.get(id) else {
                 continue;
             };
-            if !visited.insert(id) {
+            if !visited.insert((id, prepared)) {
                 continue;
             }
             paths.insert(path.clone());
             let bytecode = path.replace(".fkgram", ".fkbc");
+            let delegated = self.precompiled
+                && prepared
+                && self
+                    .release
+                    .assets
+                    .get(&bytecode)
+                    .is_some_and(|asset| asset.format_version >> 24 >= 3);
             if self.precompiled
-                && prepared_roots.contains(id)
+                && prepared
                 && self.release.assets.get(&bytecode).is_some_and(|asset| {
-                    asset.format_version == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+                    ferriki_textmate::supports_precompiled_patterns_version(asset.format_version)
                 })
             {
                 paths.insert(bytecode);
             }
-            pending.extend(embedded.iter().map(String::as_str));
+            pending.extend(embedded.iter().map(|id| (id.as_str(), delegated)));
         }
         paths.extend(
             themes
@@ -508,7 +510,15 @@ mod tests {
 
         assert!(paths.contains("languages/vue.fkgram"));
         assert!(paths.contains("languages/typescript.fkgram"));
-        let vue_only = host.plan(&["vue".to_owned()], &[]).expect("root-only plan");
+        let mut legacy = self::host(&root, &cache);
+        for (path, asset) in &mut legacy.release.assets {
+            if path.ends_with(".fkbc") {
+                asset.format_version = (2 << 24) | (asset.format_version & 0x00ff_ffff);
+            }
+        }
+        let vue_only = legacy
+            .plan(&["vue".to_owned()], &[])
+            .expect("root-only plan");
         assert!(
             vue_only
                 .iter()
@@ -519,6 +529,30 @@ mod tests {
                 .iter()
                 .any(|asset| asset.path == "languages/typescript.fkbc"),
             "the root archive already carries dependency groups"
+        );
+        let mut delegated = self::host(&root, &cache);
+        for (path, asset) in &mut delegated.release.assets {
+            if path.ends_with(".fkbc") {
+                asset.format_version = ferriki_textmate::PRECOMPILED_PATTERNS_VERSION;
+            }
+        }
+        let delegated_plan = delegated.plan(&["vue".to_owned()], &[]).unwrap();
+        assert!(
+            delegated_plan
+                .iter()
+                .any(|asset| asset.path == "languages/typescript.fkbc")
+        );
+        let markdown = delegated.plan(&["markdown".to_owned()], &[]).unwrap();
+        assert!(
+            markdown
+                .iter()
+                .any(|asset| asset.path == "languages/markdown.fkbc")
+        );
+        assert!(
+            !markdown
+                .iter()
+                .any(|asset| asset.path == "languages/rust.fkbc"),
+            "optional fenced-code languages must not be fetched unless registered explicitly"
         );
         assert!(paths.contains("languages/vue.fkbc"));
         assert!(paths.contains("languages/typescript.fkbc"));

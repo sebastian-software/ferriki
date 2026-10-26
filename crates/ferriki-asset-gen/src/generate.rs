@@ -71,6 +71,14 @@ pub(crate) fn write_language_catalog(
             .collect();
         producer.add_grammar(grammar, injections);
     }
+    let packages = producer
+        .precompile_pattern_packages(
+            &records
+                .iter()
+                .map(|record| record.scope_name.as_str())
+                .collect::<Vec<_>>(),
+        )
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
     for record in records {
         let asset_file = format!("{}.fkgram", sanitize_asset_id(&record.id));
         let asset = LanguageAsset {
@@ -90,14 +98,8 @@ pub(crate) fn write_language_catalog(
         fs::write(&asset_path, bytes)?;
         asset_paths.push(asset_path);
 
-        let bytecode = producer
-            .precompile_patterns(&record.scope_name, &[])
-            .map_err(|error| {
-                io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("{}: {error}", record.id),
-                )
-            })?
+        let bytecode = packages
+            .get(&record.scope_name)
             .expect("catalog grammar was registered");
         let precompiled_path = output_dir.join(format!("{}.fkbc", sanitize_asset_id(&record.id)));
         fs::write(&precompiled_path, bytecode)?;

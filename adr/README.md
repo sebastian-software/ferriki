@@ -27,6 +27,7 @@ changes the record first.
 | [0019](0019-shadow-dom-code-elements.md)                  | Present prepared React code in a Shadow DOM element               | Accepted |
 | [0020](0020-curated-grammar-sources.md)                   | Own a curated standard grammar catalog                            | Accepted |
 | [0021](0021-precompiled-pattern-sidecars.md)              | Ship optional precompiled pattern sidecars                        | Accepted |
+| [0022](0022-cooperating-prepared-language-packages.md)     | Delegate prepared scanners to their language packages             | Accepted |
 
 Other decision records:
 

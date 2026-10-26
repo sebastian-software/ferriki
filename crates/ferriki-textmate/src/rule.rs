@@ -415,7 +415,9 @@ impl BeginWhileRule {
         let sources = cached.get_or_insert_with(|| {
             let mut sources = RegExpSourceList::with_pattern_cache(
                 registry.regex_prefilter,
-                registry.scanner_pattern_cache.clone(),
+                registry
+                    .scanner_pattern_cache
+                    .for_owner(&self.data.source_scope_name),
             );
             sources.push(self.while_source.clone());
             sources
@@ -613,7 +615,9 @@ impl Rule {
                 let sources = cached.get_or_insert_with(|| {
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
-                        registry.scanner_pattern_cache.clone(),
+                        registry
+                            .scanner_pattern_cache
+                            .for_owner(&rule.data.source_scope_name),
                     );
                     sources.push(rule.match_source.clone());
                     sources
@@ -624,6 +628,7 @@ impl Rule {
                 &rule.cached_compiled_patterns,
                 registry,
                 Some(&rule.patterns),
+                &rule.data.source_scope_name,
                 allow_a,
                 allow_g,
             ),
@@ -635,7 +640,9 @@ impl Rule {
                 let sources = cached.get_or_insert_with(|| {
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
-                        registry.scanner_pattern_cache.clone(),
+                        registry
+                            .scanner_pattern_cache
+                            .for_owner(&rule.data.source_scope_name),
                     );
                     collect_pattern_ids(registry, &rule.patterns, &mut sources);
                     if rule.apply_end_pattern_last {
@@ -659,6 +666,7 @@ impl Rule {
                 &rule.cached_compiled_patterns,
                 registry,
                 Some(&rule.patterns),
+                &rule.data.source_scope_name,
                 allow_a,
                 allow_g,
             ),
@@ -731,6 +739,10 @@ impl Rule {
             Self::BeginEnd(rule) => rule.data.source_scope_name = scope_name,
             Self::BeginWhile(rule) => rule.data.source_scope_name = scope_name,
         }
+    }
+
+    pub(crate) fn source_scope_name(&self) -> &str {
+        &self.data().source_scope_name
     }
 }
 
@@ -915,6 +927,7 @@ fn compile_patterns(
     cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
     registry: &RuleRegistry,
     patterns: Option<&[RuleId]>,
+    owner_scope: &str,
     allow_a: bool,
     allow_g: bool,
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
@@ -922,7 +935,7 @@ fn compile_patterns(
     let sources = cached.get_or_insert_with(|| {
         let mut sources = RegExpSourceList::with_pattern_cache(
             registry.regex_prefilter,
-            registry.scanner_pattern_cache.clone(),
+            registry.scanner_pattern_cache.for_owner(owner_scope),
         );
         if let Some(patterns) = patterns {
             collect_pattern_ids(registry, patterns, &mut sources);

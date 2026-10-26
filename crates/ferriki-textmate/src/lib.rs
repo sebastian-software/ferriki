@@ -52,7 +52,7 @@ pub use parse_raw_grammar::{ParseRawGrammarError, parse_raw_grammar};
 pub use plist::PlistError;
 pub use precompiled::{
     PRECOMPILED_PATTERNS_VERSION, PrecompiledPatternsError, decompress_precompiled_patterns,
-    precompile_grammar_patterns,
+    precompile_grammar_patterns, supports_precompiled_patterns_version,
 };
 pub use raw_grammar::RawGrammar;
 pub use regex_mode::{RegexDiagnostics, RegexMode};
