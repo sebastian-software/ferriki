@@ -8,6 +8,11 @@ The retired payloads total 274,444,043 bytes; their replacements total
 optional prepared sidecars referenced by Ferriki 1.2.0. It does not establish
 an automatic retention limit for future releases.
 
+The [retirement workflow](https://github.com/sebastian-software/ferriki/actions/runs/40302637112)
+completed successfully: 94 objects removed, 274,444,043 bytes removed, no
+objects already absent. All origin deletions returned confirmed 404s. All
+506 current public source/payload objects passed verification afterward.
+
 Grammar, theme, original-source, and normalized-source objects remain
 available. Existing local prepared caches remain usable. A 1.2.0 application
 that cannot download an old optional sidecar falls back to source preparation.
