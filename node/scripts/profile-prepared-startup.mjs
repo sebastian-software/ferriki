@@ -77,7 +77,7 @@ const archives = [...preparedIds].map((language) => {
     BigInt(stamp.modified_secs) * 1_000_000_000n + BigInt(stamp.modified_nanos),
     metadata.mtimeNs,
   );
-  const indexPath = `${path}.index-v1`;
+  const indexPath = `${path}.index-v2`;
   const index = readFileSync(indexPath);
   const indexStamp = JSON.parse(readFileSync(`${indexPath}.verified`));
   const indexMetadata = statSync(indexPath, { bigint: true });
@@ -129,7 +129,7 @@ for (let repeat = 0; repeat < 5; repeat++) {
 }
 assert.ok(rustRows.every((row) => !row.phaseClocks));
 const nativeBuild = JSON.parse(readFileSync(join(repo, "node/ferriki/.benchmark-build.json")));
-assert.equal(nativeBuild.ferroni.version, "2.7.2");
+assert.equal(nativeBuild.ferroni.version, "2.8.0");
 assert.ok(!nativeBuild.ferroni.features.includes("scanner-load-profile"));
 const result = {
   capturedAt: new Date().toISOString(),

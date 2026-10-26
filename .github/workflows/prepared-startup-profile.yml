@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       baseline-ref:
-        description: Optional full commit SHA whose indexed reader is compared on the same runner
+        description: Optional full commit SHA for a same-run dependency and import-path comparison
         type: string
         default: ""
   workflow_call:
@@ -19,7 +19,7 @@ jobs:
       matrix:
         profile: [linux-x86-64, macos-arm64]
     runs-on: ${{ matrix.profile == 'macos-arm64' && 'blacksmith-6vcpu-macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
@@ -41,25 +41,33 @@ jobs:
         run: cargo build --release --locked --manifest-path benchmarks/prepared-startup-profile/Cargo.toml
       - name: Measure ordinary entry points and archive reader variants
         run: node node/scripts/profile-prepared-startup.mjs "$RUNNER_TEMP/profile"
-      - name: Compare indexed readers on the same runner
+      - name: Compare dependency and record imports on the same runner
         if: inputs.baseline-ref
         env:
           BASELINE_REF: ${{ inputs.baseline-ref }}
         run: |
           [[ "$BASELINE_REF" =~ ^[0-9a-f]{40}$ ]]
           scratch="$RUNNER_TEMP/paired-readers"
-          source=crates/ferriki-textmate/src/indexed_precompiled.rs
+          files=(Cargo.toml Cargo.lock src/precompiled_cache.rs crates/ferriki-textmate/src/indexed_precompiled.rs crates/ferriki-textmate/src/regexp.rs)
           mkdir -p "$scratch"
-          cp "$source" "$scratch/candidate.rs"
+          for source in "${files[@]}"; do
+            mkdir -p "$scratch/candidate/$(dirname "$source")"
+            cp "$source" "$scratch/candidate/$source"
+          done
+          restore() { for source in "${files[@]}"; do cp "$scratch/candidate/$source" "$source"; done; }
+          trap restore EXIT
           cp node/ferriki/ferriki.node "$scratch/candidate.node"
           cp node/ferriki/.benchmark-build.json "$RUNNER_TEMP/profile/candidate-build.json"
-          trap 'cp "$scratch/candidate.rs" "$source"' EXIT
           git fetch --no-tags --depth=1 origin "$BASELINE_REF"
-          git show "$BASELINE_REF:$source" > "$source"
+          for source in "${files[@]}"; do git show "$BASELINE_REF:$source" > "$source"; done
           pnpm -C node run build:native
           cp node/ferriki/ferriki.node "$scratch/baseline.node"
           cp node/ferriki/.benchmark-build.json "$RUNNER_TEMP/profile/baseline-build.json"
-          cp "$scratch/candidate.rs" "$source"
+          for source in Cargo.toml Cargo.lock; do cp "$scratch/candidate/$source" "$source"; done
+          pnpm -C node run build:native
+          cp node/ferriki/ferriki.node "$scratch/version-only.node"
+          cp node/ferriki/.benchmark-build.json "$RUNNER_TEMP/profile/version-only-build.json"
+          restore
           pnpm -C node run build:native
           node --input-type=module - "$RUNNER_TEMP/profile" <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
@@ -72,7 +80,8 @@ jobs:
           }))];
           writeFileSync(join(folder, 'paired-inputs.json'), JSON.stringify(scenarios));
           JS
-          node node/scripts/compare-indexed-readers.mjs "$RUNNER_TEMP/profile/paired-inputs.json" "$scratch/baseline.node" "$scratch/candidate.node" assets/standard "$RUNNER_TEMP/profile/paired.json"
+          node node/scripts/compare-indexed-readers.mjs "$RUNNER_TEMP/profile/paired-inputs.json" "$scratch/baseline.node" "$scratch/version-only.node" assets/standard "$RUNNER_TEMP/profile/paired-version.json"
+          node node/scripts/compare-indexed-readers.mjs "$RUNNER_TEMP/profile/paired-inputs.json" "$scratch/version-only.node" "$scratch/candidate.node" assets/standard "$RUNNER_TEMP/profile/paired-records.json"
       - name: Collect separate Linux OS diagnostics when available
         if: runner.os == 'Linux'
         run: |
