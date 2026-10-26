@@ -238,7 +238,9 @@ impl AssetStore {
                     )
                 })?;
                 if file.ends_with(".fkbc") {
-                    if metadata.format_version() != ferriki_textmate::PRECOMPILED_PATTERNS_VERSION {
+                    if !ferriki_textmate::supports_precompiled_patterns_version(
+                        metadata.format_version(),
+                    ) {
                         return Err(Error::new(
                             ErrorKind::AssetFormat,
                             "Unsupported precompiled pattern version.",
@@ -285,12 +287,28 @@ pub(crate) struct LanguageAssetCatalog {
     cache: RefCell<HashMap<String, Arc<LanguageAsset>>>,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum PreparedCoverage {
+    Complete,
+    Delegated,
+}
+
+impl PreparedCoverage {
+    fn for_version(version: u32) -> Self {
+        if version >> 24 >= 3 {
+            Self::Delegated
+        } else {
+            Self::Complete
+        }
+    }
+}
+
 impl LanguageAssetCatalog {
     pub(crate) fn attach_precompiled(
         &self,
         id: &str,
         registry: &mut ferriki_textmate::SyncRegistry,
-    ) -> bool {
+    ) -> Option<PreparedCoverage> {
         if let Some(entry) = self.entries_by_id.get(id)
             && let Some(stem) = entry.asset_file.strip_suffix(".fkgram")
             && let AssetStore::Verified {
@@ -300,15 +318,22 @@ impl LanguageAssetCatalog {
                 ..
             } = &self.asset_store
             && let Some(metadata) = metadata.get(&format!("{prefix}/{stem}.fkbc"))
-            && metadata.format_version() == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+            && ferriki_textmate::supports_precompiled_patterns_version(metadata.format_version())
             && let Some(decoded) = metadata.decoded()
             && let Some((file, index)) = crate::precompiled_cache::read_indexed(root, decoded)
             && registry.add_precompiled_patterns_file(file, &index).is_ok()
         {
-            return true;
+            return Some(PreparedCoverage::for_version(metadata.format_version()));
         }
-        self.load_precompiled(id)
-            .is_some_and(|bytes| registry.add_precompiled_patterns_owned(bytes).is_ok())
+        let bytes = self.load_precompiled(id)?;
+        if bytes.starts_with(b"FERRONI\0") {
+            registry.add_precompiled_patterns_owned(bytes).ok()?;
+            return Some(PreparedCoverage::Complete);
+        }
+        let bytes = ferriki_textmate::decompress_precompiled_patterns(&bytes).ok()?;
+        let version = u32::from_le_bytes(bytes.get(8..12)?.try_into().ok()?);
+        registry.add_precompiled_patterns_owned(bytes).ok()?;
+        Some(PreparedCoverage::for_version(version))
     }
 
     /// Bytecode is an optional optimization. Missing or unverifiable bytes leave
@@ -383,6 +408,12 @@ impl LanguageAssetCatalog {
             return Some(resolved_id);
         }
         self.aliases.get(requested).map(String::as_str)
+    }
+
+    pub(crate) fn scope_name(&self, id: &str) -> Option<&str> {
+        self.entries_by_id
+            .get(id)
+            .map(|entry| entry.scope_name.as_str())
     }
 
     pub(crate) fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>> {

@@ -49,7 +49,22 @@ const nodeRun = (mode) =>
 // Seed decoded containers and verification receipts, outside every timer.
 nodeRun("prepared");
 const release = JSON.parse(readFileSync(join(repo, "assets/standard/release-manifest.json")));
-const archives = [...new Set(inputs[0].documents.map((doc) => doc.lang))].map((language) => {
+const catalog = JSON.parse(readFileSync(join(repo, "assets/catalog.json"))).languages.entries;
+const entries = new Map(catalog.map((entry) => [entry.id, entry]));
+const preparedIds = new Set();
+const pending = inputs[0].documents.map((doc) => [doc.lang, true]);
+const visited = new Set();
+while (pending.length) {
+  const [id, prepared] = pending.pop();
+  const visit = `${id}:${prepared}`;
+  if (visited.has(visit)) continue;
+  visited.add(visit);
+  const asset = release.assets[`languages/${id}.fkbc`];
+  if (prepared && asset) preparedIds.add(id);
+  const delegated = prepared && asset && asset.formatVersion >>> 24 >= 3;
+  pending.push(...(entries.get(id)?.embedded_langs ?? []).map((id) => [id, delegated]));
+}
+const archives = [...preparedIds].map((language) => {
   const decoded = release.assets[`languages/${language}.fkbc`].decoded;
   const path = join(cache, "decoded", decoded.sha256);
   const bytes = readFileSync(path);
@@ -89,6 +104,7 @@ for (let repeat = 0; repeat < 5; repeat++) {
     const row = nodeRun(mode);
     if (nodeRows.length) assert.deepEqual(row.outputHashes, nodeRows[0].outputHashes);
     if (mode === "prepared") {
+      assert.equal(row.diagnostics.preparedArchives, archives.length);
       assert.ok(row.diagnostics.preparedBytesRead > 0);
       assert.ok(row.diagnostics.preparedBytesRead < archives.reduce((n, a) => n + a.bytes, 0));
     } else {

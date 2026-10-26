@@ -189,6 +189,51 @@ impl SyncRegistry {
             .transpose()
     }
 
+    /// Prepare a catalog as cooperating language packages.
+    ///
+    /// Intrinsic scanners stay with the grammar that defines them. Exact foreign
+    /// groups are delegated to that grammar's package; host-specific combinations
+    /// remain in the host. Attach the cooperating packages together when consuming.
+    /// Missing packages retain normal source fallback. Every static context is
+    /// prepared; this does not sample source documents or remove grammar features.
+    pub fn precompile_pattern_packages(
+        &self,
+        scopes: &[&str],
+    ) -> Result<BTreeMap<String, Vec<u8>>, PrecompiledPatternsError> {
+        let grammars = scopes
+            .iter()
+            .map(|scope| {
+                self.raw_grammars
+                    .lookup(scope)
+                    .map(|raw| ((*scope).to_owned(), raw))
+                    .ok_or_else(|| {
+                        PrecompiledPatternsError::new("package grammar is not registered")
+                    })
+            })
+            .collect::<Result<BTreeMap<_, _>, _>>()?;
+        // First retain only compact signatures of each language's own groups.
+        // Then prepare/filter one complete host at a time. This avoids holding
+        // every expanded archive or compressing data that will be delegated.
+        let mut intrinsic = crate::indexed_precompiled::IntrinsicGroups::new();
+        for (scope, raw) in &grammars {
+            let package = crate::precompiled::prepare_owned_package(raw, &self.raw_grammars)?;
+            intrinsic.insert(
+                scope.clone(),
+                crate::indexed_precompiled::intrinsic_groups(scope, &package)?,
+            );
+        }
+        grammars
+            .iter()
+            .map(|(scope, raw)| {
+                let package = crate::precompiled::prepare_package(raw, &self.raw_grammars, &[])?;
+                Ok((
+                    scope.clone(),
+                    crate::indexed_precompiled::delegate_package(scope, &package, &intrinsic)?,
+                ))
+            })
+            .collect()
+    }
+
     #[cfg(test)]
     pub(crate) fn prepared_stats(&self, scope: &str) -> (usize, usize) {
         self.scanner_pattern_cache.prepared_stats(scope)

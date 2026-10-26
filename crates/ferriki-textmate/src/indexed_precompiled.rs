@@ -4,21 +4,63 @@
 //! into a smaller, rebound pair and passed through Ferroni's normal validators.
 //! No bytecode or automaton instructions are decoded by this module.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::time::SystemTime;
 
 use ferroni::scanner::{PrecompiledEager, PrecompiledEagerStats};
+use sha2::{Digest, Sha256};
 
+use crate::PrecompiledPatternsError;
 use crate::precompiled::{MAX_ARCHIVE_BYTES, archive_layout};
-use crate::{PRECOMPILED_PATTERNS_VERSION, PrecompiledPatternsError};
 
 type Result<T> = std::result::Result<T, PrecompiledPatternsError>;
 const INDEX_MAGIC: &[u8; 8] = b"FKIX001\0";
 pub(crate) const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 const PROGRAM_MAGIC: &[u8; 8] = b"FERRONI\0";
 const GROUP_MAGIC: &[u8; 8] = b"FPRT003\0";
+
+pub(crate) fn group_lookup(source: &PrecompiledEager) -> Result<HashSet<[u8; 32]>> {
+    let mut programs = Input(source.program_bytes());
+    if programs.take(8)? != PROGRAM_MAGIC || programs.u32()? != 2 {
+        return Err(invalid());
+    }
+    let size = programs.u32()? as usize;
+    let mut entries = Input(programs.take(size)?);
+    let mut keys = Vec::new();
+    for _ in 0..entries.count(100_000)? {
+        keys.push(entries.vector()?);
+        entries.take(12)?;
+    }
+    entries.done()?;
+    keys.sort_unstable();
+    let patterns = keys
+        .iter()
+        .map(|key| pattern_key(key).map(|(pattern, _)| pattern))
+        .collect::<Result<Vec<_>>>()?;
+    let mut input = Input(source.group_bytes());
+    if input.take(8)? != GROUP_MAGIC {
+        return Err(invalid());
+    }
+    input.take(5)?;
+    let mut groups = HashSet::new();
+    for _ in 0..input.count(100_000)? {
+        let ids = (0..input.count(65_535)?)
+            .map(|_| input.u32())
+            .collect::<Result<Vec<_>>>()?;
+        let list = ids
+            .iter()
+            .map(|id| patterns.get(*id as usize).copied().ok_or_else(invalid))
+            .collect::<Result<Vec<_>>>()?;
+        groups.insert(pattern_fingerprint(list));
+        input.u32()?;
+        let size = input.u32()? as usize;
+        input.take(size)?;
+    }
+    input.done()?;
+    Ok(groups)
+}
 
 struct Index {
     format: u32,
@@ -44,6 +86,64 @@ struct Group {
     record: Record,
 }
 
+/// Keep intrinsic and context-specific groups in their host; delegate exact
+/// foreign groups to the package that defines them. Intrinsic groups never
+/// delegate, so even mutually embedding languages retain concrete owners.
+pub(crate) type IntrinsicGroups = HashMap<String, HashMap<[u8; 32], [u8; 32]>>;
+
+pub(crate) fn intrinsic_groups(
+    scope: &str,
+    package: &crate::precompiled::PreparedPackage,
+) -> Result<HashMap<[u8; 32], [u8; 32]>> {
+    let decoded = &package.bytes;
+    let index = archive_index(decoded)?;
+    let mut groups = HashMap::new();
+    for group in &index.groups {
+        let owner_key = index.group_fingerprint(group)?;
+        if package
+            .owners
+            .get(&owner_key)
+            .is_some_and(|owner| owner == scope)
+        {
+            groups.insert(
+                index.serialized_group_fingerprint(group),
+                Sha256::digest(record_bytes(decoded, &group.record)?).into(),
+            );
+        }
+    }
+    Ok(groups)
+}
+
+pub(crate) fn delegate_package(
+    scope: &str,
+    package: &crate::precompiled::PreparedPackage,
+    intrinsic: &IntrinsicGroups,
+) -> Result<Vec<u8>> {
+    let decoded = &package.bytes;
+    let index = archive_index(decoded)?;
+    let mut retained = Vec::new();
+    for group in &index.groups {
+        let owner_key = index.group_fingerprint(group)?;
+        let key = index.serialized_group_fingerprint(group);
+        let digest: [u8; 32] = Sha256::digest(record_bytes(decoded, &group.record)?).into();
+        let delegate = package.owners.get(&owner_key).is_some_and(|owner| {
+            owner != scope
+                && intrinsic.get(owner).and_then(|groups| groups.get(&key)) == Some(&digest)
+        });
+        if !delegate {
+            retained.push(group);
+        }
+    }
+    crate::precompiled::compress_archive(&index.subset(decoded, &retained)?)
+}
+
+fn record_bytes<'a>(bytes: &'a [u8], record: &Record) -> Result<&'a [u8]> {
+    let start = usize::try_from(record.start).map_err(PrecompiledPatternsError::new)?;
+    bytes
+        .get(start..start.checked_add(record.len as usize).ok_or_else(invalid)?)
+        .ok_or_else(invalid)
+}
+
 /// Build a small local index for a trusted, decoded prepared container.
 ///
 /// The complete container stays on disk, unchanged. Persist this derived index
@@ -51,6 +151,14 @@ struct Group {
 /// Authenticate the container against trusted producer metadata before calling.
 /// Unsupported wire versions return an error; ordinary owned imports remain available.
 pub fn index_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>> {
+    let bytes = archive_index(bytes)?.encode()?;
+    if bytes.len() as u64 > MAX_INDEX_BYTES {
+        return Err(invalid());
+    }
+    Ok(bytes)
+}
+
+fn archive_index(bytes: &[u8]) -> Result<Index> {
     let (scope_end, program_end) = archive_layout(bytes)?;
     if bytes.len() as u64 > MAX_ARCHIVE_BYTES
         || ferroni::scanner::PRECOMPILED_FORMAT_VERSION != 2
@@ -113,23 +221,112 @@ pub fn index_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>> {
         });
     }
     input.done()?;
-    let index = Index {
-        format: PRECOMPILED_PATTERNS_VERSION,
+    Ok(Index {
+        format: u32::from_le_bytes(
+            bytes[8..12]
+                .try_into()
+                .map_err(PrecompiledPatternsError::new)?,
+        ),
         scope: std::str::from_utf8(&bytes[32..scope_end])
             .map_err(PrecompiledPatternsError::new)?
             .to_owned(),
         size: bytes.len() as u64,
         programs,
         groups,
-    };
-    let bytes = index.encode()?;
-    if bytes.len() as u64 > MAX_INDEX_BYTES {
-        return Err(invalid());
-    }
-    Ok(bytes)
+    })
 }
 
 impl Index {
+    fn serialized_group_fingerprint(&self, group: &Group) -> [u8; 32] {
+        let mut hash = Sha256::new();
+        for id in &group.ids {
+            let key = &self.programs[*id as usize].key;
+            hash.update((key.len() as u64).to_le_bytes());
+            hash.update(key);
+        }
+        hash.finalize().into()
+    }
+
+    fn group_fingerprint(&self, group: &Group) -> Result<[u8; 32]> {
+        let patterns = group
+            .ids
+            .iter()
+            .map(|id| pattern_key(&self.programs[*id as usize].key).map(|(pattern, _)| pattern))
+            .collect::<Result<Vec<_>>>()?;
+        Ok(pattern_fingerprint(patterns))
+    }
+
+    fn subset(&self, decoded: &[u8], groups: &[&Group]) -> Result<Vec<u8>> {
+        let mut selected = BTreeSet::new();
+        for (id, program) in self.programs.iter().enumerate() {
+            if !pattern_key(&program.key)?.1 {
+                // The source grammar's own static programs were prepared in
+                // both settings before any external scanners were visited.
+                selected.insert(id as u32);
+                let mut key = program.key.clone();
+                key[6] = 1;
+                if let Ok(id) = self.programs.binary_search_by(|p| p.key.cmp(&key)) {
+                    selected.insert(id as u32);
+                }
+            }
+        }
+        for group in groups {
+            selected.extend(group.ids.iter().copied());
+        }
+        let selected: Vec<_> = selected.into_iter().collect();
+        let mut entries = Vec::new();
+        number(&mut entries, selected.len())?;
+        let mut offset = 0_usize;
+        for id in &selected {
+            let program = &self.programs[*id as usize];
+            number(&mut entries, program.key.len())?;
+            entries.extend_from_slice(&program.key);
+            number(&mut entries, offset)?;
+            entries.extend_from_slice(&program.record.len.to_le_bytes());
+            entries.extend_from_slice(&program.record.checksum.to_le_bytes());
+            offset = offset
+                .checked_add(program.record.len as usize)
+                .ok_or_else(invalid)?;
+        }
+        let mut programs = PROGRAM_MAGIC.to_vec();
+        programs.extend_from_slice(&2_u32.to_le_bytes());
+        number(&mut programs, entries.len())?;
+        programs.extend_from_slice(&entries);
+        for id in &selected {
+            programs.extend_from_slice(record_bytes(decoded, &self.programs[*id as usize].record)?);
+        }
+        let mut portable = GROUP_MAGIC.to_vec();
+        portable.extend_from_slice(&binding_checksum(&programs).to_le_bytes());
+        portable.push(1);
+        number(&mut portable, groups.len())?;
+        for group in groups {
+            number(&mut portable, group.ids.len())?;
+            for id in &group.ids {
+                number(
+                    &mut portable,
+                    selected
+                        .binary_search(id)
+                        .map_err(PrecompiledPatternsError::new)?,
+                )?;
+            }
+            portable.extend_from_slice(&group.record.checksum.to_le_bytes());
+            portable.extend_from_slice(&group.record.len.to_le_bytes());
+            portable.extend_from_slice(record_bytes(decoded, &group.record)?);
+        }
+        // Retain the scope and container version while replacing both sections.
+        let (scope_end, _) = archive_layout(decoded)?;
+        let mut output = decoded[..scope_end].to_vec();
+        output[16..24].copy_from_slice(&(programs.len() as u64).to_le_bytes());
+        output[24..32].copy_from_slice(&(portable.len() as u64).to_le_bytes());
+        output.extend_from_slice(&programs);
+        output.extend_from_slice(&portable);
+        crate::precompiled::open_archive(&output)?
+            .eager
+            .validate_groups()
+            .map_err(PrecompiledPatternsError::from_engine)?;
+        Ok(output)
+    }
+
     fn encode(&self) -> Result<Vec<u8>> {
         let mut bytes = INDEX_MAGIC.to_vec();
         bytes.extend_from_slice(&self.format.to_le_bytes());
@@ -221,13 +418,21 @@ pub(crate) struct IndexedArchive {
 }
 
 impl IndexedArchive {
+    pub(crate) fn contains_group(&self, patterns: &[&str]) -> bool {
+        patterns
+            .iter()
+            .map(|pattern| self.ids.get(*pattern).copied())
+            .collect::<Option<Vec<_>>>()
+            .is_some_and(|ids| self.groups.contains_key(&ids))
+    }
+
     pub(crate) fn open(file: File, bytes: &[u8]) -> Result<Self> {
         if bytes.len() as u64 > MAX_INDEX_BYTES {
             return Err(invalid());
         }
         let index = Index::decode(bytes)?;
         let metadata = file.metadata().map_err(PrecompiledPatternsError::new)?;
-        if index.format != PRECOMPILED_PATTERNS_VERSION
+        if !crate::supports_precompiled_patterns_version(index.format)
             || ferroni::scanner::PRECOMPILED_FORMAT_VERSION != 2
             || ferroni::scanner::PRECOMPILED_EAGER_FORMAT_VERSION != 3
             || index.size > MAX_ARCHIVE_BYTES
@@ -531,6 +736,16 @@ fn binding_checksum(bytes: &[u8]) -> u32 {
     hash = hash.wrapping_mul(0xff51_afd7_ed55_8ccd);
     hash ^= hash >> 33;
     (hash ^ (hash >> 32)) as u32
+}
+
+/// Lengths and order distinguish duplicates and scanner-list boundaries.
+pub(crate) fn pattern_fingerprint<'a>(patterns: impl IntoIterator<Item = &'a str>) -> [u8; 32] {
+    let mut hash = Sha256::new();
+    for pattern in patterns {
+        hash.update((pattern.len() as u64).to_le_bytes());
+        hash.update(pattern.as_bytes());
+    }
+    hash.finalize().into()
 }
 
 #[cfg(test)]
