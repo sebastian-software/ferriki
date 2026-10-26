@@ -29,6 +29,20 @@ assert.equal(
 assert.equal(assetOnly.if, "${{ github.event_name == 'workflow_dispatch' && inputs.assets-only }}");
 assert.equal(assetOnly.steps[0].with["persist-credentials"], false);
 const cleanup = assetOnly.steps.find((step) => step.name === "Remove verified migration objects");
+const retirement = assetOnly.steps.find(
+  (step) => step.name === "Retire complete prepared packages",
+);
+assert.equal(
+  releaseWorkflow.on.workflow_dispatch.inputs["retire-complete-prepared-assets"].default,
+  false,
+);
+assert.equal(retirement.if, "inputs.retire-complete-prepared-assets");
+assert(
+  assetOnly.steps.indexOf(retirement) >
+    assetOnly.steps.findIndex((step) => step.name === "Verify public CDN objects"),
+);
+assert.match(retirement.run, /test-retire-prepared-assets\.mjs/);
+assert.match(retirement.run, /retire-prepared-assets\.mjs --apply/);
 assert.equal(cleanup.if, "inputs.cleanup-bootstrap-assets");
 assert(
   assetOnly.steps.indexOf(cleanup) >
@@ -46,7 +60,11 @@ for (const name of [
   "Open a reviewable update",
 ]) {
   const step = job.steps.find((candidate) => candidate.name === name);
-  assert.equal(step.env.CANDIDATE, candidatePath, `${name} must use the runner temp candidate path`);
+  assert.equal(
+    step.env.CANDIDATE,
+    candidatePath,
+    `${name} must use the runner temp candidate path`,
+  );
 }
 const artifact = job.steps.find((step) => step.name === "Keep the candidate and its report");
 assert.equal(artifact.with.path, candidatePath);

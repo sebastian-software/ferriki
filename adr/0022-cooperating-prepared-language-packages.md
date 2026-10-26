@@ -42,7 +42,9 @@ coverage: `$base`, injections and host end patterns can change ordered lists.
 - Mark cooperating containers with `FKBC003` and container version 3; retain
   the program/group envelope layout. Accept complete `FKBC002` version-2
   packages with matching engine formats. Raw imports remain unchanged.
-  Release digests identify new objects; publish them append-only.
+  Release digests identify new objects; publish them append-only. The separate
+  [pre-adoption cutoff](../docs/migrations/complete-prepared-packages.md) retires
+  the superseded complete packages after replacement verification.
 - Plan packages for requested languages and required registered dependencies.
   Optional languages stay optional: Markdown alone does not download Rust;
   explicitly registering Rust makes its package available to Markdown. Legacy
@@ -73,6 +75,9 @@ Planner tests cover required dependencies, optional fences and legacy roots.
 The native compatibility gate and standard fixture comparisons remain required.
 
 ## History
+
+- 2026-10-26: Retire complete packages as a documented pre-adoption cutoff;
+  retain grammar/theme/source objects and the legacy import API.
 
 - 2026-10-26: Accepted. Delegate identical foreign scanners while retaining
   intrinsic owners, host contexts, optional languages and legacy reads.
