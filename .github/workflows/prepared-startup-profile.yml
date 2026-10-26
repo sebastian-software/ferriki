@@ -52,6 +52,25 @@ jobs:
         run: |
           cargo build --release --locked --manifest-path benchmarks/prepared-startup-profile/Cargo.toml --features phases
           benchmarks/prepared-startup-profile/target/release/ferriki-prepared-startup-profile "$RUNNER_TEMP/profile/archives.json" take > "$RUNNER_TEMP/profile/engine-phases.json"
+      - name: Measure production indexed restoration phases separately
+        run: |
+          cache=$(node --input-type=module -e 'import { TEST_ASSET_CACHE_DIR } from "./node/scripts/test-asset-env.mjs"; console.log(process.env.FERRIKI_CACHE_DIR ?? TEST_ASSET_CACHE_DIR)')
+          for repeat in 0 1 2; do
+            for mode in off auto eager prepared; do
+              benchmarks/prepared-startup-profile/target/release/production-phases assets/standard "$RUNNER_TEMP/profile/inputs.json" "$cache" "$mode" > "$RUNNER_TEMP/profile/production-$mode-$repeat.json"
+            done
+          done
+          node --input-type=module - "$RUNNER_TEMP/profile" <<'JS'
+          import assert from 'node:assert/strict';
+          import { readdirSync, readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const folder = process.argv[2];
+          const reference = JSON.parse(readFileSync(join(folder, 'results.json'))).nodeRows[0].outputHashes;
+          for (const file of readdirSync(folder).filter(name => /^production-.*\.json$/.test(name))) {
+            const profile = JSON.parse(readFileSync(join(folder, file)));
+            assert.deepEqual(profile.outputHashes, reference, file);
+          }
+          JS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:

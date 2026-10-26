@@ -10,8 +10,14 @@ publish = false
 phases = ["ferroni/scanner-load-profile"]
 
 [dependencies]
+ferriki = { path = "../.." }
 ferroni = { version = "=2.7.2", features = ["precompiled-eager"] }
 serde_json = "1"
+
+[[bin]]
+name = "production-phases"
+path = "src/production.rs"
+required-features = ["phases"]
 
 [profile.release]
 lto = "fat"
