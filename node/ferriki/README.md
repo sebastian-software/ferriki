@@ -22,10 +22,16 @@ deployments. Each fresh process restores the prepared automata instead of
 rebuilding them from source. This is the default with prefiltering on;
 unavailable packages fall back to source, and dynamic patterns remain local.
 
+Embedded languages reuse their own prepared packages across hosts. Markdown's
+prepared download falls from **25.9 MB to 1.9 MB** with the same grammar coverage;
+Astro falls from **6.5 MB to 0.52 MB**. Required dependencies load with the host,
+while optional code-fence languages stay optional. See the
+[package-sharing evidence](https://ferriki.dev/evidence/benchmarks#shared-language-packages).
+
 The first load also caches the unpacked package. Later processes skip
 decompression and SHA-256 for unchanged local files, then restore the cached
-data directly. Program and group sections share the decoded allocation,
-avoiding separate bulk copies. File-state checks detect changes and trigger
+data on demand through a small index. Only requested program and group records
+are read into owned buffers. File-state checks detect changes and trigger
 verification again.
 
 In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
@@ -34,7 +40,7 @@ Startup includes restoration and the first document; network, file I/O, and
 complete builds are outside the timer. See the
 [measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
-The current full Node comparison measures Source Off, Auto, Eager and
+The October 25 full Node comparison measures Source Off, Auto, Eager and
 Prepared separately. Prepared first use takes **39% less time than Source Eager
 on macOS**, with **5% more time on Linux**. Source Off still starts fastest.
 See the [separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)

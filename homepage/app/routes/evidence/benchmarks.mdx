@@ -95,6 +95,29 @@ retention. It is a bounded reuse test, not a leak or concurrency test.
 
 <RegexPolicyMemory />
 
+## Shared language packages
+
+The October 26, 2026 catalog delegates identical embedded scanners to their
+defining language packages. Markdown reuses Rust's package when Rust is
+registered, rather than carrying all of its scanners itself. Host-specific
+combinations stay local. Required dependencies load with their host; optional
+code-fence languages remain optional.
+
+| Prepared download | Complete root package | Shared language package |
+| ----------------- | --------------------: | ----------------------: |
+| Markdown          |               25.9 MB |                  1.9 MB |
+| Astro             |                6.5 MB |                 0.52 MB |
+| HTML              |                3.4 MB |                 0.44 MB |
+| All 94 packages   |                274 MB |                   35 MB |
+
+These are compressed prepared payloads in decimal MB, with the same grammar
+coverage. Grammar and theme files are byte-identical. The total counts each
+catalog package once; applications download the packages they request and
+their required dependencies. It is not a startup or execution benchmark.
+The [complete size evidence](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/delegated-packages-2026-10-26/README.md)
+retains both manifests and every package descriptor. Earlier timing captures
+below predate this package layout.
+
 ## Prepared regex
 
 Ferriki can carry regex preparation across process restarts. With Ferroni 2.7,
