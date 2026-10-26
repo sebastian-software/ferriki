@@ -155,6 +155,21 @@ impl SyncRegistry {
         self.scanner_pattern_cache.add_precompiled_owned(archive)
     }
 
+    /// Attach a trusted decoded container through its persisted local index.
+    ///
+    /// Build the index with [`crate::index_precompiled_patterns`]. The host must
+    /// verify that both files belong to the trusted local cache before attaching.
+    /// Only requested programs and groups are read, into owned buffers. Changes
+    /// to the open file, I/O errors and invalid records retain source fallback.
+    /// Disposal closes the file; borrowed and owned byte import APIs are unchanged.
+    pub fn add_precompiled_patterns_file(
+        &mut self,
+        file: std::fs::File,
+        index: &[u8],
+    ) -> Result<(), PrecompiledPatternsError> {
+        self.scanner_pattern_cache.add_precompiled_file(file, index)
+    }
+
     /// Prepare static programs and the ordered Eager groups exercised by `samples`.
     ///
     /// Resolves the registry's current includes and injections in a temporary

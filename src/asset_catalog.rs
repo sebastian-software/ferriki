@@ -286,6 +286,31 @@ pub(crate) struct LanguageAssetCatalog {
 }
 
 impl LanguageAssetCatalog {
+    pub(crate) fn attach_precompiled(
+        &self,
+        id: &str,
+        registry: &mut ferriki_textmate::SyncRegistry,
+    ) -> bool {
+        if let Some(entry) = self.entries_by_id.get(id)
+            && let Some(stem) = entry.asset_file.strip_suffix(".fkgram")
+            && let AssetStore::Verified {
+                prefix,
+                metadata,
+                decoded_cache: Some(root),
+                ..
+            } = &self.asset_store
+            && let Some(metadata) = metadata.get(&format!("{prefix}/{stem}.fkbc"))
+            && metadata.format_version() == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+            && let Some(decoded) = metadata.decoded()
+            && let Some((file, index)) = crate::precompiled_cache::read_indexed(root, decoded)
+            && registry.add_precompiled_patterns_file(file, &index).is_ok()
+        {
+            return true;
+        }
+        self.load_precompiled(id)
+            .is_some_and(|bytes| registry.add_precompiled_patterns_owned(bytes).is_ok())
+    }
+
     /// Bytecode is an optional optimization. Missing or unverifiable bytes leave
     /// the source grammar usable, including with older catalogs and offline caches.
     pub(crate) fn load_precompiled(&self, id: &str) -> Option<Vec<u8>> {

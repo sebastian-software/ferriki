@@ -35,10 +35,27 @@ pub(crate) struct ScannerPatternCache {
 
 struct PatternCacheState {
     cache: FerroniScannerPatternCache,
-    sources: BTreeMap<String, crate::precompiled::PreparedArchive>,
+    sources: BTreeMap<String, PreparedSource>,
     ordinary_sources: Vec<PrecompiledPatterns>,
     active_scope: Option<String>,
     diagnostics: crate::RegexDiagnostics,
+}
+
+enum PreparedSource {
+    Memory(crate::precompiled::PreparedArchive),
+    File(crate::indexed_precompiled::IndexedArchive),
+}
+
+impl PreparedSource {
+    fn stats(&self) -> (usize, usize) {
+        match self {
+            Self::Memory(source) => {
+                let stats = source.eager.stats();
+                (stats.loaded_groups, stats.invalid_groups)
+            }
+            Self::File(source) => source.stats(),
+        }
+    }
 }
 
 impl Default for ScannerPatternCache {
@@ -90,9 +107,12 @@ impl ScannerPatternCache {
         let mut diagnostics = state.diagnostics.clone();
         diagnostics.prepared_archives = state.sources.len();
         for source in state.sources.values() {
-            let stats = source.eager.stats();
-            diagnostics.loaded_prepared_groups += stats.loaded_groups;
-            diagnostics.invalid_prepared_groups += stats.invalid_groups;
+            let (loads, failures) = source.stats();
+            diagnostics.loaded_prepared_groups += loads;
+            diagnostics.invalid_prepared_groups += failures;
+            if let PreparedSource::File(source) = source {
+                diagnostics.prepared_bytes_read += source.bytes_read;
+            }
         }
         diagnostics
     }
@@ -145,7 +165,9 @@ impl ScannerPatternCache {
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
-        state.sources.insert(source.scope.clone(), source);
+        state
+            .sources
+            .insert(source.scope.clone(), PreparedSource::Memory(source));
         state.active_scope = None;
         state.cache.clear_precompiled();
         Ok(())
@@ -173,10 +195,30 @@ impl ScannerPatternCache {
                 .shared
                 .lock()
                 .expect("scanner pattern cache lock poisoned");
-            state.sources.insert(source.scope.clone(), source);
+            state
+                .sources
+                .insert(source.scope.clone(), PreparedSource::Memory(source));
             state.active_scope = None;
             state.cache.clear_precompiled();
         }
+        Ok(())
+    }
+
+    pub(crate) fn add_precompiled_file(
+        &self,
+        file: std::fs::File,
+        index: &[u8],
+    ) -> Result<(), PrecompiledPatternsError> {
+        let source = crate::indexed_precompiled::IndexedArchive::open(file, index)?;
+        let mut state = self
+            .shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned");
+        state
+            .sources
+            .insert(source.scope.clone(), PreparedSource::File(source));
+        state.active_scope = None;
+        state.cache.clear_precompiled();
         Ok(())
     }
 
@@ -259,7 +301,15 @@ impl ScannerPatternCache {
             drop(state);
             return Scanner::with_config(patterns, &config);
         }
-        if state.active_scope.as_deref() != Some(&self.scope) {
+        let requested_source = if eager && self.mode == crate::RegexMode::Prepared {
+            match state.sources.get_mut(&self.scope) {
+                Some(PreparedSource::File(source)) => source.load(patterns),
+                _ => None,
+            }
+        } else {
+            None
+        };
+        if state.active_scope.as_deref() != Some(&self.scope) || requested_source.is_some() {
             // Ferroni's stable API selects one group source. Bind it to the root
             // grammar while keeping every language's programs and decoded groups.
             state.cache.clear_precompiled();
@@ -271,9 +321,15 @@ impl ScannerPatternCache {
                 .iter()
                 .filter(|(scope, _)| *scope != &self.scope)
                 .chain(state.sources.get_key_value(&self.scope))
-                .map(|(_, source)| source.eager.clone())
+                .filter_map(|(_, source)| match source {
+                    PreparedSource::Memory(source) => Some(source.eager.clone()),
+                    PreparedSource::File(_) => None,
+                })
                 .collect();
             for source in sources {
+                state.cache.add_precompiled_eager(source);
+            }
+            if let Some(source) = requested_source {
                 state.cache.add_precompiled_eager(source);
             }
             state.active_scope = Some(self.scope.clone());
@@ -298,8 +354,7 @@ impl ScannerPatternCache {
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
-        let stats = state.sources.get(scope).unwrap().eager.stats();
-        (stats.loaded_groups, stats.invalid_groups)
+        state.sources.get(scope).unwrap().stats()
     }
 
     #[cfg(test)]

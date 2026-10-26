@@ -47,4 +47,6 @@ pub struct RegexDiagnostics {
     pub prepared_archives: usize,
     pub loaded_prepared_groups: usize,
     pub invalid_prepared_groups: usize,
+    /// Program/group payload bytes read by indexed file sources, excluding indexes.
+    pub prepared_bytes_read: u64,
 }

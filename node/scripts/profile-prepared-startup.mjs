@@ -62,7 +62,23 @@ const archives = [...new Set(inputs[0].documents.map((doc) => doc.lang))].map((l
     BigInt(stamp.modified_secs) * 1_000_000_000n + BigInt(stamp.modified_nanos),
     metadata.mtimeNs,
   );
-  return { language, path, bytes: decoded.size, sha256: decoded.sha256 };
+  const indexPath = `${path}.index-v1`;
+  const index = readFileSync(indexPath);
+  const indexStamp = JSON.parse(readFileSync(`${indexPath}.verified`));
+  const indexMetadata = statSync(indexPath, { bigint: true });
+  assert.equal(BigInt(indexStamp.size), indexMetadata.size);
+  assert.equal(
+    BigInt(indexStamp.modified_secs) * 1_000_000_000n + BigInt(indexStamp.modified_nanos),
+    indexMetadata.mtimeNs,
+  );
+  return {
+    language,
+    path,
+    bytes: decoded.size,
+    sha256: decoded.sha256,
+    indexBytes: index.length,
+    indexSha256: hash(index),
+  };
 });
 const archivePath = join(out, "archives.json");
 writeFileSync(archivePath, JSON.stringify(archives, null, 2));
@@ -72,6 +88,12 @@ for (let repeat = 0; repeat < 5; repeat++) {
   for (const mode of [...modes.slice(repeat % 4), ...modes.slice(0, repeat % 4)]) {
     const row = nodeRun(mode);
     if (nodeRows.length) assert.deepEqual(row.outputHashes, nodeRows[0].outputHashes);
+    if (mode === "prepared") {
+      assert.ok(row.diagnostics.preparedBytesRead > 0);
+      assert.ok(row.diagnostics.preparedBytesRead < archives.reduce((n, a) => n + a.bytes, 0));
+    } else {
+      assert.equal(row.diagnostics.preparedBytesRead, 0);
+    }
     nodeRows.push({ repeat, ...row });
     console.log(
       `${mode} #${repeat}: setup=${row.setupMs.toFixed(2)} first=${row.firstMs.toFixed(2)}`,

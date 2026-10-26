@@ -74,6 +74,8 @@ export interface RegexDiagnostics {
   assemblyFallbacks: number;
   preparedArchives: number;
   loadedPreparedGroups: number;
+  /** Program/group payload bytes read from indexed local archives. */
+  preparedBytesRead: number;
   invalidPreparedGroups: number;
 }
 
