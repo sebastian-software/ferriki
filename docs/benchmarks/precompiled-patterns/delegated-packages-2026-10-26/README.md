@@ -117,7 +117,9 @@ The candidate receipt and both addon hashes are retained in `local/`.
 The [assets-only workflow](https://github.com/sebastian-software/ferriki/actions/runs/40293043184)
 rebuilt the locked objects on Linux, checked their identities, uploaded immutable
 objects and verified the public CDN. Package-release jobs were skipped. The old
-objects remain available to existing consumers.
+objects remained available during this publication. The subsequent
+[pre-adoption cutoff](../../../migrations/complete-prepared-packages.md) retired
+all 94 complete version-2 prepared objects after verifying their replacements.
 
 `capture.json` identifies both successful workflows and the original startup
 artifact ZIP digests. The complete Linux/macOS artifact files are retained as
