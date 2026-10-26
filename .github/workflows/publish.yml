@@ -18,6 +18,10 @@ on:
         description: Remove verified full-hash migration objects and the temporary upload folder
         type: boolean
         default: false
+      retire-complete-prepared-assets:
+        description: Retire the 94 complete v2 prepared packages after verifying their v3 replacements
+        type: boolean
+        default: false
       bootstrap-assets:
         description: Seed assets from the exact historical snapshot instead of the CDN
         type: boolean
@@ -88,6 +92,16 @@ jobs:
         run: node scripts/publish-assets.mjs
       - name: Verify public CDN objects
         run: node scripts/verify-assets.mjs
+      - name: Retire complete prepared packages
+        if: inputs.retire-complete-prepared-assets
+        env:
+          BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_ACCESS_KEY }}
+        run: |
+          node scripts/test-retire-prepared-assets.mjs
+          node scripts/retire-prepared-assets.mjs --apply
+          node scripts/verify-assets.mjs
       - name: Remove verified migration objects
         if: inputs.cleanup-bootstrap-assets
         env:

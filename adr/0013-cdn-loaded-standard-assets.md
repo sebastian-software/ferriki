@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-25
+Last updated: 2026-10-26
 
 ## Context
 
@@ -96,6 +96,10 @@ local build artifacts, not committed repository data.
   full-hash migration copies and the temporary upload directory after short-name
   CDN verification succeeds. Unexpected files or different bytes abort cleanup
   before deletion. Scheduled updates and ordinary releases never enable it.
+  A separate manual retirement removes only the 94 complete version-2 prepared
+  packages after verifying their cooperating replacements. This is an explicit
+  pre-adoption cutoff, including those referenced by 1.2.0; see the
+  [migration note](../docs/migrations/complete-prepared-packages.md).
 - **Release gate.** Before either registry publishes, the release-source gate
   materializes the accepted snapshot and verifies its immutable storage objects.
   Public npm verification checks every payload through the CDN by SHA-256 and
@@ -138,8 +142,10 @@ local build artifacts, not committed repository data.
 - Git reviews configuration, pins, hashes, metadata, and patches rather than
   thousands of imported or generated lines. Payload availability depends on
   the storage/CDN, with upstream reconstruction available to maintainers.
-- Published immutable Storage objects must remain available for the lifetime
-  of released versions.
+- Published immutable Storage objects remain available for the lifetime
+  of released versions, except for explicitly documented pre-adoption cutoffs.
+  The October 26 cutoff covers only the superseded complete prepared packages;
+  grammar, theme, and source objects remain available.
   Storage cleanup requires explicit analysis of every released catalog. The
   automatic updater never performs garbage collection or changes active catalogs.
 - Maintainer publication needs a zone-specific Actions secret and non-sensitive
@@ -153,6 +159,10 @@ local build artifacts, not committed repository data.
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-10-26: Retire the 94 superseded complete prepared packages as an explicit
+  pre-adoption cutoff. Keep source/grammar/theme objects and verify every
+  cooperating replacement before deleting the exact old payloads.
 
 - 2026-10-25: Reuse the verified decoded file state across processes. Trust the
   local cache and use stat-based change detection instead of hashing unchanged
