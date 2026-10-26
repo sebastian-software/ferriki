@@ -51,7 +51,7 @@ if (process.argv[2] === "--worker") {
   assert.equal(diagnostics.assemblyFallbacks, 0);
   assert.equal(diagnostics.invalidPreparedGroups, 0);
   if (mode === "prepared") {
-    assert.equal(diagnostics.preparedArchives, new Set(documents.map((doc) => doc.lang)).size);
+    assert.ok(diagnostics.preparedArchives >= new Set(documents.map((doc) => doc.lang)).size);
     assert.ok(diagnostics.loadedPreparedGroups > 0);
   } else {
     assert.equal(diagnostics.preparedArchives, 0);

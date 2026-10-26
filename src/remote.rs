@@ -396,18 +396,11 @@ impl RemoteAssetHost {
     /// these themes need, unless they are cached. Unknown names are skipped;
     /// loading them reports the error. Blocking; call it off the main thread.
     pub fn prefetch(&self, languages: &[String], themes: &[String]) -> Result<()> {
-        let prepared_roots: BTreeSet<&str> = languages
-            .iter()
-            .map(|requested| {
-                self.language_aliases
-                    .get(requested.as_str())
-                    .map_or(requested.as_str(), String::as_str)
-            })
-            .collect();
         let mut paths = BTreeSet::new();
-        let mut pending: Vec<&str> = languages.iter().map(String::as_str).collect();
+        let mut pending: Vec<(&str, bool)> =
+            languages.iter().map(|id| (id.as_str(), true)).collect();
         let mut visited = BTreeSet::new();
-        while let Some(requested) = pending.pop() {
+        while let Some((requested, prepared)) = pending.pop() {
             let id = self
                 .language_aliases
                 .get(requested)
@@ -415,19 +408,25 @@ impl RemoteAssetHost {
             let Some((path, embedded)) = self.languages.get(id) else {
                 continue;
             };
-            if !visited.insert(id) {
+            if !visited.insert((id, prepared)) {
                 continue;
             }
             paths.insert(path.clone());
             let bytecode = path.replace(".fkgram", ".fkbc");
-            if prepared_roots.contains(id)
+            let delegated = prepared
+                && self
+                    .release
+                    .assets
+                    .get(&bytecode)
+                    .is_some_and(|asset| asset.format_version >> 24 >= 3);
+            if prepared
                 && self.release.assets.get(&bytecode).is_some_and(|asset| {
-                    asset.format_version == ferriki_textmate::PRECOMPILED_PATTERNS_VERSION
+                    ferriki_textmate::supports_precompiled_patterns_version(asset.format_version)
                 })
             {
                 paths.insert(bytecode);
             }
-            pending.extend(embedded.iter().map(String::as_str));
+            pending.extend(embedded.iter().map(|id| (id.as_str(), delegated)));
         }
         paths.extend(
             themes

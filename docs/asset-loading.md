@@ -31,9 +31,16 @@ before and after record reads; changed files or read failures fall back to
 source compilation. Missing or changed indexes are rebuilt once from the verified
 container. No memory mapping is used.
 
-All static contexts, embedded languages and anchor variants remain in the
-original packages. This changes local access, not grammar coverage or CDN
-payloads. Embedded catalogs, old manifests and caches that cannot persist an
+New prepared packages also delegate identical embedded scanners to the package
+that defines them. Markdown keeps its own rules and host-specific combinations;
+Rust scanners come from the Rust package when Rust is registered. Required
+dependencies load their packages with the host; optional fenced-code languages
+are not downloaded automatically. Multiple hosts reuse the same language package.
+Container version 3 marks this composition; complete version-2 roots keep their
+existing root-only loading behavior. All static contexts and anchor variants
+remain covered across the cooperating packages.
+
+Embedded catalogs, old manifests and caches that cannot persist an
 index retain the shared owned-container path. `preparedBytesRead` in regex
 diagnostics reports indexed payload reads, excluding index bytes; zero also
 applies to source modes and owned imports.

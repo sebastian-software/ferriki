@@ -26,6 +26,7 @@ pub struct HighlighterCore {
     aliases: BTreeMap<String, String>,
     loaded_language_ids: BTreeSet<String>,
     prepared_language_scopes: BTreeSet<String>,
+    delegated_language_scopes: BTreeSet<String>,
     attempted_precompiled_scopes: BTreeSet<String>,
     loaded_custom_language_ids: BTreeSet<String>,
     loaded_language_order: Vec<String>,
@@ -385,6 +386,7 @@ impl HighlighterCore {
             aliases: BTreeMap::new(),
             loaded_language_ids: BTreeSet::new(),
             prepared_language_scopes: BTreeSet::new(),
+            delegated_language_scopes: BTreeSet::new(),
             attempted_precompiled_scopes: BTreeSet::new(),
             loaded_custom_language_ids: BTreeSet::new(),
             loaded_language_order: Vec::new(),
@@ -435,6 +437,7 @@ impl HighlighterCore {
         self.aliases.clear();
         self.loaded_language_ids.clear();
         self.prepared_language_scopes.clear();
+        self.delegated_language_scopes.clear();
         self.attempted_precompiled_scopes.clear();
         self.loaded_custom_language_ids.clear();
         self.loaded_language_order.clear();
@@ -506,11 +509,42 @@ impl HighlighterCore {
         {
             // The root's pair already includes its dependency scanner groups.
             // Do not also open every dependency's standalone archive.
-            if catalogs
+            if let Some(coverage) = catalogs
                 .languages
                 .attach_precompiled(id, &mut self.registry)
             {
                 self.prepared_language_scopes.insert(scope.clone());
+                if matches!(coverage, crate::asset_catalog::PreparedCoverage::Delegated) {
+                    self.delegated_language_scopes.insert(scope.clone());
+                }
+            }
+        }
+        if scope
+            .as_ref()
+            .is_some_and(|scope| self.delegated_language_scopes.contains(scope))
+            && let Some(catalogs) = &self.standard_assets
+        {
+            // Only already registered standard languages participate. Optional
+            // fenced-code languages remain optional; they are not eagerly loaded.
+            for id in &self.loaded_language_ids {
+                let Some(dependency_scope) = catalogs.languages.scope_name(id) else {
+                    continue;
+                };
+                if retry_optional {
+                    self.attempted_precompiled_scopes.remove(dependency_scope);
+                }
+                if !self.prepared_language_scopes.contains(dependency_scope)
+                    && self
+                        .attempted_precompiled_scopes
+                        .insert(dependency_scope.to_owned())
+                    && catalogs
+                        .languages
+                        .attach_precompiled(id, &mut self.registry)
+                        .is_some()
+                {
+                    self.prepared_language_scopes
+                        .insert(dependency_scope.to_owned());
+                }
             }
         }
         Ok(scope)
@@ -1274,21 +1308,27 @@ mod tests {
     }
 
     #[test]
-    fn opens_only_requested_root_archives_and_can_promote_a_dependency() {
+    fn opens_registered_packages_without_optional_fenced_languages() {
         let mut highlighter = standard_highlighter();
         highlighter.load_standard_language("vue").unwrap();
-        assert_eq!(
-            highlighter.prepared_language_scopes,
-            BTreeSet::from(["text.html.vue".to_owned()])
-        );
+        let catalogs = highlighter.standard_assets.as_ref().unwrap();
+        let expected = highlighter
+            .loaded_language_ids
+            .iter()
+            .map(|id| catalogs.languages.scope_name(id).unwrap().to_owned())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(highlighter.prepared_language_scopes, expected);
+        assert!(!highlighter.prepared_language_scopes.contains("source.rust"));
         assert!(highlighter.resolve_scope("typescript").is_some());
         highlighter.load_standard_language("ts").unwrap();
         assert_eq!(
-            highlighter.prepared_language_scopes,
-            BTreeSet::from(["text.html.vue".to_owned(), "source.ts".to_owned()])
+            highlighter.prepared_language_scopes, expected,
+            "an explicit load reuses the already registered dependency package"
         );
+        assert!(highlighter.prepared_language_scopes.contains("source.ts"));
         highlighter.dispose();
         assert!(highlighter.prepared_language_scopes.is_empty());
+        assert!(highlighter.delegated_language_scopes.is_empty());
     }
 
     #[test]

@@ -16,16 +16,29 @@ use std::sync::Arc;
 /// Combined container/program/group format carried by `.fkbc` sidecars.
 /// The high 8 bits identify the container; two 12-bit fields identify programs
 /// and Eager groups. A change to any of the formats requires regenerated files.
-pub const PRECOMPILED_PATTERNS_VERSION: u32 = (2 << 24)
+pub const PRECOMPILED_PATTERNS_VERSION: u32 = (3 << 24)
     | (ferroni::scanner::PRECOMPILED_FORMAT_VERSION << 12)
     | ferroni::scanner::PRECOMPILED_EAGER_FORMAT_VERSION;
 pub(crate) const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
-const MAGIC: &[u8; 8] = b"FKBC002\0";
+const MAGIC: &[u8; 8] = b"FKBC003\0";
+const LEGACY_MAGIC: &[u8; 8] = b"FKBC002\0";
+
+/// Whether a catalog's pattern format can be consumed by this runtime.
+/// Version 2 has complete root packages; version 3 permits language delegation.
+#[must_use]
+pub const fn supports_precompiled_patterns_version(version: u32) -> bool {
+    version == PRECOMPILED_PATTERNS_VERSION || version == PRECOMPILED_PATTERNS_VERSION - (1 << 24)
+}
+
+fn decoded_archive(bytes: &[u8]) -> bool {
+    bytes.starts_with(MAGIC) || bytes.starts_with(LEGACY_MAGIC)
+}
 
 #[derive(Clone)]
 pub(crate) struct PreparedArchive {
     pub(crate) scope: String,
     pub(crate) eager: PrecompiledEager,
+    pub(crate) groups: Option<std::collections::HashSet<[u8; 32]>>,
 }
 
 /// Decompress a prepared container for a persistent, verified asset cache.
@@ -41,7 +54,7 @@ pub fn decompress_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>, Precompi
 }
 
 fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsError> {
-    if bytes.starts_with(MAGIC) {
+    if decoded_archive(bytes) {
         if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
             return Err(PrecompiledPatternsError::new("excessive archive size"));
         }
@@ -91,7 +104,7 @@ fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsErro
 }
 
 pub(crate) fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
-    if decoded.len() < 32 || &decoded[..8] != MAGIC {
+    if decoded.len() < 32 || !decoded_archive(decoded) {
         return Err(PrecompiledPatternsError::new(
             "unsupported Ferriki prepared archive",
         ));
@@ -104,7 +117,12 @@ pub(crate) fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), Precompil
         .checked_add(scope_len as u64)
         .and_then(|n| n.checked_add(program_len))
         .and_then(|n| n.checked_add(group_len));
-    if version != PRECOMPILED_PATTERNS_VERSION || total != Some(decoded.len() as u64) {
+    let expected = if decoded.starts_with(LEGACY_MAGIC) {
+        PRECOMPILED_PATTERNS_VERSION - (1 << 24)
+    } else {
+        PRECOMPILED_PATTERNS_VERSION
+    };
+    if version != expected || total != Some(decoded.len() as u64) {
         return Err(PrecompiledPatternsError::new(
             "unsupported archive version or invalid lengths",
         ));
@@ -124,14 +142,19 @@ pub(crate) fn open_archive(
     let eager =
         PrecompiledEager::from_bytes(&decoded[scope_end..program_end], &decoded[program_end..])
             .map_err(PrecompiledPatternsError::from_engine)?;
-    Ok(PreparedArchive { scope, eager })
+    let groups = crate::indexed_precompiled::group_lookup(&eager).ok();
+    Ok(PreparedArchive {
+        scope,
+        eager,
+        groups,
+    })
 }
 
 pub(crate) fn open_owned_archive(
     bytes: Vec<u8>,
 ) -> Result<PreparedArchive, PrecompiledPatternsError> {
     use ferroni::scanner::PrecompiledBytes;
-    let decoded = if bytes.starts_with(MAGIC) {
+    let decoded = if decoded_archive(&bytes) {
         bytes
     } else {
         decompress_precompiled_patterns(&bytes)?
@@ -153,7 +176,12 @@ pub(crate) fn open_owned_archive(
             .map_err(PrecompiledPatternsError::from_engine)?,
     )
     .map_err(PrecompiledPatternsError::from_engine)?;
-    Ok(PreparedArchive { scope, eager })
+    let groups = crate::indexed_precompiled::group_lookup(&eager).ok();
+    Ok(PreparedArchive {
+        scope,
+        eager,
+        groups,
+    })
 }
 
 /// A failure to generate or open a precompiled pattern archive.
@@ -220,6 +248,35 @@ pub(crate) fn prepare(
     provider: &dyn GrammarProvider,
     samples: &[&str],
 ) -> Result<Vec<u8>, PrecompiledPatternsError> {
+    compress_archive(&prepare_package(grammar, provider, samples)?.bytes)
+}
+
+pub(crate) struct PreparedPackage {
+    pub(crate) bytes: Vec<u8>,
+    pub(crate) owners: std::collections::HashMap<[u8; 32], String>,
+}
+
+pub(crate) fn prepare_package(
+    grammar: &RawGrammar,
+    provider: &dyn GrammarProvider,
+    samples: &[&str],
+) -> Result<PreparedPackage, PrecompiledPatternsError> {
+    prepare_package_with_coverage(grammar, provider, samples, false)
+}
+
+pub(crate) fn prepare_owned_package(
+    grammar: &RawGrammar,
+    provider: &dyn GrammarProvider,
+) -> Result<PreparedPackage, PrecompiledPatternsError> {
+    prepare_package_with_coverage(grammar, provider, &[], true)
+}
+
+fn prepare_package_with_coverage(
+    grammar: &RawGrammar,
+    provider: &dyn GrammarProvider,
+    samples: &[&str],
+    owned_only: bool,
+) -> Result<PreparedPackage, PrecompiledPatternsError> {
     let mut patterns = BTreeSet::new();
     for rule in grammar
         .patterns
@@ -229,7 +286,7 @@ pub(crate) fn prepare(
     {
         collect_rule(rule, &mut patterns);
     }
-    let cache = ScannerPatternCache::for_preparation();
+    let cache = ScannerPatternCache::for_preparation().for_scope(&grammar.scope_name);
     for pattern in patterns {
         for prefilter in [false, true] {
             cache.compile_static(&pattern, prefilter)?;
@@ -248,9 +305,12 @@ pub(crate) fn prepare(
             cache.clone(),
         );
         if samples.is_empty() {
-            grammar
-                .prepare_static_scanners()
-                .map_err(PrecompiledPatternsError::new)?;
+            if owned_only {
+                grammar.prepare_owned_static_scanners()
+            } else {
+                grammar.prepare_static_scanners()
+            }
+            .map_err(PrecompiledPatternsError::new)?;
         }
         for sample in samples {
             let mut state = None;
@@ -283,6 +343,13 @@ pub(crate) fn prepare(
             "precompiled archive exceeds its size limit",
         ));
     }
+    Ok(PreparedPackage {
+        bytes,
+        owners: cache.preparation_owners(),
+    })
+}
+
+pub(crate) fn compress_archive(bytes: &[u8]) -> Result<Vec<u8>, PrecompiledPatternsError> {
     let mut encoder = zstd::bulk::Compressor::new(19).map_err(PrecompiledPatternsError::new)?;
     encoder
         .set_parameter(zstd::zstd_safe::CParameter::WindowLog(23))
@@ -291,7 +358,7 @@ pub(crate) fn prepare(
         .set_parameter(zstd::zstd_safe::CParameter::ChecksumFlag(true))
         .map_err(PrecompiledPatternsError::new)?;
     encoder
-        .compress(&bytes)
+        .compress(bytes)
         .map_err(PrecompiledPatternsError::new)
 }
 
@@ -391,6 +458,148 @@ mod tests {
     fn standard_archives_prepare_static_groups() {
         let archive = open_archive(precompile_grammar_patterns(&grammar()).unwrap()).unwrap();
         assert!(!archive.eager.is_empty());
+    }
+
+    #[test]
+    fn legacy_complete_containers_keep_programs_and_groups() {
+        let raw = grammar();
+        let mut decoded =
+            decompress_precompiled_patterns(&precompile_grammar_patterns(&raw).unwrap()).unwrap();
+        decoded[..8].copy_from_slice(LEGACY_MAGIC);
+        let version = PRECOMPILED_PATTERNS_VERSION - (1 << 24);
+        decoded[8..12].copy_from_slice(&version.to_le_bytes());
+        assert!(supports_precompiled_patterns_version(version));
+        let expected = open_archive(precompile_grammar_patterns(&raw).unwrap()).unwrap();
+        let old = open_owned_archive(decoded.clone()).unwrap();
+        assert_eq!(old.eager.program_bytes(), expected.eager.program_bytes());
+        assert_eq!(old.eager.group_bytes(), expected.eager.group_bytes());
+        assert!(crate::index_precompiled_patterns(&decoded).is_ok());
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(raw.clone(), vec![]);
+        registry.add_precompiled_patterns_owned(decoded).unwrap();
+        registry
+            .grammar_for_scope_name(&raw.scope_name, GrammarConfiguration::default())
+            .unwrap()
+            .unwrap()
+            .tokenize_line("first word TODO", None, 0)
+            .unwrap();
+        assert!(registry.regex_diagnostics().loaded_prepared_groups > 0);
+        assert_eq!(registry.regex_diagnostics().invalid_prepared_groups, 0);
+    }
+
+    #[test]
+    fn language_packages_delegate_intrinsic_groups_and_keep_host_specific_base_contexts() {
+        let host = parse_raw_grammar(
+            r#"{
+            "scopeName":"text.host",
+            "patterns":[
+                {"begin":"```leaf", "end":"```", "patterns":[{"include":"source.leaf"}]},
+                {"match":"HOST", "name":"keyword.host"}
+            ]
+        }"#,
+            Some("host.json"),
+        )
+        .unwrap();
+        let leaf = parse_raw_grammar(
+            r#"{
+            "scopeName":"source.leaf",
+            "patterns":[
+                {"match":"WORD", "name":"keyword.leaf"},
+                {"begin":"\"", "end":"\"", "patterns":[{"match":"word", "name":"string.word"}]},
+                {"begin":"<", "end":">", "patterns":[{"include":"$base"}]}
+            ]
+        }"#,
+            Some("leaf.json"),
+        )
+        .unwrap();
+        let mut producer = SyncRegistry::new(None, None).unwrap();
+        for raw in [&host, &leaf] {
+            producer.add_grammar(raw.clone(), vec![]);
+        }
+        let complete = producer
+            .precompile_patterns(&host.scope_name, &[])
+            .unwrap()
+            .unwrap();
+        let packages = producer
+            .precompile_pattern_packages(&[&host.scope_name, &leaf.scope_name])
+            .unwrap();
+        let old = open_archive(&complete).unwrap();
+        let local = open_archive(&packages[&host.scope_name]).unwrap();
+        let foreign = open_archive(&packages[&leaf.scope_name]).unwrap();
+        assert!(
+            local.eager.len() < old.eager.len(),
+            "the host must stop duplicating intrinsic leaf groups"
+        );
+        assert!(
+            old.groups.as_ref().unwrap().iter().all(|key| local
+                .groups
+                .as_ref()
+                .unwrap()
+                .contains(key)
+                || foreign.groups.as_ref().unwrap().contains(key)),
+            "delegation must preserve complete static group coverage"
+        );
+        let mut full = SyncRegistry::new(None, None).unwrap();
+        full.add_precompiled_patterns(complete).unwrap();
+        let mut delegated = SyncRegistry::new(None, None).unwrap();
+        let mut indexed = SyncRegistry::new(None, None).unwrap();
+        let mut paths = Vec::new();
+        for (scope, bytes) in packages {
+            let decoded = decompress_precompiled_patterns(&bytes).unwrap();
+            let index = crate::index_precompiled_patterns(&decoded).unwrap();
+            let path = std::env::temp_dir()
+                .join(format!("ferriki-delegated-{}-{scope}", std::process::id()));
+            std::fs::write(&path, decoded).unwrap();
+            indexed
+                .add_precompiled_patterns_file(std::fs::File::open(&path).unwrap(), &index)
+                .unwrap();
+            paths.push(path);
+            delegated.add_precompiled_patterns(bytes).unwrap();
+        }
+        let mut source = SyncRegistry::new(None, None).unwrap();
+        for registry in [&mut full, &mut delegated, &mut indexed, &mut source] {
+            for raw in [&host, &leaf] {
+                registry.add_grammar(raw.clone(), vec![]);
+            }
+        }
+        let tokenize = |registry: &mut SyncRegistry| {
+            let grammar = registry
+                .grammar_for_scope_name(&host.scope_name, GrammarConfiguration::default())
+                .unwrap()
+                .unwrap();
+            let mut stack = None;
+            ["HOST", "```leaf", "WORD \"word\" <HOST>", "```", "HOST"]
+                .into_iter()
+                .map(|line| {
+                    let result = grammar.tokenize_line(line, stack.take(), 0).unwrap();
+                    stack = Some(result.rule_stack);
+                    result.tokens
+                })
+                .collect::<Vec<_>>()
+        };
+        let expected = tokenize(&mut source);
+        assert_eq!(tokenize(&mut full), expected);
+        assert_eq!(tokenize(&mut delegated), expected);
+        assert_eq!(tokenize(&mut indexed), expected);
+        let before = full.regex_diagnostics();
+        let after = delegated.regex_diagnostics();
+        assert_eq!(after.loaded_prepared_groups, before.loaded_prepared_groups);
+        assert_eq!(after.invalid_prepared_groups, 0);
+        assert_eq!(after.assembly_fallbacks, 0);
+        assert!(delegated.prepared_stats(&leaf.scope_name).0 > 0);
+        let file_stats = indexed.regex_diagnostics();
+        assert_eq!(
+            file_stats.loaded_prepared_groups,
+            before.loaded_prepared_groups
+        );
+        assert_eq!(file_stats.invalid_prepared_groups, 0);
+        assert_eq!(file_stats.assembly_fallbacks, 0);
+        assert!(file_stats.prepared_bytes_read > 0);
+        assert!(indexed.prepared_stats(&leaf.scope_name).0 > 0);
+        indexed.dispose();
+        for path in paths {
+            std::fs::remove_file(path).unwrap();
+        }
     }
 
     #[test]

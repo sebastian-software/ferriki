@@ -12,7 +12,7 @@ fn millis(start: Instant) -> f64 {
 }
 
 fn open(bytes: Vec<u8>) -> (PrecompiledEager, Vec<Value>) {
-    assert_eq!(&bytes[..8], b"FKBC002\0");
+    assert!([b"FKBC002\0", b"FKBC003\0"].contains(&bytes[..8].try_into().unwrap()));
     let scope_len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
     let program_len = u64::from_le_bytes(bytes[16..24].try_into().unwrap()) as usize;
     let group_len = u64::from_le_bytes(bytes[24..32].try_into().unwrap()) as usize;

@@ -29,6 +29,7 @@ use ferroni::scanner::{
 pub(crate) struct ScannerPatternCache {
     shared: Arc<Mutex<PatternCacheState>>,
     scope: String,
+    owner_scope: String,
     preparing: bool,
     mode: crate::RegexMode,
 }
@@ -39,6 +40,7 @@ struct PatternCacheState {
     ordinary_sources: Vec<PrecompiledPatterns>,
     active_scope: Option<String>,
     diagnostics: crate::RegexDiagnostics,
+    preparation_owners: HashMap<[u8; 32], String>,
 }
 
 enum PreparedSource {
@@ -47,6 +49,16 @@ enum PreparedSource {
 }
 
 impl PreparedSource {
+    fn contains_group(&self, patterns: &[&str]) -> bool {
+        match self {
+            Self::Memory(source) => source.groups.as_ref().is_none_or(|groups| {
+                groups.contains(&crate::indexed_precompiled::pattern_fingerprint(
+                    patterns.iter().copied(),
+                ))
+            }),
+            Self::File(source) => source.contains_group(patterns),
+        }
+    }
     fn stats(&self) -> (usize, usize) {
         match self {
             Self::Memory(source) => {
@@ -73,8 +85,10 @@ impl ScannerPatternCache {
                 ordinary_sources: Vec::new(),
                 active_scope: None,
                 diagnostics: crate::RegexDiagnostics::default(),
+                preparation_owners: HashMap::new(),
             })),
             scope: String::new(),
+            owner_scope: String::new(),
             preparing: false,
             mode: crate::RegexMode::default(),
         }
@@ -90,8 +104,24 @@ impl ScannerPatternCache {
     pub(crate) fn for_scope(&self, scope: &str) -> Self {
         Self {
             scope: scope.to_owned(),
+            owner_scope: scope.to_owned(),
             ..self.clone()
         }
+    }
+
+    pub(crate) fn for_owner(&self, scope: &str) -> Self {
+        Self {
+            owner_scope: scope.to_owned(),
+            ..self.clone()
+        }
+    }
+
+    pub(crate) fn preparation_owners(&self) -> HashMap<[u8; 32], String> {
+        self.shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .preparation_owners
+            .clone()
     }
 
     pub(crate) fn with_mode(mut self, mode: crate::RegexMode) -> Self {
@@ -129,6 +159,7 @@ impl ScannerPatternCache {
         state.ordinary_sources.clear();
         state.active_scope = None;
         state.diagnostics = crate::RegexDiagnostics::default();
+        state.preparation_owners.clear();
     }
 
     /// Raw ordinary program archives retain the registry-wide import contract.
@@ -271,6 +302,19 @@ impl ScannerPatternCache {
             .shared
             .lock()
             .expect("scanner pattern cache lock poisoned");
+        if self.preparing && share_patterns {
+            let fingerprint =
+                crate::indexed_precompiled::pattern_fingerprint(patterns.iter().copied());
+            // Prefer an intrinsic root rule when identical lists occur in both
+            // the root and an included grammar. Its package keeps that group.
+            let owner = state
+                .preparation_owners
+                .entry(fingerprint)
+                .or_insert_with(|| self.owner_scope.clone());
+            if self.owner_scope == self.scope {
+                owner.clone_from(&self.owner_scope);
+            }
+        }
         let enabled = prefilter && self.mode.prefilter();
         let eager = enabled
             && (self.preparing
@@ -301,15 +345,28 @@ impl ScannerPatternCache {
             drop(state);
             return Scanner::with_config(patterns, &config);
         }
+        let selected_scope = if eager && self.mode == crate::RegexMode::Prepared {
+            [&self.scope, &self.owner_scope]
+                .into_iter()
+                .find(|scope| {
+                    state
+                        .sources
+                        .get(*scope)
+                        .is_some_and(|source| source.contains_group(patterns))
+                })
+                .unwrap_or(&self.scope)
+        } else {
+            &self.scope
+        };
         let requested_source = if eager && self.mode == crate::RegexMode::Prepared {
-            match state.sources.get_mut(&self.scope) {
+            match state.sources.get_mut(selected_scope) {
                 Some(PreparedSource::File(source)) => source.load(patterns),
                 _ => None,
             }
         } else {
             None
         };
-        if state.active_scope.as_deref() != Some(&self.scope) || requested_source.is_some() {
+        if state.active_scope.as_deref() != Some(selected_scope) || requested_source.is_some() {
             // Ferroni's stable API selects one group source. Bind it to the root
             // grammar while keeping every language's programs and decoded groups.
             state.cache.clear_precompiled();
@@ -319,8 +376,8 @@ impl ScannerPatternCache {
             let sources: Vec<_> = state
                 .sources
                 .iter()
-                .filter(|(scope, _)| *scope != &self.scope)
-                .chain(state.sources.get_key_value(&self.scope))
+                .filter(|(scope, _)| *scope != selected_scope)
+                .chain(state.sources.get_key_value(selected_scope))
                 .filter_map(|(_, source)| match source {
                     PreparedSource::Memory(source) => Some(source.eager.clone()),
                     PreparedSource::File(_) => None,
@@ -332,7 +389,7 @@ impl ScannerPatternCache {
             if let Some(source) = requested_source {
                 state.cache.add_precompiled_eager(source);
             }
-            state.active_scope = Some(self.scope.clone());
+            state.active_scope = Some(selected_scope.clone());
         }
         // An optional archive must not turn a source-valid scanner into a
         // load error, including a mixed decoded/source program set. Retry the

@@ -63,8 +63,12 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   cache. Programs decode only on a cache miss. Prepared group sources are bound
   to the root grammar: Ferroni selects one group source per cache, so switching
   roots switches that source while retaining shared programs and decoded groups.
-  Only explicitly requested roots download/open sidecars: each root pair already
-  includes its dependencies. Off mode skips opening Eager archives, and the Node
+  [ADR 0022](0022-cooperating-prepared-language-packages.md) assigns identical
+  embedded scanners to their defining language package. New containers use
+  version 3; complete version-2 roots remain supported. Requested roots and
+  required registered dependencies download/open cooperating packages; optional
+  fenced-code languages remain optional. Legacy roots retain root-only sidecar
+  planning. Off mode skips opening Eager archives, and the Node
   planner skips their download. Disposal releases archives and decoded programs. Runtime-resolved scanners keep their existing
   cache bypass ([ADR 0010](0010-mechanical-vscode-textmate-port.md)).
 - Bytecode is optional. Missing downloads, integrity failures, unsupported
@@ -151,6 +155,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-26: Delegate identical embedded scanners through cooperating language
+  packages (ADR 0022). Preserve complete static coverage, context-specific
+  combinations and version-2 reads; reduce the locked CDN payloads.
 
 - 2026-10-26: Add indexed, on-demand reads from verified decoded containers.
   Preserve every static program/group on disk and let Ferroni validate reduced
