@@ -22,10 +22,21 @@ The local cache and receipts are trusted; these stat checks detect ordinary
 changes rather than authenticate against malicious local modification. Ferroni
 still validates archive indexes and requested records.
 
-The registry retains the decoded container and shares its program and group
-sections through Ferroni's owned byte views. It does not copy both sections
-into separate archive buffers. This applies to populated-cache reads and to
-newly decoded downloads.
+The cache also saves a small derived `.index-v1` file with its own verification
+receipt. On subsequent loads the registry opens the complete decoded file and
+reads its index. It reads program and group payloads only when a static scanner
+requests them, then passes an owned, reduced pair through Ferroni's ordinary
+validation. Repeated scanner use reuses the loaded data. File state is checked
+before and after record reads; changed files or read failures fall back to
+source compilation. Missing or changed indexes are rebuilt once from the verified
+container. No memory mapping is used.
+
+All static contexts, embedded languages and anchor variants remain in the
+original packages. This changes local access, not grammar coverage or CDN
+payloads. Embedded catalogs, old manifests and caches that cannot persist an
+index retain the shared owned-container path. `preparedBytesRead` in regex
+diagnostics reports indexed payload reads, excluding index bytes; zero also
+applies to source modes and owned imports.
 
 The release manifest pins both representations. A detected damaged entry is
 rebuilt from the verified download when available; an unwritable cache keeps

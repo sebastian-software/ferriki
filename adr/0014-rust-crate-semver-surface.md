@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-25
+Last updated: 2026-10-26
 
 ## Context
 
@@ -58,6 +58,9 @@ Each crate publishes a deliberate, curated surface.
   generator and verified cache. `SyncRegistry::add_precompiled_patterns_from_slice`
   accepts compressed or decoded containers without a temporary whole-input Arc;
   the registry retains its own program/group bytes after the slice is dropped.
+  `index_precompiled_patterns` and `SyncRegistry::add_precompiled_patterns_file`
+  additionally expose derived indexes and owned file handles for on-demand
+  local reads. The host verifies the cache identity; Ferroni types remain private.
   `SyncRegistry::add_precompiled_patterns_owned` consumes a `Vec<u8>` and retains
   shared views of its decoded allocation without copying the program/group
   sections. It accepts the same archives and preserves the existing error and
@@ -173,6 +176,9 @@ without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#r
 owns policy semantics and the limits of those counters.
 
 ## History
+
+- 2026-10-26: Document the additive indexed prepared-file API; keep engine
+  envelopes private and retain existing byte import contracts.
 
 - 2026-10-25: Add the owned archive importer using Ferroni 2.7.2 shared byte
   views, preserving the borrowed and Arc-based import APIs.
