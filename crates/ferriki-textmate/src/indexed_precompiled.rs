@@ -409,8 +409,7 @@ pub(crate) struct IndexedArchive {
     size: u64,
     modified: SystemTime,
     programs: Vec<Program>,
-    program_range: std::ops::Range<u64>,
-    program_chunks: HashMap<u64, Vec<u8>>,
+    program_records: Vec<Option<Vec<u8>>>,
     ids: HashMap<String, u32>,
     groups: HashMap<Vec<u32>, Record>,
     loaded: HashMap<Vec<u32>, Option<PrecompiledEager>>,
@@ -445,16 +444,11 @@ impl IndexedArchive {
             return Err(invalid());
         }
         let mut ids = HashMap::new();
-        let (mut program_start, mut program_end) = (u64::MAX, 0);
         for (id, program) in index.programs.iter().enumerate() {
             check_record(&program.record, index.size, 16 << 20)?;
             let (pattern, prefilter) = pattern_key(&program.key)?;
             if prefilter && ids.insert(pattern.to_owned(), id as u32).is_some() {
                 return Err(invalid());
-            }
-            if prefilter {
-                program_start = program_start.min(program.record.start);
-                program_end = program_end.max(program.record.start + u64::from(program.record.len));
             }
             if id > 0 && index.programs[id - 1].key >= program.key {
                 return Err(invalid());
@@ -478,8 +472,7 @@ impl IndexedArchive {
             file,
             size: index.size,
             modified: metadata.modified().map_err(PrecompiledPatternsError::new)?,
-            program_range: program_start.min(program_end)..program_end,
-            program_chunks: HashMap::new(),
+            program_records: (0..index.programs.len()).map(|_| None).collect(),
             programs: index.programs,
             ids,
             groups,
@@ -571,7 +564,15 @@ impl IndexedArchive {
         #[cfg(feature = "prepared-load-profile")]
         let indexed = started.elapsed().as_nanos();
         for id in &selected {
-            self.append_program(*id as usize, &mut programs)?;
+            let record = &self.programs[*id as usize].record;
+            let data = &mut self.program_records[*id as usize];
+            if data.is_none() {
+                let mut bytes = Vec::new();
+                read_record(&mut self.file, record, &mut bytes)?;
+                self.bytes_read += u64::from(record.len);
+                *data = Some(bytes);
+            }
+            programs.extend_from_slice(data.as_ref().expect("the requested program was read"));
         }
         #[cfg(feature = "prepared-load-profile")]
         let copied = started.elapsed().as_nanos();
@@ -616,42 +617,6 @@ impl IndexedArchive {
             );
         }
         source
-    }
-
-    fn append_program(&mut self, id: usize, output: &mut Vec<u8>) -> Result<()> {
-        let record = &self.programs[id].record;
-        let mut cursor = record.start;
-        let end = record.start + u64::from(record.len);
-        // Amortize small seeks/allocations while retaining demand-driven
-        // reads. A record may cross chunks; no alignment is assumed.
-        const CHUNK_BYTES: u64 = 256 * 1024;
-        while cursor < end {
-            let chunk = (cursor - self.program_range.start) / CHUNK_BYTES;
-            let start = self.program_range.start + chunk * CHUNK_BYTES;
-            if let std::collections::hash_map::Entry::Vacant(entry) =
-                self.program_chunks.entry(chunk)
-            {
-                let len = (self.program_range.end - start).min(CHUNK_BYTES) as u32;
-                let mut bytes = Vec::new();
-                read_record(
-                    &mut self.file,
-                    &Record {
-                        start,
-                        len,
-                        checksum: 0,
-                    },
-                    &mut bytes,
-                )?;
-                self.bytes_read += u64::from(len);
-                entry.insert(bytes);
-            }
-            let bytes = &self.program_chunks[&chunk];
-            let offset = (cursor - start) as usize;
-            let len = (end - cursor).min((bytes.len() - offset) as u64) as usize;
-            output.extend_from_slice(&bytes[offset..offset + len]);
-            cursor += len as u64;
-        }
-        Ok(())
     }
 }
 
@@ -810,46 +775,6 @@ pub(crate) fn pattern_fingerprint<'a>(patterns: impl IntoIterator<Item = &'a str
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
-
-    #[test]
-    fn program_chunks_cross_boundaries_reuse_data_and_stop_at_the_program_end() {
-        let bytes: Vec<_> = (0..700_123).map(|i| (i % 251) as u8).collect();
-        let path =
-            std::env::temp_dir().join(format!("ferriki-program-chunks-{}", std::process::id()));
-        std::fs::write(&path, &bytes).unwrap();
-        let file = File::open(&path).unwrap();
-        let mut archive = IndexedArchive {
-            scope: String::new(),
-            modified: file.metadata().unwrap().modified().unwrap(),
-            size: bytes.len() as u64,
-            file,
-            programs: vec![Program {
-                key: Vec::new(),
-                record: Record {
-                    start: 250_003,
-                    len: 450_000,
-                    checksum: 0,
-                },
-            }],
-            program_range: 101..700_003,
-            program_chunks: HashMap::new(),
-            ids: HashMap::new(),
-            groups: HashMap::new(),
-            loaded: HashMap::new(),
-            failures: 0,
-            bytes_read: 0,
-        };
-        let mut output = vec![17, 23];
-        archive.append_program(0, &mut output).unwrap();
-        assert_eq!(&output[2..], &bytes[250_003..700_003]);
-        assert_eq!(archive.bytes_read, 699_902);
-        let read = archive.bytes_read;
-        archive.append_program(0, &mut output).unwrap();
-        assert_eq!(archive.bytes_read, read);
-        assert_eq!(&output[450_002..], &bytes[250_003..700_003]);
-        drop(archive);
-        std::fs::remove_file(path).unwrap();
-    }
 
     #[test]
     fn subset_binding_record_validation_and_file_changes_preserve_fallback() {
