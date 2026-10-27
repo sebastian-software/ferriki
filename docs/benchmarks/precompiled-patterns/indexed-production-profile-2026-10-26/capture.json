@@ -1,0 +1,64 @@
+{
+  "captures": [
+    {
+      "runId": 40307123062,
+      "commit": "c1cc96e154f89f9a402a52dbcee28ec957c7711f",
+      "name": "startup-profile-macos-arm64-40307123062",
+      "artifactId": 12642747450,
+      "zipSha256": "dc08bf64decfbec30690866a3adf0b4e8cccd375dc8ce8456cffbdcc6cdfa16f"
+    },
+    {
+      "runId": 40307123062,
+      "commit": "c1cc96e154f89f9a402a52dbcee28ec957c7711f",
+      "name": "startup-profile-linux-x86-64-40307123062",
+      "artifactId": 12642533840,
+      "zipSha256": "c8c2ed37a87795e2aa2e0661dd4385e292bddab8e17e4d598670811b50a7cc00"
+    },
+    {
+      "runId": 40308181232,
+      "commit": "3e72dcd7adb11bac895cd56d34ebcaec4f501b74",
+      "name": "startup-profile-linux-x86-64-40308181232",
+      "artifactId": 12643527889,
+      "zipSha256": "f3a2f9984d3f36d83251f925fd9e72a17f960e9de2f96496196a4502b46edb30"
+    },
+    {
+      "runId": 40308181232,
+      "commit": "3e72dcd7adb11bac895cd56d34ebcaec4f501b74",
+      "name": "startup-profile-macos-arm64-40308181232",
+      "artifactId": 12642359332,
+      "zipSha256": "2022f237f0a0112e7e2cc0fa15108c69e91be150eee84559e58aa078424ef3d8"
+    },
+    {
+      "runId": 40309956682,
+      "commit": "22d57cd4d7c3f5949ed6dea368359c923352799c",
+      "name": "startup-profile-macos-arm64-40309956682",
+      "artifactId": 12645130507,
+      "zipSha256": "eef8f15bfd713b9d99106c016406efc636e5f426569d73a251746586b0861ee6",
+      "pairedComparison": "rejected: stock loader ignored addon selection; baseline cache fills were not symmetric"
+    },
+    {
+      "runId": 40309956682,
+      "commit": "22d57cd4d7c3f5949ed6dea368359c923352799c",
+      "name": "startup-profile-linux-x86-64-40309956682",
+      "artifactId": 12644203336,
+      "zipSha256": "c721c295a331e8624eb5336e2c2dba9ec2ae2b8790b00c15768093799cabef1d",
+      "pairedComparison": "rejected: stock loader ignored addon selection; baseline cache fills were not symmetric"
+    },
+    {
+      "runId": 40311393577,
+      "commit": "ba27228efcc21babd830f0704c5a934af5b86c05",
+      "name": "startup-profile-macos-arm64-40311393577",
+      "artifactId": 12644788599,
+      "zipSha256": "8ed51bc4aeb1edb1ec5c8ead39d4607931b1fb9a652d13f1542edbb76f0e9b25",
+      "pairedComparison": "valid; chunked candidate rejected because Linux startup did not improve"
+    },
+    {
+      "runId": 40311393577,
+      "commit": "ba27228efcc21babd830f0704c5a934af5b86c05",
+      "name": "startup-profile-linux-x86-64-40311393577",
+      "artifactId": 12643834637,
+      "zipSha256": "f02103b560c8b9fcc482afeaa3ab45e220081584efc11cd9a182e7ffa0ff038e",
+      "pairedComparison": "valid; chunked candidate rejected because Linux startup did not improve"
+    }
+  ]
+}

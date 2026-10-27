@@ -13,6 +13,10 @@ keywords.workspace = true
 categories.workspace = true
 publish = ["crates-io"]
 
+[features]
+# Separate diagnostic builds only; ordinary builds contain no phase clocks.
+prepared-load-profile = []
+
 [dependencies]
 ferroni = { workspace = true }
 zstd = { workspace = true }

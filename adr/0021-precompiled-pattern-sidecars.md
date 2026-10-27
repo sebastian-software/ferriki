@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## Context
 
@@ -43,20 +43,20 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   verification. Changed/unrecorded files require SHA-256 before receipt renewal.
   The cache directory and its receipts are trusted local state, not a boundary
   against malicious local modification; engine validation remains unchanged.
-  A derived, versioned local index records the offsets of every program and
-  static group in the complete decoded container. Verified disk caches attach
-  an open file and this small index instead of reading the full container.
-  Scanner construction reads only its requested records into owned buffers,
-  remaps the selected program IDs and rebinds a reduced portable pair. Ferroni
-  checks this pair and validates its requested bytecode/instructions normally.
-  This adapter interprets only the stable v2 program/v3 portable envelopes and
-  their binding checksum; unsupported formats retain the owned-import path.
-  Both cache files use size/mtime receipts; changed or missing indexes are
-  rebuilt from the verified container. File state is checked before and after
-  record reads, with source fallback on changes or I/O errors. No file mapping,
-  unsafe code, archive pruning, new CDN objects or format migration is needed.
+  A derived version-2 local index embeds Ferroni 2.8's checked record index
+  and the container's section offsets. Verified disk caches attach an open
+  file and this small index instead of reading the full container. Scanner
+  construction reads requested opaque records once into shared owned buffers
+  and supplies them through `PrecompiledEagerRecords`. Ferroni owns dictionary
+  references, record validation and decoding; runtime loading does not assemble
+  reduced archives, remap program IDs or recompute pair-binding checksums.
+  Existing version-1 local indexes are left intact; the version-2 index is
+  generated once from the verified decoded container. Both cache files use
+  size/mtime receipts. File state is checked before and after record reads,
+  with source fallback on changes or I/O errors. No file mapping, unsafe code,
+  archive pruning, new CDN objects or transport format migration is needed.
   Borrowed/owned imports, embedded assets, legacy manifests and unwritable
-  caches retain their shared-allocation behavior through Ferroni 2.7.2.
+  caches retain their shared-allocation behavior.
   Old manifests remain supported. A damaged decoded entry is rebuilt from the
   verified compressed payload, and cache write failures remain optional.
 - Catalog loading attaches the matching sidecar to the registry's pattern
@@ -155,6 +155,10 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-10-27: Require Ferroni 2.8 and use its record-backed imports for indexed
+  disk caches. Replace runtime subset assembly with shared record insertion;
+  rebuild only the derived local index and retain existing CDN packages.
 
 - 2026-10-26: Delegate identical embedded scanners through cooperating language
   packages (ADR 0022). Preserve complete static coverage, context-specific

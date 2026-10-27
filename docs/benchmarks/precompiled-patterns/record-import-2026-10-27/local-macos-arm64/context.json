@@ -1,0 +1,8 @@
+{
+  "capturedAt": "2026-10-26T23:23:47.298Z",
+  "platform": "darwin 27.0.0",
+  "cpu": "Apple M1 Ultra",
+  "node": "v24.22.1",
+  "candidateCommit": "53c02bdb87726ea916175169bef28aac98d3e768",
+  "comparison": "Ferroni 2.8.0 subset pairs versus Ferroni 2.8.0 direct records; diagnostic local run"
+}

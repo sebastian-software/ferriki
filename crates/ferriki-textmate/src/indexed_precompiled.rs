@@ -1,22 +1,24 @@
 //! Local indexes over the stable Ferroni v2 program / v3 portable envelopes.
 //!
-//! Only envelopes are interpreted here. Requested opaque records are assembled
-//! into a smaller, rebound pair and passed through Ferroni's normal validators.
-//! No bytecode or automaton instructions are decoded by this module.
+//! Asset generation interprets stable envelopes to delegate complete groups.
+//! Runtime reads use Ferroni's own record index and import API; opaque payloads
+//! are supplied once without constructing reduced archives.
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::time::SystemTime;
 
-use ferroni::scanner::{PrecompiledEager, PrecompiledEagerStats};
+use ferroni::scanner::{
+    PrecompiledEager, PrecompiledEagerRecordKind, PrecompiledEagerRecords, ScannerConfig,
+};
 use sha2::{Digest, Sha256};
 
 use crate::PrecompiledPatternsError;
 use crate::precompiled::{MAX_ARCHIVE_BYTES, archive_layout};
 
 type Result<T> = std::result::Result<T, PrecompiledPatternsError>;
-const INDEX_MAGIC: &[u8; 8] = b"FKIX001\0";
+const INDEX_MAGIC: &[u8; 8] = b"FKIX002\0";
 pub(crate) const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 const PROGRAM_MAGIC: &[u8; 8] = b"FERRONI\0";
 const GROUP_MAGIC: &[u8; 8] = b"FPRT003\0";
@@ -63,9 +65,6 @@ pub(crate) fn group_lookup(source: &PrecompiledEager) -> Result<HashSet<[u8; 32]
 }
 
 struct Index {
-    format: u32,
-    scope: String,
-    size: u64,
     programs: Vec<Program>,
     groups: Vec<Group>,
 }
@@ -151,11 +150,32 @@ fn record_bytes<'a>(bytes: &'a [u8], record: &Record) -> Result<&'a [u8]> {
 /// Authenticate the container against trusted producer metadata before calling.
 /// Unsupported wire versions return an error; ordinary owned imports remain available.
 pub fn index_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>> {
-    let bytes = archive_index(bytes)?.encode()?;
-    if bytes.len() as u64 > MAX_INDEX_BYTES {
+    let (program_start, group_start) = archive_layout(bytes)?;
+    let archive = crate::precompiled::open_archive(bytes)?;
+    let index = archive
+        .eager
+        .export_record_index()
+        .map_err(PrecompiledPatternsError::from_engine)?;
+    let mut output = INDEX_MAGIC.to_vec();
+    output.extend_from_slice(
+        &u32::from_le_bytes(
+            bytes[8..12]
+                .try_into()
+                .map_err(PrecompiledPatternsError::new)?,
+        )
+        .to_le_bytes(),
+    );
+    output.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+    number(&mut output, archive.scope.len())?;
+    output.extend_from_slice(archive.scope.as_bytes());
+    output.extend_from_slice(&(program_start as u64).to_le_bytes());
+    output.extend_from_slice(&(group_start as u64).to_le_bytes());
+    number(&mut output, index.len())?;
+    output.extend_from_slice(&index);
+    if output.len() as u64 > MAX_INDEX_BYTES {
         return Err(invalid());
     }
-    Ok(bytes)
+    Ok(output)
 }
 
 fn archive_index(bytes: &[u8]) -> Result<Index> {
@@ -221,19 +241,7 @@ fn archive_index(bytes: &[u8]) -> Result<Index> {
         });
     }
     input.done()?;
-    Ok(Index {
-        format: u32::from_le_bytes(
-            bytes[8..12]
-                .try_into()
-                .map_err(PrecompiledPatternsError::new)?,
-        ),
-        scope: std::str::from_utf8(&bytes[32..scope_end])
-            .map_err(PrecompiledPatternsError::new)?
-            .to_owned(),
-        size: bytes.len() as u64,
-        programs,
-        groups,
-    })
+    Ok(Index { programs, groups })
 }
 
 impl Index {
@@ -326,31 +334,30 @@ impl Index {
             .map_err(PrecompiledPatternsError::from_engine)?;
         Ok(output)
     }
+}
 
-    fn encode(&self) -> Result<Vec<u8>> {
-        let mut bytes = INDEX_MAGIC.to_vec();
-        bytes.extend_from_slice(&self.format.to_le_bytes());
-        bytes.extend_from_slice(&self.size.to_le_bytes());
-        number(&mut bytes, self.scope.len())?;
-        bytes.extend_from_slice(self.scope.as_bytes());
-        number(&mut bytes, self.programs.len())?;
-        for program in &self.programs {
-            number(&mut bytes, program.key.len())?;
-            bytes.extend_from_slice(&program.key);
-            program.record.write(&mut bytes);
-        }
-        number(&mut bytes, self.groups.len())?;
-        for group in &self.groups {
-            number(&mut bytes, group.ids.len())?;
-            for id in &group.ids {
-                bytes.extend_from_slice(&id.to_le_bytes());
-            }
-            group.record.write(&mut bytes);
-        }
-        Ok(bytes)
+pub(crate) struct IndexedArchive {
+    pub(crate) scope: String,
+    file: File,
+    size: u64,
+    modified: SystemTime,
+    program_start: u64,
+    group_start: u64,
+    records: PrecompiledEagerRecords,
+    loaded: HashMap<[u8; 32], bool>,
+    failures: usize,
+    pub(crate) bytes_read: u64,
+}
+
+impl IndexedArchive {
+    pub(crate) fn contains_group(&self, patterns: &[&str], config: &ScannerConfig) -> bool {
+        self.records.group(patterns, config, false).is_some()
     }
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
+    pub(crate) fn open(file: File, bytes: &[u8]) -> Result<Self> {
+        if bytes.len() as u64 > MAX_INDEX_BYTES {
+            return Err(invalid());
+        }
         let mut input = Input(bytes);
         if input.take(8)? != INDEX_MAGIC {
             return Err(invalid());
@@ -360,122 +367,43 @@ impl Index {
         let scope = std::str::from_utf8(input.vector()?)
             .map_err(PrecompiledPatternsError::new)?
             .to_owned();
-        let mut programs = Vec::new();
-        for _ in 0..input.count(100_000)? {
-            programs.push(Program {
-                key: input.vector()?.to_vec(),
-                record: Record::read(&mut input)?,
-            });
-        }
-        let mut groups = Vec::new();
-        for _ in 0..input.count(100_000)? {
-            let ids = (0..input.count(65_535)?)
-                .map(|_| input.u32())
-                .collect::<Result<Vec<_>>>()?;
-            groups.push(Group {
-                ids,
-                record: Record::read(&mut input)?,
-            });
-        }
+        let program_start = input.u64()?;
+        let group_start = input.u64()?;
+        let records = PrecompiledEagerRecords::from_index(input.vector()?)
+            .map_err(PrecompiledPatternsError::from_engine)?;
         input.done()?;
-        Ok(Self {
-            format,
-            scope,
-            size,
-            programs,
-            groups,
-        })
-    }
-}
-
-impl Record {
-    fn write(&self, bytes: &mut Vec<u8>) {
-        bytes.extend_from_slice(&self.start.to_le_bytes());
-        bytes.extend_from_slice(&self.len.to_le_bytes());
-        bytes.extend_from_slice(&self.checksum.to_le_bytes());
-    }
-    fn read(input: &mut Input<'_>) -> Result<Self> {
-        Ok(Self {
-            start: input.u64()?,
-            len: input.u32()?,
-            checksum: input.u32()?,
-        })
-    }
-}
-
-pub(crate) struct IndexedArchive {
-    pub(crate) scope: String,
-    file: File,
-    size: u64,
-    modified: SystemTime,
-    programs: Vec<Program>,
-    program_records: Vec<Option<Vec<u8>>>,
-    ids: HashMap<String, u32>,
-    groups: HashMap<Vec<u32>, Record>,
-    loaded: HashMap<Vec<u32>, Option<PrecompiledEager>>,
-    failures: usize,
-    pub(crate) bytes_read: u64,
-}
-
-impl IndexedArchive {
-    pub(crate) fn contains_group(&self, patterns: &[&str]) -> bool {
-        patterns
-            .iter()
-            .map(|pattern| self.ids.get(*pattern).copied())
-            .collect::<Option<Vec<_>>>()
-            .is_some_and(|ids| self.groups.contains_key(&ids))
-    }
-
-    pub(crate) fn open(file: File, bytes: &[u8]) -> Result<Self> {
-        if bytes.len() as u64 > MAX_INDEX_BYTES {
-            return Err(invalid());
-        }
-        let index = Index::decode(bytes)?;
         let metadata = file.metadata().map_err(PrecompiledPatternsError::new)?;
-        if !crate::supports_precompiled_patterns_version(index.format)
-            || ferroni::scanner::PRECOMPILED_FORMAT_VERSION != 2
-            || ferroni::scanner::PRECOMPILED_EAGER_FORMAT_VERSION != 3
-            || index.size > MAX_ARCHIVE_BYTES
+        if !crate::supports_precompiled_patterns_version(format)
+            || size > MAX_ARCHIVE_BYTES
             || !metadata.is_file()
-            || metadata.len() != index.size
-            || index.programs.len() > 100_000
-            || index.groups.len() > 100_000
+            || metadata.len() != size
+            || program_start < 32
+            || program_start >= group_start
+            || group_start >= size
         {
             return Err(invalid());
         }
-        let mut ids = HashMap::new();
-        for (id, program) in index.programs.iter().enumerate() {
-            check_record(&program.record, index.size, 16 << 20)?;
-            let (pattern, prefilter) = pattern_key(&program.key)?;
-            if prefilter && ids.insert(pattern.to_owned(), id as u32).is_some() {
-                return Err(invalid());
-            }
-            if id > 0 && index.programs[id - 1].key >= program.key {
-                return Err(invalid());
-            }
-        }
-        let mut groups = HashMap::new();
-        for group in index.groups {
-            check_record(&group.record, index.size, 64 << 20)?;
-            if group.ids.len() > 65_535
-                || group
-                    .ids
-                    .iter()
-                    .any(|id| *id as usize >= index.programs.len())
-                || groups.insert(group.ids, group.record).is_some()
+        for record in records.programs().chain(records.groups()) {
+            let (offset, end) = match record.kind() {
+                PrecompiledEagerRecordKind::Program => (program_start, group_start),
+                PrecompiledEagerRecordKind::Group => (group_start, size),
+                _ => return Err(invalid()),
+            };
+            if offset
+                .checked_add(record.range().end as u64)
+                .is_none_or(|at| at > end)
             {
                 return Err(invalid());
             }
         }
         Ok(Self {
-            scope: index.scope,
+            scope,
             file,
-            size: index.size,
+            size,
             modified: metadata.modified().map_err(PrecompiledPatternsError::new)?,
-            program_records: (0..index.programs.len()).map(|_| None).collect(),
-            programs: index.programs,
-            ids,
-            groups,
+            program_start,
+            group_start,
+            records,
             loaded: HashMap::new(),
             failures: 0,
             bytes_read: 0,
@@ -483,33 +411,27 @@ impl IndexedArchive {
     }
 
     pub(crate) fn stats(&self) -> (usize, usize) {
-        self.loaded
-            .values()
-            .flatten()
-            .fold((0, self.failures), |(loads, failures), source| {
-                let PrecompiledEagerStats {
-                    loaded_groups,
-                    invalid_groups,
-                    ..
-                } = source.stats();
-                (loads + loaded_groups, failures + invalid_groups)
-            })
+        let stats = self.records.stats();
+        (stats.loaded_groups, stats.invalid_groups + self.failures)
     }
 
-    pub(crate) fn load(&mut self, patterns: &[&str]) -> Option<PrecompiledEager> {
-        let ids = patterns
-            .iter()
-            .map(|pattern| self.ids.get(*pattern).copied())
-            .collect::<Option<Vec<_>>>()?;
-        if let Some(source) = self.loaded.get(&ids) {
-            return source.clone();
-        }
-        let source = self.read_pair(&ids).ok();
-        if source.is_none() {
-            self.failures += 1;
-        }
-        self.loaded.insert(ids, source.clone());
-        source
+    pub(crate) fn load(
+        &mut self,
+        patterns: &[&str],
+        config: &ScannerConfig,
+    ) -> Option<PrecompiledEagerRecords> {
+        let key = pattern_fingerprint(patterns.iter().copied());
+        let loaded = if let Some(loaded) = self.loaded.get(&key) {
+            *loaded
+        } else {
+            let loaded = self.read_records(patterns, config).is_ok();
+            if !loaded {
+                self.failures += 1;
+            }
+            self.loaded.insert(key, loaded);
+            loaded
+        };
+        loaded.then(|| self.records.clone())
     }
 
     fn unchanged(&self) -> Result<()> {
@@ -525,89 +447,64 @@ impl IndexedArchive {
         Ok(())
     }
 
-    fn read_pair(&mut self, ids: &[u32]) -> Result<PrecompiledEager> {
+    fn read_records(&mut self, patterns: &[&str], config: &ScannerConfig) -> Result<()> {
+        #[cfg(feature = "prepared-load-profile")]
+        let started = std::time::Instant::now();
         self.unchanged()?;
-        let mut selected = ids.to_vec();
-        selected.sort_unstable();
-        selected.dedup();
-        let mut index = Vec::new();
-        number(&mut index, selected.len())?;
-        let mut data_len = 0_usize;
-        for id in &selected {
-            let program = &self.programs[*id as usize];
-            number(&mut index, program.key.len())?;
-            index.extend_from_slice(&program.key);
-            number(&mut index, data_len)?;
-            index.extend_from_slice(&program.record.len.to_le_bytes());
-            index.extend_from_slice(&program.record.checksum.to_le_bytes());
-            data_len = data_len
-                .checked_add(program.record.len as usize)
-                .ok_or_else(invalid)?;
-            if data_len > 256 << 20 {
-                return Err(invalid());
+        let mut requested = patterns
+            .iter()
+            .filter_map(|pattern| self.records.program(pattern, config, false))
+            .collect::<Vec<_>>();
+        requested.extend(self.records.group(patterns, config, false));
+        let mut pending = Vec::new();
+        let mut seen = HashSet::new();
+        for record in requested {
+            let kind = matches!(record.kind(), PrecompiledEagerRecordKind::Group);
+            if self.records.contains(&record) || !seen.insert((kind, record.id())) {
+                continue;
             }
-        }
-        let mut programs = PROGRAM_MAGIC.to_vec();
-        programs.extend_from_slice(&2_u32.to_le_bytes());
-        number(&mut programs, index.len())?;
-        programs.extend_from_slice(&index);
-        if programs
-            .len()
-            .checked_add(data_len)
-            .is_none_or(|len| len > 256 << 20)
-        {
-            return Err(invalid());
-        }
-        programs.reserve(data_len);
-        for id in &selected {
-            let record = &self.programs[*id as usize].record;
-            let data = &mut self.program_records[*id as usize];
-            if data.is_none() {
-                let mut bytes = Vec::new();
-                read_record(&mut self.file, record, &mut bytes)?;
-                self.bytes_read += u64::from(record.len);
-                *data = Some(bytes);
-            }
-            programs.extend_from_slice(data.as_ref().expect("the requested program was read"));
-        }
-        let mut groups = GROUP_MAGIC.to_vec();
-        groups.extend_from_slice(&binding_checksum(&programs).to_le_bytes());
-        groups.push(1);
-        if let Some(record) = self.groups.get(ids) {
-            number(&mut groups, 1)?;
-            number(&mut groups, ids.len())?;
-            for id in ids {
-                number(
-                    &mut groups,
-                    selected
-                        .binary_search(id)
-                        .map_err(PrecompiledPatternsError::new)?,
-                )?;
-            }
-            groups.extend_from_slice(&record.checksum.to_le_bytes());
-            groups.extend_from_slice(&record.len.to_le_bytes());
-            read_record(&mut self.file, record, &mut groups)?;
-            self.bytes_read += u64::from(record.len);
-        } else {
-            number(&mut groups, 0)?;
+            let offset = if kind {
+                self.group_start
+            } else {
+                self.program_start
+            };
+            let range = record.range();
+            let mut bytes = Vec::new();
+            read_record(
+                &mut self.file,
+                &Record {
+                    start: offset + range.start as u64,
+                    len: u32::try_from(range.len()).map_err(PrecompiledPatternsError::new)?,
+                    checksum: 0, // Ferroni owns the expected checksum in its record index.
+                },
+                &mut bytes,
+            )?;
+            self.bytes_read += bytes.len() as u64;
+            pending.push((record, bytes));
         }
         self.unchanged()?;
-        PrecompiledEager::from_shared_bytes(programs.into(), groups.into())
-            .map_err(PrecompiledPatternsError::from_engine)
+        #[cfg(feature = "prepared-load-profile")]
+        let read = started.elapsed().as_nanos();
+        #[cfg(feature = "prepared-load-profile")]
+        let bytes = pending.iter().map(|(_, bytes)| bytes.len()).sum::<usize>();
+        #[cfg(feature = "prepared-load-profile")]
+        let count = pending.len();
+        for (record, bytes) in pending {
+            self.records
+                .insert(&record, bytes.into())
+                .map_err(PrecompiledPatternsError::from_engine)?;
+        }
+        #[cfg(feature = "prepared-load-profile")]
+        if std::env::var_os("FERRIKI_PROFILE_PREPARED_PAIRS").is_some() {
+            eprintln!(
+                "{}",
+                serde_json::json!({"scope": self.scope,
+                "records": count, "recordBytes": bytes, "readNs": read,
+                "insertNs": started.elapsed().as_nanos() - read})
+            );
+        }
+        Ok(())
     }
-}
-
-fn check_record(record: &Record, size: u64, max: u32) -> Result<()> {
-    if record.len == 0
-        || record.len > max
-        || record
-            .start
-            .checked_add(u64::from(record.len))
-            .is_none_or(|end| end > size)
-    {
-        return Err(invalid());
-    }
-    Ok(())
 }
 
 fn read_record(file: &mut File, record: &Record, bytes: &mut Vec<u8>) -> Result<()> {
@@ -623,7 +520,7 @@ fn read_record(file: &mut File, record: &Record, bytes: &mut Vec<u8>) -> Result<
 }
 
 // Read only the stable program key envelope. Ferroni checks the exact current
-// environment/settings again when selecting programs from each reduced pair.
+// environment/settings again when selecting records or programs.
 fn pattern_key(bytes: &[u8]) -> Result<(&str, bool)> {
     let mut input = Input(bytes);
     if input.u32()? != ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP.bits()
@@ -754,17 +651,14 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
-    fn subset_binding_record_validation_and_file_changes_preserve_fallback() {
+    fn record_validation_and_file_changes_preserve_fallback() {
         static NEXT: AtomicUsize = AtomicUsize::new(0);
         let raw = crate::parse_raw_grammar(
-            r#"{
-            "scopeName":"source.indexed",
-            "patterns":[
+            r#"{"scopeName":"source.indexed","patterns":[
                 {"match":"outer"},
-                {"begin":"<", "end":">", "patterns":[{"match":"inner"}]},
-                {"begin":"\\[", "end":"\\]", "patterns":[{"match":"rare"}]}
-            ]
-        }"#,
+                {"begin":"<","end":">","patterns":[{"match":"inner"}]},
+                {"begin":"\\[","end":"\\]","patterns":[{"match":"rare"}]}
+            ]}"#,
             Some("indexed.json"),
         )
         .unwrap();
@@ -772,55 +666,73 @@ mod tests {
             &crate::precompile_grammar_patterns(&raw).unwrap(),
         )
         .unwrap();
+        let original = archive_index(&bytes).unwrap();
         let index = index_precompiled_patterns(&bytes).unwrap();
         let path = std::env::temp_dir().join(format!(
             "ferriki-indexed-record-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
-        std::fs::write(&path, &bytes).unwrap();
-        let mut source = IndexedArchive::open(File::open(&path).unwrap(), &index).unwrap();
-        let lists: Vec<Vec<String>> = source
+        let config =
+            crate::regexp::scanner_config(true).acceleration(ferroni::AccelerationMode::Eager);
+        let lists = original
             .groups
-            .keys()
-            .map(|ids| {
-                ids.iter()
+            .iter()
+            .map(|group| {
+                group
+                    .ids
+                    .iter()
                     .map(|id| {
-                        pattern_key(&source.programs[*id as usize].key)
+                        pattern_key(&original.programs[*id as usize].key)
                             .unwrap()
                             .0
                             .to_owned()
                     })
-                    .collect()
+                    .collect::<Vec<_>>()
             })
-            .collect();
+            .collect::<Vec<_>>();
+        std::fs::write(&path, &bytes).unwrap();
+        let mut source = IndexedArchive::open(File::open(&path).unwrap(), &index).unwrap();
+        for patterns in &lists {
+            let patterns = patterns.iter().map(String::as_str).collect::<Vec<_>>();
+            let records = source.load(&patterns, &config).unwrap();
+            assert!(
+                records
+                    .validate_record(&records.group(&patterns, &config, false).unwrap())
+                    .unwrap()
+            );
+        }
+        let read = source.bytes_read;
         for patterns in &lists {
             source
-                .load(&patterns.iter().map(String::as_str).collect::<Vec<_>>())
-                .unwrap()
-                .validate_groups()
+                .load(
+                    &patterns.iter().map(String::as_str).collect::<Vec<_>>(),
+                    &config,
+                )
                 .unwrap();
         }
-        let rare_ids = source
+        assert_eq!(source.bytes_read, read);
+        let bad = original
             .groups
-            .keys()
-            .find(|ids| {
-                ids.iter()
-                    .any(|id| pattern_key(&source.programs[*id as usize].key).unwrap().0 == "rare")
+            .iter()
+            .find(|group| {
+                group.ids.iter().any(|id| {
+                    pattern_key(&original.programs[*id as usize].key).unwrap().0 == "rare"
+                })
             })
             .unwrap();
-        let bad = &source.groups[rare_ids];
-        bytes[bad.start as usize + bad.len as usize - 1] ^= 1;
+        bytes[bad.record.start as usize + bad.record.len as usize - 1] ^= 1;
         drop(source);
         std::fs::write(&path, &bytes).unwrap();
         let mut source = IndexedArchive::open(File::open(&path).unwrap(), &index).unwrap();
         for patterns in &lists {
-            let pair = source
-                .load(&patterns.iter().map(String::as_str).collect::<Vec<_>>())
-                .unwrap();
+            let patterns = patterns.iter().map(String::as_str).collect::<Vec<_>>();
+            let records = source.load(&patterns, &config).unwrap();
             assert_eq!(
-                pair.validate_groups().is_err(),
-                patterns.iter().any(|p| p == "rare")
+                records
+                    .validate_record(&records.group(&patterns, &config, false).unwrap())
+                    .is_err(),
+                patterns.contains(&"rare")
             );
         }
         drop(source);
@@ -832,18 +744,15 @@ mod tests {
             .set_modified(SystemTime::UNIX_EPOCH)
             .unwrap();
         let patterns = lists[0].iter().map(String::as_str).collect::<Vec<_>>();
-        assert!(source.load(&patterns).is_none());
+        assert!(source.load(&patterns, &config).is_none());
         assert_eq!(source.bytes_read, 0);
         assert_eq!(source.stats().1, 1);
-        assert!(source.load(&patterns).is_none());
+        assert!(source.load(&patterns, &config).is_none());
         assert_eq!(source.stats().1, 1);
         drop(source);
-        let mut invalid_index = Index::decode(&index).unwrap();
-        invalid_index.programs[0].record.start = u64::MAX;
-        assert!(
-            IndexedArchive::open(File::open(&path).unwrap(), &invalid_index.encode().unwrap())
-                .is_err()
-        );
+        let mut bad_index = index.clone();
+        bad_index[12..20].copy_from_slice(&u64::MAX.to_le_bytes());
+        assert!(IndexedArchive::open(File::open(&path).unwrap(), &bad_index).is_err());
         std::fs::remove_file(path).unwrap();
     }
 }

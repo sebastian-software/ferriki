@@ -118,7 +118,7 @@ pub(crate) fn read_indexed(root: &Path, decoded: &AssetMetadata) -> Option<(fs::
         return None;
     }
     let target = path(root, decoded);
-    let index_path = target.with_extension("index-v1");
+    let index_path = target.with_extension("index-v2");
     let open = || {
         let file = fs::File::open(&target).ok()?;
         let metadata = file.metadata().ok()?;
@@ -161,7 +161,7 @@ const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 fn write_index(target: &Path, bytes: &[u8]) -> std::io::Result<()> {
     let bytes =
         ferriki_textmate::index_precompiled_patterns(bytes).map_err(std::io::Error::other)?;
-    let target = target.with_extension("index-v1");
+    let target = target.with_extension("index-v2");
     write_atomic(&target, &bytes)?;
     if let Some(stamp) = FileStamp::of(&fs::metadata(&target)?) {
         write_stamp(&target, &stamp)?;
@@ -337,7 +337,7 @@ mod tests {
         );
         assert_eq!(prepare(&root, &metadata, &compressed).unwrap(), bytes);
         let target = path(&root, &metadata);
-        let index_path = target.with_extension("index-v1");
+        let index_path = target.with_extension("index-v2");
         let (_, expected) = read_indexed(&root, &metadata).unwrap();
         assert_eq!(fs::read(&index_path).unwrap(), expected);
         fs::write(&index_path, b"changed index").unwrap();

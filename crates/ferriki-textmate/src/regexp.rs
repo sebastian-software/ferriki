@@ -49,14 +49,14 @@ enum PreparedSource {
 }
 
 impl PreparedSource {
-    fn contains_group(&self, patterns: &[&str]) -> bool {
+    fn contains_group(&self, patterns: &[&str], config: &ScannerConfig) -> bool {
         match self {
             Self::Memory(source) => source.groups.as_ref().is_none_or(|groups| {
                 groups.contains(&crate::indexed_precompiled::pattern_fingerprint(
                     patterns.iter().copied(),
                 ))
             }),
-            Self::File(source) => source.contains_group(patterns),
+            Self::File(source) => source.contains_group(patterns, config),
         }
     }
     fn stats(&self) -> (usize, usize) {
@@ -352,7 +352,7 @@ impl ScannerPatternCache {
                     state
                         .sources
                         .get(*scope)
-                        .is_some_and(|source| source.contains_group(patterns))
+                        .is_some_and(|source| source.contains_group(patterns, &config))
                 })
                 .unwrap_or(&self.scope)
         } else {
@@ -360,7 +360,7 @@ impl ScannerPatternCache {
         };
         let requested_source = if eager && self.mode == crate::RegexMode::Prepared {
             match state.sources.get_mut(selected_scope) {
-                Some(PreparedSource::File(source)) => source.load(patterns),
+                Some(PreparedSource::File(source)) => source.load(patterns, &config),
                 _ => None,
             }
         } else {
@@ -387,7 +387,7 @@ impl ScannerPatternCache {
                 state.cache.add_precompiled_eager(source);
             }
             if let Some(source) = requested_source {
-                state.cache.add_precompiled_eager(source);
+                state.cache.add_precompiled_eager_records(source);
             }
             state.active_scope = Some(selected_scope.clone());
         }

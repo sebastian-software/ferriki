@@ -1,0 +1,92 @@
+{
+  "captures": [
+    {
+      "runId": 40419008705,
+      "candidateCommit": "53c02bdb87726ea916175169bef28aac98d3e768",
+      "artifacts": [
+        {
+          "id": 12697741621,
+          "name": "startup-profile-macos-arm64-40419008705",
+          "size_in_bytes": 248773,
+          "url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12697741621",
+          "archive_download_url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12697741621/zip",
+          "expired": false,
+          "created_at": "2026-10-26T23:27:13Z",
+          "expires_at": "2027-01-24T23:19:58Z",
+          "updated_at": "2026-10-26T23:27:13Z",
+          "digest": "sha256:f2fd8df8ffd4647450ee7d4b32dfbb8b9b46903f90e20de1cb3be67cd34d0566",
+          "workflow_run": {
+            "id": 40419008705,
+            "repository_id": 1176068946,
+            "head_repository_id": 1176068946,
+            "head_branch": "codex/ferroni-2-8-records",
+            "head_sha": "53c02bdb87726ea916175169bef28aac98d3e768"
+          }
+        },
+        {
+          "id": 12696802097,
+          "name": "startup-profile-linux-x86-64-40419008705",
+          "size_in_bytes": 257340,
+          "url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12696802097",
+          "archive_download_url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12696802097/zip",
+          "expired": false,
+          "created_at": "2026-10-26T23:27:06Z",
+          "expires_at": "2027-01-24T23:19:58Z",
+          "updated_at": "2026-10-26T23:27:06Z",
+          "digest": "sha256:db500b3cc6cf0c19401fff06c6ab9a0c50f5bf459d515d9a1d7a152673fb0826",
+          "workflow_run": {
+            "id": 40419008705,
+            "repository_id": 1176068946,
+            "head_repository_id": 1176068946,
+            "head_branch": "codex/ferroni-2-8-records",
+            "head_sha": "53c02bdb87726ea916175169bef28aac98d3e768"
+          }
+        }
+      ]
+    },
+    {
+      "runId": 40420127484,
+      "candidateCommit": "53c02bdb87726ea916175169bef28aac98d3e768",
+      "artifacts": [
+        {
+          "id": 12697848046,
+          "name": "startup-profile-macos-arm64-40420127484",
+          "size_in_bytes": 249369,
+          "url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12697848046",
+          "archive_download_url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12697848046/zip",
+          "expired": false,
+          "created_at": "2026-10-26T23:36:31Z",
+          "expires_at": "2027-01-24T23:29:42Z",
+          "updated_at": "2026-10-26T23:36:31Z",
+          "digest": "sha256:4c5b2cdf8785efb181948f358e05d49944ee27c8ab994d9986a478eee07b781d",
+          "workflow_run": {
+            "id": 40420127484,
+            "repository_id": 1176068946,
+            "head_repository_id": 1176068946,
+            "head_branch": "codex/ferroni-2-8-records",
+            "head_sha": "53c02bdb87726ea916175169bef28aac98d3e768"
+          }
+        },
+        {
+          "id": 12696998106,
+          "name": "startup-profile-linux-x86-64-40420127484",
+          "size_in_bytes": 257074,
+          "url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12696998106",
+          "archive_download_url": "https://api.github.com/repos/sebastian-software/ferriki/actions/artifacts/12696998106/zip",
+          "expired": false,
+          "created_at": "2026-10-26T23:36:29Z",
+          "expires_at": "2027-01-24T23:29:42Z",
+          "updated_at": "2026-10-26T23:36:29Z",
+          "digest": "sha256:ee34591408c6b1d02622c919da7b36d864739f071341b54faff649df36800e0e",
+          "workflow_run": {
+            "id": 40420127484,
+            "repository_id": 1176068946,
+            "head_repository_id": 1176068946,
+            "head_branch": "codex/ferroni-2-8-records",
+            "head_sha": "53c02bdb87726ea916175169bef28aac98d3e768"
+          }
+        }
+      ]
+    }
+  ]
+}
