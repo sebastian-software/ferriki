@@ -46,7 +46,10 @@ if (packed.status !== 0) {
   throw new Error(`${npm} pack failed for ${manifest.name}:\n${packed.stderr}`);
 }
 
-const files = JSON.parse(packed.stdout)[0].files.map((file) => file.path);
+const packResult = JSON.parse(packed.stdout);
+const archive = Array.isArray(packResult) ? packResult[0] : packResult[manifest.name];
+assert.equal(archive?.name, manifest.name, "npm pack must describe the expected platform package");
+const files = archive.files.map((file) => file.path);
 assert(files.includes("ferriki.node"), `${manifest.name} dry-run package is missing ferriki.node`);
 // The dual license is only real if both texts travel with the published addon.
 for (const licenseFile of ["LICENSE-APACHE", "LICENSE-MIT"])

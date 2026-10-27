@@ -455,26 +455,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Set Rust target
-        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
-        with:
-          toolchain: stable
-          targets: ${{ matrix.target }}
-
-      - name: Set up Zig for the musl cross-build
-        if: ${{ matrix.libc == 'musl' }}
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
-        with:
-          version: 0.15.2
-
-      - name: Install cargo-zigbuild
-        if: ${{ matrix.libc == 'musl' }}
-        uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tool: cargo-zigbuild
-
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
@@ -485,21 +465,21 @@ jobs:
         with:
           node-version: ${{ '22.x' }}
 
-      - name: Setup
-        run: npm i -g @antfu/ni
-
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build native
-        run: pnpm run build:native
+        uses: ./node/node_modules/ferramenta-native/actions/build-native
+        with:
+          target: ${{ matrix.target }}
+          libc: ${{ matrix.libc }}
         env:
           FERRIKI_RUST_TARGET: ${{ matrix.target }}
           FERRIKI_PLATFORM_TARGET: ${{ matrix.id }}
           FERRIKI_PLATFORM_ID: ${{ matrix.id }}
 
       - name: Verify native platform package
-        run: nr check:platform-package
+        run: pnpm check:platform-package
         env:
           FERRIKI_PLATFORM_ID: ${{ matrix.id }}
 
@@ -509,7 +489,7 @@ jobs:
 
       - name: Verify the installed sidecar is what the loader resolves
         if: ${{ matrix.libc != 'musl' }}
-        run: nr check:packed-sidecar
+        run: pnpm check:packed-sidecar
         env:
           FERRIKI_PLATFORM_ID: ${{ matrix.id }}
 

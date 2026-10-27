@@ -2,7 +2,6 @@ catalogMode: prefer
 # The organization's own packages are exempt from pnpm's release cooldown, so
 # an internal release installs immediately instead of after a day.
 minimumReleaseAgeExclude:
-  - "ferramenta-native"
   - "@sebastian-gmbh/*"
   - "@sebastian-software/*"
 # The native sidecars are workspace packages that carry a plain version
@@ -35,7 +34,7 @@ catalogs:
     "@napi-rs/cli": ^3.10.7
     "@antfu/eslint-config": ^7.2.0
     eslint: ^9.39.2
-    ferramenta-native: 0.1.0
+    ferramenta-native: github:sebastian-software/ferramenta#9bb9b8a04ef61012adebb92010ad4634816db75a&path:/packages/native
     oxfmt: ^0.66.0
     rimraf: ^6.1.2
     tsx: ^4.21.0

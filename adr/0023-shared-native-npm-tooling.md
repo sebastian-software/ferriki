@@ -20,9 +20,13 @@ publication recovery. `node/native-npm.config.mjs` supplies product identity.
 Assets, compatibility checks, public APIs and benchmark build receipts stay in
 Ferriki. The existing local Ferroni experiment remains a locked build input.
 
-The CLI catalog pins the published `ferramenta-native` version exactly. The
-initial bootstrap archive has been removed. End users install only `@ferriki/core`
-and its platform package.
+The CLI catalog pins a full Ferramenta Git commit and the `packages/native`
+subdirectory through pnpm. Normal and frozen installs fetch the ready-to-run
+helpers automatically; no toolkit registry release, submodule setup, sibling
+checkout or install-time build is required. The same dependency ships the
+composite CI action for Rust target setup, musl toolchains and the product's
+native build. Functional checks and asset preparation remain in Ferriki.
+End users install only `@ferriki/core` and its platform package.
 
 ## Consequences
 
@@ -35,3 +39,5 @@ by Ferriki. No Rust objects cross addon boundaries.
 - 2026-10-27: Accepted; unify family native packaging while retaining Ferriki's compatibility and release contracts.
 
 - 2026-10-27: Adopt the published 0.1.0 toolkit and remove the bootstrap archive.
+
+- 2026-10-27: Consume the toolkit and shared CI action through one full-SHA pnpm Git dependency, avoiding toolkit releases and contributor setup.
