@@ -533,6 +533,7 @@ jobs:
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node \
             -e FERRIKI_PLATFORM_ID="$FERRIKI_PLATFORM_ID" node:22-alpine sh -euc '
+              npm install --global pnpm@10.28.2
               node -e "if (process.report.getReport().header.glibcVersionRuntime) throw new Error(\"not a musl host\")"
               node ./scripts/check-packed-consumer.mjs
               node ./scripts/check-packed-sidecar.mjs
