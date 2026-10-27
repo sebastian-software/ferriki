@@ -27,6 +27,9 @@ const footprint = await readJson(new URL("../app/data/footprint.json", import.me
 const blacksmith = await readJson(
   new URL("../../docs/benchmarks/blacksmith-comparison.json", import.meta.url),
 );
+const preparedReport = await readJson(
+  new URL("../../docs/benchmarks/regex-modes-comparison.json", import.meta.url),
+);
 const grammarSources = await readJson(
   new URL("../../assets/grammars/sources.json", import.meta.url),
 );
@@ -138,8 +141,9 @@ const required = [
   [prismComparison, "Plain text"],
   [prismComparison, "prism-comparison-grid"],
   [homepage, `v${version}`],
-  [homepage, oneDecimal(factor("codeToHtml", "shiki-wasm"))],
-  [homepage, report.revision],
+  [homepage, preparedReport.runUrl],
+  [homepage, preparedReport.measured],
+  [homepage, "Beautiful code. Head start included."],
   [homepage, "@ferriki/core/react/macro"],
   [homepage, 'href="/guide/build-time-macros"'],
   [homepage, 'href="/guide/ferriki-and-syntect"'],
@@ -165,15 +169,30 @@ for (const engine of ["shiki-wasm", "shiki-js"]) {
 }
 for (const profile of blacksmith.profiles) {
   required.push([benchmarks, profile.machine.cpu], [benchmarks, profile.runner]);
-  required.push([homepage, profile.label], [benchmarks, profile.label]);
+  required.push([benchmarks, profile.label]);
   for (const engine of ["shiki-wasm", "shiki-js"]) {
     if (profile.warm.on[engine] === undefined) {
       required.push([benchmarks, "Unsupported"]);
       continue;
     }
     const observedFactor = oneDecimal(profile.warm.on[engine] / profile.warm.on.ferriki);
-    required.push([homepage, observedFactor], [benchmarks, observedFactor]);
+    required.push([benchmarks, observedFactor]);
   }
+}
+for (const profile of preparedReport.profiles) {
+  required.push(
+    [homepage, profile.label],
+    [homepage, profile.corpusMachines.comparison.cpu],
+    [homepage, oneDecimal(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"])],
+  );
+  for (const engine of ["ferriki-off", "ferriki-eager", "ferriki-precompiled"])
+    required.push([homepage, `${grouped(Math.round(profile.cold[engine]))} ms`]);
+  const { engines } = profile.memory.scenarios.find((scenario) => scenario.id === "repository");
+  const rssReduction = Math.round(
+    100 *
+      (1 - engines["ferriki-precompiled"].finalRss.median / engines["shiki-wasm"].finalRss.median),
+  );
+  required.push([homepage, `${rssReduction}% less whole-process RSS`]);
 }
 required.push([benchmarks, blacksmith.runUrl], [benchmarks, "JSON and Astro"]);
 
@@ -182,10 +201,6 @@ if (report.phiki?.status === "available") {
   const phikiDifferences = outputRows.filter((entry) => entry.status === "different").length;
   const phikiErrors = outputRows.filter((entry) => entry.status === "error").length;
   required.push([benchmarks, "Phiki (PHP)"]);
-  required.push([
-    homepage,
-    `matched on ${report.agreement.phiki.documents} of ${corpusSize} documents`,
-  ]);
   if (phikiDifferences > 0) {
     required.push([
       benchmarks,

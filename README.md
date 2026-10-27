@@ -12,50 +12,38 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-**Beautiful code. Optimization, delivered.** Ferriki brings editor-grade TextMate
-highlighting to documentation, CMS content, and site builds. Its native Rust
-engine works from Node.js and Rust, while Vite 8 macros prepare literal
-component examples during the build. The Node API keeps
-Shiki's familiar HTML call shape, backed by Ferriki's own curated grammar
-catalog.
+**Beautiful code. Head start included.** Ferriki brings the detail of your
+editor to docs, blogs, and CMS content. A native Rust engine handles the
+highlighting, with familiar Shiki-style HTML calls in Node.js, a Rust API,
+and Vite 8 macros for component examples.
 
-## Compile once. Start optimized.
+## The regex homework is already done
 
-Regex optimization can travel with your grammar. Powered by Ferroni 2.7,
-Ferriki prepares regex programs and static scanner automata ahead of time and
-delivers them as packages from the CDN. Your highlighter restores that work
-and starts with Eager optimizations from the first static scan.
+Your next build can start fresh with its regex optimizations ready to go.
+Powered by Ferroni 2.8, Ferriki prepares regex programs and static scanners
+ahead of time, then delivers them with your standard grammars from the CDN.
+Each new process restores that work and gets on with your code.
 
-Keep the asset cache between builds and the same download serves fresh
-processes, rebuilds, and deployments. Each process restores the prepared
-automata instead of rebuilding them from regex source. Standard grammars use
-these packages by default when prefiltering is on, with source fallback when
-a package is unavailable. Dynamic patterns remain local.
+Keep the disk cache between builds and you keep the download, the unpacked
+packages, and the preparation. Standard grammars use prepared packages by
+default with prefiltering on. Custom dynamic patterns stay local; unavailable
+packages fall back to source.
 
-Embedded languages reuse their own prepared packages across hosts. Markdown's
-prepared download falls from **25.9 MB to 1.9 MB** with the same grammar coverage;
-Astro falls from **6.5 MB to 0.52 MB**. Required dependencies load with the host,
-while optional code-fence languages stay optional. See the
-[package-sharing evidence](docs/benchmarks/precompiled-patterns/delegated-packages-2026-10-26/README.md).
+The payoff shows up at both ends: **first HTML takes about half the time of
+Source Eager**, while repeated highlighting keeps Eager's execution speed.
+In our fourteen-file Blacksmith corpus, Prepared starts within 6% of the
+unoptimized Source Off path on both hosts.
 
-The first load also caches the unpacked package. Later processes skip
-decompression and SHA-256 for unchanged local files, then restore the cached
-data on demand through a small index. Only requested program and group records
-are read into owned buffers. File-state checks detect changes and trigger
-verification again.
+| Same 14-file corpus, same HTML as Shiki/WASM | Linux x86-64 | macOS ARM64 |
+| --- | ---: | ---: |
+| First HTML vs. Shiki/WASM | **4.2× faster** | **5.5× faster** |
+| Repeated highlighting vs. Shiki/WASM | **3.7× faster** | **4.4× faster** |
 
-In our local seven-grammar diagnostic, C++ tokenizer startup dropped from
-**about 144 ms to 68 ms**, with execution comparable to ordinary Eager.
-Startup includes restoration and the first document; network, file I/O, and
-complete builds are outside the timer. See the
-[measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
-
-The October 27 full Node comparison measures Source Off, Auto, Eager and
-Prepared separately. Prepared first use takes **52% less time than Source Eager
-on Linux** and **50% less on macOS**, while starting within 6% of Source Off
-on both hosts. See the
-[separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
-for all policies, language cases and process memory.
+Measured October 27, 2026 with Ferriki 1.3.0 and Ferroni 2.8.0. First HTML
+includes imports, setup, and rendering in a fresh process with the asset and
+decoded caches already populated; downloads, first cache fill, and process
+creation are excluded. These are highlighting measurements, not total build
+times. [See every mode, machine, and raw result](https://ferriki.dev/evidence/benchmarks#four-regex-policies).
 
 ## Choose your path
 
@@ -122,22 +110,21 @@ try {
 }
 ```
 
-The October 27 Blacksmith capture uses Ferriki 1.3.0 with Ferroni 2.8.0
-and prepared standard regex packages. On its 14-file corpus, a reused
-highlighter produced the same HTML as Shiki/WASM and ran **3.7× faster on
-Linux x86-64** and **4.4× faster on macOS ARM64**. With the decoded cache
-already populated, first use was **4.2× / 5.5× faster than Shiki/WASM** on
-Linux/macOS. See the
-[benchmark report](https://ferriki.dev/evidence/benchmarks) for hosts,
-first-use timings, raw results, and measurement limits.
+## Keep the useful work. Travel lighter.
 
-Memory depends on the loaded languages. In the October 27 memory capture,
-after 600 documents with 12 languages loaded together, Prepared's whole-process
-RSS was **45% lower than Shiki/WASM** on both hosts. With the large TypeScript
-workload, it was **67–69% lower**. These are six-process medians per contender
-and workload, with identical HTML. Ferriki loads requested languages and their
-dependencies; this does not measure the entire grammar catalog. See the
-[memory details](https://ferriki.dev/evidence/benchmarks#process-memory-by-policy).
+The cache helps the next build; shared language packages help the first
+download. Markdown reuses the prepared scanners from its embedded languages
+instead of carrying another copy of each. Its own prepared package shrank
+from **25.9 MB to 1.9 MB**. Astro went from **6.5 MB to 0.52 MB**, with the same
+grammar coverage. Ferriki loads requested languages and required dependencies;
+optional code-fence languages stay optional. See the
+[package-sharing evidence](docs/benchmarks/precompiled-patterns/delegated-packages-2026-10-26/README.md).
+
+Memory looks good in the new capture, too. After 600 documents across twelve
+loaded languages, Prepared's whole-process RSS was **45% lower than Shiki/WASM**
+on both hosts. For the large TypeScript workload, it was **67–69% lower**.
+These are medians from six isolated processes per contender and workload,
+with identical HTML. [See the memory measurements](https://ferriki.dev/evidence/benchmarks#process-memory-by-policy).
 
 ## More ways to use Ferriki
 

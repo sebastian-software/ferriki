@@ -1,55 +1,51 @@
 import { EvidenceFigures, Section } from "ferramenta-family";
 import { Link } from "react-router";
 
+import report from "../../../docs/benchmarks/regex-modes-comparison.json";
+
 const steps = [
   [
-    "Prepare once",
-    "Ferroni compiles regex programs and optimizes static scanner automata ahead of time.",
+    "We prepare the scanners",
+    "Ferroni 2.8 does the regex optimization before the language package reaches you.",
   ],
   [
-    "Download your grammars",
-    "Embedded languages share their prepared packages across hosts. The first load verifies, unpacks, and caches them on disk.",
+    "You load your languages",
+    "Grammars and required dependencies download from the CDN and are verified.",
   ],
+  ["The cache keeps the work", "Keep downloads and unpacked packages on disk for the next build."],
   [
-    "Restore next time",
-    "A fresh process checks the cache and reads only the scanner records your document needs.",
+    "Your next process reuses it",
+    "Restore the requested scanners and start highlighting with their optimizations ready.",
   ],
-  ["Start optimized", "Static scanners use Eager optimizations from their first execution."],
 ];
 
-const figures = [
-  {
-    label: "Smaller Markdown package",
-    value: "93%",
-    detail: "1.9 MB prepared download · previously 25.9 MB",
-    measure: "Same grammar coverage · October 26, 2026 catalog",
-  },
-  {
-    label: "Lower C++ tokenizer startup",
-    value: "53%",
-    detail: "68 ms prepared · 144 ms source Eager",
-    measure: "Local macOS ARM64 diagnostic · first document included",
-  },
-];
+const milliseconds = (value: number) => `${Math.round(value).toLocaleString("en-US")} ms`;
+const figures = report.profiles.map((profile) => ({
+  label: `${profile.label} · first HTML`,
+  value: milliseconds(profile.cold["ferriki-precompiled"]),
+  detail: `${milliseconds(profile.cold["ferriki-off"])} Source Off · ${milliseconds(profile.cold["ferriki-eager"])} Source Eager`,
+  measure: profile.corpusMachines.comparison.cpu,
+}));
 
 export function PreparedRegexSection() {
   return (
     <Section
       id="prepared-regex"
       tone="dim"
-      title="Compile once. Start optimized."
-      intro="Make regex optimization part of the grammar you download. Powered by Ferroni 2.7, Ferriki ships prepared regex programs and scanner automata with its standard grammars. The expensive preparation survives a process restart, so each new build can pick up the work already done."
+      title="The regex homework is already done."
+      intro="Fast regex scanners take work to prepare. Ferriki does that work ahead of time and ships the result with your standard grammars. Keep the cache between builds, and each new process restores the optimized scanners and gets on with your code."
       note={
         <>
-          Enabled by default for standard grammars. Keep the disk cache between builds to reuse
-          downloads and unpacked packages. Restoration still takes time; dynamic patterns remain
-          local, and unavailable packages fall back to source.{" "}
-          <Link to="/evidence/benchmarks#prepared-regex">Read the measurements and limits.</Link>
+          October 27 Blacksmith capture: first HTML includes imports, setup, and all fourteen files
+          in a fresh process. Downloads and unpacking happen before timing; process creation is
+          excluded. Prepared starts within 6% of unoptimized Source Off on both hosts, while taking
+          about half Source Eager&rsquo;s first-use time.{" "}
+          <Link to="/evidence/benchmarks#four-regex-policies">See every mode and measurement.</Link>
         </>
       }
     >
       <figure className="ferriki-flow">
-        <figcaption>From grammar preparation to your next build</figcaption>
+        <figcaption>One preparation, many fresh starts</figcaption>
         <ol>
           {steps.map(([label, detail]) => (
             <li key={label}>
@@ -61,15 +57,15 @@ export function PreparedRegexSection() {
       </figure>
       <EvidenceFigures figures={figures} />
       <p className="fam-note">
-        Language packages share embedded scanners instead of shipping each language inside every
-        host. Across the catalog, prepared downloads fall from 274 MB to 35 MB. Optional code-fence
-        languages stay optional.{" "}
-        <Link to="/evidence/benchmarks#shared-language-packages">See the package sizes.</Link>
+        Embedded languages share their own prepared scanners. Markdown&rsquo;s own prepared package
+        shrank from 25.9 MB to 1.9 MB; Astro went from 6.5 MB to 0.52 MB, with the same grammar
+        coverage. Optional code-fence languages stay optional.{" "}
+        <Link to="/evidence/benchmarks#shared-language-packages">See the smaller packages.</Link>
       </p>
       <p className="fam-note">
-        Prepared execution stayed comparable to ordinary Eager in this seven-grammar diagnostic.
-        Startup includes archive restoration and the first document; network, file I/O, and full
-        builds are outside the timer. This is separate from the older Shiki comparisons below.
+        Prepared packages are enabled by default for standard grammars. Missing packages fall back
+        to source; custom dynamic patterns stay local. Keep the disk cache between builds to reuse
+        the download and unpacked packages.
       </p>
     </Section>
   );

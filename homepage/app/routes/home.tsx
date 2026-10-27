@@ -9,6 +9,7 @@ import {
 } from "ferramenta-family";
 import { Link } from "react-router";
 
+import preparedReport from "../../../docs/benchmarks/regex-modes-comparison.json";
 import {
   ClosingSection,
   CodeSection,
@@ -16,22 +17,29 @@ import {
   MacroSection,
 } from "../components/home-sections";
 import { PreparedRegexSection } from "../components/prepared-regex";
-import { agreeingDocuments, blacksmith, documents, formatFactor, report } from "../data/benchmarks";
+import { formatFactor } from "../data/benchmarks";
 import { grammarCount } from "../data/grammar-catalog";
 import sample from "../data/sample.json";
 import { version } from "../version";
+
+const measurementDate = new Date(preparedReport.measured).toLocaleDateString("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 function HeroSection() {
   return (
     <ProjectHero
       icon="ferriki"
       title="Ferriki"
-      what="Beautiful code. Optimization, delivered."
-      lede="Native TextMate highlighting for Node.js and Rust, with regex optimizations prepared before your build starts. Load standard grammars from the CDN, restore their optimized scanners, and get straight to highlighting."
+      what="Beautiful code. Head start included."
+      lede="Native syntax highlighting for Node.js and Rust. Grammars arrive with regex optimization already done, ready for your docs, CMS, and next site build."
       facts={[
         { label: "Runtime", value: "Native Rust" },
         { label: "Grammars", value: String(grammarCount) },
-        { label: "Regex", value: "Prepared ahead" },
+        { label: "Regex", value: "Ready to run" },
       ]}
       actions={
         <>
@@ -62,7 +70,7 @@ function SampleSection() {
     <Section
       id="sample"
       title="One file, three languages"
-      intro="An HTML page with a stylesheet and a module script: the HTML grammar hands each block to the CSS and JavaScript grammars, and the template literal inside the script keeps its own scopes. This is Ferriki’s committed output for the source on the left."
+      intro="HTML, CSS, and JavaScript share a page. Ferriki follows each language into the next, right down to the template literal inside the script. The result on the right comes straight from Ferriki."
       note={
         <a href="https://github.com/sebastian-software/ferriki/tree/main/homepage/scripts">
           Rendered by scripts/render-sample.mjs with codeToHtml
@@ -83,9 +91,9 @@ function SampleSection() {
 function EvidenceIntro() {
   return (
     <>
-      On two Blacksmith hosts, Ferriki and Shiki + WASM produced identical HTML for{" "}
-      {agreeingDocuments} of {documents} files in the repository corpus. The figures show repeated{" "}
-      <code>codeToHtml</code> calls with languages and themes already loaded.
+      One loaded highlighter, block after block. On our fourteen-file repository corpus, Ferriki
+      produced identical HTML to Shiki/WASM on Linux and macOS. Here is how much faster repeated{" "}
+      <code>codeToHtml</code> calls ran with languages and themes already loaded.
     </>
   );
 }
@@ -93,11 +101,11 @@ function EvidenceIntro() {
 function EvidenceNote() {
   return (
     <>
-      Measured {report.measured} at commit <code>{report.revision}</code>, with Ferroni{" "}
-      {blacksmith.profiles[0].ferroni} and Shiki {report.versions.shiki}. The{" "}
-      <Link to="/evidence/benchmarks">full benchmark report</Link> includes both hosts, first-use,
-      JSON and Astro, memory, raw reports, and reproduction commands. Results depend on workload and
-      hardware.
+      Measured <time dateTime={preparedReport.measured}>{measurementDate}</time> with Ferriki{" "}
+      {preparedReport.ferriki} and Ferroni {preparedReport.ferroni} in this{" "}
+      <a href={preparedReport.runUrl}>Blacksmith run</a>. These measure highlighting, not total
+      build time. The <Link to="/evidence/benchmarks">full report</Link> has every language case,
+      startup, memory, and raw results. Results depend on workload and hardware.
     </>
   );
 }
@@ -107,18 +115,24 @@ function EvidenceSection() {
     <Section
       id="evidence"
       layout="split"
-      title="Same HTML. Faster repeated highlighting."
+      title="The numbers look good, too."
       intro={<EvidenceIntro />}
       note={<EvidenceNote />}
     >
       <EvidenceFigures
-        figures={blacksmith.profiles.map((profile) => ({
+        figures={preparedReport.profiles.map((profile) => ({
           label: profile.label,
-          value: formatFactor(profile.warm.on["shiki-wasm"] / profile.warm.on.ferriki),
-          detail: "faster than Shiki + WASM · 14-file repository corpus",
-          measure: profile.machine.cpu,
+          value: formatFactor(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"]),
+          detail: "faster than Shiki/WASM",
+          measure: profile.corpusMachines.comparison.cpu,
         }))}
       />
+      <p className="fam-note">
+        Prepared also used about 45% less whole-process RSS than Shiki/WASM after 600 documents
+        across twelve loaded languages on both hosts. Six isolated processes per contender; all
+        produced identical HTML.{" "}
+        <Link to="/evidence/benchmarks#process-memory-by-policy">Compare the memory results.</Link>
+      </p>
     </Section>
   );
 }

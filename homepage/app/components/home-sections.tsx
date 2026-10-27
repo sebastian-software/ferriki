@@ -18,12 +18,12 @@ export function MacroSection() {
   return (
     <Section
       id="build-time"
-      title="Prepare component examples before they ship"
+      title="Code examples, ready before the page ships"
       intro={
         <>
-          Put <code>&lt;Code /&gt;</code> beside the React component that teaches the idea. During a
-          Vite 8 build, <code>@ferriki/vite</code> replaces it with the prepared HTML and CSS shown
-          here. Your page receives the highlighted result before it ships.
+          Write <code>&lt;Code /&gt;</code> right beside the React component it explains. During a
+          Vite 8 build, <code>@ferriki/vite</code> turns the example into highlighted HTML and CSS.
+          Your readers get the finished block when the page arrives.
         </>
       }
       note={
@@ -163,11 +163,11 @@ export function CodeSection() {
   return (
     <Section
       id="code"
-      title="A familiar HTML API, on one native engine"
+      title="Familiar calls, native Rust underneath"
       intro={
         <>
-          Use familiar Shiki-style HTML calls in Node.js. The Rust crate calls the same native
-          TextMate engine directly, and Vite 8 can prepare React examples as your site builds.
+          Start with Shiki-style HTML calls in Node.js, or use the same TextMate engine directly
+          from Rust. Pick a language, choose a theme, and give your code a place on the page.
         </>
       }
       note={
@@ -249,8 +249,8 @@ export function CoverageSection() {
   return (
     <Section
       id="coverage"
-      title="What it covers"
-      intro="Highlight code for the pages you publish: render HTML and CSS from Node.js or Rust, or prepare component examples during a Vite 8 build."
+      title="Built for the code you publish"
+      intro="Bring your languages, your themes, even a grammar of your own. Here is what Ferriki supports today, with the details close at hand."
       note={
         <>
           <Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>{" "}
@@ -267,11 +267,11 @@ export function ClosingSection() {
   return (
     <ClosingAction
       id="start"
-      title="Bring editor-grade highlighting to your build"
+      title="Give your next build a head start"
       actions={
         <>
           <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
-            Read the guide <Mark name="arrow" className="icon" size={18} />
+            Highlight your first block <Mark name="arrow" className="icon" size={18} />
           </Link>
           <Link to="/rust/getting-started" className="fam-btn fam-btn-ghost">
             Use it from Rust
@@ -289,8 +289,8 @@ export function ClosingSection() {
       }
     >
       <p className="fam-intro">
-        The npm package, Rust crate, and Vite adapter share one native TextMate engine. Your app
-        gets highlighted HTML and CSS, ready for the page.
+        Start with a language and a theme. Ferriki brings the prepared scanners and turns your code
+        into HTML and CSS, ready for the page.
       </p>
     </ClosingAction>
   );
