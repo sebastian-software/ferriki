@@ -1,6 +1,6 @@
 {
   "name": "@ferriki/linux-x64-gnu",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": false,
   "description": "Native x86_64-unknown-linux-gnu binary for ferriki",
   "license": "MIT OR Apache-2.0",
