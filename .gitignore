@@ -46,6 +46,3 @@ assets/shiki/
 
 assets/upstream/curated/
 assets/standard/
-
-# Content-addressed bootstrap until ferramenta-native is released.
-!node/vendor/ferramenta-native-*.tgz

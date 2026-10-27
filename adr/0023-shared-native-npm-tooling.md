@@ -20,9 +20,9 @@ publication recovery. `node/native-npm.config.mjs` supplies product identity.
 Assets, compatibility checks, public APIs and benchmark build receipts stay in
 Ferriki. The existing local Ferroni experiment remains a locked build input.
 
-The initial dependency is the reviewed bootstrap archive under `node/vendor`.
-After the first tooling release, adopt its exact registry version and remove
-the archive. End users install only `@ferriki/core` and its platform package.
+The CLI catalog pins the published `ferramenta-native` version exactly. The
+initial bootstrap archive has been removed. End users install only `@ferriki/core`
+and its platform package.
 
 ## Consequences
 
@@ -33,3 +33,5 @@ by Ferriki. No Rust objects cross addon boundaries.
 ## History
 
 - 2026-10-27: Accepted; unify family native packaging while retaining Ferriki's compatibility and release contracts.
+
+- 2026-10-27: Adopt the published 0.1.0 toolkit and remove the bootstrap archive.

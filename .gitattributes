@@ -12,4 +12,3 @@ assets/shiki/GRAMMAR-NOTICES.md -text -whitespace
 /node/ferriki/native-runtime.mjs text eol=lf
 /node/ferriki/native-runtime.d.mts text eol=lf
 /node/scripts/native-registry.mjs text eol=lf
-/node/vendor/*.tgz binary

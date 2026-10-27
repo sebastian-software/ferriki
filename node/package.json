@@ -84,7 +84,7 @@
     "cson-parser": "catalog:",
     "eslint": "catalog:cli",
     "fast-glob": "catalog:testing",
-    "ferramenta-native": "file:vendor/ferramenta-native-0.1.0-6d574d6eff17.tgz",
+    "ferramenta-native": "catalog:cli",
     "fs-extra": "catalog:testing",
     "hast-util-from-html": "catalog:inlined",
     "hast-util-to-html": "catalog:inlined",

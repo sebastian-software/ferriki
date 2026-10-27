@@ -39,13 +39,6 @@ export default antfu(
     },
   },
   {
-    files: ["package.json"],
-    rules: {
-      // pnpm 10 catalogs cannot name a bootstrap file dependency; remove after the first toolkit release.
-      "pnpm/json-enforce-catalog": ["error", { ignores: ["ferramenta-native"] }],
-    },
-  },
-  {
     files: ["vite/package.json"],
     rules: {
       // Core follows the shared product version, not an external catalog.
