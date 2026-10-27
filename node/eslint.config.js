@@ -12,6 +12,9 @@ export default antfu(
       "**/node_modules/**",
       "**/dist/**",
       "**/*.d.mts",
+      // Generated shared sources are checked by native:check and linted in Ferramenta.
+      "ferriki/native-runtime.mjs",
+      "scripts/native-registry.mjs",
       "compat/upstream/**",
       // Keep the measured benchmark inputs byte-identical to the saved run.
       "benchmarks/shadow-dom-spike/fixtures/**",

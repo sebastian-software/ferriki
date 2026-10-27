@@ -1,7 +1,8 @@
 {
   "name": "@ferriki/linux-x64-gnu",
   "version": "1.3.0",
-  "description": "Ferriki native addon for Linux x64 with GNU libc",
+  "private": false,
+  "description": "Native x86_64-unknown-linux-gnu binary for ferriki",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
@@ -23,6 +24,10 @@
     "glibc"
   ],
   "main": "ferriki.node",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "engines": {
     "node": ">=22.13.0"
   }

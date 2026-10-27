@@ -7,3 +7,8 @@ assets/shiki/**/*.fkindex binary
 # Upstream license text is archived and aggregated verbatim.
 assets/grammars/licenses/*.txt -text -whitespace
 assets/shiki/GRAMMAR-NOTICES.md -text -whitespace
+
+# Shared native sources are compared byte for byte on every platform.
+/node/ferriki/native-runtime.mjs text eol=lf
+/node/ferriki/native-runtime.d.mts text eol=lf
+/node/scripts/native-registry.mjs text eol=lf

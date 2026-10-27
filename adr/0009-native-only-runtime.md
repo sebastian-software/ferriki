@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-10-27
 
 ## Context
 
@@ -180,3 +180,13 @@ native loader remains internal.
   framework-free server helper remains for manually authored reference hosts.
 - 2026-10-12: Keeps native declarative highlighting and framework-free
   presentation as separate runtime paths (#257, #263).
+
+## Amendment: Shared native packaging (2026-10-27)
+
+The build and loader implementation now follows [ADR 0023](0023-shared-native-npm-tooling.md).
+The supported platform policy and standalone npm distribution stay unchanged.
+The historical template evaluation above records the evidence at that time;
+the common driver preserves the existing source gate, exact platform coverage,
+packed-sidecar negative control, and provenance-checked release recovery.
+
+- 2026-10-27: Adopt Ferramenta's common build driver and generated loader without changing the native-only runtime contract.

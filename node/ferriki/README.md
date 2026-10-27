@@ -95,9 +95,9 @@ later calls.
 
 Same fourteen files. Same HTML as Shiki/WASM. Less time spent highlighting.
 
-| October 27 Blacksmith capture | Linux x86-64 | macOS ARM64 |
-| --- | ---: | ---: |
-| First HTML vs. Shiki/WASM | **4.2× faster** | **5.5× faster** |
+| October 27 Blacksmith capture        |    Linux x86-64 |     macOS ARM64 |
+| ------------------------------------ | --------------: | --------------: |
+| First HTML vs. Shiki/WASM            | **4.2× faster** | **5.5× faster** |
 | Repeated highlighting vs. Shiki/WASM | **3.7× faster** | **4.4× faster** |
 
 Measured with Ferriki 1.3.0 and Ferroni 2.8.0. First HTML includes imports,
