@@ -170,6 +170,19 @@ are diagnostic; small differences and noisy controls need care.
 - Existing tests retain later-context coverage, cooperating package behavior,
   corruption and file-change fallback, and repeated-read reuse.
 
+## Post-capture CI maintenance
+
+PR #338 also updates Zstd from 0.13.3 to 0.14.3, zstd-safe to 8.2.0 and
+zstd-sys to 2.1.2 after the advisory gate reported RUSTSEC-2026-0391,
+RUSTSEC-2026-0398, RUSTSEC-2026-0403 and RUSTSEC-2026-0410. The bundled codec
+remains Zstd 1.5.7. Existing transport packages stay unchanged. The fuzz lockfile
+also pins Ferroni 2.8.0. Workspace tests, native compatibility, Clippy, MSRV and
+cargo-deny pass after this maintenance.
+
+The benchmark receipts retain the exact pre-maintenance dependency versions
+and source revision. The measured warm-disk-cache startup path does not repeat
+transport decompression; these captures remain evidence for their pinned build.
+
 ## Retained evidence
 
 Run/host folders retain every original artifact file, including both paired
