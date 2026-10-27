@@ -48,13 +48,13 @@ export const meta: MetaFunction = ({ location }) => {
   const page = section?.pages.find(([, to]) => to === path);
   const title = page
     ? `${page[0]} · ${section?.label} · Ferriki`
-    : "Ferriki — Beautiful code. Optimization, delivered.";
+    : "Ferriki — Beautiful code. Head start included.";
   return [
     { title },
     {
       name: "description",
       content:
-        "Native TextMate highlighting for Node.js and Rust. Prepared regex packages bring Eager optimizations to your first highlight and carry them across builds.",
+        "Native syntax highlighting for Node.js and Rust. Grammars arrive optimized, so every new build gets a head start. See the benchmarks and try Ferriki.",
     },
   ];
 };
