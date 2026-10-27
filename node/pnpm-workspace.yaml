@@ -34,7 +34,7 @@ catalogs:
     "@napi-rs/cli": ^3.10.7
     "@antfu/eslint-config": ^7.2.0
     eslint: ^9.39.2
-    ferramenta-native: github:sebastian-software/ferramenta#9f5743a1e414ec0f69297a5c5459433f4a8bdfa3&path:/packages/native
+    ferramenta-native: github:sebastian-software/ferramenta#4c173d74927a8186f16962e03a11309b49ed622d&path:/packages/native
     oxfmt: ^0.66.0
     rimraf: ^6.1.2
     tsx: ^4.21.0
