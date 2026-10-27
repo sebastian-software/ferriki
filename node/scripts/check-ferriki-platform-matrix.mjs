@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -18,7 +20,7 @@ const ferrikiManifest = JSON.parse(
 
 assert.equal(FERRIKI_NODE_MIN_VERSION, "22.13.0");
 assert.deepEqual(
-  FERRIKI_PLATFORM_TARGETS.map((target) => target.id),
+  FERRIKI_PLATFORM_TARGETS.map((target) => target.id).sort(),
   [
     "linux-x64-gnu",
     "linux-arm64-gnu",
@@ -27,7 +29,7 @@ assert.deepEqual(
     "darwin-arm64",
     "win32-x64-msvc",
     "win32-arm64-msvc",
-  ],
+  ].sort(),
 );
 assert.equal(
   resolveFerrikiPlatformTarget({ platform: "linux", arch: "x64", libc: "gnu" }).id,
@@ -88,20 +90,26 @@ for (const target of FERRIKI_PLATFORM_TARGETS) {
 const platformIds = FERRIKI_PLATFORM_TARGETS.map((target) => target.id);
 const ciWorkflow = await readFile(join(workflowDir, "ci.yml"), "utf8");
 const publishWorkflow = await readFile(join(workflowDir, "publish.yml"), "utf8");
-const matrixIds = (workflow) =>
-  [...workflow.matchAll(/^\s+platform-id: (\S+)$/gm)].map((match) => match[1]);
-assert.deepEqual(matrixIds(ciWorkflow), platformIds, "ci.yml native-smoke matrix");
-assert.deepEqual(matrixIds(publishWorkflow), platformIds, "publish.yml build-native matrix");
+const matrix = JSON.parse(
+  execFileSync(process.execPath, [join(nodeRoot, "scripts/native-matrix.mjs")], {
+    encoding: "utf8",
+  }),
+);
+assert.deepEqual(matrix.include.map((target) => target.id).sort(), [...platformIds].sort());
+for (const workflow of [ciWorkflow, publishWorkflow]) {
+  assert.match(workflow, /node scripts\/native-matrix\.mjs/);
+  assert.match(workflow, /fromJSON\(needs\.native-matrix\.outputs\.matrix\)/);
+}
 assert.deepEqual(
-  [...publishWorkflow.matchAll(/^\s+name: native-(\S+)\n\s+path: node\/platforms\/\1$/gm)].map(
-    (match) => match[1],
-  ),
-  platformIds,
+  [...publishWorkflow.matchAll(/^\s+name: native-(\S+)\n\s+path: node\/platforms\/\1$/gm)]
+    .map((match) => match[1])
+    .sort(),
+  [...platformIds].sort(),
   "publish.yml must download every native sidecar into its platform package",
 );
-assert.equal(
-  /^\s+FERRIKI_PLATFORM_IDS: (.+)$/m.exec(publishWorkflow)?.[1],
-  platformIds.join(" "),
+assert.deepEqual(
+  /^\s+FERRIKI_PLATFORM_IDS: (.+)$/m.exec(publishWorkflow)?.[1].split(" ").sort(),
+  [...platformIds].sort(),
   "publish.yml FERRIKI_PLATFORM_IDS must list every platform package to verify and publish",
 );
 

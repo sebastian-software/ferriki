@@ -16,9 +16,5 @@
     "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.mjs", "eslint.config.js"],
-  "exclude": [
-    "**/node_modules/**",
-    "**/dist/**",
-    "compat/upstream/**"
-  ]
+  "exclude": ["**/node_modules/**", "**/dist/**", "compat/upstream/**"]
 }

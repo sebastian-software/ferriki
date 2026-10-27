@@ -5,10 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { verifyPlatform } from "ferramenta-native/packages";
+import config from "../native-npm.config.mjs";
 
 const nodeRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const platformId = process.env.FERRIKI_PLATFORM_ID;
 assert(platformId, "FERRIKI_PLATFORM_ID is required for a platform package check");
+
+await verifyPlatform(config, platformId);
 
 const packageDir = join(nodeRoot, "platforms", platformId);
 const manifest = JSON.parse(await readFile(join(packageDir, "package.json"), "utf8"));

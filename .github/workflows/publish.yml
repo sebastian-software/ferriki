@@ -238,44 +238,40 @@ jobs:
             ferriki-asset-gen
             ferriki
 
+  native-matrix:
+    runs-on: ubuntu-latest
+    needs: verify-release-source
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.verify-release-source.outputs.release_sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+      - run: pnpm -C node install --frozen-lockfile --ignore-scripts
+      - id: matrix
+        working-directory: node
+        run: echo "matrix=$(node scripts/native-matrix.mjs)" >> "$GITHUB_OUTPUT"
+
   build-native:
     needs:
       - release-please
       - verify-release-source
+      - native-matrix
     if: ${{ needs.release-please.outputs.releases_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force-publish) }}
     timeout-minutes: 30
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            rust-target: x86_64-unknown-linux-gnu
-            platform-id: linux-x64-gnu
-          - os: ubuntu-24.04-arm
-            rust-target: aarch64-unknown-linux-gnu
-            platform-id: linux-arm64-gnu
-          # musl targets cross-compile with cargo-zigbuild on a glibc runner of
-          # the same architecture; CI's native-smoke job loads them on Alpine.
-          - os: ubuntu-latest
-            rust-target: x86_64-unknown-linux-musl
-            platform-id: linux-x64-musl
-            musl: true
-          - os: ubuntu-24.04-arm
-            rust-target: aarch64-unknown-linux-musl
-            platform-id: linux-arm64-musl
-            musl: true
-          - os: macos-latest
-            rust-target: aarch64-apple-darwin
-            platform-id: darwin-arm64
-          - os: windows-latest
-            rust-target: x86_64-pc-windows-msvc
-            platform-id: win32-x64-msvc
-          - os: windows-11-arm
-            rust-target: aarch64-pc-windows-msvc
-            platform-id: win32-arm64-msvc
-    runs-on: ${{ matrix.os }}
+      matrix: ${{ fromJSON(needs.native-matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     defaults:
       run:
         working-directory: node
@@ -302,16 +298,16 @@ jobs:
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
         with:
           toolchain: stable
-          targets: ${{ matrix.rust-target }}
+          targets: ${{ matrix.target }}
 
       - name: Set up Zig for the musl cross-build
-        if: ${{ matrix.musl }}
+        if: ${{ matrix.libc == 'musl' }}
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: 0.15.2
 
       - name: Install cargo-zigbuild
-        if: ${{ matrix.musl }}
+        if: ${{ matrix.libc == 'musl' }}
         uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -324,19 +320,19 @@ jobs:
       - name: Build native addon
         run: pnpm run build:native
         env:
-          FERRIKI_RUST_TARGET: ${{ matrix.rust-target }}
-          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+          FERRIKI_RUST_TARGET: ${{ matrix.target }}
+          FERRIKI_PLATFORM_ID: ${{ matrix.id }}
 
       - name: Verify platform package
         run: pnpm run check:platform-package
         env:
-          FERRIKI_PLATFORM_ID: ${{ matrix.platform-id }}
+          FERRIKI_PLATFORM_ID: ${{ matrix.id }}
 
       - name: Upload native sidecar
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: native-${{ matrix.platform-id }}
-          path: node/platforms/${{ matrix.platform-id }}/ferriki.node
+          name: native-${{ matrix.id }}
+          path: node/platforms/${{ matrix.id }}/ferriki.node
           if-no-files-found: error
           retention-days: 1
 
