@@ -5,7 +5,7 @@
 # See ADR 0012 and docs/release-checklist.md.
 [package]
 name = "ferriki"
-version = "1.2.0"
+version = "1.3.0"
 description = "Reusable native Rust syntax highlighter with TextMate grammars"
 readme = "README.md"
 documentation = "https://docs.rs/ferriki"
@@ -41,14 +41,14 @@ include = [
 remote = ["dep:ureq", "dep:rustls", "dep:rustls-webpki", "dep:webpki-root-certs"]
 
 [dependencies]
-ferriki-asset-gen = { version = "1.2.0", path = "crates/ferriki-asset-gen" }
-ferriki-textmate = { version = "1.2.0", path = "crates/ferriki-textmate" }
+ferriki-asset-gen = { version = "1.3.0", path = "crates/ferriki-asset-gen" }
+ferriki-textmate = { version = "1.3.0", path = "crates/ferriki-textmate" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 
 [build-dependencies]
-ferriki-asset-gen = { version = "1.2.0", path = "crates/ferriki-asset-gen" }
+ferriki-asset-gen = { version = "1.3.0", path = "crates/ferriki-asset-gen" }
 serde_json = { workspace = true }
 
 # The HTTP client exists only outside wasm32, where it cannot run; a wasm build

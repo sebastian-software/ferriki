@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.3.0](https://github.com/sebastian-software/ferriki/compare/v1.2.0...v1.3.0) (2026-10-27)
+
+
+### Features
+
+* **assets:** delegate prepared scanners across language packages ([9e3b52c](https://github.com/sebastian-software/ferriki/commit/9e3b52c813039fff9114bd7e4b864f74c9c62213))
+* benchmark source and prepared regex modes independently ([#332](https://github.com/sebastian-software/ferriki/issues/332)) ([9220ea3](https://github.com/sebastian-software/ferriki/commit/9220ea3c1d5787746faeca039544fe020527bfe6))
+
+
+### Bug Fixes
+
+* **benchmarks:** verify native selection in reader comparisons ([ba27228](https://github.com/sebastian-software/ferriki/commit/ba27228efcc21babd830f0704c5a934af5b86c05))
+* **deps:** require Ferroni 2.7.1 for prepared scanners ([adcf0b9](https://github.com/sebastian-software/ferriki/commit/adcf0b9aa540901cd00fe8788cdb3ddcfe49e679))
+* **deps:** update Zstd and pin fuzz Ferroni ([755eab8](https://github.com/sebastian-software/ferriki/commit/755eab8826423db12b772d459bd1201184a7d79b))
+
+
+### Performance Improvements
+
+* **assets:** batch indexed program reads into reusable chunks ([22d57cd](https://github.com/sebastian-software/ferriki/commit/22d57cd4d7c3f5949ed6dea368359c923352799c))
+* **assets:** cache decoded prepared packages between processes ([7fefb2c](https://github.com/sebastian-software/ferriki/commit/7fefb2c7a75e04b2e835a23ae51df2fc651f4766))
+* **assets:** import prepared records with Ferroni 2.8 ([53c02bd](https://github.com/sebastian-software/ferriki/commit/53c02bdb87726ea916175169bef28aac98d3e768))
+* **assets:** load prepared records directly with Ferroni 2.8 ([#338](https://github.com/sebastian-software/ferriki/issues/338)) ([3f26e16](https://github.com/sebastian-software/ferriki/commit/3f26e16ab6422ef2930440e22d05573a4bf57d3b))
+* **assets:** read prepared scanner records on demand ([31c6460](https://github.com/sebastian-software/ferriki/commit/31c6460bd9896b3aa44d1ef9facf9ca472f3436a))
+* **assets:** reuse decoded cache verification by file state ([486b825](https://github.com/sebastian-software/ferriki/commit/486b825b73151be7f83308c9e7dfce6acf96d4c0))
+* **assets:** use Ferroni 2.7.2 shared archive storage ([34372b7](https://github.com/sebastian-software/ferriki/commit/34372b771e2eb8e5b1687313f3220031be529da7))
+
 ## [1.2.0](https://github.com/sebastian-software/ferriki/compare/v1.1.2...v1.2.0) (2026-10-24)
 
 
