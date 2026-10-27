@@ -1,0 +1,555 @@
+{
+  "schemaVersion": 1,
+  "recorded": "2026-10-27",
+  "catalogSha256": "78d9d7d35889facf40aec0844f7c3a1af7c3aa288d58e83afd40de45798d3ec0",
+  "grammarSourcesSha256": "a109c62aebc4c753760453883d7f69aa9a57595b1e31ff3e3e5a8bcb0c183ccb",
+  "basis": "Fresh-cache native asset plans for the same requested roots and required dependencies, no themes. grammarBytes: unoptimized .fkgram CDN payloads. preparedExtraBytes: additional compressed .fkbc programs/automata. normalizedJsonBytes: pinned normalized JSON definitions, not a transfer-size estimate. HTTP headers, transport encoding, decoded disk caches and local indexes excluded. Optional embedded languages are not requested.",
+  "coverage": {
+    "standard": 67,
+    "support": 27
+  },
+  "cases": [
+    {
+      "id": "rust",
+      "label": "Rust",
+      "languages": [
+        "rust"
+      ],
+      "normalizedJsonBytes": 31193,
+      "grammarBytes": 17967,
+      "preparedExtraBytes": 40353,
+      "preparedTotalBytes": 58320,
+      "definitions": [
+        {
+          "language": "rust",
+          "bytes": 31193,
+          "sha256": "03c369e6edf0e659a44598705cfdf9e1aa0008bb8da5097802c3d91445f1e0d7"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/rust.fkbc",
+          "sha256": "a36cb2d3f22fe917e659bd75c2bf0dbc6f256a4444dea7d19da9b2aaf7913a12",
+          "size": 40353
+        },
+        {
+          "path": "languages/rust.fkgram",
+          "sha256": "f2e7decec9584bd4ad56004f5225492c7de2130738e26c960fd7805b1ec1de43",
+          "size": 17967
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "label": "Python",
+      "languages": [
+        "python"
+      ],
+      "normalizedJsonBytes": 118620,
+      "grammarBytes": 78379,
+      "preparedExtraBytes": 249944,
+      "preparedTotalBytes": 328323,
+      "definitions": [
+        {
+          "language": "python",
+          "bytes": 118620,
+          "sha256": "4abae9c3bd7b6b1fed0df09d52c9dcff2f2fa0916be6c5d149f28b7ff2be3381"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/python.fkbc",
+          "sha256": "0bb89917cb0e18b807f0abadaded8980742127258da85d0aa6b560e377519f26",
+          "size": 249944
+        },
+        {
+          "path": "languages/python.fkgram",
+          "sha256": "f87d133e1555a5dd578f49edd95004b0015160b6ebb3dc832a172d1c747dd965",
+          "size": 78379
+        }
+      ]
+    },
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "languages": [
+        "typescript"
+      ],
+      "normalizedJsonBytes": 764882,
+      "grammarBytes": 539126,
+      "preparedExtraBytes": 4109864,
+      "preparedTotalBytes": 4648990,
+      "definitions": [
+        {
+          "language": "css-styled",
+          "bytes": 34654,
+          "sha256": "a25a1d8ffbb320dd63bc12cfa029c2aac60fc20cdc9b8ff11002e0f4e5b034f7"
+        },
+        {
+          "language": "css",
+          "bytes": 93619,
+          "sha256": "ad57ae3a701022032308923a8bc48d2268e66289f3fb69b5f3aecc8f1f0b9e5e"
+        },
+        {
+          "language": "es-tag-css",
+          "bytes": 10968,
+          "sha256": "c6c33aecac0ed21255f2ac2a7f3ba0d81c989d0d19a1982f3d93c9008b0ccdb0"
+        },
+        {
+          "language": "es-tag-html",
+          "bytes": 3491,
+          "sha256": "62d254a53ba131da36e85a22c665571c4ea1785b54df5820d484c8881be08c33"
+        },
+        {
+          "language": "html",
+          "bytes": 104444,
+          "sha256": "a66d9bcca6d77e53b210c5fe9c99d09bbfb7388a405fe7a016bd007f1663b85f"
+        },
+        {
+          "language": "javascript",
+          "bytes": 257156,
+          "sha256": "6921689f7d7cf722fcd2dacb7dbadc264411b753a606048abd693f99180fb2a7"
+        },
+        {
+          "language": "typescript",
+          "bytes": 260550,
+          "sha256": "733af1f3e2ac3a444df0490f6ff23ac7cfe1483068c7d168d570448243e0d7eb"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/css-styled.fkbc",
+          "sha256": "5d139642c33e57664669bb31b46c62fbce9fe81cd6a748a688bdcaad9ed8305f",
+          "size": 953292
+        },
+        {
+          "path": "languages/css-styled.fkgram",
+          "sha256": "cc5f2825dda22918180b7ccd52631d1b8a02c1fe0ee12f11fa0b3a241e94499e",
+          "size": 20630
+        },
+        {
+          "path": "languages/css.fkbc",
+          "sha256": "c6b0c03cef0adeaa0fcb8934d664fc071f865a3a937f6de94af51e611baae9dd",
+          "size": 639264
+        },
+        {
+          "path": "languages/css.fkgram",
+          "sha256": "fb87e4ad68a5e50a043f2c02f6aaadcda690879d6c721f7d886aa769ce674525",
+          "size": 65683
+        },
+        {
+          "path": "languages/es-tag-css.fkbc",
+          "sha256": "55857213e35567ecb0301a331f3bd05ee736ce9fe36c6aafc25bac406b442d42",
+          "size": 221716
+        },
+        {
+          "path": "languages/es-tag-css.fkgram",
+          "sha256": "09cd8bc1976e5453a842ac0a8362823494d51d7acac388f65ceeb8de1002d944",
+          "size": 6984
+        },
+        {
+          "path": "languages/es-tag-html.fkbc",
+          "sha256": "33c8e5fdb68a59736946c64436e945f1331c221a660b0676b9c1866f63a61181",
+          "size": 337344
+        },
+        {
+          "path": "languages/es-tag-html.fkgram",
+          "sha256": "ec4d093e52b95fb188397a49532d117e63c3e71d3d3d01d075356dea1b662322",
+          "size": 2540
+        },
+        {
+          "path": "languages/html.fkbc",
+          "sha256": "77033a33b561b6e3ce8dcddb57163593dbcb2b9a69d91e0cd7e10c8d9d8d2b34",
+          "size": 438207
+        },
+        {
+          "path": "languages/html.fkgram",
+          "sha256": "63cd10a6dcec861f41d0746d32a56a2bc765bcf56102e6032359a81c64f0e688",
+          "size": 60559
+        },
+        {
+          "path": "languages/javascript.fkbc",
+          "sha256": "8574dc5ed873028c52268a7866e5211622b1967cc7eaa31eca77096ac19fd284",
+          "size": 767719
+        },
+        {
+          "path": "languages/javascript.fkgram",
+          "sha256": "9be3c5cf08b3bb95b22f05129e6bc135518eedda35ee6175bdd6d2979e518522",
+          "size": 188538
+        },
+        {
+          "path": "languages/typescript.fkbc",
+          "sha256": "4c493984eb02ce69bd8c384f5adeca510b78c50f87a26e9a43a57a086fa7d169",
+          "size": 752322
+        },
+        {
+          "path": "languages/typescript.fkgram",
+          "sha256": "1c6be2284a9d03eafa4fb252d0187b2a67badb5a0dbabd86c9790fe7f26bc3ab",
+          "size": 194192
+        }
+      ]
+    },
+    {
+      "id": "markdown",
+      "label": "Markdown",
+      "languages": [
+        "markdown"
+      ],
+      "normalizedJsonBytes": 94788,
+      "grammarBytes": 61131,
+      "preparedExtraBytes": 1908071,
+      "preparedTotalBytes": 1969202,
+      "definitions": [
+        {
+          "language": "markdown",
+          "bytes": 94788,
+          "sha256": "86527b7c1d36d84067da61e0b66907019d2244a682b53e1a22f2aa899f3cb97b"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/markdown.fkbc",
+          "sha256": "28a0ed3fdcf2b0f495525b95f1b3f69fbf5ea3f6f5badf59f41438bcf1a488c9",
+          "size": 1908071
+        },
+        {
+          "path": "languages/markdown.fkgram",
+          "sha256": "1e27280796533ce3f8d27c6ccbdeca0531dd261aa41b2dea271aecf3842a7da5",
+          "size": 61131
+        }
+      ]
+    },
+    {
+      "id": "astro",
+      "label": "Astro",
+      "languages": [
+        "astro"
+      ],
+      "normalizedJsonBytes": 1072449,
+      "grammarBytes": 763051,
+      "preparedExtraBytes": 5422755,
+      "preparedTotalBytes": 6185806,
+      "definitions": [
+        {
+          "language": "astro",
+          "bytes": 34387,
+          "sha256": "5ecf30e180a64d36885362f8008da231705065832b3de4e5aa29ddac05258ecf"
+        },
+        {
+          "language": "css-styled",
+          "bytes": 34654,
+          "sha256": "a25a1d8ffbb320dd63bc12cfa029c2aac60fc20cdc9b8ff11002e0f4e5b034f7"
+        },
+        {
+          "language": "css",
+          "bytes": 93619,
+          "sha256": "ad57ae3a701022032308923a8bc48d2268e66289f3fb69b5f3aecc8f1f0b9e5e"
+        },
+        {
+          "language": "es-tag-css",
+          "bytes": 10968,
+          "sha256": "c6c33aecac0ed21255f2ac2a7f3ba0d81c989d0d19a1982f3d93c9008b0ccdb0"
+        },
+        {
+          "language": "es-tag-html",
+          "bytes": 3491,
+          "sha256": "62d254a53ba131da36e85a22c665571c4ea1785b54df5820d484c8881be08c33"
+        },
+        {
+          "language": "html",
+          "bytes": 104444,
+          "sha256": "a66d9bcca6d77e53b210c5fe9c99d09bbfb7388a405fe7a016bd007f1663b85f"
+        },
+        {
+          "language": "javascript",
+          "bytes": 257156,
+          "sha256": "6921689f7d7cf722fcd2dacb7dbadc264411b753a606048abd693f99180fb2a7"
+        },
+        {
+          "language": "json",
+          "bytes": 6009,
+          "sha256": "f59d1f28b5569fefdb4b88d13016f4b847cddd73d4f7624440d035def6a7e711"
+        },
+        {
+          "language": "postcss",
+          "bytes": 9311,
+          "sha256": "e4ab32b2cbda1a52bb3709eecb3098d140fc478b9014ae58ebf65f75ba1eadab"
+        },
+        {
+          "language": "tsx",
+          "bytes": 257860,
+          "sha256": "8ebe0886edc97878bda5bd27e1a45b26f859eb0b21071969fc312b85b9a6e3eb"
+        },
+        {
+          "language": "typescript",
+          "bytes": 260550,
+          "sha256": "733af1f3e2ac3a444df0490f6ff23ac7cfe1483068c7d168d570448243e0d7eb"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/astro.fkbc",
+          "sha256": "06822da987cd44170d0e3870247d48db4b6d3739ca91275d35ec41618a388163",
+          "size": 520583
+        },
+        {
+          "path": "languages/astro.fkgram",
+          "sha256": "f6a6d090a4dc74b3b5f33396edc4c87ba98333bf4075be6cf8664e98b588b67e",
+          "size": 24245
+        },
+        {
+          "path": "languages/css-styled.fkbc",
+          "sha256": "5d139642c33e57664669bb31b46c62fbce9fe81cd6a748a688bdcaad9ed8305f",
+          "size": 953292
+        },
+        {
+          "path": "languages/css-styled.fkgram",
+          "sha256": "cc5f2825dda22918180b7ccd52631d1b8a02c1fe0ee12f11fa0b3a241e94499e",
+          "size": 20630
+        },
+        {
+          "path": "languages/css.fkbc",
+          "sha256": "c6b0c03cef0adeaa0fcb8934d664fc071f865a3a937f6de94af51e611baae9dd",
+          "size": 639264
+        },
+        {
+          "path": "languages/css.fkgram",
+          "sha256": "fb87e4ad68a5e50a043f2c02f6aaadcda690879d6c721f7d886aa769ce674525",
+          "size": 65683
+        },
+        {
+          "path": "languages/es-tag-css.fkbc",
+          "sha256": "55857213e35567ecb0301a331f3bd05ee736ce9fe36c6aafc25bac406b442d42",
+          "size": 221716
+        },
+        {
+          "path": "languages/es-tag-css.fkgram",
+          "sha256": "09cd8bc1976e5453a842ac0a8362823494d51d7acac388f65ceeb8de1002d944",
+          "size": 6984
+        },
+        {
+          "path": "languages/es-tag-html.fkbc",
+          "sha256": "33c8e5fdb68a59736946c64436e945f1331c221a660b0676b9c1866f63a61181",
+          "size": 337344
+        },
+        {
+          "path": "languages/es-tag-html.fkgram",
+          "sha256": "ec4d093e52b95fb188397a49532d117e63c3e71d3d3d01d075356dea1b662322",
+          "size": 2540
+        },
+        {
+          "path": "languages/html.fkbc",
+          "sha256": "77033a33b561b6e3ce8dcddb57163593dbcb2b9a69d91e0cd7e10c8d9d8d2b34",
+          "size": 438207
+        },
+        {
+          "path": "languages/html.fkgram",
+          "sha256": "63cd10a6dcec861f41d0746d32a56a2bc765bcf56102e6032359a81c64f0e688",
+          "size": 60559
+        },
+        {
+          "path": "languages/javascript.fkbc",
+          "sha256": "8574dc5ed873028c52268a7866e5211622b1967cc7eaa31eca77096ac19fd284",
+          "size": 767719
+        },
+        {
+          "path": "languages/javascript.fkgram",
+          "sha256": "9be3c5cf08b3bb95b22f05129e6bc135518eedda35ee6175bdd6d2979e518522",
+          "size": 188538
+        },
+        {
+          "path": "languages/json.fkbc",
+          "sha256": "c0b8f819856919a3f539f2babda13819b7dee7ba36c00f6af19b91c3c0613ff6",
+          "size": 4707
+        },
+        {
+          "path": "languages/json.fkgram",
+          "sha256": "5247ead20b77465def885add8e098c532dd3b2db64f6132424d1e6de1e3ab250",
+          "size": 4026
+        },
+        {
+          "path": "languages/postcss.fkbc",
+          "sha256": "4505fe70815c604cc3f4a23d4311ffd65a2510ef487712ac76a041e5acc5b842",
+          "size": 19864
+        },
+        {
+          "path": "languages/postcss.fkgram",
+          "sha256": "b92e71c984cb84d8b64b3afb26cc4356a3224b389f34b9abde94613a41aafff8",
+          "size": 6418
+        },
+        {
+          "path": "languages/tsx.fkbc",
+          "sha256": "07aa61146ce2460073fd5dd33ddf909d805d3f2a47feffc97d9fe5f30dc70d2f",
+          "size": 767737
+        },
+        {
+          "path": "languages/tsx.fkgram",
+          "sha256": "9c10727eaf4606c966adf8c09683238a1f02337242dfd8654c103de9a9c7ac5b",
+          "size": 189236
+        },
+        {
+          "path": "languages/typescript.fkbc",
+          "sha256": "4c493984eb02ce69bd8c384f5adeca510b78c50f87a26e9a43a57a086fa7d169",
+          "size": 752322
+        },
+        {
+          "path": "languages/typescript.fkgram",
+          "sha256": "1c6be2284a9d03eafa4fb252d0187b2a67badb5a0dbabd86c9790fe7f26bc3ab",
+          "size": 194192
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "label": "TypeScript + Rust + Markdown",
+      "languages": [
+        "typescript",
+        "rust",
+        "markdown"
+      ],
+      "normalizedJsonBytes": 890863,
+      "grammarBytes": 618224,
+      "preparedExtraBytes": 6058288,
+      "preparedTotalBytes": 6676512,
+      "definitions": [
+        {
+          "language": "css-styled",
+          "bytes": 34654,
+          "sha256": "a25a1d8ffbb320dd63bc12cfa029c2aac60fc20cdc9b8ff11002e0f4e5b034f7"
+        },
+        {
+          "language": "css",
+          "bytes": 93619,
+          "sha256": "ad57ae3a701022032308923a8bc48d2268e66289f3fb69b5f3aecc8f1f0b9e5e"
+        },
+        {
+          "language": "es-tag-css",
+          "bytes": 10968,
+          "sha256": "c6c33aecac0ed21255f2ac2a7f3ba0d81c989d0d19a1982f3d93c9008b0ccdb0"
+        },
+        {
+          "language": "es-tag-html",
+          "bytes": 3491,
+          "sha256": "62d254a53ba131da36e85a22c665571c4ea1785b54df5820d484c8881be08c33"
+        },
+        {
+          "language": "html",
+          "bytes": 104444,
+          "sha256": "a66d9bcca6d77e53b210c5fe9c99d09bbfb7388a405fe7a016bd007f1663b85f"
+        },
+        {
+          "language": "javascript",
+          "bytes": 257156,
+          "sha256": "6921689f7d7cf722fcd2dacb7dbadc264411b753a606048abd693f99180fb2a7"
+        },
+        {
+          "language": "markdown",
+          "bytes": 94788,
+          "sha256": "86527b7c1d36d84067da61e0b66907019d2244a682b53e1a22f2aa899f3cb97b"
+        },
+        {
+          "language": "rust",
+          "bytes": 31193,
+          "sha256": "03c369e6edf0e659a44598705cfdf9e1aa0008bb8da5097802c3d91445f1e0d7"
+        },
+        {
+          "language": "typescript",
+          "bytes": 260550,
+          "sha256": "733af1f3e2ac3a444df0490f6ff23ac7cfe1483068c7d168d570448243e0d7eb"
+        }
+      ],
+      "assets": [
+        {
+          "path": "languages/css-styled.fkbc",
+          "sha256": "5d139642c33e57664669bb31b46c62fbce9fe81cd6a748a688bdcaad9ed8305f",
+          "size": 953292
+        },
+        {
+          "path": "languages/css-styled.fkgram",
+          "sha256": "cc5f2825dda22918180b7ccd52631d1b8a02c1fe0ee12f11fa0b3a241e94499e",
+          "size": 20630
+        },
+        {
+          "path": "languages/css.fkbc",
+          "sha256": "c6b0c03cef0adeaa0fcb8934d664fc071f865a3a937f6de94af51e611baae9dd",
+          "size": 639264
+        },
+        {
+          "path": "languages/css.fkgram",
+          "sha256": "fb87e4ad68a5e50a043f2c02f6aaadcda690879d6c721f7d886aa769ce674525",
+          "size": 65683
+        },
+        {
+          "path": "languages/es-tag-css.fkbc",
+          "sha256": "55857213e35567ecb0301a331f3bd05ee736ce9fe36c6aafc25bac406b442d42",
+          "size": 221716
+        },
+        {
+          "path": "languages/es-tag-css.fkgram",
+          "sha256": "09cd8bc1976e5453a842ac0a8362823494d51d7acac388f65ceeb8de1002d944",
+          "size": 6984
+        },
+        {
+          "path": "languages/es-tag-html.fkbc",
+          "sha256": "33c8e5fdb68a59736946c64436e945f1331c221a660b0676b9c1866f63a61181",
+          "size": 337344
+        },
+        {
+          "path": "languages/es-tag-html.fkgram",
+          "sha256": "ec4d093e52b95fb188397a49532d117e63c3e71d3d3d01d075356dea1b662322",
+          "size": 2540
+        },
+        {
+          "path": "languages/html.fkbc",
+          "sha256": "77033a33b561b6e3ce8dcddb57163593dbcb2b9a69d91e0cd7e10c8d9d8d2b34",
+          "size": 438207
+        },
+        {
+          "path": "languages/html.fkgram",
+          "sha256": "63cd10a6dcec861f41d0746d32a56a2bc765bcf56102e6032359a81c64f0e688",
+          "size": 60559
+        },
+        {
+          "path": "languages/javascript.fkbc",
+          "sha256": "8574dc5ed873028c52268a7866e5211622b1967cc7eaa31eca77096ac19fd284",
+          "size": 767719
+        },
+        {
+          "path": "languages/javascript.fkgram",
+          "sha256": "9be3c5cf08b3bb95b22f05129e6bc135518eedda35ee6175bdd6d2979e518522",
+          "size": 188538
+        },
+        {
+          "path": "languages/markdown.fkbc",
+          "sha256": "28a0ed3fdcf2b0f495525b95f1b3f69fbf5ea3f6f5badf59f41438bcf1a488c9",
+          "size": 1908071
+        },
+        {
+          "path": "languages/markdown.fkgram",
+          "sha256": "1e27280796533ce3f8d27c6ccbdeca0531dd261aa41b2dea271aecf3842a7da5",
+          "size": 61131
+        },
+        {
+          "path": "languages/rust.fkbc",
+          "sha256": "a36cb2d3f22fe917e659bd75c2bf0dbc6f256a4444dea7d19da9b2aaf7913a12",
+          "size": 40353
+        },
+        {
+          "path": "languages/rust.fkgram",
+          "sha256": "f2e7decec9584bd4ad56004f5225492c7de2130738e26c960fd7805b1ec1de43",
+          "size": 17967
+        },
+        {
+          "path": "languages/typescript.fkbc",
+          "sha256": "4c493984eb02ce69bd8c384f5adeca510b78c50f87a26e9a43a57a086fa7d169",
+          "size": 752322
+        },
+        {
+          "path": "languages/typescript.fkgram",
+          "sha256": "1c6be2284a9d03eafa4fb252d0187b2a67badb5a0dbabd86c9790fe7f26bc3ab",
+          "size": 194192
+        }
+      ]
+    }
+  ]
+}

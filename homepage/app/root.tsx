@@ -54,7 +54,7 @@ export const meta: MetaFunction = ({ location }) => {
     {
       name: "description",
       content:
-        "Native syntax highlighting for Node.js and Rust. Grammars arrive optimized, so every new build gets a head start. See the benchmarks and try Ferriki.",
+        "Native syntax highlighting for Node.js and Rust. Precompiled regex programs and optimized scanner automata ship with your grammars. The optimization is in the download.",
     },
   ];
 };
@@ -126,7 +126,8 @@ function FooterLegal() {
   return (
     <>
       {`Ferriki v${version}`} · Released under the MIT or Apache-2.0 License ·{" "}
-      <a href="https://ardo-docs.dev">Built with Ardo</a>
+      <a href="https://ardo-docs.dev">Built with Ardo</a> · CDN sponsored by{" "}
+      <a href="https://sebastian-software.de/">Sebastian Software</a>
     </>
   );
 }

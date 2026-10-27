@@ -15,17 +15,28 @@ editor to docs, blogs, and CMS content. A native Rust engine handles the
 highlighting, with familiar Shiki-style HTML calls in Node.js, a Rust API,
 and Vite 8 macros for component examples.
 
-## The regex homework is already done
+## We ship the optimization
 
-Your next build can start fresh with its regex optimizations ready to go.
-Powered by Ferroni 2.8, Ferriki prepares regex programs and static scanners
-ahead of time, then delivers them with your standard grammars from the CDN.
-Each new process restores that work and gets on with your code.
+A syntax definition tells a highlighter what to match. Ferriki's standard
+language packages also carry **compiled regex programs and optimized static
+scanner automata**. The optimization becomes part of the download.
+Matching stays in Ferroni's native, Oniguruma-compatible engine, with no
+translation into JavaScript RegExp. Capture-dependent end and while patterns
+remain dynamic to preserve TextMate behavior.
+
+Powered by Ferroni 2.8, we move static regex compilation and Eager scanner
+preparation into the asset pipeline. The CDN delivers that prepared work
+alongside the grammar. Each new process restores the scanners it needs,
+with their static optimizations already in place.
 
 Keep the disk cache between builds and you keep the download, the unpacked
-packages, and the preparation. Standard grammars use prepared packages by
-default with prefiltering on. Custom dynamic patterns stay local; unavailable
-packages fall back to source.
+packages, and the preparation. Prepared packages are the default with
+prefiltering on. Missing packages fall back to source, and dynamic patterns
+remain local. Only requested languages and required dependencies load;
+optional code-fence languages stay optional.
+
+**Sponsored by [Sebastian Software](https://sebastian-software.de/)**,
+which currently covers Ferriki's CDN costs.
 
 The payoff shows up at both ends: **first HTML takes about half the time of
 Source Eager**, while repeated highlighting keeps Eager's execution speed.
@@ -108,21 +119,41 @@ try {
 }
 ```
 
-## Keep the useful work. Travel lighter.
+## What goes over the wire
 
-The cache helps the next build; shared language packages help the first
-download. Markdown reuses the prepared scanners from its embedded languages
-instead of carrying another copy of each. Its own prepared package shrank
-from **25.9 MB to 1.9 MB**. Astro went from **6.5 MB to 0.52 MB**, with the same
-grammar coverage. Ferriki loads requested languages and required dependencies;
-optional code-fence languages stay optional. See the
-[package-sharing evidence](docs/benchmarks/precompiled-patterns/delegated-packages-2026-10-26/README.md).
+Prepared scanners add download weight. Here is the tradeoff for the same
+requested languages, including their required dependencies:
+
+| Language | Grammar-only CDN payload | Total with prepared scanners |
+| --- | ---: | ---: |
+| Rust | 18 kB | 58 kB · 3.2× |
+| TypeScript | 0.54 MB | 4.65 MB · 8.6× |
+| Markdown | 61 kB | 1.97 MB · 32.2× |
+
+Grammar-only is Ferriki's unoptimized grammar payload; Prepared keeps that
+payload and adds compiled programs and automata. Sizes are decimal and
+exclude themes and HTTP overhead. Optional fenced-code languages are not
+loaded. Keep the cache to reuse these downloads; decoded data takes additional
+disk space. [See the exact sizes and source-definition comparison](docs/benchmarks/precompiled-patterns/download-footprint-2026-10-27.md).
 
 Memory looks good in the new capture, too. After 600 documents across twelve
 loaded languages, Prepared's whole-process RSS was **45% lower than Shiki/WASM**
 on both hosts. For the large TypeScript workload, it was **67–69% lower**.
 These are medians from six isolated processes per contender and workload,
 with identical HTML. [See the memory measurements](https://ferriki.dev/evidence/benchmarks#process-memory-by-policy).
+
+## Syntax that follows your code
+
+The catalog covers TypeScript, JSX and TSX, Vue, Svelte, Astro, and Angular;
+Rust, Python, Go, Java, C/C++, and C#; Markdown, MDX, SQL, JSON, YAML, and TOML;
+and build tools from shell scripts and Docker to Terraform and Nix.
+
+TextMate grammars follow the context inside your code: embedded JavaScript
+and CSS in HTML, component expressions, tagged templates, and registered
+languages in Markdown fences. The catalog contains **67 standard entries for
+languages and formats**, plus **27 support grammars** for embeddings and
+injections, with **65 themes**. Register custom TextMate grammars for syntax
+outside the curated catalog. [Browse the coverage and examples](https://ferriki.dev/guide/languages-and-themes).
 
 ## More ways to use Ferriki
 

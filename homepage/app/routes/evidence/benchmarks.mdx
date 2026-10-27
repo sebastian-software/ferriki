@@ -100,26 +100,31 @@ original dates and results.
 
 ## Shared language packages
 
-The October 26, 2026 catalog delegates identical embedded scanners to their
-defining language packages. Markdown reuses Rust's package when Rust is
-registered, rather than carrying all of its scanners itself. Host-specific
-combinations stay local. Required dependencies load with their host; optional
-code-fence languages remain optional.
+Prepared mode retains each grammar and adds compiled regex programs and
+optimized scanner automata. The following sizes compare the same requested
+roots, including required dependencies and injections. Optional code-fence
+languages and themes are excluded.
 
-| Prepared download | Complete root package | Shared language package |
-| ----------------- | --------------------: | ----------------------: |
-| Markdown          |               25.9 MB |                  1.9 MB |
-| Astro             |                6.5 MB |                 0.52 MB |
-| HTML              |                3.4 MB |                 0.44 MB |
-| All 94 packages   |                274 MB |                   35 MB |
+| Requested languages          | Grammar-only CDN payload | Additional prepared scanners | Total prepared download |
+| ---------------------------- | -----------------------: | ---------------------------: | ----------------------: |
+| Rust                         |                  18.0 kB |                      40.4 kB |          58.3 kB · 3.2× |
+| Python                       |                  78.4 kB |                     249.9 kB |         328.3 kB · 4.2× |
+| TypeScript                   |                 539.1 kB |                      4.11 MB |          4.65 MB · 8.6× |
+| Markdown                     |                  61.1 kB |                      1.91 MB |         1.97 MB · 32.2× |
+| Astro                        |                 763.1 kB |                      5.42 MB |          6.19 MB · 8.1× |
+| TypeScript + Rust + Markdown |                 618.2 kB |                      6.06 MB |         6.68 MB · 10.8× |
 
-These are compressed prepared payloads in decimal MB, with the same grammar
-coverage. Grammar and theme files are byte-identical. The total counts each
-catalog package once; applications download the packages they request and
-their required dependencies. It is not a startup or execution benchmark.
-The [complete size evidence](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/delegated-packages-2026-10-26/README.md)
-retains both manifests and every package descriptor. Earlier timing captures
-below predate this package layout.
+Decimal units; ratios are total prepared bytes divided by grammar-only bytes.
+Grammar-only means Ferriki's unoptimized grammar payload, rather than raw
+TextMate JSON. The [complete size comparison](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/download-footprint-2026-10-27.md)
+also reports the normalized source-definition sizes and every pinned asset.
+These are manifest payload sizes, excluding HTTP headers or additional
+transport encoding. They are not a download-speed measurement.
+
+Shared dependencies download once per unchanged cached asset. The combined
+row deduplicates them. Decoded scanner data and indexes take additional disk
+space. The first-use timing tables above use populated caches and exclude
+downloads and the initial unpacking cost.
 
 ## Prepared regex
 
