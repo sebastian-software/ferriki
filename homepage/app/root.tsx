@@ -54,7 +54,7 @@ export const meta: MetaFunction = ({ location }) => {
     {
       name: "description",
       content:
-        "Native syntax highlighting for Node.js and Rust. Precompiled regex programs and optimized scanner automata ship with your grammars. The optimization is in the download.",
+        "Native, Oniguruma-compatible highlighting for Node.js and Rust. Precompiled CDN packages, ready for production and enabled by default for standard grammars.",
     },
   ];
 };

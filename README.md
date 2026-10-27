@@ -12,16 +12,18 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
 
-**Beautiful code. Head start included.** Ferriki brings the detail of your
-editor to docs, blogs, and CMS content. A native Rust engine handles the
-highlighting, with familiar Shiki-style HTML calls in Node.js, a Rust API,
-and Vite 8 macros for component examples.
+**Beautiful code. Head start included.** Ferriki brings native,
+Oniguruma-compatible syntax highlighting to docs, blogs, and CMS content.
+**Precompiled CDN packages are ready for production and enabled by default
+for standard grammars.** Use familiar Shiki-style HTML calls in Node.js,
+call the Rust API directly, or prepare component examples with Vite 8 macros.
 
 ## We ship the optimization
 
-A syntax definition tells a highlighter what to match. Ferriki's standard
-language packages also carry **compiled regex programs and optimized static
-scanner automata**. The optimization becomes part of the download.
+Native Oniguruma compatibility and precompiled delivery work together in
+Ferriki's production default. Standard language packages carry **compiled
+regex programs and optimized static scanner automata** alongside the syntax
+definition. The optimization becomes part of the download.
 Matching stays in Ferroni's native, Oniguruma-compatible engine, with no
 translation into JavaScript RegExp. Capture-dependent end and while patterns
 remain dynamic to preserve TextMate behavior.
