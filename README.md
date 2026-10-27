@@ -50,11 +50,12 @@ Startup includes restoration and the first document; network, file I/O, and
 complete builds are outside the timer. See the
 [measurements and limits](https://ferriki.dev/evidence/benchmarks#prepared-regex).
 
-The October 25 full Node comparison measures Source Off, Auto, Eager and
-Prepared separately. Prepared first use takes **39% less time than Source Eager
-on macOS**, with **5% more time on Linux**. Source Off still starts fastest.
-See the [separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
-for all policies and the historical memory measurements.
+The October 27 full Node comparison measures Source Off, Auto, Eager and
+Prepared separately. Prepared first use takes **52% less time than Source Eager
+on Linux** and **50% less on macOS**, while starting within 6% of Source Off
+on both hosts. See the
+[separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies)
+for all policies, language cases and process memory.
 
 ## Choose your path
 
@@ -121,21 +122,22 @@ try {
 }
 ```
 
-The October 25 Blacksmith capture uses the repository build with Ferroni
-2.7.2 and prepared standard regex packages. On its 14-file corpus, a reused
+The October 27 Blacksmith capture uses Ferriki 1.3.0 with Ferroni 2.8.0
+and prepared standard regex packages. On its 14-file corpus, a reused
 highlighter produced the same HTML as Shiki/WASM and ran **3.7× faster on
-Linux x86-64** and **4.3× faster on macOS ARM64**. With the decoded cache
-already populated, first use was **2.0× / 4.4× faster than Shiki/WASM** on
+Linux x86-64** and **4.4× faster on macOS ARM64**. With the decoded cache
+already populated, first use was **4.2× / 5.5× faster than Shiki/WASM** on
 Linux/macOS. See the
 [benchmark report](https://ferriki.dev/evidence/benchmarks) for hosts,
 first-use timings, raw results, and measurement limits.
 
-Memory depends on the loaded languages. In the earlier October 24 memory
-capture, after 600 documents with 12 languages loaded together, Ferriki's
-whole-process RSS was **51–137% higher than Shiki/WASM**. With only the large TypeScript workload, it was **33–55% lower**.
-Ferriki loads requested languages and their dependencies; these are separate
-workloads, not measurements of the entire grammar catalog. See the
-[memory details](https://ferriki.dev/evidence/benchmarks#process-memory).
+Memory depends on the loaded languages. In the October 27 memory capture,
+after 600 documents with 12 languages loaded together, Prepared's whole-process
+RSS was **45% lower than Shiki/WASM** on both hosts. With the large TypeScript
+workload, it was **67–69% lower**. These are six-process medians per contender
+and workload, with identical HTML. Ferriki loads requested languages and their
+dependencies; this does not measure the entire grammar catalog. See the
+[memory details](https://ferriki.dev/evidence/benchmarks#process-memory-by-policy).
 
 ## More ways to use Ferriki
 

@@ -64,14 +64,9 @@ if (process.argv.includes("--check"))
   );
 else writeFileSync(target, output);
 if (process.argv.includes("--check")) {
-  // Both workloads appear in the READMEs and detailed page. Check each
-  // scenario's magnitude and direction wherever the copy repeats it.
-  const headlinePaths = [
-    "README.md.src",
-    "README.md",
-    "node/ferriki/README.md",
-    "homepage/app/routes/evidence/benchmarks.mdx",
-  ];
+  // The detailed page retains these dated observations. Current README
+  // claims are checked against the new capture by publish-regex-mode-evidence.mjs.
+  const headlinePaths = ["homepage/app/routes/evidence/benchmarks.mdx"];
   for (const scenario of ["repository", "large-typescript"]) {
     const changes = profiles.map((profile) => {
       const { engines } = profile.scenarios.find((entry) => entry.id === scenario);

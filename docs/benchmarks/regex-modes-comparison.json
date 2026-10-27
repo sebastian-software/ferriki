@@ -1,8 +1,10 @@
 {
-  "measured": "2026-10-25",
-  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40174524561",
-  "commit": "8aba6dd009fa09a3eed895e1764b2f04dbef0f1b",
-  "archive": "docs/benchmarks/blacksmith/2026-10-25-regex-modes",
+  "measured": "2026-10-27",
+  "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40473534100",
+  "commit": "ee1ad3a881544112f659c4b3d83eddca263bfd02",
+  "ferriki": "1.3.0",
+  "ferroni": "2.8.0",
+  "archive": "docs/benchmarks/blacksmith/2026-10-27-ferroni-2.8",
   "engines": [
     {
       "id": "ferriki-off",
@@ -41,32 +43,32 @@
         "comparison": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+          "binarySha256": "837f24b9930f528b5b5d84b75119aec29b807ec55c10ae3e23b105a2dc7214cf"
         },
         "curated": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+          "binarySha256": "837f24b9930f528b5b5d84b75119aec29b807ec55c10ae3e23b105a2dc7214cf"
         },
         "tiobe": {
           "cpu": "AMD EPYC",
           "os": "Linux 6.6.141",
-          "binarySha256": "85e7059acdba47be6fcba4e9fd66f7b856adcff802befdb808b26de852a2243d"
+          "binarySha256": "837f24b9930f528b5b5d84b75119aec29b807ec55c10ae3e23b105a2dc7214cf"
         }
       },
       "warm": {
-        "ferriki-off": 120.62122600000657,
-        "ferriki": 84.36326400001417,
-        "ferriki-eager": 84.54492449995996,
-        "ferriki-precompiled": 154.58180300000004,
-        "shiki-wasm": 300.9660550000017
+        "ferriki-off": 121.55437099999654,
+        "ferriki": 85.08034549998865,
+        "ferriki-eager": 85.40215099998932,
+        "ferriki-precompiled": 81.12140149998231,
+        "shiki-wasm": 303.54895199996827
       },
       "cold": {
-        "ferriki-off": 214.8776015,
-        "ferriki": 354.143271,
-        "ferriki-eager": 445.89436950000004,
-        "ferriki-precompiled": 817.9798880000001,
-        "shiki-wasm": 958.4194135
+        "ferriki-off": 224.6095865,
+        "ferriki": 368.6329135,
+        "ferriki-eager": 476.54907449999996,
+        "ferriki-precompiled": 227.894597,
+        "shiki-wasm": 954.0981735
       },
       "workloads": [
         {
@@ -75,13 +77,13 @@
           "size": "example",
           "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
           "timings": {
-            "ferriki-off": 1.74646400000006,
-            "ferriki": 0.791939000000184,
-            "ferriki-eager": 0.7579459999999472,
-            "ferriki-precompiled": 0.7381769999999506,
-            "shiki-wasm": 3.691822000000002,
-            "shiki-js": 4.464194000000134,
-            "prism": 0.2071490000000722
+            "ferriki-off": 1.7339849999998478,
+            "ferriki": 0.7592630000000327,
+            "ferriki-eager": 0.7319360000000188,
+            "ferriki-precompiled": 0.7205545000000484,
+            "shiki-wasm": 3.5342654999999468,
+            "shiki-js": 4.370137,
+            "prism": 0.19907999999998083
           }
         },
         {
@@ -90,13 +92,13 @@
           "size": "large",
           "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
           "timings": {
-            "ferriki-off": 25.990309499999967,
-            "ferriki": 10.921105500000067,
-            "ferriki-eager": 10.845712000000276,
-            "ferriki-precompiled": 10.840307500000108,
-            "shiki-wasm": 56.88252049999983,
-            "shiki-js": 68.91732950000005,
-            "prism": 2.0866585000007944
+            "ferriki-off": 25.966624499999853,
+            "ferriki": 10.989692999999988,
+            "ferriki-eager": 10.770807000000332,
+            "ferriki-precompiled": 10.817494500000521,
+            "shiki-wasm": 54.9552819999999,
+            "shiki-js": 67.49616650000007,
+            "prism": 2.0517130000002908
           }
         },
         {
@@ -105,13 +107,13 @@
           "size": "example",
           "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
           "timings": {
-            "ferriki-off": 1.8941565000000082,
-            "ferriki": 0.9044654999999011,
-            "ferriki-eager": 0.8830204999999296,
-            "ferriki-precompiled": 0.8680420000000595,
-            "shiki-wasm": 4.036088499999778,
-            "shiki-js": 3.8968880000001036,
-            "prism": 0.305349000000092
+            "ferriki-off": 1.9094299999999294,
+            "ferriki": 0.8993009999999231,
+            "ferriki-eager": 0.870256000000154,
+            "ferriki-precompiled": 0.8666390000000774,
+            "shiki-wasm": 4.041749999999865,
+            "shiki-js": 3.865739000000076,
+            "prism": 0.30381099999999606
           }
         },
         {
@@ -120,13 +122,13 @@
           "size": "large",
           "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
           "timings": {
-            "ferriki-off": 28.694904500000575,
-            "ferriki": 13.352371499999208,
-            "ferriki-eager": 13.290800500000387,
-            "ferriki-precompiled": 13.274149500000021,
-            "shiki-wasm": 63.31859700000041,
-            "shiki-js": 60.70486699999992,
-            "prism": 3.5290110000000823
+            "ferriki-off": 28.694860999999946,
+            "ferriki": 13.310170000000198,
+            "ferriki-eager": 13.263736999999765,
+            "ferriki-precompiled": 13.366666000000805,
+            "shiki-wasm": 63.89055999999982,
+            "shiki-js": 59.97709300000042,
+            "prism": 3.58321449999994
           }
         },
         {
@@ -135,13 +137,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.2538680000000113,
-            "ferriki": 0.19826199999988603,
-            "ferriki-eager": 0.18708200000003217,
-            "ferriki-precompiled": 0.18240300000002208,
-            "shiki-wasm": 1.2450010000002294,
-            "shiki-js": 0.5839780000001156,
-            "prism": 0.10320400000000518
+            "ferriki-off": 0.2555210000000443,
+            "ferriki": 0.19560749999999416,
+            "ferriki-eager": 0.18615049999999655,
+            "ferriki-precompiled": 0.1821830000000091,
+            "shiki-wasm": 1.244726000000071,
+            "shiki-js": 0.5844239999999843,
+            "prism": 0.10272299999996903
           }
         },
         {
@@ -150,13 +152,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 3.298091000000568,
-            "ferriki": 2.775488000000223,
-            "ferriki-eager": 2.7546500000003107,
-            "ferriki-precompiled": 2.7156159999999545,
-            "shiki-wasm": 18.426277000000027,
-            "shiki-js": 7.83681500000057,
-            "prism": 1.051738000000114
+            "ferriki-off": 3.3442800000002535,
+            "ferriki": 2.7774140000001353,
+            "ferriki-eager": 2.7660229999996773,
+            "ferriki-precompiled": 2.7434599999996863,
+            "shiki-wasm": 18.565950000000157,
+            "shiki-js": 8.070079000000078,
+            "prism": 1.0654340000000957
           }
         },
         {
@@ -165,13 +167,13 @@
           "size": "example",
           "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
           "timings": {
-            "ferriki-off": 0.3320250000001579,
-            "ferriki": 0.32138400000008005,
-            "ferriki-eager": 0.30736799999999675,
-            "ferriki-precompiled": 0.2901550000001407,
-            "shiki-wasm": 2.409289999999828,
-            "shiki-js": 0.6502729999999701,
-            "prism": 0.0809119999998984
+            "ferriki-off": 0.332445000000007,
+            "ferriki": 0.3186439999999493,
+            "ferriki-eager": 0.3051190000001043,
+            "ferriki-precompiled": 0.2905110000000377,
+            "shiki-wasm": 2.4305464999999913,
+            "shiki-js": 0.6541610000001583,
+            "prism": 0.08008050000000821
           }
         },
         {
@@ -180,13 +182,13 @@
           "size": "large",
           "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
           "timings": {
-            "ferriki-off": 4.162667000000511,
-            "ferriki": 4.424028999999791,
-            "ferriki-eager": 4.37121900000011,
-            "ferriki-precompiled": 4.220004999999674,
-            "shiki-wasm": 36.999428999999964,
-            "shiki-js": 9.308352000000014,
-            "prism": 0.9399170000001504
+            "ferriki-off": 4.114730000000236,
+            "ferriki": 4.370601000000079,
+            "ferriki-eager": 4.3511239999998,
+            "ferriki-precompiled": 4.195842999999513,
+            "shiki-wasm": 37.33055400000012,
+            "shiki-js": 9.540945000000647,
+            "prism": 0.9755849999996826
           }
         },
         {
@@ -195,13 +197,13 @@
           "size": "example",
           "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
           "timings": {
-            "ferriki-off": 1.1096664999998893,
-            "ferriki": 0.6907140000001846,
-            "ferriki-eager": 0.6643940000000157,
-            "ferriki-precompiled": 0.6405239999999139,
-            "shiki-wasm": 3.305785999999898,
-            "shiki-js": 2.5118024999999307,
-            "prism": 0.22201800000016192
+            "ferriki-off": 1.119976500000007,
+            "ferriki": 0.6896219999999857,
+            "ferriki-eager": 0.6651964999999791,
+            "ferriki-precompiled": 0.6497820000001866,
+            "shiki-wasm": 3.2939494999999397,
+            "shiki-js": 2.5151354999999285,
+            "prism": 0.22343549999993684
           }
         },
         {
@@ -210,13 +212,13 @@
           "size": "large",
           "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
           "timings": {
-            "ferriki-off": 15.965601999999762,
-            "ferriki": 9.651235499999984,
-            "ferriki-eager": 9.721566999999595,
-            "ferriki-precompiled": 9.558204999999816,
-            "shiki-wasm": 51.39079599999968,
-            "shiki-js": 38.676067500000045,
-            "prism": 2.450001499999871
+            "ferriki-off": 16.02574200000072,
+            "ferriki": 9.629021000000193,
+            "ferriki-eager": 9.641022999999677,
+            "ferriki-precompiled": 9.61606649999976,
+            "shiki-wasm": 52.068322999999964,
+            "shiki-js": 38.74155200000041,
+            "prism": 2.81563049999977
           }
         },
         {
@@ -225,13 +227,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 1.119359999999915,
-            "ferriki": 0.500034499999856,
-            "ferriki-eager": 0.4839354999999159,
-            "ferriki-precompiled": 0.45442849999994905,
-            "shiki-wasm": 2.6981530000000475,
-            "shiki-js": 2.6808774999999514,
-            "prism": 0.10742000000004737
+            "ferriki-off": 1.128481999999849,
+            "ferriki": 0.5039030000000366,
+            "ferriki-eager": 0.4863650000002053,
+            "ferriki-precompiled": 0.4610770000001594,
+            "shiki-wasm": 2.692914999999857,
+            "shiki-js": 2.68790550000017,
+            "prism": 0.10789299999987634
           }
         },
         {
@@ -240,13 +242,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 15.800319500000114,
-            "ferriki": 6.664249000000382,
-            "ferriki-eager": 6.6627709999993385,
-            "ferriki-precompiled": 6.436876000000211,
-            "shiki-wasm": 39.839548999999806,
-            "shiki-js": 38.72704599999997,
-            "prism": 1.079319000000396
+            "ferriki-off": 15.94332149999991,
+            "ferriki": 6.761418000000049,
+            "ferriki-eager": 6.748247500000161,
+            "ferriki-precompiled": 6.5492129999997815,
+            "shiki-wasm": 39.804631999999856,
+            "shiki-js": 38.85997499999985,
+            "prism": 1.0553649999997106
           }
         },
         {
@@ -255,13 +257,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.4335819999999444,
-            "ferriki": 0.2692809999999781,
-            "ferriki-eager": 0.24986200000000736,
-            "ferriki-precompiled": 0.2363234999999122,
-            "shiki-wasm": 1.4576579999999808,
-            "shiki-js": 0.8910965000000601,
-            "prism": 0.08605800000003683
+            "ferriki-off": 0.43346999999994296,
+            "ferriki": 0.2677085000000261,
+            "ferriki-eager": 0.24743000000006532,
+            "ferriki-precompiled": 0.23765699999995604,
+            "shiki-wasm": 1.4465754999999945,
+            "shiki-js": 0.8825049999999806,
+            "prism": 0.08575700000000097
           }
         },
         {
@@ -270,13 +272,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 5.467301500000076,
-            "ferriki": 3.443650999999818,
-            "ferriki-eager": 3.3282874999999876,
-            "ferriki-precompiled": 3.2156335000001945,
-            "shiki-wasm": 21.63061300000004,
-            "shiki-js": 12.044591500000024,
-            "prism": 0.9600789999999506
+            "ferriki-off": 5.422499000000016,
+            "ferriki": 3.4258490000001984,
+            "ferriki-eager": 3.29255349999994,
+            "ferriki-precompiled": 3.21940050000012,
+            "shiki-wasm": 21.568352000000004,
+            "shiki-js": 11.980779000000211,
+            "prism": 0.9481334999998126
           }
         },
         {
@@ -285,13 +287,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.32491400000003523,
-            "ferriki": 0.22598999999991065,
-            "ferriki-eager": 0.20989099999997052,
-            "ferriki-precompiled": 0.2041710000000876,
-            "shiki-wasm": 1.1070190000000366,
-            "shiki-js": 0.7372440000000324,
-            "prism": 0.10348300000003974
+            "ferriki-off": 0.3260530000000017,
+            "ferriki": 0.22533399999997528,
+            "ferriki-eager": 0.2084220000001551,
+            "ferriki-precompiled": 0.20539599999995062,
+            "shiki-wasm": 1.1012009999999464,
+            "shiki-js": 0.7254140000000007,
+            "prism": 0.10419600000000173
           }
         },
         {
@@ -300,13 +302,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.916337500000054,
-            "ferriki": 2.9278195000001688,
-            "ferriki-eager": 2.8678529999999682,
-            "ferriki-precompiled": 2.8319945000000644,
-            "shiki-wasm": 16.002237500000092,
-            "shiki-js": 10.083747500000072,
-            "prism": 1.166668999999274
+            "ferriki-off": 3.965979999999945,
+            "ferriki": 2.9316430000003493,
+            "ferriki-eager": 2.8708999999998923,
+            "ferriki-precompiled": 2.8625939999992625,
+            "shiki-wasm": 15.855461999999989,
+            "shiki-js": 9.796065999999882,
+            "prism": 1.161164000000099
           }
         },
         {
@@ -315,13 +317,13 @@
           "size": "example",
           "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
           "timings": {
-            "ferriki-off": 0.4836804999999913,
-            "ferriki": 0.338704000000007,
-            "ferriki-eager": 0.31747649999988425,
-            "ferriki-precompiled": 0.30099700000005214,
-            "shiki-wasm": 1.164976499999966,
-            "shiki-js": 1.5593029999997725,
-            "prism": 0.14748149999991256
+            "ferriki-off": 0.4893600000000333,
+            "ferriki": 0.3424840000000131,
+            "ferriki-eager": 0.3216040000002067,
+            "ferriki-precompiled": 0.3070179999999709,
+            "shiki-wasm": 1.1539699999998447,
+            "shiki-js": 1.5411589999998796,
+            "prism": 0.15074300000014773
           }
         },
         {
@@ -330,13 +332,13 @@
           "size": "large",
           "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
           "timings": {
-            "ferriki-off": 5.972265000000334,
-            "ferriki": 4.35039499999948,
-            "ferriki-eager": 4.301880999999412,
-            "ferriki-precompiled": 4.188218000000234,
-            "shiki-wasm": 16.66566000000057,
-            "shiki-js": 22.97957899999983,
-            "prism": 1.3739209999994273
+            "ferriki-off": 5.941444999999476,
+            "ferriki": 4.407400500000222,
+            "ferriki-eager": 4.330364500000087,
+            "ferriki-precompiled": 4.1618429999998625,
+            "shiki-wasm": 16.650952999999845,
+            "shiki-js": 22.45328150000023,
+            "prism": 1.405663999999888
           }
         },
         {
@@ -345,13 +347,13 @@
           "size": "example",
           "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
           "timings": {
-            "ferriki-off": 0.09125200000001144,
-            "ferriki": 0.0847199999999475,
-            "ferriki-eager": 0.08701400000001058,
-            "ferriki-precompiled": 0.08567200000004505,
-            "shiki-wasm": 0.20507800000004295,
-            "shiki-js": 0.16249249999998483,
-            "prism": 0.029657500000027426
+            "ferriki-off": 0.09311999999999898,
+            "ferriki": 0.08505999999997016,
+            "ferriki-eager": 0.08730949999997506,
+            "ferriki-precompiled": 0.08632199999999557,
+            "shiki-wasm": 0.21336200000001782,
+            "shiki-js": 0.16903200000001561,
+            "prism": 0.03077250000004028
           }
         },
         {
@@ -360,13 +362,13 @@
           "size": "large",
           "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
           "timings": {
-            "ferriki-off": 1.285184000000072,
-            "ferriki": 1.2606799999998657,
-            "ferriki-eager": 1.292316000000028,
-            "ferriki-precompiled": 1.2637359999998807,
-            "shiki-wasm": 3.136287999999695,
-            "shiki-js": 2.4783440000001065,
-            "prism": 0.4376040000001922
+            "ferriki-off": 1.2867255000001023,
+            "ferriki": 1.2485434999998688,
+            "ferriki-eager": 1.2819309999998723,
+            "ferriki-precompiled": 1.2648435000000973,
+            "shiki-wasm": 3.2183379999999033,
+            "shiki-js": 2.5541840000000775,
+            "prism": 0.4419309999999541
           }
         },
         {
@@ -375,12 +377,12 @@
           "size": "example",
           "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
           "timings": {
-            "ferriki-off": 1.2160210000000689,
-            "ferriki": 1.5227984999999364,
-            "ferriki-eager": 1.500714500000015,
-            "ferriki-precompiled": 1.4907719999999927,
-            "shiki-wasm": 1.2838560000000712,
-            "prism": 0.06055200000002969
+            "ferriki-off": 1.2127659999999878,
+            "ferriki": 1.512956000000031,
+            "ferriki-eager": 1.4972609999999804,
+            "ferriki-precompiled": 1.4846120000000838,
+            "shiki-wasm": 1.2895305000000121,
+            "prism": 0.06132999999988442
           }
         },
         {
@@ -389,12 +391,12 @@
           "size": "large",
           "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
           "timings": {
-            "ferriki-off": 17.936438499999895,
-            "ferriki": 23.945688500000188,
-            "ferriki-eager": 23.93494450000003,
-            "ferriki-precompiled": 23.867525000000114,
-            "shiki-wasm": 19.02492899999993,
-            "prism": 0.5576364999999441
+            "ferriki-off": 17.753392000000076,
+            "ferriki": 23.778432999999723,
+            "ferriki-eager": 23.737316500000134,
+            "ferriki-precompiled": 23.76431700000012,
+            "shiki-wasm": 19.02173700000003,
+            "prism": 0.5614960000002611
           }
         },
         {
@@ -403,13 +405,13 @@
           "size": "example",
           "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
           "timings": {
-            "ferriki-off": 0.14312300000005962,
-            "ferriki": 0.13602599999998688,
-            "ferriki-eager": 0.15689249999996946,
-            "ferriki-precompiled": 0.1521690000000433,
-            "shiki-wasm": 0.3428869999999904,
-            "shiki-js": 0.2922820000000286,
-            "prism": 0.049372000000062144
+            "ferriki-off": 0.14403599999999983,
+            "ferriki": 0.13562000000000296,
+            "ferriki-eager": 0.15629400000003102,
+            "ferriki-precompiled": 0.15430500000007896,
+            "shiki-wasm": 0.350153999999975,
+            "shiki-js": 0.2971190000000661,
+            "prism": 0.04997400000002017
           }
         },
         {
@@ -418,13 +420,13 @@
           "size": "large",
           "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
           "timings": {
-            "ferriki-off": 2.2275955000000067,
-            "ferriki": 2.1667075000000295,
-            "ferriki-eager": 2.4767715000000408,
-            "ferriki-precompiled": 2.4214640000000145,
-            "shiki-wasm": 5.31476049999992,
-            "shiki-js": 4.581605000000081,
-            "prism": 0.7264205000001311
+            "ferriki-off": 2.2476279999996223,
+            "ferriki": 2.1750509999999394,
+            "ferriki-eager": 2.4727000000000317,
+            "ferriki-precompiled": 2.459055000000035,
+            "shiki-wasm": 5.406749000000218,
+            "shiki-js": 4.674531999999999,
+            "prism": 0.7309140000002117
           }
         },
         {
@@ -433,12 +435,12 @@
           "size": "example",
           "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
           "timings": {
-            "ferriki-off": 2.004385999999954,
-            "ferriki": 1.3482905000001892,
-            "ferriki-eager": 1.5866214999998647,
-            "ferriki-precompiled": 1.2455530000000863,
-            "shiki-wasm": 4.361977000000138,
-            "shiki-js": 3.8941085000001294
+            "ferriki-off": 2.1749410000001035,
+            "ferriki": 1.5272674999999936,
+            "ferriki-eager": 1.7969199999997727,
+            "ferriki-precompiled": 1.4495264999999335,
+            "shiki-wasm": 4.419262499999945,
+            "shiki-js": 3.981123000000025
           }
         },
         {
@@ -447,12 +449,12 @@
           "size": "large",
           "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
           "timings": {
-            "ferriki-off": 23.049101999999493,
-            "ferriki": 15.529611000000386,
-            "ferriki-eager": 20.077425500000118,
-            "ferriki-precompiled": 15.35223249999899,
-            "shiki-wasm": 53.36998350000022,
-            "shiki-js": 51.08207599999969
+            "ferriki-off": 25.52708849999999,
+            "ferriki": 18.27272449999964,
+            "ferriki-eager": 22.918847999999798,
+            "ferriki-precompiled": 17.984517000000324,
+            "shiki-wasm": 53.44623700000011,
+            "shiki-js": 50.750055500000144
           }
         },
         {
@@ -461,12 +463,12 @@
           "size": "example",
           "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
           "timings": {
-            "ferriki-off": 2.0458679999997003,
-            "ferriki": 1.201575000000048,
-            "ferriki-eager": 1.3328980000001138,
-            "ferriki-precompiled": 1.1316219999998793,
-            "shiki-wasm": 4.449290000000019,
-            "shiki-js": 4.610175000000254
+            "ferriki-off": 2.09298600000011,
+            "ferriki": 1.245522999999821,
+            "ferriki-eager": 1.3768700000000536,
+            "ferriki-precompiled": 1.168918000000076,
+            "shiki-wasm": 4.507629000000179,
+            "shiki-js": 4.613226000000395
           }
         },
         {
@@ -475,12 +477,12 @@
           "size": "large",
           "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
           "timings": {
-            "ferriki-off": 29.884581499999058,
-            "ferriki": 16.627795000000333,
-            "ferriki-eager": 19.261141499999212,
-            "ferriki-precompiled": 16.6127919999999,
-            "shiki-wasm": 68.24959249999847,
-            "shiki-js": 70.29793050000035
+            "ferriki-off": 30.374992000000475,
+            "ferriki": 16.767407499999536,
+            "ferriki-eager": 19.52693249999902,
+            "ferriki-precompiled": 16.8624860000009,
+            "shiki-wasm": 68.71268650000002,
+            "shiki-js": 71.34234800000013
           }
         },
         {
@@ -489,13 +491,13 @@
           "size": "example",
           "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
           "timings": {
-            "ferriki-off": 0.3113659999999072,
-            "ferriki": 0.20216000000027634,
-            "ferriki-eager": 0.19585799999958908,
-            "ferriki-precompiled": 0.1883740000000671,
-            "shiki-wasm": 1.5919639999999617,
-            "shiki-js": 0.8008159999999407,
-            "prism": 0.11450600000000577
+            "ferriki-off": 0.31261799999992945,
+            "ferriki": 0.20078699999999117,
+            "ferriki-eager": 0.19398499999999785,
+            "ferriki-precompiled": 0.194246000000021,
+            "shiki-wasm": 1.5866140000000541,
+            "shiki-js": 0.8071279999999206,
+            "prism": 0.11504599999989296
           }
         },
         {
@@ -504,13 +506,13 @@
           "size": "large",
           "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
           "timings": {
-            "ferriki-off": 3.7065810000003694,
-            "ferriki": 2.7086629999998877,
-            "ferriki-eager": 2.7389200000002347,
-            "ferriki-precompiled": 2.6729459999996834,
-            "shiki-wasm": 24.20577400000002,
-            "shiki-js": 10.749370999999883,
-            "prism": 1.2847000000001572
+            "ferriki-off": 3.698506499999894,
+            "ferriki": 2.6928854999996474,
+            "ferriki-eager": 2.682245499999908,
+            "ferriki-precompiled": 2.690360999999939,
+            "shiki-wasm": 23.93780450000031,
+            "shiki-js": 10.73650449999991,
+            "prism": 1.2699385000000802
           }
         },
         {
@@ -519,13 +521,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.40404399999999896,
-            "ferriki": 0.3010190000001103,
-            "ferriki-eager": 0.2816020000000208,
-            "ferriki-precompiled": 0.27260599999999613,
-            "shiki-wasm": 1.6042949999998655,
-            "shiki-js": 0.958793999999898,
-            "prism": 0.1271199999999908
+            "ferriki-off": 0.41169949999999744,
+            "ferriki": 0.30306499999994685,
+            "ferriki-eager": 0.28136000000006334,
+            "ferriki-precompiled": 0.27594900000002553,
+            "shiki-wasm": 1.6225170000001299,
+            "shiki-js": 0.979752999999846,
+            "prism": 0.1290875000000824
           }
         },
         {
@@ -534,13 +536,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 5.039150999999947,
-            "ferriki": 4.069447999999738,
-            "ferriki-eager": 4.019272000000001,
-            "ferriki-precompiled": 3.9395119999999224,
-            "shiki-wasm": 23.921596000000136,
-            "shiki-js": 13.408371000000443,
-            "prism": 1.4894979999999123
+            "ferriki-off": 5.051932999999735,
+            "ferriki": 4.119988999999805,
+            "ferriki-eager": 4.0267039999998815,
+            "ferriki-precompiled": 4.005804999999782,
+            "shiki-wasm": 24.082426000000396,
+            "shiki-js": 13.611461999999847,
+            "prism": 1.5065339999996468
           }
         },
         {
@@ -549,12 +551,12 @@
           "size": "example",
           "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
           "timings": {
-            "ferriki-off": 1.2069275000001198,
-            "ferriki": 0.6362234999999146,
-            "ferriki-eager": 0.6094679999999926,
-            "ferriki-precompiled": 0.5900509999999031,
-            "shiki-wasm": 2.0322340000001304,
-            "shiki-js": 2.1119390000000067
+            "ferriki-off": 1.2213469999999234,
+            "ferriki": 0.6449429999997847,
+            "ferriki-eager": 0.6217790000000605,
+            "ferriki-precompiled": 0.6018019999999069,
+            "shiki-wasm": 2.0509179999999105,
+            "shiki-js": 2.1261890000000676
           }
         },
         {
@@ -563,12 +565,12 @@
           "size": "large",
           "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
           "timings": {
-            "ferriki-off": 17.748069500000156,
-            "ferriki": 9.091080500000317,
-            "ferriki-eager": 8.950794499999574,
-            "ferriki-precompiled": 8.810805000000073,
-            "shiki-wasm": 31.86871849999966,
-            "shiki-js": 32.46162950000007
+            "ferriki-off": 17.85453249999955,
+            "ferriki": 9.079868499999975,
+            "ferriki-eager": 9.002006500000334,
+            "ferriki-precompiled": 8.905435500000067,
+            "shiki-wasm": 32.28444899999977,
+            "shiki-js": 33.57329250000066
           }
         },
         {
@@ -577,12 +579,12 @@
           "size": "example",
           "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
           "timings": {
-            "ferriki-off": 0.693100999999956,
-            "ferriki": 0.42921199999977944,
-            "ferriki-eager": 0.40156450000006316,
-            "ferriki-precompiled": 0.37833549999982097,
-            "shiki-wasm": 1.7752125000001797,
-            "shiki-js": 2.3748420000001715
+            "ferriki-off": 0.6945715000000519,
+            "ferriki": 0.42507449999993696,
+            "ferriki-eager": 0.39800849999994625,
+            "ferriki-precompiled": 0.37882200000001376,
+            "shiki-wasm": 1.7585130000001072,
+            "shiki-js": 2.358641499999976
           }
         },
         {
@@ -591,12 +593,12 @@
           "size": "large",
           "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
           "timings": {
-            "ferriki-off": 9.161888999999519,
-            "ferriki": 5.764076999999816,
-            "ferriki-eager": 5.577549500000259,
-            "ferriki-precompiled": 5.441201000000092,
-            "shiki-wasm": 27.108970999999656,
-            "shiki-js": 36.675655000000006
+            "ferriki-off": 9.109173499999997,
+            "ferriki": 5.645548500000132,
+            "ferriki-eager": 5.4341465000002245,
+            "ferriki-precompiled": 5.3482294999998885,
+            "shiki-wasm": 26.72630449999997,
+            "shiki-js": 36.54979549999962
           }
         },
         {
@@ -605,13 +607,13 @@
           "size": "example",
           "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
           "timings": {
-            "ferriki-off": 0.3372025000001031,
-            "ferriki": 0.25489749999997,
-            "ferriki-eager": 0.24047000000001617,
-            "ferriki-precompiled": 0.22688400000009779,
-            "shiki-wasm": 2.521314000000018,
-            "shiki-js": 0.6394199999998591,
-            "prism": 0.1271759999999631
+            "ferriki-off": 0.34013950000007753,
+            "ferriki": 0.2549695000000156,
+            "ferriki-eager": 0.23674549999998362,
+            "ferriki-precompiled": 0.22928149999989955,
+            "shiki-wasm": 2.5276345000000333,
+            "shiki-js": 0.6485200000000759,
+            "prism": 0.12934900000004745
           }
         },
         {
@@ -620,13 +622,13 @@
           "size": "large",
           "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
           "timings": {
-            "ferriki-off": 4.0341610000002674,
-            "ferriki": 3.265100500000017,
-            "ferriki-eager": 3.214644999999564,
-            "ferriki-precompiled": 3.0543620000005376,
-            "shiki-wasm": 38.92236000000048,
-            "shiki-js": 8.678269,
-            "prism": 1.5446065000001
+            "ferriki-off": 4.090684000000692,
+            "ferriki": 3.351263999999901,
+            "ferriki-eager": 3.319144000000051,
+            "ferriki-precompiled": 3.18492999999944,
+            "shiki-wasm": 39.039418999999725,
+            "shiki-js": 8.733706999999868,
+            "prism": 1.5408879999995406
           }
         },
         {
@@ -635,13 +637,13 @@
           "size": "example",
           "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
           "timings": {
-            "ferriki-off": 0.3999210000000062,
-            "ferriki": 0.3054730000000063,
-            "ferriki-eager": 0.2910405000000651,
-            "ferriki-precompiled": 0.28318100000007007,
-            "shiki-wasm": 0.9896069999999781,
-            "shiki-js": 0.6983909999999582,
-            "prism": 0.12080850000006649
+            "ferriki-off": 0.39936099999999897,
+            "ferriki": 0.3048140000000785,
+            "ferriki-eager": 0.2897650000002159,
+            "ferriki-precompiled": 0.2831229999999323,
+            "shiki-wasm": 0.9930380000000696,
+            "shiki-js": 0.707470999999714,
+            "prism": 0.1214589999999589
           }
         },
         {
@@ -650,13 +652,13 @@
           "size": "large",
           "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
           "timings": {
-            "ferriki-off": 4.922801499999878,
-            "ferriki": 4.097495499999923,
-            "ferriki-eager": 4.085858000000144,
-            "ferriki-precompiled": 4.038563500000009,
-            "shiki-wasm": 13.68226400000026,
-            "shiki-js": 9.737117499999385,
-            "prism": 1.3073729999998704
+            "ferriki-off": 5.002654500000062,
+            "ferriki": 4.110130499999968,
+            "ferriki-eager": 4.097707499999842,
+            "ferriki-precompiled": 4.058233499999915,
+            "shiki-wasm": 13.872192499999528,
+            "shiki-js": 9.670603999999912,
+            "prism": 1.3196124999999483
           }
         },
         {
@@ -665,13 +667,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.6472040000001016,
-            "ferriki": 0.5630359999995562,
-            "ferriki-eager": 0.5415359999997236,
-            "ferriki-precompiled": 0.5167699999999513,
-            "shiki-wasm": 2.035859999999957,
-            "shiki-js": 1.2808340000001408,
-            "prism": 0.1835839999999962
+            "ferriki-off": 0.4106409999999414,
+            "ferriki": 0.30442200000004505,
+            "ferriki-eager": 0.2836520000000746,
+            "ferriki-precompiled": 0.27775100000008024,
+            "shiki-wasm": 1.6193289999998797,
+            "shiki-js": 0.9848279999999932,
+            "prism": 0.129683
           }
         },
         {
@@ -680,13 +682,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 5.926322000000255,
-            "ferriki": 4.855844000000161,
-            "ferriki-eager": 4.683810000000449,
-            "ferriki-precompiled": 4.560469000000012,
-            "shiki-wasm": 28.281185000000278,
-            "shiki-js": 16.89108000000033,
-            "prism": 1.7269210000004023
+            "ferriki-off": 5.053112999999939,
+            "ferriki": 4.10539400000016,
+            "ferriki-eager": 4.061192000000119,
+            "ferriki-precompiled": 4.003754999999728,
+            "shiki-wasm": 24.124424999999974,
+            "shiki-js": 13.61079299999983,
+            "prism": 1.4933429999996406
           }
         },
         {
@@ -695,13 +697,13 @@
           "size": "example",
           "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
           "timings": {
-            "ferriki-off": 0.7346990000000915,
-            "ferriki": 0.48870800000008785,
-            "ferriki-eager": 0.460303999999951,
-            "ferriki-precompiled": 0.4399949999999535,
-            "shiki-wasm": 2.2000289999999723,
-            "shiki-js": 1.2506470000000718,
-            "prism": 0.1334910000000491
+            "ferriki-off": 0.4854259999999613,
+            "ferriki": 0.2469779999998991,
+            "ferriki-eager": 0.2292850000001181,
+            "ferriki-precompiled": 0.22404050000000097,
+            "shiki-wasm": 1.6945954999999913,
+            "shiki-js": 1.0027264999998806,
+            "prism": 0.09410649999983889
           }
         },
         {
@@ -710,13 +712,13 @@
           "size": "large",
           "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
           "timings": {
-            "ferriki-off": 7.159571499999856,
-            "ferriki": 3.717141499999798,
-            "ferriki-eager": 3.6668414999999186,
-            "ferriki-precompiled": 3.550733500000206,
-            "shiki-wasm": 28.895773499999905,
-            "shiki-js": 16.56646049999995,
-            "prism": 1.2137625000000298
+            "ferriki-off": 6.232788000000255,
+            "ferriki": 3.2247110000002976,
+            "ferriki-eager": 3.1771130000001904,
+            "ferriki-precompiled": 3.1292530000000625,
+            "shiki-wasm": 25.168303999999807,
+            "shiki-js": 14.209627000000182,
+            "prism": 1.1266539999996894
           }
         },
         {
@@ -725,13 +727,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 2.0782799999997223,
-            "ferriki": 1.2400975000000471,
-            "ferriki-eager": 1.2525410000000647,
-            "ferriki-precompiled": 1.1486059999999725,
-            "shiki-wasm": 4.571078500000112,
-            "shiki-js": 4.145004000000199,
-            "prism": 0.15721999999982472
+            "ferriki-off": 1.1290189999999711,
+            "ferriki": 0.5008900000002541,
+            "ferriki-eager": 0.4811829999998736,
+            "ferriki-precompiled": 0.45366100000001097,
+            "shiki-wasm": 2.700988999999936,
+            "shiki-js": 2.66069299999981,
+            "prism": 0.10997700000007171
           }
         },
         {
@@ -740,13 +742,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 18.05955750000021,
-            "ferriki": 7.806696000000102,
-            "ferriki-eager": 7.939104500000212,
-            "ferriki-precompiled": 7.569034499999361,
-            "shiki-wasm": 48.86014150000028,
-            "shiki-js": 47.57410349999964,
-            "prism": 1.278434500000003
+            "ferriki-off": 15.752472500000295,
+            "ferriki": 6.786428500000511,
+            "ferriki-eager": 6.689365500000349,
+            "ferriki-precompiled": 6.494510499999706,
+            "shiki-wasm": 40.01358600000003,
+            "shiki-js": 39.18447649999962,
+            "prism": 1.1114984999999251
           }
         },
         {
@@ -755,13 +757,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.5065810000000965,
-            "ferriki": 0.4266809999999168,
-            "ferriki-eager": 0.39922999999998865,
-            "ferriki-precompiled": 0.37799900000004527,
-            "shiki-wasm": 1.4222489999999652,
-            "shiki-js": 0.9327599999999165,
-            "prism": 0.15029200000003584
+            "ferriki-off": 0.32562099999995553,
+            "ferriki": 0.22458099999994374,
+            "ferriki-eager": 0.20846099999994294,
+            "ferriki-precompiled": 0.20507500000007894,
+            "shiki-wasm": 1.1125859999999648,
+            "shiki-js": 0.7363609999997607,
+            "prism": 0.10531700000001365
           }
         },
         {
@@ -770,13 +772,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 4.6841199999998935,
-            "ferriki": 3.439785000000029,
-            "ferriki-eager": 3.2952140000002146,
-            "ferriki-precompiled": 3.2372349999996004,
-            "shiki-wasm": 18.6094149999999,
-            "shiki-js": 11.791519000000335,
-            "prism": 1.3645610000003217
+            "ferriki-off": 3.908172500000319,
+            "ferriki": 2.871929499999851,
+            "ferriki-eager": 2.8478289999998196,
+            "ferriki-precompiled": 2.806336000000556,
+            "shiki-wasm": 16.076569500000005,
+            "shiki-js": 10.168728999999985,
+            "prism": 1.2093469999997524
           }
         },
         {
@@ -785,13 +787,13 @@
           "size": "example",
           "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
           "timings": {
-            "ferriki-off": 1.3445279999999684,
-            "ferriki": 0.7334364999999252,
-            "ferriki-eager": 0.7230219999999576,
-            "ferriki-precompiled": 0.6894545000000107,
-            "shiki-wasm": 1.8758854999999812,
-            "shiki-js": 2.30660400000005,
-            "prism": 0.34892500000000837
+            "ferriki-off": 0.9165179999999964,
+            "ferriki": 0.33387599999991835,
+            "ferriki-eager": 0.3172349999999824,
+            "ferriki-precompiled": 0.3063250000000153,
+            "shiki-wasm": 1.240144999999984,
+            "shiki-js": 1.6832460000000538,
+            "prism": 0.21956199999999626
           }
         },
         {
@@ -800,13 +802,13 @@
           "size": "large",
           "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
           "timings": {
-            "ferriki-off": 15.076317999999901,
-            "ferriki": 5.276056499999868,
-            "ferriki-eager": 5.109373499999947,
-            "ferriki-precompiled": 4.888524499999903,
-            "shiki-wasm": 21.11588299999994,
-            "shiki-js": 30.81252050000012,
-            "prism": 2.8524029999998675
+            "ferriki-off": 12.934914999999819,
+            "ferriki": 4.317509999999629,
+            "ferriki-eager": 4.247422500000084,
+            "ferriki-precompiled": 4.1786689999999,
+            "shiki-wasm": 17.64925299999959,
+            "shiki-js": 24.209111500000063,
+            "prism": 2.5022265000002335
           }
         },
         {
@@ -815,13 +817,13 @@
           "size": "example",
           "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
           "timings": {
-            "ferriki-off": 2.8237060000000156,
-            "ferriki": 1.6602859999999282,
-            "ferriki-eager": 1.6054230000002008,
-            "ferriki-precompiled": 1.6223750000000337,
-            "shiki-wasm": 5.851482000000033,
-            "shiki-js": 6.0182005000000345,
-            "prism": 0.3271424999999226
+            "ferriki-off": 2.0674205000000256,
+            "ferriki": 0.8276714999997239,
+            "ferriki-eager": 0.7978159999998979,
+            "ferriki-precompiled": 0.7878269999998793,
+            "shiki-wasm": 4.416915000000017,
+            "shiki-js": 4.58210049999991,
+            "prism": 0.23275149999994937
           }
         },
         {
@@ -830,13 +832,13 @@
           "size": "large",
           "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
           "timings": {
-            "ferriki-off": 34.115882000000056,
-            "ferriki": 13.596865000000435,
-            "ferriki-eager": 13.692535500000304,
-            "ferriki-precompiled": 13.552801499999987,
-            "shiki-wasm": 80.97063050000042,
-            "shiki-js": 83.33766999999989,
-            "prism": 2.6679519999997865
+            "ferriki-off": 31.32570349999969,
+            "ferriki": 12.010246499999994,
+            "ferriki-eager": 11.888954000000012,
+            "ferriki-precompiled": 11.977680500000133,
+            "shiki-wasm": 69.16307899999947,
+            "shiki-js": 70.47953699999971,
+            "prism": 2.2636039999997593
           }
         },
         {
@@ -845,13 +847,13 @@
           "size": "example",
           "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
           "timings": {
-            "ferriki-off": 0.39810099999976956,
-            "ferriki": 0.4256520000001274,
-            "ferriki-eager": 0.4179980000003525,
-            "ferriki-precompiled": 0.4042819999999665,
-            "shiki-wasm": 1.1902450000000044,
-            "shiki-js": 0.5532339999999749,
-            "prism": 0.08837599999998247
+            "ferriki-off": 0.3166640000000598,
+            "ferriki": 0.29403650000000425,
+            "ferriki-eager": 0.28696299999998587,
+            "ferriki-precompiled": 0.27579199999991033,
+            "shiki-wasm": 0.9870505000000662,
+            "shiki-js": 0.4115360000000692,
+            "prism": 0.057353000000034626
           }
         },
         {
@@ -860,13 +862,13 @@
           "size": "large",
           "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
           "timings": {
-            "ferriki-off": 4.936070499999914,
-            "ferriki": 4.723343999999997,
-            "ferriki-eager": 4.727256500000294,
-            "ferriki-precompiled": 4.6287655000001,
-            "shiki-wasm": 16.680545500000107,
-            "shiki-js": 6.991692000000057,
-            "prism": 0.8232330000000729
+            "ferriki-off": 4.296084000000064,
+            "ferriki": 4.114353999999821,
+            "ferriki-eager": 4.144629999999779,
+            "ferriki-precompiled": 4.057907000000341,
+            "shiki-wasm": 14.643072000000302,
+            "shiki-js": 5.893699000000197,
+            "prism": 0.7394060000001446
           }
         },
         {
@@ -875,13 +877,13 @@
           "size": "example",
           "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
           "timings": {
-            "ferriki-off": 0.5341870000002018,
-            "ferriki": 0.44553000000007614,
-            "ferriki-eager": 0.42609300000003714,
-            "ferriki-precompiled": 6.1440379999999095,
-            "shiki-wasm": 2.574796000000333,
-            "shiki-js": 0.7185749999999871,
-            "prism": 0.12125900000000911
+            "ferriki-off": 0.3215779999998176,
+            "ferriki": 0.27910799999995106,
+            "ferriki-eager": 0.2658080000001064,
+            "ferriki-precompiled": 0.25852499999984957,
+            "shiki-wasm": 2.0380760000000464,
+            "shiki-js": 0.4821789999999737,
+            "prism": 0.07413399999990133
           }
         },
         {
@@ -890,13 +892,13 @@
           "size": "large",
           "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
           "timings": {
-            "ferriki-off": 5.012679499999649,
-            "ferriki": 4.417992999999569,
-            "ferriki-eager": 4.375438000000031,
-            "ferriki-precompiled": 94.55507800000032,
-            "shiki-wasm": 36.40585549999969,
-            "shiki-js": 8.514911000000211,
-            "prism": 1.14725400000043
+            "ferriki-off": 4.042447999999695,
+            "ferriki": 3.786559000000125,
+            "ferriki-eager": 3.7758789999998044,
+            "ferriki-precompiled": 3.7445989999996527,
+            "shiki-wasm": 31.09788099999969,
+            "shiki-js": 6.34628900000007,
+            "prism": 0.8945770000000266
           }
         },
         {
@@ -905,13 +907,13 @@
           "size": "example",
           "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
           "timings": {
-            "ferriki-off": 0.3527350000000524,
-            "ferriki": 0.26934349999999085,
-            "ferriki-eager": 0.255657000000042,
-            "ferriki-precompiled": 0.23395100000004732,
-            "shiki-wasm": 1.7392655000000445,
-            "shiki-js": 0.9229210000000876,
-            "prism": 0.07499150000012378
+            "ferriki-off": 0.27037700000005316,
+            "ferriki": 0.19502600000009807,
+            "ferriki-eager": 0.18635900000003858,
+            "ferriki-precompiled": 0.18132999999988897,
+            "shiki-wasm": 1.4614799999999377,
+            "shiki-js": 0.7657859999999346,
+            "prism": 0.05519299999991745
           }
         },
         {
@@ -920,13 +922,13 @@
           "size": "large",
           "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
           "timings": {
-            "ferriki-off": 4.145238000000063,
-            "ferriki": 3.214023000000452,
-            "ferriki-eager": 3.1437700000001314,
-            "ferriki-precompiled": 3.0213490000001,
-            "shiki-wasm": 25.699592999999822,
-            "shiki-js": 12.934607000000142,
-            "prism": 0.8123319999995147
+            "ferriki-off": 3.358210500000041,
+            "ferriki": 2.6540509999999813,
+            "ferriki-eager": 2.659245999999939,
+            "ferriki-precompiled": 2.6222055000000637,
+            "shiki-wasm": 22.23762550000015,
+            "shiki-js": 10.823752499999955,
+            "prism": 0.738244499999837
           }
         },
         {
@@ -935,13 +937,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.32301950000004354,
-            "ferriki": 0.2653705000000173,
-            "ferriki-eager": 0.24651000000000067,
-            "ferriki-precompiled": 0.2367219999999861,
-            "shiki-wasm": 1.4072145000000091,
-            "shiki-js": 0.6808390000000486,
-            "prism": 0.13204899999993813
+            "ferriki-off": 0.25337500000000546,
+            "ferriki": 0.19684399999994184,
+            "ferriki-eager": 0.18542750000000296,
+            "ferriki-precompiled": 0.18265699999994922,
+            "shiki-wasm": 1.2537304999999606,
+            "shiki-js": 0.5907430000000033,
+            "prism": 0.10316299999999501
           }
         },
         {
@@ -950,13 +952,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 3.9813045000000784,
-            "ferriki": 3.197069499999998,
-            "ferriki-eager": 3.1244330000004084,
-            "ferriki-precompiled": 3.0694289999999,
-            "shiki-wasm": 21.550126500000033,
-            "shiki-js": 9.789037999999891,
-            "prism": 1.284983499999953
+            "ferriki-off": 3.273005499999954,
+            "ferriki": 2.7492339999998876,
+            "ferriki-eager": 2.7240220000001045,
+            "ferriki-precompiled": 2.7174544999998034,
+            "shiki-wasm": 18.96594200000004,
+            "shiki-js": 8.302524999999832,
+            "prism": 1.0676610000000437
           }
         },
         {
@@ -965,13 +967,13 @@
           "size": "example",
           "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
           "timings": {
-            "ferriki-off": 1.1659290000000055,
-            "ferriki": 1.154217000000017,
-            "ferriki-eager": 1.1839930000001004,
-            "ferriki-precompiled": 1.1112960000000385,
-            "shiki-wasm": 2.7330950000000485,
-            "shiki-js": 1.7473160000001826,
-            "prism": 0.11046900000019377
+            "ferriki-off": 0.6317139999998744,
+            "ferriki": 0.4350760000002083,
+            "ferriki-eager": 0.41735300000004827,
+            "ferriki-precompiled": 0.40867600000001403,
+            "shiki-wasm": 1.7514830000000075,
+            "shiki-js": 1.175734000000034,
+            "prism": 0.07344699999998738
           }
         },
         {
@@ -980,13 +982,13 @@
           "size": "large",
           "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
           "timings": {
-            "ferriki-off": 9.260125499999958,
-            "ferriki": 6.986332500000117,
-            "ferriki-eager": 6.801883999999518,
-            "ferriki-precompiled": 6.726707499999748,
-            "shiki-wasm": 30.86352350000061,
-            "shiki-js": 19.810660499999358,
-            "prism": 0.9369020000003729
+            "ferriki-off": 8.28704700000003,
+            "ferriki": 6.082778500000131,
+            "ferriki-eager": 6.0083539999998266,
+            "ferriki-precompiled": 5.971835500000225,
+            "shiki-wasm": 26.23277949999988,
+            "shiki-js": 17.1268685,
+            "prism": 0.8083604999999352
           }
         },
         {
@@ -995,13 +997,13 @@
           "size": "example",
           "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
           "timings": {
-            "ferriki-off": 0.5671450000000959,
-            "ferriki": 0.42005199999994147,
-            "ferriki-eager": 0.40037049999995133,
-            "ferriki-precompiled": 0.3721370000000661,
-            "shiki-wasm": 1.6637284999999338,
-            "shiki-js": 0.8528634999999838,
-            "prism": 0.0944329999999809
+            "ferriki-off": 0.4466569999999592,
+            "ferriki": 0.2856560000001309,
+            "ferriki-eager": 0.2658884999998463,
+            "ferriki-precompiled": 0.2570570000000316,
+            "shiki-wasm": 1.3744460000000913,
+            "shiki-js": 0.6939715000000319,
+            "prism": 0.069108999999969
           }
         },
         {
@@ -1010,13 +1012,13 @@
           "size": "large",
           "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
           "timings": {
-            "ferriki-off": 6.820373999999902,
-            "ferriki": 4.442530000000261,
-            "ferriki-eager": 4.310429999999542,
-            "ferriki-precompiled": 4.0670200000004115,
-            "shiki-wasm": 23.8332419999997,
-            "shiki-js": 11.579690999999912,
-            "prism": 0.939050999999381
+            "ferriki-off": 5.643819999999778,
+            "ferriki": 3.635295000000042,
+            "ferriki-eager": 3.5870960000002015,
+            "ferriki-precompiled": 3.44658199999958,
+            "shiki-wasm": 20.067893999999797,
+            "shiki-js": 9.20180100000016,
+            "prism": 0.7791909999996278
           }
         },
         {
@@ -1025,13 +1027,13 @@
           "size": "example",
           "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
           "timings": {
-            "ferriki-off": 0.16823699999997643,
-            "ferriki": 0.21385299999997187,
-            "ferriki-eager": 0.19941599999992832,
-            "ferriki-precompiled": 0.18708300000002964,
-            "shiki-wasm": 0.8538299999999026,
-            "shiki-js": 0.31208799999990333,
-            "prism": 0.09205400000001873
+            "ferriki-off": 0.14402999999992971,
+            "ferriki": 0.17880000000008067,
+            "ferriki-eager": 0.16751399999998284,
+            "ferriki-precompiled": 0.15973500000001195,
+            "shiki-wasm": 0.7616629999999986,
+            "shiki-js": 0.26308300000005147,
+            "prism": 0.07422900000003096
           }
         },
         {
@@ -1040,13 +1042,13 @@
           "size": "large",
           "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
           "timings": {
-            "ferriki-off": 2.293180499999835,
-            "ferriki": 2.7578064999997878,
-            "ferriki-eager": 2.67496049999977,
-            "ferriki-precompiled": 2.6281920000001264,
-            "shiki-wasm": 12.429473499999858,
-            "shiki-js": 4.188425000000052,
-            "prism": 0.9524814999999762
+            "ferriki-off": 1.9370265000000018,
+            "ferriki": 2.3072649999996884,
+            "ferriki-eager": 2.2700360000001183,
+            "ferriki-precompiled": 2.2256474999999227,
+            "shiki-wasm": 11.652260999999726,
+            "shiki-js": 3.8677710000001753,
+            "prism": 0.8989504999999554
           }
         },
         {
@@ -1055,13 +1057,13 @@
           "size": "example",
           "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
           "timings": {
-            "ferriki-off": 0.6976259999996728,
-            "ferriki": 0.492048000000068,
-            "ferriki-eager": 0.46429600000010396,
-            "ferriki-precompiled": 0.4342700000001969,
-            "shiki-wasm": 2.254622000000154,
-            "shiki-js": 1.1146119999998518,
-            "prism": 0.2355649999999514
+            "ferriki-off": 0.3899709999999459,
+            "ferriki": 0.23198499999995192,
+            "ferriki-eager": 0.21769300000005387,
+            "ferriki-precompiled": 0.21131149999996524,
+            "shiki-wasm": 1.6762924999999314,
+            "shiki-js": 0.7813250000000949,
+            "prism": 0.1559480000001372
           }
         },
         {
@@ -1070,13 +1072,13 @@
           "size": "large",
           "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
           "timings": {
-            "ferriki-off": 5.879429500000242,
-            "ferriki": 3.5383379999998397,
-            "ferriki-eager": 3.4496564999999464,
-            "ferriki-precompiled": 3.341422499999908,
-            "shiki-wasm": 30.49074449999989,
-            "shiki-js": 12.178640499999801,
-            "prism": 1.7302334999999402
+            "ferriki-off": 4.723951499999657,
+            "ferriki": 2.9285359999998946,
+            "ferriki-eager": 2.906894500000135,
+            "ferriki-precompiled": 2.8444130000000314,
+            "shiki-wasm": 25.552509999999984,
+            "shiki-js": 10.08897449999995,
+            "prism": 1.5526605000004565
           }
         },
         {
@@ -1085,13 +1087,13 @@
           "size": "example",
           "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
           "timings": {
-            "ferriki-off": 0.4593409999999949,
-            "ferriki": 0.2777240000002621,
-            "ferriki-eager": 0.244230999999985,
-            "ferriki-precompiled": 0.233696000000009,
-            "shiki-wasm": 2.4693474999999125,
-            "shiki-js": 1.0710004999999114,
-            "prism": 0.057738500000255044
+            "ferriki-off": 0.31029799999998886,
+            "ferriki": 0.13488299999994524,
+            "ferriki-eager": 0.11779100000009635,
+            "ferriki-precompiled": 0.11189100000001417,
+            "shiki-wasm": 2.2171094999999355,
+            "shiki-js": 0.8989014999999654,
+            "prism": 0.03764100000000781
           }
         },
         {
@@ -1100,13 +1102,13 @@
           "size": "large",
           "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
           "timings": {
-            "ferriki-off": 4.339715000000069,
-            "ferriki": 1.8485359999999673,
-            "ferriki-eager": 1.769256999999925,
-            "ferriki-precompiled": 1.7615829999999733,
-            "shiki-wasm": 36.45623099999966,
-            "shiki-js": 13.285087000000203,
-            "prism": 0.4281879999998637
+            "ferriki-off": 3.7184389999999894,
+            "ferriki": 1.5820420000000013,
+            "ferriki-eager": 1.5228805000001557,
+            "ferriki-precompiled": 1.521252000000004,
+            "shiki-wasm": 33.88667950000013,
+            "shiki-js": 12.169788000000153,
+            "prism": 0.3639189999998962
           }
         },
         {
@@ -1115,13 +1117,13 @@
           "size": "example",
           "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
           "timings": {
-            "ferriki-off": 0.344524999999976,
-            "ferriki": 0.31099200000005567,
-            "ferriki-eager": 0.2993094999999357,
-            "ferriki-precompiled": 0.28334449999999833,
-            "shiki-wasm": 0.8947825000000194,
-            "shiki-js": 0.6237115000000699,
-            "prism": 0.09236950000001798
+            "ferriki-off": 0.26338500000002796,
+            "ferriki": 0.23292699999998945,
+            "ferriki-eager": 0.22264849999999115,
+            "ferriki-precompiled": 0.21203800000006368,
+            "shiki-wasm": 0.7555340000000115,
+            "shiki-js": 0.516705500000171,
+            "prism": 0.07819699999998875
           }
         },
         {
@@ -1130,13 +1132,13 @@
           "size": "large",
           "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
           "timings": {
-            "ferriki-off": 4.0664889999998195,
-            "ferriki": 3.6568489999999656,
-            "ferriki-eager": 3.5780989999998383,
-            "ferriki-precompiled": 3.4400989999999183,
-            "shiki-wasm": 12.31793000000016,
-            "shiki-js": 8.33909500000027,
-            "prism": 1.113491999999951
+            "ferriki-off": 3.1682099999998172,
+            "ferriki": 3.004503999999997,
+            "ferriki-eager": 2.9813399999998182,
+            "ferriki-precompiled": 2.92952299999979,
+            "shiki-wasm": 10.706569999999829,
+            "shiki-js": 7.1239009999999325,
+            "prism": 1.0650610000002416
           }
         },
         {
@@ -1145,13 +1147,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.7586859999998978,
-            "ferriki": 0.6155659999999443,
-            "ferriki-eager": 0.608011999999917,
-            "ferriki-precompiled": 0.5804200000000037,
-            "shiki-wasm": 2.0849759999999833,
-            "shiki-js": 1.2228769999999258,
-            "prism": 0.1226800000001731
+            "ferriki-off": 0.43396500000017113,
+            "ferriki": 0.2667309999999361,
+            "ferriki-eager": 0.2466030000000501,
+            "ferriki-precompiled": 0.23769700000002558,
+            "shiki-wasm": 1.4741089999999986,
+            "shiki-js": 0.8975359999999455,
+            "prism": 0.0868439999999282
           }
         },
         {
@@ -1160,13 +1162,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 6.702189999999746,
-            "ferriki": 4.168545500000164,
-            "ferriki-eager": 3.966014499999801,
-            "ferriki-precompiled": 3.7576339999998254,
-            "shiki-wasm": 25.40684650000003,
-            "shiki-js": 16.217675000000327,
-            "prism": 1.2579929999999422
+            "ferriki-off": 5.452973000000384,
+            "ferriki": 3.4551089999995384,
+            "ferriki-eager": 3.2969419999999445,
+            "ferriki-precompiled": 3.2048500000000786,
+            "shiki-wasm": 22.362303999999313,
+            "shiki-js": 12.308819000000312,
+            "prism": 0.9725969999999506
           }
         },
         {
@@ -1175,13 +1177,13 @@
           "size": "example",
           "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
           "timings": {
-            "ferriki-off": 0.6620034999999689,
-            "ferriki": 0.4354324999998198,
-            "ferriki-eager": 0.405576999999937,
-            "ferriki-precompiled": 0.3839059999999108,
-            "shiki-wasm": 2.1855860000000575,
-            "shiki-js": 1.1307235000001583,
-            "prism": 0.10885949999993727
+            "ferriki-off": 0.46992299999988063,
+            "ferriki": 0.24814699999978984,
+            "ferriki-eager": 0.23281700000006822,
+            "ferriki-precompiled": 0.22039300000005824,
+            "shiki-wasm": 1.755587000000105,
+            "shiki-js": 0.9313989999998284,
+            "prism": 0.07696499999997286
           }
         },
         {
@@ -1190,13 +1192,13 @@
           "size": "large",
           "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
           "timings": {
-            "ferriki-off": 7.214632000000165,
-            "ferriki": 3.8482590000003256,
-            "ferriki-eager": 3.7498939999995855,
-            "ferriki-precompiled": 3.579403999999613,
-            "shiki-wasm": 32.25553200000013,
-            "shiki-js": 16.134058000000095,
-            "prism": 1.005117999999129
+            "ferriki-off": 5.874509499999931,
+            "ferriki": 3.1841200000003482,
+            "ferriki-eager": 3.1482684999998582,
+            "ferriki-precompiled": 3.076067500000363,
+            "shiki-wasm": 26.587108999999828,
+            "shiki-js": 12.9948830000003,
+            "prism": 0.9219315000000279
           }
         },
         {
@@ -1205,13 +1207,13 @@
           "size": "example",
           "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
           "timings": {
-            "ferriki-off": 1.3087789999999586,
-            "ferriki": 1.1364949999997407,
-            "ferriki-eager": 1.0929830000000038,
-            "ferriki-precompiled": 1.0642700000000787,
-            "shiki-wasm": 4.290279999999939,
-            "shiki-js": 1.1261960000001636,
-            "prism": 0.14376999999990403
+            "ferriki-off": 0.8104820000000927,
+            "ferriki": 0.7233290000000352,
+            "ferriki-eager": 0.7112660000000233,
+            "ferriki-precompiled": 0.7012170000000424,
+            "shiki-wasm": 3.546651000000111,
+            "shiki-js": 0.7562710000001971,
+            "prism": 0.08094200000005003
           }
         },
         {
@@ -1220,13 +1222,13 @@
           "size": "large",
           "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
           "timings": {
-            "ferriki-off": 12.937317999999777,
-            "ferriki": 12.258793500000365,
-            "ferriki-eager": 11.981211500000427,
-            "ferriki-precompiled": 11.9892719999998,
-            "shiki-wasm": 61.02981450000016,
-            "shiki-js": 12.772207999999864,
-            "prism": 1.1498149999999896
+            "ferriki-off": 11.20597799999996,
+            "ferriki": 10.835597999999663,
+            "ferriki-eager": 10.803226500000164,
+            "ferriki-precompiled": 10.731486500000301,
+            "shiki-wasm": 55.681812000000264,
+            "shiki-js": 9.734859499999857,
+            "prism": 0.9165814999998929
           }
         }
       ],
@@ -1236,149 +1238,149 @@
           {
             "id": "repository",
             "documents": 12,
-            "inputBytes": 199301,
+            "inputBytes": 201617,
             "passes": 50,
             "engines": {
               "ferriki-off": {
                 "baselineRss": {
-                  "min": 56422400,
-                  "median": 56614912,
-                  "max": 56815616
+                  "min": 56360960,
+                  "median": 56616960,
+                  "max": 56811520
                 },
                 "initializedRss": {
-                  "min": 69263360,
-                  "median": 69459968,
-                  "max": 69660672
+                  "min": 69206016,
+                  "median": 69525504,
+                  "max": 69656576
                 },
                 "finalRss": {
-                  "min": 146677760,
-                  "median": 147052544,
-                  "max": 147365888
+                  "min": 147988480,
+                  "median": 148195328,
+                  "max": 148459520
                 },
                 "peakRss": {
-                  "min": 148643840,
-                  "median": 149018624,
-                  "max": 149327872
+                  "min": 149950464,
+                  "median": 150161408,
+                  "max": 150425600
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 143798272,
-                      "median": 143982592,
-                      "max": 144199680
+                      "min": 144982016,
+                      "median": 145068032,
+                      "max": 145313792
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 145960960,
-                      "median": 146137088,
-                      "max": 146350080
+                      "min": 147132416,
+                      "median": 147222528,
+                      "max": 147460096
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 146677760,
-                      "median": 147052544,
-                      "max": 147365888
+                      "min": 147988480,
+                      "median": 148195328,
+                      "max": 148459520
                     }
                   }
                 ]
               },
               "ferriki": {
                 "baselineRss": {
-                  "min": 56680448,
-                  "median": 56682496,
-                  "max": 56811520
+                  "min": 56549376,
+                  "median": 56680448,
+                  "max": 56680448
                 },
                 "initializedRss": {
                   "min": 69263360,
-                  "median": 69394432,
-                  "max": 69525504
+                  "median": 69265408,
+                  "max": 69394432
                 },
                 "finalRss": {
-                  "min": 264376320,
-                  "median": 264671232,
-                  "max": 265228288
+                  "min": 265588736,
+                  "median": 265748480,
+                  "max": 266002432
                 },
                 "peakRss": {
-                  "min": 266342400,
-                  "median": 266635264,
-                  "max": 267194368
+                  "min": 267554816,
+                  "median": 267712512,
+                  "max": 267968512
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 204869632,
-                      "median": 205084672,
-                      "max": 205201408
+                      "min": 206036992,
+                      "median": 206206976,
+                      "max": 206467072
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 251846656,
-                      "median": 252092416,
-                      "max": 252182528
+                      "min": 253112320,
+                      "median": 253190144,
+                      "max": 253411328
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 264376320,
-                      "median": 264671232,
-                      "max": 265228288
+                      "min": 265588736,
+                      "median": 265748480,
+                      "max": 266002432
                     }
                   }
                 ]
               },
               "ferriki-eager": {
                 "baselineRss": {
-                  "min": 56553472,
-                  "median": 56680448,
+                  "min": 56549376,
+                  "median": 56616960,
                   "max": 56684544
                 },
                 "initializedRss": {
                   "min": 69263360,
                   "median": 69462016,
-                  "max": 69656576
+                  "max": 69525504
                 },
                 "finalRss": {
-                  "min": 267071488,
-                  "median": 267151360,
-                  "max": 267292672
+                  "min": 268136448,
+                  "median": 268400640,
+                  "max": 268611584
                 },
                 "peakRss": {
-                  "min": 269037568,
-                  "median": 269117440,
-                  "max": 269258752
+                  "min": 270102528,
+                  "median": 270366720,
+                  "max": 270577664
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 265744384,
-                      "median": 266010624,
-                      "max": 266174464
+                      "min": 267018240,
+                      "median": 267165696,
+                      "max": 267235328
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 266129408,
-                      "median": 266414080,
-                      "max": 266543104
+                      "min": 267436032,
+                      "median": 267601920,
+                      "max": 267649024
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 267071488,
-                      "median": 267151360,
-                      "max": 267292672
+                      "min": 268136448,
+                      "median": 268400640,
+                      "max": 268611584
                     }
                   }
                 ]
@@ -1386,95 +1388,95 @@
               "ferriki-precompiled": {
                 "baselineRss": {
                   "min": 56680448,
-                  "median": 56680448,
+                  "median": 56682496,
                   "max": 56811520
                 },
                 "initializedRss": {
-                  "min": 579010560,
-                  "median": 579119104,
-                  "max": 579244032
+                  "min": 72560640,
+                  "median": 72749056,
+                  "max": 72896512
                 },
                 "finalRss": {
-                  "min": 722513920,
-                  "median": 722573312,
-                  "max": 722628608
+                  "min": 254689280,
+                  "median": 254758912,
+                  "max": 254976000
                 },
                 "peakRss": {
-                  "min": 786923520,
-                  "median": 787077120,
-                  "max": 787271680
+                  "min": 256655360,
+                  "median": 256722944,
+                  "max": 256942080
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 719024128,
-                      "median": 719265792,
-                      "max": 719364096
+                      "min": 251527168,
+                      "median": 251762688,
+                      "max": 251932672
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 721477632,
-                      "median": 721723392,
-                      "max": 721821696
+                      "min": 253722624,
+                      "median": 253986816,
+                      "max": 254144512
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 722513920,
-                      "median": 722573312,
-                      "max": 722628608
+                      "min": 254689280,
+                      "median": 254758912,
+                      "max": 254976000
                     }
                   }
                 ]
               },
               "shiki-wasm": {
                 "baselineRss": {
-                  "min": 56492032,
-                  "median": 56614912,
-                  "max": 56815616
+                  "min": 56623104,
+                  "median": 56680448,
+                  "max": 56811520
                 },
                 "initializedRss": {
-                  "min": 92135424,
-                  "median": 92868608,
-                  "max": 96075776
+                  "min": 91836416,
+                  "median": 93589504,
+                  "max": 101875712
                 },
                 "finalRss": {
-                  "min": 459173888,
-                  "median": 459929600,
-                  "max": 462983168
+                  "min": 457019392,
+                  "median": 463142912,
+                  "max": 481841152
                 },
                 "peakRss": {
-                  "min": 464257024,
-                  "median": 466653184,
-                  "max": 468070400
+                  "min": 462409728,
+                  "median": 468402176,
+                  "max": 488161280
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 283201536,
-                      "median": 288610304,
-                      "max": 310902784
+                      "min": 281223168,
+                      "median": 291364864,
+                      "max": 311611392
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 422182912,
-                      "median": 426528768,
-                      "max": 432574464
+                      "min": 423669760,
+                      "median": 425240576,
+                      "max": 432594944
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 459173888,
-                      "median": 459929600,
-                      "max": 462983168
+                      "min": 457019392,
+                      "median": 463142912,
+                      "max": 481841152
                     }
                   }
                 ]
@@ -1486,43 +1488,43 @@
                   "max": 56811520
                 },
                 "initializedRss": {
-                  "min": 86519808,
-                  "median": 86980608,
-                  "max": 87879680
+                  "min": 86626304,
+                  "median": 88199168,
+                  "max": 88391680
                 },
                 "finalRss": {
-                  "min": 357302272,
-                  "median": 358320128,
-                  "max": 364707840
+                  "min": 358928384,
+                  "median": 360468480,
+                  "max": 361422848
                 },
                 "peakRss": {
-                  "min": 362868736,
-                  "median": 364394496,
-                  "max": 370991104
+                  "min": 364883968,
+                  "median": 366579712,
+                  "max": 368676864
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 267952128,
-                      "median": 268556288,
-                      "max": 272044032
+                      "min": 268226560,
+                      "median": 271845376,
+                      "max": 274776064
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 355737600,
-                      "median": 357021696,
-                      "max": 362487808
+                      "min": 356642816,
+                      "median": 358606848,
+                      "max": 360296448
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 357302272,
-                      "median": 358320128,
-                      "max": 364707840
+                      "min": 358928384,
+                      "median": 360468480,
+                      "max": 361422848
                     }
                   }
                 ]
@@ -1532,293 +1534,293 @@
           {
             "id": "large-typescript",
             "documents": 1,
-            "inputBytes": 265165,
+            "inputBytes": 267365,
             "passes": 10,
             "engines": {
               "ferriki-off": {
                 "baselineRss": {
-                  "min": 56647680,
-                  "median": 56739840,
-                  "max": 56758272
+                  "min": 56569856,
+                  "median": 56692736,
+                  "max": 56905728
                 },
                 "initializedRss": {
-                  "min": 65859584,
-                  "median": 66066432,
-                  "max": 66318336
+                  "min": 65949696,
+                  "median": 66170880,
+                  "max": 66248704
                 },
                 "finalRss": {
-                  "min": 90365952,
-                  "median": 90441728,
-                  "max": 90656768
+                  "min": 90611712,
+                  "median": 90857472,
+                  "max": 91049984
                 },
                 "peakRss": {
-                  "min": 92336128,
-                  "median": 92411904,
-                  "max": 92672000
+                  "min": 92557312,
+                  "median": 92786688,
+                  "max": 92987392
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 88985600,
-                      "median": 89069568,
-                      "max": 89296896
+                      "min": 89235456,
+                      "median": 89473024,
+                      "max": 89579520
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 90316800,
-                      "median": 90404864,
-                      "max": 90607616
+                      "min": 90562560,
+                      "median": 90802176,
+                      "max": 90902528
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 90365952,
-                      "median": 90441728,
-                      "max": 90656768
+                      "min": 90611712,
+                      "median": 90857472,
+                      "max": 91049984
                     }
                   }
                 ]
               },
               "ferriki": {
                 "baselineRss": {
-                  "min": 56573952,
-                  "median": 56700928,
-                  "max": 56758272
+                  "min": 56639488,
+                  "median": 56666112,
+                  "max": 56770560
                 },
                 "initializedRss": {
-                  "min": 65880064,
+                  "min": 65945600,
                   "median": 66007040,
-                  "max": 66293760
+                  "max": 66215936
                 },
                 "finalRss": {
-                  "min": 107069440,
-                  "median": 107171840,
-                  "max": 107520000
+                  "min": 107352064,
+                  "median": 107530240,
+                  "max": 107614208
                 },
                 "peakRss": {
-                  "min": 109416448,
-                  "median": 109520896,
-                  "max": 109834240
+                  "min": 109875200,
+                  "median": 109950976,
+                  "max": 110120960
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 106098688,
-                      "median": 106254336,
-                      "max": 106524672
+                      "min": 106483712,
+                      "median": 106563584,
+                      "max": 106721280
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 107040768,
-                      "median": 107141120,
-                      "max": 107483136
+                      "min": 107319296,
+                      "median": 107501568,
+                      "max": 107577344
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 107069440,
-                      "median": 107171840,
-                      "max": 107520000
+                      "min": 107352064,
+                      "median": 107530240,
+                      "max": 107614208
                     }
                   }
                 ]
               },
               "ferriki-eager": {
                 "baselineRss": {
-                  "min": 56623104,
-                  "median": 56725504,
-                  "max": 56770560
+                  "min": 56643584,
+                  "median": 56676352,
+                  "max": 56819712
                 },
                 "initializedRss": {
-                  "min": 65802240,
-                  "median": 66195456,
-                  "max": 66207744
+                  "min": 65900544,
+                  "median": 66043904,
+                  "max": 66256896
                 },
                 "finalRss": {
-                  "min": 108527616,
-                  "median": 108761088,
-                  "max": 108863488
+                  "min": 108789760,
+                  "median": 108998656,
+                  "max": 109109248
                 },
                 "peakRss": {
-                  "min": 110985216,
-                  "median": 111265792,
-                  "max": 111419392
+                  "min": 111292416,
+                  "median": 111376384,
+                  "max": 111616000
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 107601920,
-                      "median": 107923456,
-                      "max": 108015616
+                      "min": 107933696,
+                      "median": 108017664,
+                      "max": 108265472
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 108433408,
-                      "median": 108754944,
-                      "max": 108851200
+                      "min": 108781568,
+                      "median": 108986368,
+                      "max": 109101056
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 108527616,
-                      "median": 108761088,
-                      "max": 108863488
+                      "min": 108789760,
+                      "median": 108998656,
+                      "max": 109109248
                     }
                   }
                 ]
               },
               "ferriki-precompiled": {
                 "baselineRss": {
-                  "min": 56557568,
-                  "median": 56748032,
-                  "max": 56823808
+                  "min": 56610816,
+                  "median": 56760320,
+                  "max": 56778752
                 },
                 "initializedRss": {
-                  "min": 127279104,
-                  "median": 127387648,
-                  "max": 127496192
+                  "min": 67125248,
+                  "median": 67311616,
+                  "max": 67510272
                 },
                 "finalRss": {
-                  "min": 158445568,
-                  "median": 158568448,
-                  "max": 158617600
+                  "min": 107720704,
+                  "median": 107927552,
+                  "max": 108056576
                 },
                 "peakRss": {
-                  "min": 180899840,
-                  "median": 180969472,
-                  "max": 181030912
+                  "min": 109424640,
+                  "median": 109631488,
+                  "max": 109760512
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 158220288,
-                      "median": 158255104,
-                      "max": 158375936
+                      "min": 107601920,
+                      "median": 107739136,
+                      "max": 107909120
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 158420992,
-                      "median": 158496768,
-                      "max": 158552064
+                      "min": 107671552,
+                      "median": 107878400,
+                      "max": 108011520
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 158445568,
-                      "median": 158568448,
-                      "max": 158617600
+                      "min": 107720704,
+                      "median": 107927552,
+                      "max": 108056576
                     }
                   }
                 ]
               },
               "shiki-wasm": {
                 "baselineRss": {
-                  "min": 56619008,
-                  "median": 56707072,
-                  "max": 56803328
+                  "min": 56557568,
+                  "median": 56768512,
+                  "max": 56905728
                 },
                 "initializedRss": {
-                  "min": 84664320,
-                  "median": 84762624,
-                  "max": 84901888
+                  "min": 83595264,
+                  "median": 84391936,
+                  "max": 84619264
                 },
                 "finalRss": {
-                  "min": 320352256,
-                  "median": 321830912,
-                  "max": 322834432
+                  "min": 314249216,
+                  "median": 323543040,
+                  "max": 363601920
                 },
                 "peakRss": {
-                  "min": 331161600,
-                  "median": 332361728,
-                  "max": 333778944
+                  "min": 325812224,
+                  "median": 332771328,
+                  "max": 374366208
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 197644288,
-                      "median": 199280640,
-                      "max": 201383936
+                      "min": 193392640,
+                      "median": 199854080,
+                      "max": 206438400
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 302198784,
-                      "median": 303380480,
-                      "max": 305225728
+                      "min": 285212672,
+                      "median": 287664128,
+                      "max": 357228544
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 320352256,
-                      "median": 321830912,
-                      "max": 322834432
+                      "min": 314249216,
+                      "median": 323543040,
+                      "max": 363601920
                     }
                   }
                 ]
               },
               "shiki-js": {
                 "baselineRss": {
-                  "min": 56565760,
-                  "median": 56748032,
-                  "max": 56897536
+                  "min": 56582144,
+                  "median": 56723456,
+                  "max": 56823808
                 },
                 "initializedRss": {
-                  "min": 75902976,
-                  "median": 76410880,
-                  "max": 76664832
+                  "min": 75882496,
+                  "median": 76146688,
+                  "max": 76333056
                 },
                 "finalRss": {
-                  "min": 301170688,
-                  "median": 301780992,
-                  "max": 319815680
+                  "min": 299589632,
+                  "median": 300918784,
+                  "max": 319606784
                 },
                 "peakRss": {
-                  "min": 312262656,
-                  "median": 312956928,
-                  "max": 331272192
+                  "min": 309190656,
+                  "median": 311603200,
+                  "max": 331104256
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 171376640,
-                      "median": 173211648,
-                      "max": 173924352
+                      "min": 170508288,
+                      "median": 174178304,
+                      "max": 174526464
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 291319808,
-                      "median": 298584064,
-                      "max": 301035520
+                      "min": 265351168,
+                      "median": 269402112,
+                      "max": 287088640
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 301170688,
-                      "median": 301780992,
-                      "max": 319815680
+                      "min": 299589632,
+                      "median": 300918784,
+                      "max": 319606784
                     }
                   }
                 ]
@@ -1835,32 +1837,32 @@
         "comparison": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+          "binarySha256": "96c0ec0ebebdfdbf4862c9a16efe45746654c20b0d2019647a194ecc1ae51076"
         },
         "curated": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+          "binarySha256": "96c0ec0ebebdfdbf4862c9a16efe45746654c20b0d2019647a194ecc1ae51076"
         },
         "tiobe": {
           "cpu": "Apple M4 Pro (Virtual)",
           "os": "Darwin 25.3.0",
-          "binarySha256": "a26b3b1c4a43134d3734446c240807083c7c54a703d8acf861c01c1f1c5da60b"
+          "binarySha256": "96c0ec0ebebdfdbf4862c9a16efe45746654c20b0d2019647a194ecc1ae51076"
         }
       },
       "warm": {
-        "ferriki-off": 121.39450049999868,
-        "ferriki": 80.63847949999581,
-        "ferriki-eager": 80.4211659999969,
-        "ferriki-precompiled": 115.31085199999688,
-        "shiki-wasm": 335.88208299997405
+        "ferriki-off": 134.7901034999859,
+        "ferriki": 87.3897065000042,
+        "ferriki-eager": 88.34002149998923,
+        "ferriki-precompiled": 84.10797900000216,
+        "shiki-wasm": 367.8895425000378
       },
       "cold": {
-        "ferriki-off": 219.73424999999997,
-        "ferriki": 338.45929149999995,
-        "ferriki-eager": 413.72466699999995,
-        "ferriki-precompiled": 619.943104,
-        "shiki-wasm": 1099.913688
+        "ferriki-off": 206.3916045,
+        "ferriki": 318.5198755,
+        "ferriki-eager": 388.98002099999997,
+        "ferriki-precompiled": 194.8240835,
+        "shiki-wasm": 1072.3964165
       },
       "workloads": [
         {
@@ -1869,13 +1871,13 @@
           "size": "example",
           "sha256": "8a0dcbf03baebf972d1f22058485e71f2597bf100193cbbf37fd1cd4a1f72dd9",
           "timings": {
-            "ferriki-off": 1.752478999999994,
-            "ferriki": 0.8323749999999563,
-            "ferriki-eager": 0.7893749999998363,
-            "ferriki-precompiled": 0.8026664999999866,
-            "shiki-wasm": 3.758583499999986,
-            "shiki-js": 5.4502915000000485,
-            "prism": 0.21218750000002728
+            "ferriki-off": 1.6618539999999484,
+            "ferriki": 0.7129790000001321,
+            "ferriki-eager": 0.6816040000001067,
+            "ferriki-precompiled": 0.6893334999998615,
+            "shiki-wasm": 3.582646000000068,
+            "shiki-js": 5.150021000000152,
+            "prism": 0.19620800000006966
           }
         },
         {
@@ -1884,13 +1886,13 @@
           "size": "large",
           "sha256": "fcd9d83f28572d3ecc412b1dbf52e20b90583f84b40774ad816c7decb9e67d90",
           "timings": {
-            "ferriki-off": 25.676770999999917,
-            "ferriki": 10.173729000000549,
-            "ferriki-eager": 9.929416500000116,
-            "ferriki-precompiled": 10.019771000000219,
-            "shiki-wasm": 56.77125000000024,
-            "shiki-js": 83.79212499999903,
-            "prism": 2.43224999999984
+            "ferriki-off": 24.133187000000817,
+            "ferriki": 9.40591650000033,
+            "ferriki-eager": 9.255583999999999,
+            "ferriki-precompiled": 9.378458000000137,
+            "shiki-wasm": 52.57402099999945,
+            "shiki-js": 77.15247899999986,
+            "prism": 2.2077704999996968
           }
         },
         {
@@ -1899,13 +1901,13 @@
           "size": "example",
           "sha256": "1e602f48aee24d46f6a7dd37f12745b6aaa20f8c75d9a9edbde67e7415de17a5",
           "timings": {
-            "ferriki-off": 1.9594590000001517,
-            "ferriki": 1.0511670000000777,
-            "ferriki-eager": 1.0078750000000127,
-            "ferriki-precompiled": 1.04162499999984,
-            "shiki-wasm": 4.454792000000225,
-            "shiki-js": 4.657791999999972,
-            "prism": 0.3273750000000746
+            "ferriki-off": 1.7729375000001255,
+            "ferriki": 0.8021249999999327,
+            "ferriki-eager": 0.7689794999998867,
+            "ferriki-precompiled": 0.7812705000000051,
+            "shiki-wasm": 4.133562499999925,
+            "shiki-js": 4.27104149999991,
+            "prism": 0.29443800000012743
           }
         },
         {
@@ -1914,13 +1916,13 @@
           "size": "large",
           "sha256": "459d8cafc67117514329825c0fb8224e5448ec3d09288cedc1ef6738a8e9597e",
           "timings": {
-            "ferriki-off": 27.662270499999977,
-            "ferriki": 12.043999999999869,
-            "ferriki-eager": 11.954937499999687,
-            "ferriki-precompiled": 12.002958000000035,
-            "shiki-wasm": 65.56210400000009,
-            "shiki-js": 68.72697950000065,
-            "prism": 3.9480005000000347
+            "ferriki-off": 31.861750000000484,
+            "ferriki": 13.675916500000312,
+            "ferriki-eager": 13.30837500000007,
+            "ferriki-precompiled": 13.689541500000814,
+            "shiki-wasm": 72.01829150000003,
+            "shiki-js": 79.13064599999962,
+            "prism": 4.353437500000382
           }
         },
         {
@@ -1929,13 +1931,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.18287550000002284,
-            "ferriki": 0.1482499999999618,
-            "ferriki-eager": 0.14895850000004884,
-            "ferriki-precompiled": 0.14718699999991713,
-            "shiki-wasm": 1.129979500000104,
-            "shiki-js": 0.459833500000002,
-            "prism": 0.08160399999991341
+            "ferriki-off": 0.25974999999994,
+            "ferriki": 0.20791600000006838,
+            "ferriki-eager": 0.19791600000007747,
+            "ferriki-precompiled": 0.19800000000032014,
+            "shiki-wasm": 1.4357089999998607,
+            "shiki-js": 0.612416999999823,
+            "prism": 0.12370899999996254
           }
         },
         {
@@ -1944,13 +1946,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 2.790208000000348,
-            "ferriki": 2.3026660000000447,
-            "ferriki-eager": 2.315791999999419,
-            "ferriki-precompiled": 2.2867080000000897,
-            "shiki-wasm": 17.609292000000096,
-            "shiki-js": 6.726584000000003,
-            "prism": 1.1676250000000437
+            "ferriki-off": 3.3819584999998824,
+            "ferriki": 2.8307499999998527,
+            "ferriki-eager": 2.8304794999999103,
+            "ferriki-precompiled": 2.8240419999997357,
+            "shiki-wasm": 21.850541500000418,
+            "shiki-js": 8.961229499999945,
+            "prism": 1.402791999999863
           }
         },
         {
@@ -1959,13 +1961,13 @@
           "size": "example",
           "sha256": "118e7ccdad74ab34c45aef733c44ba94174bb4eb310a8265178c9567c4d0760d",
           "timings": {
-            "ferriki-off": 0.2423749999999245,
-            "ferriki": 0.2605624999999918,
-            "ferriki-eager": 0.2542080000000624,
-            "ferriki-precompiled": 0.25074999999981173,
-            "shiki-wasm": 2.54218800000001,
-            "shiki-js": 0.5188750000000937,
-            "prism": 0.06987499999991087
+            "ferriki-off": 0.32770800000002964,
+            "ferriki": 0.38249999999993634,
+            "ferriki-eager": 0.3662090000002536,
+            "ferriki-precompiled": 0.3704169999998612,
+            "shiki-wasm": 3.019125000000031,
+            "shiki-js": 0.6537089999999353,
+            "prism": 0.09379100000001017
           }
         },
         {
@@ -1974,13 +1976,13 @@
           "size": "large",
           "sha256": "ea08df94144a384fb7f7f3526fb8c74933be43f52e6c3d85126367c86fe8f47f",
           "timings": {
-            "ferriki-off": 3.5394160000005286,
-            "ferriki": 3.729374999999891,
-            "ferriki-eager": 3.699333000000024,
-            "ferriki-precompiled": 3.655416999999943,
-            "shiki-wasm": 39.718415999999706,
-            "shiki-js": 7.740250000000742,
-            "prism": 1.0011670000003505
+            "ferriki-off": 3.855374999999867,
+            "ferriki": 4.0861879999997655,
+            "ferriki-eager": 4.190396499999906,
+            "ferriki-precompiled": 3.9235834999999497,
+            "shiki-wasm": 44.39456249999989,
+            "shiki-js": 8.498208500000374,
+            "prism": 1.068188000000191
           }
         },
         {
@@ -1989,13 +1991,13 @@
           "size": "example",
           "sha256": "07344110f85e24e26acf01721b16302f33012b3e19d3c625a6593eedf124a653",
           "timings": {
-            "ferriki-off": 1.0167080000001079,
-            "ferriki": 0.6178330000002461,
-            "ferriki-eager": 0.5991250000001855,
-            "ferriki-precompiled": 0.6012919999998303,
-            "shiki-wasm": 3.409958000000188,
-            "shiki-js": 2.519125000000031,
-            "prism": 0.20670799999970768
+            "ferriki-off": 1.3292500000002292,
+            "ferriki": 0.9460419999995793,
+            "ferriki-eager": 0.9318749999999909,
+            "ferriki-precompiled": 0.9310420000001614,
+            "shiki-wasm": 4.2548340000000735,
+            "shiki-js": 3.3237080000001242,
+            "prism": 0.2737919999999576
           }
         },
         {
@@ -2004,13 +2006,13 @@
           "size": "large",
           "sha256": "afb35a0236fb4eb1fe13038e8a0ae5e1b8b53a77a4b6ecd937a279e78d0997a1",
           "timings": {
-            "ferriki-off": 14.58304199999975,
-            "ferriki": 8.14756250000005,
-            "ferriki-eager": 8.1003125000002,
-            "ferriki-precompiled": 8.121646000000055,
-            "shiki-wasm": 52.36158299999988,
-            "shiki-js": 37.65291699999989,
-            "prism": 2.464666500000476
+            "ferriki-off": 16.82737549999956,
+            "ferriki": 9.236291999999594,
+            "ferriki-eager": 9.654021000000284,
+            "ferriki-precompiled": 9.524854499999947,
+            "shiki-wasm": 62.032582999999704,
+            "shiki-js": 45.523979000000054,
+            "prism": 2.8073535000003176
           }
         },
         {
@@ -2019,13 +2021,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 0.9271249999997053,
-            "ferriki": 0.40612499999997453,
-            "ferriki-eager": 0.395958999999948,
-            "ferriki-precompiled": 0.390625,
-            "shiki-wasm": 2.72458400000005,
-            "shiki-js": 2.2377080000001115,
-            "prism": 0.09887499999967986
+            "ferriki-off": 1.182770500000288,
+            "ferriki": 0.6056250000001455,
+            "ferriki-eager": 0.5730420000002141,
+            "ferriki-precompiled": 0.5698125000001255,
+            "shiki-wasm": 3.209104000000025,
+            "shiki-js": 2.772999999999911,
+            "prism": 0.1252079999999296
           }
         },
         {
@@ -2034,13 +2036,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 13.083729499999663,
-            "ferriki": 5.3780210000004445,
-            "ferriki-eager": 5.263791500000025,
-            "ferriki-precompiled": 5.223811999999725,
-            "shiki-wasm": 40.3913120000002,
-            "shiki-js": 33.74416700000074,
-            "prism": 1.1716670000000704
+            "ferriki-off": 14.142374999999902,
+            "ferriki": 5.797625000000153,
+            "ferriki-eager": 5.721395500000199,
+            "ferriki-precompiled": 5.655208500000299,
+            "shiki-wasm": 44.84824949999984,
+            "shiki-js": 37.76783299999988,
+            "prism": 1.263271000000259
           }
         },
         {
@@ -2049,13 +2051,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.328125,
-            "ferriki": 0.20124999999984539,
-            "ferriki-eager": 0.1951249999999618,
-            "ferriki-precompiled": 0.19099999999980355,
-            "shiki-wasm": 1.3952500000000327,
-            "shiki-js": 0.7232919999996739,
-            "prism": 0.07391699999993762
+            "ferriki-off": 0.3897499999999354,
+            "ferriki": 0.2523124999999027,
+            "ferriki-eager": 0.2417080000000169,
+            "ferriki-precompiled": 0.23958350000009432,
+            "shiki-wasm": 1.6199585000000525,
+            "shiki-js": 0.8548960000000534,
+            "prism": 0.08941700000002584
           }
         },
         {
@@ -2064,13 +2066,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 4.8044159999999465,
-            "ferriki": 2.937167000000045,
-            "ferriki-eager": 2.881290999999692,
-            "ferriki-precompiled": 2.7916250000002947,
-            "shiki-wasm": 21.086749999999938,
-            "shiki-js": 10.733042000000296,
-            "prism": 1.0009170000002996
+            "ferriki-off": 5.278874999999971,
+            "ferriki": 3.3279170000000704,
+            "ferriki-eager": 3.1908329999996567,
+            "ferriki-precompiled": 3.0807920000002014,
+            "shiki-wasm": 23.376500000000306,
+            "shiki-js": 11.511666000000332,
+            "prism": 1.1040000000002692
           }
         },
         {
@@ -2079,13 +2081,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.22483299999998962,
-            "ferriki": 0.16479100000003655,
-            "ferriki-eager": 0.16108299999996234,
-            "ferriki-precompiled": 0.16287499999998545,
-            "shiki-wasm": 0.9767079999999169,
-            "shiki-js": 0.6180840000000103,
-            "prism": 0.08758299999999508
+            "ferriki-off": 0.24283399999967514,
+            "ferriki": 0.183667000000014,
+            "ferriki-eager": 0.17904199999998127,
+            "ferriki-precompiled": 0.18066700000008495,
+            "shiki-wasm": 1.0298330000000533,
+            "shiki-js": 0.6458339999999794,
+            "prism": 0.09624999999994088
           }
         },
         {
@@ -2094,13 +2096,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.3629999999993743,
-            "ferriki": 2.5090829999999187,
-            "ferriki-eager": 2.4705409999996846,
-            "ferriki-precompiled": 2.507665999999972,
-            "shiki-wasm": 15.106209000000035,
-            "shiki-js": 9.329000000000633,
-            "prism": 1.305667000000085
+            "ferriki-off": 3.5275839999994787,
+            "ferriki": 2.588082999999642,
+            "ferriki-eager": 2.5709999999999127,
+            "ferriki-precompiled": 2.5947910000004413,
+            "shiki-wasm": 15.626709000000119,
+            "shiki-js": 9.719208999999864,
+            "prism": 1.3821250000000873
           }
         },
         {
@@ -2109,13 +2111,13 @@
           "size": "example",
           "sha256": "3ef85443b6a2dc6c8034dba8b2f763f140f476e6ccd65c828ca510be66a30901",
           "timings": {
-            "ferriki-off": 0.34262500000022555,
-            "ferriki": 0.25525000000016007,
-            "ferriki-eager": 0.24687500000027285,
-            "ferriki-precompiled": 0.24291700000003402,
-            "shiki-wasm": 1.0213330000001406,
-            "shiki-js": 1.4262079999998605,
-            "prism": 0.11583399999972244
+            "ferriki-off": 0.5526459999999815,
+            "ferriki": 0.4287085000000843,
+            "ferriki-eager": 0.4094795000000886,
+            "ferriki-precompiled": 0.40629149999995207,
+            "shiki-wasm": 1.3989794999999958,
+            "shiki-js": 1.910479500000065,
+            "prism": 0.1592294999998103
           }
         },
         {
@@ -2124,13 +2126,13 @@
           "size": "large",
           "sha256": "87570a071ade89408c0eb595ea7449730fffeb3f01b15ca941916d514ca9e8cc",
           "timings": {
-            "ferriki-off": 4.676000000000386,
-            "ferriki": 3.3827714999997625,
-            "ferriki-eager": 3.336187500000051,
-            "ferriki-precompiled": 3.2996460000003935,
-            "shiki-wasm": 14.934729000000061,
-            "shiki-js": 22.090020999999524,
-            "prism": 1.4332079999999223
+            "ferriki-off": 4.9473330000000715,
+            "ferriki": 3.578874999999698,
+            "ferriki-eager": 3.5514170000001286,
+            "ferriki-precompiled": 3.5127499999994143,
+            "shiki-wasm": 15.789895999999771,
+            "shiki-js": 23.378000000000156,
+            "prism": 1.511729500000456
           }
         },
         {
@@ -2139,13 +2141,13 @@
           "size": "example",
           "sha256": "2a8d0668206cddcbc7ed9ad8ebd134246cf348292f0c6594c970669624ef1cef",
           "timings": {
-            "ferriki-off": 0.07325000000003001,
-            "ferriki": 0.07154100000002472,
-            "ferriki-eager": 0.07366650000000163,
-            "ferriki-precompiled": 0.07437499999994657,
-            "shiki-wasm": 0.1770624999999768,
-            "shiki-js": 0.13241700000000378,
-            "prism": 0.030457999999967456
+            "ferriki-off": 0.07445800000002123,
+            "ferriki": 0.07287499999999625,
+            "ferriki-eager": 0.07495850000000814,
+            "ferriki-precompiled": 0.07541599999998994,
+            "shiki-wasm": 0.18083350000000564,
+            "shiki-js": 0.13529199999999264,
+            "prism": 0.03187499999997101
           }
         },
         {
@@ -2154,13 +2156,13 @@
           "size": "large",
           "sha256": "b78d79844bb50008c74481cd84a25e23182ec9d02d19eae7ebf2c4d335815bc4",
           "timings": {
-            "ferriki-off": 1.0822709999998779,
-            "ferriki": 1.0537289999999757,
-            "ferriki-eager": 1.0899580000001379,
-            "ferriki-precompiled": 1.0928960000001098,
-            "shiki-wasm": 2.6945000000001755,
-            "shiki-js": 1.948812500000031,
-            "prism": 0.47508399999981066
+            "ferriki-off": 1.1187085000001389,
+            "ferriki": 1.0943750000000136,
+            "ferriki-eager": 1.121916500000225,
+            "ferriki-precompiled": 1.1230209999999943,
+            "shiki-wasm": 2.762354000000073,
+            "shiki-js": 2.016687499999989,
+            "prism": 0.5093334999999115
           }
         },
         {
@@ -2169,12 +2171,12 @@
           "size": "example",
           "sha256": "7062527a4252581b2cb8050e83e528ea315da66c2bc205a0959de6d91b8c5c9a",
           "timings": {
-            "ferriki-off": 0.9657500000000709,
-            "ferriki": 1.2012080000000651,
-            "ferriki-eager": 1.1908750000000055,
-            "ferriki-precompiled": 1.1862920000000088,
-            "shiki-wasm": 1.2275000000000773,
-            "prism": 0.04504099999985556
+            "ferriki-off": 0.9833749999999952,
+            "ferriki": 1.2254999999999825,
+            "ferriki-eager": 1.228125000000034,
+            "ferriki-precompiled": 1.2276460000000498,
+            "shiki-wasm": 1.2447919999999613,
+            "prism": 0.045146000000045206
           }
         },
         {
@@ -2183,12 +2185,12 @@
           "size": "large",
           "sha256": "0b0f6c7af6e983e37314c4c3f2c7ac08ff8ce299b958780691265ca8a300f2b1",
           "timings": {
-            "ferriki-off": 15.173875499999895,
-            "ferriki": 19.135729500000025,
-            "ferriki-eager": 18.868146000000024,
-            "ferriki-precompiled": 18.78456250000022,
-            "shiki-wasm": 19.545103999999583,
-            "prism": 0.6422914999998284
+            "ferriki-off": 15.471999500000038,
+            "ferriki": 19.56316700000002,
+            "ferriki-eager": 19.396291000000247,
+            "ferriki-precompiled": 19.500187500000038,
+            "shiki-wasm": 19.896437500000047,
+            "prism": 0.6702084999997169
           }
         },
         {
@@ -2197,13 +2199,13 @@
           "size": "example",
           "sha256": "11231ab1ba5ec9cbabc259cc75ecec4c3c612d59fd6e22170cea6738e418e76c",
           "timings": {
-            "ferriki-off": 0.11691700000002925,
-            "ferriki": 0.11487500000001205,
-            "ferriki-eager": 0.12895800000001145,
-            "ferriki-precompiled": 0.12895899999995208,
-            "shiki-wasm": 0.29322899999999663,
-            "shiki-js": 0.237333499999977,
-            "prism": 0.04966699999999946
+            "ferriki-off": 0.11891700000001038,
+            "ferriki": 0.11662500000005593,
+            "ferriki-eager": 0.1314794999999549,
+            "ferriki-precompiled": 0.12983299999999076,
+            "shiki-wasm": 0.2943124999999611,
+            "shiki-js": 0.2385835000000327,
+            "prism": 0.049875000000028535
           }
         },
         {
@@ -2212,13 +2214,13 @@
           "size": "large",
           "sha256": "58852239e36a9dcd855284e28921c6f99f5a803b3a9ef28b37260e151fb1c1b8",
           "timings": {
-            "ferriki-off": 1.8537710000000516,
-            "ferriki": 1.8121455000000424,
-            "ferriki-eager": 2.009582999999793,
-            "ferriki-precompiled": 2.0044794999998885,
-            "shiki-wasm": 4.658645500000034,
-            "shiki-js": 3.755896000000007,
-            "prism": 0.8018334999999297
+            "ferriki-off": 1.8996249999999009,
+            "ferriki": 1.8496870000001309,
+            "ferriki-eager": 2.0424379999999474,
+            "ferriki-precompiled": 2.006603999999925,
+            "shiki-wasm": 4.8438750000000255,
+            "shiki-js": 3.90999950000014,
+            "prism": 0.8181875000000218
           }
         },
         {
@@ -2227,12 +2229,12 @@
           "size": "example",
           "sha256": "04e99d8d655a8fbf782ed2ed5b83b5d4a50d320e603506c0dcf2f8ee3c56eb62",
           "timings": {
-            "ferriki-off": 1.8806455000001279,
-            "ferriki": 1.1970834999999624,
-            "ferriki-eager": 1.3558750000000828,
-            "ferriki-precompiled": 1.1483755000001565,
-            "shiki-wasm": 4.64193750000004,
-            "shiki-js": 4.300104000000147
+            "ferriki-off": 2.0724784999999883,
+            "ferriki": 1.4017285000001038,
+            "ferriki-eager": 1.5849374999997963,
+            "ferriki-precompiled": 1.3739170000001195,
+            "shiki-wasm": 5.083000500000026,
+            "shiki-js": 4.759478999999942
           }
         },
         {
@@ -2241,12 +2243,12 @@
           "size": "large",
           "sha256": "da5a7282ea903baa625018f108de791d7050a41ea8d13e30d916fb0a0c31b7f2",
           "timings": {
-            "ferriki-off": 21.303437999999915,
-            "ferriki": 13.340437500000007,
-            "ferriki-eager": 16.394395500000428,
-            "ferriki-precompiled": 13.15231300000005,
-            "shiki-wasm": 57.38039549999985,
-            "shiki-js": 55.6514585000009
+            "ferriki-off": 20.850166999999146,
+            "ferriki": 12.735416999999416,
+            "ferriki-eager": 15.612978999999996,
+            "ferriki-precompiled": 12.789249500000096,
+            "shiki-wasm": 54.27881249999973,
+            "shiki-js": 53.3133955000003
           }
         },
         {
@@ -2255,12 +2257,12 @@
           "size": "example",
           "sha256": "9fea84163fb00ae79ca7815a0ed6a1d938269ce8101068d88ced92e9e2788c83",
           "timings": {
-            "ferriki-off": 2.1869579999998905,
-            "ferriki": 1.270354000000225,
-            "ferriki-eager": 1.3571459999999433,
-            "ferriki-precompiled": 1.2075205000001006,
-            "shiki-wasm": 5.211708499999872,
-            "shiki-js": 5.861707999999908
+            "ferriki-off": 2.2295420000000377,
+            "ferriki": 1.3393750000000182,
+            "ferriki-eager": 1.4054579999999532,
+            "ferriki-precompiled": 1.2951670000002196,
+            "shiki-wasm": 5.231959000000188,
+            "shiki-js": 6.0437080000001515
           }
         },
         {
@@ -2269,12 +2271,12 @@
           "size": "large",
           "sha256": "84b92103a1cb90e8aa3a1920f6f1e9ba318630fd710f4730b5a91bfdb58f7151",
           "timings": {
-            "ferriki-off": 27.87925000000041,
-            "ferriki": 14.19427049999922,
-            "ferriki-eager": 15.936937500000568,
-            "ferriki-precompiled": 14.129874999999629,
-            "shiki-wasm": 69.9052085000003,
-            "shiki-js": 79.21679199999926
+            "ferriki-off": 30.735146499999246,
+            "ferriki": 15.595333500000379,
+            "ferriki-eager": 17.76083349999999,
+            "ferriki-precompiled": 15.744354499999645,
+            "shiki-wasm": 75.53454150000016,
+            "shiki-js": 90.2675005000001
           }
         },
         {
@@ -2283,13 +2285,13 @@
           "size": "example",
           "sha256": "e363c8769e15356792beeb9f351702ef1d772c46cc73457c844c8d2fd2063fa5",
           "timings": {
-            "ferriki-off": 0.21149950000005902,
-            "ferriki": 0.14947900000009895,
-            "ferriki-eager": 0.1490000000001146,
-            "ferriki-precompiled": 0.14727050000010422,
-            "shiki-wasm": 1.55081250000012,
-            "shiki-js": 0.6646664999998961,
-            "prism": 0.08725000000004002
+            "ferriki-off": 0.21216600000002472,
+            "ferriki": 0.15095900000005713,
+            "ferriki-eager": 0.15095900000005713,
+            "ferriki-precompiled": 0.15145899999993162,
+            "shiki-wasm": 1.5798330000000078,
+            "shiki-js": 0.6752080000001115,
+            "prism": 0.08750000000009095
           }
         },
         {
@@ -2298,13 +2300,13 @@
           "size": "large",
           "sha256": "ee00147586e541a676a63c739af4373979a1681c6e14fb8324bce6233e03aeca",
           "timings": {
-            "ferriki-off": 3.1666665000000194,
-            "ferriki": 2.241958000000068,
-            "ferriki-eager": 2.271936999999525,
-            "ferriki-precompiled": 2.2620000000003984,
-            "shiki-wasm": 24.275312500000155,
-            "shiki-js": 10.34458299999983,
-            "prism": 1.295624499999576
+            "ferriki-off": 3.1750419999998485,
+            "ferriki": 2.256916999999703,
+            "ferriki-eager": 2.3117080000001806,
+            "ferriki-precompiled": 2.2772500000000946,
+            "shiki-wasm": 24.429042000000663,
+            "shiki-js": 10.292000000000371,
+            "prism": 1.2906670000002123
           }
         },
         {
@@ -2313,13 +2315,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.2851670000000013,
-            "ferriki": 0.22433399999999892,
-            "ferriki-eager": 0.21837500000037835,
-            "ferriki-precompiled": 0.21854199999995672,
-            "shiki-wasm": 1.4157500000000027,
-            "shiki-js": 0.7918750000000045,
-            "prism": 0.10424999999997908
+            "ferriki-off": 0.3199169999999185,
+            "ferriki": 0.2556669999999599,
+            "ferriki-eager": 0.24535400000002028,
+            "ferriki-precompiled": 0.24806250000006003,
+            "shiki-wasm": 1.5578540000000487,
+            "shiki-js": 0.8653125000000159,
+            "prism": 0.1192919999998594
           }
         },
         {
@@ -2328,13 +2330,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 4.253978999999845,
-            "ferriki": 3.442874999999731,
-            "ferriki-eager": 3.402853999999934,
-            "ferriki-precompiled": 3.4036875000003874,
-            "shiki-wasm": 21.770749499999965,
-            "shiki-js": 11.884479499999998,
-            "prism": 1.4707080000000587
+            "ferriki-off": 4.453145999999833,
+            "ferriki": 3.5897919999999885,
+            "ferriki-eager": 3.5537914999999884,
+            "ferriki-precompiled": 3.5405000000000655,
+            "shiki-wasm": 23.48477099999991,
+            "shiki-js": 12.660812499999793,
+            "prism": 1.5767915000001267
           }
         },
         {
@@ -2343,12 +2345,12 @@
           "size": "example",
           "sha256": "6f2a439051c630c8a7ffa12bdcbb46262c3d14d2a95d1d6c933ead72fdd175f2",
           "timings": {
-            "ferriki-off": 1.1207080000001497,
-            "ferriki": 0.5802499999999782,
-            "ferriki-eager": 0.565166999999974,
-            "ferriki-precompiled": 0.5667920000000777,
-            "shiki-wasm": 2.0464169999995647,
-            "shiki-js": 2.251166999999896
+            "ferriki-off": 1.187791999999945,
+            "ferriki": 0.6414170000000468,
+            "ferriki-eager": 0.6298544999999649,
+            "ferriki-precompiled": 0.635812999999871,
+            "shiki-wasm": 2.1646250000001146,
+            "shiki-js": 2.420062499999972
           }
         },
         {
@@ -2357,12 +2359,12 @@
           "size": "large",
           "sha256": "66fe7a8cdc4a3403a66355fc2e36d58ed49cb53aeefb38c3c4c8cc8569d1d152",
           "timings": {
-            "ferriki-off": 18.07516699999951,
-            "ferriki": 8.29647900000009,
-            "ferriki-eager": 8.176896000000397,
-            "ferriki-precompiled": 8.329229499999656,
-            "shiki-wasm": 33.332645500000126,
-            "shiki-js": 36.41395800000009
+            "ferriki-off": 16.545666499999697,
+            "ferriki": 7.76089600000023,
+            "ferriki-eager": 7.605062999999973,
+            "ferriki-precompiled": 7.703166499999952,
+            "shiki-wasm": 30.77710400000001,
+            "shiki-js": 33.65706199999977
           }
         },
         {
@@ -2371,12 +2373,12 @@
           "size": "example",
           "sha256": "da473b78028237af6b97568060834404cc95e09870d4912c546c3fd823e91743",
           "timings": {
-            "ferriki-off": 0.6237294999999676,
-            "ferriki": 0.3988329999999678,
-            "ferriki-eager": 0.38131250000014916,
-            "ferriki-precompiled": 0.3803749999997308,
-            "shiki-wasm": 1.9228329999999687,
-            "shiki-js": 2.799103999999943
+            "ferriki-off": 0.6584170000000995,
+            "ferriki": 0.4259590000001481,
+            "ferriki-eager": 0.4017079999998714,
+            "ferriki-precompiled": 0.3973750000000109,
+            "shiki-wasm": 2.0027499999996508,
+            "shiki-js": 2.9335410000001048
           }
         },
         {
@@ -2385,12 +2387,12 @@
           "size": "large",
           "sha256": "775511aae2b0cf937b03e3aca0455eb03d64176534c44706538df1cea83ddd78",
           "timings": {
-            "ferriki-off": 7.732062499999756,
-            "ferriki": 4.840520499999911,
-            "ferriki-eager": 4.685374499999853,
-            "ferriki-precompiled": 4.783187500000167,
-            "shiki-wasm": 27.52318749999995,
-            "shiki-js": 42.23027050000019
+            "ferriki-off": 7.82447900000011,
+            "ferriki": 4.861208499999975,
+            "ferriki-eager": 4.708333000000266,
+            "ferriki-precompiled": 4.594458499999746,
+            "shiki-wasm": 27.239207999999962,
+            "shiki-js": 42.074875000000475
           }
         },
         {
@@ -2399,13 +2401,13 @@
           "size": "example",
           "sha256": "5627cbc56635aee1ec2f5cf3f4f2316528591a28345b3064dfb0e890cc38de24",
           "timings": {
-            "ferriki-off": 0.2825414999999225,
-            "ferriki": 0.24908300000004147,
-            "ferriki-eager": 0.23727100000007795,
-            "ferriki-precompiled": 0.23168799999984913,
-            "shiki-wasm": 3.0038334999999847,
-            "shiki-js": 0.5708334999998215,
-            "prism": 0.14339599999988195
+            "ferriki-off": 0.2873340000001008,
+            "ferriki": 0.2553330000000642,
+            "ferriki-eager": 0.24454100000002654,
+            "ferriki-precompiled": 0.23775000000000546,
+            "shiki-wasm": 3.0470409999998083,
+            "shiki-js": 0.597041999999874,
+            "prism": 0.15320900000006077
           }
         },
         {
@@ -2414,13 +2416,13 @@
           "size": "large",
           "sha256": "4785621a97fb3fb161c71c238cbcacdd33e6b9aa6e353b90c4b520044440e2a0",
           "timings": {
-            "ferriki-off": 3.8561250000002474,
-            "ferriki": 3.2281875000001037,
-            "ferriki-eager": 3.180895499999906,
-            "ferriki-precompiled": 3.0833959999999934,
-            "shiki-wasm": 47.971020499999895,
-            "shiki-js": 8.108854000000065,
-            "prism": 2.027083500000117
+            "ferriki-off": 3.9873959999999897,
+            "ferriki": 3.317083499999626,
+            "ferriki-eager": 3.2477085000000443,
+            "ferriki-precompiled": 3.154458500000146,
+            "shiki-wasm": 48.41141650000009,
+            "shiki-js": 8.565916500000185,
+            "prism": 2.07989600000019
           }
         },
         {
@@ -2429,13 +2431,13 @@
           "size": "example",
           "sha256": "33c921b87fe7ffec1b3d1f86ec93188ee922a75c3539ad6eea8beeb9e1ee6efc",
           "timings": {
-            "ferriki-off": 0.2665624999999636,
-            "ferriki": 0.22420800000008967,
-            "ferriki-eager": 0.22060400000009395,
-            "ferriki-precompiled": 0.22233350000010432,
-            "shiki-wasm": 0.826124999999962,
-            "shiki-js": 0.5439380000000256,
-            "prism": 0.08766599999989921
+            "ferriki-off": 0.3224159999999756,
+            "ferriki": 0.2719170000000304,
+            "ferriki-eager": 0.26624999999989996,
+            "ferriki-precompiled": 0.26533299999999826,
+            "shiki-wasm": 0.9812089999998079,
+            "shiki-js": 0.6351669999999103,
+            "prism": 0.10879099999999653
           }
         },
         {
@@ -2444,13 +2446,13 @@
           "size": "large",
           "sha256": "0c7e5addcc12e4374aa13fcd288442230d48117c041efec21571d28ab25f11e9",
           "timings": {
-            "ferriki-off": 4.020624999999882,
-            "ferriki": 3.4576665000001867,
-            "ferriki-eager": 3.4323749999998654,
-            "ferriki-precompiled": 3.4329375000002074,
-            "shiki-wasm": 12.435229000000163,
-            "shiki-js": 8.202895500000068,
-            "prism": 1.2958960000000843
+            "ferriki-off": 4.648687500000051,
+            "ferriki": 3.9957500000000437,
+            "ferriki-eager": 3.908437499999991,
+            "ferriki-precompiled": 3.913937499999747,
+            "shiki-wasm": 14.813166999999567,
+            "shiki-js": 9.330500000000029,
+            "prism": 1.5089164999999412
           }
         },
         {
@@ -2459,13 +2461,13 @@
           "size": "example",
           "sha256": "a6d07790bfe14bd45af981bc65c3e32f1a2094750cd09cc8a77dac13b60f6766",
           "timings": {
-            "ferriki-off": 0.3064170000000104,
-            "ferriki": 0.2476249999999709,
-            "ferriki-eager": 0.24083300000000918,
-            "ferriki-precompiled": 0.24183300000004238,
-            "shiki-wasm": 1.5287920000000668,
-            "shiki-js": 0.8480410000000234,
-            "prism": 0.11541699999997945
+            "ferriki-off": 0.3147084999999379,
+            "ferriki": 0.2556455000000142,
+            "ferriki-eager": 0.24877050000003464,
+            "ferriki-precompiled": 0.24854200000004312,
+            "shiki-wasm": 1.5079789999999775,
+            "shiki-js": 0.8347709999999893,
+            "prism": 0.11366649999996525
           }
         },
         {
@@ -2474,13 +2476,13 @@
           "size": "large",
           "sha256": "fe572cc4a088e52d57ffac694b1eb53372def311cae5b5781a52e30dfef7d00b",
           "timings": {
-            "ferriki-off": 4.4049589999999625,
-            "ferriki": 3.6007919999997284,
-            "ferriki-eager": 3.513249999999971,
-            "ferriki-precompiled": 3.486417000000074,
-            "shiki-wasm": 22.734042000000045,
-            "shiki-js": 12.403416999999536,
-            "prism": 1.5270410000002812
+            "ferriki-off": 4.404457999999977,
+            "ferriki": 3.5459579999997004,
+            "ferriki-eager": 3.4886670000000777,
+            "ferriki-precompiled": 3.505916999999954,
+            "shiki-wasm": 22.960167000000183,
+            "shiki-js": 12.471875000000182,
+            "prism": 1.5216670000004342
           }
         },
         {
@@ -2489,13 +2491,13 @@
           "size": "example",
           "sha256": "c74594bfaf21e0b2244aaab72447907660475f7c5726c5f637a102d1ba42d5f9",
           "timings": {
-            "ferriki-off": 0.39545799999996234,
-            "ferriki": 0.21104200000002038,
-            "ferriki-eager": 0.20187499999997272,
-            "ferriki-precompiled": 0.20804150000003574,
-            "shiki-wasm": 1.7434579999999755,
-            "shiki-js": 0.9788330000000087,
-            "prism": 0.0976660000000038
+            "ferriki-off": 0.3816870000000563,
+            "ferriki": 0.20710399999995843,
+            "ferriki-eager": 0.1983545000000504,
+            "ferriki-precompiled": 0.20481299999983094,
+            "shiki-wasm": 1.6568749999999,
+            "shiki-js": 0.8899790000000394,
+            "prism": 0.08683350000001155
           }
         },
         {
@@ -2504,13 +2506,13 @@
           "size": "large",
           "sha256": "f1ec7c5eb812b72dadb223a95d3e00c8418c96c9b32bab0c0b337c74e1938d3c",
           "timings": {
-            "ferriki-off": 5.370542000000569,
-            "ferriki": 2.819582999999966,
-            "ferriki-eager": 2.776666000000205,
-            "ferriki-precompiled": 2.7936249999997926,
-            "shiki-wasm": 24.93783399999984,
-            "shiki-js": 13.506542000000081,
-            "prism": 1.1850409999997282
+            "ferriki-off": 5.53039600000011,
+            "ferriki": 2.88885399999981,
+            "ferriki-eager": 2.8446874999999636,
+            "ferriki-precompiled": 2.8595209999998588,
+            "shiki-wasm": 25.807333499999686,
+            "shiki-js": 13.685437499999807,
+            "prism": 1.2241874999997435
           }
         },
         {
@@ -2519,13 +2521,13 @@
           "size": "example",
           "sha256": "31abfbd31f35233604d6cce9743d809af4be69f865869a584816e1d7c488ae1f",
           "timings": {
-            "ferriki-off": 0.9800834999998642,
-            "ferriki": 0.4435000000000855,
-            "ferriki-eager": 0.4356869999999162,
-            "ferriki-precompiled": 0.4288335000001098,
-            "shiki-wasm": 2.799916499999881,
-            "shiki-js": 2.2802914999997483,
-            "prism": 0.10250050000013289
+            "ferriki-off": 1.1315210000000206,
+            "ferriki": 0.5792500000000018,
+            "ferriki-eager": 0.5570625000000291,
+            "ferriki-precompiled": 0.5550830000000815,
+            "shiki-wasm": 3.0357919999999012,
+            "shiki-js": 2.521020500000077,
+            "prism": 0.11402100000009341
           }
         },
         {
@@ -2534,13 +2536,13 @@
           "size": "large",
           "sha256": "1dd82de44248aec3a9f9617bdc3c85814caa2b6c47122a4e30104fd0c75833b0",
           "timings": {
-            "ferriki-off": 13.136103999999705,
-            "ferriki": 5.399458500000037,
-            "ferriki-eager": 5.2378130000001875,
-            "ferriki-precompiled": 5.2491665000002286,
-            "shiki-wasm": 40.996978999999556,
-            "shiki-js": 33.65625,
-            "prism": 1.181270499999755
+            "ferriki-off": 13.175250499999947,
+            "ferriki": 5.3780625000003965,
+            "ferriki-eager": 5.412124500000118,
+            "ferriki-precompiled": 5.288228999999319,
+            "shiki-wasm": 43.08150049999949,
+            "shiki-js": 34.5197290000001,
+            "prism": 1.2023119999998926
           }
         },
         {
@@ -2549,13 +2551,13 @@
           "size": "example",
           "sha256": "90a63d1222f23eaee6008f4ac04ad6c06b653e76e4872c9d60cb9b40f72e9b08",
           "timings": {
-            "ferriki-off": 0.22174999999992906,
-            "ferriki": 0.1622500000000855,
-            "ferriki-eager": 0.15816700000004857,
-            "ferriki-precompiled": 0.15875000000005457,
-            "shiki-wasm": 0.9704160000001139,
-            "shiki-js": 0.6067499999999768,
-            "prism": 0.08662500000002638
+            "ferriki-off": 0.23039600000004157,
+            "ferriki": 0.1720420000000331,
+            "ferriki-eager": 0.16754200000013952,
+            "ferriki-precompiled": 0.16941700000006676,
+            "shiki-wasm": 1.0011250000000018,
+            "shiki-js": 0.610166500000048,
+            "prism": 0.0889794999999367
           }
         },
         {
@@ -2564,13 +2566,13 @@
           "size": "large",
           "sha256": "e3a11e9255e23850f40a4f8bfaaee7bdf67cc14c511edaef570be04f8fe5f820",
           "timings": {
-            "ferriki-off": 3.4635000000007494,
-            "ferriki": 2.6015409999999974,
-            "ferriki-eager": 2.526999999999589,
-            "ferriki-precompiled": 2.546542000000045,
-            "shiki-wasm": 15.4818750000004,
-            "shiki-js": 9.751624999999876,
-            "prism": 1.3277500000003783
+            "ferriki-off": 3.423728999999639,
+            "ferriki": 2.5657290000001467,
+            "ferriki-eager": 2.5036459999998897,
+            "ferriki-precompiled": 2.502062500000193,
+            "shiki-wasm": 15.514521000000059,
+            "shiki-js": 9.431646,
+            "prism": 1.3047080000001188
           }
         },
         {
@@ -2579,13 +2581,13 @@
           "size": "example",
           "sha256": "085073b3a10d256ace9eb03f4b00e15d2571ac5c83a579b8ec018e1882011709",
           "timings": {
-            "ferriki-off": 0.7639580000000024,
-            "ferriki": 0.2610829999998714,
-            "ferriki-eager": 0.2555409999999938,
-            "ferriki-precompiled": 0.2524590000000444,
-            "shiki-wasm": 1.1471670000000813,
-            "shiki-js": 1.7807920000000195,
-            "prism": 0.17591600000014296
+            "ferriki-off": 0.7898329999999305,
+            "ferriki": 0.2932709999998906,
+            "ferriki-eager": 0.28508350000004157,
+            "ferriki-precompiled": 0.27883299999996325,
+            "shiki-wasm": 1.1845210000000748,
+            "shiki-js": 1.817937499999971,
+            "prism": 0.18679150000002664
           }
         },
         {
@@ -2594,13 +2596,13 @@
           "size": "large",
           "sha256": "a001d2bb1d7b5bc50b4568c1ff31f220d740cd49fe7dd11150e89711edb27233",
           "timings": {
-            "ferriki-off": 11.593729000000167,
-            "ferriki": 3.807271000000128,
-            "ferriki-eager": 3.7594585000001643,
-            "ferriki-precompiled": 3.686083499999768,
-            "shiki-wasm": 17.040208500000062,
-            "shiki-js": 27.31793749999997,
-            "prism": 2.530771000000186
+            "ferriki-off": 11.87370850000002,
+            "ferriki": 3.819395500000155,
+            "ferriki-eager": 3.8096039999998084,
+            "ferriki-precompiled": 3.7449375000001055,
+            "shiki-wasm": 16.539207999999917,
+            "shiki-js": 28.518978999999945,
+            "prism": 2.5091454999999314
           }
         },
         {
@@ -2609,13 +2611,13 @@
           "size": "example",
           "sha256": "099cd8d6afbbed7be260b8474832d4789fbd387e231d063d952c9d5dd1140297",
           "timings": {
-            "ferriki-off": 2.0403750000001537,
-            "ferriki": 0.8382084999999506,
-            "ferriki-eager": 0.812166500000103,
-            "ferriki-precompiled": 0.8087285000000293,
-            "shiki-wasm": 4.654978999999912,
-            "shiki-js": 5.427687500000161,
-            "prism": 0.22947950000002493
+            "ferriki-off": 2.2181249999998727,
+            "ferriki": 1.0625829999999041,
+            "ferriki-eager": 1.0154999999999745,
+            "ferriki-precompiled": 1.0567080000000715,
+            "shiki-wasm": 5.087667000000238,
+            "shiki-js": 5.877291999999898,
+            "prism": 0.2502079999999296
           }
         },
         {
@@ -2624,13 +2626,13 @@
           "size": "large",
           "sha256": "7f42708b6c7de7c24cd8f711a03f41ca06b9b707d52720b29100492111ddc8f3",
           "timings": {
-            "ferriki-off": 29.640666000000238,
-            "ferriki": 10.682062499999574,
-            "ferriki-eager": 10.525041999999758,
-            "ferriki-precompiled": 10.558396000000357,
-            "shiki-wasm": 69.9144999999994,
-            "shiki-js": 83.18424999999979,
-            "prism": 2.4017714999999953
+            "ferriki-off": 32.19227150000006,
+            "ferriki": 11.566833499999575,
+            "ferriki-eager": 11.580916999999772,
+            "ferriki-precompiled": 11.540229499999441,
+            "shiki-wasm": 77.91458349999948,
+            "shiki-js": 96.15647900000022,
+            "prism": 2.5723124999999527
           }
         },
         {
@@ -2639,13 +2641,13 @@
           "size": "example",
           "sha256": "9e88d3768d24b5c115384a213c8ffbc3da3c1e3e1bc412318555fa71d370bf46",
           "timings": {
-            "ferriki-off": 0.2396249999999327,
-            "ferriki": 0.23854100000016842,
-            "ferriki-eager": 0.23916700000017954,
-            "ferriki-precompiled": 0.23424999999997453,
-            "shiki-wasm": 0.9679590000000076,
-            "shiki-js": 0.32037500000001273,
-            "prism": 0.04920799999990777
+            "ferriki-off": 0.2720409999999447,
+            "ferriki": 0.29549999999994725,
+            "ferriki-eager": 0.2939999999999827,
+            "ferriki-precompiled": 0.28741600000000744,
+            "shiki-wasm": 1.0698750000000246,
+            "shiki-js": 0.37545799999998053,
+            "prism": 0.06091699999979028
           }
         },
         {
@@ -2654,13 +2656,13 @@
           "size": "large",
           "sha256": "564413edbc1ecb89eaac850c44b68020520ffaa9a022d05de62d1d14c1c54a61",
           "timings": {
-            "ferriki-off": 3.7470624999998563,
-            "ferriki": 3.80231300000014,
-            "ferriki-eager": 3.834208500000159,
-            "ferriki-precompiled": 3.7673955000000205,
-            "shiki-wasm": 15.259646500000372,
-            "shiki-js": 4.9681250000001,
-            "prism": 0.7637080000001788
+            "ferriki-off": 3.915041000000201,
+            "ferriki": 3.969082999999955,
+            "ferriki-eager": 3.986417000000074,
+            "ferriki-precompiled": 3.931332999999995,
+            "shiki-wasm": 15.853499999999713,
+            "shiki-js": 5.27350000000024,
+            "prism": 0.7885420000002341
           }
         },
         {
@@ -2669,13 +2671,13 @@
           "size": "example",
           "sha256": "bb74e623390194974c27c064ba091558a41612864b08c2bf10105a3fcdad5783",
           "timings": {
-            "ferriki-off": 0.2727919999998676,
-            "ferriki": 0.24899999999999523,
-            "ferriki-eager": 0.2394790000000171,
-            "ferriki-precompiled": 4.3055835000000116,
-            "shiki-wasm": 2.453458499999954,
-            "shiki-js": 0.42981299999996736,
-            "prism": 0.07670850000010887
+            "ferriki-off": 0.24516700000012293,
+            "ferriki": 0.23333350000007158,
+            "ferriki-eager": 0.22958299999993415,
+            "ferriki-precompiled": 0.22891649999996844,
+            "shiki-wasm": 2.357646000000045,
+            "shiki-js": 0.3847709999999438,
+            "prism": 0.06856249999998454
           }
         },
         {
@@ -2684,13 +2686,13 @@
           "size": "large",
           "sha256": "faf74b179e7dc87295e01a43e810ce071b90b67570476b03d5d8f03da1e7d92a",
           "timings": {
-            "ferriki-off": 3.83902100000023,
-            "ferriki": 3.6781459999997423,
-            "ferriki-eager": 3.680812500000002,
-            "ferriki-precompiled": 69.17249949999996,
-            "shiki-wasm": 38.32233350000001,
-            "shiki-js": 6.01629099999991,
-            "prism": 0.9904375000000982
+            "ferriki-off": 3.756666999999652,
+            "ferriki": 3.607082999999875,
+            "ferriki-eager": 3.5921660000003612,
+            "ferriki-precompiled": 3.6232500000000982,
+            "shiki-wasm": 38.16279100000065,
+            "shiki-js": 5.8424589999999625,
+            "prism": 1.0008329999996022
           }
         },
         {
@@ -2699,13 +2701,13 @@
           "size": "example",
           "sha256": "ea7b5ddd34eab328574c0c534ff9267f40803bdb2b2f633b22ffdaa463e4ecbb",
           "timings": {
-            "ferriki-off": 0.19852100000002793,
-            "ferriki": 0.1532079999999496,
-            "ferriki-eager": 0.1524169999999856,
-            "ferriki-precompiled": 0.15189550000002328,
-            "shiki-wasm": 1.5251250000001164,
-            "shiki-js": 0.6713750000000118,
-            "prism": 0.050541500000008455
+            "ferriki-off": 0.197041999999783,
+            "ferriki": 0.15295800000001236,
+            "ferriki-eager": 0.1507090000000062,
+            "ferriki-precompiled": 0.14974999999981264,
+            "shiki-wasm": 1.4836249999998472,
+            "shiki-js": 0.656667000000084,
+            "prism": 0.05070800000021336
           }
         },
         {
@@ -2714,13 +2716,13 @@
           "size": "large",
           "sha256": "b0d4bcc467ac1edd2ae23e17abfb0f86406ace003f5cc4b003edd55230c20c72",
           "timings": {
-            "ferriki-off": 2.893729500000063,
-            "ferriki": 2.268562499999689,
-            "ferriki-eager": 2.2758745000001,
-            "ferriki-precompiled": 2.2388750000000073,
-            "shiki-wasm": 23.46618800000033,
-            "shiki-js": 10.088729000000285,
-            "prism": 0.7365420000005543
+            "ferriki-off": 2.906812500000342,
+            "ferriki": 2.259916500000145,
+            "ferriki-eager": 2.268875499999922,
+            "ferriki-precompiled": 2.258416500000294,
+            "shiki-wasm": 23.273562499999798,
+            "shiki-js": 9.916770999999926,
+            "prism": 0.7711660000002212
           }
         },
         {
@@ -2729,13 +2731,13 @@
           "size": "example",
           "sha256": "fd4293c89219bd08c7617ab35337d1fe40a3c5fddd8b6d2be918e9def74937c9",
           "timings": {
-            "ferriki-off": 0.1840209999999729,
-            "ferriki": 0.14885399999991478,
-            "ferriki-eager": 0.1464585000000227,
-            "ferriki-precompiled": 0.1471250000001305,
-            "shiki-wasm": 1.1393129999999587,
-            "shiki-js": 0.45954149999997185,
-            "prism": 0.08287499999994452
+            "ferriki-off": 0.18425000000002,
+            "ferriki": 0.1504380000000083,
+            "ferriki-eager": 0.14741649999996298,
+            "ferriki-precompiled": 0.14783349999996176,
+            "shiki-wasm": 1.1353335000000015,
+            "shiki-js": 0.4633959999999888,
+            "prism": 0.08243750000002592
           }
         },
         {
@@ -2744,13 +2746,13 @@
           "size": "large",
           "sha256": "47be3e432c0fb4117aa538709156076cc16d3b82674f62b9f85e36195e7580a5",
           "timings": {
-            "ferriki-off": 2.8227085000000898,
-            "ferriki": 2.3340830000001915,
-            "ferriki-eager": 2.3056874999999764,
-            "ferriki-precompiled": 2.2972079999997277,
-            "shiki-wasm": 18.087250000000267,
-            "shiki-js": 6.946124999999938,
-            "prism": 1.2025830000000042
+            "ferriki-off": 2.7816665000000285,
+            "ferriki": 2.290457999999944,
+            "ferriki-eager": 2.2748535000002903,
+            "ferriki-precompiled": 2.2888754999999037,
+            "shiki-wasm": 17.410874499999863,
+            "shiki-js": 6.717916500000001,
+            "prism": 1.1794375000001764
           }
         },
         {
@@ -2759,13 +2761,13 @@
           "size": "example",
           "sha256": "5d92b5d65e6a1f2986d6f5fe402ab07b9265504f6e4ae15a4643ee5600e04ecf",
           "timings": {
-            "ferriki-off": 0.450458000000026,
-            "ferriki": 0.3417079999999828,
-            "ferriki-eager": 0.3550000000000182,
-            "ferriki-precompiled": 0.32920800000010786,
-            "shiki-wasm": 1.5830000000000837,
-            "shiki-js": 1.0074999999999363,
-            "prism": 0.06445800000005875
+            "ferriki-off": 0.5570419999999672,
+            "ferriki": 0.5057294999999442,
+            "ferriki-eager": 0.5046040000000289,
+            "ferriki-precompiled": 0.48147949999997763,
+            "shiki-wasm": 1.8172499999999445,
+            "shiki-js": 1.1368124999999054,
+            "prism": 0.07322950000002493
           }
         },
         {
@@ -2774,13 +2776,13 @@
           "size": "large",
           "sha256": "5feed101af94c1e7f4d0419401eed2dabc94012760330f2f5aad2e67c9813c1e",
           "timings": {
-            "ferriki-off": 6.410708500000055,
-            "ferriki": 4.799646000000166,
-            "ferriki-eager": 4.989083500000106,
-            "ferriki-precompiled": 4.693666499999836,
-            "shiki-wasm": 24.218624499999805,
-            "shiki-js": 15.30254200000013,
-            "prism": 0.861625000000231
+            "ferriki-off": 6.429999500000122,
+            "ferriki": 4.909854000000223,
+            "ferriki-eager": 5.066187499999842,
+            "ferriki-precompiled": 4.745521000000053,
+            "shiki-wasm": 25.263500000000022,
+            "shiki-js": 15.461499999999887,
+            "prism": 0.8906875000000127
           }
         },
         {
@@ -2789,13 +2791,13 @@
           "size": "example",
           "sha256": "bd9db37f7b6f95447f03454f239d0825cc88c5350c3d76f6ef84521440ea631d",
           "timings": {
-            "ferriki-off": 0.329124999999749,
-            "ferriki": 0.21133399999996527,
-            "ferriki-eager": 0.2049170000000231,
-            "ferriki-precompiled": 0.1974999999999909,
-            "shiki-wasm": 1.235208,
-            "shiki-js": 0.5301660000000084,
-            "prism": 0.05837500000006912
+            "ferriki-off": 0.3504579999998896,
+            "ferriki": 0.2320839999999862,
+            "ferriki-eager": 0.22650000000021464,
+            "ferriki-precompiled": 0.21870800000010604,
+            "shiki-wasm": 1.2965410000000475,
+            "shiki-js": 0.5534999999999854,
+            "prism": 0.0612500000000864
           }
         },
         {
@@ -2804,13 +2806,13 @@
           "size": "large",
           "sha256": "e55c4f79f3a38247e2fdb82c7817a174e431427cc9d7603801c2f399faf708ad",
           "timings": {
-            "ferriki-off": 4.891457999999147,
-            "ferriki": 3.1628749999999854,
-            "ferriki-eager": 3.125250000000051,
-            "ferriki-precompiled": 2.962999999999738,
-            "shiki-wasm": 18.714833,
-            "shiki-js": 7.720792000000074,
-            "prism": 0.8259579999999005
+            "ferriki-off": 4.963792000000012,
+            "ferriki": 3.239792000000307,
+            "ferriki-eager": 3.2154160000000047,
+            "ferriki-precompiled": 3.0353750000003856,
+            "shiki-wasm": 19.3176669999998,
+            "shiki-js": 7.850084000000152,
+            "prism": 0.8352499999991778
           }
         },
         {
@@ -2819,13 +2821,13 @@
           "size": "example",
           "sha256": "ed128c43a722d7aacd5faa20a1062c3c15a9cf7ae536a9186049f9818363d16a",
           "timings": {
-            "ferriki-off": 0.10791699999992943,
-            "ferriki": 0.13118750000001,
-            "ferriki-eager": 0.13110449999993534,
-            "ferriki-precompiled": 0.1302499999999327,
-            "shiki-wasm": 0.7424170000001027,
-            "shiki-js": 0.1963540000000421,
-            "prism": 0.061332999999990534
+            "ferriki-off": 0.10975000000001955,
+            "ferriki": 0.1385204999999985,
+            "ferriki-eager": 0.13789599999995517,
+            "ferriki-precompiled": 0.13531250000005457,
+            "shiki-wasm": 0.7364374999999086,
+            "shiki-js": 0.20049999999989154,
+            "prism": 0.06112499999994725
           }
         },
         {
@@ -2834,13 +2836,13 @@
           "size": "large",
           "sha256": "65f2f755af11c97b009a2d1e16be18597faf49d94152d3a5e453cb1780ad8567",
           "timings": {
-            "ferriki-off": 1.6868125000000873,
-            "ferriki": 2.1574995000000854,
-            "ferriki-eager": 2.139875000000302,
-            "ferriki-precompiled": 2.135146500000019,
-            "shiki-wasm": 11.584958500000084,
-            "shiki-js": 2.937167000000045,
-            "prism": 0.9533335000000989
+            "ferriki-off": 1.7500419999996666,
+            "ferriki": 2.2431659999997464,
+            "ferriki-eager": 2.2486250000001746,
+            "ferriki-precompiled": 2.2171250000001237,
+            "shiki-wasm": 11.69254200000023,
+            "shiki-js": 3.1331669999999576,
+            "prism": 0.9720000000002074
           }
         },
         {
@@ -2849,13 +2851,13 @@
           "size": "example",
           "sha256": "70e1146dba5f45c5e5b209d29c0a0f8d5219e085a7336469b555a258f8bac732",
           "timings": {
-            "ferriki-off": 0.2829580000000078,
-            "ferriki": 0.17341599999986101,
-            "ferriki-eager": 0.16775000000006912,
-            "ferriki-precompiled": 0.1673750000002201,
-            "shiki-wasm": 1.5871250000000146,
-            "shiki-js": 0.5838330000001406,
-            "prism": 0.12216699999999037
+            "ferriki-off": 0.5204170000000659,
+            "ferriki": 0.3677500000001146,
+            "ferriki-eager": 0.36008300000003146,
+            "ferriki-precompiled": 0.3647919999998521,
+            "shiki-wasm": 2.117728999999997,
+            "shiki-js": 0.8438125000000127,
+            "prism": 0.1863335000001598
           }
         },
         {
@@ -2864,13 +2866,13 @@
           "size": "large",
           "sha256": "7bc355512fdcb4c24cb8edf6836d05015962f8570e13e677b9f78200c17c04d1",
           "timings": {
-            "ferriki-off": 3.940541499999881,
-            "ferriki": 2.4645620000001145,
-            "ferriki-eager": 2.4543334999996205,
-            "ferriki-precompiled": 2.436354500000107,
-            "shiki-wasm": 24.53512499999988,
-            "shiki-js": 8.38262500000019,
-            "prism": 1.6636874999999236
+            "ferriki-off": 4.157833500000379,
+            "ferriki": 2.653187500000058,
+            "ferriki-eager": 2.6637710000002244,
+            "ferriki-precompiled": 2.6406669999996666,
+            "shiki-wasm": 26.184833499999513,
+            "shiki-js": 9.099437500000022,
+            "prism": 1.8339375000002747
           }
         },
         {
@@ -2879,13 +2881,13 @@
           "size": "example",
           "sha256": "0a25bb492495d1230ec092bbf49320e0bc589e57b33d5a6e256dc9099a7098a3",
           "timings": {
-            "ferriki-off": 0.2541875000000289,
-            "ferriki": 0.1069164999998975,
-            "ferriki-eager": 0.10229150000000686,
-            "ferriki-precompiled": 0.0993955000000426,
-            "shiki-wasm": 2.262917000000016,
-            "shiki-js": 0.797583500000087,
-            "prism": 0.034062499999976126
+            "ferriki-off": 0.26187499999991815,
+            "ferriki": 0.11400000000003274,
+            "ferriki-eager": 0.10804099999995742,
+            "ferriki-precompiled": 0.10779200000001765,
+            "shiki-wasm": 2.238833999999997,
+            "shiki-js": 0.766832999999906,
+            "prism": 0.03254200000014862
           }
         },
         {
@@ -2894,13 +2896,13 @@
           "size": "large",
           "sha256": "d7558bcaee27dd8b3e1079d4b3028dd39b0a940aa2e477c7fb48a4d9062a3c46",
           "timings": {
-            "ferriki-off": 3.5867714999999407,
-            "ferriki": 1.4617919999996047,
-            "ferriki-eager": 1.4058954999995876,
-            "ferriki-precompiled": 1.428645500000357,
-            "shiki-wasm": 37.12006250000013,
-            "shiki-js": 11.564916500000209,
-            "prism": 0.4158954999998059
+            "ferriki-off": 3.57549999999992,
+            "ferriki": 1.4546249999998508,
+            "ferriki-eager": 1.3947499999994761,
+            "ferriki-precompiled": 1.387959000000592,
+            "shiki-wasm": 35.49687500000073,
+            "shiki-js": 11.223458000000392,
+            "prism": 0.40862499999957436
           }
         },
         {
@@ -2909,13 +2911,13 @@
           "size": "example",
           "sha256": "45cf37fd751ca7ff8cc5c4c1d8ccc48d6d61609c998fcad8828a188a78ca99b9",
           "timings": {
-            "ferriki-off": 0.18758299999990413,
-            "ferriki": 0.17993750000005093,
-            "ferriki-eager": 0.17741650000004938,
-            "ferriki-precompiled": 0.1716874999999618,
-            "shiki-wasm": 0.6344585000000507,
-            "shiki-js": 0.39802050000002964,
-            "prism": 0.06841649999995525
+            "ferriki-off": 0.19808349999999564,
+            "ferriki": 0.19277099999987968,
+            "ferriki-eager": 0.19125000000008185,
+            "ferriki-precompiled": 0.18550000000001887,
+            "shiki-wasm": 0.6448130000001129,
+            "shiki-js": 0.40560449999998127,
+            "prism": 0.07085399999994024
           }
         },
         {
@@ -2924,13 +2926,13 @@
           "size": "large",
           "sha256": "dea2922db0ea4d519a3c35c436bd4fdf1e9c01d26502c78aad9c7ffcb1da0028",
           "timings": {
-            "ferriki-off": 2.815875000000233,
-            "ferriki": 2.735124999999698,
-            "ferriki-eager": 2.7530839999999444,
-            "ferriki-precompiled": 2.670208999999886,
-            "shiki-wasm": 10.045000000000073,
-            "shiki-js": 6.224874999999884,
-            "prism": 1.0552079999997659
+            "ferriki-off": 2.762249999999767,
+            "ferriki": 2.6965414999999666,
+            "ferriki-eager": 2.6872704999998405,
+            "ferriki-precompiled": 2.6307914999999866,
+            "shiki-wasm": 9.689374999999927,
+            "shiki-js": 6.1443125000002965,
+            "prism": 1.091707999999926
           }
         },
         {
@@ -2939,13 +2941,13 @@
           "size": "example",
           "sha256": "b7bce66519446c587e13d38512dcf00d87e90f8c4968fe7e6378786414416fb6",
           "timings": {
-            "ferriki-off": 0.3268750000002001,
-            "ferriki": 0.20066600000018298,
-            "ferriki-eager": 0.19408400000020265,
-            "ferriki-precompiled": 0.19345899999984795,
-            "shiki-wasm": 1.3920420000004015,
-            "shiki-js": 0.7329579999999396,
-            "prism": 0.07633299999997689
+            "ferriki-off": 0.35741699999994125,
+            "ferriki": 0.2345420000000331,
+            "ferriki-eager": 0.22800000000006548,
+            "ferriki-precompiled": 0.22325000000000728,
+            "shiki-wasm": 1.4454580000000306,
+            "shiki-js": 0.7589579999998932,
+            "prism": 0.07899999999995089
           }
         },
         {
@@ -2954,13 +2956,13 @@
           "size": "large",
           "sha256": "61889ce5b931d38e3cbb69b6f5118f3cbb2ddc310e887a3df7f6588a989dea30",
           "timings": {
-            "ferriki-off": 4.660165999999663,
-            "ferriki": 2.8504579999998896,
-            "ferriki-eager": 2.7880829999994603,
-            "ferriki-precompiled": 2.744459000000006,
-            "shiki-wasm": 20.682458000000224,
-            "shiki-js": 10.321540999999343,
-            "prism": 1.000999999999749
+            "ferriki-off": 4.738186999999925,
+            "ferriki": 2.9073335000000498,
+            "ferriki-eager": 2.8396464999998443,
+            "ferriki-precompiled": 2.7729790000000776,
+            "shiki-wasm": 21.146958499999755,
+            "shiki-js": 10.561937999999827,
+            "prism": 1.0133124999999836
           }
         },
         {
@@ -2969,13 +2971,13 @@
           "size": "example",
           "sha256": "b56c898e1b7b70448e3187078b8f6982f8f96cb9cd9c5152d442b7eae0be782d",
           "timings": {
-            "ferriki-off": 0.347374999999829,
-            "ferriki": 0.18783299999995506,
-            "ferriki-eager": 0.18366600000013023,
-            "ferriki-precompiled": 0.1799999999998363,
-            "shiki-wasm": 1.7046659999999747,
-            "shiki-js": 0.7428340000000162,
-            "prism": 0.0675420000000031
+            "ferriki-off": 0.40095850000000155,
+            "ferriki": 0.23918700000001536,
+            "ferriki-eager": 0.23422949999996945,
+            "ferriki-precompiled": 0.224291499999822,
+            "shiki-wasm": 1.8071874999999409,
+            "shiki-js": 0.7824790000000803,
+            "prism": 0.07566650000006803
           }
         },
         {
@@ -2984,13 +2986,13 @@
           "size": "large",
           "sha256": "b1c5e1aa13f02dac08693c8e08a08db9c5d10296e821e0ab7ea8d2c54b9a33b4",
           "timings": {
-            "ferriki-off": 5.021166999999878,
-            "ferriki": 2.757999999999811,
-            "ferriki-eager": 2.7608329999998205,
-            "ferriki-precompiled": 2.7180420000004233,
-            "shiki-wasm": 26.163874999999734,
-            "shiki-js": 11.052666000000045,
-            "prism": 0.915208000000348
+            "ferriki-off": 5.212582999999995,
+            "ferriki": 2.864542000000256,
+            "ferriki-eager": 2.8447909999995318,
+            "ferriki-precompiled": 2.7557080000001406,
+            "shiki-wasm": 27.441792000000078,
+            "shiki-js": 11.380707999999686,
+            "prism": 0.944582999999966
           }
         },
         {
@@ -2999,13 +3001,13 @@
           "size": "example",
           "sha256": "6774873b589d0165a231d7477d84e8c25ec571da8eae47d6937eac16fff2d959",
           "timings": {
-            "ferriki-off": 0.7018545000000813,
-            "ferriki": 0.6785209999999893,
-            "ferriki-eager": 0.6702295000000049,
-            "ferriki-precompiled": 0.6695000000000846,
-            "shiki-wasm": 4.310771000000045,
-            "shiki-js": 0.5929789999999571,
-            "prism": 0.07260450000001129
+            "ferriki-off": 0.7716249999998581,
+            "ferriki": 0.7386250000001837,
+            "ferriki-eager": 0.7222920000001523,
+            "ferriki-precompiled": 0.7236669999999776,
+            "shiki-wasm": 4.4305420000000595,
+            "shiki-js": 0.6572089999999662,
+            "prism": 0.08483400000000074
           }
         },
         {
@@ -3014,13 +3016,13 @@
           "size": "large",
           "sha256": "4c4bd7cdf8df2c745e259c59c30272d1c0c4a9da5bc60a9486969c774fd14673",
           "timings": {
-            "ferriki-off": 10.599146000000474,
-            "ferriki": 10.37164600000051,
-            "ferriki-eager": 10.304125500000282,
-            "ferriki-precompiled": 10.314584000000195,
-            "shiki-wasm": 67.99550049999971,
-            "shiki-js": 8.66193750000025,
-            "prism": 1.0050834999999552
+            "ferriki-off": 10.88739600000008,
+            "ferriki": 10.748208499999919,
+            "ferriki-eager": 10.633979000000181,
+            "ferriki-precompiled": 10.620728999999983,
+            "shiki-wasm": 69.61931249999998,
+            "shiki-js": 9.115125499999522,
+            "prism": 1.0359585000001061
           }
         }
       ],
@@ -3030,245 +3032,245 @@
           {
             "id": "repository",
             "documents": 12,
-            "inputBytes": 199301,
+            "inputBytes": 201617,
             "passes": 50,
             "engines": {
               "ferriki-off": {
                 "baselineRss": {
-                  "min": 56197120,
-                  "median": 56295424,
-                  "max": 56410112
+                  "min": 56131584,
+                  "median": 56229888,
+                  "max": 56492032
                 },
                 "initializedRss": {
-                  "min": 68157440,
-                  "median": 68362240,
-                  "max": 68435968
+                  "min": 68304896,
+                  "median": 68485120,
+                  "max": 68534272
                 },
                 "finalRss": {
-                  "min": 148848640,
-                  "median": 149012480,
-                  "max": 149340160
+                  "min": 149897216,
+                  "median": 150118400,
+                  "max": 150323200
                 },
                 "peakRss": {
-                  "min": 150863872,
-                  "median": 151027712,
-                  "max": 151355392
+                  "min": 151977984,
+                  "median": 152182784,
+                  "max": 152403968
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 146325504,
-                      "median": 146432000,
-                      "max": 146702336
+                      "min": 147243008,
+                      "median": 147447808,
+                      "max": 147881984
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 148062208,
-                      "median": 148201472,
-                      "max": 148504576
+                      "min": 149045248,
+                      "median": 149274624,
+                      "max": 149405696
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 148848640,
-                      "median": 149012480,
-                      "max": 149340160
+                      "min": 149897216,
+                      "median": 150118400,
+                      "max": 150323200
                     }
                   }
                 ]
               },
               "ferriki": {
                 "baselineRss": {
-                  "min": 56180736,
+                  "min": 56049664,
                   "median": 56254464,
-                  "max": 56475648
+                  "max": 56311808
                 },
                 "initializedRss": {
-                  "min": 68059136,
-                  "median": 68263936,
-                  "max": 68501504
+                  "min": 68354048,
+                  "median": 68411392,
+                  "max": 68632576
                 },
                 "finalRss": {
-                  "min": 283885568,
-                  "median": 284073984,
-                  "max": 284262400
+                  "min": 285163520,
+                  "median": 285442048,
+                  "max": 285933568
                 },
                 "peakRss": {
-                  "min": 285900800,
-                  "median": 286056448,
-                  "max": 286261248
+                  "min": 287244288,
+                  "median": 287481856,
+                  "max": 287997952
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 212844544,
-                      "median": 213041152,
-                      "max": 213368832
+                      "min": 213434368,
+                      "median": 213983232,
+                      "max": 214351872
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 269713408,
-                      "median": 270016512,
-                      "max": 270106624
+                      "min": 270893056,
+                      "median": 271212544,
+                      "max": 271728640
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 283885568,
-                      "median": 284073984,
-                      "max": 284262400
+                      "min": 285163520,
+                      "median": 285442048,
+                      "max": 285933568
                     }
                   }
                 ]
               },
               "ferriki-eager": {
                 "baselineRss": {
-                  "min": 56197120,
-                  "median": 56410112,
-                  "max": 56459264
+                  "min": 56098816,
+                  "median": 56229888,
+                  "max": 56393728
                 },
                 "initializedRss": {
-                  "min": 68190208,
-                  "median": 68354048,
-                  "max": 68419584
+                  "min": 68354048,
+                  "median": 68468736,
+                  "max": 68517888
                 },
                 "finalRss": {
-                  "min": 285687808,
-                  "median": 285859840,
-                  "max": 286392320
+                  "min": 286654464,
+                  "median": 286883840,
+                  "max": 287244288
                 },
                 "peakRss": {
-                  "min": 287703040,
-                  "median": 287850496,
-                  "max": 288407552
+                  "min": 288735232,
+                  "median": 288956416,
+                  "max": 289325056
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 282951680,
-                      "median": 283344896,
-                      "max": 283541504
+                      "min": 283820032,
+                      "median": 284090368,
+                      "max": 284524544
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 284868608,
-                      "median": 285040640,
-                      "max": 285360128
+                      "min": 285687808,
+                      "median": 285827072,
+                      "max": 286195712
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 285687808,
-                      "median": 285859840,
-                      "max": 286392320
+                      "min": 286654464,
+                      "median": 286883840,
+                      "max": 287244288
                     }
                   }
                 ]
               },
               "ferriki-precompiled": {
                 "baselineRss": {
-                  "min": 56164352,
-                  "median": 56262656,
-                  "max": 56410112
+                  "min": 56115200,
+                  "median": 56205312,
+                  "max": 56426496
                 },
                 "initializedRss": {
-                  "min": 983416832,
-                  "median": 983580672,
-                  "max": 983646208
+                  "min": 72253440,
+                  "median": 72368128,
+                  "max": 72433664
                 },
                 "finalRss": {
-                  "min": 1123287040,
-                  "median": 1123377152,
-                  "max": 1123565568
+                  "min": 260964352,
+                  "median": 261070848,
+                  "max": 261160960
                 },
                 "peakRss": {
-                  "min": 1125302272,
-                  "median": 1125367808,
-                  "max": 1125580800
+                  "min": 263045120,
+                  "median": 263143424,
+                  "max": 263225344
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 1119567872,
-                      "median": 1119797248,
-                      "max": 1119961088
+                      "min": 257523712,
+                      "median": 257638400,
+                      "max": 257851392
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 1122205696,
-                      "median": 1122328576,
-                      "max": 1122566144
+                      "min": 259850240,
+                      "median": 259915776,
+                      "max": 259981312
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 1123287040,
-                      "median": 1123377152,
-                      "max": 1123565568
+                      "min": 260964352,
+                      "median": 261070848,
+                      "max": 261160960
                     }
                   }
                 ]
               },
               "shiki-wasm": {
                 "baselineRss": {
-                  "min": 56049664,
-                  "median": 56344576,
-                  "max": 56426496
+                  "min": 56098816,
+                  "median": 56221696,
+                  "max": 56475648
                 },
                 "initializedRss": {
-                  "min": 90406912,
-                  "median": 91529216,
-                  "max": 92422144
+                  "min": 90488832,
+                  "median": 91275264,
+                  "max": 101793792
                 },
                 "finalRss": {
-                  "min": 465944576,
-                  "median": 474095616,
-                  "max": 481329152
+                  "min": 470269952,
+                  "median": 472653824,
+                  "max": 475447296
                 },
                 "peakRss": {
-                  "min": 470237184,
-                  "median": 479789056,
-                  "max": 487751680
+                  "min": 475578368,
+                  "median": 478347264,
+                  "max": 480854016
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 295649280,
-                      "median": 309829632,
-                      "max": 323371008
+                      "min": 291454976,
+                      "median": 295919616,
+                      "max": 322600960
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 435109888,
-                      "median": 445997056,
-                      "max": 453279744
+                      "min": 438435840,
+                      "median": 450838528,
+                      "max": 457113600
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 465944576,
-                      "median": 474095616,
-                      "max": 481329152
+                      "min": 470269952,
+                      "median": 472653824,
+                      "max": 475447296
                     }
                   }
                 ]
@@ -3276,47 +3278,47 @@
               "shiki-js": {
                 "baselineRss": {
                   "min": 56098816,
-                  "median": 56287232,
+                  "median": 56246272,
                   "max": 56328192
                 },
                 "initializedRss": {
-                  "min": 86949888,
-                  "median": 87203840,
-                  "max": 88506368
+                  "min": 86982656,
+                  "median": 87351296,
+                  "max": 88326144
                 },
                 "finalRss": {
-                  "min": 344129536,
-                  "median": 349257728,
-                  "max": 355778560
+                  "min": 347111424,
+                  "median": 348692480,
+                  "max": 353566720
                 },
                 "peakRss": {
-                  "min": 349978624,
-                  "median": 356278272,
-                  "max": 361234432
+                  "min": 351846400,
+                  "median": 355590144,
+                  "max": 359251968
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 229654528,
-                      "median": 261480448,
-                      "max": 263094272
+                      "min": 258834432,
+                      "median": 261464064,
+                      "max": 268648448
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 342228992,
-                      "median": 346284032,
-                      "max": 349847552
+                      "min": 341884928,
+                      "median": 342777856,
+                      "max": 348651520
                     }
                   },
                   {
                     "passes": 50,
                     "rss": {
-                      "min": 344129536,
-                      "median": 349257728,
-                      "max": 355778560
+                      "min": 347111424,
+                      "median": 348692480,
+                      "max": 353566720
                     }
                   }
                 ]
@@ -3326,149 +3328,149 @@
           {
             "id": "large-typescript",
             "documents": 1,
-            "inputBytes": 265165,
+            "inputBytes": 267365,
             "passes": 10,
             "engines": {
               "ferriki-off": {
                 "baselineRss": {
-                  "min": 56344576,
-                  "median": 56442880,
-                  "max": 56524800
+                  "min": 56279040,
+                  "median": 56434688,
+                  "max": 56606720
                 },
                 "initializedRss": {
-                  "min": 64651264,
-                  "median": 64667648,
-                  "max": 64798720
+                  "min": 64716800,
+                  "median": 64815104,
+                  "max": 64962560
                 },
                 "finalRss": {
-                  "min": 89587712,
-                  "median": 89743360,
-                  "max": 89931776
+                  "min": 89161728,
+                  "median": 89292800,
+                  "max": 90243072
                 },
                 "peakRss": {
-                  "min": 91291648,
-                  "median": 91447296,
-                  "max": 91635712
+                  "min": 90865664,
+                  "median": 90996736,
+                  "max": 91930624
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 89374720,
-                      "median": 89587712,
-                      "max": 89767936
+                      "min": 88981504,
+                      "median": 89104384,
+                      "max": 90030080
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 89538560,
-                      "median": 89710592,
-                      "max": 89899008
+                      "min": 89128960,
+                      "median": 89243648,
+                      "max": 90193920
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 89587712,
-                      "median": 89743360,
-                      "max": 89931776
+                      "min": 89161728,
+                      "median": 89292800,
+                      "max": 90243072
                     }
                   }
                 ]
               },
               "ferriki": {
                 "baselineRss": {
-                  "min": 56213504,
+                  "min": 56360960,
                   "median": 56500224,
-                  "max": 56655872
+                  "max": 56754176
                 },
                 "initializedRss": {
-                  "min": 64520192,
-                  "median": 64708608,
-                  "max": 64847872
+                  "min": 64651264,
+                  "median": 64765952,
+                  "max": 64864256
                 },
                 "finalRss": {
-                  "min": 108920832,
-                  "median": 109133824,
-                  "max": 109625344
+                  "min": 107839488,
+                  "median": 107929600,
+                  "max": 108134400
                 },
                 "peakRss": {
-                  "min": 110641152,
-                  "median": 110845952,
-                  "max": 111329280
+                  "min": 109543424,
+                  "median": 109633536,
+                  "max": 109838336
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 108740608,
-                      "median": 108986368,
-                      "max": 109477888
+                      "min": 107675648,
+                      "median": 107732992,
+                      "max": 107905024
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 108888064,
-                      "median": 109092864,
-                      "max": 109576192
+                      "min": 107790336,
+                      "median": 107864064,
+                      "max": 108036096
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 108920832,
-                      "median": 109133824,
-                      "max": 109625344
+                      "min": 107839488,
+                      "median": 107929600,
+                      "max": 108134400
                     }
                   }
                 ]
               },
               "ferriki-eager": {
                 "baselineRss": {
-                  "min": 56311808,
-                  "median": 56475648,
-                  "max": 56573952
+                  "min": 56328192,
+                  "median": 56393728,
+                  "max": 56475648
                 },
                 "initializedRss": {
-                  "min": 64602112,
+                  "min": 64700416,
                   "median": 64733184,
-                  "max": 64765952
+                  "max": 64897024
                 },
                 "finalRss": {
-                  "min": 109756416,
-                  "median": 110190592,
-                  "max": 110411776
+                  "min": 108658688,
+                  "median": 108986368,
+                  "max": 109264896
                 },
                 "peakRss": {
-                  "min": 111460352,
-                  "median": 111894528,
-                  "max": 112132096
+                  "min": 110346240,
+                  "median": 110690304,
+                  "max": 110968832
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 109543424,
-                      "median": 109993984,
-                      "max": 110264320
+                      "min": 108462080,
+                      "median": 108838912,
+                      "max": 109133824
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 109707264,
-                      "median": 110149632,
-                      "max": 110346240
+                      "min": 108576768,
+                      "median": 108945408,
+                      "max": 109215744
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 109756416,
-                      "median": 110190592,
-                      "max": 110411776
+                      "min": 108658688,
+                      "median": 108986368,
+                      "max": 109264896
                     }
                   }
                 ]
@@ -3476,143 +3478,143 @@
               "ferriki-precompiled": {
                 "baselineRss": {
                   "min": 56393728,
-                  "median": 56451072,
-                  "max": 56557568
+                  "median": 56426496,
+                  "max": 56606720
                 },
                 "initializedRss": {
-                  "min": 180486144,
-                  "median": 180666368,
-                  "max": 180797440
+                  "min": 66240512,
+                  "median": 66363392,
+                  "max": 66535424
                 },
                 "finalRss": {
-                  "min": 215367680,
-                  "median": 215523328,
-                  "max": 215859200
+                  "min": 106086400,
+                  "median": 106258432,
+                  "max": 106545152
                 },
                 "peakRss": {
-                  "min": 217071616,
-                  "median": 217227264,
-                  "max": 217563136
+                  "min": 107790336,
+                  "median": 107970560,
+                  "max": 108232704
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 215203840,
-                      "median": 215359488,
-                      "max": 215728128
+                      "min": 105857024,
+                      "median": 106078208,
+                      "max": 106348544
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 215318528,
-                      "median": 215482368,
-                      "max": 215810048
+                      "min": 106004480,
+                      "median": 106184704,
+                      "max": 106479616
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 215367680,
-                      "median": 215523328,
-                      "max": 215859200
+                      "min": 106086400,
+                      "median": 106258432,
+                      "max": 106545152
                     }
                   }
                 ]
               },
               "shiki-wasm": {
                 "baselineRss": {
-                  "min": 56393728,
-                  "median": 56467456,
-                  "max": 56606720
+                  "min": 56311808,
+                  "median": 56385536,
+                  "max": 56623104
                 },
                 "initializedRss": {
-                  "min": 83001344,
-                  "median": 83124224,
-                  "max": 83410944
+                  "min": 82853888,
+                  "median": 83296256,
+                  "max": 83591168
                 },
                 "finalRss": {
-                  "min": 328482816,
-                  "median": 330964992,
-                  "max": 333004800
+                  "min": 332398592,
+                  "median": 344309760,
+                  "max": 349159424
                 },
                 "peakRss": {
-                  "min": 339591168,
-                  "median": 342245376,
-                  "max": 344113152
+                  "min": 343408640,
+                  "median": 350535680,
+                  "max": 360857600
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 205881344,
-                      "median": 208691200,
-                      "max": 209436672
+                      "min": 201998336,
+                      "median": 203325440,
+                      "max": 208011264
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 296910848,
-                      "median": 297746432,
-                      "max": 315392000
+                      "min": 312098816,
+                      "median": 315228160,
+                      "max": 316162048
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 328482816,
-                      "median": 330964992,
-                      "max": 333004800
+                      "min": 332398592,
+                      "median": 344309760,
+                      "max": 349159424
                     }
                   }
                 ]
               },
               "shiki-js": {
                 "baselineRss": {
-                  "min": 56197120,
-                  "median": 56426496,
+                  "min": 56344576,
+                  "median": 56475648,
                   "max": 56508416
                 },
                 "initializedRss": {
-                  "min": 73515008,
-                  "median": 73916416,
-                  "max": 74350592
+                  "min": 73449472,
+                  "median": 73924608,
+                  "max": 74186752
                 },
                 "finalRss": {
-                  "min": 292732928,
-                  "median": 302874624,
-                  "max": 314081280
+                  "min": 301170688,
+                  "median": 309198848,
+                  "max": 320765952
                 },
                 "peakRss": {
-                  "min": 303841280,
-                  "median": 311492608,
-                  "max": 325779456
+                  "min": 312573952,
+                  "median": 315269120,
+                  "max": 332627968
                 },
                 "checkpoints": [
                   {
                     "passes": 1,
                     "rss": {
-                      "min": 169869312,
-                      "median": 170770432,
-                      "max": 171393024
+                      "min": 170115072,
+                      "median": 170934272,
+                      "max": 171524096
                     }
                   },
                   {
                     "passes": 5,
                     "rss": {
-                      "min": 268484608,
-                      "median": 276824064,
-                      "max": 294060032
+                      "min": 280674304,
+                      "median": 290758656,
+                      "max": 301137920
                     }
                   },
                   {
                     "passes": 10,
                     "rss": {
-                      "min": 292732928,
-                      "median": 302874624,
-                      "max": 314081280
+                      "min": 301170688,
+                      "median": 309198848,
+                      "max": 320765952
                     }
                   }
                 ]

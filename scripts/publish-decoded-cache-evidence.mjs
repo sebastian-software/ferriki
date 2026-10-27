@@ -111,19 +111,8 @@ const contents = `${JSON.stringify(report, null, 2)}\n`;
 if (process.argv.includes("--check"))
   assert.equal(read(path).toString(), contents, `Regenerate ${path}`);
 else writeFileSync(new URL(path, root), contents);
-// The authored README owns its wording; verify its current headline figures.
-if (process.argv.includes("--check")) {
-  for (const path of ["README.md.src", "node/ferriki/README.md"]) {
-    const text = read(path).toString("utf8");
-    for (const profile of profiles) {
-      const factor = `${(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"]).toFixed(1)}×`;
-      assert.ok(
-        text.includes(factor),
-        `${path} must state the current ${profile.label} factor (${factor})`,
-      );
-    }
-  }
-}
+// Current README figures are checked by publish-regex-mode-evidence.mjs;
+// this decoded-cache capture remains historical.
 console.log(
   "Verified decoded-cache timing evidence: six corpus VMs, complete HTML gates and original checksums.",
 );
