@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { packPackage } from "ferramenta-native/pack";
 
 import { FERRIKI_PLATFORM_TARGETS, resolveFerrikiPlatformTarget } from "../ferriki/platforms.mjs";
 import "./test-asset-env.mjs";
@@ -23,7 +24,6 @@ await stat(join(sidecarRoot, "ferriki.node")).catch(() => {
 
 const tempRoot = await mkdtemp(join(tmpdir(), "ferriki-vite-packed-consumer-"));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const cacheDir = join(tempRoot, "npm-cache");
 
 function run(command, args, options = {}) {
@@ -46,26 +46,11 @@ function run(command, args, options = {}) {
   return result;
 }
 
-function npmPack(directory) {
-  const result = run(npm, ["pack", "--json", "--pack-destination", tempRoot], { cwd: directory });
-  return JSON.parse(result.stdout)[0];
-}
-
 try {
-  const vitePack = run(pnpm, ["pack", "--pack-destination", tempRoot], { cwd: viteRoot });
-  const viteTarball = vitePack.stdout.trim().split("\n").at(-1);
-  assert(
-    viteTarball.endsWith(".tgz"),
-    `pnpm pack did not return a Vite package tarball: ${vitePack.stdout}`,
-  );
-  const viteTarballPath = viteTarball.startsWith(tempRoot)
-    ? viteTarball
-    : join(tempRoot, viteTarball);
+  const viteTarballPath = packPackage(viteRoot, tempRoot).filename;
   const vitePackage = JSON.parse(await readFile(join(viteRoot, "package.json"), "utf8"));
-  const corePack = npmPack(coreRoot);
-  const sidecarPack = npmPack(sidecarRoot);
-  const coreTarball = join(tempRoot, corePack.filename);
-  const sidecarTarball = join(tempRoot, sidecarPack.filename);
+  const coreTarball = packPackage(coreRoot, tempRoot).filename;
+  const sidecarTarball = packPackage(sidecarRoot, tempRoot).filename;
   const tsc = join(nodeRoot, "node_modules", "typescript", "bin", "tsc");
   await stat(tsc);
 

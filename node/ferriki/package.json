@@ -1,6 +1,7 @@
 {
   "name": "@ferriki/core",
   "version": "1.3.0",
+  "private": false,
   "description": "native syntax highlighting with HTML and CSS-class output",
   "keywords": [
     "highlighter",

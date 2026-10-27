@@ -54,7 +54,7 @@ catalogs:
       specifier: ^4.21.0
       version: 4.21.0
     ferramenta-native:
-      specifier: github:sebastian-software/ferramenta#f76b3310601052542a5be5fd13b4c89ab4d08458&path:/packages/native
+      specifier: github:sebastian-software/ferramenta#9f5743a1e414ec0f69297a5c5459433f4a8bdfa3&path:/packages/native
       version: 0.1.0
   default:
     prismjs:
@@ -263,7 +263,7 @@ importers:
         version: 3.3.3
       ferramenta-native:
         specifier: catalog:cli
-        version: https://codeload.github.com/sebastian-software/ferramenta/tar.gz/f76b3310601052542a5be5fd13b4c89ab4d08458#path:/packages/native
+        version: https://codeload.github.com/sebastian-software/ferramenta/tar.gz/9f5743a1e414ec0f69297a5c5459433f4a8bdfa3#path:/packages/native
       fs-extra:
         specifier: catalog:testing
         version: 11.3.4
@@ -6191,8 +6191,9 @@ packages:
     engines:
       node: '>=20'
 
-  ferramenta-native@https://codeload.github.com/sebastian-software/ferramenta/tar.gz/f76b3310601052542a5be5fd13b4c89ab4d08458#path:/packages/native:
-    resolution: { path: /packages/native, tarball: https://codeload.github.com/sebastian-software/ferramenta/tar.gz/f76b3310601052542a5be5fd13b4c89ab4d08458 }
+  ferramenta-native@https://codeload.github.com/sebastian-software/ferramenta/tar.gz/9f5743a1e414ec0f69297a5c5459433f4a8bdfa3#path:/packages/native:
+    hasBin: true
+    resolution: { path: /packages/native, tarball: https://codeload.github.com/sebastian-software/ferramenta/tar.gz/9f5743a1e414ec0f69297a5c5459433f4a8bdfa3 }
     version: 0.1.0
     engines: { node: '>=22.13.0' }
 snapshots:
@@ -9188,4 +9189,6 @@ snapshots:
       - '@types/node'
       - supports-color
 
-  ferramenta-native@https://codeload.github.com/sebastian-software/ferramenta/tar.gz/f76b3310601052542a5be5fd13b4c89ab4d08458#path:/packages/native: {}
+  ferramenta-native@https://codeload.github.com/sebastian-software/ferramenta/tar.gz/9f5743a1e414ec0f69297a5c5459433f4a8bdfa3#path:/packages/native:
+    dependencies:
+      cross-spawn: 7.0.6

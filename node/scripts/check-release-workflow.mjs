@@ -141,10 +141,6 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
     "dist-tag:",
     "timeout-minutes:",
     "actions/download-artifact@",
-    "npm install --global npm@11.21.0",
-    "node ./scripts/publish-npm-product.mjs sidecars",
-    "node ./scripts/publish-npm-product.mjs core",
-    "node ./scripts/publish-npm-product.mjs vite",
     "verify-crates-publish:",
     "NPM_PUBLISH_RESULT:",
     "write-release-summary.mjs",
@@ -243,48 +239,35 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
   );
 
   const publishWorkflow = workflowJob(workflow, "publish-npm");
-  const coreSmokeMatch = publishWorkflow.match(
-    /^[ \t]+run:[ \t]+node \.\/scripts\/check-packed-consumer\.mjs\s*$/m,
+  assert.match(
+    publishWorkflow,
+    /uses: \.\/node\/node_modules\/ferramenta-native\/actions\/release-native/,
+    "publish-npm must use the shared native release action",
   );
-  assert(coreSmokeMatch, "publish-npm must run an executable packed core-consumer smoke command");
-  const viteSmokeMatch = publishWorkflow.match(/^[ \t]+run:[ \t]+pnpm run check:packed-vite\s*$/m);
-  assert(viteSmokeMatch, "publish-npm must run the packed Vite consumer smoke command");
-  const publicationMatches = [
-    ...publishWorkflow.matchAll(
-      /^[ \t]*run:[ \t]+node \.\/scripts\/publish-npm-product\.mjs (?:sidecars|core|vite)\s*$/gm,
-    ),
-  ].sort((left, right) => left.index - right.index);
-  assert(publicationMatches.length > 0, "publish-npm must contain a registry publication step");
-  const firstPublicationIndex = publicationMatches[0].index;
-  assert(
-    coreSmokeMatch.index < firstPublicationIndex,
-    "packed core-consumer smoke command must precede the first registry publication step",
+  assert.match(
+    publishWorkflow,
+    /source-sha: \$\{\{ needs\.verify-release-source\.outputs\.release_sha \}\}/,
+    "native release must bind artifacts to the verified source",
   );
-  assert(
-    viteSmokeMatch.index < firstPublicationIndex,
-    "packed Vite consumer smoke command must precede the first registry publication step",
+  assert.match(
+    publishWorkflow,
+    /tag: \$\{\{ needs\.verify-release-source\.outputs\.release_tag \}\}/,
+    "native release must use the verified tag",
   );
-
-  const corePublishIndex = publishWorkflow.indexOf(
-    "name: Publish main package with npm provenance",
+  assert.match(
+    publishWorkflow,
+    /publish: "true"/,
+    "native release must enable publication explicitly",
   );
-  const vitePublishIndex = publishWorkflow.indexOf(
-    "name: Pack and publish Vite integration with npm provenance",
-  );
-  assert(corePublishIndex >= 0 && vitePublishIndex >= 0);
-  assert(
-    corePublishIndex < vitePublishIndex,
-    "the Vite integration must publish after its @ferriki/core dependency",
+  assert.match(
+    publishWorkflow,
+    /prepare-command: \|[\s\S]*pnpm run check:packed-vite/,
+    "native release must include the packed Vite consumer check before publishing",
   );
   assert.match(
     publishWorkflow,
     /^\s+id-token: write\s*$/m,
     "publish-npm needs an OIDC token for npm Trusted Publishing",
-  );
-  assert(
-    publishWorkflow.indexOf("node ./scripts/publish-npm-product.mjs sidecars") < corePublishIndex &&
-      corePublishIndex < vitePublishIndex,
-    "sidecars must publish before core and Vite",
   );
 
   // Every release summary lists each sidecar's addon size (#216).

@@ -100,17 +100,10 @@ for (const workflow of [ciWorkflow, publishWorkflow]) {
   assert.match(workflow, /node scripts\/native-matrix\.mjs/);
   assert.match(workflow, /fromJSON\(needs\.native-matrix\.outputs\.matrix\)/);
 }
-assert.deepEqual(
-  [...publishWorkflow.matchAll(/^\s+name: native-(\S+)\n\s+path: node\/platforms\/\1$/gm)]
-    .map((match) => match[1])
-    .sort(),
-  [...platformIds].sort(),
-  "publish.yml must download every native sidecar into its platform package",
-);
-assert.deepEqual(
-  /^\s+FERRIKI_PLATFORM_IDS: (.+)$/m.exec(publishWorkflow)?.[1].split(" ").sort(),
-  [...platformIds].sort(),
-  "publish.yml FERRIKI_PLATFORM_IDS must list every platform package to verify and publish",
+assert.match(
+  publishWorkflow,
+  /uses: \.\/node\/node_modules\/ferramenta-native\/actions\/release-native/,
+  "publish.yml must use the shared full-matrix artifact restoration",
 );
 
 console.log(`Ferriki platform matrix verified (${FERRIKI_PLATFORM_TARGETS.length} targets)`);

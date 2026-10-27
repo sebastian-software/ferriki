@@ -12,8 +12,8 @@ import {
   registryVersionUrl,
   runPublicNpmInstall,
   verifyCdnPayloads,
-  verifyNpmPublication,
   verifyPublicAssetCache,
+  verifyNpmPublication as verifyPublication,
 } from "./verify-npm-publish.mjs";
 
 let npmVersionProbes = 0;
@@ -212,6 +212,12 @@ await assert.rejects(
   /publish-npm concluded failure/,
 );
 assert.equal(failedPublishAttempts, 1, "a failed publish must not wait out the retry window");
+
+// Registry fixtures below focus on version processing and provenance. The
+// shared suite separately exercises channel propagation and missing dist-tags.
+function verifyNpmPublication(options) {
+  return verifyPublication({ ...options, checkDistTag: false });
+}
 
 const assetCache = await mkdtemp(join(tmpdir(), "ferriki-public-cache-contract-"));
 const cachePayloads = ["rust grammar", "prepared regex", "nord theme"].map((value) =>
