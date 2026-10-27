@@ -27,9 +27,9 @@ import {
 # Benchmarks
 
 A CMS or site build can highlight hundreds of blocks with one loaded
-highlighter. In the October 25 capture with Ferroni 2.7.2 on our
-14-file corpus, Ferriki was **3.7× faster than Shiki/WASM on Linux x86-64**
-and **4.3× faster on macOS ARM64**. Ferriki and Shiki/WASM produced identical HTML for
+highlighter. In the October 27 capture with Ferriki 1.3.0 and Ferroni 2.8.0
+on our 14-file corpus, Ferriki was **3.7× faster than Shiki/WASM on Linux x86-64**
+and **4.4× faster on macOS ARM64**. Ferriki and Shiki/WASM produced identical HTML for
 every repository file on both hosts.
 
 These factors are Shiki's time divided by Ferriki's time. They describe this
@@ -38,41 +38,41 @@ the same factor for another workload.
 
 ## Four regex policies
 
-The timing tables use the [Ferroni 2.7.2 shared-storage capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-shared-storage).
-The runtime shares program and group sections of each decoded container instead
-of copying both buffers. Fresh processes reuse unpacked packages populated before timing. The separate
-[local startup diagnostic](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/precompiled-patterns/decoded-cache)
-also measures the first cache fill and setup without rendering. The earlier
-Blacksmith capture and its memory measurements remain available below.
+The timing and memory tables use the [October 27 full Blacksmith capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-27-ferroni-2.8).
+Ferroni 2.8 imports the requested prepared records directly, so startup avoids
+assembling new archives for individual scanner lists. Fresh processes reuse
+unpacked packages populated before timing; downloads, first cache fill and
+process creation are excluded.
 
-The October 25 repository build measures **Source Off**, **Source Auto (lazy
-DFA)**, **Source Eager**, and **Prepared** as separate contenders. The source
-paths do not open prepared archives. Prepared remains the product default;
-these explicit configuration and diagnostic APIs are repository additions
-after npm 1.2.0.
+Ferriki 1.3.0 measures **Source Off**, **Source Auto (lazy DFA)**, **Source Eager**,
+and **Prepared** as separate contenders. The source paths do not open prepared
+archives. Prepared is the product default.
 
 Tables scroll horizontally on narrow screens. Focus a table and use the arrow
 keys to compare every column.
 
 <RegexPolicySummary />
 
-On macOS, Prepared reaches first HTML in **277 ms**, compared with **453 ms**
-for Source Eager and **1,225 ms** for Shiki/WASM. On Linux it takes **470 ms**,
-slightly longer than Source Eager's **446 ms** and about half Shiki/WASM's
-**947 ms**. Source Off still has the cheapest first use on both hosts.
-Repeated Prepared rendering is **3.7× faster than Shiki/WASM on Linux** and
-**4.3× on macOS**, and close to or faster than Source Eager on this corpus.
+Prepared reaches first HTML in **228 ms on Linux** and **195 ms on macOS**,
+compared with Source Eager's **477 / 389 ms** and Shiki/WASM's **954 / 1,072 ms**.
+That is **52% / 50% less first-use time than Source Eager**, while staying
+within 6% of Source Off on both hosts. Repeated Prepared rendering is about
+5% faster than Source Eager and **3.7× / 4.4× faster than Shiki/WASM** on this
+corpus.
 
-The new capture, the [previous decoded-cache capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-decoded-cache)
-and the [earlier mode capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-regex-modes)
-retain all samples, policy diagnostics and per-corpus machines. Each timing
-comparison uses one VM. Cold setup loads the 14 requested corpus languages and
-their dependencies, rather than the entire catalog. Downloads and process
-creation are excluded. A comparison between current policies does not establish
-whether a source path regressed against an earlier release.
-The current capture includes the full fourteen-language timing corpus; SQL is
-retained in the raw results without further investigation. No new memory
-measurement is implied.
+All six timing VMs and both independent memory VMs passed their output and
+provenance gates. Each timing comparison uses one VM; the curated and TIOBE
+corpora use separate VMs. Setup loads the requested corpus languages and their
+dependencies, rather than the entire catalog. The full fourteen-language timing
+corpus retains SQL without further investigation. Shiki JS cannot run the full
+corpus because of its YAML conversion limit; supported cases remain visible.
+
+The [previous shared-storage capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-shared-storage),
+[decoded-cache capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-decoded-cache)
+and [earlier mode capture](https://github.com/sebastian-software/ferriki/tree/main/docs/benchmarks/blacksmith/2026-10-25-regex-modes)
+retain their original samples and contexts. Current mode comparisons do not
+establish whether a source path regressed against an earlier release. The new
+capture records historical differences and individual outliers separately.
 
 ### Every language, with separate modes
 
@@ -84,14 +84,17 @@ on narrow screens, focus the table and use the arrow keys to reach all columns.
 
 ### Process memory by policy
 
-These memory measurements predate the decoded cache and come from the earlier
-workflow. They are retained as historical observations; the timing-only rerun
-does not establish a change in memory use.
+These October 27 memory measurements use separate VMs with the same 12-file
+and large-TypeScript workloads described below. Prepared's final process RSS
+is **243 MiB on Linux** and **249 MiB on macOS** for the repository workload,
+about **45% lower than Shiki/WASM** and 5–9% lower than Source Eager. With the
+large TypeScript workload it is **103 / 101 MiB**, **67–69% lower than Shiki/WASM**.
 
-These independent memory VMs use the same 12-file and large-TypeScript workloads
-described below. All native policies and both Shiki engines pass exact HTML
-checks before measurement. Absolute RSS includes Node, Rust, WASM and allocator
-retention. It is a bounded reuse test, not a leak or concurrency test.
+All native policies and both Shiki engines pass exact HTML checks before
+measurement. Each value summarizes six isolated processes. Absolute RSS
+includes Node, Rust, WASM and allocator retention. This is a bounded reuse test,
+not a leak or concurrency test. The older memory tables below retain their
+original dates and results.
 
 <RegexPolicyMemory />
 

@@ -1,6 +1,5 @@
 import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
 
-import timingReport from "../../../docs/benchmarks/decoded-cache-comparison.json";
 import report from "../../../docs/benchmarks/regex-modes-comparison.json";
 import { formatMs } from "../data/benchmarks";
 
@@ -25,7 +24,7 @@ const values = (timings: Record<string, number | undefined>) =>
   );
 
 export function RegexPolicySummary() {
-  const rows: ComparisonRow[] = timingReport.profiles.flatMap((profile) =>
+  const rows: ComparisonRow[] = report.profiles.flatMap((profile) =>
     ["warm", "cold"].map((phase) => ({
       label: `${profile.label} · ${phase === "warm" ? "reused" : "first use"}`,
       values: values(phase === "warm" ? profile.warm : profile.cold),
@@ -43,12 +42,11 @@ export function RegexPolicySummary() {
 }
 
 type Profile = (typeof report.profiles)[number];
-type TimingProfile = (typeof timingReport.profiles)[number];
 function PolicyLanguageCorpus({
   profile,
   corpus,
 }: {
-  profile: TimingProfile;
+  profile: Profile;
   corpus: "curated" | "tiobe";
 }) {
   const rows: ComparisonRow[] = profile.workloads
@@ -72,7 +70,7 @@ function PolicyLanguageCorpus({
 export function RegexPolicyLanguages() {
   return (
     <>
-      {timingReport.profiles.flatMap((profile) =>
+      {report.profiles.flatMap((profile) =>
         (["curated", "tiobe"] as const).map((corpus) => (
           <PolicyLanguageCorpus key={`${profile.id}-${corpus}`} profile={profile} corpus={corpus} />
         )),

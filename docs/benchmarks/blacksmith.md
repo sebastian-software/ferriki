@@ -260,3 +260,11 @@ The [October 25 mode capture](blacksmith/2026-10-25-regex-modes/README.md)
 retains the separate policies, full timing and memory evidence, and a repeated
 local release control for the classic paths. The website adds the new mode
 tables alongside the dated October 24 results.
+
+The [October 27 full capture](blacksmith/2026-10-27-ferroni-2.8/README.md)
+uses Ferriki 1.3.0 and Ferroni 2.8.0. All six timing jobs and two memory jobs
+passed. It supplies the current website policy tables and README claims;
+earlier captures remain dated and unchanged. Prepared first use is within 6%
+of Source Off on both hosts, with roughly half Source Eager's first-use time.
+The report also retains source-path changes and individual fixed-case outliers
+without presenting this cross-VM rerun as a controlled release-regression test.

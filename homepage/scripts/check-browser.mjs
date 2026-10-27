@@ -354,12 +354,6 @@ async function verifyLanguageTables(page) {
 }
 
 async function verifyRegexPolicyTables(page) {
-  const timing = JSON.parse(
-    await readFile(
-      new URL("../../docs/benchmarks/decoded-cache-comparison.json", import.meta.url),
-      "utf8",
-    ),
-  );
   const report = JSON.parse(
     await readFile(
       new URL("../../docs/benchmarks/regex-modes-comparison.json", import.meta.url),
@@ -370,10 +364,25 @@ async function verifyRegexPolicyTables(page) {
   const overview = page.getByRole("region", { name: /^Regex policies on the same/ });
   assert.equal(await overview.getByRole("row").count(), 5);
   for (const profile of report.profiles) {
-    const current = timing.profiles.find((value) => value.id === profile.id);
-    assert.ok(current, "Missing current timing capture");
+    for (const phase of ["warm", "cold"]) {
+      const label = `${profile.label} · ${phase === "warm" ? "reused" : "first use"}`;
+      const row = overview.getByRole("rowheader", { name: label, exact: true }).locator("..");
+      const cells = await row.getByRole("cell").allTextContents();
+      assert.deepEqual(
+        cells,
+        engines
+          .filter((id) => id !== "prism")
+          .map((id) => {
+            const value = profile[phase][id];
+            return value === undefined
+              ? "Unsupported"
+              : `${value < 10 ? value.toFixed(2) : value.toFixed(1)} ms`;
+          }),
+        `${label}: stale policy summary`,
+      );
+    }
     for (const corpus of ["curated", "tiobe"])
-      await verifyRegexPolicyLanguage({ page, profile: current, corpus, engines });
+      await verifyRegexPolicyLanguage({ page, profile, corpus, engines });
     await verifyRegexPolicyMemory(page, profile, engines);
   }
   console.log(
