@@ -4,16 +4,18 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
 [![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
 
-**Beautiful code. Head start included.** Give your docs, blog, or CMS the
-detail of your editor. Ferriki runs TextMate grammars on a native Rust engine,
-with familiar Shiki-style HTML calls in Node.js. Render a page of examples or
-keep one highlighter ready for the next block.
+**Beautiful code. Head start included.** Native, Oniguruma-compatible syntax
+highlighting for your docs, blog, or CMS, with familiar Shiki-style HTML calls
+in Node.js. **Precompiled CDN packages are ready for production and enabled
+by default for standard grammars.** Render a page of examples or keep one
+highlighter ready for the next block.
 
 ## We ship the optimization
 
-A syntax definition tells a highlighter what to match. Ferriki's standard
-language packages also carry **compiled regex programs and optimized static
-scanner automata**. The optimization becomes part of the download.
+Native Oniguruma compatibility and precompiled delivery work together in
+Ferriki's production default. Standard language packages carry **compiled
+regex programs and optimized static scanner automata** alongside the syntax
+definition. The optimization becomes part of the download.
 Matching stays in Ferroni's native, Oniguruma-compatible engine, with no
 translation into JavaScript RegExp. Capture-dependent end and while patterns
 remain dynamic to preserve TextMate behavior.

@@ -35,7 +35,7 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="Beautiful code. Head start included."
-      lede="Native syntax highlighting for Node.js and Rust. Our language packages carry compiled regex programs and optimized scanner automata, delivered from the CDN alongside the grammar. The optimization is already in the download."
+      lede="Native, Oniguruma-compatible syntax highlighting for Node.js and Rust. Precompiled CDN packages are ready for production and enabled by default for standard grammars. Load your languages and start with their static optimizations already prepared."
       facts={[
         { label: "Runtime", value: "Native Rust" },
         { label: "Grammars", value: String(grammarCount) },

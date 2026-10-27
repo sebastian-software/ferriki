@@ -33,7 +33,7 @@ export function PreparedRegexSection() {
       id="prepared-regex"
       tone="dim"
       title="We ship the optimization."
-      intro="A syntax definition describes what to match. Ferriki delivers compiled regex programs and optimized static scanner automata alongside it. Matching stays in Ferroni's native, Oniguruma-compatible engine, with no JavaScript RegExp translation. We move static preparation into the asset pipeline, so a fresh process can restore the optimization."
+      intro="Precompiled CDN packages are ready for production and enabled by default for standard grammars. They carry compiled regex programs and optimized static scanner automata alongside each syntax definition. Matching runs in Ferroni's native, Oniguruma-compatible engine, with no JavaScript RegExp translation. Each fresh process restores the prepared work and gets on with your code."
       note={
         <>
           October 27 Blacksmith capture: first HTML includes imports, setup, and all fourteen files
@@ -64,10 +64,9 @@ export function PreparedRegexSection() {
         <Link to="/evidence/benchmarks#shared-language-packages">Compare the download sizes.</Link>
       </p>
       <p className="fam-note">
-        Prepared packages are enabled by default for standard grammars. Missing packages fall back
-        to source. Capture-dependent end and while patterns stay dynamic to preserve TextMate
-        behavior. Only requested languages and required dependencies load; optional code-fence
-        languages stay optional.
+        Missing packages fall back to source. Capture-dependent end and while patterns stay dynamic
+        to preserve TextMate behavior. Only requested languages and required dependencies load;
+        optional code-fence languages stay optional.
       </p>
       <p className="fam-note">
         Sponsored by <a href="https://sebastian-software.de/">Sebastian Software</a>, which
