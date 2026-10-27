@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/sebastian-software/ferriki/compare/v1.3.0...v1.3.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **node:** use symlink-safe shared native CLI ([51b4997](https://github.com/sebastian-software/ferriki/commit/51b49975dead9851a8a6bb62a498f00c4926109d))
+
 ## [1.3.0](https://github.com/sebastian-software/ferriki/compare/v1.2.0...v1.3.0) (2026-10-27)
 
 
