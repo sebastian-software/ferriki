@@ -4,7 +4,7 @@
 import { ClosingAction, CodePanel, Ledger, Mark, Section } from "ferramenta-family";
 import { Link } from "react-router";
 
-import { grammarCount } from "../data/grammar-catalog";
+import { grammarCount, standardGrammarCount, supportGrammarCount } from "../data/grammar-catalog";
 import macroSample from "../data/macro-sample.json";
 
 /*
@@ -197,10 +197,9 @@ const coverage = [
   },
   {
     name: "Standard grammars and themes",
-    status: `${grammarCount} · 65`,
+    status: `${grammarCount} grammars · 65 themes`,
     settled: true,
-    detail:
-      "Curated language and support grammars. Payloads download on first use from the release-pinned asset service, verified by SHA-256 and cached.",
+    detail: `${standardGrammarCount} standard language and format entries, plus ${supportGrammarCount} support grammars for embeddings and injections. Required dependencies load with the host; optional code-fence languages stay optional.`,
   },
   {
     name: "Custom TextMate grammars and themes",
@@ -250,10 +249,11 @@ export function CoverageSection() {
     <Section
       id="coverage"
       title="Built for the code you publish"
-      intro="Bring your languages, your themes, even a grammar of your own. Here is what Ferriki supports today, with the details close at hand."
+      intro="TypeScript and TSX, Vue, Svelte, Astro, and Angular; Rust, Python, Go, and C/C++; Markdown, MDX, SQL, and configuration files. TextMate grammars follow embedded languages, component expressions, and tagged templates. Bring your own grammar for syntax outside the curated catalog."
       note={
         <>
           <Link to="/evidence/compatibility">Read the compatibility and support policy.</Link>{" "}
+          <Link to="/guide/languages-and-themes">Browse every language and theme.</Link>{" "}
           <Link to="/guide/ferriki-vs-prism">See Ferriki and Prism on the same code.</Link>
         </>
       }

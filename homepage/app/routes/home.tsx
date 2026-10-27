@@ -35,11 +35,11 @@ function HeroSection() {
       icon="ferriki"
       title="Ferriki"
       what="Beautiful code. Head start included."
-      lede="Native syntax highlighting for Node.js and Rust. Grammars arrive with regex optimization already done, ready for your docs, CMS, and next site build."
+      lede="Native syntax highlighting for Node.js and Rust. Our language packages carry compiled regex programs and optimized scanner automata, delivered from the CDN alongside the grammar. The optimization is already in the download."
       facts={[
         { label: "Runtime", value: "Native Rust" },
         { label: "Grammars", value: String(grammarCount) },
-        { label: "Regex", value: "Ready to run" },
+        { label: "Regex", value: "Precompiled" },
       ]}
       actions={
         <>

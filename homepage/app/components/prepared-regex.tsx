@@ -5,16 +5,16 @@ import report from "../../../docs/benchmarks/regex-modes-comparison.json";
 
 const steps = [
   [
-    "We prepare the scanners",
-    "Ferroni 2.8 does the regex optimization before the language package reaches you.",
+    "Compile before delivery",
+    "Ferroni 2.8 compiles static regex programs and prepares Eager scanner automata.",
   ],
   [
-    "You load your languages",
-    "Grammars and required dependencies download from the CDN and are verified.",
+    "Ship the optimized package",
+    "The CDN delivers those programs and automata alongside the grammar you request.",
   ],
-  ["The cache keeps the work", "Keep downloads and unpacked packages on disk for the next build."],
+  ["Keep the optimization", "Cache verified downloads and unpacked packages across builds."],
   [
-    "Your next process reuses it",
+    "Restore, then highlight",
     "Restore the requested scanners and start highlighting with their optimizations ready.",
   ],
 ];
@@ -32,8 +32,8 @@ export function PreparedRegexSection() {
     <Section
       id="prepared-regex"
       tone="dim"
-      title="The regex homework is already done."
-      intro="Fast regex scanners take work to prepare. Ferriki does that work ahead of time and ships the result with your standard grammars. Keep the cache between builds, and each new process restores the optimized scanners and gets on with your code."
+      title="We ship the optimization."
+      intro="A syntax definition describes what to match. Ferriki delivers compiled regex programs and optimized static scanner automata alongside it. Matching stays in Ferroni's native, Oniguruma-compatible engine, with no JavaScript RegExp translation. We move static preparation into the asset pipeline, so a fresh process can restore the optimization."
       note={
         <>
           October 27 Blacksmith capture: first HTML includes imports, setup, and all fourteen files
@@ -45,7 +45,7 @@ export function PreparedRegexSection() {
       }
     >
       <figure className="ferriki-flow">
-        <figcaption>One preparation, many fresh starts</figcaption>
+        <figcaption>From syntax definitions to optimized downloads</figcaption>
         <ol>
           {steps.map(([label, detail]) => (
             <li key={label}>
@@ -57,15 +57,21 @@ export function PreparedRegexSection() {
       </figure>
       <EvidenceFigures figures={figures} />
       <p className="fam-note">
-        Embedded languages share their own prepared scanners. Markdown&rsquo;s own prepared package
-        shrank from 25.9 MB to 1.9 MB; Astro went from 6.5 MB to 0.52 MB, with the same grammar
-        coverage. Optional code-fence languages stay optional.{" "}
-        <Link to="/evidence/benchmarks#shared-language-packages">See the smaller packages.</Link>
+        The preparation adds download weight: Rust needs about 58 kB in total versus 18 kB for its
+        grammar alone. TypeScript with required embeddings needs 4.65 MB versus 0.54 MB; Markdown
+        needs 1.97 MB versus 61 kB. Decimal payload sizes, excluding themes and HTTP overhead. Keep
+        the disk cache to reuse downloads; decoded data also takes disk space.{" "}
+        <Link to="/evidence/benchmarks#shared-language-packages">Compare the download sizes.</Link>
       </p>
       <p className="fam-note">
         Prepared packages are enabled by default for standard grammars. Missing packages fall back
-        to source; custom dynamic patterns stay local. Keep the disk cache between builds to reuse
-        the download and unpacked packages.
+        to source. Capture-dependent end and while patterns stay dynamic to preserve TextMate
+        behavior. Only requested languages and required dependencies load; optional code-fence
+        languages stay optional.
+      </p>
+      <p className="fam-note">
+        Sponsored by <a href="https://sebastian-software.de/">Sebastian Software</a>, which
+        currently covers Ferriki&rsquo;s CDN costs.
       </p>
     </Section>
   );

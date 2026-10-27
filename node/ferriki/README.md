@@ -9,21 +9,46 @@ detail of your editor. Ferriki runs TextMate grammars on a native Rust engine,
 with familiar Shiki-style HTML calls in Node.js. Render a page of examples or
 keep one highlighter ready for the next block.
 
-## The regex homework is already done
+## We ship the optimization
 
-Ferriki ships standard grammars with their regex programs and static scanners
-already prepared by Ferroni 2.8. Keep the disk cache between builds and fresh
-processes restore those optimizations, ready for the first static scan.
-The download and unpacked packages stay useful across rebuilds and deployments.
+A syntax definition tells a highlighter what to match. Ferriki's standard
+language packages also carry **compiled regex programs and optimized static
+scanner automata**. The optimization becomes part of the download.
+Matching stays in Ferroni's native, Oniguruma-compatible engine, with no
+translation into JavaScript RegExp. Capture-dependent end and while patterns
+remain dynamic to preserve TextMate behavior.
+
+Powered by Ferroni 2.8, we move static regex compilation and Eager scanner
+preparation into the asset pipeline. The CDN delivers that prepared work
+alongside the grammar. Each new process restores the scanners it needs,
+with their static optimizations already in place.
+
+Keep the disk cache between builds and you keep the download, the unpacked
+packages, and the preparation. Prepared packages are the default with
+prefiltering on. Missing packages fall back to source, and dynamic patterns
+remain local. Only requested languages and required dependencies load;
+optional code-fence languages stay optional.
+
+**Sponsored by [Sebastian Software](https://sebastian-software.de/)**,
+which currently covers Ferriki's CDN costs.
 
 In our fourteen-file Blacksmith corpus, Prepared reached first HTML in about
 half Source Eager's time, while keeping its execution speed. Startup stayed
 within 6% of unoptimized Source Off on Linux and macOS.
 
-Prepared packages are the default with prefiltering on. Missing packages fall
-back to source, and custom dynamic patterns stay local. Only requested
-languages and their required dependencies load; optional code-fence languages
-stay optional. [See the separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies).
+[See the separate-mode results](https://ferriki.dev/evidence/benchmarks#four-regex-policies).
+
+## Syntax that follows your code
+
+TypeScript and TSX, Vue, Svelte, Astro, and Angular; Rust, Python, Go, Java,
+and C/C++; Markdown, MDX, SQL, JSON, YAML, and TOML are all included. TextMate
+grammars follow embedded languages, component expressions, and tagged
+templates. Registered languages also highlight inside supported Markdown fences.
+
+The curated catalog has **67 standard language and format entries**, **27
+support grammars** for embeddings and injections, and **65 themes**. Add your
+own TextMate grammars for syntax outside the catalog.
+[Browse the complete coverage](https://ferriki.dev/guide/languages-and-themes).
 
 ## Requirements and install
 
@@ -84,6 +109,18 @@ languages, Prepared's whole-process RSS was **45% lower than Shiki/WASM** on
 both hosts. For the large TypeScript workload, it was **67–69% lower**. These
 are six-process medians per contender and workload, with identical HTML.
 [See the memory measurements](https://ferriki.dev/evidence/benchmarks#process-memory-by-policy).
+
+## What goes over the wire
+
+Prepared scanners increase the first download: Rust needs about **58 kB in
+total versus 18 kB for the grammar alone**; TypeScript with required
+embeddings needs **4.65 MB versus 0.54 MB**. Markdown needs **1.97 MB versus
+61 kB**, with optional code-fence languages still unloaded.
+
+These compare Ferriki's grammar-only CDN payloads with the same grammars plus
+prepared programs and automata, in decimal units, excluding themes and HTTP
+overhead. Keep the cache across builds to reuse downloads. Decoded data also
+uses additional disk space. [See exact sizes and the source-definition comparison](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/download-footprint-2026-10-27.md).
 
 ## Reuse a highlighter
 
