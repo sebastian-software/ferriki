@@ -305,6 +305,30 @@ try {
       "Search did not restore focus",
     );
   }
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const search = page.getByRole("button", { name: "Search", exact: true });
+    // Exercise the longer non-Mac hint even on a Mac browser.
+    await search
+      .locator("kbd")
+      .first()
+      .evaluate((element) => {
+        element.textContent = "Ctrl";
+      });
+    await search.hover();
+    const hint = await search.locator('span[aria-hidden="true"]').boundingBox();
+    assert(
+      hint && hint.x >= 0 && hint.x + hint.width <= width,
+      "The search shortcut hint leaves the viewport",
+    );
+    assert(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      "The search hint creates horizontal scrolling",
+    );
+  }
+  console.log("Verified the longer search shortcut hint stays inside phone and desktop viewports.");
   await page.emulateMedia({ reducedMotion: "reduce" });
   const motion = await page
     .locator(".ferra-page, .ferra-page *")
