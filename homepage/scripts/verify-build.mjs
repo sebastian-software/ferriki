@@ -1,10 +1,10 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
 /* cspell:words syntect */
-// Checks the prerendered site after `react-router build`: every documentation
+// Checks the prerendered site after `ardo build`: every documentation
 // page exists, the landing page carries the published version, the HTML
 // measurements and the macro sample, the footprint page carries its committed
 // record, and the strict Node / optional Phiki cohorts match the report.
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
@@ -13,10 +13,23 @@ import { validateReport } from "../../node/scripts/run-blacksmith-comparison.mjs
 import { expectedPages } from "./site-pages.mjs";
 import { verifyArdoAcceptanceHtml } from "./verify-ardo-acceptance.mjs";
 
+async function assertNoSiteStyles(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, directory);
+    if (entry.isDirectory()) await assertNoSiteStyles(path);
+    else if (entry.name.endsWith(".css"))
+      throw new Error(`Use the shared theme instead of ${path.pathname}`);
+  }
+}
+await assertNoSiteStyles(new URL("../app/", import.meta.url));
+
 const outputDirectory = new URL("../build/client/", import.meta.url);
 await Promise.all(expectedPages.map((page) => access(new URL(page, outputDirectory))));
 
-const read = (path) => readFile(new URL(path, outputDirectory), "utf8");
+const read = async (path) => {
+  const html = await readFile(new URL(path, outputDirectory), "utf8");
+  return html.replaceAll(/<!--[\s\S]*?-->/g, "").replaceAll(/href="(\/[^"?#]*?)\/"/g, 'href="$1"');
+};
 const readJson = async (url) => JSON.parse(await readFile(url, "utf8"));
 
 const { version } = await readJson(new URL("../../node/ferriki/package.json", import.meta.url));
@@ -147,8 +160,8 @@ const required = [
   [homepage, "@ferriki/core/react/macro"],
   [homepage, 'href="/guide/build-time-macros"'],
   [homepage, 'href="/guide/ferriki-and-syntect"'],
-  [homepage, 'class="site-header"'],
-  [homepage, 'class="site-footer"'],
+  [homepage, 'class="ferra-header ferra-wrap"'],
+  [homepage, 'class="ferra-footer ferra-wrap"'],
   [syntectGuide, "Ferriki and syntect"],
   [syntectGuide, "as_24_bit_terminal_escaped"],
   [rustGuide, 'href="/guide/ferriki-and-syntect"'],
@@ -179,20 +192,30 @@ for (const profile of blacksmith.profiles) {
     required.push([benchmarks, observedFactor]);
   }
 }
+const preparedFactors = preparedReport.profiles.map(
+  (profile) => profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"],
+);
+required.push([
+  homepage,
+  `${Math.min(...preparedFactors).toFixed(1)}–${Math.max(...preparedFactors).toFixed(1)}×`,
+]);
 for (const profile of preparedReport.profiles) {
-  required.push(
-    [homepage, profile.label],
-    [homepage, profile.corpusMachines.comparison.cpu],
-    [homepage, oneDecimal(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"])],
-  );
-  for (const engine of ["ferriki-off", "ferriki-eager", "ferriki-precompiled"])
-    required.push([homepage, `${grouped(Math.round(profile.cold[engine]))} ms`]);
-  const { engines } = profile.memory.scenarios.find((scenario) => scenario.id === "repository");
-  const rssReduction = Math.round(
+  const scenario = profile.memory.scenarios.find((entry) => entry.id === "repository");
+  const reduction = Math.round(
     100 *
-      (1 - engines["ferriki-precompiled"].finalRss.median / engines["shiki-wasm"].finalRss.median),
+      (1 -
+        scenario.engines["ferriki-precompiled"].finalRss.median /
+          scenario.engines["shiki-wasm"].finalRss.median),
   );
-  required.push([homepage, `${rssReduction}% less whole-process RSS`]);
+  required.push(
+    [homepage, `about ${reduction}% less whole-process RSS`],
+    [homepage, `${scenario.documents * scenario.passes} documents`],
+  );
+  required.push([benchmarks, profile.label], [benchmarks, profile.corpusMachines.comparison.cpu]);
+  for (const engine of ["ferriki-off", "ferriki-eager", "ferriki-precompiled"]) {
+    const value = profile.cold[engine];
+    required.push([benchmarks, `${value < 10 ? value.toFixed(2) : value.toFixed(1)} ms`]);
+  }
 }
 required.push([benchmarks, blacksmith.runUrl], [benchmarks, "JSON and Astro"]);
 
@@ -282,11 +305,11 @@ function verifyFocusableMarkdownTables(html) {
     throw new Error("The rendered API guide has no Markdown tables to verify.");
   }
 
-  const missingTabIndex = tables.filter((table) => attribute(table.raw, "tabindex") !== "0");
-  if (missingTabIndex.length > 0) {
-    throw new Error(
-      `The rendered API guide has ${missingTabIndex.length} Markdown table(s) without keyboard focus.`,
-    );
+  const accessible = [
+    ...html.matchAll(/<div\s[^>]*role="region"[^>]*tabindex="0"[^>]*>[\s\S]*?<table\b/g),
+  ];
+  if (accessible.length !== tables.length) {
+    throw new Error("Every Markdown table must have a focusable scrolling region.");
   }
 }
 

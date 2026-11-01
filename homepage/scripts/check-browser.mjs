@@ -17,11 +17,11 @@ assert(
   "FERRIKI_PREVIEW_PORT must be a valid TCP port",
 );
 const selectors = {
-  nav: ".site-links, .ferriki-nav",
-  menu: ".site-menu, .ferriki-menu",
-  summary: ".site-menu > summary, .ferriki-menu > summary",
-  flyout: ".site-menu-flyout, .ferriki-menu-flyout",
-  search: ".site-search input, .ferriki-search input",
+  nav: ".ferra-header > .ferra-nav",
+  menu: 'button[aria-label="Toggle menu"]',
+  summary: 'button[aria-label="Toggle menu"]',
+  flyout: '[role="dialog"]',
+  search: 'button[aria-label="Search"]',
 };
 
 let browser;
@@ -47,11 +47,18 @@ try {
   const origin = `http://127.0.0.1:${address.port}`;
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ colorScheme: "light" });
+  const runtimeErrors = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
   for (const pageFile of expectedPages) {
     for (const viewport of [
-      { name: "desktop", width: 1440, height: 900 },
+      { name: "phone-small", width: 320, height: 760 },
+      { name: "phone-compact", width: 375, height: 812 },
       { name: "phone", width: 390, height: 844 },
+      { name: "phone-wide", width: 640, height: 900 },
+      { name: "tablet", width: 768, height: 1024 },
       { name: "landscape", width: 844, height: 390 },
+      { name: "tablet-wide", width: 1024, height: 900 },
+      { name: "desktop", width: 1440, height: 900 },
     ]) {
       await verifyViewport({ page, pageFile, viewport, origin });
     }
@@ -63,12 +70,12 @@ try {
   );
   const yaml = benchmarkReport.warm.codeToHtml.find((row) => row.lang === "yaml");
   assert(yaml?.unsupported?.["shiki-js"], "Expected the documented YAML converter limitation");
-  await page.getByLabel("Compare", { exact: true }).selectOption(yaml.path);
+  await page.getByRole("combobox", { name: "Compare", exact: true }).selectOption(yaml.path);
   assert.match(await page.locator(".ferriki-benchmark-chart").textContent(), /YAML grammar/);
   const yamlRow = page.getByRole("row").filter({ hasText: yaml.path });
   assert.match(await yamlRow.textContent(), /Unsupported/);
   assert.doesNotMatch(await page.locator("main").textContent(), /NaN|Infinity/);
-  await page.getByLabel("Compare", { exact: true }).selectOption("");
+  await page.getByRole("combobox", { name: "Compare", exact: true }).selectOption("");
   assert.doesNotMatch(await page.locator(".ferriki-benchmark-chart").textContent(), /NaN|Infinity/);
   console.log("Verified YAML's unsupported Shiki/JS state and full-corpus chart selection.");
 
@@ -114,7 +121,9 @@ try {
   );
   await page.goto(new URL("/guide/ferriki-vs-prism/", origin).href, { waitUntil: "load" });
   for (const entry of prismSamples.samples) {
-    await page.getByLabel("Choose an example").selectOption(entry.id);
+    await page
+      .getByRole("combobox", { name: "Choose an example", exact: true })
+      .selectOption(entry.id);
     const outputs = page.locator(".prism-comparison-grid pre");
     assert.equal(await outputs.count(), 2, `${entry.id}: missing comparison panel`);
     assert.equal(
@@ -141,7 +150,9 @@ try {
       );
     }
   }
-  await page.getByLabel("Choose an example").selectOption("typescript-parameters");
+  await page
+    .getByRole("combobox", { name: "Choose an example", exact: true })
+    .selectOption("typescript-parameters");
   assert.match(
     await page.locator(".prism-classifications").textContent(),
     /variable\.parameter\.ts/,
@@ -207,95 +218,129 @@ try {
   assert(hasVisibleFocus, "The mobile Docs menu has no visible keyboard focus indicator");
 
   await page.keyboard.press("Enter");
-  assert.equal(
-    await page.locator(selectors.menu).getAttribute("open"),
-    "",
-    "Enter did not open the Docs menu",
+  assert(
+    await page.locator(selectors.flyout).isVisible(),
+    "Enter did not open documentation navigation",
   );
   await page.keyboard.press("Escape");
-  assert.equal(
-    await page.locator(selectors.menu).getAttribute("open"),
-    null,
-    "Escape did not close the Docs menu",
-  );
+  assert.equal(await page.locator(selectors.flyout).count(), 0, "Escape did not close navigation");
   assert(
     await summary.evaluate((element) => element === document.activeElement),
-    "Escape did not return focus to Docs",
+    "Escape did not restore menu focus",
   );
-
   await page.keyboard.press("Enter");
-  await page.keyboard.press("Tab");
-  assert.equal(
-    await page.evaluate(() => document.activeElement.textContent.trim()),
-    "Ferriki home",
-  );
-  await page.keyboard.press("Tab");
-  assert.equal(
-    await page.evaluate(() => document.activeElement.textContent.trim()),
-    "Getting started",
-  );
-  await page.keyboard.press("Tab");
-  assert.equal(
-    await page.evaluate(() => document.activeElement.textContent.trim()),
-    "Build-time macros",
-  );
+  const macroLink = page
+    .locator(selectors.flyout)
+    .getByRole("link", { name: "Build-time macros", exact: true });
+  let reachedMacro = false;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await page.keyboard.press("Tab");
+    if (await macroLink.evaluate((element) => element === document.activeElement)) {
+      reachedMacro = true;
+      break;
+    }
+  }
+  assert(reachedMacro, "Keyboard navigation did not reach Build-time macros");
   await page.keyboard.press("Enter");
   await page.waitForURL((url) => url.pathname.startsWith("/guide/build-time-macros"));
-  assert.equal(
-    await page.locator(selectors.menu).getAttribute("open"),
-    null,
-    "Selecting a page did not close the Docs menu",
-  );
-  console.log(
-    "Verified mobile menu keyboard order, Enter navigation, Escape close, and focus return.",
-  );
+  await page.locator(selectors.flyout).waitFor({ state: "detached" });
+  console.log("Verified keyboard menu navigation, Escape, focus return, and selection close.");
 
   await page.setViewportSize({ width: 844, height: 390 });
-  await page.goto(new URL("/guide/getting-started/", origin).href, { waitUntil: "load" });
-  await page.evaluate(() => globalThis.document.fonts.ready);
-  const landscapeSummary = page.locator(selectors.summary);
+  await page.goto(new URL("/evidence/benchmarks/", origin).href, { waitUntil: "load" });
+  await page.locator(selectors.menu).focus();
+  await page.keyboard.press("Enter");
   const flyout = page.locator(selectors.flyout);
   const compatibility = flyout.getByRole("link", { name: "Compatibility", exact: true });
-  await landscapeSummary.focus();
-  await page.keyboard.press("Enter");
-  const linkCount = await flyout.getByRole("link").count();
   let reachedCompatibility = false;
-  for (let attempt = 0; attempt < linkCount + 1; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     await page.keyboard.press("Tab");
     if (await compatibility.evaluate((element) => element === document.activeElement)) {
       reachedCompatibility = true;
       break;
     }
   }
-  assert(reachedCompatibility, "Tab navigation does not reach Compatibility in the landscape menu");
-  const [flyoutBounds, compatibilityBounds] = await Promise.all([
-    flyout.boundingBox(),
-    compatibility.boundingBox(),
-  ]);
+  assert(reachedCompatibility, "Keyboard navigation does not reach Compatibility");
+  const bounds = await compatibility.boundingBox();
   assert(
-    flyoutBounds && compatibilityBounds,
-    "The landscape menu or Compatibility link has no visible bounds",
-  );
-  assert(
-    flyoutBounds.y >= 0 && flyoutBounds.y + flyoutBounds.height <= 390,
-    "The landscape menu exceeds the viewport height",
-  );
-  assert(
-    compatibilityBounds.y >= flyoutBounds.y &&
-      compatibilityBounds.y + compatibilityBounds.height <= flyoutBounds.y + flyoutBounds.height &&
-      compatibilityBounds.y >= 0 &&
-      compatibilityBounds.y + compatibilityBounds.height <= 390,
-    `Keyboard focus did not bring Compatibility fully into the visible landscape menu: ${JSON.stringify({ flyoutBounds, compatibilityBounds })}`,
+    bounds && bounds.y >= 0 && bounds.y + bounds.height <= 390,
+    "Focused landscape link is outside the viewport",
   );
   await page.keyboard.press("Enter");
   await page.waitForURL((url) => url.pathname.startsWith("/evidence/compatibility"));
-  assert.equal(
-    await page.locator(selectors.menu).getAttribute("open"),
-    null,
-    "Selecting Compatibility did not close the landscape menu",
+  await flyout.waitFor({ state: "detached" });
+  console.log("Verified landscape menu scrolling and navigation.");
+
+  await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+  const theme = page.getByRole("combobox", { name: "Theme", exact: true });
+  const token = page.locator("[data-class-example] .tok-string").first();
+  await token.evaluate((element) => {
+    globalThis.ferrikiToken = element;
+  });
+  await theme.selectOption("dark");
+  await page.getByRole("button", { name: /Use plain string color/ }).click();
+  assert(
+    await token.evaluate((element) => element === globalThis.ferrikiToken),
+    "Theme change replaced the highlighted token",
   );
+  const inherited = await token.evaluate(
+    (element) => getComputedStyle(element).color === getComputedStyle(element.parentElement).color,
+  );
+  assert(inherited, "The CSS override did not restyle strings");
+  await theme.selectOption("light");
+  console.log("Verified CSS-only theme switching and string overrides without retokenizing.");
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+    await page.locator(selectors.search).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.locator("input").fill("macro");
+    await dialog.locator('a[href*="/guide/build-time-macros"]').first().waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert(
+      await page
+        .locator(selectors.search)
+        .evaluate((element) => element === document.activeElement),
+      "Search did not restore focus",
+    );
+  }
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const search = page.getByRole("button", { name: "Search", exact: true });
+    // Exercise the longer non-Mac hint even on a Mac browser.
+    await search
+      .locator("kbd")
+      .first()
+      .evaluate((element) => {
+        element.textContent = "Ctrl";
+      });
+    await search.hover();
+    const hint = await search.locator('span[aria-hidden="true"]').boundingBox();
+    assert(
+      hint && hint.x >= 0 && hint.x + hint.width <= width,
+      "The search shortcut hint leaves the viewport",
+    );
+    assert(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      "The search hint creates horizontal scrolling",
+    );
+  }
+  console.log("Verified the longer search shortcut hint stays inside phone and desktop viewports.");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const motion = await page
+    .locator(".ferra-page, .ferra-page *")
+    .evaluateAll((elements) =>
+      elements
+        .map((element) => getComputedStyle(element).animationDuration)
+        .filter((value) => value !== "0s"),
+    );
+  assert.deepEqual(motion, [], "Reduced motion still animates the page");
+  assert.deepEqual(runtimeErrors, [], "The site raised browser runtime errors");
   console.log(
-    "Verified landscape menu fits the viewport and keyboard navigation reaches Compatibility.",
+    "Verified desktop/mobile search, focus return, reduced motion, and no runtime errors.",
   );
 } finally {
   await browser?.close();

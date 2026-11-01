@@ -1,7 +1,7 @@
 // Compact reports are derived from the checksum-verified Blacksmith archive by
 // scripts/publish-blacksmith-evidence.mjs. Pages share these measured values.
-import blacksmithReport from "../../../docs/benchmarks/blacksmith-comparison.json";
-import sourceReport from "../../../docs/benchmarks/shiki-comparison.json";
+import blacksmithReport from "./evidence/blacksmith-comparison.json";
+import sourceReport from "./evidence/shiki-comparison.json";
 
 export type Timings = {
   ferriki: number;

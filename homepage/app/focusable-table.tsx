@@ -1,5 +1,2 @@
-import type { ComponentProps } from "react";
-
-export function FocusableTable(props: ComponentProps<"table">) {
-  return <table {...props} tabIndex={props.tabIndex ?? 0} />;
-}
+// Keep the existing MDX imports while sharing the native, keyboard-scrollable table frame.
+export { FerraReadingTable as FocusableTable } from "ferramenta-family/ferra";

@@ -7,8 +7,6 @@ config.unshift({
     "**/dist/**",
     "coverage/**",
     "build/**",
-    ".react-router/**",
-    "app/routes.ts",
     "node_modules/**",
     "pnpm-lock.yaml",
     "**/*.json",

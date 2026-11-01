@@ -1,5 +1,6 @@
 /* oxlint-disable react/no-danger -- Output comes from fixed source fixtures, generated and checked against both highlighters. */
-import { useState } from "react";
+import { useState } from "ardo/react";
+import { FerraCodePair, FerraRenderedCode, FerraSelect } from "ferramenta-family/ferra";
 
 import sample from "../data/prism-comparison.json";
 import { FocusableTable } from "../focusable-table";
@@ -28,29 +29,20 @@ const observations: Record<string, string> = {
 };
 
 function ComparisonPanels({ entry }: { entry: Sample }) {
+  const style = /<pre[^>]*style="([^"]*)"/.exec(entry.ferrikiHtml)?.[1] ?? "";
+  const backgroundColor = /background-color:([^;]+)/.exec(style)?.[1];
+  const color = /(?:^|;)color:([^;]+)/.exec(style)?.[1];
   return (
-    <div className="prism-comparison-grid">
-      <figure className="ferriki-highlighted-panel">
-        <figcaption>
-          <strong>Ferriki {sample.versions.ferriki}</strong>
-          <span>TextMate grammar · GitHub Dark High Contrast</span>
-        </figcaption>
-        <div
-          dangerouslySetInnerHTML={{
-            __html: entry.ferrikiHtml.replace("<pre ", '<pre tabindex="0" '),
-          }}
-        />
-      </figure>
-      <figure className="ferriki-highlighted-panel prism-rendered">
-        <figcaption>
-          <strong>Prism {sample.versions.prism}</strong>
-          <span>
-            {entry.prismHtml === null
-              ? "Astro grammar unavailable · source shown"
-              : "Prism grammar · matched color palette"}
-          </span>
-        </figcaption>
-        <pre tabIndex={0}>
+    <FerraCodePair className="prism-comparison-grid">
+      <FerraRenderedCode
+        caption={`Ferriki ${sample.versions.ferriki} · TextMate grammar · GitHub Dark High Contrast`}
+        html={entry.ferrikiHtml}
+      />
+      <FerraRenderedCode
+        className="prism-rendered"
+        caption={`Prism ${sample.versions.prism} · ${entry.prismHtml === null ? "Astro grammar unavailable · source shown" : "Prism grammar · matched color palette"}`}
+      >
+        <pre tabIndex={0} style={{ backgroundColor, color }}>
           <code>
             {entry.prismHtml === null ? (
               entry.source
@@ -59,8 +51,8 @@ function ComparisonPanels({ entry }: { entry: Sample }) {
             )}
           </code>
         </pre>
-      </figure>
-    </div>
+      </FerraRenderedCode>
+    </FerraCodePair>
   );
 }
 
@@ -118,30 +110,24 @@ export function PrismComparison() {
   const entry = sample.samples.find((item) => item.id === selected) ?? sample.samples[0];
   return (
     <section className="prism-comparison" aria-label="Ferriki and Prism rendered examples">
-      <div className="ferriki-chart-control">
-        <label htmlFor="prism-example">Choose an example</label>
-        <select
-          id="prism-example"
-          value={selected}
-          onChange={(event) => {
-            setSelected(event.target.value);
-          }}
-        >
-          {sample.samples.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <FerraSelect
+        label="Choose an example"
+        id="prism-example"
+        value={selected}
+        onChange={(event) => {
+          setSelected(event.target.value);
+        }}
+        options={sample.samples.map((item) => ({ value: item.id, label: item.label }))}
+      />
       <p className="prism-observation" aria-live="polite">
         {observations[entry.id]}
       </p>
       <ComparisonPanels entry={entry} />
       <p className="prism-presentation-note">
         Same source, font, and code-panel background. Ferriki uses GitHub Dark High Contrast; Prism
-        uses custom CSS from the same palette. Theme rules can still differ. No generated token is
-        added or relabeled. The classifications below show the grammar evidence behind the colors.
+        uses inline token colors from the same palette. Theme rules can still differ. No generated
+        token is added or relabeled. The classifications below show the grammar evidence behind the
+        colors.
       </p>
       <ClassificationDetails entry={entry} />
     </section>

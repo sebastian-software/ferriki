@@ -1,0 +1,395 @@
+{
+  "measured": "2026-10-24",
+  "revision": "2b16844e",
+  "source": {
+    "revision": "2b16844ed26da3d58a8198e362cd467f777bea7d",
+    "tree": "0119727f8ce8e0e1933cfd29884bb92f44e34bf5",
+    "workingTreeClean": true,
+    "distribution": "Ferriki version is read from the workspace source package; this report does not certify a registry artifact."
+  },
+  "machine": {
+    "cpu": "Intel(R) Xeon(R) Processor",
+    "cores": 4,
+    "memoryGiB": 15,
+    "platform": "linux-x64",
+    "os": "Linux 6.6.141",
+    "node": "v24.21.0"
+  },
+  "versions": {
+    "ferriki": "1.2.0",
+    "shiki": "4.5.0",
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": null,
+    "psrSimpleCache": null,
+    "php": "8.3.6",
+    "composer": null
+  },
+  "assets": {
+    "tmGrammars": "1.32.3",
+    "tmThemes": "1.12.3",
+    "phiki": null
+  },
+  "runtime": {
+    "node": "v24.21.0",
+    "phiki": {
+      "version": "8.3.6",
+      "versionId": 80306,
+      "sapi": "cli",
+      "mbstring": true,
+      "oniguruma": "6.9.9",
+      "opcacheLoaded": true,
+      "opcacheEnabled": "1",
+      "opcacheCli": "0",
+      "jit": "disable",
+      "jitBufferSize": "0",
+      "xdebug": true
+    },
+    "phpIniArguments": []
+  },
+  "theme": "github-dark",
+  "method": {
+    "regexPrefilter": true,
+    "apis": ["codeToHtml"],
+    "warmup": 5,
+    "minSamples": 30,
+    "minMilliseconds": 1500,
+    "coldRuns": 10,
+    "coldTimingOrder": "Ten rounds of fresh processes; eligible engine order rotates each round, serially",
+    "statistic": "median",
+    "phiki": {
+      "status": "skipped",
+      "reason": "Phiki dependencies are not installed; run composer install --no-interaction --working-dir=node/benchmarks/phiki.",
+      "warmProcess": "one persistent PHP CLI process and one Phiki highlighter for output checks, warmup and samples",
+      "warmTimingBoundary": "PHP hrtime around codeToHtml()->cache(null)->toString(); JSON stdin/stdout transport and post-render HTML length checks are excluded",
+      "coldTimingBoundary": "fresh Node or PHP process per run; process creation is excluded, Node module loading / Composer autoload, highlighter setup and rendering are included",
+      "warmTimingOrder": "serial; per document, warmup and measured orders each rotate by documentIndex + round among eligible engines, separately for each phase; Phiki sample duration comes from the PHP worker stopwatch",
+      "coldTimingOrder": "full corpus and shared cohort: ten rounds of fresh processes, rotating eligible engines each round; shared cohort includes Phiki in the rotation",
+      "agreement": "normalized visible source text and per-Unicode-codepoint color, font-style, font-weight and text-decoration",
+      "eolNormalization": "CRLF and CR normalize to LF; one final artificial LF is removed only when rendered text is exactly source plus one LF",
+      "differingOutputTimings": "per-document warm timings are shown with their output status but excluded from every aggregate total; cold Phiki timing requires a matching shared cohort",
+      "grammarRegistration": "recursive embedded grammars are registered by scope through a narrowly scoped ReflectionProperty bridge for the pinned Phiki 2.2.1 repository; external injectionSelector/injectTo assets are inventoried but not activated"
+    }
+  },
+  "agreement": {
+    "ferriki": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-wasm": {
+      "documents": 14,
+      "of": 14
+    },
+    "shiki-js": {
+      "documents": 13,
+      "of": 14
+    },
+    "phiki": {
+      "status": "skipped",
+      "documents": 0,
+      "of": 14
+    }
+  },
+  "outputAgreement": {
+    "criteria": "visible source text and per-Unicode-codepoint color, font-style, font-weight, text-decoration",
+    "documents": [
+      {
+        "path": "src/highlighter.rs",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/ferriki/src/api.mts",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/ferriki/src/index.mjs",
+        "status": "unavailable"
+      },
+      {
+        "path": "docs/ferriki-api.md",
+        "status": "unavailable"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/package.json",
+        "status": "unavailable"
+      },
+      {
+        "path": "Cargo.toml",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "status": "unavailable"
+      },
+      {
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "status": "unavailable"
+      }
+    ]
+  },
+  "phiki": {
+    "status": "skipped",
+    "reason": "Phiki dependencies are not installed; run composer install --no-interaction --working-dir=node/benchmarks/phiki.",
+    "operations": {
+      "codeToHtml": "skipped"
+    },
+    "runtime": {
+      "version": "8.3.6",
+      "versionId": 80306,
+      "sapi": "cli",
+      "mbstring": true,
+      "oniguruma": "6.9.9",
+      "opcacheLoaded": true,
+      "opcacheEnabled": "1",
+      "opcacheCli": "0",
+      "jit": "disable",
+      "jitBufferSize": "0",
+      "xdebug": true
+    }
+  },
+  "warm": {
+    "codeToHtml": [
+      {
+        "lang": "rust",
+        "path": "src/highlighter.rs",
+        "lines": 1561,
+        "bytes": 57811,
+        "medianMs": {
+          "ferriki": 7.320377000000008,
+          "shiki-wasm": 52.119001000000026,
+          "shiki-js": 29.34803699999975
+        },
+        "samples": 51,
+        "sha256": "3f90a862a51e0e60594275aa48d227bc245328e3cfb943e84238c1137ee84c93"
+      },
+      {
+        "lang": "typescript",
+        "path": "node/ferriki/src/api.mts",
+        "lines": 323,
+        "bytes": 11101,
+        "medianMs": {
+          "ferriki": 9.882489999999962,
+          "shiki-wasm": 19.481722000000445,
+          "shiki-js": 17.269830000001093
+        },
+        "samples": 97,
+        "sha256": "645dca2b4b39466a7ab94ec91d2f22b17fcc6d5d5fef23df126995f633579cf5"
+      },
+      {
+        "lang": "javascript",
+        "path": "node/ferriki/src/index.mjs",
+        "lines": 1812,
+        "bytes": 64664,
+        "medianMs": {
+          "ferriki": 68.17882199999985,
+          "shiki-wasm": 183.94432400000005,
+          "shiki-js": 135.93523749999986
+        },
+        "samples": 30,
+        "sha256": "69efb426b0f0af51afe4208e3cbc9e265e8f23bf90251a19ae3a425f57ba2aed"
+      },
+      {
+        "lang": "markdown",
+        "path": "docs/ferriki-api.md",
+        "lines": 522,
+        "bytes": 36135,
+        "medianMs": {
+          "ferriki": 3.0297069999978703,
+          "shiki-wasm": 10.314704000000347,
+          "shiki-js": 13.793587000000116
+        },
+        "samples": 163,
+        "sha256": "30dfaa9b4211867162c18741352007ae6bc9d9f23cb89bc05244e31bd8fa9716"
+      },
+      {
+        "lang": "yaml",
+        "path": ".github/workflows/ci.yml",
+        "lines": 574,
+        "bytes": 19607,
+        "medianMs": {
+          "ferriki": 34.653034499995556,
+          "shiki-wasm": 23.129980499999874
+        },
+        "samples": 52,
+        "sha256": "91e42fd7334e32d840ba51e561742c8dd8b5bc74b31ce8bbb37a9c2cf59169eb",
+        "unsupported": {
+          "shiki-js": "Shiki's JavaScript engine cannot translate the current VS Code YAML multi-codepoint hex escape; native and WASM output remain required"
+        }
+      },
+      {
+        "lang": "css",
+        "path": "node/compat/upstream/shiki/packages/twoslash/style-rich.css",
+        "lines": 289,
+        "bytes": 8014,
+        "medianMs": {
+          "ferriki": 1.6076390000016545,
+          "shiki-wasm": 11.243063000001712,
+          "shiki-js": 3.194389999996929
+        },
+        "samples": 275,
+        "sha256": "a0b29f777e13d43d05474fe2de94e536905dc50aa65817c1dda2d3cc84a2aa83"
+      },
+      {
+        "lang": "json",
+        "path": "node/package.json",
+        "lines": 118,
+        "bytes": 7674,
+        "medianMs": {
+          "ferriki": 0.5721560000019963,
+          "shiki-wasm": 1.395543999999063,
+          "shiki-js": 1.115883999998914
+        },
+        "samples": 1355,
+        "sha256": "a6e7e801e18d2139be057d69868c32ae4ed9e827cf8eb74b31b88b3c72744ccd"
+      },
+      {
+        "lang": "toml",
+        "path": "Cargo.toml",
+        "lines": 123,
+        "bytes": 4793,
+        "medianMs": {
+          "ferriki": 0.5175429999944754,
+          "shiki-wasm": 1.27267700000084,
+          "shiki-js": 0.913154999994731
+        },
+        "samples": 1551,
+        "sha256": "068e3751d73711db9bada934f4f1d05d1680345b4eaee7bdf0435eb405e92077"
+      },
+      {
+        "lang": "python",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.py",
+        "lines": 98,
+        "bytes": 2119,
+        "medianMs": {
+          "ferriki": 1.588568999999552,
+          "shiki-wasm": 3.1940949999989243,
+          "shiki-js": 1.4090230000001611
+        },
+        "samples": 707,
+        "sha256": "dca30556748c8e87336aa707c2b2204e88476fabaab1e2ab664fdc4bc4829fce"
+      },
+      {
+        "lang": "html",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.html",
+        "lines": 42,
+        "bytes": 1200,
+        "medianMs": {
+          "ferriki": 0.46452750000025844,
+          "shiki-wasm": 1.5848370000021532,
+          "shiki-js": 1.2181569999993371
+        },
+        "samples": 1342,
+        "sha256": "b2ba047d8dead253f8b34b4585b5457be99e2b559f366ef4957cf94034abe487"
+      },
+      {
+        "lang": "go",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.go",
+        "lines": 24,
+        "bytes": 572,
+        "medianMs": {
+          "ferriki": 0.14737400000012713,
+          "shiki-wasm": 0.5720189999992726,
+          "shiki-js": 0.32524800000101095
+        },
+        "samples": 4167,
+        "sha256": "001f75b294ce4783e30c77793e45f245fbfedcc728ca554d02a2a6f09fe78156"
+      },
+      {
+        "lang": "php",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.php",
+        "lines": 46,
+        "bytes": 802,
+        "medianMs": {
+          "ferriki": 0.23214999999618158,
+          "shiki-wasm": 1.6362729999964358,
+          "shiki-js": 0.8383709999980056
+        },
+        "samples": 1613,
+        "sha256": "9cf1f1d40eaf14fe45de4b47b12723f5b7d925c93673c0fc0b401954f1c91b68"
+      },
+      {
+        "lang": "shellscript",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sh",
+        "lines": 31,
+        "bytes": 634,
+        "medianMs": {
+          "ferriki": 0.3232149999967078,
+          "shiki-wasm": 0.9318880000064382,
+          "shiki-js": 0.6528550000075484
+        },
+        "samples": 2297,
+        "sha256": "8cfe4bb2a98bdf1bf6326b5aaf6166ea571b1d436047805cb8e832fdad0c41f1"
+      },
+      {
+        "lang": "sql",
+        "path": "node/compat/upstream/vscode-textmate/test-cases/themes/tests/test.sql",
+        "lines": 6,
+        "bytes": 123,
+        "medianMs": {
+          "ferriki": 0.036556999999447726,
+          "shiki-wasm": 0.27949299999454524,
+          "shiki-js": 0.07635949999530567
+        },
+        "samples": 10880,
+        "sha256": "65c2946d148989654c3273d28a84280d4fef7de781f9a139d318f36b6e5da6f6"
+      }
+    ]
+  },
+  "cold": {
+    "ferriki": {
+      "medianMs": 876.574569,
+      "runs": 10
+    },
+    "shiki-wasm": {
+      "medianMs": 1027.2440115,
+      "runs": 10
+    },
+    "shiki-js": {
+      "status": "unsupported",
+      "reason": "Full-corpus cold timing requires every grammar to be supported",
+      "paths": [".github/workflows/ci.yml"]
+    }
+  },
+  "coldMatching": {
+    "status": "skipped",
+    "documents": 0,
+    "of": 14,
+    "reason": "Phiki dependencies are not installed; run composer install --no-interaction --working-dir=node/benchmarks/phiki."
+  },
+  "warmTotalMs": {
+    "codeToHtml": {
+      "ferriki": 128.55416099998365,
+      "shiki-wasm": 311.0996205000001
+    }
+  },
+  "evidence": {
+    "profile": "linux-x86-64",
+    "runUrl": "https://github.com/sebastian-software/ferriki/actions/runs/40135588303",
+    "ferroni": "2.7.0",
+    "archive": "docs/benchmarks/blacksmith/2026-10-24-prepared-eager/timings/linux-x86-64/comparison/"
+  }
+}

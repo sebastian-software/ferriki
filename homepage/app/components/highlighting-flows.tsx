@@ -1,3 +1,5 @@
+import { FerraSteps } from "ferramenta-family/ferra";
+
 const flows = [
   {
     title: "Call the API",
@@ -23,21 +25,11 @@ const flows = [
 ];
 
 export function HighlightingFlows() {
-  return (
-    <div className="ferriki-flows">
-      {flows.map((flow) => (
-        <figure className="ferriki-flow" key={flow.title}>
-          <figcaption>{flow.title}</figcaption>
-          <ol>
-            {flow.steps.map((step) => (
-              <li key={step.label}>
-                <strong>{step.label}</strong>
-                <span>{step.detail}</span>
-              </li>
-            ))}
-          </ol>
-        </figure>
-      ))}
-    </div>
-  );
+  return flows.map((flow) => (
+    <FerraSteps
+      key={flow.title}
+      caption={flow.title}
+      items={flow.steps.map((step) => ({ heading: step.label, text: step.detail }))}
+    />
+  ));
 }

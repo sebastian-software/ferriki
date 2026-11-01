@@ -1,7 +1,9 @@
-import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
+import type { ComparisonRow } from "ferramenta-family";
 
-import memoryReport from "../../../docs/benchmarks/blacksmith-memory.json";
+import { FerraComparisonTable as ComparisonTable } from "ferramenta-family/ferra";
+
 import { engineLabels, nodeEngines } from "../data/benchmarks";
+import memoryReport from "../data/evidence/blacksmith-memory.json";
 
 type Distribution = { min: number; median: number; max: number };
 type MemoryMetric = "finalRss" | "initializedRss" | "peakRss";

@@ -1,7 +1,9 @@
-import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
+import type { ComparisonRow } from "ferramenta-family";
 
-import report from "../../../docs/benchmarks/regex-modes-comparison.json";
+import { FerraComparisonTable as ComparisonTable } from "ferramenta-family/ferra";
+
 import { formatMs } from "../data/benchmarks";
+import report from "../data/evidence/regex-modes-comparison.json";
 
 const nativeAndShiki = report.engines.filter(({ id }) => id !== "prism");
 const nativeLabels: Record<string, string> = {

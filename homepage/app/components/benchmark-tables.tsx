@@ -1,4 +1,9 @@
-import { type ComparisonRow, ComparisonTable, type Contender, Measured } from "ferramenta-family";
+import type { ComparisonRow, Contender } from "ferramenta-family";
+
+import {
+  FerraComparisonTable as ComparisonTable,
+  FerraMeasured as Measured,
+} from "ferramenta-family/ferra";
 
 import {
   type Api,
