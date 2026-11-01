@@ -1,47 +1,44 @@
 /* cspell:words Monokai */
-import { useState } from "react";
+import { useId, useState } from "ardo/react";
+import { FerraRenderedCode, FerraSelect, FerraToggle } from "ferramenta-family/ferra";
 
 import sample from "../data/class-sample.json";
 
 export function ClassHighlightingDemo() {
-  const [theme, setTheme] = useState("dark");
+  const id = useId();
+  const [theme, setTheme] = useState("light");
   const [custom, setCustom] = useState(false);
   return (
     <section
-      className={`class-demo${custom ? " class-demo-custom" : ""}`}
       aria-label="Class highlighting example"
+      data-class-example={id}
+      data-ferriki-theme={theme}
+      data-custom={custom}
     >
-      <style>{sample.css}</style>
-      <div className="class-demo-controls">
-        <label>
-          Theme{" "}
-          <select
-            value={theme}
-            onChange={(event) => {
-              setTheme(event.target.value);
-            }}
-          >
-            <option value="light">GitHub Light</option>
-            <option value="dark">Monokai</option>
-          </select>
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={custom}
-            onChange={(event) => {
-              setCustom(event.target.checked);
-            }}
-          />{" "}
-          Override strings with CSS
-        </label>
-      </div>
-      {/* HTML and CSS are generated from the fixed local fixture, never user input. */}
-      <div
-        data-ferriki-theme={theme}
-        // oxlint-disable-next-line react/no-danger -- Fixed local source is escaped by Ferriki and committed as an artifact.
-        dangerouslySetInnerHTML={{ __html: sample.html }}
+      {/* The generated example owns its theme variables; the page uses shared styles. */}
+      <style>{`${sample.css}
+[data-class-example="${id}"] .ferriki { color: var(--ferriki-color); background-color: var(--ferriki-background); }
+[data-class-example="${id}"][data-custom="true"] .tok-string { color: inherit; }`}</style>
+      <FerraSelect
+        label="Theme"
+        value={theme}
+        options={[
+          { value: "light", label: "GitHub Light" },
+          { value: "dark", label: "Monokai" },
+        ]}
+        onChange={(event) => {
+          setTheme(event.target.value);
+        }}
       />
+      <FerraToggle
+        pressed={custom}
+        label="Use plain string color"
+        description="Override one token class with CSS."
+        onClick={() => {
+          setCustom(!custom);
+        }}
+      />
+      <FerraRenderedCode caption="The same token elements, restyled" html={sample.html} />
       <p>
         Change the theme or enable the CSS override. The highlighted token elements stay in place.
       </p>

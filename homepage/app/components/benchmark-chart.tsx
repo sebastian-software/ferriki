@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { useId, useState } from "ardo/react";
+import { FerraBars, FerraSelect } from "ferramenta-family/ferra";
 
 import {
   type EngineId,
@@ -67,23 +68,21 @@ function DocumentSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="ferriki-chart-control">
-      <label htmlFor={id}>Compare</label>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value);
-        }}
-      >
-        <option value="">Entire corpus · Node engines</option>
-        {report.warm.codeToHtml.map((row) => (
-          <option value={row.path} key={row.path}>
-            {row.lang} · {row.path}
-          </option>
-        ))}
-      </select>
-    </div>
+    <FerraSelect
+      label="Compare"
+      id={id}
+      value={value}
+      onChange={(event) => {
+        onChange(event.target.value);
+      }}
+      options={[
+        { value: "", label: "Entire corpus · Node engines" },
+        ...report.warm.codeToHtml.map((row) => ({
+          value: row.path,
+          label: `${row.lang} · ${row.path}`,
+        })),
+      ]}
+    />
   );
 }
 
@@ -94,23 +93,17 @@ function ChartBars({
   engines: EngineId[];
   times: Partial<Record<EngineId, number>>;
 }) {
-  const maximum = Math.max(...engines.map((engine) => times[engine] ?? 0));
   return (
-    <dl>
-      {engines.map((engine) => (
-        <div className="ferriki-chart-row" data-own={engine === "ferriki"} key={engine}>
-          <dt>{engineLabels[engine]}</dt>
-          <dd>
-            <span className="ferriki-chart-track" aria-hidden="true">
-              <span style={{ width: `${((times[engine] ?? 0) / maximum) * 100}%` }} />
-            </span>
-            <span className="ferriki-chart-value">
-              {times[engine] === undefined ? "Not measured" : formatMs(times[engine])}
-            </span>
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <FerraBars
+      caption="Median render time · lower is faster"
+      items={engines.map((engine) => ({
+        id: engine,
+        label: engineLabels[engine],
+        value: times[engine] ?? 0,
+        displayValue: times[engine] === undefined ? "Not measured" : formatMs(times[engine]),
+        highlight: engine === "ferriki",
+      }))}
+    />
   );
 }
 

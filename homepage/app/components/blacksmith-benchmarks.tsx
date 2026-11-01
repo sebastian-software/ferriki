@@ -1,4 +1,6 @@
-import { type ComparisonRow, ComparisonTable } from "ferramenta-family";
+import type { ComparisonRow } from "ferramenta-family";
+
+import { FerraComparisonTable as ComparisonTable } from "ferramenta-family/ferra";
 
 import {
   blacksmith,

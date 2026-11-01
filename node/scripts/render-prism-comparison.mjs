@@ -20,6 +20,24 @@ const json = (url) => JSON.parse(readFileSync(url, "utf8"));
 const componentsUrl = new URL("../node_modules/prismjs/components.json", import.meta.url);
 const components = json(componentsUrl);
 loadLanguages(["typescript", "tsx", "cpp", "css", "go", "rust", "markup", "javascript"]);
+// Match the existing comparison palette without depending on a page stylesheet.
+// Only presentation attributes change; the token stream and source stay intact.
+const palette = [
+  [["comment", "prolog", "doctype"], "#9ea7b3"],
+  [["keyword", "operator", "atrule"], "#ff9492"],
+  [["string", "attr-value"], "#addcff"],
+  [["number", "boolean", "property", "constant"], "#91cbff"],
+  [["function"], "#dbb7ff"],
+  [["variable", "class-name", "selector"], "#ffb757"],
+  [["tag", "attr-name"], "#72f088"],
+];
+Prism.hooks.add("wrap", (environment) => {
+  for (const [names, color] of palette) {
+    if (names.some((name) => environment.classes.includes(name))) {
+      environment.attributes.style = `color:${color}`;
+    }
+  }
+});
 const langs = [...new Set(inputs.flatMap((entry) => [entry.lang, ...entry.embedded]))];
 const highlighter = await createHighlighter({ langs, themes: [theme], assets: { remote: false } });
 const reference = await shiki.createHighlighter({

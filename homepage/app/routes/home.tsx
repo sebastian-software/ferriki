@@ -1,27 +1,52 @@
-import {
-  EvidenceFigures,
-  Mark,
-  ProjectHero,
-  RegistryFacts,
-  Relations,
-  RunSample,
-  Section,
-} from "ferramenta-family";
-import { Link } from "react-router";
+import type { ArdoMetaFunction } from "ardo/runtime";
 
-import preparedReport from "../../../docs/benchmarks/regex-modes-comparison.json";
+import { ArdoLink as Link } from "ardo/runtime";
+import { Mark, RegistryFacts } from "ferramenta-family";
+import {
+  FerraAction,
+  FerraArticle,
+  FerraColumns,
+  FerraEditorialRow,
+  FerraInstrument,
+  FerraNotes,
+  FerraProductLead,
+  FerraProductPage,
+  FerraReleaseFacts,
+} from "ferramenta-family/ferra";
+import { family, WORKSHOP } from "ferramenta-family/registry";
+
 import {
   ClosingSection,
   CodeSection,
   CoverageSection,
+  FamilySection,
   MacroSection,
+  SampleSection,
+  ThemeSection,
 } from "../components/home-sections";
 import { PreparedRegexSection } from "../components/prepared-regex";
-import { formatFactor } from "../data/benchmarks";
-import { grammarCount } from "../data/grammar-catalog";
-import sample from "../data/sample.json";
+import preparedReport from "../data/evidence/regex-modes-comparison.json";
 import { version } from "../version";
 
+// oxlint-disable-next-line react/only-export-components -- Ardo reads route metadata.
+export const meta: ArdoMetaFunction = () => [
+  { title: "Ferriki — Beautiful code. Head start included." },
+  {
+    name: "description",
+    content:
+      "Native TextMate syntax highlighting for Node.js, Rust and Vite. Familiar Shiki-style calls, embedded languages, and prepared grammar packages.",
+  },
+];
+// oxlint-disable-next-line react/only-export-components -- Ardo reads the route layout.
+export const handle = { layout: "bare" };
+
+const member = family.find((entry) => entry.name === "ferriki");
+if (!member) throw new Error("Ferriki is missing from the family registry.");
+const tool = { ...member, version };
+const factors = preparedReport.profiles.map(
+  (profile) => profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"],
+);
+const speedRange = `${Math.min(...factors).toFixed(1)}–${Math.max(...factors).toFixed(1)}×`;
 const measurementDate = new Date(preparedReport.measured).toLocaleDateString("en-US", {
   month: "long",
   day: "numeric",
@@ -29,136 +54,120 @@ const measurementDate = new Date(preparedReport.measured).toLocaleDateString("en
   timeZone: "UTC",
 });
 
-function HeroSection() {
+function Opening() {
   return (
-    <ProjectHero
-      icon="ferriki"
-      title="Ferriki"
-      what="Beautiful code. Head start included."
-      lede="Native, Oniguruma-compatible syntax highlighting for Node.js and Rust. Precompiled CDN packages are ready for production and enabled by default for standard grammars. Load your languages and start with their static optimizations already prepared."
-      facts={[
-        { label: "Runtime", value: "Native Rust" },
-        { label: "Grammars", value: String(grammarCount) },
-        { label: "Regex", value: "Precompiled" },
-      ]}
-      actions={
+    <FerraProductLead
+      id="overview"
+      title="Beautiful code. Head start included."
+      introduction="TextMate syntax highlighting for Node.js, Rust and Vite. Keep the grammars and themes your editor uses, with a native engine and prepared language packages that arrive ready to work."
+      art={<FerraInstrument product="ferriki" />}
+      byline={
         <>
-          <Link to="/guide/getting-started" className="fam-btn fam-btn-primary">
-            Start with Node.js <Mark name="arrow" className="icon" size={18} />
-          </Link>
-          <Link to="/guide/build-time-macros" className="fam-btn fam-btn-ghost">
-            Use Vite 8
-          </Link>
-          <Link to="/rust/getting-started" className="fam-btn fam-btn-ghost">
-            Use Rust
-          </Link>
+          An open-source project by <a href={WORKSHOP.openSource}>{WORKSHOP.company}</a>.
         </>
-      }
-      install={
-        <>
-          <code translate="no">npm install @ferriki/core</code>
-          <span> · </span>
-          <code translate="no">cargo add ferriki --features remote</code>
-        </>
-      }
-    />
-  );
-}
-
-function SampleSection() {
-  return (
-    <Section
-      id="sample"
-      title="One file, three languages"
-      intro="HTML, CSS, and JavaScript share a page. Ferriki follows each language into the next, right down to the template literal inside the script. The result on the right comes straight from Ferriki."
-      note={
-        <a href="https://github.com/sebastian-software/ferriki/tree/main/homepage/scripts">
-          Rendered by scripts/render-sample.mjs with codeToHtml
-        </a>
       }
     >
-      <RunSample
-        input={sample.input}
-        inputCaption="index.html"
-        inputKind="HTML source"
-        output={sample.output}
-        outputCaption={`Ferriki v${version} · ${sample.theme}`}
-      />
-    </Section>
+      <div className="ferra-actions">
+        <FerraAction href="/guide/getting-started">Start with Node.js</FerraAction>
+        <FerraAction variant="secondary" href="/rust/getting-started">
+          Start with Rust
+        </FerraAction>
+      </div>
+    </FerraProductLead>
   );
 }
-
-function EvidenceIntro() {
+function Overview() {
   return (
-    <>
-      One loaded highlighter, block after block. On our fourteen-file repository corpus, Ferriki
-      produced identical HTML to Shiki/WASM on Linux and macOS. Here is how much faster repeated{" "}
-      <code>codeToHtml</code> calls ran with languages and themes already loaded.
-    </>
+    <FerraColumns>
+      <FerraArticle
+        title="Your editor’s grammar, on your page."
+        icon={<Mark name="pen" size={28} />}
+        meta={<Link to="/evidence/compatibility">What compatibility covers</Link>}
+      >
+        <p>
+          TextMate tokenization, embedded languages and grammar injections, with familiar
+          Shiki-style HTML calls. The detail comes from the grammar your editor uses.
+        </p>
+        <a href="#sample">See the languages in action</a>
+      </FerraArticle>
+      <FerraArticle
+        title="A head start, built in."
+        icon={<Mark name="document" size={28} />}
+        meta={<FerraReleaseFacts tool={tool} />}
+      >
+        <p>
+          Standard language packages include compiled regex programs and prepared scanners. Restore
+          that work on startup, then highlight with native Rust.
+        </p>
+        <a href="#prepared-regex">How the preparation travels</a>
+      </FerraArticle>
+    </FerraColumns>
   );
 }
-
-function EvidenceNote() {
-  return (
-    <>
-      Measured <time dateTime={preparedReport.measured}>{measurementDate}</time> with Ferriki{" "}
-      {preparedReport.ferriki} and Ferroni {preparedReport.ferroni} in this{" "}
-      <a href={preparedReport.runUrl}>Blacksmith run</a>. These measure highlighting, not total
-      build time. The <Link to="/evidence/benchmarks">full report</Link> has every language case,
-      startup, memory, and raw results. Results depend on workload and hardware.
-    </>
-  );
-}
-
 function EvidenceSection() {
   return (
-    <Section
+    <FerraArticle
       id="evidence"
-      layout="split"
-      title="The numbers look good, too."
-      intro={<EvidenceIntro />}
-      note={<EvidenceNote />}
+      title="Spend less time rendering code."
+      introduction="Load a highlighter once, then keep using it. On our fourteen-file repository corpus, Ferriki delivered identical HTML to Shiki/WASM on both measured hosts."
+      meta={
+        <>
+          Measured <time dateTime={preparedReport.measured}>{measurementDate}</time> with Ferriki{" "}
+          {preparedReport.ferriki} and Ferroni {preparedReport.ferroni}.{" "}
+          <a href={preparedReport.runUrl}>Source run</a>
+          {" · "}
+          <Link to="/evidence/benchmarks">Timings, startup, memory and every language case</Link>
+        </>
+      }
     >
-      <EvidenceFigures
-        figures={preparedReport.profiles.map((profile) => ({
-          label: profile.label,
-          value: formatFactor(profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"]),
-          detail: "faster than Shiki/WASM",
-          measure: profile.corpusMachines.comparison.cpu,
-        }))}
-      />
-      <p className="fam-note">
-        Prepared also used about 45% less whole-process RSS than Shiki/WASM after 600 documents
-        across twelve loaded languages on both hosts. Six isolated processes per contender; all
-        produced identical HTML.{" "}
-        <Link to="/evidence/benchmarks#process-memory-by-policy">Compare the memory results.</Link>
+      <p>
+        With the languages and themes already loaded, repeated HTML calls were {speedRange} faster
+        than Shiki/WASM across Linux x86-64 and macOS ARM64. These are highlighting measurements,
+        rather than total build times; another workload or machine can give different results.
       </p>
-    </Section>
+      <p>
+        Prepared packages also used about 45% less whole-process RSS after 600 documents across
+        twelve loaded languages on both hosts. Six isolated processes per contender produced
+        identical HTML. The detailed report keeps the startup cost, download weight and measurement
+        conditions alongside the results.
+      </p>
+    </FerraArticle>
   );
 }
-
-function PipelineSection() {
-  return (
-    <Section id="pipeline" title="Part of your build">
-      <Relations current="ferriki" />
-    </Section>
-  );
-}
-
 export default function HomePage() {
   return (
     <RegistryFacts>
-      <div className="fam-page ferriki-home">
-        <HeroSection />
-        <PreparedRegexSection />
+      <FerraProductPage>
+        <Opening />
+        <Overview />
         <SampleSection />
-        <CodeSection />
+        <FerraEditorialRow
+          notes={
+            <FerraNotes
+              label="Preparation and compatibility"
+              notes={tool.editorial?.notes.slice(0, 1) ?? []}
+            />
+          }
+        >
+          <PreparedRegexSection />
+        </FerraEditorialRow>
         <MacroSection />
+        <FerraEditorialRow
+          notes={
+            <FerraNotes
+              label="Inside the grammar engine"
+              notes={tool.editorial?.notes.slice(1) ?? []}
+            />
+          }
+        >
+          <ThemeSection />
+        </FerraEditorialRow>
+        <CodeSection />
         <EvidenceSection />
-        <PipelineSection />
+        <FamilySection />
         <CoverageSection />
         <ClosingSection />
-      </div>
+      </FerraProductPage>
     </RegistryFacts>
   );
 }
