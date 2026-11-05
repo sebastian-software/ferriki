@@ -6,6 +6,7 @@
 export const documentationSections = [
   {
     id: "guide",
+    icon: "document",
     label: "Guide",
     to: "/guide/getting-started",
     pages: [
@@ -22,12 +23,14 @@ export const documentationSections = [
   },
   {
     id: "rust",
+    icon: "crate",
     label: "Rust",
     to: "/rust/getting-started",
     pages: [["Start with Rust", "/rust/getting-started"]],
   },
   {
     id: "evidence",
+    icon: "check",
     label: "Evidence",
     to: "/evidence/benchmarks",
     pages: [
