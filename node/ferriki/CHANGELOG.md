@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/sebastian-software/ferriki/compare/v1.3.0...v1.4.0) (2026-11-05)
+
+
+### Features
+
+* **homepage:** adopt the shared Ferra product design ([f59fc8b](https://github.com/sebastian-software/ferriki/commit/f59fc8b397eaa81738aef4ca826b087237e6f37f))
+* **homepage:** adopt the shared Ferra product design ([aa0ef9a](https://github.com/sebastian-software/ferriki/commit/aa0ef9a75f334282151d2fac2698d46b116ddead))
+* **homepage:** show documentation sections in the Ferra section rail ([09ed54e](https://github.com/sebastian-software/ferriki/commit/09ed54e1a87121b88843dad6ac43f43957e22ead))
+* **homepage:** show documentation sections in the Ferra section rail ([97ea2dd](https://github.com/sebastian-software/ferriki/commit/97ea2dd1dc9009cea48abb179820e059169f90ea))
+
+
+### Bug Fixes
+
+* **homepage:** bound search hints on compact screens ([7eb72df](https://github.com/sebastian-software/ferriki/commit/7eb72df7939fe47bfd71bf267179598954206f15))
+* **homepage:** resolve the shared theme with pnpm 12 ([30d7ff0](https://github.com/sebastian-software/ferriki/commit/30d7ff0bdb2718780b89672dc607fc01584e5674))
+* **node:** use symlink-safe shared native CLI ([51b4997](https://github.com/sebastian-software/ferriki/commit/51b49975dead9851a8a6bb62a498f00c4926109d))
+* **site:** adopt compact code blocks and unframed docs ([#345](https://github.com/sebastian-software/ferriki/issues/345)) ([f588598](https://github.com/sebastian-software/ferriki/commit/f58859846e5119222a788f3d44141072758f9611))
+* **site:** use compact shared card footers ([f1fcba2](https://github.com/sebastian-software/ferriki/commit/f1fcba2cce26eec7dbdc9c2609af04c82fb92b38))
+* **site:** use compact shared card footers ([5aae126](https://github.com/sebastian-software/ferriki/commit/5aae1267f5a39de27cc1076cfa0fb1bb3387aec5))
+
 ## [1.3.0](https://github.com/sebastian-software/ferriki/compare/v1.2.0...v1.3.0) (2026-10-27)
 
 
