@@ -53,7 +53,24 @@ for (const file of appFiles.filter((name) => name.endsWith(".css"))) {
   }
 }
 
+// No source imports the Ferra theme or the original kit.
+const theme =
+  /ferramenta-family\/(?:ferra(?:-ardo|-tokens|-fonts)?\.css|ferra"|landing\.css|chrome\.css)/;
+for (const file of appFiles.filter((name) => /\.(?:tsx?|mdx?|css)$/.test(name))) {
+  const source = await readFile(new URL(`../app/${file}`, import.meta.url), "utf8");
+  if (theme.test(source))
+    throw new Error(`app/${file} imports the Ferra theme or the original kit`);
+}
+
 const outputDirectory = new URL("../build/client/", import.meta.url);
+// No built stylesheet carries a selector of the Ferra theme or the original kit.
+const builtAssets = await readdir(new URL("assets/", outputDirectory));
+for (const file of builtAssets.filter((name) => name.endsWith(".css"))) {
+  const css = await readFile(new URL(`assets/${file}`, outputDirectory), "utf8");
+  if (/\.(?:ferra-(?!mark|instrument|workshop-logo)|fam-)[a-z]/.test(css)) {
+    throw new Error(`build/client/assets/${file} carries the Ferra theme or the original kit`);
+  }
+}
 await Promise.all(expectedPages.map((page) => access(new URL(page, outputDirectory))));
 
 const read = async (path) => {
@@ -306,18 +323,30 @@ if (missing.length > 0) {
 }
 
 const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, await read(page)]));
-// Every page wears the Monografie header and footer, never Ardo's or the Ferra ones.
-// Documentation pages keep their section navigation and the menu that carries
-// it on narrow screens.
+// Every page wears the Monografie header and footer, never Ardo's, and stands on
+// Monografie (ADR-0012 in ferramenta): no class of the Ferra theme or the
+// original kit survives; only Ferra's identity assets keep the name.
+// Documentation pages stand on the Monografie documentation page and keep their
+// section navigation and the menu that carries it on narrow screens.
+const ferraIdentity = new Set(["ferra-mark", "ferra-instrument", "ferra-workshop-logo"]);
 for (const [page, html] of pageFiles) {
   const fragments = ['class="mono-header"', 'class="mono-footer"', 'rel="icon"'];
   if (page !== "index.html") {
-    fragments.push('class="ferra-guide-navigation"', 'aria-label="Toggle menu"', "fk-docs");
+    fragments.push(
+      'class="mono mono-docs fk-docs"',
+      'class="mono-guide-navigation"',
+      'aria-label="Toggle menu"',
+    );
   }
   const absent = fragments.filter((fragment) => !html.includes(fragment));
-  const stray = ['class="ardo-header', 'class="ardo-footer', "ferra-header", "ferra-footer"].filter(
-    (fragment) => html.includes(fragment),
-  );
+  const stray = [
+    ...['class="ardo-header', 'class="ardo-footer'].filter((fragment) => html.includes(fragment)),
+    ...new Set(
+      [...html.matchAll(/class="([^"]*)"/g)]
+        .flatMap(([, value]) => value.split(/\s+/))
+        .filter((name) => /^(?:ferra|fam)-/.test(name) && !ferraIdentity.has(name)),
+    ),
+  ];
   if (absent.length > 0 || stray.length > 0) {
     throw new Error(
       `${page}: missing ${JSON.stringify(absent)}, unexpected ${JSON.stringify(stray)}`,

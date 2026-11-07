@@ -1,5 +1,5 @@
 import { useId, useState } from "ardo/react";
-import { FerraBars, FerraSelect } from "ferramenta-family/ferra";
+import { MonoBars, MonoSelect } from "ferramenta-family/monografie";
 
 import {
   type EngineId,
@@ -68,7 +68,7 @@ function DocumentSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <FerraSelect
+    <MonoSelect
       label="Compare"
       id={id}
       value={value}
@@ -94,7 +94,7 @@ function ChartBars({
   times: Partial<Record<EngineId, number>>;
 }) {
   return (
-    <FerraBars
+    <MonoBars
       caption="Median render time · lower is faster"
       items={engines.map((engine) => ({
         id: engine,

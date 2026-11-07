@@ -1,4 +1,4 @@
-import { FerraSteps } from "ferramenta-family/ferra";
+import { MonoSteps } from "ferramenta-family/monografie";
 
 const flows = [
   {
@@ -26,7 +26,7 @@ const flows = [
 
 export function HighlightingFlows() {
   return flows.map((flow) => (
-    <FerraSteps
+    <MonoSteps
       key={flow.title}
       caption={flow.title}
       items={flow.steps.map((step) => ({ heading: step.label, text: step.detail }))}
