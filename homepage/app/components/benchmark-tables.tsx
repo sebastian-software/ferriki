@@ -1,9 +1,9 @@
 import type { ComparisonRow, Contender } from "ferramenta-family";
 
 import {
-  FerraComparisonTable as ComparisonTable,
-  FerraMeasured as Measured,
-} from "ferramenta-family/ferra";
+  MonoComparisonTable as ComparisonTable,
+  MonoMeasured as Measured,
+} from "ferramenta-family/monografie";
 
 import {
   type Api,

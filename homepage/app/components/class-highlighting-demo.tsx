@@ -1,6 +1,6 @@
 /* cspell:words Monokai */
 import { useId, useState } from "ardo/react";
-import { FerraRenderedCode, FerraSelect, FerraToggle } from "ferramenta-family/ferra";
+import { MonoRenderedCode, MonoSelect, MonoToggle } from "ferramenta-family/monografie";
 
 import sample from "../data/class-sample.json";
 
@@ -19,7 +19,7 @@ export function ClassHighlightingDemo() {
       <style>{`${sample.css}
 [data-class-example="${id}"] .ferriki { color: var(--ferriki-color); background-color: var(--ferriki-background); }
 [data-class-example="${id}"][data-custom="true"] .tok-string { color: inherit; }`}</style>
-      <FerraSelect
+      <MonoSelect
         label="Theme"
         value={theme}
         options={[
@@ -30,7 +30,7 @@ export function ClassHighlightingDemo() {
           setTheme(event.target.value);
         }}
       />
-      <FerraToggle
+      <MonoToggle
         pressed={custom}
         label="Use plain string color"
         description="Override one token class with CSS."
@@ -38,7 +38,7 @@ export function ClassHighlightingDemo() {
           setCustom(!custom);
         }}
       />
-      <FerraRenderedCode caption="The same token elements, restyled" html={sample.html} />
+      <MonoRenderedCode caption="The same token elements, restyled" html={sample.html} />
       <p>
         Change the theme or enable the CSS override. The highlighted token elements stay in place.
       </p>

@@ -1,6 +1,6 @@
 /* oxlint-disable react/no-danger -- Output comes from fixed source fixtures, generated and checked against both highlighters. */
 import { useState } from "ardo/react";
-import { FerraCodePair, FerraRenderedCode, FerraSelect } from "ferramenta-family/ferra";
+import { MonoCodePair, MonoRenderedCode, MonoSelect } from "ferramenta-family/monografie";
 
 import sample from "../data/prism-comparison.json";
 import { FocusableTable } from "../focusable-table";
@@ -33,12 +33,12 @@ function ComparisonPanels({ entry }: { entry: Sample }) {
   const backgroundColor = /background-color:([^;]+)/.exec(style)?.[1];
   const color = /(?:^|;)color:([^;]+)/.exec(style)?.[1];
   return (
-    <FerraCodePair className="prism-comparison-grid">
-      <FerraRenderedCode
+    <MonoCodePair className="prism-comparison-grid">
+      <MonoRenderedCode
         caption={`Ferriki ${sample.versions.ferriki} · TextMate grammar · GitHub Dark High Contrast`}
         html={entry.ferrikiHtml}
       />
-      <FerraRenderedCode
+      <MonoRenderedCode
         className="prism-rendered"
         caption={`Prism ${sample.versions.prism} · ${entry.prismHtml === null ? "Astro grammar unavailable · source shown" : "Prism grammar · matched color palette"}`}
       >
@@ -51,8 +51,8 @@ function ComparisonPanels({ entry }: { entry: Sample }) {
             )}
           </code>
         </pre>
-      </FerraRenderedCode>
-    </FerraCodePair>
+      </MonoRenderedCode>
+    </MonoCodePair>
   );
 }
 
@@ -110,7 +110,7 @@ export function PrismComparison() {
   const entry = sample.samples.find((item) => item.id === selected) ?? sample.samples[0];
   return (
     <section className="prism-comparison" aria-label="Ferriki and Prism rendered examples">
-      <FerraSelect
+      <MonoSelect
         label="Choose an example"
         id="prism-example"
         value={selected}

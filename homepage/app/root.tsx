@@ -9,22 +9,23 @@ import {
   ArdoTOC,
 } from "ardo/ui";
 import { Mark, MarkDefs } from "ferramenta-family";
-import {
-  FerraGuideNavigation,
-  FerraPage,
-  FerraReadingLayout,
-  FerraReadingTable,
-  FerraSectionRail,
-} from "ferramenta-family/ferra";
 import touchIcon from "ferramenta-family/ferra-assets/ferriki/apple-touch-icon.png?url";
 import favicon from "ferramenta-family/ferra-assets/ferriki/favicon.ico?url";
-import { MonoFooter, MonoHeader, MonoPage } from "ferramenta-family/monografie";
-import "ferramenta-family/ferra.css";
+import {
+  MonoFooter,
+  MonoGuideNavigation,
+  MonoHeader,
+  MonoPage,
+  MonoReadingLayout,
+  MonoReadingTable,
+  MonoSectionRail,
+} from "ferramenta-family/monografie";
 
 import { documentationSections as navigation } from "./navigation";
 import { version } from "./version";
-import "ferramenta-family/ferra-ardo.css";
 import "ferramenta-family/monografie.css";
+import "ferramenta-family/monografie-docs.css";
+import "ferramenta-family/monografie-ardo.css";
 
 // Ferriki's own specimens, all under fk- classes; after the package so they win its ties.
 import "./components/homepage-specimens.css";
@@ -33,7 +34,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <ArdoRootLayout
       colorScheme="light"
-      className="ferra-tokens ferra-ardo"
+      className="mono-ardo"
       icon={favicon}
       appleTouchIcon={touchIcon}
       iconBasePath={false}
@@ -49,7 +50,7 @@ function GuideNavigation({ onNavigate }: { onNavigate?: () => void }) {
   const current = navigation.find((section) => path.startsWith(`/${section.id}/`)) ?? navigation[0];
   return (
     <>
-      <FerraSectionRail aria-label="Documentation sections">
+      <MonoSectionRail aria-label="Documentation sections">
         {navigation.map((section) => (
           <NavLink
             key={section.id}
@@ -61,8 +62,8 @@ function GuideNavigation({ onNavigate }: { onNavigate?: () => void }) {
             {section.label}
           </NavLink>
         ))}
-      </FerraSectionRail>
-      <FerraGuideNavigation aria-label="Documentation pages">
+      </MonoSectionRail>
+      <MonoGuideNavigation aria-label="Documentation pages">
         <NavLink to="/" onClick={onNavigate}>
           Overview
         </NavLink>
@@ -72,7 +73,7 @@ function GuideNavigation({ onNavigate }: { onNavigate?: () => void }) {
             {title}
           </NavLink>
         ))}
-      </FerraGuideNavigation>
+      </MonoGuideNavigation>
     </>
   );
 }
@@ -135,7 +136,7 @@ function Article({ children }: { children: ReactNode }) {
   const path = useArdoPath();
   const current = navigation.find((section) => path.startsWith(`/${section.id}/`));
   return (
-    <FerraReadingLayout
+    <MonoReadingLayout
       id="ferriki-article"
       navigation={<GuideNavigation />}
       outline={<ArdoTOC source="dom" scope="#ferriki-article" />}
@@ -145,14 +146,14 @@ function Article({ children }: { children: ReactNode }) {
         <h1>{page?.title ?? "Documentation"}</h1>
       </header>
       {children}
-    </FerraReadingLayout>
+    </MonoReadingLayout>
   );
 }
-const components = { table: FerraReadingTable, wrapper: Article };
+const components = { table: MonoReadingTable, wrapper: Article };
 
 /**
- * Every page wears the Monografie header and footer. The homepage reads on the
- * Monografie page ground; documentation keeps the Ferra reading layout.
+ * Every page wears the Monografie header and footer and reads on the Monografie
+ * page ground; documentation adds the reading layout.
  */
 export default function Root() {
   const path = useArdoPath();
@@ -160,7 +161,7 @@ export default function Root() {
   const shell = (
     <>
       <ArdoRoot
-        className={home ? "fk-shell" : "ferra-ardo-shell"}
+        className="mono-ardo-shell"
         scrollMode="document"
         header={<Header docs={!home} />}
         sidebar={false}
@@ -177,9 +178,9 @@ export default function Root() {
   );
   if (home) return <MonoPage className="fk-site">{shell}</MonoPage>;
   return (
-    <FerraPage className="ferra-site fk-docs">
+    <MonoPage className="mono-docs fk-docs">
       <MarkDefs />
       {shell}
-    </FerraPage>
+    </MonoPage>
   );
 }

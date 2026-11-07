@@ -1,6 +1,6 @@
 import type { ComparisonRow, Contender } from "ferramenta-family";
 
-import { FerraComparisonTable as ComparisonTable } from "ferramenta-family/ferra";
+import { MonoComparisonTable as ComparisonTable } from "ferramenta-family/monografie";
 
 const ferriki: Contender[] = [{ id: "ferriki", label: "Ferriki", own: true }];
 

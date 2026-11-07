@@ -14,12 +14,15 @@ pnpm --dir homepage verify
 ```
 
 The homepage uses Ardo 6 and the shared `ferramenta-family/monografie` page
-system (Ferramenta ADR-0012): every page wears its header and footer, the
-homepage reads on its paper, and the documentation keeps the
-`ferramenta-family/ferra` reading layout, navigation, code panels, and evidence
-tables. The one site stylesheet, `app/components/homepage-specimens.css`, holds
-the homepage's own specimens; `scripts/verify-build.mjs` fails on a selector
-there without an `fk-` class. Changes to shared presentation belong in
+system (Ferramenta ADR-0012): every page wears its header and footer and reads
+on its paper, and the documentation uses its documentation pages
+(`monografie-docs.css` and the Ardo adapter `monografie-ardo.css`) for the
+reading layout, navigation, code panels, and evidence tables. The one site
+stylesheet, `app/components/homepage-specimens.css`, holds the homepage's own
+specimens and two temporary code-contrast fits for the documentation;
+`scripts/verify-build.mjs` fails on a selector there without an `fk-` class, on
+any rendered `ferra-` or `fam-` class other than Ferra's identity assets, and on
+an import of the Ferra or original stylesheets. Changes to shared presentation belong in
 Ferramenta, with a kit specimen, before updating the pinned package commit here.
 
 Ardo's build-time highlighting uses the default immutable asset service. No

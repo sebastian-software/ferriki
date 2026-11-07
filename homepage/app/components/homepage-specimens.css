@@ -1,6 +1,6 @@
 /*
- * Ferriki's own specimens on the Monografie homepage (and one fit of the
- * header on the documentation pages, under `fk-docs`): the token register,
+ * Ferriki's own specimens on the Monografie homepage (and temporary contrast
+ * fits of the documentation code, under `fk-docs`): the token register,
  * highlighted code on the sheets and cards, the diagnostics lists and the
  * application card. Everything is scoped to `fk-` classes and takes the
  * package's `--mono-*` tokens; the page system itself lives in
@@ -8,52 +8,24 @@
  * `fk-` class.
  */
 
-/* ---------- Ardo shell: the homepage's main stands on the page's paper ---------- */
-.fk-shell {
-  min-height: 0;
-  background: transparent;
-}
-.fk-shell > div {
-  padding-block-start: 0;
-}
-.fk-shell #main-content {
-  min-width: 0;
-  padding: 0;
-  overflow: visible;
-  background: transparent;
-}
+/* ---------- The page fills the viewport ---------- */
 .fk-site {
   min-height: 100vh;
 }
-/* Anchors clear the sticky Monografie header. */
-html:has(.fk-site, .fk-docs) {
-  scroll-padding-top: 76px;
-}
 
-/* ---------- Documentation under the sticky header ---------- */
-/* The reading layout's sticky panels clear the 60px Monografie header. */
-.fk-docs :is(.ferra-reading-navigation, .ferra-reading-outline) {
-  top: 84px;
-  max-height: calc(100svh - 108px);
+/* ---------- Documentation: code contrast (temporary) ---------- */
+/* Shiki's GitHub Light comment gray (#6E7781) reaches only 4.39:1 on the
+   Monografie code sheet. ferramenta PR #138 fixes it in monografie-ardo.css;
+   this rule goes once the pin includes that fix. */
+.fk-docs :is(.ardo-code-block, .ardo-shiki) span[style*="--shiki-light:#6E7781" i],
+.fk-docs :is(.ardo-code-block, .ardo-shiki) span[style*="color:#6E7781" i] {
+  color: #59636e !important;
 }
-
-/* One menu on narrow screens. */
-/* The documentation drawer carries the navigation below 961px; a second menu
-   icon beside it would only confuse. The name leads home. */
-@media (max-width: 960px) {
-  .fk-docs .mono-menu-button {
-    display: none;
-  }
-  .fk-docs .mono-header-actions {
-    margin-left: auto;
-  }
-  /* Search is the last control in the bar: its shortcut hint aligns to the
-     button's right edge so it stays inside a phone's viewport. */
-  .fk-docs .mono-header-actions button[aria-label="Search"] > span[aria-hidden="true"] {
-    left: auto;
-    right: 0;
-    transform: translateY(-2px);
-  }
+/* On a highlighted line, the oxide wash (#f3e9e3) drops GitHub Light's purple
+   and red below 4.5:1 (4.22 and 4.48). A lighter wash keeps every token above
+   it; this goes once monografie-ardo.css lightens the highlight itself. */
+.fk-docs :is(.ardo-code-block, .ardo-shiki) .line.highlighted {
+  background: #f8f2ee;
 }
 
 /* Room between a specimen and the reading text that follows it. */
