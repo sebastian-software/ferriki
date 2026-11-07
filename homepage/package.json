@@ -5,16 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/write-site-data.mjs && ardo dev",
-    "verify": "pnpm sample:check && pnpm prism-sample:check && pnpm class-sample:check && pnpm macro-sample:check && pnpm footprint:check && pnpm guide-samples:check && pnpm lint && pnpm typecheck && pnpm format:check && pnpm build && pnpm browser:check",
+    "verify": "pnpm homepage-samples:check && pnpm prism-sample:check && pnpm class-sample:check && pnpm footprint:check && pnpm guide-samples:check && pnpm lint && pnpm typecheck && pnpm format:check && pnpm build && pnpm browser:check",
     "build": "node ../scripts/publish-blacksmith-evidence.mjs --check && node ../scripts/publish-memory-evidence.mjs --check && node ../scripts/publish-regex-mode-evidence.mjs --check && node ../scripts/publish-decoded-cache-evidence.mjs --check && node scripts/write-site-data.mjs && ardo build && node scripts/verify-build.mjs",
     "class-sample:write": "node scripts/render-class-sample.mjs",
     "class-sample:check": "node scripts/render-class-sample.mjs --check",
     "footprint:write": "node scripts/write-footprint.mjs",
     "footprint:check": "node scripts/write-footprint.mjs --check",
-    "macro-sample:write": "node scripts/render-macro-sample.mjs",
-    "macro-sample:check": "node scripts/render-macro-sample.mjs --check",
-    "sample:write": "node scripts/render-sample.mjs",
-    "sample:check": "node scripts/render-sample.mjs --check",
+    "homepage-samples:write": "node scripts/render-homepage-samples.mjs",
+    "homepage-samples:check": "node scripts/render-homepage-samples.mjs --check",
     "guide-samples:check": "node scripts/check-guide-examples.mjs",
     "browser:check": "node scripts/check-browser.mjs",
     "lint": "pnpm lint:oxlint && pnpm lint:eslint",
@@ -29,7 +27,7 @@
   },
   "dependencies": {
     "ardo": "^6.0.0",
-    "ferramenta-family": "github:sebastian-software/ferramenta#0e22e8aa755fce55287a1a26a66f5e8de5b91f29&path:/packages/family"
+    "ferramenta-family": "github:sebastian-software/ferramenta#3f98d378b0ce66275b1131225d4ee51816be85a3&path:/packages/family"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

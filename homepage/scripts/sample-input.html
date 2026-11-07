@@ -2,15 +2,15 @@
 <html lang="en">
   <head>
     <style>
-      .card {
+      button {
         color: rebeccapurple;
       }
     </style>
   </head>
   <body>
-    <button class="card" data-name="Ferriki">Say hello</button>
+    <button data-name="Ferriki">Say hello</button>
     <script type="module">
-      const button = document.querySelector(".card");
+      const button = document.querySelector("button");
       button.addEventListener("click", () => {
         const name = button.dataset.name ?? "you";
         alert(`Hello, ${name}!`);
