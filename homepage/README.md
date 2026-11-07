@@ -13,20 +13,35 @@ pnpm --dir homepage exec playwright install chromium
 pnpm --dir homepage verify
 ```
 
-The homepage uses Ardo 6 and the shared `ferramenta-family/ferra` entry for
-landing pages, documentation, navigation, code panels, and evidence tables.
-It has no site stylesheet. Changes to shared presentation belong in Ferramenta,
-with a kit specimen, before updating the pinned package commit here.
+The homepage uses Ardo 6 and the shared `ferramenta-family/monografie` page
+system (Ferramenta ADR-0012): every page wears its header and footer, the
+homepage reads on its paper, and the documentation keeps the
+`ferramenta-family/ferra` reading layout, navigation, code panels, and evidence
+tables. The one site stylesheet, `app/components/homepage-specimens.css`, holds
+the homepage's own specimens; `scripts/verify-build.mjs` fails on a selector
+there without an `fk-` class. Changes to shared presentation belong in
+Ferramenta, with a kit specimen, before updating the pinned package commit here.
 
 Ardo's build-time highlighting uses the default immutable asset service. No
 legacy `FERRIKI_ASSETS_BASE_URL` override is needed. `scripts/write-site-data.mjs`
-mirrors the release version, verified evidence reports, and lifecycle illustration
-into the documentation package before development, type checking, and builds.
-Their original repository files remain the source of truth.
+mirrors the release version, the minimum Rust and Node.js versions, the theme
+count, verified evidence reports, and lifecycle illustration into the
+documentation package before development, type checking, and builds. Their
+original repository files remain the source of truth.
 
-`verify` checks that the committed homepage samples, including the
-`@ferriki/vite` macro sample, still match the current build, checks the shape
-of the committed footprint record, executes the marked guide examples against
+Every specimen on the homepage is real output of the published npm packages.
+`pnpm homepage-samples:write` installs `@ferriki/core` and `@ferriki/vite` at
+the versions in `node/ferriki/package.json` and `node/vite/package.json` into a
+temporary directory, renders the specimens, and writes
+`app/data/homepage-samples.json` with those versions in `renderedWith`; the
+page credits them. Run it again after a release. `pnpm homepage-samples:check`
+renders again with the recorded versions and fails when the file drifted. The
+figures beside the specimens come from the verified reports in
+`app/data/evidence/`, through `app/components/homepage-data.ts`, which fails the
+build when a report no longer supports what the copy says.
+
+`verify` checks that the committed homepage samples still match the published
+packages, checks the shape of the committed footprint record, executes the marked guide examples against
 packed Ferriki packages using the seeded cache, checks links and fragments in
 the built site, and runs responsive layout, axe accessibility, and keyboard
 navigation checks in Chromium at eight widths from 320 to 1440 pixels. The homepage CI workflow also runs the packed

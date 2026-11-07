@@ -1,9 +1,11 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- Paths are fixed relative to this script. */
 /* cspell:words syntect */
 // Checks the prerendered site after `ardo build`: every documentation
-// page exists, the landing page carries the published version, the HTML
-// measurements and the macro sample, the footprint page carries its committed
-// record, and the strict Node / optional Phiki cohorts match the report.
+// page exists and wears the Monografie header and footer, the homepage carries
+// the published version, the chart and first-use figures recomputed from the
+// verified reports and the credits of its rendered specimens, the footprint
+// page carries its committed record, and the strict Node / optional Phiki
+// cohorts match the report.
 import { access, readdir, readFile } from "node:fs/promises";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,15 +15,43 @@ import { validateReport } from "../../node/scripts/run-blacksmith-comparison.mjs
 import { expectedPages } from "./site-pages.mjs";
 import { verifyArdoAcceptanceHtml } from "./verify-ardo-acceptance.mjs";
 
-async function assertNoSiteStyles(directory) {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const path = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, directory);
-    if (entry.isDirectory()) await assertNoSiteStyles(path);
-    else if (entry.name.endsWith(".css"))
-      throw new Error(`Use the shared theme instead of ${path.pathname}`);
+/** A selector list split at its top-level commas, so `:is(a, b)` stays whole. */
+function selectorList(prelude) {
+  const selectors = [""];
+  let depth = 0;
+  for (const char of prelude) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) selectors.push("");
+    else selectors[selectors.length - 1] += char;
+  }
+  return selectors.map((selector) => selector.trim());
+}
+
+// Shared presentation lives in ferramenta-family. The one exception is the
+// homepage's own specimens: every rule there names an `fk-` class, so nothing
+// reusable or global can grow in homepage/app.
+const specimenStyles = join("components", "homepage-specimens.css");
+const appFiles = await readdir(new URL("../app/", import.meta.url), { recursive: true });
+for (const file of appFiles.filter((name) => name.endsWith(".css"))) {
+  if (file !== specimenStyles) {
+    throw new Error(`Use the shared theme instead of homepage/app/${file}`);
+  }
+  const css = await readFile(new URL(`../app/${file}`, import.meta.url), "utf8");
+  const unscoped = css
+    .replaceAll(/\/\*[\s\S]*?\*\//g, "")
+    .split("{")
+    .slice(0, -1)
+    .map((chunk) =>
+      chunk.slice(Math.max(chunk.lastIndexOf("}"), chunk.lastIndexOf(";")) + 1).trim(),
+    )
+    .filter((prelude) => !prelude.startsWith("@"))
+    .flatMap((prelude) => selectorList(prelude))
+    .filter((selector) => !/\.fk-/.test(selector));
+  if (unscoped.length > 0) {
+    throw new Error(`${file}: scope ${JSON.stringify(unscoped)} to an fk- class`);
   }
 }
-await assertNoSiteStyles(new URL("../app/", import.meta.url));
 
 const outputDirectory = new URL("../build/client/", import.meta.url);
 await Promise.all(expectedPages.map((page) => access(new URL(page, outputDirectory))));
@@ -46,6 +76,7 @@ const preparedReport = await readJson(
 const grammarSources = await readJson(
   new URL("../../assets/grammars/sources.json", import.meta.url),
 );
+const samples = await readJson(new URL("../app/data/homepage-samples.json", import.meta.url));
 
 const totals = report.warmTotalMs;
 const factor = (api, other) => totals[api][other] / totals[api].ferriki;
@@ -156,12 +187,30 @@ const required = [
   [homepage, `v${version}`],
   [homepage, preparedReport.runUrl],
   [homepage, preparedReport.measured],
-  [homepage, "Beautiful code. Head start included."],
+  [homepage, "Your editor’s colors, on your page."],
+  [homepage, 'class="mono fk-site"'],
+  [homepage, 'data-product="ferriki"'],
   [homepage, "@ferriki/core/react/macro"],
+  [homepage, `Real output of @ferriki/core ${samples.renderedWith["@ferriki/core"]}`],
+  [homepage, `Real output of @ferriki/vite ${samples.renderedWith["@ferriki/vite"]}`],
+  [homepage, `${report.agreement.ferriki.documents} / ${report.agreement.ferriki.of}`],
   [homepage, 'href="/guide/build-time-macros"'],
   [homepage, 'href="/guide/ferriki-and-syntect"'],
-  [homepage, 'class="ferra-header ferra-wrap"'],
-  [homepage, 'class="ferra-footer ferra-wrap"'],
+  [homepage, 'href="/evidence/benchmarks/#four-regex-policies"'],
+  // The published anchors other pages and sites link to.
+  ...[
+    "sample",
+    "evidence",
+    "prepared-regex",
+    "build-time",
+    "themes",
+    "code",
+    "compatibility",
+    "coverage",
+    "pipeline",
+    "start",
+    "work",
+  ].map((id) => [homepage, `id="${id}"`]),
   [syntectGuide, "Ferriki and syntect"],
   [syntectGuide, "as_24_bit_terminal_escaped"],
   [rustGuide, 'href="/guide/ferriki-and-syntect"'],
@@ -192,13 +241,19 @@ for (const profile of blacksmith.profiles) {
     required.push([benchmarks, observedFactor]);
   }
 }
-const preparedFactors = preparedReport.profiles.map(
-  (profile) => profile.warm["shiki-wasm"] / profile.warm["ferriki-precompiled"],
-);
-required.push([
-  homepage,
-  `${Math.min(...preparedFactors).toFixed(1)}–${Math.max(...preparedFactors).toFixed(1)}×`,
-]);
+// The homepage chart: each featured alternative's summed medians over Ferriki's
+// prepared packages, over the language files both can highlight, recomputed here.
+for (const profile of preparedReport.profiles) {
+  for (const engine of ["shiki-wasm", "shiki-js", "prism"]) {
+    const shared = profile.workloads.filter((entry) => entry.timings[engine] !== undefined);
+    const sum = (id) => shared.reduce((total, entry) => total + entry.timings[id], 0);
+    required.push([homepage, `${(sum(engine) / sum("ferriki-precompiled")).toFixed(2)}×`]);
+  }
+  for (const engine of ["ferriki-precompiled", "ferriki", "shiki-wasm"]) {
+    const value = profile.cold[engine];
+    required.push([homepage, `${value < 10 ? value.toFixed(2) : value.toFixed(1)} ms`]);
+  }
+}
 for (const profile of preparedReport.profiles) {
   const scenario = profile.memory.scenarios.find((entry) => entry.id === "repository");
   const reduction = Math.round(
@@ -208,8 +263,8 @@ for (const profile of preparedReport.profiles) {
           scenario.engines["shiki-wasm"].finalRss.median),
   );
   required.push(
-    [homepage, `about ${reduction}% less whole-process RSS`],
-    [homepage, `${scenario.documents * scenario.passes} documents`],
+    [homepage, `${reduction}% less memory`],
+    [homepage, `${scenario.documents * scenario.passes} renders`],
   );
   required.push([benchmarks, profile.label], [benchmarks, profile.corpusMachines.comparison.cpu]);
   for (const engine of ["ferriki-off", "ferriki-eager", "ferriki-precompiled"]) {
@@ -251,6 +306,24 @@ if (missing.length > 0) {
 }
 
 const pageFiles = await Promise.all(expectedPages.map(async (page) => [page, await read(page)]));
+// Every page wears the Monografie header and footer, never Ardo's or the Ferra ones.
+// Documentation pages keep their section navigation and the menu that carries
+// it on narrow screens.
+for (const [page, html] of pageFiles) {
+  const fragments = ['class="mono-header"', 'class="mono-footer"', 'rel="icon"'];
+  if (page !== "index.html") {
+    fragments.push('class="ferra-guide-navigation"', 'aria-label="Toggle menu"', "fk-docs");
+  }
+  const absent = fragments.filter((fragment) => !html.includes(fragment));
+  const stray = ['class="ardo-header', 'class="ardo-footer', "ferra-header", "ferra-footer"].filter(
+    (fragment) => html.includes(fragment),
+  );
+  if (absent.length > 0 || stray.length > 0) {
+    throw new Error(
+      `${page}: missing ${JSON.stringify(absent)}, unexpected ${JSON.stringify(stray)}`,
+    );
+  }
+}
 const linkCount = await verifyRenderedPages(pageFiles);
 verifyFocusableMarkdownCodeBlocks(await read("guide/getting-started/index.html"));
 verifyFocusableMarkdownTables(await read("guide/api/index.html"));

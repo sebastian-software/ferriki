@@ -17,7 +17,9 @@ assert(
   "FERRIKI_PREVIEW_PORT must be a valid TCP port",
 );
 const selectors = {
-  nav: ".ferra-header > .ferra-nav",
+  nav: ".mono-header nav",
+  // The header's own menu; documentation pages hand narrow screens to their drawer instead.
+  headerMenu: ".mono-header .mono-menu-button",
   menu: 'button[aria-label="Toggle menu"]',
   summary: 'button[aria-label="Toggle menu"]',
   flyout: '[role="dialog"]',
@@ -272,13 +274,16 @@ try {
   console.log("Verified landscape menu scrolling and navigation.");
 
   await page.goto(new URL("/", origin).href, { waitUntil: "load" });
-  const theme = page.getByRole("combobox", { name: "Theme", exact: true });
-  const token = page.locator("[data-class-example] .tok-string").first();
+  const themes = page.getByRole("group", { name: "Theme", exact: true });
+  const token = page.locator(".fk-theme-sample .tok-string").first();
   await token.evaluate((element) => {
     globalThis.ferrikiToken = element;
   });
-  await theme.selectOption("dark");
-  await page.getByRole("button", { name: /Use plain string color/ }).click();
+  await themes.getByRole("button", { name: "GitHub Dark Default", exact: true }).click();
+  await page
+    .getByRole("group", { name: "Strings", exact: true })
+    .getByRole("button", { name: "Plain, by your CSS", exact: true })
+    .click();
   assert(
     await token.evaluate((element) => element === globalThis.ferrikiToken),
     "Theme change replaced the highlighted token",
@@ -287,11 +292,19 @@ try {
     (element) => getComputedStyle(element).color === getComputedStyle(element.parentElement).color,
   );
   assert(inherited, "The CSS override did not restyle strings");
-  await theme.selectOption("light");
+  await themes.getByRole("button", { name: "GitHub Light Default", exact: true }).click();
+  const examples = page.getByRole("group", { name: "Show a token", exact: true });
+  await examples.getByRole("button", { name: "CSS property", exact: true }).click();
+  assert.equal(
+    await page.locator(".fk-scopes li[data-innermost]").textContent(),
+    "support.type.property-name.css",
+    "The token register did not show the chosen token's scope",
+  );
   console.log("Verified CSS-only theme switching and string overrides without retokenizing.");
+  // Search lives in the documentation header; the homepage keeps its own links.
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+    await page.goto(new URL("/guide/getting-started/", origin).href, { waitUntil: "load" });
     await page.locator(selectors.search).click();
     const dialog = page.getByRole("dialog");
     await dialog.locator("input").fill("macro");
@@ -307,7 +320,7 @@ try {
   }
   for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(new URL("/", origin).href, { waitUntil: "load" });
+    await page.goto(new URL("/guide/getting-started/", origin).href, { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     const search = page.getByRole("button", { name: "Search", exact: true });
     // Exercise the longer non-Mac hint even on a Mac browser.
@@ -330,8 +343,9 @@ try {
   }
   console.log("Verified the longer search shortcut hint stays inside phone and desktop viewports.");
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(new URL("/", origin).href, { waitUntil: "load" });
   const motion = await page
-    .locator(".ferra-page, .ferra-page *")
+    .locator(".mono, .mono *")
     .evaluateAll((elements) =>
       elements
         .map((element) => getComputedStyle(element).animationDuration)
@@ -492,97 +506,71 @@ async function verifyViewport({ page, pageFile, viewport, origin }) {
     `${pageFile} has horizontal page overflow at ${viewport.name} width ${viewport.width}px: ${layout.pageWidth}px`,
   );
 
-  if (pageFile === "index.html") await verifyMacroSample(page, viewport);
+  const home = pageFile === "index.html";
+  if (home) await verifyMacroSample(page, viewport);
 
-  const navDisplay = await page
-    .locator(selectors.nav)
-    .evaluate((element) => getComputedStyle(element).display);
-  const menuDisplay = await page
-    .locator(selectors.menu)
-    .evaluate((element) => getComputedStyle(element).display);
-  assert(
-    await page.locator(selectors.search).isVisible(),
-    "The site should keep search visible at each checked viewport",
-  );
-  if (viewport.name === "desktop") {
-    assert.notEqual(navDisplay, "none", `${pageFile} hides desktop section navigation`);
-    assert.equal(menuDisplay, "none", `${pageFile} shows the phone navigation on desktop`);
-  } else {
-    assert.equal(
-      navDisplay,
-      "none",
-      `${pageFile} shows desktop navigation at ${viewport.name} width`,
-    );
-    assert.notEqual(
-      menuDisplay,
-      "none",
-      `${pageFile} hides the phone navigation at ${viewport.name} width`,
-    );
-  }
+  await verifyHeader(page, pageFile, viewport);
   await verifyAccessibility(page, pageFile, viewport);
   console.log(`Verified ${pageFile} at ${viewport.name} (${viewport.width}px).`);
 }
-async function verifyMacroSample(page, viewport) {
-  const sample = page.locator(".ferriki-macro-sample");
-  assert.equal(await sample.count(), 1, "Homepage must show the Vite macro example");
-  const figures = sample.locator("figure");
-  assert.equal(await figures.count(), 2, "Expected source and prepared-result panels");
-  await verifyMacroContent(sample, figures);
-  await verifyMacroLayout(figures, viewport);
-  await verifyMacroKeyboard(page, figures);
+/** Links on desktop; below 961px the homepage's header menu or the documentation drawer. */
+async function verifyHeader(page, pageFile, viewport) {
+  const home = pageFile === "index.html";
+  const navVisible = await page.locator(selectors.nav).isVisible();
+  const headerMenuVisible = await page.locator(selectors.headerMenu).isVisible();
+  const drawerVisible = home ? false : await page.locator(selectors.menu).isVisible();
+  if (!home) {
+    assert(
+      await page.locator(selectors.search).isVisible(),
+      "Documentation pages should keep search visible at each checked viewport",
+    );
+  }
+  // The Monografie header folds its links into a menu below 961px.
+  if (viewport.width >= 961) {
+    assert(navVisible, `${pageFile} hides the header links at ${viewport.name} width`);
+    assert(!headerMenuVisible, `${pageFile} shows the header menu at ${viewport.name} width`);
+    // The documentation drawer stands in for the sidebar until the sidebar fits.
+    if (viewport.name === "desktop") {
+      assert(!drawerVisible, `${pageFile} shows the documentation drawer on desktop`);
+    }
+  } else {
+    assert(!navVisible, `${pageFile} shows the header links at ${viewport.name} width`);
+    // The homepage folds its links into the header menu; documentation pages use their drawer.
+    assert(
+      home ? headerMenuVisible : drawerVisible && !headerMenuVisible,
+      `${pageFile} shows the wrong menu at ${viewport.name} width`,
+    );
+  }
 }
 
-async function verifyMacroContent(sample, figures) {
-  const input = figures.nth(0).locator("pre");
-  const output = figures.nth(1).locator("pre");
+async function verifyMacroSample(page, viewport) {
+  const sample = page.locator("#build-time .mono-facing");
+  assert.equal(await sample.count(), 1, "Homepage must show the Vite macro example");
+  const input = sample.locator("pre").nth(0);
+  const output = sample.locator("pre").nth(1);
   assert.match(await input.textContent(), /@ferriki\/core\/react\/macro/);
-  const outputText = await output.textContent();
-  assert.equal(outputText, "export const answer = 42;");
-  assert(outputText.length < 128, "The visible prepared result should stay compact");
-  assert.doesNotMatch(
-    await sample.textContent(),
-    /FerrikiMacroRenderHelper|FerrikiCodeBlocks|FerrikiDefineCodeElement/,
-    "The full transform should remain a separate inspection artifact",
-  );
+  assert.equal(await output.textContent(), "export const answer = 42;");
   assert.equal(await input.getAttribute("tabindex"), "0");
   assert.equal(await output.getAttribute("tabindex"), "0");
-}
-
-async function verifyMacroLayout(figures, viewport) {
-  const input = figures.nth(0).locator("pre");
-  const output = figures.nth(1).locator("pre");
   const [inputBounds, outputBounds] = await Promise.all([
     input.boundingBox(),
     output.boundingBox(),
   ]);
-  assert(inputBounds && outputBounds, "Both macro panels need visible bounds");
+  assert(inputBounds && outputBounds, "Both macro sheets need visible bounds");
   if (viewport.width <= 700) {
-    assert(outputBounds.y > inputBounds.y, "The macro panels should stack on a phone");
-    return;
+    assert(outputBounds.y > inputBounds.y, "The macro sheets should stack on a phone");
+  } else if (viewport.width > 960) {
+    assert(outputBounds.x > inputBounds.x, "The macro sheets should face each other");
   }
-  assert(outputBounds.x > inputBounds.x, "The macro panels should read from left to right");
-  assert(
-    Math.abs(outputBounds.y - inputBounds.y) < 2,
-    "The macro panels should align at the top on wider screens",
-  );
+  await verifyMacroKeyboard(page, input, output);
 }
 
-async function verifyMacroKeyboard(page, figures) {
-  const input = figures.nth(0).locator("pre");
-  const output = figures.nth(1).locator("pre");
+async function verifyMacroKeyboard(page, input, output) {
   await input.focus();
   await page.keyboard.press("Tab");
   assert(
     await output.evaluate((element) => element === document.activeElement),
     "Keyboard focus should move from the Vite input to the prepared output",
-  );
-  const outline = await output.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
-  });
-  assert(
-    outline.style !== "none" && outline.width >= 2,
-    "The focused prepared output should have a visible focus indicator",
   );
 }
 

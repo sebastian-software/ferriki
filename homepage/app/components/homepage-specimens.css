@@ -1,0 +1,298 @@
+/*
+ * Ferriki's own specimens on the Monografie homepage (and one fit of the
+ * header on the documentation pages, under `fk-docs`): the token register,
+ * highlighted code on the sheets and cards, the diagnostics lists and the
+ * application card. Everything is scoped to `fk-` classes and takes the
+ * package's `--mono-*` tokens; the page system itself lives in
+ * ferramenta-family. scripts/verify-build.mjs fails on a selector without an
+ * `fk-` class.
+ */
+
+/* ---------- Ardo shell: the homepage's main stands on the page's paper ---------- */
+.fk-shell {
+  min-height: 0;
+  background: transparent;
+}
+.fk-shell > div {
+  padding-block-start: 0;
+}
+.fk-shell #main-content {
+  min-width: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+}
+.fk-site {
+  min-height: 100vh;
+}
+/* Anchors clear the sticky Monografie header. */
+html:has(.fk-site, .fk-docs) {
+  scroll-padding-top: 76px;
+}
+
+/* ---------- Documentation under the sticky header ---------- */
+/* The reading layout's sticky panels clear the 60px Monografie header. */
+.fk-docs :is(.ferra-reading-navigation, .ferra-reading-outline) {
+  top: 84px;
+  max-height: calc(100svh - 108px);
+}
+
+/* One menu on narrow screens. */
+/* The documentation drawer carries the navigation below 961px; a second menu
+   icon beside it would only confuse. The name leads home. */
+@media (max-width: 960px) {
+  .fk-docs .mono-menu-button {
+    display: none;
+  }
+  .fk-docs .mono-header-actions {
+    margin-left: auto;
+  }
+  /* Search is the last control in the bar: its shortcut hint aligns to the
+     button's right edge so it stays inside a phone's viewport. */
+  .fk-docs .mono-header-actions button[aria-label="Search"] > span[aria-hidden="true"] {
+    left: auto;
+    right: 0;
+    transform: translateY(-2px);
+  }
+}
+
+/* Room between a specimen and the reading text that follows it. */
+.fk-gap {
+  margin-bottom: 44px;
+}
+
+/* ---------- The token register ---------- */
+.fk-register {
+  margin-top: 56px;
+}
+/* The example choices wrap on a phone instead of widening the page. */
+:is(.fk-register, .fk-themes) .mono-seg {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.fk-register > .mono-facing {
+  margin-top: 20px;
+}
+.fk-tokens {
+  margin: 0;
+  padding: 14px 16px;
+  box-shadow: 0 0 0 1px var(--mono-hair-2);
+  font: 400 12.5px/1.75 var(--mono-mono);
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.fk-tokens:focus-visible {
+  outline: 2px solid var(--mono-ink);
+  outline-offset: 4px;
+}
+.fk-tokens .fk-line {
+  display: block;
+  min-height: 1.75em;
+}
+.fk-tokens .fk-token {
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+.fk-tokens .fk-token:hover,
+.fk-tokens .fk-token[data-active] {
+  background: rgba(38, 35, 31, 0.08);
+  box-shadow: 0 0 0 1px var(--mono-steel-2);
+}
+.fk-readout {
+  font: 400 14px/1.55 var(--mono-sans);
+  color: var(--mono-ink-2);
+}
+.fk-readout .fk-readout-token {
+  margin: 0 0 14px;
+  font: 500 22px/1.3 var(--mono-mono);
+}
+.fk-readout .fk-readout-token code {
+  font: inherit;
+  background: none;
+  padding: 0;
+}
+.fk-readout .fk-scopes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 13px/1.5 var(--mono-mono);
+  overflow-wrap: anywhere;
+}
+.fk-readout .fk-scopes li {
+  position: relative;
+  padding: 3px 0 3px 14px;
+  border-left: 1px solid var(--mono-hair);
+}
+.fk-readout .fk-scopes li[data-innermost] {
+  color: var(--mono-ink);
+  font-weight: 600;
+  border-left-color: var(--mono-ink);
+}
+.fk-readout .fk-readout-color {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 0;
+}
+.fk-readout .fk-readout-color code {
+  font: 400 13px/1.4 var(--mono-mono);
+}
+.fk-readout .fk-swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  box-shadow: 0 0 0 1px var(--mono-hair);
+}
+
+/* ---------- Highlighted code on sheets and cards ---------- */
+.fk-highlighted pre {
+  margin: 0;
+  font: 400 13px/1.7 var(--mono-mono);
+  background: transparent !important;
+  white-space: pre;
+  overflow-x: auto;
+}
+.fk-highlighted pre:focus-visible {
+  outline: 2px solid var(--mono-ink);
+  outline-offset: 4px;
+}
+/* Output that brings its own ground keeps it, with room around the code. */
+.fk-highlighted.fk-grounded {
+  padding: 14px 16px;
+  box-shadow: 0 0 0 1px var(--mono-hair-2);
+}
+.fk-theme-sample .fk-highlighted pre {
+  padding: 16px 18px;
+}
+.fk-theme-sample .fk-highlighted pre {
+  background: var(--ferriki-background) !important;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+.fk-code .fk-highlighted pre {
+  font-size: 12.5px;
+}
+.fk-sub-head {
+  font: 600 13px/1.3 var(--mono-sans);
+  color: var(--mono-ink-2);
+  margin: 18px 0 8px;
+}
+
+/* ---------- Theme switch ---------- */
+.fk-themes {
+  margin-top: 48px;
+}
+.fk-themes .fk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-bottom: 18px;
+}
+.fk-themes .fk-theme-sample {
+  margin-bottom: 14px;
+  box-shadow:
+    0 0 0 1px var(--mono-hair-2),
+    0 14px 28px -24px rgba(38, 35, 31, 0.55);
+}
+
+/* ---------- Diagnostics and first use ---------- */
+.fk-out-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 13px/1.5 var(--mono-mono);
+}
+.fk-out-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--mono-hair-2);
+}
+.fk-out-list li span:first-child {
+  font-family: var(--mono-sans);
+  color: var(--mono-ink-2);
+}
+.fk-out-list li span:last-child {
+  color: var(--mono-ink);
+  font-variant-numeric: tabular-nums;
+}
+.mono-table.fk-first-use {
+  margin-top: 48px;
+}
+.mono-table.fk-first-use caption {
+  caption-side: bottom;
+  text-align: left;
+  padding-top: 10px;
+  font: 400 13px/1.5 var(--mono-sans);
+  color: var(--mono-ink-3);
+}
+.mono-table.fk-first-use tbody th {
+  font-weight: 400;
+  border-bottom-color: var(--mono-hair-2);
+}
+
+/* ---------- Good company ---------- */
+.mono-card .fk-card-text {
+  margin: 0;
+  font: 400 15px/1.55 var(--mono-sans);
+  color: var(--mono-ink-2);
+}
+.fk-apps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  margin: 28px 0 0;
+}
+.fk-app {
+  background: #fff;
+  padding: 22px 24px;
+  box-shadow:
+    0 0 0 1px var(--mono-hair-2),
+    0 14px 28px -24px rgba(38, 35, 31, 0.5);
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.fk-app img {
+  width: 52px;
+  height: 52px;
+}
+.fk-app h3 {
+  font: 600 18px/1.2 var(--mono-sans);
+  margin: 2px 0 4px;
+  color: var(--mono-ink);
+}
+.fk-app p {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.fk-app .fk-runs {
+  font: 400 12.5px/1.4 var(--mono-mono);
+  color: var(--mono-ink-3);
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 640px) {
+  .fk-readout .fk-readout-token {
+    font-size: 19px;
+  }
+  .fk-app {
+    grid-template-columns: 40px 1fr;
+    padding: 18px;
+  }
+  .fk-app img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fk-site *,
+  .fk-site *::before,
+  .fk-site *::after {
+    transition: none !important;
+  }
+}

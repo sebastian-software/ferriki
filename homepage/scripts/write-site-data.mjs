@@ -2,12 +2,24 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { format } from "oxfmt";
 
-const { version } = JSON.parse(
+const manifest = JSON.parse(
   await readFile(new URL("../../node/ferriki/package.json", import.meta.url), "utf8"),
 );
+// The minimum toolchains: Cargo.toml's workspace rust-version and the npm engines field.
+const cargo = await readFile(new URL("../../Cargo.toml", import.meta.url), "utf8");
+const rustVersion = /^rust-version\s*=\s*"([^"]+)"/m.exec(cargo)?.[1];
+const nodeVersion = /^>=\s*(\S+)$/.exec(manifest.engines?.node ?? "")?.[1];
+if (rustVersion === undefined || nodeVersion === undefined) {
+  throw new Error("Cargo.toml and the npm manifest must state a minimum Rust and Node.js version");
+}
+// The standard theme catalog the release ships.
+const catalog = JSON.parse(
+  await readFile(new URL("../../assets/catalog.json", import.meta.url), "utf8"),
+);
+const themeCount = catalog.theme_sources.length;
 await writeFile(
   new URL("../app/data/site.json", import.meta.url),
-  `${JSON.stringify({ version }, null, 2)}\n`,
+  `${JSON.stringify({ version: manifest.version, rustVersion, nodeVersion, themeCount }, null, 2)}\n`,
 );
 
 // Keep browser modules inside the documentation package. These snapshots are
