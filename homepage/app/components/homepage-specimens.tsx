@@ -145,9 +145,9 @@ export function MacroSheets() {
         </MonoSheet>
       </MonoFacing>
       <figcaption className="mono-caption">
-        Real output of @ferriki/vite {samples.renderedWith["@ferriki/vite"]} with its default
-        options. The component on the left becomes the finished block on the right while Vite
-        builds; the browser receives no highlighter.
+        Real output of @ferriki/vite {samples.renderedWith["@ferriki/vite"]} with the
+        github-light-default theme. The component on the left becomes the finished block on the
+        right while Vite builds; the browser receives no highlighter.
       </figcaption>
     </figure>
   );

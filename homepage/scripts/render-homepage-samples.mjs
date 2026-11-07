@@ -176,8 +176,8 @@ export function Answer() {
   );
 }
 `;
-  // The adapter's default options: one theme, inline styles.
-  const plugin = ferriki();
+  // One light theme, inline styles: the page's own ground, not a dark field.
+  const plugin = ferriki({ theme: light });
   const warnings = [];
   const context = {
     warn(message) {
