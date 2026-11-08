@@ -2,7 +2,6 @@
 import { ArdoLink as Link } from "ardo/runtime";
 import {
   MonoCredit,
-  MonoLeadIn,
   MonoPassage,
   MonoProofs,
   MonoSection,
@@ -33,9 +32,9 @@ export function Themes() {
         }}
       >
         <p>
-          <MonoLeadIn>Inline colors are</MonoLeadIn> the simplest output: every token carries its
-          color in a style attribute. That works until a site needs a dark mode, a second theme or
-          one color of its own. Then every code block has to be highlighted again for each look.
+          Inline colors are the simplest output: every token carries its color in a style attribute.
+          That works until a site needs a dark mode, a second theme or one color of its own. Then
+          every code block has to be highlighted again for each look.
         </p>
       </MonoPassage>
       <p>
@@ -59,10 +58,10 @@ export function Code() {
       standfirst="Start with Shiki-style calls in Node.js, or use the engine directly from Rust."
     >
       <p>
-        <MonoLeadIn>Coming from Shiki,</MonoLeadIn> the calls will look familiar:{" "}
-        <code>createHighlighter</code>, <code>codeToHtml</code>, the themes map, transformers and
-        decorations. Ferriki covers that HTML API with its own native engine. It runs in Node.js and
-        in Rust, not in the browser; by the time a page loads, its work is done.
+        Coming from Shiki, the calls will look familiar: <code>createHighlighter</code>,{" "}
+        <code>codeToHtml</code>, the themes map, transformers and decorations. Ferriki covers that
+        HTML API with its own native engine. It runs in Node.js and in Rust, not in the browser; by
+        the time a page loads, its work is done.
       </p>
       <MonoPassage
         note={{
@@ -98,11 +97,11 @@ export function Compatibility() {
       standfirst={`On our ${agreement.of} repository files, Ferriki’s HTML matched Shiki’s byte for byte.`}
     >
       <p>
-        <MonoLeadIn>Compatibility is checked,</MonoLeadIn> not claimed. Shiki&rsquo;s own test suite
-        runs unchanged against Ferriki&rsquo;s engine from a pinned copy in the repository. The
-        tokenizer is a mechanical port of vscode-textmate, the library inside VS Code, and is
-        checked against its test cases. Tests outside Ferriki&rsquo;s scope are listed with their
-        reasons instead of being skipped quietly.
+        Compatibility is checked, not claimed. Shiki&rsquo;s own test suite runs unchanged against
+        Ferriki&rsquo;s engine from a pinned copy in the repository. The tokenizer is a mechanical
+        port of vscode-textmate, the library inside VS Code, and is checked against its test cases.
+        Tests outside Ferriki&rsquo;s scope are listed with their reasons instead of being skipped
+        quietly.
       </p>
       <MonoProofs
         items={[
@@ -129,11 +128,11 @@ export function Coverage() {
       standfirst={`${grammarCount} grammars and ${themeCount} themes ship as standard packages, from TypeScript and Rust to Vue, Svelte and Astro.`}
     >
       <p>
-        <MonoLeadIn>Component formats</MonoLeadIn> are where highlighters tend to struggle. A Vue or
-        Svelte file holds markup, styles and script; an Astro file adds expressions inside the
-        markup. TextMate grammars describe those languages inside one another, and Ferriki follows
-        them. Grammars that only serve as building blocks, such as the expressions inside an Angular
-        template, load with the language that needs them.
+        Component formats are where highlighters tend to struggle. A Vue or Svelte file holds
+        markup, styles and script; an Astro file adds expressions inside the markup. TextMate
+        grammars describe those languages inside one another, and Ferriki follows them. Grammars
+        that only serve as building blocks, such as the expressions inside an Angular template, load
+        with the language that needs them.
       </p>
       <MonoTerms
         className="mono-wide fk-gap"

@@ -1,11 +1,5 @@
 import { ArdoLink as Link } from "ardo/runtime";
-import {
-  MonoCredit,
-  MonoLeadIn,
-  MonoPassage,
-  MonoSection,
-  MonoTerms,
-} from "ferramenta-family/monografie";
+import { MonoCredit, MonoPassage, MonoSection, MonoTerms } from "ferramenta-family/monografie";
 
 import { corpus, memorySaved, memoryWorkload } from "./homepage-data";
 import { DiagnosticsCards, FirstUseTable, MacroSheets } from "./homepage-specimens";
@@ -26,11 +20,11 @@ export function Explainer() {
         }}
       >
         <p>
-          <MonoLeadIn>Every code example</MonoLeadIn> in documentation, a blog post or a product
-          page reaches its reader as plain characters. Color shows where a string ends, which word
-          is a keyword and which line is only a comment. Editors have done this for decades. A web
-          page has to do it too, for every language on the page, including the CSS and JavaScript
-          that live inside an HTML file.
+          Every code example in documentation, a blog post or a product page reaches its reader as
+          plain characters. Color shows where a string ends, which word is a keyword and which line
+          is only a comment. Editors have done this for decades. A web page has to do it too, for
+          every language on the page, including the CSS and JavaScript that live inside an HTML
+          file.
         </p>
       </MonoPassage>
       <MonoPassage
@@ -79,10 +73,9 @@ export function Speed() {
         }}
       >
         <p>
-          <MonoLeadIn>A documentation build</MonoLeadIn> highlights every code block on every page,
-          often thousands of them, and does it again after each change. A server that renders
-          articles on request highlights while a reader waits. Every millisecond saved is saved many
-          times over.
+          A documentation build highlights every code block on every page, often thousands of them,
+          and does it again after each change. A server that renders articles on request highlights
+          while a reader waits. Every millisecond saved is saved many times over.
         </p>
       </MonoPassage>
       <p>
@@ -179,11 +172,11 @@ export function Prepared() {
         }}
       >
         <p>
-          <MonoLeadIn>A grammar is mostly</MonoLeadIn> regular expressions, hundreds of them for a
-          language like TypeScript. Before the first line gets its colors, each pattern has to be
-          compiled, and the patterns that compete at each position are gathered into scanners. Most
-          highlighters repeat that work in every new process: on every build, in every serverless
-          function, in every test run.
+          A grammar is mostly regular expressions, hundreds of them for a language like TypeScript.
+          Before the first line gets its colors, each pattern has to be compiled, and the patterns
+          that compete at each position are gathered into scanners. Most highlighters repeat that
+          work in every new process: on every build, in every serverless function, in every test
+          run.
         </p>
       </MonoPassage>
       <p>
@@ -218,12 +211,11 @@ export function BuildTime() {
         }}
       >
         <p>
-          <MonoLeadIn>Highlighting in the browser</MonoLeadIn> means sending a highlighter, its
-          grammars and its themes to every visitor, then waiting while they load. For examples that
-          never change, that work can happen once, while the site is built. The{" "}
-          <code>@ferriki/vite</code> adapter finds the <code>code()</code> calls and{" "}
-          <code>&lt;Code /&gt;</code> elements in your components, highlights them during the build
-          and leaves finished markup in their place.
+          Highlighting in the browser means sending a highlighter, its grammars and its themes to
+          every visitor, then waiting while they load. For examples that never change, that work can
+          happen once, while the site is built. The <code>@ferriki/vite</code> adapter finds the{" "}
+          <code>code()</code> calls and <code>&lt;Code /&gt;</code> elements in your components,
+          highlights them during the build and leaves finished markup in their place.
         </p>
       </MonoPassage>
       <MacroSheets />
