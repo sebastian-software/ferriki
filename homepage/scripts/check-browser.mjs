@@ -253,7 +253,10 @@ try {
   await page.locator(selectors.menu).focus();
   await page.keyboard.press("Enter");
   const flyout = page.locator(selectors.flyout);
-  const compatibility = flyout.getByRole("link", { name: "Compatibility", exact: true });
+  // The page in Ardo's sidebar, not the header's link of the same name above it.
+  const compatibility = flyout
+    .locator(".ardo-sidebar")
+    .getByRole("link", { name: "Compatibility", exact: true });
   let reachedCompatibility = false;
   for (let attempt = 0; attempt < 30; attempt++) {
     await page.keyboard.press("Tab");
@@ -526,7 +529,9 @@ async function verifyHeader(page, pageFile, viewport) {
     );
   }
   // The Monografie header folds its links into a menu below 961px.
-  if (viewport.width >= 961) {
+  // Documentation pages fold the header's links into Ardo's menu where Ardo's
+  // sidebar folds away.
+  if (viewport.width >= (home ? 961 : 1025)) {
     assert(navVisible, `${pageFile} hides the header links at ${viewport.name} width`);
     assert(!headerMenuVisible, `${pageFile} shows the header menu at ${viewport.name} width`);
     // The documentation drawer stands in for the sidebar until the sidebar fits.
