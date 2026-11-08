@@ -51,7 +51,6 @@ function Opening() {
     <MonoOpening
       product="ferriki"
       instrumentLabel="Ferriki's instrument: a token register on a machined steel plate. Plain engraved token groups run along a guide, pass under a registration head that holds a rust-brown theme cassette, and leave inlaid in brown, green and blue."
-      caption="A token register: plain groups of tokens pass under the theme cassette and come out inlaid in the theme's colors, the way a theme maps each syntax group to its color."
       kicker={`${displayName(tool)} ${releaseLine}, ${tool.what.toLowerCase()} for Node.js, Rust and Vite`}
       title="Your editor’s colors, on your page."
       subtitle="Highlighted natively, with Shiki’s familiar calls."
