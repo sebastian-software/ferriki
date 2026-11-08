@@ -1,6 +1,5 @@
 /*
- * Ferriki's own specimens on the Monografie homepage (and temporary contrast
- * fits of the documentation code, under `fk-docs`): the token register,
+ * Ferriki's own specimens on the Monografie homepage: the token register,
  * highlighted code on the sheets and cards, the diagnostics lists and the
  * application card. Everything is scoped to `fk-` classes and takes the
  * package's `--mono-*` tokens; the page system itself lives in
@@ -11,21 +10,6 @@
 /* ---------- The page fills the viewport ---------- */
 .fk-site {
   min-height: 100vh;
-}
-
-/* ---------- Documentation: code contrast (temporary) ---------- */
-/* Shiki's GitHub Light comment gray (#6E7781) reaches only 4.39:1 on the
-   Monografie code sheet. ferramenta PR #138 fixes it in monografie-ardo.css;
-   this rule goes once the pin includes that fix. */
-.fk-docs :is(.ardo-code-block, .ardo-shiki) span[style*="--shiki-light:#6E7781" i],
-.fk-docs :is(.ardo-code-block, .ardo-shiki) span[style*="color:#6E7781" i] {
-  color: #59636e !important;
-}
-/* On a highlighted line, the oxide wash (#f3e9e3) drops GitHub Light's purple
-   and red below 4.5:1 (4.22 and 4.48). A lighter wash keeps every token above
-   it; this goes once monografie-ardo.css lightens the highlight itself. */
-.fk-docs :is(.ardo-code-block, .ardo-shiki) .line.highlighted {
-  background: #f8f2ee;
 }
 
 /* Room between a specimen and the reading text that follows it. */

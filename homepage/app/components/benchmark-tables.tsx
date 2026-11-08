@@ -1,4 +1,4 @@
-import type { ComparisonRow, Contender } from "ferramenta-family";
+import type { ComparisonRow, Contender } from "ferramenta-family/monografie";
 
 import {
   MonoComparisonTable as ComparisonTable,
