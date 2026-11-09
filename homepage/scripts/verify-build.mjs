@@ -334,7 +334,7 @@ for (const [page, html] of pageFiles) {
   if (page !== "index.html") {
     fragments.push(
       'class="mono mono-docs fk-docs"',
-      'class="mono-guide-navigation"',
+      'class="ardo-sidebar ',
       'aria-label="Toggle menu"',
     );
   }
