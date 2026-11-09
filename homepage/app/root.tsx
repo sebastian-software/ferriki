@@ -43,15 +43,9 @@ const links = [
   <NavLink key="rust" to="/rust/getting-started">
     Rust
   </NavLink>,
-  <a key="speed" href="/#evidence">
-    Benchmarks
-  </a>,
   <NavLink key="evidence" to="/evidence/compatibility">
     Compatibility
   </NavLink>,
-  <a key="github" href="https://github.com/sebastian-software/ferriki">
-    GitHub
-  </a>,
 ];
 
 /** Every page on Monografie's Ardo shell; the documentation adds its menu, search and reading layout. */
@@ -62,6 +56,7 @@ export default function Root() {
       name="Ferriki"
       release={version}
       links={links}
+      repository="https://github.com/sebastian-software/ferriki"
       sections={sections}
       homeClassName="fk-site"
       docsClassName="fk-docs"
