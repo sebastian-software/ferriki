@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>sebastian-software/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep the upstream Shiki and vscode-textmate compatibility mirrors immutable (AGENTS.md and ADR 0003).",
+      "matchFileNames": [
+        "node/compat/upstream/**"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Keep the dated and version-bound precompiled-pattern benchmark reproductions at their recorded dependency versions.",
+      "matchFileNames": [
+        "docs/benchmarks/precompiled-patterns/**"
+      ],
+      "enabled": false
+    }
+  ]
+}
