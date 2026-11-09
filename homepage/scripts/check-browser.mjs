@@ -268,8 +268,9 @@ try {
   assert(reachedCompatibility, "Keyboard navigation does not reach Compatibility");
   const bounds = await compatibility.boundingBox();
   assert(
-    bounds && bounds.y >= 0 && bounds.y + bounds.height <= 390,
-    "Focused landscape link is outside the viewport",
+    // Scrolled into view, the link can end a fraction of a pixel past the edge.
+    bounds && bounds.y >= 0 && bounds.y + bounds.height <= 391,
+    `Focused landscape link is outside the viewport: ${JSON.stringify(bounds)}`,
   );
   await page.keyboard.press("Enter");
   await page.waitForURL((url) => url.pathname.startsWith("/evidence/compatibility"));
@@ -531,7 +532,7 @@ async function verifyHeader(page, pageFile, viewport) {
   // The Monografie header folds its links into a menu below 961px.
   // Documentation pages fold the header's links into Ardo's menu where Ardo's
   // sidebar folds away.
-  if (viewport.width >= (home ? 961 : 1025)) {
+  if (viewport.width >= (home ? 961 : 1024)) {
     assert(navVisible, `${pageFile} hides the header links at ${viewport.name} width`);
     assert(!headerMenuVisible, `${pageFile} shows the header menu at ${viewport.name} width`);
     // The documentation drawer stands in for the sidebar until the sidebar fits.
