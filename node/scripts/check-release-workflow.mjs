@@ -214,8 +214,8 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
   }
   assert.match(
     cratesJob,
-    /sebastian-software\/standards\/\.github\/actions\/publish-crates@[0-9a-f]{40}/,
-    "publish-crates must use the shared, pinned standards action",
+    /sebastian-software\/project-infra\/\.github\/actions\/publish-crates@[0-9a-f]{40}/,
+    "publish-crates must use the shared, pinned project-infra action",
   );
   assert.match(
     cratesJob,

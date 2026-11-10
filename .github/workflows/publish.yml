@@ -236,7 +236,7 @@ jobs:
       # action waits for the index between crates and skips versions that are
       # already published, so a retry after a partial publish is safe.
       - name: Publish Rust crates
-        uses: sebastian-software/standards/.github/actions/publish-crates@a840766444dbb0e421f1f1868c48bee315ead769 # v0.13.0
+        uses: sebastian-software/project-infra/.github/actions/publish-crates@c97d8db475ce5abb7e7ab7b0ac22e249346b9fab # v0.3.0
         with:
           crates: |
             ferriki-textmate
