@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-11-10
 
 ## Context
 
@@ -62,9 +62,11 @@ depend on a JavaScript parser or expose a macro API
 
 ### Release
 
-Ferriki follows the organization's release blueprint (one product, one
-version, one release signal; see Ferromark ADR-0020 and
-`reference/release-please/` in sebastian-software/standards):
+Ferriki's release layout was originally adopted from the organization's
+standards blueprint (historical provenance; see Ferromark ADR-0020). Current
+project-owned configuration follows the shared
+[project-infra guidance](https://github.com/sebastian-software/project-infra/blob/v0.3.0/skills/project-infra/references/ci-and-releases.md):
+one product, one version, one release signal.
 
 - `ferriki` is the repository's root Cargo package, so Release Please's native
   `rust` strategy updates the root package, all workspace members, their
@@ -139,3 +141,4 @@ version, one release signal; see Ferromark ADR-0020 and
 - 2026-10-04: Removes the native inline macro scanner and the `@ferriki/core/macro-transform` entry; macro recognition moves to `@ferriki/vite` (#216).
 - 2026-10-10: Requires exact release-commit CI before either registry publisher and binds manual recovery to the release tag and OIDC event SHA (#245).
 - 2026-10-10: Require source-pinned recovery for partial npm publication and both registries in the final product outcome (#246, #247).
+- 2026-11-10: Marks the original standards blueprint as historical provenance and links current project-infra guidance; executable release contracts are unchanged.
