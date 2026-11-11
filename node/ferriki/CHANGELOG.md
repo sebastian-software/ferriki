@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.4.0](https://github.com/sebastian-software/ferriki/compare/v1.3.0...v1.4.0) (2026-11-11)
+
+
+### Features
+
+* GitHub as the header's mark, on Ardo 6.4 ([#356](https://github.com/sebastian-software/ferriki/issues/356)) ([64a87c8](https://github.com/sebastian-software/ferriki/commit/64a87c836bd9bc2978c1c838cd2f22397e8f1bcf))
+* **homepage:** adopt the Monografie page system ([04592d3](https://github.com/sebastian-software/ferriki/commit/04592d31cb1858bb587f521e9457b25b5673b4d7))
+* **homepage:** adopt the Monografie page system ([b206149](https://github.com/sebastian-software/ferriki/commit/b2061499b86e484f7d15643f76176c31b64c1eb5))
+* **homepage:** adopt the shared Ferra product design ([f59fc8b](https://github.com/sebastian-software/ferriki/commit/f59fc8b397eaa81738aef4ca826b087237e6f37f))
+* **homepage:** adopt the shared Ferra product design ([aa0ef9a](https://github.com/sebastian-software/ferriki/commit/aa0ef9a75f334282151d2fac2698d46b116ddead))
+* **homepage:** show documentation sections in the Ferra section rail ([09ed54e](https://github.com/sebastian-software/ferriki/commit/09ed54e1a87121b88843dad6ac43f43957e22ead))
+* **homepage:** show documentation sections in the Ferra section rail ([97ea2dd](https://github.com/sebastian-software/ferriki/commit/97ea2dd1dc9009cea48abb179820e059169f90ea))
+
+
+### Bug Fixes
+
+* **homepage:** bound search hints on compact screens ([7eb72df](https://github.com/sebastian-software/ferriki/commit/7eb72df7939fe47bfd71bf267179598954206f15))
+* **homepage:** pin ferramenta-family with the Monografie fixes ([bb346ab](https://github.com/sebastian-software/ferriki/commit/bb346ab6f8272dc3cd4ab8ef57495afe4084480e))
+* **homepage:** pin ferramenta-family with the Monografie fixes ([0e8f941](https://github.com/sebastian-software/ferriki/commit/0e8f9413a70329901879d87125fc763a49a288d7))
+* **homepage:** render the build-time sample in the page's light theme ([e6d3513](https://github.com/sebastian-software/ferriki/commit/e6d35139cef1e9eeed31c5405a51dabe447cd03b))
+* **homepage:** resolve the shared theme with pnpm 12 ([30d7ff0](https://github.com/sebastian-software/ferriki/commit/30d7ff0bdb2718780b89672dc607fc01584e5674))
+* **node:** use symlink-safe shared native CLI ([51b4997](https://github.com/sebastian-software/ferriki/commit/51b49975dead9851a8a6bb62a498f00c4926109d))
+* recover from transient asset download failures ([#366](https://github.com/sebastian-software/ferriki/issues/366)) ([2c3132b](https://github.com/sebastian-software/ferriki/commit/2c3132bc89e9922625937442fb57bfd5d4e5416e))
+* **site:** adopt compact code blocks and unframed docs ([#345](https://github.com/sebastian-software/ferriki/issues/345)) ([f588598](https://github.com/sebastian-software/ferriki/commit/f58859846e5119222a788f3d44141072758f9611))
+* **site:** use compact shared card footers ([f1fcba2](https://github.com/sebastian-software/ferriki/commit/f1fcba2cce26eec7dbdc9c2609af04c82fb92b38))
+* **site:** use compact shared card footers ([5aae126](https://github.com/sebastian-software/ferriki/commit/5aae1267f5a39de27cc1076cfa0fb1bb3387aec5))
+
 ## [1.3.0](https://github.com/sebastian-software/ferriki/compare/v1.2.0...v1.3.0) (2026-10-27)
 
 
