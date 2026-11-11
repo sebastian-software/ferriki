@@ -5,8 +5,24 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { setTimeout as delay } from "node:timers/promises";
 
 const DOWNLOAD_TIMEOUT_MS = 60_000;
+const DOWNLOAD_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 250;
+const MAX_RETRY_DELAY_MS = 5_000;
+const TRANSIENT_NETWORK_CODES = new Set([
+  "EAI_AGAIN",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "ETIMEDOUT",
+  "UND_ERR_BODY_TIMEOUT",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_SOCKET",
+]);
 // Identifies the client like the Rust loader's `ferriki/<version>`.
 const USER_AGENT = `ferriki/${JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version} (node)`;
 const MAX_DOWNLOAD_WORKERS = 6;
@@ -76,16 +92,66 @@ function validatePlanAsset(asset) {
 }
 
 async function downloadAsset(asset, target) {
+  const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await downloadAttempt(asset, target, signal);
+    } catch (error) {
+      if (signal.aborted || attempt + 1 >= DOWNLOAD_ATTEMPTS) throw error;
+      const wait = retryDelay(error, attempt);
+      if (wait === undefined) throw error;
+      await delay(wait, undefined, { signal });
+    }
+  }
+}
+
+class DownloadHttpError extends Error {
+  constructor(url, response) {
+    super(`Downloading ${url} failed: HTTP ${response.status}`);
+    this.status = response.status;
+    this.retryAfter = response.headers.get("retry-after");
+  }
+}
+
+function retryDelay(error, attempt) {
+  let wait = RETRY_DELAY_MS * 2 ** attempt;
+  if (error instanceof DownloadHttpError) {
+    if (error.status !== 408 && error.status !== 429 && (error.status < 500 || error.status > 599))
+      return;
+    if (error.retryAfter !== null) {
+      const after = /^\d+$/.test(error.retryAfter)
+        ? Number(error.retryAfter) * 1_000
+        : Date.parse(error.retryAfter) - Date.now();
+      if (!Number.isNaN(after)) wait = Math.max(wait, after);
+    }
+  } else if (!isTransientNetworkError(error)) return;
+  // A longer server-directed pause should fail rather than retrying early or
+  // holding an asset worker indefinitely.
+  return wait <= MAX_RETRY_DELAY_MS ? wait : undefined;
+}
+
+function isTransientNetworkError(error) {
+  return (
+    error?.name === "TimeoutError" ||
+    TRANSIENT_NETWORK_CODES.has(error?.code) ||
+    (error instanceof AggregateError &&
+      error.errors.length > 0 &&
+      error.errors.every(isTransientNetworkError)) ||
+    (error?.cause !== undefined && isTransientNetworkError(error.cause))
+  );
+}
+
+async function downloadAttempt(asset, target, signal) {
   const temporary = `${target}.${process.pid}-${randomUUID()}.tmp`;
   try {
     await mkdir(dirname(target), { recursive: true });
     const response = await fetch(asset.url, {
       headers: { "user-agent": USER_AGENT },
-      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+      signal,
     });
     if (response.status !== 200) {
       await response.body?.cancel().catch(() => {});
-      throw new Error(`Downloading ${asset.url} failed: HTTP ${response.status}`);
+      throw new DownloadHttpError(asset.url, response);
     }
     if (!response.body) throw new Error(`Downloading ${asset.url} failed: response has no body.`);
 

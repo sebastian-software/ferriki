@@ -4,12 +4,23 @@ Ferriki's Node package uses Node's built-in `fetch` to load the release-pinned
 grammar and theme payloads. Node 22.13 is the package floor and includes the
 global fetch API. The native planner resolves aliases and embedded grammars
 from the packaged manifests, checks the digest-addressed cache, and returns
-only missing payloads. Each request has a 60-second timeout, and each load uses
+only missing payloads. Each asset has a 60-second network deadline, and each load uses
 up to six download workers. Separate loads can have more downloads in flight;
 matching cache targets share a transfer. Node bounds decoded response bytes to
 the release-pinned size, hashes them as they arrive, and installs verified
 files through a temporary file and rename. The native catalog verifies cached bytes
-again when it reads them. Failed downloads are not retried.
+again when it reads them. Transient connection or response-stream failures and
+HTTP 408, 429 and 5xx responses receive up to two retries, with exponential
+backoff inside that same deadline. A `Retry-After` pause of at most five seconds
+is honored; a longer pause fails rather than retrying early. Permanent HTTP,
+certificate and integrity errors fail directly. Failed attempts remove partial
+files before retrying, and overlapping loads share the complete retry operation.
+
+The optional Rust `remote` feature applies the same attempt limits, backoff,
+`Retry-After` handling and network deadline through `ureq`. Rust verifies the
+received bytes before writing them to the cache. Node still uses its host
+runtime for HTTP, proxy and certificate configuration; Rust's transport uses
+the platform trust store.
 
 Prepared regex packages also cache their uncompressed containers under
 `decoded/<sha256>`. The first load decompresses and verifies the container,

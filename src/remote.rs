@@ -4,14 +4,15 @@
 //! downloaded from immutable language/theme hash paths selected by the catalog. Downloaded bytes
 //! are verified against the release manifest before they are cached, and the
 //! cache holds one file per SHA-256 digest, so unchanged payloads are reused
-//! across releases. There is no retry policy.
+//! across releases. Transient failures receive bounded backoff within one shared
+//! network deadline; permanent failures and invalid payloads fail directly.
 
 use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
@@ -20,7 +21,13 @@ use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_a
 use crate::asset_source::{AssetDigest, AssetSource};
 use crate::{Error, ErrorKind, Result, StandardAssetCatalogs};
 
+#[cfg(test)]
+mod retry_tests;
+
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(60);
+const DOWNLOAD_ATTEMPTS: usize = 3;
+const RETRY_DELAY: Duration = Duration::from_millis(250);
+const MAX_RETRY_DELAY: Duration = Duration::from_secs(5);
 const PREFETCH_WORKERS: usize = 6;
 
 /// Where and whether [`crate::StandardAssetCatalogs::remote`] loads payloads.
@@ -203,28 +210,7 @@ impl RemoteAssetSource {
             path,
             digest.as_str(),
         )?;
-        let failed = |detail: String| {
-            Error::new(
-                ErrorKind::AssetDownload,
-                format!("Downloading {url} failed: {detail}"),
-            )
-        };
-        let mut response = self
-            .agent
-            .get(&url)
-            .call()
-            .map_err(|error| failed(error.to_string()))?;
-        let status = response.status();
-        if status != 200 {
-            return Err(failed(format!("HTTP {}", status.as_u16())));
-        }
-        let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
-        response
-            .body_mut()
-            .as_reader()
-            .take(size.saturating_add(1))
-            .read_to_end(&mut bytes)
-            .map_err(|error| failed(error.to_string()))?;
+        let bytes = self.read_remote_until(&url, size, Instant::now() + DOWNLOAD_TIMEOUT)?;
         if bytes.len() as u64 != size || AssetDigest::of(&bytes) != *digest {
             return Err(Error::new(
                 ErrorKind::AssetIntegrity,
@@ -234,6 +220,68 @@ impl RemoteAssetSource {
             ));
         }
         self.store(digest, &bytes)?;
+        Ok(bytes)
+    }
+
+    fn read_remote_until(&self, url: &str, size: u64, deadline: Instant) -> Result<Vec<u8>> {
+        let mut attempts = 0;
+        loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return Err(DownloadFailure::transport(ureq::Error::Timeout(
+                    ureq::Timeout::Global,
+                ))
+                .into_error(url));
+            }
+            attempts += 1;
+            match self.read_remote_once(url, size, remaining) {
+                Ok(bytes) => return Ok(bytes),
+                Err(failure) => match failure.retry_delay(attempts - 1) {
+                    Some(wait)
+                        if attempts < DOWNLOAD_ATTEMPTS
+                            && wait < deadline.saturating_duration_since(Instant::now()) =>
+                    {
+                        std::thread::sleep(wait);
+                    }
+                    _ => return Err(failure.into_error(url)),
+                },
+            }
+        }
+    }
+
+    fn read_remote_once(
+        &self,
+        url: &str,
+        size: u64,
+        remaining: Duration,
+    ) -> std::result::Result<Vec<u8>, DownloadFailure> {
+        let mut response = self
+            .agent
+            .get(url)
+            .config()
+            .timeout_global(Some(remaining))
+            .build()
+            .call()
+            .map_err(DownloadFailure::transport)?;
+        let status = response.status().as_u16();
+        if status != 200 {
+            let retry_after = response
+                .headers()
+                .get("retry-after")
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| retry_after_delay(value, SystemTime::now()));
+            return Err(DownloadFailure {
+                source: ureq::Error::StatusCode(status),
+                retry_after,
+            });
+        }
+        let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
+        response
+            .body_mut()
+            .as_reader()
+            .take(size.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .map_err(|error| DownloadFailure::transport(error.into()))?;
         Ok(bytes)
     }
 
@@ -266,6 +314,87 @@ impl RemoteAssetSource {
             io(error)
         })
     }
+}
+
+struct DownloadFailure {
+    source: ureq::Error,
+    retry_after: Option<Duration>,
+}
+
+impl DownloadFailure {
+    fn transport(source: ureq::Error) -> Self {
+        Self {
+            source,
+            retry_after: None,
+        }
+    }
+
+    fn retry_delay(&self, attempt: usize) -> Option<Duration> {
+        let transient = match &self.source {
+            ureq::Error::StatusCode(status) => matches!(status, 408 | 429 | 500..=599),
+            error => transient_transport_error(error),
+        };
+        if !transient {
+            return None;
+        }
+        let wait = (RETRY_DELAY * (1 << attempt)).max(self.retry_after.unwrap_or_default());
+        (wait <= MAX_RETRY_DELAY).then_some(wait)
+    }
+
+    fn into_error(self, url: &str) -> Error {
+        let detail = match &self.source {
+            ureq::Error::StatusCode(status) => format!("HTTP {status}"),
+            error => error.to_string(),
+        };
+        Error::new(
+            ErrorKind::AssetDownload,
+            format!("Downloading {url} failed: {detail}"),
+        )
+        .with_source(self.source)
+    }
+}
+
+fn transient_transport_error(error: &ureq::Error) -> bool {
+    match error {
+        ureq::Error::Timeout(_) | ureq::Error::ConnectionFailed => true,
+        // std's DNS lookup erases temporary/permanent resolver codes into an
+        // opaque I/O error. Retry network I/O within the same finite budget;
+        // cache/filesystem operations are deliberately outside this loop.
+        ureq::Error::Io(error) => !matches!(
+            error.kind(),
+            std::io::ErrorKind::InvalidInput
+                | std::io::ErrorKind::InvalidData
+                | std::io::ErrorKind::PermissionDenied
+                | std::io::ErrorKind::NotFound
+                | std::io::ErrorKind::Unsupported
+        ),
+        ureq::Error::Decompress(_, error) => matches!(
+            error.kind(),
+            std::io::ErrorKind::TimedOut
+                | std::io::ErrorKind::Interrupted
+                | std::io::ErrorKind::WouldBlock
+                | std::io::ErrorKind::ConnectionRefused
+                | std::io::ErrorKind::ConnectionReset
+                | std::io::ErrorKind::ConnectionAborted
+                | std::io::ErrorKind::UnexpectedEof
+                | std::io::ErrorKind::BrokenPipe
+                | std::io::ErrorKind::NotConnected
+                | std::io::ErrorKind::NetworkDown
+                | std::io::ErrorKind::NetworkUnreachable
+                | std::io::ErrorKind::HostUnreachable
+        ),
+        _ => false,
+    }
+}
+
+fn retry_after_delay(value: &str, now: SystemTime) -> Option<Duration> {
+    let value = value.trim();
+    if !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Some(value.parse().map_or(Duration::MAX, Duration::from_secs));
+    }
+    httpdate::parse_http_date(value)
+        .ok()
+        .map(|date| date.duration_since(now).unwrap_or_default())
 }
 
 impl AssetSource for RemoteAssetSource {
