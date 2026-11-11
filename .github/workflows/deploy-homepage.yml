@@ -104,11 +104,12 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Install Chromium for browser checks
-        run: pnpm exec playwright install --with-deps chromium
-
       - name: Check responsive layout, accessibility and keyboard navigation
-        run: node scripts/check-browser.mjs
+        # Match homepage's Playwright version; keep browser OS dependencies in the image.
+        run: |
+          docker run --rm --init --shm-size=1gb -e CI \
+            -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/homepage" \
+            mcr.microsoft.com/playwright:v1.63.0-noble node scripts/check-browser.mjs
 
       - name: Upload artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
