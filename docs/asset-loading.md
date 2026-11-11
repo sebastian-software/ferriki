@@ -16,6 +16,12 @@ is honored; a longer pause fails rather than retrying early. Permanent HTTP,
 certificate and integrity errors fail directly. Failed attempts remove partial
 files before retrying, and overlapping loads share the complete retry operation.
 
+The optional Rust `remote` feature applies the same attempt limits, backoff,
+`Retry-After` handling and network deadline through `ureq`. Rust verifies the
+received bytes before writing them to the cache. Node still uses its host
+runtime for HTTP, proxy and certificate configuration; Rust's transport uses
+the platform trust store.
+
 Prepared regex packages also cache their uncompressed containers under
 `decoded/<sha256>`. The first load decompresses and verifies the container,
 then saves it atomically with a `.verified` receipt of its size and modification

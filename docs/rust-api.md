@@ -328,7 +328,11 @@ let mut highlighter = Highlighter::builder()
 - Errors: `AssetDownload` for an unreachable mirror or a non-200 response,
   `AssetIntegrity` for bytes that do not match the release manifest (never
   cached), and `AssetUnavailable` for a cache miss with downloads turned off.
-  There is no retry.
+- Transient connection/response-stream failures and HTTP 408/429/5xx use at most
+  three attempts with 250/500 ms backoff inside one 60-second network deadline.
+  `Retry-After` pauses of at most five seconds are honored; longer pauses fail
+  rather than retrying early. Permanent HTTP, certificate and integrity errors
+  fail directly, matching the [Node policy](./asset-loading.md).
 - Offline use: point `FERRIKI_ASSETS_BASE_URL` at a mirror with the immutable
   language/theme hash paths, run once online to populate the cache
   and reuse it, or use `DirectoryAssetSource`/`EmbeddedAssetSource` over a

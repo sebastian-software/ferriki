@@ -157,8 +157,9 @@ sidecar is published (see #52).
 - Concurrent first singleton calls share one initialization attempt. If it
   fails, each caller receives that failure and a later explicit call can
   initialize again. A failed later registration does not discard a healthy
-  singleton or its first creation's defaults. Ferriki does not automatically
-  retry asset downloads (#244).
+  singleton or its first creation's defaults. Transient asset downloads can
+  recover through the [bounded retry policy](./asset-loading.md); a failed
+  initialization still needs a later explicit call (#244).
 - Validation failures have stable `ShikiError` identity and a
   machine-readable `code` category (#50). Message text is documented for
   user-facing migration errors; native stack details are not part of the
@@ -173,7 +174,8 @@ sidecar is published (see #52).
   loads and highlighting never perform I/O beyond the cache. A payload that
   cannot be downloaded, fails its SHA-256 digest, or is missing from the cache
   with downloads turned off fails with `FerrikiError` and `ERR_ASSET`, whose
-  message names the remedies. Downloads are not retried.
+  message names the remedies. Transient download failures use bounded retries;
+  permanent HTTP, certificate and integrity failures fail directly.
 
 ## Ardo and Ferromark traceability
 

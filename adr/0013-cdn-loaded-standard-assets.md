@@ -115,15 +115,17 @@ local build artifacts, not committed repository data.
 - **Caching and integrity.** Downloads are verified before decoding or caching.
   The local cache uses one file per digest and deduplicates across releases.
   Size, digest, or format mismatches fail and are never cached. Node uses its
-  built-in fetch with six workers and a 60-second network deadline per asset, shared
-  across at most three attempts. Transient connection/stream failures and HTTP
-  408, 429 and 5xx responses use bounded exponential backoff. `Retry-After` is
-  honored when the requested delay is at most five seconds; a longer delay
-  fails instead of retrying early. Permanent HTTP, certificate, filesystem and
-  integrity failures are not retried. Each failed attempt removes its temporary
-  file before retrying; concurrent callers share the complete retry operation.
-  The optional Rust `remote` feature uses ureq/rustls and the platform trust store. Existing
-  proxy, certificate, cache-location, and download-limit behavior is unchanged.
+  built-in fetch; the optional Rust `remote` feature uses ureq/rustls and the
+  platform trust store. Both transports allow at most three attempts inside a
+  shared 60-second network deadline per asset. Transient connection/stream
+  failures and HTTP 408, 429 and 5xx responses use 250/500 ms backoff.
+  `Retry-After` is honored when the requested delay is at most five seconds;
+  a longer delay fails instead of retrying early. Permanent HTTP, certificate,
+  filesystem and integrity failures are not retried. Node removes temporary
+  files before retrying and shares the complete retry operation between
+  concurrent callers; Rust verifies the received bytes before writing the
+  cache. Existing worker limits, proxy, certificate and cache-location
+  behavior are unchanged.
   Prepared sidecars additionally pin the decoded container's SHA-256 and size.
   Their first load writes verified, uncompressed bytes atomically under
   `decoded/<sha256>`. A small atomic `.verified` receipt records the verified
@@ -166,9 +168,9 @@ local build artifacts, not committed repository data.
 
 ## History
 
-- 2026-11-11: Retry transient Node asset failures with bounded backoff within
-  the existing deadline, preserving fail-fast permanent/integrity errors and
-  atomic cache publication.
+- 2026-11-11: Retry transient Node and Rust remote asset failures with bounded
+  backoff within the existing deadline, preserving fail-fast permanent/integrity
+  errors and atomic cache publication.
 
 - 2026-10-26: Retire the 94 superseded complete prepared packages as an explicit
   pre-adoption cutoff. Keep source/grammar/theme objects and verify every

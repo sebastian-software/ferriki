@@ -38,7 +38,7 @@ include = [
 # Loads standard payloads on demand from the release-pinned CDN mirror,
 # verified and cached by digest (ADR 0013). Off by default, so the library
 # stays free of network code unless a consumer opts in.
-remote = ["dep:ureq", "dep:rustls", "dep:rustls-webpki", "dep:webpki-root-certs"]
+remote = ["dep:ureq", "dep:rustls", "dep:rustls-webpki", "dep:webpki-root-certs", "dep:httpdate"]
 
 [dependencies]
 ferriki-asset-gen = { version = "1.3.0", path = "crates/ferriki-asset-gen" }
@@ -55,6 +55,7 @@ serde_json = { workspace = true }
 # gets its own fetch path (ADR 0009). TLS uses rustls with ring and the
 # operating system's trust store, so corporate CAs and TLS inspection work.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+httpdate = { version = "1", optional = true }
 rustls = { version = "0.23.46", default-features = false, features = [ "ring", "std", "tls12" ], optional = true }
 ureq = { version = "3", default-features = false, features = [ "rustls-no-provider", "platform-verifier", "gzip" ], optional = true }
 # The published manifest must enforce these security fixes for downstream

@@ -106,6 +106,7 @@ SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
   network errors and HTTP 408, 429 and 5xx receive up to two retries with backoff
   within the asset's 60-second deadline. Longer `Retry-After` requests fail
   rather than retrying early; permanent HTTP and certificate errors fail directly.
+  The same retry policy applies to Rust's optional `remote` transport.
 - **`… did not match its release-pinned SHA-256`**: the mirror served
   different bytes. Nothing was cached; fix the mirror.
 - **`… is not cached … Load it through the asynchronous createHighlighter,
