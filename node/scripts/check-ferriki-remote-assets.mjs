@@ -36,6 +36,7 @@ const remotePaths = new Map(
 );
 const remotePath = (key) => `/${payloadPath(key, release.assets[key])}`;
 const requests = [];
+const requestTimes = [];
 const userAgents = new Set();
 const replaced = new Map();
 const missing = new Set();
@@ -43,12 +44,28 @@ const delayed = new Set();
 const delayedFinished = new Set();
 const oversized = new Set();
 const interrupted = new Set();
+const transientReplies = new Map();
 const server = createServer(async (request, response) => {
   requests.push(request.url);
+  requestTimes.push(performance.now());
   userAgents.add(request.headers["user-agent"]);
   const relative = remotePaths.get(request.url);
   if (!relative || missing.has(relative)) {
     response.writeHead(404).end();
+    return;
+  }
+  const reply = transientReplies.get(relative)?.shift();
+  if (reply === "reset") {
+    request.socket.destroy();
+    return;
+  }
+  if (reply?.status) {
+    response
+      .writeHead(
+        reply.status,
+        reply.retryAfter === undefined ? {} : { "retry-after": reply.retryAfter },
+      )
+      .end();
     return;
   }
   const body = replaced.has(relative)
@@ -63,7 +80,7 @@ const server = createServer(async (request, response) => {
     response.writeHead(200, { "content-length": bytes.length }).end(bytes);
     return;
   }
-  if (interrupted.has(relative)) {
+  if (interrupted.has(relative) || reply === "interrupt") {
     response.writeHead(200, { "content-length": body.length + 100 });
     response.write(body.subarray(0, 32));
     setTimeout(() => response.destroy(), 20);
@@ -193,7 +210,9 @@ try {
   const draculaPath = join(cacheDir, dracula.sha256);
   const tampered = createNative({ remote: true, baseUrl, cacheDir });
   replaced.set("themes/dracula.fktheme", Buffer.from("not the pinned theme"));
+  const corruptOffset = requests.length;
   await assert.rejects(createAssetDownloader(tampered)([], ["dracula"]), /did not match/);
+  assert.equal(requests.length - corruptOffset, 1, "integrity failures are not retried");
   assert.equal(await readFile(draculaPath).catch(() => undefined), undefined);
 
   replaced.delete("themes/dracula.fktheme");
@@ -212,9 +231,100 @@ try {
   assert(tampered.loadStandardTheme("dracula"));
 
   missing.add("themes/monokai.fktheme");
+  const missingOffset = requests.length;
   await assert.rejects(createAssetDownloader(tampered)([], ["monokai"]), /HTTP 404/);
+  assert.equal(requests.length - missingOffset, 1, "permanent HTTP failures are not retried");
   missing.clear();
   tampered.dispose();
+
+  for (const [label, replies] of [
+    ["transient-status", [{ status: 503 }, { status: 429, retryAfter: "0" }]],
+    ["short-retry-after", [{ status: 429, retryAfter: "1" }]],
+    ["connection-reset", ["reset"]],
+    ["interrupted-response", ["interrupt"]],
+  ]) {
+    const retryCache = join(tempRoot, label);
+    const recovering = createNative({ remote: true, baseUrl, cacheDir: retryCache });
+    const retryDownload = createAssetDownloader(recovering);
+    const offset = requests.length;
+    const attempts = replies.length + 1;
+    transientReplies.set("themes/nord.fktheme", replies);
+    await Promise.all([retryDownload([], ["nord"]), retryDownload([], ["nord"])]);
+    assert.equal(
+      requests.length - offset,
+      attempts,
+      `${label} retries share one in-flight download`,
+    );
+    if (label === "short-retry-after")
+      assert(
+        Math.ceil(requestTimes[offset + 1] - requestTimes[offset]) >= 1_000,
+        "the next request honors Retry-After rather than the shorter default backoff",
+      );
+    assert.deepEqual(await readFile(join(retryCache, collisionAsset.sha256)), collisionBytes);
+    assert(!(await readdir(retryCache)).some((name) => name.endsWith(".tmp")));
+    recovering.dispose();
+  }
+
+  for (const [code, recover] of [
+    ["UND_ERR_CONNECT_TIMEOUT", true],
+    ["CERT_HAS_EXPIRED", false],
+  ]) {
+    const failureCache = join(tempRoot, code);
+    const failingNative = createNative({ remote: true, baseUrl, cacheDir: failureCache });
+    const originalFetch = globalThis.fetch;
+    const cause = Object.assign(new Error(code), { code });
+    const failure = new TypeError("fetch failed", { cause });
+    let attempts = 0;
+    globalThis.fetch = async (...arguments_) => {
+      attempts++;
+      if (attempts === 1 || !recover) throw failure;
+      return originalFetch(...arguments_);
+    };
+    try {
+      const pending = createAssetDownloader(failingNative)([], ["nord"]);
+      if (recover) {
+        await pending;
+        assert.deepEqual(await readFile(join(failureCache, collisionAsset.sha256)), collisionBytes);
+      } else await assert.rejects(pending, (error) => error === failure);
+      assert.equal(attempts, recover ? 2 : 1, `${code} is classified by its cause, not TypeError`);
+      assert(!(await readdir(failureCache)).some((name) => name.endsWith(".tmp")));
+    } finally {
+      globalThis.fetch = originalFetch;
+      failingNative.dispose();
+    }
+  }
+
+  const exhaustedCache = join(tempRoot, "exhausted-retries");
+  const exhausted = createNative({ remote: true, baseUrl, cacheDir: exhaustedCache });
+  const exhaustedDownload = createAssetDownloader(exhausted);
+  transientReplies.set(
+    "themes/nord.fktheme",
+    Array.from({ length: 3 }, () => ({ status: 503 })),
+  );
+  const exhaustedOffset = requests.length;
+  await assert.rejects(exhaustedDownload([], ["nord"]), /HTTP 503/);
+  assert.equal(
+    requests.length - exhaustedOffset,
+    3,
+    "transient failures stop after three attempts",
+  );
+  assert.deepEqual(await readdir(exhaustedCache), [], "exhausted retries leave no partial cache");
+  await exhaustedDownload([], ["nord"]);
+  assert.equal(requests.length - exhaustedOffset, 4, "an explicit later call can recover");
+  exhausted.dispose();
+
+  const deferredCache = join(tempRoot, "deferred-retry");
+  const deferred = createNative({ remote: true, baseUrl, cacheDir: deferredCache });
+  transientReplies.set("themes/nord.fktheme", [{ status: 429, retryAfter: "120" }]);
+  const deferredOffset = requests.length;
+  await assert.rejects(createAssetDownloader(deferred)([], ["nord"]), /HTTP 429/);
+  assert.equal(
+    requests.length - deferredOffset,
+    1,
+    "long Retry-After values are not retried early",
+  );
+  assert.deepEqual(await readdir(deferredCache), []);
+  deferred.dispose();
 
   for (const failure of ["missing", "corrupt"]) {
     const sidecarCache = join(tempRoot, `bytecode-${failure}`);

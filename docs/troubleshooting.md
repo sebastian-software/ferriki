@@ -102,8 +102,10 @@ SHA-256 and cached ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 - **`Ferriki could not download assets: … HTTP 404` or a connection error**:
   the mirror is unreachable or does not serve that immutable object. Check network
   access, Node's proxy configuration and `FERRIKI_ASSETS_BASE_URL`. See
-  [asset loading](asset-loading.md) for Node-version requirements. Downloads
-  are not retried.
+  [asset loading](asset-loading.md) for Node-version requirements. Transient
+  network errors and HTTP 408, 429 and 5xx receive up to two retries with backoff
+  within the asset's 60-second deadline. Longer `Retry-After` requests fail
+  rather than retrying early; permanent HTTP and certificate errors fail directly.
 - **`… did not match its release-pinned SHA-256`**: the mirror served
   different bytes. Nothing was cached; fix the mirror.
 - **`… is not cached … Load it through the asynchronous createHighlighter,
