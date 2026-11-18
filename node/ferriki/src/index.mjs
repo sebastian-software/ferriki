@@ -26,6 +26,7 @@ const MAX_GRAMMAR_STATE_JSON_BYTES = 1_048_576;
 const GRAMMAR_STATE_CONTINUATION = Symbol("ferriki.grammar-state-continuation");
 const GRAMMAR_STATE_CAPTURE = Symbol("ferriki.grammar-state-capture");
 let singleton;
+const disposedHighlighters = new WeakSet();
 
 export class ShikiError extends Error {
   constructor(message, code = "ERR_USAGE", options) {
@@ -649,6 +650,7 @@ export function createHighlighterCoreSync(options = {}) {
     dispose() {
       if (!disposed) {
         disposed = true;
+        disposedHighlighters.add(highlighter);
         native.dispose();
       }
     },
@@ -667,14 +669,17 @@ export function createShikiPrimitive(options = {}) {
 }
 
 export async function getSingletonHighlighter(options = {}) {
-  const pending = (singleton ||= createHighlighter(options));
   let highlighter;
-  try {
-    highlighter = await pending;
-  } catch (error) {
-    if (singleton === pending) singleton = undefined;
-    throw error;
-  }
+  do {
+    const pending = (singleton ||= createHighlighter(options));
+    try {
+      highlighter = await pending;
+    } catch (error) {
+      if (singleton === pending) singleton = undefined;
+      throw error;
+    }
+    if (disposedHighlighters.has(highlighter) && singleton === pending) singleton = undefined;
+  } while (disposedHighlighters.has(highlighter));
   if (options.langs?.length) await highlighter.loadLanguage(...options.langs);
   if (options.themes?.length) await highlighter.loadTheme(...options.themes);
   return highlighter;
