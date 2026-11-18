@@ -17,6 +17,7 @@ import {
   splitTokensAtDecorations,
 } from "../transformers.mjs";
 import { createAssetDownloader } from "./asset-download.mjs";
+import { alignThemeTokens, tokenStyle } from "./theme-tokens.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const standardAssetRoot = join(packageDir, "assets", "standard");
@@ -1380,63 +1381,6 @@ function tokenStyleFromNative(style) {
   if (fontStyle & 8) decorations.push("line-through");
   if (decorations.length) output["text-decoration"] = decorations.join(" ");
   return output;
-}
-
-function alignThemeTokens(results) {
-  const lineCount = Math.max(...results.map((result) => result.result.tokens.length));
-  return Array.from({ length: lineCount }, (_, lineIndex) => {
-    const lines = results.map((result) => result.result.tokens[lineIndex] || []);
-    const boundaries = new Set();
-    for (const line of lines) {
-      for (const token of line) {
-        boundaries.add(token.offset);
-        boundaries.add(token.offset + token.content.length);
-      }
-    }
-    const sorted = [...boundaries].sort((left, right) => left - right);
-    const output = [];
-    for (let index = 0; index < sorted.length - 1; index++) {
-      const start = sorted[index];
-      const end = sorted[index + 1];
-      if (start === end) continue;
-      const variants = {};
-      let baseToken;
-      for (const result of results) {
-        const token = tokenAt(lines[results.indexOf(result)], start);
-        if (token && !baseToken) baseToken = token;
-        variants[result.color] = tokenStyle(token);
-      }
-      if (!baseToken) continue;
-      output.push({
-        content: baseToken.content.slice(start - baseToken.offset, end - baseToken.offset),
-        offset: start,
-        ...(baseToken.type === undefined ? {} : { type: baseToken.type }),
-        ...(baseToken.scopeNames ? { scopeNames: baseToken.scopeNames } : {}),
-        variants,
-      });
-    }
-    return output;
-  });
-}
-
-function tokenAt(line, offset) {
-  return line.find(
-    (token) => offset >= token.offset && offset < token.offset + token.content.length,
-  );
-}
-
-function tokenStyle(token) {
-  if (!token) return {};
-  const style = {};
-  if (token.color) style.color = token.color;
-  const fontStyle = token.fontStyle || 0;
-  if (fontStyle & 1) style["font-style"] = "italic";
-  if (fontStyle & 2) style["font-weight"] = "bold";
-  const decorations = [];
-  if (fontStyle & 4) decorations.push("underline");
-  if (fontStyle & 8) decorations.push("line-through");
-  if (decorations.length) style["text-decoration"] = decorations.join(" ");
-  return style;
 }
 
 function tokenHtmlStyle(

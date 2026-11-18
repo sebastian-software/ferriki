@@ -26,6 +26,7 @@ for (const script of [
   "../scripts/sync-grammars.mjs",
   "./scripts/check-ferriki-grammars.mjs",
   "./scripts/check-ferriki-frontend.mjs",
+  "./scripts/test-theme-token-alignment.mjs",
 ]) {
   const result = spawnSync(
     process.execPath,
