@@ -1,60 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import vm from "node:vm";
-
-// Exercise the private alignment function without adding it to the public API.
-const source = await readFile(new URL("../ferriki/src/index.mjs", import.meta.url), "utf8");
-const implementation = source.slice(
-  source.indexOf("function alignThemeTokens("),
-  source.indexOf("function tokenHtmlStyle("),
-);
-const align = vm.runInThisContext(`(() => { ${implementation}; return alignThemeTokens; })()`);
-
-function reference(results) {
-  const lineCount = Math.max(...results.map((result) => result.result.tokens.length));
-  return Array.from({ length: lineCount }, (_, lineIndex) => {
-    const lines = results.map((result) => result.result.tokens[lineIndex] || []);
-    const boundaries = [
-      ...new Set(
-        lines.flatMap((line) =>
-          line.flatMap((token) => [token.offset, token.offset + token.content.length]),
-        ),
-      ),
-    ].sort((a, b) => a - b);
-    const output = [];
-    for (let i = 0; i < boundaries.length - 1; i++) {
-      const start = boundaries[i];
-      const end = boundaries[i + 1];
-      const variants = {};
-      let base;
-      for (let j = 0; j < results.length; j++) {
-        const token = lines[j].find(
-          (item) => item.offset <= start && start < item.offset + item.content.length,
-        );
-        base ||= token;
-        const style = {};
-        if (token?.color) style.color = token.color;
-        if (token?.fontStyle & 1) style["font-style"] = "italic";
-        if (token?.fontStyle & 2) style["font-weight"] = "bold";
-        const decorations = [];
-        if (token?.fontStyle & 4) decorations.push("underline");
-        if (token?.fontStyle & 8) decorations.push("line-through");
-        if (decorations.length) style["text-decoration"] = decorations.join(" ");
-        variants[results[j].color] = style;
-      }
-      if (base)
-        output.push({
-          content: base.content.slice(start - base.offset, end - base.offset),
-          offset: start,
-          ...(base.type === undefined ? {} : { type: base.type }),
-          ...(base.scopeNames ? { scopeNames: base.scopeNames } : {}),
-          variants,
-        });
-    }
-    return output;
-  });
-}
+import { alignThemeTokens as align } from "../ferriki/src/theme-tokens.mjs";
 
 const result = (color, tokens) => ({ color, result: { tokens } });
 
@@ -78,11 +24,71 @@ test("alignment preserves splits, gaps, fallback scopes, UTF-16 offsets and empt
     result("other", [
       [
         { offset: 0, content: "" },
-        { offset: 1, content: "\ude00abx", fontStyle: 4 },
+        { offset: 1, content: "\uDE00abx", fontStyle: 4 },
       ],
     ]),
   ];
-  assert.deepEqual(align(input), reference(input));
+  assert.deepEqual(align(input), [
+    [
+      {
+        content: "\uD83D",
+        offset: 0,
+        type: "emoji",
+        scopeNames: ["emoji"],
+        variants: { dark: { color: "red" }, light: { color: "blue" }, other: {} },
+      },
+      {
+        content: "\uDE00",
+        offset: 1,
+        type: "emoji",
+        scopeNames: ["emoji"],
+        variants: {
+          dark: { color: "red" },
+          light: { color: "blue" },
+          other: { "text-decoration": "underline" },
+        },
+      },
+      {
+        content: "a",
+        offset: 2,
+        variants: { dark: {}, light: { color: "blue" }, other: { "text-decoration": "underline" } },
+      },
+      {
+        content: "b",
+        offset: 3,
+        scopeNames: ["fallback"],
+        variants: { dark: {}, light: {}, other: { "text-decoration": "underline" } },
+      },
+      {
+        content: "x",
+        offset: 4,
+        variants: {
+          dark: {
+            "font-style": "italic",
+            "font-weight": "bold",
+            "text-decoration": "underline line-through",
+          },
+          light: {},
+          other: { "text-decoration": "underline" },
+        },
+      },
+      {
+        content: "y",
+        offset: 5,
+        variants: {
+          dark: {
+            "font-style": "italic",
+            "font-weight": "bold",
+            "text-decoration": "underline line-through",
+          },
+          light: {},
+          other: {},
+        },
+      },
+    ],
+    [{ content: "z", offset: 0, variants: { dark: {}, light: {}, other: {} } }],
+    [],
+  ]);
   assert.deepEqual(
     align(input)[0].map((token) => token.offset),
     [0, 1, 2, 3, 4, 5],
