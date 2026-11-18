@@ -7,6 +7,7 @@ import {
   codeToHtml,
   createCssVariablesTheme,
   createHighlighter,
+  getSingletonHighlighter,
   ShikiError,
 } from "../ferriki/index.mjs";
 
@@ -102,5 +103,32 @@ for (const regexPrefilter of [null, 0, "false", {}]) {
     (error) => error instanceof ShikiError && error.code === "ERR_USAGE",
   );
 }
+
+const singletonOptions = { langs: ["typescript"], themes: ["nord"] };
+const first = await getSingletonHighlighter(singletonOptions);
+assert.equal(await getSingletonHighlighter(), first);
+first.dispose();
+assert.throws(() => first.loadThemeSync("nord"), /disposed/);
+const [second, concurrent] = await Promise.all([
+  getSingletonHighlighter(singletonOptions),
+  getSingletonHighlighter(singletonOptions),
+]);
+assert.equal(second, concurrent);
+assert.notEqual(second, first);
+assert(
+  second.codeToHtml("const answer = 42", { lang: "typescript", theme: "nord" }).includes("const"),
+);
+first.dispose();
+assert.equal(await getSingletonHighlighter(), second);
+second[Symbol.dispose]();
+assert.throws(() => second.loadThemeSync("nord"), /disposed/);
+assert(
+  (await codeToHtml("const answer = 42", { lang: "typescript", theme: "nord" })).includes("const"),
+);
+const third = await getSingletonHighlighter();
+assert.notEqual(third, second);
+second[Symbol.dispose]();
+assert.equal(await getSingletonHighlighter(), third);
+third.dispose();
 
 console.log("Ferriki 1.0 API contract verified");
