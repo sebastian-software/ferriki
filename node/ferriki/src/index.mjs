@@ -1395,14 +1395,24 @@ function alignThemeTokens(results) {
     }
     const sorted = [...boundaries].sort((left, right) => left - right);
     const output = [];
+    const cursors = lines.map(() => 0);
     for (let index = 0; index < sorted.length - 1; index++) {
       const start = sorted[index];
       const end = sorted[index + 1];
       if (start === end) continue;
       const variants = {};
       let baseToken;
-      for (const result of results) {
-        const token = tokenAt(lines[results.indexOf(result)], start);
+      for (let themeIndex = 0; themeIndex < results.length; themeIndex++) {
+        const result = results[themeIndex];
+        const line = lines[themeIndex];
+        while (
+          cursors[themeIndex] < line.length &&
+          line[cursors[themeIndex]].offset + line[cursors[themeIndex]].content.length <= start
+        ) {
+          cursors[themeIndex]++;
+        }
+        const candidate = line[cursors[themeIndex]];
+        const token = candidate && candidate.offset <= start ? candidate : undefined;
         if (token && !baseToken) baseToken = token;
         variants[result.color] = tokenStyle(token);
       }
@@ -1417,12 +1427,6 @@ function alignThemeTokens(results) {
     }
     return output;
   });
-}
-
-function tokenAt(line, offset) {
-  return line.find(
-    (token) => offset >= token.offset && offset < token.offset + token.content.length,
-  );
 }
 
 function tokenStyle(token) {
