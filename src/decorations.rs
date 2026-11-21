@@ -66,9 +66,9 @@ impl DecorationSource {
             source.length += 1;
             previous = Some(unit);
         }
-        source.lengths.push(
-            source.length - source.starts.last().unwrap() - usize::from(previous == Some(13)),
-        );
+        source
+            .lengths
+            .push(source.length - source.starts.last().unwrap());
         source
     }
 
@@ -609,6 +609,60 @@ mod tests {
             utf16.resolve(DecorationPosition::Offset(8)).unwrap().line,
             2
         );
+    }
+
+    #[test]
+    fn final_carriage_return_is_part_of_the_unterminated_line() {
+        let text = "a😀\r\nb😀\r";
+        for (source, first_end, final_start, final_length) in [
+            (DecorationSource::utf8(text), 5, 7, 6),
+            (DecorationSource::utf16(text), 3, 5, 4),
+        ] {
+            assert_eq!(
+                source
+                    .resolve(DecorationPosition::Line {
+                        line: 0,
+                        character: first_end
+                    })
+                    .unwrap(),
+                source
+                    .resolve(DecorationPosition::Offset(first_end as usize))
+                    .unwrap()
+            );
+            assert!(
+                source
+                    .resolve(DecorationPosition::Line {
+                        line: 0,
+                        character: first_end + 1
+                    })
+                    .is_err()
+            );
+            let end = source
+                .resolve(DecorationPosition::Line {
+                    line: 1,
+                    character: final_length,
+                })
+                .unwrap();
+            assert_eq!(
+                end,
+                source
+                    .resolve(DecorationPosition::Offset(
+                        final_start + final_length as usize
+                    ))
+                    .unwrap()
+            );
+            assert_eq!(end.character, final_length as usize);
+            assert_eq!(
+                source
+                    .resolve(DecorationPosition::Line {
+                        line: 1,
+                        character: -1
+                    })
+                    .unwrap()
+                    .offset,
+                end.offset - 1
+            );
+        }
     }
     #[test]
     fn range_validation_allows_nesting_touching_and_empty_but_not_crossing() {
