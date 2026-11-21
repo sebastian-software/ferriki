@@ -1177,6 +1177,46 @@
       }
     },
     {
+      "id": "mermaid",
+      "grammar_file": "mermaid.json",
+      "scope_name": "source.mermaid",
+      "display_name": "Mermaid",
+      "aliases": [
+        "mmd",
+        "mermaid example"
+      ],
+      "embedded_langs": [
+        "yaml",
+        "html",
+        "javascript",
+        "css",
+        "mermaid-c4c-diagram",
+        "mermaid-class-diagram",
+        "mermaid-er-diagram",
+        "mermaid-flowchart",
+        "mermaid-gantt",
+        "mermaid-gitgraph",
+        "mermaid-mindmap",
+        "mermaid-pie-chart",
+        "mermaid-quad-chart",
+        "mermaid-requirement-diagram",
+        "mermaid-sankey",
+        "mermaid-sequence-diagram",
+        "mermaid-state-diagram",
+        "mermaid-timeline",
+        "mermaid-user-journey",
+        "mermaid-zenuml"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/all.cson"
+      }
+    },
+    {
       "id": "nix",
       "grammar_file": "nix.json",
       "scope_name": "source.nix",
@@ -1894,6 +1934,274 @@
       "selector": {
         "module": "vendor/grammars/sublime-zig-language",
         "path": "Syntaxes/Zig.tmLanguage.json"
+      }
+    },
+    {
+      "id": "mermaid-c4c-diagram",
+      "grammar_file": "mermaid-c4c-diagram.json",
+      "scope_name": "source.mermaid.c4c-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "mermaid-user-journey"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/c4c-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-class-diagram",
+      "grammar_file": "mermaid-class-diagram.json",
+      "scope_name": "source.mermaid.class-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "mermaid-flowchart"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/class-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-er-diagram",
+      "grammar_file": "mermaid-er-diagram.json",
+      "scope_name": "source.mermaid.er-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/er-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-flowchart",
+      "grammar_file": "mermaid-flowchart.json",
+      "scope_name": "source.mermaid.flowchart",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/flowchart.cson"
+      }
+    },
+    {
+      "id": "mermaid-gantt",
+      "grammar_file": "mermaid-gantt.json",
+      "scope_name": "source.mermaid.gantt",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "mermaid-flowchart"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/gantt.cson"
+      }
+    },
+    {
+      "id": "mermaid-gitgraph",
+      "grammar_file": "mermaid-gitgraph.json",
+      "scope_name": "source.mermaid.gitgraph",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "json"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/gitgraph.cson"
+      }
+    },
+    {
+      "id": "mermaid-mindmap",
+      "grammar_file": "mermaid-mindmap.json",
+      "scope_name": "source.mermaid.mindmap",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "mermaid-flowchart"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/mindmap.cson"
+      }
+    },
+    {
+      "id": "mermaid-pie-chart",
+      "grammar_file": "mermaid-pie-chart.json",
+      "scope_name": "source.mermaid.pie-chart",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/pie-chart.cson"
+      }
+    },
+    {
+      "id": "mermaid-quad-chart",
+      "grammar_file": "mermaid-quad-chart.json",
+      "scope_name": "source.mermaid.quad-chart",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/quad-chart.cson"
+      }
+    },
+    {
+      "id": "mermaid-requirement-diagram",
+      "grammar_file": "mermaid-requirement-diagram.json",
+      "scope_name": "source.mermaid.requirement-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/requirement-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-sankey",
+      "grammar_file": "mermaid-sankey.json",
+      "scope_name": "source.mermaid.sankey",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/sankey.cson"
+      }
+    },
+    {
+      "id": "mermaid-sequence-diagram",
+      "grammar_file": "mermaid-sequence-diagram.json",
+      "scope_name": "source.mermaid.sequence-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [
+        "json"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/sequence-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-state-diagram",
+      "grammar_file": "mermaid-state-diagram.json",
+      "scope_name": "source.mermaid.state-diagram",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/state-diagram.cson"
+      }
+    },
+    {
+      "id": "mermaid-timeline",
+      "grammar_file": "mermaid-timeline.json",
+      "scope_name": "source.mermaid.timeline",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/timeline.cson"
+      }
+    },
+    {
+      "id": "mermaid-user-journey",
+      "grammar_file": "mermaid-user-journey.json",
+      "scope_name": "source.mermaid.user-journey",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/user-journey.cson"
+      }
+    },
+    {
+      "id": "mermaid-zenuml",
+      "grammar_file": "mermaid-zenuml.json",
+      "scope_name": "source.mermaid.zenuml",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/language-mermaid",
+        "path": "grammars/zenuml.cson"
       }
     }
   ]

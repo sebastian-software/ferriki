@@ -17,6 +17,7 @@ const ids = new Set();
 const keys = new Set();
 const licenses = new Set([
   "MIT",
+  "ISC",
   "Apache-2.0",
   "BSD-3-Clause",
   "MPL-2.0",

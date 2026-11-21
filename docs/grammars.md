@@ -16,10 +16,11 @@ The catalog covers:
   HTML/SVG/CSS template injections for Lit.
 - Documents and configuration: Markdown, MDX, JSON, JSONC, JSON5, YAML, TOML,
   INI, XML, shell scripts, PowerShell, Dockerfiles, Make, CMake, HCL, Terraform,
-  Nix, diffs, regular expressions, WebAssembly text, and WGSL.
+  Nix, Mermaid, diffs, regular expressions, WebAssembly text, and WGSL.
 
 [`assets/grammars/catalog.json`](../assets/grammars/catalog.json) owns IDs,
-aliases, dependencies, and source selectors.
+aliases, dependencies, and source selectors. See [Mermaid grammar coverage](mermaid-grammar.md)
+for diagram-specific support and known gaps.
 [`repositories.json`](../assets/grammars/repositories.json) configures the
 maintained collections and justified exceptions. The generated
 [`sources.json`](../assets/grammars/sources.json) locks repository commits,
