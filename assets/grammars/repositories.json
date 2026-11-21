@@ -42,7 +42,8 @@
         "vendor/grammars/nix-linguist",
         "vendor/grammars/godot-vscode-plugin",
         "vendor/grammars/vsc-ember-syntax",
-        "vendor/grammars/liquid-tm-grammar"
+        "vendor/grammars/liquid-tm-grammar",
+        "vendor/grammars/language-mermaid"
       ],
       "paths": {
         "vendor/grammars/vscode-cmake-tools": [
@@ -111,6 +112,9 @@
           "syntaxes/source.gts.json"
         ],
         "vendor/grammars/liquid-tm-grammar": [
+          "grammars/"
+        ],
+        "vendor/grammars/language-mermaid": [
           "grammars/"
         ]
       },
@@ -201,6 +205,10 @@
         },
         "vendor/grammars/liquid-tm-grammar": {
           "id": "MIT",
+          "path": "LICENSE.md"
+        },
+        "vendor/grammars/language-mermaid": {
+          "id": "ISC",
           "path": "LICENSE.md"
         }
       }
