@@ -129,7 +129,7 @@ for (let repeat = 0; repeat < 5; repeat++) {
 }
 assert.ok(rustRows.every((row) => !row.phaseClocks));
 const nativeBuild = JSON.parse(readFileSync(join(repo, "node/ferriki/.benchmark-build.json")));
-assert.equal(nativeBuild.ferroni.version, "2.8.0");
+assert.equal(nativeBuild.ferroni.version, "2.9.0");
 assert.ok(!nativeBuild.ferroni.features.includes("scanner-load-profile"));
 const result = {
   capturedAt: new Date().toISOString(),
