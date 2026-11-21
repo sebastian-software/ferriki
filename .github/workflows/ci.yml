@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# Reruns and non-PR runs get their own group, including while pending.
+concurrency:
+  group: validation-${{ github.repository }}-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.run_attempt == '1' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}-{1}', github.run_id, github.run_attempt) }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
