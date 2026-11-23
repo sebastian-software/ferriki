@@ -261,5 +261,11 @@
       }
     ],
     "reason": "Keep obsolete entries distinct before and after the first gettext field."
+  },
+  {
+    "path": "/patterns/0/begin",
+    "before": "^(?=(msgid(_plural)?|msgctxt)\\s*\"[^\"])|^\\s*$",
+    "after": "^(?=(?:msgid(?:_plural)?|msgctxt|msgstr(?:\\[\\d+\\])?)\\s*\"[^\"])|^\\s*$",
+    "reason": "Enter the gettext body for a nonempty translation following an initial continued message while keeping the header scopes."
   }
 ]
