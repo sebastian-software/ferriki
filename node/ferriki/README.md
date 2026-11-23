@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki#license)
-[![Node.js 22 (22.13.0 or later), 24, and 26](https://img.shields.io/badge/Node.js-22%20%7C%2024%20%7C%2026-339933?logo=nodedotjs&logoColor=white)](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/README.md#requirements-and-install)
+[![Supported Node.js majors 22, 24, and 26. The 22 series starts at 22.13.0.](https://img.shields.io/badge/Node.js-22%20%7C%2024%20%7C%2026-339933?logo=nodedotjs&logoColor=white)](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/README.md#requirements-and-install)
 
 **Beautiful code. Head start included.** Native, Oniguruma-compatible syntax
 highlighting for your docs, blog, or CMS, with familiar Shiki-style HTML calls
