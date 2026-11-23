@@ -102,6 +102,10 @@
         "vendor/grammars/language-mermaid": {
           "repository": "Alhadis/language-mermaid",
           "commit": "bec500f956c6d68b1f634fa83803efe35d3b14b9"
+        },
+        "vendor/grammars/gettext.tmbundle": {
+          "repository": "textmate/gettext.tmbundle",
+          "commit": "08bb69558d82ada8d4f36b8869f871ce69014749"
         }
       }
     },
@@ -789,6 +793,27 @@
       "sha256": "62d254a53ba131da36e85a22c665571c4ea1785b54df5820d484c8881be08c33"
     },
     {
+      "id": "fcl",
+      "grammar_file": "fcl.json",
+      "scope_name": "source.fcl",
+      "display_name": "Ferrocat Catalog Lines",
+      "aliases": [],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "local",
+      "source": "assets/grammars/local/fcl.tmLanguage.json",
+      "upstream_path": "assets/grammars/local/fcl.tmLanguage.json",
+      "license": "MIT",
+      "license_url": "LICENSE-MIT",
+      "license_file": "assets/grammars/licenses/aaca9ba40a4864fb4394b2f0f936b2d0c5a9035f2ed27385c35e2c92d461b463.txt",
+      "upstream_sha256": "51494473ffc879168336ad914c2b542bfe061f90a44eb77442f99c2e6e146822",
+      "sha256": "55a760f6647cb5b6dadaa7ad62906ee9a17ba1a8652f7c37a50d5880f1791155"
+    },
+    {
       "id": "gdscript",
       "grammar_file": "gdscript.json",
       "scope_name": "source.gdscript",
@@ -1094,6 +1119,25 @@
       "license_file": "assets/grammars/licenses/9480271317925265e806a9a196aaa33410a962fa9d4d1e248a4a5187bc8c9df9.txt",
       "upstream_sha256": "0d6495edf9edfb25ae89ef43d64c4b6ee2bbb2468179001c7c9574c789a1ed77",
       "sha256": "bde35a4ef7e79d61db920f0b3d44cf734cf913e66223abd79f6cc57c43d9e334"
+    },
+    {
+      "id": "icu-message",
+      "grammar_file": "icu-message.json",
+      "scope_name": "source.icu-message",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "local",
+      "source": "assets/grammars/local/icu-message.tmLanguage.json",
+      "upstream_path": "assets/grammars/local/icu-message.tmLanguage.json",
+      "license": "MIT",
+      "license_url": "LICENSE-MIT",
+      "license_file": "assets/grammars/licenses/aaca9ba40a4864fb4394b2f0f936b2d0c5a9035f2ed27385c35e2c92d461b463.txt",
+      "upstream_sha256": "53036eb80c98ac9364c386641acba88eea4012e1b906dcd3bf00a7ed7e18defe",
+      "sha256": "1ec01c58d79562d0d230f5456e4ad18270614e8def9994d5e331f51f248d1718"
     },
     {
       "id": "ini",
@@ -1682,7 +1726,10 @@
         "mermaid-state-diagram",
         "mermaid-timeline",
         "mermaid-user-journey",
-        "mermaid-zenuml"
+        "mermaid-zenuml",
+        "mermaid-diagrams",
+        "mermaid-c4",
+        "mermaid-zenuml-comments"
       ],
       "embedded_langs_lazy": [],
       "inject_to": [],
@@ -1697,7 +1744,28 @@
       "license_url": "https://raw.githubusercontent.com/Alhadis/language-mermaid/bec500f956c6d68b1f634fa83803efe35d3b14b9/LICENSE.md",
       "license_file": "assets/grammars/licenses/dc474b35d0915825248d7aef258810473cfd628930b321cd704e859d6354e904.txt",
       "upstream_sha256": "5d40dae397196b3100b62b02a601367a0ee7cefeab9d740e98b57d3455fc7468",
-      "sha256": "f2db2f52dbda0485c9f1c4be6d651cbe08f5d2bb93dca859cc94e02304decf14"
+      "sha256": "8283374ab7bbf227e5830a5b67e76c66b42ae31ba8ae63e526ae439943cb5f1b"
+    },
+    {
+      "id": "mermaid-c4",
+      "grammar_file": "mermaid-c4.json",
+      "scope_name": "source.ferriki-mermaid-c4",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "source": "assets/grammars/local/mermaid-c4.tmLanguage.json",
+      "upstream_path": "assets/grammars/local/mermaid-c4.tmLanguage.json",
+      "license": "MIT",
+      "license_url": "LICENSE-MIT",
+      "license_file": "assets/grammars/licenses/aaca9ba40a4864fb4394b2f0f936b2d0c5a9035f2ed27385c35e2c92d461b463.txt",
+      "upstream_sha256": "4aa9cecbe6f5562811285d73d0fb7d3a3ff71dd92953db53b97409e5050904e3",
+      "sha256": "4a25028b615c2e014c6c29ac01b2bdf93a289c42dade901c9b8cb3d268ffccab"
     },
     {
       "id": "mermaid-c4c-diagram",
@@ -1746,6 +1814,27 @@
       "license_file": "assets/grammars/licenses/dc474b35d0915825248d7aef258810473cfd628930b321cd704e859d6354e904.txt",
       "upstream_sha256": "01bc50b31835b33daf8b97c87e63522c464131e23b1ad5f1aad5dda9ba9fac82",
       "sha256": "2dbca6187f1b35653ac2372094b4eff69778cc8a5a83f8bc63e953012b82062e"
+    },
+    {
+      "id": "mermaid-diagrams",
+      "grammar_file": "mermaid-diagrams.json",
+      "scope_name": "source.ferriki-mermaid-diagrams",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "source": "assets/grammars/local/mermaid-diagrams.tmLanguage.json",
+      "upstream_path": "assets/grammars/local/mermaid-diagrams.tmLanguage.json",
+      "license": "MIT",
+      "license_url": "LICENSE-MIT",
+      "license_file": "assets/grammars/licenses/aaca9ba40a4864fb4394b2f0f936b2d0c5a9035f2ed27385c35e2c92d461b463.txt",
+      "upstream_sha256": "30f04d5d44bb64de483d6799de913e88dcb3a6703de58a525b5624579c18d7b9",
+      "sha256": "b18514c297cd7c7c92ad0114f0d4dd858c64112c1721d5203c0bb18067120100"
     },
     {
       "id": "mermaid-er-diagram",
@@ -2064,6 +2153,27 @@
       "sha256": "30c4ebf7b13f62eab5d7aa7806c24b429c69c9c6071d633e99d68ed93ca23e81"
     },
     {
+      "id": "mermaid-zenuml-comments",
+      "grammar_file": "mermaid-zenuml-comments.json",
+      "scope_name": "source.ferriki-mermaid-zenuml-comments",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "source": "assets/grammars/local/mermaid-zenuml-comments.tmLanguage.json",
+      "upstream_path": "assets/grammars/local/mermaid-zenuml-comments.tmLanguage.json",
+      "license": "MIT",
+      "license_url": "LICENSE-MIT",
+      "license_file": "assets/grammars/licenses/aaca9ba40a4864fb4394b2f0f936b2d0c5a9035f2ed27385c35e2c92d461b463.txt",
+      "upstream_sha256": "bf149ef3503accd186c094f938604be1d4aabb93e319ddad46e202c3a614b500",
+      "sha256": "f8f74e05765983d0d67e600b0f339b024145e96f96eaab6e9a4be8b91ff1af88"
+    },
+    {
       "id": "nix",
       "grammar_file": "nix.json",
       "scope_name": "source.nix",
@@ -2139,6 +2249,33 @@
       "license_file": "assets/grammars/licenses/9480271317925265e806a9a196aaa33410a962fa9d4d1e248a4a5187bc8c9df9.txt",
       "upstream_sha256": "dea92689034f878009c556d59abef08a16e0995ad423ac8ffe93fad78d065c1c",
       "sha256": "186df12d7c449af0f6bf0715fe684f2f950c233bae813658a944b12e68cd93b3"
+    },
+    {
+      "id": "po",
+      "grammar_file": "po.json",
+      "scope_name": "source.po",
+      "display_name": "Gettext Catalog",
+      "aliases": [
+        "pot"
+      ],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "patch_file": "assets/grammars/patches/po.json",
+      "repository_id": "linguist",
+      "source": "https://raw.githubusercontent.com/textmate/gettext.tmbundle/08bb69558d82ada8d4f36b8869f871ce69014749/Syntaxes/Gettext.tmLanguage",
+      "upstream_repository": "textmate/gettext.tmbundle",
+      "upstream_commit": "08bb69558d82ada8d4f36b8869f871ce69014749",
+      "upstream_path": "Syntaxes/Gettext.tmLanguage",
+      "module": "vendor/grammars/gettext.tmbundle",
+      "license": "LicenseRef-TextMate-Bundle",
+      "license_url": "https://raw.githubusercontent.com/textmate/gettext.tmbundle/08bb69558d82ada8d4f36b8869f871ce69014749/README.mdown",
+      "license_file": "assets/grammars/licenses/7ab0693a63bc1f61b54ba4fff7b04d17a6926899dfee40e3b6c9b9885e927dc7.txt",
+      "upstream_sha256": "79171dd2636a98f21f2192220b45ab9cb5beca95394132e64d5ef08d5a3a46ef",
+      "sha256": "c4d4df2db63e54fff13296b133a0012209d06b968d081176345180c4dfcd9aa0"
     },
     {
       "id": "postcss",
