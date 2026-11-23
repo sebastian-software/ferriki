@@ -96,7 +96,12 @@ export function parseSubmodules(text) {
   return modules;
 }
 
-export async function resolveRepositorySnapshots(config, reader, locked) {
+export async function resolveRepositorySnapshots(
+  config,
+  reader,
+  locked,
+  { allowModuleChanges = false } = {},
+) {
   if (
     locked &&
     JSON.stringify(config.repositories.map((source) => source.id).sort()) !==
@@ -119,6 +124,7 @@ export async function resolveRepositorySnapshots(config, reader, locked) {
     if (source.adapter === "linguist") {
       if (
         previous &&
+        !allowModuleChanges &&
         JSON.stringify([...source.modules].sort()) !==
           JSON.stringify(Object.keys(previous.modules || {}).sort())
       )
@@ -135,7 +141,10 @@ export async function resolveRepositorySnapshots(config, reader, locked) {
         if (!pin || !repository || !COMMIT.test(pin.sha))
           throw new Error(`Missing Linguist module: ${modulePath}`);
         const module = { repository, commit: pin.sha };
-        if (previous && JSON.stringify(module) !== JSON.stringify(previous.modules?.[modulePath]))
+        if (
+          previous?.modules?.[modulePath] &&
+          JSON.stringify(module) !== JSON.stringify(previous.modules[modulePath])
+        )
           throw new Error(`Linguist module lock drift: ${modulePath}`);
         snapshot.modules[modulePath] = module;
       }

@@ -21,6 +21,7 @@ for (const script of [
   "../scripts/test-asset-store.mjs",
   "../scripts/test-cleanup-bootstrap.mjs",
   "../scripts/test-grammar-source.mjs",
+  "../scripts/test-local-grammar.mjs",
   "../scripts/test-grammar-repositories.mjs",
   "../scripts/test-grammar-update-workflow.mjs",
   "../scripts/sync-grammars.mjs",
@@ -29,6 +30,7 @@ for (const script of [
   "./scripts/check-ferriki-fcl.mjs",
   "./scripts/check-mermaid-local.mjs",
   "./scripts/check-mermaid-local-catalog.mjs",
+  "./scripts/check-ferriki-po.mjs",
   "./scripts/test-theme-token-alignment.mjs",
 ]) {
   const result = spawnSync(

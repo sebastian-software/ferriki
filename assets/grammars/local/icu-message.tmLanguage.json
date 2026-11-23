@@ -14,7 +14,7 @@
       "patterns": [
         {
           "name": "constant.character.escape.icu-message",
-          "match": "\\\\[\\\\\"nt]"
+          "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9a-fA-F]+)"
         }
       ]
     },
@@ -26,8 +26,9 @@
         },
         {
           "name": "string.quoted.single.icu-message",
-          "begin": "'(?=[{}#])",
-          "end": "'|(?=\\t)",
+          "begin": "'(?=[{}])",
+          "end": "'|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "applyEndPatternLast": 1,
           "patterns": [
             {
               "include": "#escapes"
@@ -36,25 +37,21 @@
               "name": "constant.character.escape.icu-message",
               "match": "''"
             }
-          ],
-          "applyEndPatternLast": 1
+          ]
         }
       ]
     },
     "argument": {
       "name": "meta.argument.icu-message",
-      "begin": "(\\{)\\s*([^\\s{},]+)",
+      "begin": "\\{",
       "beginCaptures": {
-        "1": {
+        "0": {
           "name": "punctuation.section.argument.begin.icu-message"
-        },
-        "2": {
-          "name": "variable.parameter.icu-message"
         }
       },
-      "end": "(\\})|(?=\\t)",
+      "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
       "endCaptures": {
-        "1": {
+        "0": {
           "name": "punctuation.section.argument.end.icu-message"
         }
       },
@@ -66,19 +63,40 @@
           "include": "#quoted"
         },
         {
-          "include": "#selector"
+          "include": "#format"
         },
         {
-          "name": "storage.type.icu-message",
-          "match": "\\b(?:plural|selectordinal|select|number|date|time)\\b"
+          "name": "variable.parameter.icu-message",
+          "match": "[^\\s{},<>\"\\\\]+"
+        }
+      ]
+    },
+    "plural": {
+      "name": "meta.plural.icu-message",
+      "begin": "\\b(plural|selectordinal)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
         },
         {
           "name": "keyword.other.offset.icu-message",
-          "match": "\\boffset(?=\\s*:)"
+          "match": "\\boffset(?=[ \\t\\r]*:)"
         },
         {
           "name": "constant.numeric.icu-message",
-          "match": "(?<=:)\\s*[0-9]+"
+          "match": "(?<=:)[ \\t\\r]*[0-9]+"
+        },
+        {
+          "include": "#plural-selector"
         },
         {
           "name": "punctuation.separator.icu-message",
@@ -86,21 +104,190 @@
         }
       ]
     },
-    "selector": {
+    "select": {
+      "name": "meta.select.icu-message",
+      "begin": "\\b(select)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#select-selector"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "plural-selector": {
       "name": "meta.selector.icu-message",
-      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(\\s*)(\\{)",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
       "beginCaptures": {
         "1": {
           "name": "constant.language.selector.icu-message"
-        },
-        "3": {
-          "name": "punctuation.section.message.begin.icu-message"
         }
       },
-      "end": "(\\})|(?=\\t)",
-      "endCaptures": {
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted-plural"
+            },
+            {
+              "include": "#argument-plural"
+            },
+            {
+              "name": "constant.language.pound.icu-message",
+              "match": "#"
+            }
+          ]
+        }
+      ]
+    },
+    "select-selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
+      "beginCaptures": {
         "1": {
-          "name": "punctuation.section.message.end.icu-message"
+          "name": "constant.language.selector.icu-message"
+        }
+      },
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted"
+            },
+            {
+              "include": "#argument"
+            }
+          ]
+        }
+      ]
+    },
+    "format": {
+      "name": "meta.format.icu-message",
+      "begin": ",",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.separator.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#plural"
+        },
+        {
+          "include": "#select"
+        },
+        {
+          "name": "storage.type.icu-message",
+          "match": "\\b(?:number|date|time|list|duration|ago|name)\\b"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "quoted-plural": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "''"
+        },
+        {
+          "name": "string.quoted.single.icu-message",
+          "begin": "'(?=[{}#])",
+          "end": "'|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "applyEndPatternLast": 1,
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "name": "constant.character.escape.icu-message",
+              "match": "''"
+            }
+          ]
+        }
+      ]
+    },
+    "argument-plural": {
+      "name": "meta.argument.icu-message",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.begin.icu-message"
+        }
+      },
+      "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.end.icu-message"
         }
       },
       "patterns": [
@@ -111,11 +298,116 @@
           "include": "#quoted"
         },
         {
-          "include": "#argument"
+          "include": "#format-plural"
         },
         {
-          "name": "constant.language.pound.icu-message",
-          "match": "#"
+          "name": "variable.parameter.icu-message",
+          "match": "[^\\s{},<>\"\\\\]+"
+        }
+      ]
+    },
+    "format-plural": {
+      "name": "meta.format.icu-message",
+      "begin": ",",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.separator.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#plural"
+        },
+        {
+          "include": "#select-plural"
+        },
+        {
+          "name": "storage.type.icu-message",
+          "match": "\\b(?:number|date|time|list|duration|ago|name)\\b"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "select-plural": {
+      "name": "meta.select.icu-message",
+      "begin": "\\b(select)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#select-plural-selector"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "select-plural-selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.selector.icu-message"
+        }
+      },
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted-plural"
+            },
+            {
+              "include": "#argument-plural"
+            },
+            {
+              "name": "constant.language.pound.icu-message",
+              "match": "#"
+            }
+          ]
         }
       ]
     }

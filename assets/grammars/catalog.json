@@ -2274,6 +2274,42 @@
       "selector": {
         "path": "assets/grammars/local/mermaid-zenuml-comments.tmLanguage.json"
       }
+    },
+    {
+      "id": "icu-message",
+      "grammar_file": "icu-message.json",
+      "scope_name": "source.icu-message",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/icu-message.tmLanguage.json"
+      }
+    },
+    {
+      "id": "po",
+      "grammar_file": "po.json",
+      "scope_name": "source.po",
+      "display_name": "Gettext Catalog",
+      "aliases": [
+        "pot"
+      ],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "patch_file": "assets/grammars/patches/po.json",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/gettext.tmbundle",
+        "path": "Syntaxes/Gettext.tmLanguage"
+      }
     }
   ]
 }

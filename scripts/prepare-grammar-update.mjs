@@ -17,18 +17,21 @@ import {
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const usage =
-  "Usage: node scripts/prepare-grammar-update.mjs [--locked] [--output-dir <new-directory>]";
+  "Usage: node scripts/prepare-grammar-update.mjs [--locked|--locked-repositories] [--output-dir <new-directory>]";
 let outputRoot;
 let created = false;
 async function prepare() {
   const args = process.argv.slice(2);
   let locked = false;
+  let lockedRepositories = false;
   for (let index = 0; index < args.length; index++) {
     if (args[index] === "--locked") locked = true;
+    else if (args[index] === "--locked-repositories") lockedRepositories = true;
     else if (args[index] === "--output-dir" && args[index + 1])
       outputRoot = path.resolve(args[++index]);
     else throw new Error(usage);
   }
+  if (locked && lockedRepositories) throw new Error(usage);
   if (outputRoot) await mkdir(outputRoot); // Refuse an existing destination.
   else outputRoot = await mkdtemp(path.join(tmpdir(), "ferriki-grammar-update-"));
   created = true;
@@ -41,13 +44,14 @@ async function prepare() {
   const previous = JSON.parse(
     await readFile(path.join(root, "assets/grammars/sources.json"), "utf8"),
   );
-  if (locked && !previous.repositories)
+  if ((locked || lockedRepositories) && !previous.repositories)
     throw new Error("No repository snapshots are locked yet. Prepare the initial update first.");
   const reader = createGitHubReader();
   const snapshots = await resolveRepositorySnapshots(
     config,
     reader,
-    locked ? previous.repositories : undefined,
+    locked || lockedRepositories ? previous.repositories : undefined,
+    { allowModuleChanges: lockedRepositories },
   );
   const inventories = new Map();
   for (const repository of config.repositories) {
@@ -69,6 +73,8 @@ async function prepare() {
   for (let index = 0; index < selections.length; index++) {
     const selection = selections[index];
     const local = selection.repository_id === "local";
+    if (local && (Object.keys(selection.selector).length !== 1 || !selection.selector.path))
+      throw new Error(`Invalid local grammar selector: ${selection.id}`);
     const candidate = local
       ? {
           path: localGrammarPath(selection.selector.path),
@@ -214,6 +220,14 @@ async function prepare() {
       ? await readFile(path.join(root, license.path))
       : await reader.read(candidate.repository, candidate.commit, license.path);
     const license_file = `assets/grammars/licenses/${digest(licenseBytes)}.txt`;
+    if (
+      locked &&
+      (!previousEntry ||
+        previousEntry.upstream_sha256 !== digest(bytes) ||
+        previousEntry.sha256 !== digest(normalized) ||
+        previousEntry.license_file !== license_file)
+    )
+      throw new Error(`Grammar lock drift: ${selection.id}`);
     await mkdir(path.join(outputRoot, "assets/grammars/licenses"), { recursive: true });
     await writeFile(path.join(outputRoot, license_file), licenseBytes);
     const { selector, ...entry } = metadata;
@@ -238,6 +252,14 @@ async function prepare() {
     grammarFiles.set(entry.id, normalized);
   }
   languages.sort((a, b) => a.id.localeCompare(b.id, "en"));
+  if (
+    locked &&
+    JSON.stringify(languages.map((entry) => entry.id)) !==
+      JSON.stringify(
+        previous.languages.map((entry) => entry.id).sort((a, b) => a.localeCompare(b, "en")),
+      )
+  )
+    throw new Error("Grammar selection lock drift");
   const changes = grammarChanges(previous.languages, languages);
   const configurationChanged =
     JSON.stringify(Object.keys(previous.repositories || {}).sort()) !==
