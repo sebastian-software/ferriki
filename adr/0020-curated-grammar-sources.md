@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-11-23
 
 ## Context
 
@@ -33,6 +33,9 @@ language coverage.
   supported required dependencies are discovered transitively. This is a
   maintained selection, not a popularity ranking or a promise to reproduce
   Shiki's entire catalog.
+- Ferriki may author TextMate grammars locally when an existing source cannot cover required family formats or shared embedded syntax. Committed files under `assets/grammars/local/` use the MIT license; the source lock records their SHA-256 and path, without a self-referential commit. Their raw, normalized, and compiled objects follow the same immutable asset publication as external grammars. Local sources are not third-party notices.
+- `--locked-repositories` prepares an update against the accepted external repository commits while permitting local source edits and selection changes to modules of the already-pinned Linguist snapshot. `--locked` remains strict replay and rejects local source drift. Neither mode resolves moving refs.
+- The standard Gettext Catalog grammar embeds ICU in all `msgid` and `msgstr` fields, including classic gettext plural fields. Literal braces in a classic PO may therefore receive ICU scopes; there is no separate unembedded variant. Gettext context and comments retain their own scopes. ICU state continues across quoted PO lines, but a keyword split within a token across physical lines cannot be scoped as one token by a line-oriented TextMate grammar.
 - Required dependencies are included transitively. Lazy embeddings name only
   languages in the standard catalog; applications explicitly load these or
   register external grammars. An optional GLSL embedding in C++ and its macro
@@ -166,3 +169,5 @@ package and crate version updates.
 - 2026-10-21: Added byte, substitution, and recursion-depth bounds to YAML
   variable expansion during source sync, including a cap on intermediate output
   generated across nested references.
+
+- 2026-11-23: Added content-locked local grammar sources and pinned-repository candidate updates for first-party family syntax and embedded ICU messages.

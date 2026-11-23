@@ -96,6 +96,11 @@ for (const entry of sources.languages) {
   if (JSON.stringify(normalizeGrammar(grammar, entry)) !== JSON.stringify(grammar))
     throw new Error(`Candidate metadata drift: ${entry.id}`);
   const selection = catalog.languages.find((item) => item.id === entry.id);
+  if (
+    entry.repository_id === "local" &&
+    (selection?.repository_id !== "local" || selection.selector?.path !== entry.upstream_path)
+  )
+    throw new Error(`Candidate local selection drift: ${entry.id}`);
   if (fields.some((key) => JSON.stringify(selection[key]) !== JSON.stringify(entry[key])))
     throw new Error(`Candidate selection metadata drift: ${entry.id}`);
   for (const key of [entry.id, ...entry.aliases]) {

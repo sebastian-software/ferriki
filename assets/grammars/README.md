@@ -28,6 +28,8 @@ node scripts/apply-grammar-update.mjs /tmp/ferriki-candidate
 pnpm -C node run test:ferriki-compat:core
 ```
 
+Use `--locked-repositories` to prepare a candidate for local grammar changes or new modules against the accepted external repository snapshots. Local grammars live in `assets/grammars/local/` under the MIT license. Their paths and content hashes are locked without a self-referential Git commit. `--locked` remains strict replay and rejects local source changes.
+
 Preparation refuses an existing output directory and leaves the current catalog
 alone. `report.json` lists changed files and notices, discovered candidates,
 external scope references, and patches already fixed upstream. A source move,
