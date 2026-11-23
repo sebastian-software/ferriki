@@ -103,7 +103,7 @@ try {
     "{count, plural, one {#\\r item} other {# items}}\tsgreeting\tWert\\rEnde",
     "Empty\ts\tLeer",
     // Updated Ferrocat API reference example, shown as an ordinary FCL fence.
-    "Hello\tn\tHallo\tlock=<hash>\tai=openai/gpt-5.5-high:0.95",
+    "Hello {name}\tn\tHallo {name}\tlock=<hash>\tai=openai/gpt-5.5-high:0.95",
   ].join("\r\n");
   assert.equal(highlighter.codeToHtml(current, { lang: "fcl", theme }), reference.html(current));
   highlighter.codeToHtml(current, {
@@ -132,6 +132,8 @@ try {
   expectScope(2, "\\r", "constant.character.escape.icu-message");
   expectScope(2, "\\r", "constant.character.escape.fcl", 1);
   expectScope(4, "Hallo", "string.unquoted.target.fcl");
+  expectScope(4, "name", "variable.parameter.icu-message", 0);
+  expectScope(4, "name", "variable.parameter.icu-message", 1);
   for (const [index, line] of current.split("\r\n").entries())
     for (let column = 0; column < line.length; column++)
       if (line[column] === "\t")
