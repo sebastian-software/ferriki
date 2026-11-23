@@ -481,6 +481,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build native
+        id: native-build
         uses: ./node/node_modules/ferramenta-native/actions/build-native
         with:
           target: ${{ matrix.target }}
@@ -542,3 +543,41 @@ jobs:
             --published "$FERRIKI_PLATFORM_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           FERRIKI_PLATFORM_ID: ${{ matrix.id }}
+
+      # Reuse the Linux build to exercise the packed consumer on the first
+      # release of each supported Node line. Node 22.0.0 is a candidate floor.
+      - name: Select Node.js 22.0.0
+        id: node-22
+        if: ${{ !cancelled() && matrix.id == 'linux-x64-gnu' && steps.native-build.outcome == 'success' }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.0.0"
+
+      - name: Verify packed consumer on Node.js 22.0.0
+        if: ${{ !cancelled() && steps.node-22.outcome == 'success' }}
+        run: node ./scripts/check-packed-consumer.mjs
+        env:
+          # The currently published engine starts at 22.13.0.
+          npm_config_engine_strict: "false"
+
+      - name: Select Node.js 24.0.0
+        id: node-24
+        if: ${{ !cancelled() && matrix.id == 'linux-x64-gnu' && steps.native-build.outcome == 'success' }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24.0.0"
+
+      - name: Verify packed consumer on Node.js 24.0.0
+        if: ${{ !cancelled() && steps.node-24.outcome == 'success' }}
+        run: node ./scripts/check-packed-consumer.mjs
+
+      - name: Select Node.js 26.0.0
+        id: node-26
+        if: ${{ !cancelled() && matrix.id == 'linux-x64-gnu' && steps.native-build.outcome == 'success' }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26.0.0"
+
+      - name: Verify packed consumer on Node.js 26.0.0
+        if: ${{ !cancelled() && steps.node-26.outcome == 'success' }}
+        run: node ./scripts/check-packed-consumer.mjs
