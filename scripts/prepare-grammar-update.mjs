@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
+import { localGrammarPath, readLocalGrammar } from "./local-grammar.mjs";
 import {
   createGitHubReader,
   digest,
@@ -67,8 +68,29 @@ async function prepare() {
   const externalScopes = [];
   for (let index = 0; index < selections.length; index++) {
     const selection = selections[index];
-    const candidate = selectCandidate(inventories.get(selection.repository_id), selection.selector);
-    const bytes = await reader.read(candidate.repository, candidate.commit, candidate.path);
+    const local = selection.repository_id === "local";
+    const candidate = local
+      ? {
+          path: localGrammarPath(selection.selector.path),
+          license: { id: "MIT", path: "LICENSE-MIT" },
+        }
+      : selectCandidate(inventories.get(selection.repository_id), selection.selector);
+    const previousEntry = previous.languages.find((entry) => entry.id === selection.id);
+    if (
+      locked &&
+      local &&
+      (!previousEntry ||
+        previousEntry.repository_id !== "local" ||
+        previousEntry.upstream_path !== candidate.path)
+    )
+      throw new Error(`Local grammar lock drift: ${selection.id}`);
+    const bytes = local
+      ? await readLocalGrammar(
+          root,
+          candidate.path,
+          locked ? previousEntry.upstream_sha256 : undefined,
+        )
+      : await reader.read(candidate.repository, candidate.commit, candidate.path);
     let grammar = parseGrammarSource(bytes.toString("utf8"), candidate.path);
     const rawFile = path.join(outputRoot, "assets/grammar-raw", selection.id, digest(bytes));
     await mkdir(path.dirname(rawFile), { recursive: true });
@@ -188,20 +210,27 @@ async function prepare() {
     const license = candidate.license;
     if (!license?.id || !license.path)
       throw new Error(`No license declaration for ${selection.id}`);
-    const licenseBytes = await reader.read(candidate.repository, candidate.commit, license.path);
+    const licenseBytes = local
+      ? await readFile(path.join(root, license.path))
+      : await reader.read(candidate.repository, candidate.commit, license.path);
     const license_file = `assets/grammars/licenses/${digest(licenseBytes)}.txt`;
     await mkdir(path.join(outputRoot, "assets/grammars/licenses"), { recursive: true });
     await writeFile(path.join(outputRoot, license_file), licenseBytes);
     const { selector, ...entry } = metadata;
     languages.push({
       ...entry,
-      source: rawUrl(candidate.repository, candidate.commit, candidate.path),
-      upstream_repository: candidate.repository,
-      upstream_commit: candidate.commit,
+      source: local
+        ? candidate.path
+        : rawUrl(candidate.repository, candidate.commit, candidate.path),
+      ...(!local
+        ? { upstream_repository: candidate.repository, upstream_commit: candidate.commit }
+        : {}),
       upstream_path: candidate.path,
       ...(candidate.module ? { module: candidate.module } : {}),
       license: license.id,
-      license_url: rawUrl(candidate.repository, candidate.commit, license.path),
+      license_url: local
+        ? license.path
+        : rawUrl(candidate.repository, candidate.commit, license.path),
       license_file,
       upstream_sha256: digest(bytes),
       sha256: digest(normalized),

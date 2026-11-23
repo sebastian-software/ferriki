@@ -1,0 +1,123 @@
+{
+  "name": "ICU MessageFormat",
+  "scopeName": "source.icu-message",
+  "patterns": [
+    {
+      "include": "#quoted"
+    },
+    {
+      "include": "#argument"
+    }
+  ],
+  "repository": {
+    "escapes": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "\\\\[\\\\\"nt]"
+        }
+      ]
+    },
+    "quoted": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "''"
+        },
+        {
+          "name": "string.quoted.single.icu-message",
+          "begin": "'(?=[{}#])",
+          "end": "'|(?=\\t)",
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "name": "constant.character.escape.icu-message",
+              "match": "''"
+            }
+          ],
+          "applyEndPatternLast": 1
+        }
+      ]
+    },
+    "argument": {
+      "name": "meta.argument.icu-message",
+      "begin": "(\\{)\\s*([^\\s{},]+)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.section.argument.begin.icu-message"
+        },
+        "2": {
+          "name": "variable.parameter.icu-message"
+        }
+      },
+      "end": "(\\})|(?=\\t)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.argument.end.icu-message"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#selector"
+        },
+        {
+          "name": "storage.type.icu-message",
+          "match": "\\b(?:plural|selectordinal|select|number|date|time)\\b"
+        },
+        {
+          "name": "keyword.other.offset.icu-message",
+          "match": "\\boffset(?=\\s*:)"
+        },
+        {
+          "name": "constant.numeric.icu-message",
+          "match": "(?<=:)\\s*[0-9]+"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(\\s*)(\\{)",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.selector.icu-message"
+        },
+        "3": {
+          "name": "punctuation.section.message.begin.icu-message"
+        }
+      },
+      "end": "(\\})|(?=\\t)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.message.end.icu-message"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#argument"
+        },
+        {
+          "name": "constant.language.pound.icu-message",
+          "match": "#"
+        }
+      ]
+    }
+  }
+}
