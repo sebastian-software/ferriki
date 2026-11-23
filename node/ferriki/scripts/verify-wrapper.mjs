@@ -20,6 +20,7 @@ const required = [
   join(pkgDir, "src", "api.d.mts"),
   join(pkgDir, "src", "index.mjs"),
   join(pkgDir, "src", "asset-download.mjs"),
+  join(pkgDir, "src", "protected-assets.mjs"),
 ];
 
 for (const file of required) await access(file);

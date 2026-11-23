@@ -378,3 +378,171 @@ fn permanent_status_and_integrity_failures_do_not_retry() {
         );
     }
 }
+
+#[test]
+fn protected_issuer_contract_rejects_mismatch_and_redacts_values() {
+    let path = "/themes/nord/DVzhgQds";
+    let digest = "a".repeat(64);
+    let signed =
+        format!("https://protected-assets.ferriki.dev{path}?token=secret_123&expires=1234");
+    let body = serde_json::json!({"url":signed,"bytes":17,"sha256":digest}).to_string();
+    assert_eq!(
+        parse_issuer_response(body.as_bytes(), path, &digest, 17).unwrap(),
+        signed
+    );
+    for bad in [
+        format!("https://evil.example{path}?token=secret_123&expires=1234"),
+        "https://protected-assets.ferriki.dev/other?token=secret_123&expires=1234".to_owned(),
+        format!("https://protected-assets.ferriki.dev{path}?token=secret_123&expires=1234&x=1"),
+        format!("https://protected-assets.ferriki.dev{path}?token=secret_123&token=x&expires=1234"),
+        format!("https://protected-assets.ferriki.dev{path}?token=secret_123&expires=abc"),
+        format!(
+            "https://protected-assets.ferriki.dev{path}?token=secret_123&expires=1234#fragment"
+        ),
+    ] {
+        let error = validate_signed_url(&bad, path).unwrap_err().to_string();
+        assert!(!error.contains("secret"));
+    }
+    assert!(parse_issuer_response(body.as_bytes(), path, &digest, 18).is_err());
+    assert!(parse_issuer_response(body.as_bytes(), path, &"b".repeat(64), 17).is_err());
+    assert_eq!(
+        protected_path("https://assets.ferriki.dev/themes/nord/DVzhgQds").unwrap(),
+        path
+    );
+    assert!(protected_path("https://mirror.example/themes/nord/DVzhgQds").is_err());
+    assert!(
+        protected_path("https://assets.ferriki.dev/themes/nord/DVzhgQds?token=secret").is_err()
+    );
+}
+
+#[test]
+fn protected_transport_posts_bearer_only_to_issuer() {
+    use std::io::Read as _;
+    let mirror = Mirror::start([]);
+    let fixture = Fixture::new(&mirror);
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let digest = "a".repeat(64);
+    let expected_digest = digest.clone();
+    let thread = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut line = String::new();
+        let mut headers = String::new();
+        let mut size = 0;
+        loop {
+            line.clear();
+            reader.read_line(&mut line).unwrap();
+            if line == "\r\n" {
+                break;
+            }
+            if let Some(value) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                size = value.trim().parse().unwrap();
+            }
+            headers.push_str(&line);
+        }
+        let mut body = vec![0; size];
+        reader.read_exact(&mut body).unwrap();
+        assert!(
+            headers
+                .to_ascii_lowercase()
+                .contains("authorization: bearer issuer-secret")
+        );
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(payload["path"], "/themes/nord/DVzhgQds");
+        assert_eq!(payload["sha256"], expected_digest);
+        let result = serde_json::json!({"url":"https://protected-assets.ferriki.dev/themes/nord/DVzhgQds?token=HS256-signed&expires=1234", "bytes":17, "sha256":expected_digest}).to_string();
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            result.len(),
+            result
+        )
+        .unwrap();
+    });
+    fixture
+        .source
+        .authorize_protected_at(
+            &format!("http://{address}/issue"),
+            "/themes/nord/DVzhgQds",
+            &digest,
+            17,
+            "issuer-secret",
+            Instant::now() + Duration::from_secs(5),
+        )
+        .unwrap();
+    thread.join().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let thread = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut line = String::new();
+        let mut headers = String::new();
+        loop {
+            line.clear();
+            reader.read_line(&mut line).unwrap();
+            if line == "\r\n" {
+                break;
+            }
+            headers.push_str(&line);
+        }
+        assert!(!headers.to_ascii_lowercase().contains("authorization:"));
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+        )
+        .unwrap();
+    });
+    assert_eq!(
+        fixture
+            .source
+            .read_protected(
+                &format!("http://{address}/asset?token=secret"),
+                2,
+                Instant::now() + Duration::from_secs(5)
+            )
+            .unwrap(),
+        b"ok"
+    );
+    thread.join().unwrap();
+}
+
+#[test]
+fn protected_transport_refuses_redirects_and_redacts_signed_query() {
+    let mirror = Mirror::start([]);
+    let fixture = Fixture::new(&mirror);
+    let target = TcpListener::bind("127.0.0.1:0").unwrap();
+    target.set_nonblocking(true).unwrap();
+    let target_address = target.local_addr().unwrap();
+    let redirect = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = redirect.local_addr().unwrap();
+    let thread = std::thread::spawn(move || {
+        let (mut stream, _) = redirect.accept().unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut line = String::new();
+        loop {
+            line.clear();
+            reader.read_line(&mut line).unwrap();
+            if line == "\r\n" {
+                break;
+            }
+        }
+        write!(stream, "HTTP/1.1 302 Found\r\nLocation: http://{target_address}/other\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
+    });
+    let error = fixture
+        .source
+        .read_protected(
+            &format!("http://{address}/asset?token=secret"),
+            2,
+            Instant::now() + Duration::from_secs(5),
+        )
+        .unwrap_err()
+        .to_string();
+    assert!(!error.contains("secret"));
+    thread.join().unwrap();
+    assert_eq!(
+        target.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock
+    );
+}

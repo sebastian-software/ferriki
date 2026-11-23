@@ -70,6 +70,11 @@ the build or point `FERRIKI_ASSETS_BASE_URL` at a mirror. Set
 `FERRIKI_ASSETS_REMOTE=0` to use the cache only. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
 for cache, proxy, and certificate settings.
 
+To select protected downloads for cache misses, set `FERRIKI_ASSETS_PROTECTED=1`
+and `FERRIKI_DOWNLOAD_TOKEN` to the issuer bearer token. Cached and offline
+loads need no token. Protected mode uses the default CDN and does not fall back
+to public downloads.
+
 ## See a highlighted page
 
 Save this complete ESM file as `highlight.mjs`:

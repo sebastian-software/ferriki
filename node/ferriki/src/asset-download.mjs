@@ -7,6 +7,8 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as delay } from "node:timers/promises";
 
+import { protectedSelected, protectedUrl } from "./protected-assets.mjs";
+
 const DOWNLOAD_TIMEOUT_MS = 60_000;
 const DOWNLOAD_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 250;
@@ -69,13 +71,14 @@ async function downloadAssets(plan, cacheDir) {
 function downloadOnce(asset, cacheDir) {
   validatePlanAsset(asset);
   const target = resolve(cacheDir, asset.digest);
-  const existing = inFlight.get(target);
+  const key = `${target}:${protectedSelected() ? "protected" : "public"}`;
+  const existing = inFlight.get(key);
   if (existing) return existing;
 
   const pending = downloadAsset(asset, target).finally(() => {
-    if (inFlight.get(target) === pending) inFlight.delete(target);
+    if (inFlight.get(key) === pending) inFlight.delete(key);
   });
-  inFlight.set(target, pending);
+  inFlight.set(key, pending);
   return pending;
 }
 
@@ -93,9 +96,11 @@ function validatePlanAsset(asset) {
 
 async function downloadAsset(asset, target) {
   const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS);
+  const isProtected = protectedSelected();
+  const url = isProtected ? await protectedUrl(asset, signal) : asset.url;
   for (let attempt = 0; ; attempt++) {
     try {
-      return await downloadAttempt(asset, target, signal);
+      return await downloadAttempt(asset, target, signal, url, isProtected);
     } catch (error) {
       if (signal.aborted || attempt + 1 >= DOWNLOAD_ATTEMPTS) throw error;
       const wait = retryDelay(error, attempt);
@@ -141,13 +146,14 @@ function isTransientNetworkError(error) {
   );
 }
 
-async function downloadAttempt(asset, target, signal) {
+async function downloadAttempt(asset, target, signal, url, isProtected) {
   const temporary = `${target}.${process.pid}-${randomUUID()}.tmp`;
   try {
     await mkdir(dirname(target), { recursive: true });
-    const response = await fetch(asset.url, {
+    const response = await fetch(url, {
       headers: { "user-agent": USER_AGENT },
       signal,
+      ...(isProtected ? { redirect: "error" } : {}),
     });
     if (response.status !== 200) {
       await response.body?.cancel().catch(() => {});
@@ -189,6 +195,9 @@ async function downloadAttempt(asset, target, signal) {
         await rename(temporary, target);
       }
     }
+  } catch (error) {
+    if (isProtected) throw new Error("Protected asset download failed.");
+    throw error;
   } finally {
     // A successful rename consumes the temporary path. On a concurrent-cache
     // hit, this also removes the redundant file left by our completed download.
