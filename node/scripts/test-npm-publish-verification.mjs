@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -240,6 +240,56 @@ try {
     await writeFile(join(assetCache, cacheManifest.assets[path].sha256), cachePayloads[index]);
   }
   await verifyPublicAssetCache(cacheManifest, assetCache);
+  const decoded = new TextEncoder().encode("decoded prepared regex");
+  const decodedHash = createHash("sha256").update(decoded).digest("hex");
+  cacheManifest.assets["languages/rust.fkbc"].decoded = {
+    sha256: decodedHash,
+    size: decoded.length,
+  };
+  await mkdir(join(assetCache, "decoded"));
+  const decodedFile = join(assetCache, "decoded", decodedHash);
+  await writeFile(decodedFile, decoded);
+  await verifyPublicAssetCache(cacheManifest, assetCache);
+  // Other derived files are private to the runtime and may change format.
+  await writeFile(join(assetCache, "decoded", "runtime-private"), "derived");
+  await verifyPublicAssetCache(cacheManifest, assetCache);
+  await writeFile(join(assetCache, "unexpected"), "foreign");
+  await assert.rejects(verifyPublicAssetCache(cacheManifest, assetCache), /prepared regex package/);
+  await rm(join(assetCache, "unexpected"));
+  const corruptDecoded = decoded.slice();
+  corruptDecoded[0] ^= 1;
+  await writeFile(decodedFile, corruptDecoded);
+  await assert.rejects(
+    verifyPublicAssetCache(cacheManifest, assetCache),
+    /decoded cache SHA-256 differs/,
+  );
+  await writeFile(decodedFile, "truncated");
+  await assert.rejects(
+    verifyPublicAssetCache(cacheManifest, assetCache),
+    /decoded cache size differs/,
+  );
+  await rm(join(assetCache, "decoded"), { recursive: true });
+  await writeFile(join(assetCache, "decoded"), "not a directory");
+  await assert.rejects(
+    verifyPublicAssetCache(cacheManifest, assetCache),
+    /decoded cache must be a directory/,
+  );
+  await rm(join(assetCache, "decoded"));
+  // Decoding is a best-effort optimization; an unwritable derived cache must
+  // not invalidate correctly downloaded, pinned release payloads.
+  await verifyPublicAssetCache(cacheManifest, assetCache);
+  for (const index of [0, 2]) {
+    const path = cachePaths[index];
+    const file = join(assetCache, cacheManifest.assets[path].sha256);
+    const corrupted = cachePayloads[index].slice();
+    corrupted[0] ^= 1;
+    await writeFile(file, corrupted);
+    await assert.rejects(
+      verifyPublicAssetCache(cacheManifest, assetCache),
+      /cached SHA-256 differs/,
+    );
+    await writeFile(file, cachePayloads[index]);
+  }
   const prepared = cacheManifest.assets["languages/rust.fkbc"];
   const preparedFile = join(assetCache, prepared.sha256);
   await rm(preparedFile);
