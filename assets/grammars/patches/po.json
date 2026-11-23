@@ -267,5 +267,28 @@
     "before": "^(?=(msgid(_plural)?|msgctxt)\\s*\"[^\"])|^\\s*$",
     "after": "^(?=(?:msgid(?:_plural)?|msgctxt|msgstr(?:\\[\\d+\\])?)\\s*\"[^\"])|^\\s*$",
     "reason": "Enter the gettext body for a nonempty translation following an initial continued message while keeping the header scopes."
+  },
+  {
+    "path": "/patterns/2",
+    "before": {
+      "match": "^msg(id|str)\\s+\"\"\\s*$\\n?",
+      "name": "comment.line.number-sign.po"
+    },
+    "after": {
+      "name": "meta.header.field.po",
+      "match": "^(?:(msgid)|(msgstr))[ \\t]+(\"\")[ \\t]*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.msgid.po"
+        },
+        "2": {
+          "name": "keyword.control.msgstr.po"
+        },
+        "3": {
+          "name": "string.quoted.double.po"
+        }
+      }
+    },
+    "reason": "Scope empty gettext header markers as fields and strings instead of comments."
   }
 ]
