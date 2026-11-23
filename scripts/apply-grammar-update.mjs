@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { digest, rawUrl } from "./grammar-repositories.mjs";
 import { normalizeGrammar } from "./grammar-source.mjs";
+import { readLocalGrammar, validateLocalGrammarEntry } from "./local-grammar.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const candidateRoot = process.argv[2] && path.resolve(process.argv[2]);
@@ -69,15 +70,25 @@ for (const entry of sources.languages) {
     throw new Error(`Incomplete candidate provenance: ${entry.id}`);
   if (!/^[a-z0-9-]+$/.test(entry.id) || entry.grammar_file !== `${entry.id}.json`)
     throw new Error(`Invalid grammar file: ${entry.id}`);
-  const repository = sources.repositories[entry.repository_id];
-  const pin = entry.module ? repository?.modules?.[entry.module] : repository;
-  if (
-    !pin ||
-    pin.repository !== entry.upstream_repository ||
-    pin.commit !== entry.upstream_commit ||
-    entry.source !== rawUrl(pin.repository, pin.commit, entry.upstream_path)
-  )
-    throw new Error(`Candidate repository pin drift: ${entry.id}`);
+  if (entry.repository_id === "local") {
+    validateLocalGrammarEntry(entry);
+    await readLocalGrammar(root, entry.upstream_path, entry.upstream_sha256);
+    if (
+      digest(await readFile(path.join(root, "LICENSE-MIT"))) !==
+      digest(await readFile(path.join(candidateRoot, entry.license_file)))
+    )
+      throw new Error(`Candidate local license drift: ${entry.id}`);
+  } else {
+    const repository = sources.repositories[entry.repository_id];
+    const pin = entry.module ? repository?.modules?.[entry.module] : repository;
+    if (
+      !pin ||
+      pin.repository !== entry.upstream_repository ||
+      pin.commit !== entry.upstream_commit ||
+      entry.source !== rawUrl(pin.repository, pin.commit, entry.upstream_path)
+    )
+      throw new Error(`Candidate repository pin drift: ${entry.id}`);
+  }
   const file = `assets/upstream/curated/grammars/${entry.grammar_file}`;
   const bytes = await readFile(path.join(candidateRoot, file));
   if (digest(bytes) !== entry.sha256) throw new Error(`Candidate grammar drift: ${entry.id}`);
@@ -85,6 +96,11 @@ for (const entry of sources.languages) {
   if (JSON.stringify(normalizeGrammar(grammar, entry)) !== JSON.stringify(grammar))
     throw new Error(`Candidate metadata drift: ${entry.id}`);
   const selection = catalog.languages.find((item) => item.id === entry.id);
+  if (
+    entry.repository_id === "local" &&
+    (selection?.repository_id !== "local" || selection.selector?.path !== entry.upstream_path)
+  )
+    throw new Error(`Candidate local selection drift: ${entry.id}`);
   if (fields.some((key) => JSON.stringify(selection[key]) !== JSON.stringify(entry[key])))
     throw new Error(`Candidate selection metadata drift: ${entry.id}`);
   for (const key of [entry.id, ...entry.aliases]) {

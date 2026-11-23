@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
+import { localGrammarPath, readLocalGrammar } from "./local-grammar.mjs";
 import {
   createGitHubReader,
   digest,
@@ -16,18 +17,21 @@ import {
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const usage =
-  "Usage: node scripts/prepare-grammar-update.mjs [--locked] [--output-dir <new-directory>]";
+  "Usage: node scripts/prepare-grammar-update.mjs [--locked|--locked-repositories] [--output-dir <new-directory>]";
 let outputRoot;
 let created = false;
 async function prepare() {
   const args = process.argv.slice(2);
   let locked = false;
+  let lockedRepositories = false;
   for (let index = 0; index < args.length; index++) {
     if (args[index] === "--locked") locked = true;
+    else if (args[index] === "--locked-repositories") lockedRepositories = true;
     else if (args[index] === "--output-dir" && args[index + 1])
       outputRoot = path.resolve(args[++index]);
     else throw new Error(usage);
   }
+  if (locked && lockedRepositories) throw new Error(usage);
   if (outputRoot) await mkdir(outputRoot); // Refuse an existing destination.
   else outputRoot = await mkdtemp(path.join(tmpdir(), "ferriki-grammar-update-"));
   created = true;
@@ -40,13 +44,14 @@ async function prepare() {
   const previous = JSON.parse(
     await readFile(path.join(root, "assets/grammars/sources.json"), "utf8"),
   );
-  if (locked && !previous.repositories)
+  if ((locked || lockedRepositories) && !previous.repositories)
     throw new Error("No repository snapshots are locked yet. Prepare the initial update first.");
   const reader = createGitHubReader();
   const snapshots = await resolveRepositorySnapshots(
     config,
     reader,
-    locked ? previous.repositories : undefined,
+    locked || lockedRepositories ? previous.repositories : undefined,
+    { allowModuleChanges: lockedRepositories },
   );
   const inventories = new Map();
   for (const repository of config.repositories) {
@@ -67,8 +72,31 @@ async function prepare() {
   const externalScopes = [];
   for (let index = 0; index < selections.length; index++) {
     const selection = selections[index];
-    const candidate = selectCandidate(inventories.get(selection.repository_id), selection.selector);
-    const bytes = await reader.read(candidate.repository, candidate.commit, candidate.path);
+    const local = selection.repository_id === "local";
+    if (local && (Object.keys(selection.selector).length !== 1 || !selection.selector.path))
+      throw new Error(`Invalid local grammar selector: ${selection.id}`);
+    const candidate = local
+      ? {
+          path: localGrammarPath(selection.selector.path),
+          license: { id: "MIT", path: "LICENSE-MIT" },
+        }
+      : selectCandidate(inventories.get(selection.repository_id), selection.selector);
+    const previousEntry = previous.languages.find((entry) => entry.id === selection.id);
+    if (
+      locked &&
+      local &&
+      (!previousEntry ||
+        previousEntry.repository_id !== "local" ||
+        previousEntry.upstream_path !== candidate.path)
+    )
+      throw new Error(`Local grammar lock drift: ${selection.id}`);
+    const bytes = local
+      ? await readLocalGrammar(
+          root,
+          candidate.path,
+          locked ? previousEntry.upstream_sha256 : undefined,
+        )
+      : await reader.read(candidate.repository, candidate.commit, candidate.path);
     let grammar = parseGrammarSource(bytes.toString("utf8"), candidate.path);
     const rawFile = path.join(outputRoot, "assets/grammar-raw", selection.id, digest(bytes));
     await mkdir(path.dirname(rawFile), { recursive: true });
@@ -188,20 +216,35 @@ async function prepare() {
     const license = candidate.license;
     if (!license?.id || !license.path)
       throw new Error(`No license declaration for ${selection.id}`);
-    const licenseBytes = await reader.read(candidate.repository, candidate.commit, license.path);
+    const licenseBytes = local
+      ? await readFile(path.join(root, license.path))
+      : await reader.read(candidate.repository, candidate.commit, license.path);
     const license_file = `assets/grammars/licenses/${digest(licenseBytes)}.txt`;
+    if (
+      locked &&
+      (!previousEntry ||
+        previousEntry.upstream_sha256 !== digest(bytes) ||
+        previousEntry.sha256 !== digest(normalized) ||
+        previousEntry.license_file !== license_file)
+    )
+      throw new Error(`Grammar lock drift: ${selection.id}`);
     await mkdir(path.join(outputRoot, "assets/grammars/licenses"), { recursive: true });
     await writeFile(path.join(outputRoot, license_file), licenseBytes);
     const { selector, ...entry } = metadata;
     languages.push({
       ...entry,
-      source: rawUrl(candidate.repository, candidate.commit, candidate.path),
-      upstream_repository: candidate.repository,
-      upstream_commit: candidate.commit,
+      source: local
+        ? candidate.path
+        : rawUrl(candidate.repository, candidate.commit, candidate.path),
+      ...(!local
+        ? { upstream_repository: candidate.repository, upstream_commit: candidate.commit }
+        : {}),
       upstream_path: candidate.path,
       ...(candidate.module ? { module: candidate.module } : {}),
       license: license.id,
-      license_url: rawUrl(candidate.repository, candidate.commit, license.path),
+      license_url: local
+        ? license.path
+        : rawUrl(candidate.repository, candidate.commit, license.path),
       license_file,
       upstream_sha256: digest(bytes),
       sha256: digest(normalized),
@@ -209,6 +252,14 @@ async function prepare() {
     grammarFiles.set(entry.id, normalized);
   }
   languages.sort((a, b) => a.id.localeCompare(b.id, "en"));
+  if (
+    locked &&
+    JSON.stringify(languages.map((entry) => entry.id)) !==
+      JSON.stringify(
+        previous.languages.map((entry) => entry.id).sort((a, b) => a.localeCompare(b, "en")),
+      )
+  )
+    throw new Error("Grammar selection lock drift");
   const changes = grammarChanges(previous.languages, languages);
   const configurationChanged =
     JSON.stringify(Object.keys(previous.repositories || {}).sort()) !==

@@ -1,0 +1,294 @@
+[
+  {
+    "path": "/repository/body/patterns/0/patterns/0/patterns",
+    "before": [
+      {
+        "match": "\\\\[\\\\\"]",
+        "name": "constant.character.escape.po"
+      }
+    ],
+    "after": [
+      {
+        "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9A-Fa-f]+)",
+        "name": "constant.character.escape.po"
+      },
+      {
+        "include": "source.icu-message"
+      }
+    ],
+    "reason": "Recognize gettext escapes and embed ICU messages in both singular and plural strings."
+  },
+  {
+    "path": "/repository/body/patterns/1/patterns/0/patterns",
+    "before": [
+      {
+        "match": "\\\\[\\\\\"]",
+        "name": "constant.character.escape.po"
+      }
+    ],
+    "after": [
+      {
+        "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9A-Fa-f]+)",
+        "name": "constant.character.escape.po"
+      },
+      {
+        "include": "source.icu-message"
+      }
+    ],
+    "reason": "Recognize gettext escapes and embed ICU messages in both singular and plural strings."
+  },
+  {
+    "path": "/repository/body/patterns/2/patterns/0/patterns",
+    "before": [
+      {
+        "match": "\\\\[\\\\\"]",
+        "name": "constant.character.escape.po"
+      }
+    ],
+    "after": [
+      {
+        "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9A-Fa-f]+)",
+        "name": "constant.character.escape.po"
+      }
+    ],
+    "reason": "Recognize gettext escapes in context strings."
+  },
+  {
+    "path": "/repository/body/patterns/0/patterns/0/end",
+    "before": "\"",
+    "after": "\"|^(?!\")",
+    "reason": "Recover an unfinished string or embedded message before the next gettext field."
+  },
+  {
+    "path": "/repository/body/patterns/1/patterns/0/end",
+    "before": "\"",
+    "after": "\"|^(?!\")",
+    "reason": "Recover an unfinished string or embedded message before the next gettext field."
+  },
+  {
+    "path": "/repository/body/patterns/2/patterns/0/end",
+    "before": "\"",
+    "after": "\"|^(?!\")",
+    "reason": "Recover an unfinished string or embedded message before the next gettext field."
+  },
+  {
+    "path": "/patterns/3",
+    "before": {
+      "captures": {
+        "1": {
+          "name": "constant.language.po"
+        },
+        "2": {
+          "name": "punctuation.separator.key-value.po"
+        },
+        "3": {
+          "name": "string.other.po"
+        }
+      },
+      "match": "^\"(?:([^\\s:]+)(:)\\s+)?([^\"]*)\"\\s*$\\n?",
+      "name": "meta.header.po"
+    },
+    "after": {
+      "name": "meta.header.po",
+      "contentName": "string.other.po",
+      "begin": "^\"(?:([^\\s:]+)(:)[ \\t]+)?",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.po"
+        },
+        "2": {
+          "name": "punctuation.separator.key-value.po"
+        }
+      },
+      "end": "\"|^(?!\")",
+      "patterns": [
+        {
+          "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9A-Fa-f]+)",
+          "name": "constant.character.escape.po"
+        },
+        {
+          "include": "source.icu-message"
+        }
+      ]
+    },
+    "reason": "Keep gettext header scopes while recognizing ICU in initial continued fields and preserving escapes."
+  },
+  {
+    "path": "/repository/comments/patterns/0/patterns",
+    "before": [
+      {
+        "begin": "(#,)\\s+",
+        "beginCaptures": {
+          "1": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.flag.po",
+        "patterns": [
+          {
+            "captures": {
+              "1": {
+                "name": "entity.name.type.flag.po"
+              }
+            },
+            "match": "(?:\\G|,\\s*)((?:fuzzy)|(?:no-)?(?:c|objc|sh|lisp|elisp|librep|scheme|smalltalk|java|csharp|awk|object-pascal|ycp|tcl|perl|perl-brace|php|gcc-internal|qt|boost)-format)"
+          }
+        ]
+      },
+      {
+        "begin": "#\\.",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.extracted.po"
+      },
+      {
+        "begin": "(#:)[ \\t]*",
+        "beginCaptures": {
+          "1": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.reference.po",
+        "patterns": [
+          {
+            "match": "(\\S+:)([\\d;]*)",
+            "name": "storage.type.class.po"
+          }
+        ]
+      },
+      {
+        "begin": "#\\|",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.previous.po"
+      },
+      {
+        "begin": "#",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.po"
+      }
+    ],
+    "after": [
+      {
+        "captures": {
+          "1": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "match": "(#~).*$",
+        "name": "comment.line.number-sign.obsolete.po"
+      },
+      {
+        "begin": "(#,)\\s+",
+        "beginCaptures": {
+          "1": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.flag.po",
+        "patterns": [
+          {
+            "captures": {
+              "1": {
+                "name": "entity.name.type.flag.po"
+              }
+            },
+            "match": "(?:\\G|,\\s*)((?:fuzzy)|(?:no-)?(?:c|objc|sh|lisp|elisp|librep|scheme|smalltalk|java|csharp|awk|object-pascal|ycp|tcl|perl|perl-brace|php|gcc-internal|qt|boost)-format)"
+          }
+        ]
+      },
+      {
+        "begin": "#\\.",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.extracted.po"
+      },
+      {
+        "begin": "(#:)[ \\t]*",
+        "beginCaptures": {
+          "1": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.reference.po",
+        "patterns": [
+          {
+            "match": "(\\S+:)([\\d;]*)",
+            "name": "storage.type.class.po"
+          }
+        ]
+      },
+      {
+        "begin": "#\\|",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.previous.po"
+      },
+      {
+        "begin": "#",
+        "beginCaptures": {
+          "0": {
+            "name": "punctuation.definition.comment.po"
+          }
+        },
+        "end": "\\n",
+        "name": "comment.line.number-sign.po"
+      }
+    ],
+    "reason": "Keep obsolete entries distinct before and after the first gettext field."
+  },
+  {
+    "path": "/patterns/0/begin",
+    "before": "^(?=(msgid(_plural)?|msgctxt)\\s*\"[^\"])|^\\s*$",
+    "after": "^(?=(?:msgid(?:_plural)?|msgctxt|msgstr(?:\\[\\d+\\])?)\\s*\"[^\"])|^\\s*$",
+    "reason": "Enter the gettext body for a nonempty translation following an initial continued message while keeping the header scopes."
+  },
+  {
+    "path": "/patterns/2",
+    "before": {
+      "match": "^msg(id|str)\\s+\"\"\\s*$\\n?",
+      "name": "comment.line.number-sign.po"
+    },
+    "after": {
+      "name": "meta.header.field.po",
+      "match": "^(?:(msgid)|(msgstr))[ \\t]+(\"\")[ \\t]*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.msgid.po"
+        },
+        "2": {
+          "name": "keyword.control.msgstr.po"
+        },
+        "3": {
+          "name": "string.quoted.double.po"
+        }
+      }
+    },
+    "reason": "Scope empty gettext header markers as fields and strings instead of comments."
+  }
+]

@@ -372,6 +372,18 @@
         ]
       },
       {
+        "id": "fcl",
+        "scope_name": "source.fcl",
+        "asset_file": "fcl.fkgram",
+        "display_name": "Ferrocat Catalog Lines",
+        "aliases": [],
+        "embedded_langs": [
+          "icu-message"
+        ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
         "id": "gdscript",
         "scope_name": "source.gdscript",
         "asset_file": "gdscript.fkgram",
@@ -535,6 +547,16 @@
         "embedded_langs": [
           "html"
         ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "icu-message",
+        "scope_name": "source.icu-message",
+        "asset_file": "icu-message.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
         "embedded_langs_lazy": [],
         "inject_to": []
       },
@@ -897,10 +919,25 @@
           "mermaid-state-diagram",
           "mermaid-timeline",
           "mermaid-user-journey",
-          "mermaid-zenuml"
+          "mermaid-zenuml",
+          "mermaid-diagrams",
+          "mermaid-c4",
+          "mermaid-zenuml-comments"
         ],
         "embedded_langs_lazy": [],
         "inject_to": []
+      },
+      {
+        "id": "mermaid-c4",
+        "scope_name": "source.ferriki-mermaid-c4",
+        "asset_file": "mermaid-c4.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": [
+          "source.mermaid"
+        ]
       },
       {
         "id": "mermaid-c4c-diagram",
@@ -925,6 +962,18 @@
         ],
         "embedded_langs_lazy": [],
         "inject_to": []
+      },
+      {
+        "id": "mermaid-diagrams",
+        "scope_name": "source.ferriki-mermaid-diagrams",
+        "asset_file": "mermaid-diagrams.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": [
+          "source.mermaid"
+        ]
       },
       {
         "id": "mermaid-er-diagram",
@@ -1075,6 +1124,18 @@
         "inject_to": []
       },
       {
+        "id": "mermaid-zenuml-comments",
+        "scope_name": "source.ferriki-mermaid-zenuml-comments",
+        "asset_file": "mermaid-zenuml-comments.fkgram",
+        "display_name": null,
+        "aliases": [],
+        "embedded_langs": [],
+        "embedded_langs_lazy": [],
+        "inject_to": [
+          "source.mermaid"
+        ]
+      },
+      {
         "id": "nix",
         "scope_name": "source.nix",
         "asset_file": "nix.fkgram",
@@ -1113,6 +1174,20 @@
           "javascript",
           "json",
           "css"
+        ],
+        "embedded_langs_lazy": [],
+        "inject_to": []
+      },
+      {
+        "id": "po",
+        "scope_name": "source.po",
+        "asset_file": "po.fkgram",
+        "display_name": "Gettext Catalog",
+        "aliases": [
+          "pot"
+        ],
+        "embedded_langs": [
+          "icu-message"
         ],
         "embedded_langs_lazy": [],
         "inject_to": []
@@ -2354,6 +2429,20 @@
         "size": 2540,
         "formatVersion": 3
       },
+      "languages/fcl.fkbc": {
+        "sha256": "58ae0d948c28abd060db824b9ea9bf871901a255bcf37f1ce9f22aa797897c42",
+        "size": 3314,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "61af56c8f5755b9daeba194bb596d83277d156a72ea274c1251e1973e62638f7",
+          "size": 20916
+        }
+      },
+      "languages/fcl.fkgram": {
+        "sha256": "497d4641181920f12d69e39cc7f855ee57c77e4ccd455e8bb0e97f2509c8af59",
+        "size": 2969,
+        "formatVersion": 3
+      },
       "languages/gdscript.fkbc": {
         "sha256": "cabcf3ecf1da3e62e7ddac2ad3cd19acee0e1f98cdd415484470e267eba0df10",
         "size": 103686,
@@ -2520,6 +2609,20 @@
       "languages/html.fkgram": {
         "sha256": "63cd10a6dcec861f41d0746d32a56a2bc765bcf56102e6032359a81c64f0e688",
         "size": 60559,
+        "formatVersion": 3
+      },
+      "languages/icu-message.fkbc": {
+        "sha256": "5c334c65136ef9318f83789e3efc29bd008ffd3c0e70ddad5347cfd58d99354a",
+        "size": 5007,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "3d788b89ba200e4d5924bcf99efe9f9d4ee361ffd0ccd889f4ab787a25ecdbc5",
+          "size": 33781
+        }
+      },
+      "languages/icu-message.fkgram": {
+        "sha256": "5e98e575fc96f4ae32297014d1c254b19d363ba245c0dee13751714377ed6725",
+        "size": 6004,
         "formatVersion": 3
       },
       "languages/ini.fkbc": {
@@ -2802,6 +2905,20 @@
         "size": 134909,
         "formatVersion": 3
       },
+      "languages/mermaid-c4.fkbc": {
+        "sha256": "97fed6e3f4112d3b0e705f2683511951cc7d08abf33b2bff83e636f22f6e7191",
+        "size": 4590,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "72d32427ce019590a4af02d2134db153fb630ae56645a655580262232adcdb88",
+          "size": 25950
+        }
+      },
+      "languages/mermaid-c4.fkgram": {
+        "sha256": "5877a36433cdd8346735420a90a381de05cdf5f16eb3148b3817c7d60637c711",
+        "size": 1390,
+        "formatVersion": 3
+      },
       "languages/mermaid-c4c-diagram.fkbc": {
         "sha256": "79aaa4b7d0a9a86871cffb0ca1a1e6294b214291b62fd56ccdea5d6f48503b41",
         "size": 2334,
@@ -2828,6 +2945,20 @@
       "languages/mermaid-class-diagram.fkgram": {
         "sha256": "e568cecd82810816043430b9574d1a94b03446504185e899535e9a9083bfc074",
         "size": 8332,
+        "formatVersion": 3
+      },
+      "languages/mermaid-diagrams.fkbc": {
+        "sha256": "b245fab97f245d9c2670021c11a88b6a2fa671bf40f6dcdab4a7757fba0b186a",
+        "size": 30332,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "f7733ac11ef5a7e0d2047ac0e613b4d2e1c27942b93ffdf6d41bf7f7dfb29374",
+          "size": 258863
+        }
+      },
+      "languages/mermaid-diagrams.fkgram": {
+        "sha256": "4cb15a888fca44207d7e8b8f4aef0ddfd8f90fd1cce7ef50525fbc4fef988498",
+        "size": 10089,
         "formatVersion": 3
       },
       "languages/mermaid-er-diagram.fkbc": {
@@ -3012,6 +3143,20 @@
         "size": 1503,
         "formatVersion": 3
       },
+      "languages/mermaid-zenuml-comments.fkbc": {
+        "sha256": "381cc91a80c9a3255682c7bfa406476b6864e32748fbbf91f65f611c7aaed1ff",
+        "size": 1071,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "0f11266be7d7a3a5b01922ed441b557522319b0122e3f3ed6f99d9ac4ad12c3b",
+          "size": 6096
+        }
+      },
+      "languages/mermaid-zenuml-comments.fkgram": {
+        "sha256": "a9c708fdd34f30ab4a44f8d583ce6dcc9d462c0dff75791193b3c7362777b4db",
+        "size": 707,
+        "formatVersion": 3
+      },
       "languages/mermaid-zenuml.fkbc": {
         "sha256": "04b3bb9aa484e52e681eb1e2e3e2ba7d063922fa404a6b6817012c7d2867f651",
         "size": 19071,
@@ -3036,8 +3181,8 @@
         }
       },
       "languages/mermaid.fkgram": {
-        "sha256": "427990e4a3d0b44c4d962f6630daec7bab2f08035993407ab6a5ded2f00865ea",
-        "size": 10912,
+        "sha256": "c6e3246d1764be41390eb48bcd1cecee52ab4df6bfe510178eab5258232f8bc0",
+        "size": 11022,
         "formatVersion": 3
       },
       "languages/nix.fkbc": {
@@ -3080,6 +3225,20 @@
       "languages/php.fkgram": {
         "sha256": "15e8acfaaa48db349b9a9ee38a44c73ee7b888bfa436d907a568a8d8c1469532",
         "size": 115487,
+        "formatVersion": 3
+      },
+      "languages/po.fkbc": {
+        "sha256": "f5519848b1d3262717d1b7dce1a9d2a04b62ebd7267df73637b67cc415980f57",
+        "size": 7839,
+        "formatVersion": 50339843,
+        "decoded": {
+          "sha256": "ddac32b8b73401db7f55d199e9708bd34f3044aa690e9931fbf106bc5489d267",
+          "size": 58730
+        }
+      },
+      "languages/po.fkgram": {
+        "sha256": "03c27a8d54d293980d6ef54952cccd6fd2cfb9fb847cc862118de343340da7e9",
+        "size": 4168,
         "formatVersion": 3
       },
       "languages/postcss.fkbc": {

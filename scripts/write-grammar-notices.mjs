@@ -12,10 +12,11 @@ const notices = [
   "Ferriki standard grammars come from the following pinned sources. The notices below apply to grammar data, separately from Ferriki's own license.",
   "",
 ];
-for (const file of [...new Set(languages.map((entry) => entry.license_file))].sort()) {
+const thirdPartyLanguages = languages.filter((entry) => entry.repository_id !== "local");
+for (const file of [...new Set(thirdPartyLanguages.map((entry) => entry.license_file))].sort()) {
   const text = await readFile(new URL(file, root), "utf8");
   if (!file.endsWith(`${digest(text)}.txt`)) throw new Error(`License notice drift: ${file}`);
-  const entries = languages.filter((entry) => entry.license_file === file);
+  const entries = thirdPartyLanguages.filter((entry) => entry.license_file === file);
   notices.push(`## ${entries.map((entry) => entry.id).join(", ")}`, "");
   for (const entry of entries)
     notices.push(`- [${entry.id}](${entry.source}) — [${entry.license}](${entry.license_url})`);

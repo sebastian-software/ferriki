@@ -12,6 +12,7 @@ import {
   writeMetadata,
 } from "./asset-store.mjs";
 import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
+import { readLocalGrammar, validateLocalGrammarEntry } from "./local-grammar.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const argv = process.argv.slice(2);
@@ -64,7 +65,14 @@ if (flags.has("--sources")) {
   const upstream = path.join(outputRoot, "assets/upstream/curated");
   await parallel(sources.languages, async (entry) => {
     const raw = path.join(outputRoot, "assets/grammar-raw", entry.id, entry.upstream_sha256);
-    await obtain(raw, "language", entry.id, entry.upstream_sha256, entry.source);
+    if (entry.repository_id === "local") {
+      validateLocalGrammarEntry(entry);
+      const bytes = await readLocalGrammar(root, entry.upstream_path, entry.upstream_sha256);
+      if (!(await verifiedRead(raw, entry.upstream_sha256)))
+        await writeVerified(raw, bytes, entry.upstream_sha256);
+    } else {
+      await obtain(raw, "language", entry.id, entry.upstream_sha256, entry.source);
+    }
     const normalized = path.join(upstream, "grammars", entry.grammar_file);
     if (!(await verifiedRead(normalized, entry.sha256))) {
       let bytes = bootstrap

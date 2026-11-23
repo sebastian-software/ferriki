@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-11-23
 
 ## Context
 
@@ -33,6 +33,19 @@ language coverage.
   supported required dependencies are discovered transitively. This is a
   maintained selection, not a popularity ranking or a promise to reproduce
   Shiki's entire catalog.
+- Keep first-party TextMate sources in `assets/grammars/local/` under the MIT
+  license. FCL and gettext share the ICU grammar. Local Mermaid injections
+  supplement the Linguist grammar where Ferrigura supports additional syntax.
+  The source lock pins each file by path and SHA-256. Raw, normalized and
+  compiled objects follow the same publication process as external grammars.
+- Use `--locked-repositories` to change first-party files or select modules from
+  the accepted Linguist snapshot. Use `--locked` to replay an accepted
+  candidate, including the recorded first-party file hashes.
+- Embed ICU in gettext message fields, including classic plural forms. Literal
+  braces in a classic PO file can receive ICU scopes. Context and comments keep
+  their gettext scopes. ICU state continues across quoted lines. A keyword
+  split inside its name across two physical lines cannot receive a single
+  keyword scope in a line-oriented TextMate grammar.
 - Required dependencies are included transitively. Lazy embeddings name only
   languages in the standard catalog; applications explicitly load these or
   register external grammars. An optional GLSL embedding in C++ and its macro
@@ -78,7 +91,7 @@ language coverage.
 - Users load the result through existing `langs`/`loadLanguage` registrations.
   Rust consumers use `register_language` or `register_language_json`.
   External dependencies and injections are explicit registrations.
-- Source snapshots and generated files are materialized locally and ignored by
+- External source snapshots and generated files are materialized locally and ignored by
   Git. `assets/catalog.json` owns the compiled catalog metadata and theme source
   hashes; `sources.json` owns grammar source hashes. Bunny stores original,
   normalized, and compiled grammar bytes under `<id>/<sha256>` and themes under
@@ -166,3 +179,5 @@ package and crate version updates.
 - 2026-10-21: Added byte, substitution, and recursion-depth bounds to YAML
   variable expansion during source sync, including a cap on intermediate output
   generated across nested references.
+- 2026-11-23: Added pinned, first-party grammar sources for FCL, shared ICU in
+  FCL and gettext, and Mermaid injections tested against Ferrigura's diagrams.

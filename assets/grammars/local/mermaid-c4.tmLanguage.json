@@ -1,0 +1,50 @@
+{
+  "scopeName": "source.ferriki-mermaid-c4",
+  "injectionSelector": "L:meta.c4c-diagram - string - comment",
+  "patterns": [
+    {
+      "name": "meta.function-call.c4.ferriki.mermaid",
+      "begin": "^[ \\t]*(Person(?:_Ext)?|System(?:Db|Queue)?(?:_Ext)?|(?:Enterprise_|System_|Container_)?Boundary|(?:Container|Component)(?:Db|Queue)?(?:_Ext)?|Deployment_Node|Node(?:_[LR])?|BiRel|Rel(?:_(?:Up|U|Down|D|Left|L|Right|R|Back))?|RelIndex|UpdateElementStyle|UpdateRelStyle|UpdateLayoutConfig)(?=[ \\t]*\\()",
+      "end": "(\\))|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "support.function.c4.ferriki.mermaid"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.arguments.end.c4.ferriki.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "name": "string.quoted.double.c4.ferriki.mermaid",
+          "begin": "\"",
+          "end": "\"|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+          "patterns": [
+            {
+              "name": "constant.character.escape.c4.ferriki.mermaid",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "variable.parameter.named.c4.ferriki.mermaid",
+          "match": "\\$[A-Za-z][A-Za-z0-9_]*"
+        },
+        {
+          "name": "variable.other.c4.ferriki.mermaid",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        },
+        {
+          "name": "constant.numeric.c4.ferriki.mermaid",
+          "match": "-?\\b\\d+(?:\\.\\d+)?\\b"
+        },
+        {
+          "name": "punctuation.separator.c4.ferriki.mermaid",
+          "match": "[,=(]"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "scopeName": "source.ferriki-mermaid-zenuml-comments",
+  "injectionSelector": "L:comment.line.double-slash.zenuml.mermaid",
+  "patterns": [
+    {
+      "name": "markup.bold.zenuml.ferriki.mermaid",
+      "match": "\\*\\*[^*\\r\\n]+\\*\\*"
+    },
+    {
+      "name": "markup.italic.zenuml.ferriki.mermaid",
+      "match": "(?<!\\*)\\*[^*\\r\\n]+\\*(?!\\*)"
+    },
+    {
+      "name": "markup.raw.inline.zenuml.ferriki.mermaid",
+      "match": "`[^`\\r\\n]+`"
+    },
+    {
+      "name": "markup.underline.link.zenuml.ferriki.mermaid",
+      "match": "\\[[^\\]\\r\\n]+\\]\\([^\\)\\r\\n]+\\)"
+    }
+  ]
+}

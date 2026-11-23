@@ -1,0 +1,415 @@
+{
+  "name": "ICU MessageFormat",
+  "scopeName": "source.icu-message",
+  "patterns": [
+    {
+      "include": "#quoted"
+    },
+    {
+      "include": "#argument"
+    }
+  ],
+  "repository": {
+    "escapes": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "\\\\(?:[abfnrtv\\\\\"]|[0-7]{1,3}|x[0-9a-fA-F]+)"
+        }
+      ]
+    },
+    "quoted": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "''"
+        },
+        {
+          "name": "string.quoted.single.icu-message",
+          "begin": "'(?=[{}])",
+          "end": "'|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "applyEndPatternLast": 1,
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "name": "constant.character.escape.icu-message",
+              "match": "''"
+            }
+          ]
+        }
+      ]
+    },
+    "argument": {
+      "name": "meta.argument.icu-message",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.begin.icu-message"
+        }
+      },
+      "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.end.icu-message"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#format"
+        },
+        {
+          "name": "variable.parameter.icu-message",
+          "match": "[^\\s{},<>\"\\\\]+"
+        }
+      ]
+    },
+    "plural": {
+      "name": "meta.plural.icu-message",
+      "begin": "\\b(plural|selectordinal)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "keyword.other.offset.icu-message",
+          "match": "\\boffset(?=[ \\t\\r]*:)"
+        },
+        {
+          "name": "constant.numeric.icu-message",
+          "match": "(?<=:)[ \\t\\r]*[0-9]+"
+        },
+        {
+          "include": "#plural-selector"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "select": {
+      "name": "meta.select.icu-message",
+      "begin": "\\b(select)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#select-selector"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "plural-selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.selector.icu-message"
+        }
+      },
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted-plural"
+            },
+            {
+              "include": "#argument-plural"
+            },
+            {
+              "name": "constant.language.pound.icu-message",
+              "match": "#"
+            }
+          ]
+        }
+      ]
+    },
+    "select-selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.selector.icu-message"
+        }
+      },
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted"
+            },
+            {
+              "include": "#argument"
+            }
+          ]
+        }
+      ]
+    },
+    "format": {
+      "name": "meta.format.icu-message",
+      "begin": ",",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.separator.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#plural"
+        },
+        {
+          "include": "#select"
+        },
+        {
+          "name": "storage.type.icu-message",
+          "match": "\\b(?:number|date|time|list|duration|ago|name)\\b"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "quoted-plural": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.icu-message",
+          "match": "''"
+        },
+        {
+          "name": "string.quoted.single.icu-message",
+          "begin": "'(?=[{}#])",
+          "end": "'|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "applyEndPatternLast": 1,
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "name": "constant.character.escape.icu-message",
+              "match": "''"
+            }
+          ]
+        }
+      ]
+    },
+    "argument-plural": {
+      "name": "meta.argument.icu-message",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.begin.icu-message"
+        }
+      },
+      "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.argument.end.icu-message"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#format-plural"
+        },
+        {
+          "name": "variable.parameter.icu-message",
+          "match": "[^\\s{},<>\"\\\\]+"
+        }
+      ]
+    },
+    "format-plural": {
+      "name": "meta.format.icu-message",
+      "begin": ",",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.separator.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#plural"
+        },
+        {
+          "include": "#select-plural"
+        },
+        {
+          "name": "storage.type.icu-message",
+          "match": "\\b(?:number|date|time|list|duration|ago|name)\\b"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "select-plural": {
+      "name": "meta.select.icu-message",
+      "begin": "\\b(select)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.icu-message"
+        }
+      },
+      "end": "(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "include": "#select-plural-selector"
+        },
+        {
+          "name": "punctuation.separator.icu-message",
+          "match": "[,:]"
+        }
+      ]
+    },
+    "select-plural-selector": {
+      "name": "meta.selector.icu-message",
+      "begin": "(=[0-9]+|[A-Za-z_][A-Za-z0-9_-]*)(?=[ \\t\\r]*\\{|[ \\t\\r]*\"?$)",
+      "beginCaptures": {
+        "1": {
+          "name": "constant.language.selector.icu-message"
+        }
+      },
+      "end": "(?<=\\})|(?=\\})|(?=^(?:msgid|msgstr|msgctxt|#))",
+      "patterns": [
+        {
+          "include": "#escapes"
+        },
+        {
+          "include": "#quoted"
+        },
+        {
+          "name": "meta.selector.body.icu-message",
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.message.begin.icu-message"
+            }
+          },
+          "end": "\\}|(?=^(?:msgid|msgstr|msgctxt|#))",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.message.end.icu-message"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#escapes"
+            },
+            {
+              "include": "#quoted-plural"
+            },
+            {
+              "include": "#argument-plural"
+            },
+            {
+              "name": "constant.language.pound.icu-message",
+              "match": "#"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

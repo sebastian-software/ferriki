@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
 import { rawUrl } from "./grammar-repositories.mjs";
+import { readLocalGrammar, validateLocalGrammarEntry } from "./local-grammar.mjs";
 
 const root = new URL("../", import.meta.url);
 const sourceRoot = new URL("assets/upstream/curated/", root);
@@ -35,7 +36,17 @@ for (const entry of languages) {
     if (keys.has(key)) throw new Error(`Duplicate language key: ${key}`);
     keys.add(key);
   }
-  if (!/^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[a-f0-9]{40}\/.+/.test(entry.source))
+  if (entry.repository_id === "local") {
+    validateLocalGrammarEntry(entry);
+    await readLocalGrammar(fileURLToPath(root), entry.upstream_path, entry.upstream_sha256);
+    if (
+      entry.license_file !==
+      `assets/grammars/licenses/${digest(await readFile(new URL("LICENSE-MIT", root)))}.txt`
+    )
+      throw new Error(`Local grammar license drift: ${entry.id}`);
+  } else if (
+    !/^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[a-f0-9]{40}\/.+/.test(entry.source)
+  )
     throw new Error(`Unpinned grammar source: ${entry.id}`);
   if (
     !licenses.has(entry.license) ||
@@ -44,7 +55,7 @@ for (const entry of languages) {
     !/^[a-f0-9]{64}$/.test(entry.upstream_sha256)
   )
     throw new Error(`Incomplete grammar provenance: ${entry.id}`);
-  if (sources.repositories) {
+  if (sources.repositories && entry.repository_id !== "local") {
     const snapshot = sources.repositories[entry.repository_id];
     const pin = entry.module ? snapshot?.modules?.[entry.module] : snapshot;
     if (
@@ -74,16 +85,25 @@ await Promise.all(
         if (JSON.stringify(normalizeGrammar(grammar, entry)) !== JSON.stringify(grammar))
           throw new Error(`Grammar metadata drift: ${entry.id}`);
       } else {
-        const response = await fetch(entry.source, { signal: AbortSignal.timeout(60000) });
-        if (!response.ok) throw new Error(`${entry.id}: HTTP ${response.status}`);
-        const chunks = [];
-        let size = 0;
-        for await (const chunk of response.body) {
-          size += chunk.length;
-          if (size > 8 * 1024 * 1024) throw new Error(`${entry.id}: grammar exceeds 8 MiB`);
-          chunks.push(chunk);
+        let bytes;
+        if (entry.repository_id === "local") {
+          bytes = await readLocalGrammar(
+            fileURLToPath(root),
+            entry.upstream_path,
+            entry.upstream_sha256,
+          );
+        } else {
+          const response = await fetch(entry.source, { signal: AbortSignal.timeout(60000) });
+          if (!response.ok) throw new Error(`${entry.id}: HTTP ${response.status}`);
+          const chunks = [];
+          let size = 0;
+          for await (const chunk of response.body) {
+            size += chunk.length;
+            if (size > 8 * 1024 * 1024) throw new Error(`${entry.id}: grammar exceeds 8 MiB`);
+            chunks.push(chunk);
+          }
+          bytes = Buffer.concat(chunks);
         }
-        const bytes = Buffer.concat(chunks);
         if (digest(bytes) !== entry.upstream_sha256)
           throw new Error(`Upstream digest mismatch: ${entry.id}`);
         const patches = entry.patch_file
@@ -136,10 +156,11 @@ const notices = [
   "Ferriki standard grammars come from the following pinned sources. The notices below apply to grammar data, separately from Ferriki's own license.",
   "",
 ];
-for (const file of [...new Set(languages.map((entry) => entry.license_file))].sort()) {
+const thirdPartyLanguages = languages.filter((entry) => entry.repository_id !== "local");
+for (const file of [...new Set(thirdPartyLanguages.map((entry) => entry.license_file))].sort()) {
   const text = await readFile(new URL(file, root), "utf8");
   if (!file.endsWith(`${digest(text)}.txt`)) throw new Error(`License notice drift: ${file}`);
-  const entries = languages.filter((entry) => entry.license_file === file);
+  const entries = thirdPartyLanguages.filter((entry) => entry.license_file === file);
   notices.push(`## ${entries.map((entry) => entry.id).join(", ")}`, "");
   for (const entry of entries)
     notices.push(`- [${entry.id}](${entry.source}) — [${entry.license}](${entry.license_url})`);

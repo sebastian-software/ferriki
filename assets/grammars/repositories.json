@@ -43,7 +43,8 @@
         "vendor/grammars/godot-vscode-plugin",
         "vendor/grammars/vsc-ember-syntax",
         "vendor/grammars/liquid-tm-grammar",
-        "vendor/grammars/language-mermaid"
+        "vendor/grammars/language-mermaid",
+        "vendor/grammars/gettext.tmbundle"
       ],
       "paths": {
         "vendor/grammars/vscode-cmake-tools": [
@@ -116,6 +117,9 @@
         ],
         "vendor/grammars/language-mermaid": [
           "grammars/"
+        ],
+        "vendor/grammars/gettext.tmbundle": [
+          "Syntaxes/"
         ]
       },
       "module_licenses": {
@@ -210,6 +214,10 @@
         "vendor/grammars/language-mermaid": {
           "id": "ISC",
           "path": "LICENSE.md"
+        },
+        "vendor/grammars/gettext.tmbundle": {
+          "id": "LicenseRef-TextMate-Bundle",
+          "path": "README.mdown"
         }
       }
     },

@@ -7,7 +7,7 @@ import "./test-asset-env.mjs";
 
 // Flowchart excerpt from Ferrigura's docs/diagrams/flowchart.md at de42bfc.
 // The remaining small examples exercise a diagram-specific body rule, not just
-// its header. C4's body delegates to the unavailable source.wsd scope.
+// its header. The local C4 injection supplies the call and argument scopes.
 const examples = [
   ["flowchart LR\n  model[FlowchartDiagram] --> data[get_data]", "model", /entity-name-tag-node/],
   ["classDiagram\n class Animal", "Animal", /entity-name-type-class/],

@@ -503,6 +503,23 @@
       "patch_file": "assets/grammars/patches/es-tag-html.json"
     },
     {
+      "id": "fcl",
+      "grammar_file": "fcl.json",
+      "scope_name": "source.fcl",
+      "display_name": "Ferrocat Catalog Lines",
+      "aliases": [],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/fcl.tmLanguage.json"
+      }
+    },
+    {
       "id": "gdscript",
       "grammar_file": "gdscript.json",
       "scope_name": "source.gdscript",
@@ -1205,7 +1222,10 @@
         "mermaid-state-diagram",
         "mermaid-timeline",
         "mermaid-user-journey",
-        "mermaid-zenuml"
+        "mermaid-zenuml",
+        "mermaid-diagrams",
+        "mermaid-c4",
+        "mermaid-zenuml-comments"
       ],
       "embedded_langs_lazy": [],
       "inject_to": [],
@@ -2202,6 +2222,93 @@
       "selector": {
         "module": "vendor/grammars/language-mermaid",
         "path": "grammars/zenuml.cson"
+      }
+    },
+    {
+      "id": "mermaid-diagrams",
+      "grammar_file": "mermaid-diagrams.json",
+      "scope_name": "source.ferriki-mermaid-diagrams",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-diagrams.tmLanguage.json"
+      }
+    },
+    {
+      "id": "mermaid-c4",
+      "grammar_file": "mermaid-c4.json",
+      "scope_name": "source.ferriki-mermaid-c4",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-c4.tmLanguage.json"
+      }
+    },
+    {
+      "id": "mermaid-zenuml-comments",
+      "grammar_file": "mermaid-zenuml-comments.json",
+      "scope_name": "source.ferriki-mermaid-zenuml-comments",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-zenuml-comments.tmLanguage.json"
+      }
+    },
+    {
+      "id": "icu-message",
+      "grammar_file": "icu-message.json",
+      "scope_name": "source.icu-message",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/icu-message.tmLanguage.json"
+      }
+    },
+    {
+      "id": "po",
+      "grammar_file": "po.json",
+      "scope_name": "source.po",
+      "display_name": "Gettext Catalog",
+      "aliases": [
+        "pot"
+      ],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "patch_file": "assets/grammars/patches/po.json",
+      "repository_id": "linguist",
+      "selector": {
+        "module": "vendor/grammars/gettext.tmbundle",
+        "path": "Syntaxes/Gettext.tmLanguage"
       }
     }
   ]

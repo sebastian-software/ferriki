@@ -1,0 +1,587 @@
+{
+  "scopeName": "source.ferriki-mermaid-diagrams",
+  "injectionSelector": "L:meta.file-body.mermaid - string - comment - meta.ferriki-mermaid - meta.flowchart - meta.sequence-diagram - meta.class-diagram - meta.state-diagram - meta.er-diagram - meta.user-journey - meta.gantt-chart - meta.pie-chart - meta.quad-chart - meta.requirement-diagram - meta.gitgraph - meta.c4c-diagram - meta.mindmap - meta.timeline - meta.zenuml - meta.sankey",
+  "patterns": [
+    {
+      "name": "meta.ferriki-mermaid.swimlanes",
+      "begin": "^[ \\t]*(swimlane-beta)(?=[ \\t]*(?:(?:LR|RL|TB|BT|TD)[ \\t]*)?(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.swimlanes.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.swimlanes.mermaid",
+          "match": "\\b(?:subgraph|end|direction)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.block",
+      "begin": "^[ \\t]*(block(?:-beta)?)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.block.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.block.mermaid",
+          "match": "\\b(?:columns|block|end|space)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.xychart",
+      "begin": "^[ \\t]*(xychart(?:-beta)?)(?=[ \\t]*(?:(?:horizontal|vertical)[ \\t]*)?(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.xychart.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.xychart.mermaid",
+          "match": "\\b(?:x-axis|y-axis|line|bar|title)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.packet",
+      "begin": "^[ \\t]*(packet(?:-beta)?)(?=[ \\t]*(?:(?:\\+?[0-9]+(?:[ \\t]*-[ \\t]*[0-9]+)?[ \\t]*:)|(?:%%.*)?$))",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.packet.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.treemap",
+      "begin": "^[ \\t]*(treemap(?:-beta)?)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.treemap.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.treemap.mermaid",
+          "match": "\\b(?:title|classDef|class)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.radar",
+      "begin": "^[ \\t]*(radar-beta)(?=:?[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.radar.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.radar.mermaid",
+          "match": "\\b(?:axis|curve|title|ticks|showLegend|max|min)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.kanban",
+      "begin": "^[ \\t]*(kanban)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.kanban.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "meta.label.kanban.mermaid",
+          "begin": "\\[",
+          "end": "\\]|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+          "patterns": [
+            {
+              "include": "#common"
+            },
+            {
+              "name": "entity.name.label.kanban.mermaid",
+              "match": "[^\\]\"\\x27\\r\\n]+"
+            }
+          ]
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.architecture",
+      "begin": "^[ \\t]*(architecture(?:-beta)?)(?=[ \\t]*(?:(?:title|accTitle|accDescr|group|service|junction|align)\\b|(?:%%.*)?$))",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.architecture.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.architecture.mermaid",
+          "match": "\\b(?:group|service|junction|in)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.ishikawa",
+      "begin": "^[ \\t]*(ishikawa(?:-beta)?)(?=$|[ \\t]|%%)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.ishikawa.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "include": "#common"
+        },
+        {
+          "match": "^[ \\t]*(?![ \\t]*[\"\\x27])(\\S[^\\r\\n]*)",
+          "captures": {
+            "1": {
+              "name": "entity.name.label.ishikawa.mermaid"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.eventmodeling",
+      "begin": "^[ \\t]*(eventmodeling)(?=[ \\t]*(?:(?:title|accTitle|accDescr|entity|tf|timeframe|data|note|gwt)\\b|(?:%%.*)?$))",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.eventmodeling.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.eventmodeling.mermaid",
+          "match": "\\b(?:tf|ui|cmd|evt|view|auto|ext|data)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.cynefin",
+      "begin": "^[ \\t]*(cynefin-beta)(?=:?[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.cynefin.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.cynefin.mermaid",
+          "match": "\\b(?:complex|complicated|clear|chaotic|confused|disorder|title)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.wardley",
+      "begin": "^[ \\t]*((?i:wardley-beta))(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.wardley.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.wardley.mermaid",
+          "match": "\\b(?:title|size|anchor|component|label|evolve|note|pipeline|style|link)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.venn",
+      "begin": "^[ \\t]*(venn-beta)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.venn.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.venn.mermaid",
+          "match": "\\b(?:set|union|intersection|difference|title)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.tree-view",
+      "begin": "^[ \\t]*(treeView-beta)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.tree-view.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "include": "#common"
+        },
+        {
+          "match": "^[ \\t]*(?![ \\t]*[\"\\x27])(\\S[^\\r\\n]*)",
+          "captures": {
+            "1": {
+              "name": "entity.name.label.tree-view.mermaid"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.railroad",
+      "begin": "^[ \\t]*(railroad(?:-ebnf|-abnf|-peg)?-beta)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.railroad.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.railroad.mermaid",
+          "match": "\\b(?:sequence|choice|terminal|nonterminal|zeroOrMore|oneOrMore|optional|repeat|skip|comment)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.agentflow",
+      "begin": "^[ \\t]*(agentflow-beta)(?=[ \\t]*(?:(?:LR|RL|TB|BT|TD)[ \\t]*)?(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.agentflow.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.agentflow.mermaid",
+          "match": "\\b(?:flow|end|agent|tool|decision|start|stop)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    },
+    {
+      "name": "meta.ferriki-mermaid.usecase",
+      "begin": "^[ \\t]*(usecase-beta)(?=[ \\t]*(?:%%.*)?$)",
+      "end": "(?=A)B|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.usecase.begin.mermaid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.mermaid#a11y"
+        },
+        {
+          "include": "source.mermaid#directive"
+        },
+        {
+          "include": "source.mermaid#comment"
+        },
+        {
+          "include": "source.mermaid#title"
+        },
+        {
+          "name": "keyword.control.usecase.mermaid",
+          "match": "\\b(?:actor|systemBoundary|note|end)\\b"
+        },
+        {
+          "include": "#common"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "common": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mermaid",
+          "begin": "\"",
+          "end": "\"|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mermaid",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.mermaid",
+          "begin": "'",
+          "end": "'|(?=^[ \\t]*(?:`{3,}|~{3,})\\s*$)",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mermaid",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "constant.numeric.mermaid",
+          "match": "(?<![\\w.])-?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\b"
+        },
+        {
+          "name": "keyword.operator.mermaid",
+          "match": "(?:<[-.]+>|[-.]+>|<[-.]+|--|[+*/=])"
+        },
+        {
+          "name": "punctuation.section.mermaid",
+          "match": "[\\[\\]{}():,]"
+        }
+      ]
+    }
+  }
+}

@@ -121,6 +121,16 @@ await assert.rejects(
   /configuration drift/,
 );
 assert.equal(calls.length, 0, "locked replay rejects a new source before resolving any moving ref");
+calls.length = 0;
+const reduced = await resolveRepositorySnapshots(
+  { repositories: [editor, { ...collection, modules: [] }] },
+  reader,
+  snapshots,
+  { allowModuleChanges: true },
+);
+assert.deepEqual(reduced.collection.modules, {});
+assert.equal(reduced.collection.commit, second);
+assert(!calls.some((call) => call.includes("/commits/")), "candidate mode keeps repository pins");
 await assert.rejects(
   resolveRepositorySnapshots(
     { repositories: [editor, { ...collection, modules: [] }] },
