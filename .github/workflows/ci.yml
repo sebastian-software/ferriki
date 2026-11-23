@@ -274,7 +274,7 @@ jobs:
       - name: Set node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: lts/*
+          node-version: 26
 
       - name: Setup
         run: npm i -g @antfu/ni
@@ -310,7 +310,7 @@ jobs:
       - name: Set node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: lts/*
+          node-version: 26
 
       - name: Setup
         run: npm i -g @antfu/ni
@@ -353,7 +353,7 @@ jobs:
       - name: Set node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 22.x
+          node-version: 26
 
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -393,7 +393,7 @@ jobs:
       - name: Set node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 22.x
+          node-version: 26
 
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -447,7 +447,7 @@ jobs:
           package_json_file: node/package.json
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "24"
+          node-version: "26"
       - run: pnpm -C node install --frozen-lockfile --ignore-scripts
       - id: matrix
         working-directory: node
@@ -472,10 +472,10 @@ jobs:
         with:
           package_json_file: node/package.json
 
-      - name: Set node ${{ '22.x' }}
+      - name: Set up Node.js 26
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: ${{ '22.x' }}
+          node-version: 26
 
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
