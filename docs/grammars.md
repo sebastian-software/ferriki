@@ -16,8 +16,8 @@ The catalog covers:
   HTML/SVG/CSS template injections for Lit.
 - Documents and configuration: Markdown, MDX, JSON, JSONC, JSON5, YAML, TOML,
   INI, XML, shell scripts, PowerShell, Dockerfiles, Make, CMake, HCL, Terraform,
-  Nix, Mermaid, Ferrocat Catalog Lines (FCL), diffs, regular expressions,
-  WebAssembly text, and WGSL.
+  Nix, Mermaid, gettext catalogs (PO/POT), Ferrocat Catalog Lines (FCL), diffs,
+  regular expressions, WebAssembly text, and WGSL.
 
 The first-party `fcl` grammar highlights FCL1 and FCL2 fields and their tab
 separators. It includes the shared ICU MessageFormat grammar in IDs and targets.
@@ -129,7 +129,9 @@ TextMate collection; GitHub Linguist provides additional grammars through its
 own pinned submodules. Ferriki follows the Linguist collection pin instead of
 tracking every specialist repository's branch independently. Angular, Vue,
 Svelte, Astro, HTML/SVG tagged templates, and CSS-in-JS are the six explicit
-exceptions. Handlebars comes from VS Code; Liquid and Glimmer follow Linguist.
+external repository exceptions. Handlebars comes from VS Code; Liquid and Glimmer follow Linguist.
+Ferriki also maintains the shared ICU MessageFormat grammar, FCL and three
+Mermaid injections in [the local grammar directory](../assets/grammars/local).
 
 The importer discovers VS Code grammars from `contributes.grammars` without
 executing package scripts. Linguist's submodule commits come from the pinned
@@ -139,8 +141,9 @@ Sublime `.sublime-syntax` state machines are outside this converter.
 
 Git stores source selectors, repository and file hashes, patches, license
 notices, and the small [`assets/catalog.json`](../assets/catalog.json) metadata
-lock. Original grammars, normalized JSON, theme snapshots, compiled payloads,
-and generated indexes are ignored local build data. The source pipeline reads upstream grammar data directly.
+lock. The first-party grammar sources are tracked alongside their selectors.
+Downloaded originals, normalized JSON, theme snapshots, compiled payloads, and
+generated indexes are ignored local build data.
 
 Bunny Storage holds immutable objects at `assets.ferriki.dev/<language-id>/<short-hash>`.
 Original, normalized, and compiled bytes each have their own full SHA-256
@@ -184,7 +187,7 @@ retain their explicit lazy policy.
 
 `--locked` prepares the same snapshot again without resolving moving refs.
 `sync-grammars.mjs` without flags reproduces normalized files from their locked
-original URLs; `--check` verifies the materialized files against the committed locks without network access.
+original URLs or tracked first-party sources; `--check` verifies the materialized files against the committed locks without network access.
 No maintainer edits commit or file hashes manually. Selection and adapter
 configuration changes remain explicit edits in the two configuration files.
 
@@ -193,7 +196,7 @@ the mandatory core gate rebuilds the addon and seeds its cache from the new
 assets before testing. Review the candidate's `report.json`, normalized diffs in `diffs/`, and metadata
 changes before committing an update. `apply-grammar-update.mjs` rebuilds the
 local payloads and refreshes `assets/catalog.json`. Commit only configuration,
-locks, patches, and notices; the large generated directories stay ignored.
+first-party grammar sources, locks, patches, and notices; the large generated directories stay ignored.
 
 ### Automatic update pull requests
 
