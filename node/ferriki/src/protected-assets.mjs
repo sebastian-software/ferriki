@@ -1,3 +1,5 @@
+import process from "node:process";
+
 const PUBLIC = "https://assets.ferriki.dev";
 const ISSUER = "https://downloads.ferriki.dev/v1/downloads";
 const PROTECTED = "https://protected-assets.ferriki.dev";
@@ -71,7 +73,7 @@ export async function protectedUrl(asset, signal, env = process.env, request = f
       url.hash ||
       url.pathname !== source.pathname ||
       [...url.searchParams.keys()].sort().join(",") !== "expires,token" ||
-      !/^[A-Za-z0-9_-]+$/.test(url.searchParams.get("token") || "") ||
+      !/^[\w-]+$/.test(url.searchParams.get("token") || "") ||
       !/^\d+$/.test(url.searchParams.get("expires") || "")
     )
       throw new Error("invalid");

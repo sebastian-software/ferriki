@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { test } from "node:test";
 import { createAssetDownloader } from "../ferriki/src/asset-download.mjs";
 import { protectedSelected, protectedUrl } from "../ferriki/src/protected-assets.mjs";
