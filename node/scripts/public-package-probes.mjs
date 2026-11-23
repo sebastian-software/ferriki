@@ -58,9 +58,12 @@ export async function verifyPublicAssetCache(releaseManifest, cacheDir) {
     assert(asset, `the release manifest is missing ${path}`);
     return { path, ...asset };
   });
+  const rootEntries = await readdir(cacheDir, { withFileTypes: true });
+  const decodedDirectory = rootEntries.find((entry) => entry.name === "decoded");
+  if (decodedDirectory) assert(decodedDirectory.isDirectory(), "decoded cache must be a directory");
   assert.deepEqual(
-    (await readdir(cacheDir)).sort(),
-    expected.map((asset) => asset.sha256).sort(),
+    rootEntries.map((entry) => entry.name).sort(),
+    [...expected.map((asset) => asset.sha256), ...(decodedDirectory ? ["decoded"] : [])].sort(),
     "the public install must cache the rust grammar, prepared regex package, and nord theme",
   );
   for (const asset of expected) {
@@ -71,6 +74,25 @@ export async function verifyPublicAssetCache(releaseManifest, cacheDir) {
       asset.sha256,
       `${asset.path}: cached SHA-256 differs`,
     );
+  }
+  // The decoded cache is optional and its index and receipt are runtime details.
+  // If the release pins an archive and it was written, check its identity too.
+  const decoded = releaseManifest.assets["languages/rust.fkbc"].decoded;
+  if (decodedDirectory && decoded) {
+    assert.match(decoded.sha256, /^[0-9a-f]{64}$/, "invalid decoded SHA-256");
+    const directory = join(cacheDir, "decoded");
+    const entries = await readdir(directory, { withFileTypes: true });
+    const archive = entries.find((entry) => entry.name === decoded.sha256);
+    if (archive) {
+      assert(archive.isFile(), "decoded cache archive must be a file");
+      const bytes = await readFile(join(directory, decoded.sha256));
+      assert.equal(bytes.length, decoded.size, "decoded cache size differs");
+      assert.equal(
+        createHash("sha256").update(bytes).digest("hex"),
+        decoded.sha256,
+        "decoded cache SHA-256 differs",
+      );
+    }
   }
 }
 
