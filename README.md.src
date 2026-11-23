@@ -4,7 +4,7 @@
 [![CI](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml)
 [![Coverage gate >= 89%](https://img.shields.io/badge/coverage%20gate-%3E%3D%2089%25-brightgreen.svg)](./.github/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](./LICENSE-MIT)
-[![Node >= 22.13.0](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](https://nodejs.org)
+[![Node.js 22 (22.13.0 or later), 24, and 26](https://img.shields.io/badge/Node.js-22%20%7C%2024%20%7C%2026-339933?logo=nodedotjs&logoColor=white)](#see-your-first-result-in-nodejs)
 [![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
 [![docs.rs](https://img.shields.io/docsrs/ferriki.svg?logo=docs.rs&label=docs.rs)](https://docs.rs/ferriki)
