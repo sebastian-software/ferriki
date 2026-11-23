@@ -28,17 +28,24 @@ language coverage.
   GitHub Linguist. Specialist grammars follow Linguist's aggregate pin rather
   than independent repository heads. Six justified exceptions provide Angular,
   Vue, Svelte, Astro, HTML/SVG tagged-template injections, and CSS-in-JS.
-- Maintain FCL locally as a first-party exception: Ferrocat's catalog format is
-  not available in the configured collections, and its documentation needs the
-  shared ICU grammar inside both message fields.
 - Select common programming, web, document, configuration, and infrastructure
   languages by practical coverage. Primary languages are configured explicitly;
   supported required dependencies are discovered transitively. This is a
   maintained selection, not a popularity ranking or a promise to reproduce
   Shiki's entire catalog.
-- Ferriki may author TextMate grammars locally when an existing source cannot cover required family formats or shared embedded syntax. Committed files under `assets/grammars/local/` use the MIT license; the source lock records their SHA-256 and path, without a self-referential commit. Their raw, normalized, and compiled objects follow the same immutable asset publication as external grammars. Local sources are not third-party notices.
-- `--locked-repositories` prepares an update against the accepted external repository commits while permitting local source edits and selection changes to modules of the already-pinned Linguist snapshot. `--locked` remains strict replay and rejects local source drift. Neither mode resolves moving refs.
-- The standard Gettext Catalog grammar embeds ICU in all `msgid` and `msgstr` fields, including classic gettext plural fields. Literal braces in a classic PO may therefore receive ICU scopes; there is no separate unembedded variant. Gettext context and comments retain their own scopes. ICU state continues across quoted PO lines, but a keyword split within a token across physical lines cannot be scoped as one token by a line-oriented TextMate grammar.
+- Keep first-party TextMate sources in `assets/grammars/local/` under the MIT
+  license. FCL and gettext share the ICU grammar. Local Mermaid injections
+  supplement the Linguist grammar where Ferrigura supports additional syntax.
+  The source lock pins each file by path and SHA-256. Raw, normalized and
+  compiled objects follow the same publication process as external grammars.
+- Use `--locked-repositories` to change first-party files or select modules from
+  the accepted Linguist snapshot. Use `--locked` to replay an accepted
+  candidate, including the recorded first-party file hashes.
+- Embed ICU in gettext message fields, including classic plural forms. Literal
+  braces in a classic PO file can receive ICU scopes. Context and comments keep
+  their gettext scopes. ICU state continues across quoted lines. A keyword
+  split inside its name across two physical lines cannot receive a single
+  keyword scope in a line-oriented TextMate grammar.
 - Required dependencies are included transitively. Lazy embeddings name only
   languages in the standard catalog; applications explicitly load these or
   register external grammars. An optional GLSL embedding in C++ and its macro
@@ -84,7 +91,7 @@ language coverage.
 - Users load the result through existing `langs`/`loadLanguage` registrations.
   Rust consumers use `register_language` or `register_language_json`.
   External dependencies and injections are explicit registrations.
-- Source snapshots and generated files are materialized locally and ignored by
+- External source snapshots and generated files are materialized locally and ignored by
   Git. `assets/catalog.json` owns the compiled catalog metadata and theme source
   hashes; `sources.json` owns grammar source hashes. Bunny stores original,
   normalized, and compiled grammar bytes under `<id>/<sha256>` and themes under
@@ -145,9 +152,6 @@ package and crate version updates.
 
 ## History
 
-- 2026-11-23: Added first-party FCL highlighting with embedded ICU to support
-  Ferrocat's catalog format and documentation.
-
 - 2026-10-12: Accepted and implemented for #152: repository snapshots from two
   collections and five justified exceptions, generated locks, candidate/replay
   commands, dependency closure, a weekly review workflow, and a native-validated
@@ -175,9 +179,5 @@ package and crate version updates.
 - 2026-10-21: Added byte, substitution, and recursion-depth bounds to YAML
   variable expansion during source sync, including a cap on intermediate output
   generated across nested references.
-- 2026-11-23: Added Ferriki-owned Mermaid injections for missing diagram
-  syntax, C4 calls, and ZenUML comment markup. The Linguist-pinned Mermaid
-  sources remain the base grammar; local rules and their Ferrigura-backed
-  scope fixtures are maintained in this repository.
-
-- 2026-11-23: Added content-locked local grammar sources and pinned-repository candidate updates for first-party family syntax and embedded ICU messages.
+- 2026-11-23: Added pinned, first-party grammar sources for FCL, shared ICU in
+  FCL and gettext, and Mermaid injections tested against Ferrigura's diagrams.
