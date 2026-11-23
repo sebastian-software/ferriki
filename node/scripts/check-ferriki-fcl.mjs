@@ -22,6 +22,11 @@ const highlighter = await createHighlighter({
 const reference = await createEngine("shiki-wasm", { textmate: "fcl" });
 try {
   assert.equal(highlighter.codeToHtml(code, { lang: "fcl", theme }), reference.html(code));
+  const legacyCrlf = code.replaceAll("\n", "\r\n");
+  assert.equal(
+    highlighter.codeToHtml(legacyCrlf, { lang: "fcl", theme }),
+    reference.html(legacyCrlf),
+  );
   let lines;
   highlighter.codeToHtml(code, {
     lang: "fcl",
@@ -106,6 +111,11 @@ try {
     "Hello {name}\tn\tHallo {name}\tlock=<hash>\tai=openai/gpt-5.5-high:0.95",
   ].join("\r\n");
   assert.equal(highlighter.codeToHtml(current, { lang: "fcl", theme }), reference.html(current));
+  const currentLf = current.replaceAll("\r\n", "\n");
+  assert.equal(
+    highlighter.codeToHtml(currentLf, { lang: "fcl", theme }),
+    reference.html(currentLf),
+  );
   highlighter.codeToHtml(current, {
     lang: "fcl",
     theme: "github-light-default",
