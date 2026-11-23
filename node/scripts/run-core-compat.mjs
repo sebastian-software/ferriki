@@ -27,6 +27,8 @@ for (const script of [
   "./scripts/check-ferriki-grammars.mjs",
   "./scripts/check-ferriki-frontend.mjs",
   "./scripts/check-ferriki-fcl.mjs",
+  "./scripts/check-mermaid-local.mjs",
+  "./scripts/check-mermaid-local-catalog.mjs",
   "./scripts/test-theme-token-alignment.mjs",
 ]) {
   const result = spawnSync(

@@ -1,0 +1,87 @@
+[
+  {
+    "id": "swimlanes",
+    "source": "swimlanes/pr-check/1-simple.mmd",
+    "body": "subgraph"
+  },
+  {
+    "id": "block",
+    "source": "block/pr-check/composite-block-with-a-set-width-f-and-g-should-split-the-available-space.mmd",
+    "body": "columns"
+  },
+  {
+    "id": "xychart",
+    "source": "xychart/pr-check/decimals-and-negative-numbers-are-supported.mmd",
+    "body": "y-axis"
+  },
+  {
+    "id": "packet",
+    "source": "packet/pr-check/should-render-a-complex-packet-diagram-with-showbits-false.mmd",
+    "body": "Source Port"
+  },
+  {
+    "id": "treemap",
+    "source": "treemap/pr-check/1-should-render-a-basic-treemap.mmd",
+    "body": "Category A"
+  },
+  {
+    "id": "radar",
+    "source": "radar/pr-check/should-handle-radar-diagram-with-radar-style-override.mmd",
+    "body": "axis"
+  },
+  {
+    "id": "kanban",
+    "source": "kanban/pr-check/1-should-render-a-kanban-with-a-single-section.mmd",
+    "body": "Todo"
+  },
+  {
+    "id": "architecture",
+    "source": "architecture/pr-check/should-render-a-deterministic-layout-for-a-complex-deeply-nested-diagram.mmd",
+    "body": "group"
+  },
+  {
+    "id": "ishikawa",
+    "source": "ishikawa/pr-check/1-should-render-a-simple-ishikawa-diagram.mmd",
+    "body": "Blurry Photo"
+  },
+  {
+    "id": "eventmodeling",
+    "source": "eventmodeling/pr-check/state-change-pattern.mmd",
+    "body": "tf"
+  },
+  {
+    "id": "cynefin",
+    "source": "cynefin/pr-check/should-render-a-cynefin-diagram-with-transitions.mmd",
+    "body": "complex"
+  },
+  {
+    "id": "wardley",
+    "source": "wardley/pr-check/1-should-render-tea-shop.mmd",
+    "body": "anchor"
+  },
+  {
+    "id": "venn",
+    "source": "venn/pr-check/1-should-render-a-simple-two-set-venn-diagram.mmd",
+    "body": "set"
+  },
+  {
+    "id": "tree-view",
+    "source": "tree-view/pr-check/should-pick-file-icons-from-filename-and-extension-config-maps.mmd",
+    "body": "src/"
+  },
+  {
+    "id": "railroad",
+    "source": "railroad/pr-check/ir-sequences-and-choices.mmd",
+    "body": "sequence"
+  },
+  {
+    "id": "agentflow",
+    "source": "agentflow/pr-check/1-should-render-nested-flow-containers.mmd",
+    "body": "flow"
+  },
+  {
+    "id": "usecase",
+    "source": "usecase/pr-check/complete-hand-drawn-rendering-contract.mmd",
+    "body": "actor"
+  }
+]

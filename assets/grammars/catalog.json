@@ -1222,7 +1222,10 @@
         "mermaid-state-diagram",
         "mermaid-timeline",
         "mermaid-user-journey",
-        "mermaid-zenuml"
+        "mermaid-zenuml",
+        "mermaid-diagrams",
+        "mermaid-c4",
+        "mermaid-zenuml-comments"
       ],
       "embedded_langs_lazy": [],
       "inject_to": [],
@@ -2219,6 +2222,57 @@
       "selector": {
         "module": "vendor/grammars/language-mermaid",
         "path": "grammars/zenuml.cson"
+      }
+    },
+    {
+      "id": "mermaid-diagrams",
+      "grammar_file": "mermaid-diagrams.json",
+      "scope_name": "source.ferriki-mermaid-diagrams",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-diagrams.tmLanguage.json"
+      }
+    },
+    {
+      "id": "mermaid-c4",
+      "grammar_file": "mermaid-c4.json",
+      "scope_name": "source.ferriki-mermaid-c4",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-c4.tmLanguage.json"
+      }
+    },
+    {
+      "id": "mermaid-zenuml-comments",
+      "grammar_file": "mermaid-zenuml-comments.json",
+      "scope_name": "source.ferriki-mermaid-zenuml-comments",
+      "display_name": null,
+      "aliases": [],
+      "embedded_langs": [],
+      "embedded_langs_lazy": [],
+      "inject_to": [
+        "source.mermaid"
+      ],
+      "role": "dependency",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/mermaid-zenuml-comments.tmLanguage.json"
       }
     }
   ]
