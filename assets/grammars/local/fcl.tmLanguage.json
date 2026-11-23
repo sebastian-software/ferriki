@@ -1,0 +1,243 @@
+{
+  "name": "Ferrocat Catalog Lines",
+  "scopeName": "source.fcl",
+  "fileTypes": [
+    "fcl"
+  ],
+  "patterns": [
+    {
+      "begin": "^(%FCL1)(?=\\t|$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.header.fcl"
+        }
+      },
+      "end": "(?!)",
+      "name": "meta.legacy.fcl",
+      "patterns": [
+        {
+          "include": "#entry-v1"
+        },
+        {
+          "include": "#tags-v1"
+        }
+      ]
+    },
+    {
+      "begin": "^(%FCL2)(?=\\t|$)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.header.fcl"
+        }
+      },
+      "end": "(?!)",
+      "name": "meta.current.fcl",
+      "patterns": [
+        {
+          "include": "#entry-v2"
+        },
+        {
+          "include": "#tags-v2"
+        }
+      ]
+    },
+    {
+      "include": "#entry-v1"
+    }
+  ],
+  "repository": {
+    "escape-v1": {
+      "match": "\\\\(?:\\\\|t|n)",
+      "name": "constant.character.escape.fcl"
+    },
+    "tags-v1": {
+      "patterns": [
+        {
+          "match": "\\t",
+          "name": "punctuation.separator.tab.fcl"
+        },
+        {
+          "match": "(?<=\\t)(source|locale|order|r|c|tc|f|lock|ai)(=)([^\\t]*)",
+          "name": "meta.tag.fcl",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.fcl"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.fcl"
+            },
+            "3": {
+              "name": "string.unquoted.tag-value.fcl",
+              "patterns": [
+                {
+                  "include": "#escape-v1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "match": "(?<=\\t)o(?=\\t|$)",
+          "name": "constant.language.flag.fcl"
+        }
+      ]
+    },
+    "entry-v1": {
+      "match": "^([^\\t]*)(\\t)([^\\t]*)(\\t)([^\\t]*)(.*)$",
+      "captures": {
+        "1": {
+          "name": "string.unquoted.id.fcl",
+          "patterns": [
+            {
+              "include": "#escape-v1"
+            },
+            {
+              "include": "source.icu-message"
+            }
+          ]
+        },
+        "2": {
+          "name": "punctuation.separator.tab.fcl"
+        },
+        "3": {
+          "name": "string.unquoted.context.fcl",
+          "patterns": [
+            {
+              "include": "#escape-v1"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.tab.fcl"
+        },
+        "5": {
+          "name": "string.unquoted.target.fcl",
+          "patterns": [
+            {
+              "include": "#escape-v1"
+            },
+            {
+              "include": "source.icu-message"
+            }
+          ]
+        },
+        "6": {
+          "patterns": [
+            {
+              "include": "#tags-v1"
+            }
+          ]
+        }
+      }
+    },
+    "escape-v2": {
+      "match": "\\\\(?:\\\\|t|n|r)",
+      "name": "constant.character.escape.fcl"
+    },
+    "tags-v2": {
+      "patterns": [
+        {
+          "match": "\\t",
+          "name": "punctuation.separator.tab.fcl"
+        },
+        {
+          "match": "(?<=\\t)(source|locale|order|r|c|tc|f|lock|ai)(=)([^\\t]*)",
+          "name": "meta.tag.fcl",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.fcl"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.fcl"
+            },
+            "3": {
+              "name": "string.unquoted.tag-value.fcl",
+              "patterns": [
+                {
+                  "include": "#escape-v2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "match": "(?<=\\t)o(?=\\t|$)",
+          "name": "constant.language.flag.fcl"
+        }
+      ]
+    },
+    "entry-v2": {
+      "match": "^([^\\t]*)(\\t)([^\\t]*)(\\t)([^\\t]*)(.*)$",
+      "captures": {
+        "1": {
+          "name": "string.unquoted.id.fcl",
+          "patterns": [
+            {
+              "include": "#escape-v2"
+            },
+            {
+              "include": "source.icu-message"
+            }
+          ]
+        },
+        "2": {
+          "name": "punctuation.separator.tab.fcl"
+        },
+        "3": {
+          "name": "string.unquoted.context.fcl",
+          "patterns": [
+            {
+              "match": "(?<=\\t)([ns])([^\\t]*)",
+              "captures": {
+                "1": {
+                  "name": "constant.language.context.fcl"
+                },
+                "2": {
+                  "patterns": [
+                    {
+                      "include": "#escape-v2"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "include": "#escape-v2"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.tab.fcl"
+        },
+        "5": {
+          "name": "string.unquoted.target.fcl",
+          "patterns": [
+            {
+              "include": "#escape-v2"
+            },
+            {
+              "include": "source.icu-message"
+            }
+          ]
+        },
+        "6": {
+          "patterns": [
+            {
+              "include": "#tags-v2"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "injections": {
+    "L:meta.legacy.fcl": {
+      "patterns": [
+        {
+          "match": "\\\\r",
+          "name": "invalid.illegal.escape.fcl"
+        }
+      ]
+    }
+  }
+}

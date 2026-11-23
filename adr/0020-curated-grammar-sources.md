@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-11-23
 
 ## Context
 
@@ -28,6 +28,9 @@ language coverage.
   GitHub Linguist. Specialist grammars follow Linguist's aggregate pin rather
   than independent repository heads. Six justified exceptions provide Angular,
   Vue, Svelte, Astro, HTML/SVG tagged-template injections, and CSS-in-JS.
+- Maintain FCL locally as a first-party exception: Ferrocat's catalog format is
+  not available in the configured collections, and its documentation needs the
+  shared ICU grammar inside both message fields.
 - Select common programming, web, document, configuration, and infrastructure
   languages by practical coverage. Primary languages are configured explicitly;
   supported required dependencies are discovered transitively. This is a
@@ -138,6 +141,9 @@ global Release Please versioning. Release Please owns the synchronized
 package and crate version updates.
 
 ## History
+
+- 2026-11-23: Added first-party FCL highlighting with embedded ICU to support
+  Ferrocat's catalog format and documentation.
 
 - 2026-10-12: Accepted and implemented for #152: repository snapshots from two
   collections and five justified exceptions, generated locks, candidate/replay

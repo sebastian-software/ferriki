@@ -16,7 +16,13 @@ The catalog covers:
   HTML/SVG/CSS template injections for Lit.
 - Documents and configuration: Markdown, MDX, JSON, JSONC, JSON5, YAML, TOML,
   INI, XML, shell scripts, PowerShell, Dockerfiles, Make, CMake, HCL, Terraform,
-  Nix, Mermaid, diffs, regular expressions, WebAssembly text, and WGSL.
+  Nix, Mermaid, Ferrocat Catalog Lines (FCL), diffs, regular expressions,
+  WebAssembly text, and WGSL.
+
+The first-party `fcl` grammar highlights FCL1 and FCL2 fields and their tab
+separators. It includes the shared ICU MessageFormat grammar in IDs and targets.
+Headerless snippets use the FCL1 interpretation; include a `%FCL2` header to
+highlight FCL2 context markers and carriage-return escapes.
 
 [`assets/grammars/catalog.json`](../assets/grammars/catalog.json) owns IDs,
 aliases, dependencies, and source selectors. See [Mermaid grammar coverage](mermaid-grammar.md)

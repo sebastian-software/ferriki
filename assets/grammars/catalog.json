@@ -503,6 +503,23 @@
       "patch_file": "assets/grammars/patches/es-tag-html.json"
     },
     {
+      "id": "fcl",
+      "grammar_file": "fcl.json",
+      "scope_name": "source.fcl",
+      "display_name": "Ferrocat Catalog Lines",
+      "aliases": [],
+      "embedded_langs": [
+        "icu-message"
+      ],
+      "embedded_langs_lazy": [],
+      "inject_to": [],
+      "role": "standard",
+      "repository_id": "local",
+      "selector": {
+        "path": "assets/grammars/local/fcl.tmLanguage.json"
+      }
+    },
+    {
       "id": "gdscript",
       "grammar_file": "gdscript.json",
       "scope_name": "source.gdscript",
