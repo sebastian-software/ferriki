@@ -15,7 +15,8 @@ const fixtures = [
   '# translator\n#. extracted\n#: src.rs:1\n#, fuzzy\n#| msgid "previous"\n#~ msgid "obsolete"\nmsgid "{n, plural, other {unfinished"\nmsgstr "{name}"\n\nmsgid "next"\nmsgstr "end"',
   "msgid \"ordinary apostrophe isn't a quote, '{literal}' and '' escaped\"\nmsgstr \"{name}\"",
   'msgid "{date} {time} {select} {plural, number}"\nmsgstr "{gender, select, other {\'#\' literal}}"',
-  'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n\nmsgid "hello"\nmsgstr "world"',
+  // Ferrocat crates/ferrocat-bench/fixtures/stress.po, header.
+  'msgid ""\nmsgstr ""\n"Project-Id-Version: Test\\n"\n"Plural-Forms: nplurals=3; plural=(n != 1);\\n"\n\nmsgid "hello"\nmsgstr "world"',
   'msgid "{count,\tplural, one {# item} other {# items}} {user.name} {größe}"\nmsgstr "{n, plural, other {{gender, select, female {# files} other {# files}}}}"',
   'msgid "{count, plu"\n"ral, other {# files}}"\nmsgstr "next"',
 ];
@@ -94,8 +95,18 @@ try {
       ),
   );
   const header = leaves(fixtures[7]);
-  has(header, "Content-Type", "constant-language-po");
-  has(header, "text/plain", "meta-header-po");
+  has(header, "Project-Id-Version", "constant-language-po");
+  has(header, "Test", "meta-header-po");
+  has(header, "msgid", "keyword-control-msgid-po");
+  has(header, "msgstr", "keyword-control-msgstr-po");
+  has(header, '""', "string-quoted-double-po");
+  assert(
+    !header.some(
+      (token) =>
+        (token.text === "msgid" || token.text === "msgstr") &&
+        token.classes.some((value) => value.includes("comment-line")),
+    ),
+  );
   const extended = leaves(fixtures[8]);
   has(extended, "plural", "storage-type-icu");
   has(extended, "user.name", "variable-parameter-icu");
