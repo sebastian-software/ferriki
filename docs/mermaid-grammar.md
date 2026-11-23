@@ -1,20 +1,39 @@
 # Mermaid grammar coverage
 
-Ferriki's standard Mermaid grammar follows the pinned Linguist submodule
-`Alhadis/language-mermaid`. Its entry point and 16 diagram-specific grammars
-are loaded together. The grammar recognizes flowchart, class, state, ER,
-requirement, mindmap, sequence, Gantt, timeline, journey, GitGraph, pie,
-quadrant, Sankey, ZenUML, C4, and the `info` statement. Recognition does not
-mean every syntax feature has a scope.
+Ferriki combines the Linguist-pinned `Alhadis/language-mermaid` grammars with
+first-party TextMate injections. The upstream grammar provides rules for
+flowchart, class, state, ER, requirement, mindmap, sequence, Gantt, timeline,
+journey, GitGraph, pie, quadrant, Sankey, ZenUML, C4, and `info`. The C4
+injection scopes common calls and their arguments. The ZenUML injection scopes
+basic Markdown emphasis, inline code, and links in comments.
 
-C4's header and shared directives, comments, and title have scopes, but its
-body delegates to `source.wsd`, which the current catalog does not provide.
-ZenUML's diagram syntax has scopes, but Markdown within its comments delegates
-to the unavailable `source.gfm` scope. These are reported by the grammar update
-pipeline as external scopes.
+The local diagram injection recognizes headers and common body syntax for:
 
-The pinned grammar has no diagram-specific rules for swimlanes, block, xychart,
-packet, treemap, radar, kanban, architecture, ishikawa, eventmodeling, cynefin,
-wardley, venn, tree-view, railroad, agentflow, or usecase. Shared syntax may
-still receive scopes. Recheck this list when updating the grammar against
-Ferrigura's diagram reference and the update report.
+<!-- local-mermaid-diagrams:start -->
+
+- swimlanes
+- block
+- xychart
+- packet
+- treemap
+- radar
+- kanban
+- architecture
+- ishikawa
+- eventmodeling
+- cynefin
+- wardley
+- venn
+- tree-view
+- railroad
+- agentflow
+- usecase
+
+<!-- local-mermaid-diagrams:end -->
+
+These rules provide syntax highlighting rather than validation, and individual
+diagram features may still lack a specific scope. Each listed diagram has a
+Ferrigura example checked for both a header and a body token. The check also
+fails when upstream's diagram entry points change, so an update prompts review
+of the list and overlapping local rules. Additional syntax needs an example and
+a scope test before it is claimed as covered.

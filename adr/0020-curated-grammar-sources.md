@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-21
+Last updated: 2026-11-23
 
 ## Context
 
@@ -166,3 +166,7 @@ package and crate version updates.
 - 2026-10-21: Added byte, substitution, and recursion-depth bounds to YAML
   variable expansion during source sync, including a cap on intermediate output
   generated across nested references.
+- 2026-11-23: Added Ferriki-owned Mermaid injections for missing diagram
+  syntax, C4 calls, and ZenUML comment markup. The Linguist-pinned Mermaid
+  sources remain the base grammar; local rules and their Ferrigura-backed
+  scope fixtures are maintained in this repository.
