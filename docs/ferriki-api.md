@@ -185,6 +185,11 @@ cache ([ADR 0013](../adr/0013-cdn-loaded-standard-assets.md)).
 An explicit option wins over the environment. The one-shot functions use the
 singleton highlighter, which only the environment configures.
 
+`FERRIKI_ASSETS_PROTECTED=1` selects protected downloads for cache misses;
+`FERRIKI_DOWNLOAD_TOKEN` supplies the issuer bearer. Cached assets work without
+the token, and protected mode does not send it to a custom mirror. See
+[asset loading](asset-loading.md#protected-downloads).
+
 Downloads happen only in the asynchronous paths: `createHighlighter`,
 `getSingletonHighlighter`, `loadLanguage`, `loadTheme` and the one-shot
 functions, which load the `lang`, `theme` and `themes` they are given. A

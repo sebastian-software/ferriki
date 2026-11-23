@@ -37,6 +37,9 @@ const PREFETCH_WORKERS: usize = 6;
 /// `FERRIKI_ASSETS_BASE_URL` ([`DEFAULT_ASSETS_BASE_URL`]) and
 /// `FERRIKI_CACHE_DIR` (the platform cache directory plus `ferriki`). The
 /// commit defaults to the release commit this crate was published from.
+/// Set `FERRIKI_ASSETS_PROTECTED=1` and `FERRIKI_DOWNLOAD_TOKEN` to authorize
+/// cache misses against the protected default CDN. Cached and offline loads do
+/// not require a token; protected mode does not use a custom mirror.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct RemoteAssets {
@@ -210,16 +213,118 @@ impl RemoteAssetSource {
             path,
             digest.as_str(),
         )?;
-        let bytes = self.read_remote_until(&url, size, Instant::now() + DOWNLOAD_TIMEOUT)?;
+        let protected = protected_selected()?;
+        let bytes = if protected {
+            let deadline = Instant::now() + DOWNLOAD_TIMEOUT;
+            let path = protected_path(&url)?;
+            let token = std::env::var("FERRIKI_DOWNLOAD_TOKEN").map_err(|_| protected_error())?;
+            if token.is_empty() || token.contains(['\r', '\n']) {
+                return Err(protected_error());
+            }
+            let signed = self.authorize_protected(path, digest.as_str(), size, &token, deadline)?;
+            self.read_protected(&signed, size, deadline)?
+        } else {
+            self.read_remote_until(&url, size, Instant::now() + DOWNLOAD_TIMEOUT)?
+        };
         if bytes.len() as u64 != size || AssetDigest::of(&bytes) != *digest {
             return Err(Error::new(
                 ErrorKind::AssetIntegrity,
-                format!(
-                    "{url} did not match its release-pinned SHA-256 and size; it was not cached."
-                ),
+                if protected {
+                    "Protected asset did not match its release-pinned SHA-256 and size; it was not cached.".to_owned()
+                } else {
+                    format!(
+                        "{url} did not match its release-pinned SHA-256 and size; it was not cached."
+                    )
+                },
             ));
         }
         self.store(digest, &bytes)?;
+        Ok(bytes)
+    }
+
+    fn authorize_protected(
+        &self,
+        path: &str,
+        digest: &str,
+        size: u64,
+        token: &str,
+        deadline: Instant,
+    ) -> Result<String> {
+        self.authorize_protected_at(
+            "https://downloads.ferriki.dev/v1/downloads",
+            path,
+            digest,
+            size,
+            token,
+            deadline,
+        )
+    }
+
+    fn authorize_protected_at(
+        &self,
+        issuer: &str,
+        path: &str,
+        digest: &str,
+        size: u64,
+        token: &str,
+        deadline: Instant,
+    ) -> Result<String> {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err(protected_error());
+        }
+        let body = serde_json::json!({ "path": path, "sha256": digest }).to_string();
+        let mut response = self
+            .agent
+            .post(issuer)
+            .header("Authorization", format!("Bearer {token}"))
+            .header("Content-Type", "application/json")
+            .config()
+            .max_redirects(0)
+            .timeout_global(Some(remaining))
+            .build()
+            .send(body.as_bytes())
+            .map_err(|_| protected_error())?;
+        if response.status().as_u16() != 200 {
+            return Err(protected_error());
+        }
+        let mut data = Vec::new();
+        response
+            .body_mut()
+            .as_reader()
+            .take(8193)
+            .read_to_end(&mut data)
+            .map_err(|_| protected_error())?;
+        if data.len() > 8192 {
+            return Err(protected_error());
+        }
+        parse_issuer_response(&data, path, digest, size)
+    }
+
+    fn read_protected(&self, url: &str, size: u64, deadline: Instant) -> Result<Vec<u8>> {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err(protected_error());
+        }
+        let mut response = self
+            .agent
+            .get(url)
+            .config()
+            .max_redirects(0)
+            .timeout_global(Some(remaining))
+            .build()
+            .call()
+            .map_err(|_| protected_error())?;
+        if response.status().as_u16() != 200 {
+            return Err(protected_error());
+        }
+        let mut bytes = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
+        response
+            .body_mut()
+            .as_reader()
+            .take(size.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .map_err(|_| protected_error())?;
         Ok(bytes)
     }
 
@@ -314,6 +419,98 @@ impl RemoteAssetSource {
             io(error)
         })
     }
+}
+
+fn protected_error() -> Error {
+    Error::new(
+        ErrorKind::AssetDownload,
+        "Protected asset download failed; check the protected download configuration.",
+    )
+}
+
+fn protected_selected() -> Result<bool> {
+    match std::env::var("FERRIKI_ASSETS_PROTECTED") {
+        Err(std::env::VarError::NotPresent) => Ok(false),
+        Ok(value) => match value.trim().to_ascii_lowercase().as_str() {
+            "" | "0" | "false" => Ok(false),
+            "1" | "true" => Ok(true),
+            _ => Err(protected_error()),
+        },
+        Err(_) => Err(protected_error()),
+    }
+}
+
+fn protected_path(url: &str) -> Result<&str> {
+    let path = url
+        .strip_prefix("https://assets.ferriki.dev")
+        .ok_or_else(protected_error)?;
+    let parts: Vec<_> = path
+        .strip_prefix('/')
+        .ok_or_else(protected_error)?
+        .split('/')
+        .collect();
+    let valid_id = |s: &str| {
+        !s.is_empty()
+            && s.bytes()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'-')
+    };
+    let valid_hash = |s: &str| s.len() == 8 && s.bytes().all(|c| c.is_ascii_alphanumeric());
+    match parts.as_slice() {
+        [id, hash] if valid_id(id) && valid_hash(hash) => Ok(path),
+        ["themes", id, hash] if valid_id(id) && valid_hash(hash) => Ok(path),
+        _ => Err(protected_error()),
+    }
+}
+
+fn parse_issuer_response(data: &[u8], path: &str, digest: &str, size: u64) -> Result<String> {
+    let value: serde_json::Value = serde_json::from_slice(data).map_err(|_| protected_error())?;
+    if value.get("bytes").and_then(serde_json::Value::as_u64) != Some(size)
+        || value.get("sha256").and_then(serde_json::Value::as_str) != Some(digest)
+    {
+        return Err(protected_error());
+    }
+    let url = value
+        .get("url")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(protected_error)?;
+    validate_signed_url(url, path)?;
+    Ok(url.to_owned())
+}
+
+fn validate_signed_url(url: &str, path: &str) -> Result<()> {
+    let rest = url
+        .strip_prefix("https://protected-assets.ferriki.dev")
+        .ok_or_else(protected_error)?;
+    let (actual_path, query) = rest.split_once('?').ok_or_else(protected_error)?;
+    if actual_path != path || query.contains('#') {
+        return Err(protected_error());
+    }
+    let mut token = false;
+    let mut expires = false;
+    for field in query.split('&') {
+        let (key, value) = field.split_once('=').ok_or_else(protected_error)?;
+        match key {
+            "token"
+                if !token
+                    && !value.is_empty()
+                    && value
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_') =>
+            {
+                token = true
+            }
+            "expires"
+                if !expires && !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) =>
+            {
+                expires = true
+            }
+            _ => return Err(protected_error()),
+        }
+    }
+    if !token || !expires {
+        return Err(protected_error());
+    }
+    Ok(())
 }
 
 struct DownloadFailure {

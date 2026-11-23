@@ -22,6 +22,24 @@ received bytes before writing them to the cache. Node still uses its host
 runtime for HTTP, proxy and certificate configuration; Rust's transport uses
 the platform trust store.
 
+## Protected downloads
+
+Set `FERRIKI_ASSETS_PROTECTED=1` to select the protected default CDN, and set
+`FERRIKI_DOWNLOAD_TOKEN` to the bearer token supplied for the download issuer.
+This setting applies to both the Node loader and Rust's `remote` feature. A
+verified cache hit or an offline load needs no token. A cache miss in protected
+mode requires a token and the default asset origin; a custom mirror is rejected
+and never receives the token. Without protected mode, existing public CDN and
+custom-mirror behavior is unchanged.
+
+The issuer receives the canonical asset path and release-pinned SHA-256. The
+client accepts only a signed HTTPS URL for that same path and the expected size
+and digest. It sends no bearer to the CDN, refuses redirects, and verifies the
+download against the release manifest before caching it. Protected failures do
+not retry through the public CDN; optional prepared sidecars can still fall
+back to compiling the verified grammar. Protected requests do not use the
+public downloader's transient retry loop.
+
 Prepared regex packages also cache their uncompressed containers under
 `decoded/<sha256>`. The first load decompresses and verifies the container,
 then saves it atomically with a `.verified` receipt of its size and modification

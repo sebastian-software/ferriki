@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-11
+Last updated: 2026-11-23
 
 ## Context
 
@@ -51,6 +51,12 @@ Standard grammar and theme data lives in Bunny Storage, served through
 notices, and the small reviewed `assets/catalog.json` lock. Original sources,
 normalized JSON, binary payloads, and generated catalog indexes are ignored
 local build artifacts, not committed repository data.
+
+An explicit protected-download mode authorizes cache misses through the
+Ferriki issuer and fetches a short-lived URL from the protected CDN. It keeps
+the same release-pinned sizes, hashes and cache, and never sends the issuer
+bearer to a mirror or the CDN. Public loading remains available during the
+migration; protected mode fails closed rather than falling back to it.
 
 - **Immutable objects.** Grammar objects use `<canonical-language-id>/<short-hash>`;
   themes use `themes/<theme-id>/<short-hash>`. SHA-256 covers every byte of the
@@ -167,6 +173,9 @@ local build artifacts, not committed repository data.
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-11-23: Add explicitly selected protected downloads for the Rust and
+  Node asset hosts while retaining the existing public and offline paths.
 
 - 2026-11-11: Retry transient Node and Rust remote asset failures with bounded
   backoff within the existing deadline, preserving fail-fast permanent/integrity

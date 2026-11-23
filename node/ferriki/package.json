@@ -46,6 +46,7 @@
     "src/api.d.mts",
     "src/asset-download.mjs",
     "src/index.mjs",
+    "src/protected-assets.mjs",
     "src/theme-tokens.mjs",
     "transformers.mjs",
     "web-component-server.d.mts",

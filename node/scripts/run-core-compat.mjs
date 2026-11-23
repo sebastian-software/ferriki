@@ -172,6 +172,17 @@ const remoteAssetsCheck = spawnSync(
 );
 if (remoteAssetsCheck.status !== 0) process.exit(remoteAssetsCheck.status || 1);
 
+const protectedAssetsCheck = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-protected-assets.mjs"],
+  {
+    cwd: nodeRoot,
+    env: process.env,
+    stdio: "inherit",
+  },
+);
+if (protectedAssetsCheck.status !== 0) process.exit(protectedAssetsCheck.status || 1);
+
 const multiThemeCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-multitheme.mjs"], {
   cwd: nodeRoot,
   env: {
