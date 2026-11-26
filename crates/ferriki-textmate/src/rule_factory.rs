@@ -397,12 +397,11 @@ impl<'a> RuleFactory<'a> {
         let scope_name = repository.scope_name().to_owned();
 
         // vscode-textmate selects match and while rules with JavaScript truthiness.
-        if let Some(match_pattern) = description
+        if description
             .match_pattern
-            .as_ref()
-            .filter(|pattern| !pattern.is_empty())
+            .as_deref()
+            .is_some_and(|pattern| !pattern.is_empty())
         {
-            let match_pattern = match_pattern.clone();
             frames.push(RuleFrame {
                 id,
                 scope_name,
@@ -413,14 +412,13 @@ impl<'a> RuleFactory<'a> {
                 },
                 pending: None,
                 kind: BuildRuleKind::Match {
-                    match_pattern,
                     captures: BTreeMap::new(),
                 },
             });
             return;
         }
 
-        let Some(begin) = description.begin.as_ref() else {
+        if description.begin.is_none() {
             let repository = if description.repository.is_some() {
                 repository.with_overlay(&description)
             } else {
@@ -456,20 +454,18 @@ impl<'a> RuleFactory<'a> {
                 },
             });
             return;
-        };
+        }
 
-        let begin = begin.clone();
         let raw_pattern_count = description
             .patterns
             .as_deref()
             .map_or(0, <[Arc<RawRule>]>::len);
 
-        if let Some(while_pattern) = description
+        if description
             .while_pattern
-            .as_ref()
-            .filter(|pattern| !pattern.is_empty())
+            .as_deref()
+            .is_some_and(|pattern| !pattern.is_empty())
         {
-            let while_pattern = while_pattern.clone();
             frames.push(RuleFrame {
                 id,
                 scope_name,
@@ -482,8 +478,6 @@ impl<'a> RuleFactory<'a> {
                 },
                 pending: None,
                 kind: BuildRuleKind::BeginWhile {
-                    begin,
-                    while_pattern,
                     begin_captures: BTreeMap::new(),
                     while_captures: BTreeMap::new(),
                     raw_pattern_count,
@@ -505,7 +499,6 @@ impl<'a> RuleFactory<'a> {
             },
             pending: None,
             kind: BuildRuleKind::BeginEnd {
-                begin,
                 begin_captures: BTreeMap::new(),
                 end_captures: BTreeMap::new(),
                 raw_pattern_count,
@@ -706,7 +699,6 @@ fn next_pattern_entry(
 
 enum BuildRuleKind {
     Match {
-        match_pattern: String,
         captures: BTreeMap<usize, Arc<CaptureRule>>,
     },
     IncludeOnly {
@@ -714,15 +706,12 @@ enum BuildRuleKind {
         compiled_patterns: Vec<RuleId>,
     },
     BeginWhile {
-        begin: String,
-        while_pattern: String,
         begin_captures: BTreeMap<usize, Arc<CaptureRule>>,
         while_captures: BTreeMap<usize, Arc<CaptureRule>>,
         raw_pattern_count: usize,
         compiled_patterns: Vec<RuleId>,
     },
     BeginEnd {
-        begin: String,
         begin_captures: BTreeMap<usize, Arc<CaptureRule>>,
         end_captures: BTreeMap<usize, Arc<CaptureRule>>,
         raw_pattern_count: usize,
@@ -921,14 +910,14 @@ impl RuleFrame {
 
     fn into_rule(self) -> Rule {
         let mut rule = match self.kind {
-            BuildRuleKind::Match {
-                match_pattern,
-                captures,
-            } => Rule::Match(MatchRule::new(
+            BuildRuleKind::Match { captures } => Rule::Match(MatchRule::new(
                 self.description.location.clone(),
                 self.id,
                 self.description.name.clone(),
-                match_pattern,
+                self.description
+                    .match_pattern
+                    .as_deref()
+                    .expect("match rule must have a match pattern"),
                 captures.into_iter().collect(),
             )),
             BuildRuleKind::IncludeOnly {
@@ -945,8 +934,6 @@ impl RuleFrame {
                 },
             )),
             BuildRuleKind::BeginWhile {
-                begin,
-                while_pattern,
                 begin_captures,
                 while_captures,
                 raw_pattern_count,
@@ -956,9 +943,17 @@ impl RuleFrame {
                 id: self.id,
                 name: self.description.name.clone(),
                 content_name: self.description.content_name.clone(),
-                begin,
+                begin: self
+                    .description
+                    .begin
+                    .as_deref()
+                    .expect("begin/while rule must have a begin pattern"),
                 begin_captures: begin_captures.into_iter().collect(),
-                while_pattern,
+                while_pattern: self
+                    .description
+                    .while_pattern
+                    .as_deref()
+                    .expect("begin/while rule must have a while pattern"),
                 while_captures: while_captures.into_iter().collect(),
                 patterns: CompilePatternsResult {
                     has_missing_patterns: raw_pattern_count != compiled_patterns.len(),
@@ -966,7 +961,6 @@ impl RuleFrame {
                 },
             })),
             BuildRuleKind::BeginEnd {
-                begin,
                 begin_captures,
                 end_captures,
                 raw_pattern_count,
@@ -976,9 +970,13 @@ impl RuleFrame {
                 id: self.id,
                 name: self.description.name.clone(),
                 content_name: self.description.content_name.clone(),
-                begin,
+                begin: self
+                    .description
+                    .begin
+                    .as_deref()
+                    .expect("begin/end rule must have a begin pattern"),
                 begin_captures: begin_captures.into_iter().collect(),
-                end: self.description.end.clone(),
+                end: self.description.end.as_deref(),
                 end_captures: end_captures.into_iter().collect(),
                 apply_end_pattern_last: self.description.apply_end_pattern_last,
                 patterns: CompilePatternsResult {

@@ -284,7 +284,7 @@ fn prepare_package_with_coverage(
         .chain(grammar.repository.values())
         .chain(grammar.injections.values())
     {
-        collect_rule(rule, &mut patterns);
+        collect_rule(rule, &mut patterns)?;
     }
     let cache = ScannerPatternCache::for_preparation().for_scope(&grammar.scope_name);
     for pattern in patterns {
@@ -362,12 +362,15 @@ pub(crate) fn compress_archive(bytes: &[u8]) -> Result<Vec<u8>, PrecompiledPatte
         .map_err(PrecompiledPatternsError::new)
 }
 
-fn collect_rule(rule: &RawRule, patterns: &mut BTreeSet<String>) {
+fn collect_rule(
+    rule: &RawRule,
+    patterns: &mut BTreeSet<String>,
+) -> Result<(), PrecompiledPatternsError> {
     for pattern in rule.match_pattern.iter().chain(rule.begin.iter()) {
-        collect_pattern(pattern, false, patterns);
+        collect_pattern(pattern, false, patterns)?;
     }
     for pattern in rule.end.iter().chain(rule.while_pattern.iter()) {
-        collect_pattern(pattern, true, patterns);
+        collect_pattern(pattern, true, patterns)?;
     }
     for child in rule
         .patterns
@@ -379,26 +382,37 @@ fn collect_rule(rule: &RawRule, patterns: &mut BTreeSet<String>) {
         .chain(rule.end_captures.iter().flat_map(|rules| rules.values()))
         .chain(rule.while_captures.iter().flat_map(|rules| rules.values()))
     {
-        collect_rule(child, patterns);
+        collect_rule(child, patterns)?;
     }
+    Ok(())
 }
 
-fn collect_pattern(pattern: &str, dynamic: bool, patterns: &mut BTreeSet<String>) {
+fn collect_pattern(
+    pattern: &str,
+    dynamic: bool,
+    patterns: &mut BTreeSet<String>,
+) -> Result<(), PrecompiledPatternsError> {
     let source = RegExpSource::new(pattern, ());
-    if source.is_oversized() || (dynamic && source.has_back_references) {
-        return;
+    if source.is_oversized() {
+        return Err(PrecompiledPatternsError::new(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
+    if dynamic && source.has_back_references {
+        return Ok(());
     }
     for allow_a in [false, true] {
         for allow_g in [false, true] {
-            if let Ok(resolved) =
-                source.resolve_anchors_bounded(allow_a, allow_g, MAX_SCANNER_PATTERN_BYTES)
-                && let Ok(normalized) =
-                    normalize_ferroni_pattern_bounded(&resolved, MAX_SCANNER_PATTERN_BYTES)
-            {
-                patterns.insert(normalized);
-            }
+            let resolved = source
+                .resolve_anchors_bounded(allow_a, allow_g, MAX_SCANNER_PATTERN_BYTES)
+                .map_err(PrecompiledPatternsError::new)?;
+            let normalized =
+                normalize_ferroni_pattern_bounded(&resolved, MAX_SCANNER_PATTERN_BYTES)
+                    .map_err(PrecompiledPatternsError::new)?;
+            patterns.insert(normalized);
         }
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -728,7 +742,7 @@ mod tests {
             ferroni::scanner::PrecompiledPatterns::from_bytes(archive.eager.program_bytes())
                 .unwrap();
         let mut patterns = BTreeSet::new();
-        collect_pattern(r"\Afirst|\Gnext|last\z", false, &mut patterns);
+        collect_pattern(r"\Afirst|\Gnext|last\z", false, &mut patterns).unwrap();
         patterns.extend([
             r"(a+)\1".to_owned(),
             "word".to_owned(),
@@ -952,5 +966,21 @@ mod tests {
                 .is_empty()
         );
         registry.dispose();
+    }
+
+    #[test]
+    fn archive_preparation_rejects_oversized_unreferenced_static_pattern() {
+        let mut raw = grammar();
+        let oversized = "a".repeat(MAX_SCANNER_PATTERN_BYTES + 1);
+        raw.repository.insert(
+            "oversized".to_owned(),
+            Arc::new(RawRule {
+                match_pattern: Some(oversized),
+                ..RawRule::default()
+            }),
+        );
+        let err = precompile_grammar_patterns(&raw)
+            .expect_err("oversized unreferenced repository pattern must fail archive preparation");
+        assert!(err.to_string().contains("size limit"));
     }
 }

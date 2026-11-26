@@ -179,7 +179,7 @@ impl MatchRule {
         location: Option<Location>,
         id: RuleId,
         name: Option<String>,
-        match_pattern: impl Into<String>,
+        match_pattern: impl AsRef<str>,
         captures: CaptureRules,
     ) -> Self {
         Self {
@@ -238,14 +238,14 @@ pub(crate) struct BeginEndRule {
     cached_compiled_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub(crate) struct BeginEndRuleOptions {
+pub(crate) struct BeginEndRuleOptions<'a> {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
     pub content_name: Option<String>,
-    pub begin: String,
+    pub begin: &'a str,
     pub begin_captures: CaptureRules,
-    pub end: Option<String>,
+    pub end: Option<&'a str>,
     pub end_captures: CaptureRules,
     pub apply_end_pattern_last: bool,
     pub patterns: CompilePatternsResult,
@@ -253,11 +253,8 @@ pub(crate) struct BeginEndRuleOptions {
 
 impl BeginEndRule {
     #[must_use]
-    pub(crate) fn new(options: BeginEndRuleOptions) -> Self {
-        let end = RegExpSource::new(
-            options.end.unwrap_or_else(|| "\u{ffff}".to_owned()),
-            RuleScannerId::End,
-        );
+    pub(crate) fn new(options: BeginEndRuleOptions<'_>) -> Self {
+        let end = RegExpSource::new(options.end.unwrap_or("\u{ffff}"), RuleScannerId::End);
         let end_has_back_references = end.has_back_references;
         Self {
             data: RuleData::new(
@@ -322,21 +319,21 @@ pub(crate) struct BeginWhileRule {
     cached_compiled_while_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub(crate) struct BeginWhileRuleOptions {
+pub(crate) struct BeginWhileRuleOptions<'a> {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
     pub content_name: Option<String>,
-    pub begin: String,
+    pub begin: &'a str,
     pub begin_captures: CaptureRules,
-    pub while_pattern: String,
+    pub while_pattern: &'a str,
     pub while_captures: CaptureRules,
     pub patterns: CompilePatternsResult,
 }
 
 impl BeginWhileRule {
     #[must_use]
-    pub(crate) fn new(options: BeginWhileRuleOptions) -> Self {
+    pub(crate) fn new(options: BeginWhileRuleOptions<'_>) -> Self {
         let while_source = RegExpSource::new(options.while_pattern, RuleScannerId::While);
         let while_has_back_references = while_source.has_back_references;
         Self {
@@ -1212,9 +1209,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: "(['\"])".into(),
+                begin: "(['\"])",
                 begin_captures: Vec::new(),
-                end: Some(r"\1".into()),
+                end: Some(r"\1"),
                 end_captures: Vec::new(),
                 apply_end_pattern_last: false,
                 patterns: CompilePatternsResult {
@@ -1252,9 +1249,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: r"(\w+)".into(),
+                begin: r"(\w+)",
                 begin_captures: Vec::new(),
-                while_pattern: r"\1".into(),
+                while_pattern: r"\1",
                 while_captures: Vec::new(),
                 patterns: CompilePatternsResult::default(),
             }))
@@ -1468,9 +1465,9 @@ mod tests {
                 id: static_id,
                 name: None,
                 content_name: None,
-                begin: "(".into(),
+                begin: "(",
                 begin_captures: Vec::new(),
-                end: Some(half.clone()),
+                end: Some(&half),
                 end_captures: Vec::new(),
                 apply_end_pattern_last: false,
                 patterns: CompilePatternsResult {
@@ -1494,9 +1491,9 @@ mod tests {
                 id: dynamic_id,
                 name: None,
                 content_name: None,
-                begin: "(.+)".into(),
+                begin: "(.+)",
                 begin_captures: Vec::new(),
-                end: Some("\\1".into()),
+                end: Some("\\1"),
                 end_captures: Vec::new(),
                 apply_end_pattern_last: false,
                 patterns: CompilePatternsResult {
@@ -1532,9 +1529,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: "(".into(),
+                begin: "(",
                 begin_captures: Vec::new(),
-                while_pattern: oversized.clone(),
+                while_pattern: &oversized,
                 while_captures: Vec::new(),
                 patterns: CompilePatternsResult::default(),
             }))
@@ -1554,9 +1551,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: "(.+)".into(),
+                begin: "(.+)",
                 begin_captures: Vec::new(),
-                while_pattern: "\\1".into(),
+                while_pattern: "\\1",
                 while_captures: Vec::new(),
                 patterns: CompilePatternsResult::default(),
             }))

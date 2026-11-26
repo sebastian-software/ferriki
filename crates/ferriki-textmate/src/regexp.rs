@@ -463,12 +463,12 @@ pub(crate) const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
 
 impl<T> RegExpSource<T> {
     #[must_use]
-    pub(crate) fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
-        let original_source = reg_exp_source.into();
-        if original_source.len() > MAX_SCANNER_PATTERN_BYTES {
+    pub(crate) fn new(reg_exp_source: impl AsRef<str>, rule_id: T) -> Self {
+        let raw_source = reg_exp_source.as_ref();
+        if raw_source.len() > MAX_SCANNER_PATTERN_BYTES {
             return Self {
                 source: String::new(),
-                original_source,
+                original_source: String::new(),
                 rule_id,
                 has_anchor: false,
                 has_back_references: false,
@@ -476,11 +476,11 @@ impl<T> RegExpSource<T> {
             };
         }
         let Some((source, has_anchor)) =
-            rewrite_end_anchor_bounded(&original_source, MAX_SCANNER_PATTERN_BYTES)
+            rewrite_end_anchor_bounded(raw_source, MAX_SCANNER_PATTERN_BYTES)
         else {
             return Self {
                 source: String::new(),
-                original_source,
+                original_source: String::new(),
                 rule_id,
                 has_anchor: false,
                 has_back_references: false,
@@ -490,7 +490,7 @@ impl<T> RegExpSource<T> {
         let has_back_references = has_back_references(&source);
         Self {
             source,
-            original_source,
+            original_source: raw_source.to_owned(),
             rule_id,
             has_anchor,
             has_back_references,
@@ -2033,9 +2033,10 @@ mod tests {
     #[test]
     fn bounds_end_anchor_rewrite_disabled_anchor_expansion_and_brace_normalization() {
         let z_pattern = "\\z".repeat(2_000_000);
-        let z_source = RegExpSource::new(z_pattern, 1_u32);
+        let z_source = RegExpSource::new(&z_pattern, 1_u32);
         assert!(z_source.is_oversized());
         assert!(z_source.source.is_empty());
+        assert!(z_source.original_source.is_empty());
 
         let anchor_pattern = "\\A".repeat(5_000_000);
         let mut anchor_list = RegExpSourceList::new();

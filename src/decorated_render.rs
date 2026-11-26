@@ -181,42 +181,52 @@ fn utf16_slice(text: &str, start: usize, end: usize) -> Option<&str> {
     Some(&text[start_byte?..end_byte?])
 }
 
-enum WriteFrame {
-    Enter(usize),
-    Exit(usize),
+struct WriteFrame {
+    index: usize,
+    next_child: usize,
+}
+
+fn write_open_node(node: &Node, html: &mut String) -> bool {
+    let Some(tag) = &node.tag else {
+        html.push_str(&escape_html(&node.text));
+        return false;
+    };
+    html.push('<');
+    html.push_str(tag);
+    for (key, value) in &node.properties {
+        html.push(' ');
+        html.push_str(key);
+        html.push_str("=\"");
+        html.push_str(&escape_attribute(value));
+        html.push('"');
+    }
+    html.push('>');
+    true
 }
 
 fn write_node(nodes: &[Node], root: usize, html: &mut String) {
-    let mut stack = vec![WriteFrame::Enter(root)];
-    while let Some(frame) = stack.pop() {
-        match frame {
-            WriteFrame::Enter(index) => {
-                let node = &nodes[index];
-                let Some(tag) = &node.tag else {
-                    html.push_str(&escape_html(&node.text));
-                    continue;
-                };
-                html.push('<');
-                html.push_str(tag);
-                for (key, value) in &node.properties {
-                    html.push(' ');
-                    html.push_str(key);
-                    html.push_str("=\"");
-                    html.push_str(&escape_attribute(value));
-                    html.push('"');
-                }
-                html.push('>');
-                stack.push(WriteFrame::Exit(index));
-                for &child in node.children.iter().rev() {
-                    stack.push(WriteFrame::Enter(child));
-                }
+    if !write_open_node(&nodes[root], html) {
+        return;
+    }
+    let mut stack = vec![WriteFrame {
+        index: root,
+        next_child: 0,
+    }];
+    while let Some(frame) = stack.last_mut() {
+        if let Some(&child) = nodes[frame.index].children.get(frame.next_child) {
+            frame.next_child += 1;
+            if write_open_node(&nodes[child], html) {
+                stack.push(WriteFrame {
+                    index: child,
+                    next_child: 0,
+                });
             }
-            WriteFrame::Exit(index) => {
-                if let Some(tag) = &nodes[index].tag {
-                    html.push_str("</");
-                    html.push_str(tag);
-                    html.push('>');
-                }
+        } else {
+            let finished = stack.pop().expect("active write frame must exist");
+            if let Some(tag) = &nodes[finished.index].tag {
+                html.push_str("</");
+                html.push_str(tag);
+                html.push('>');
             }
         }
     }
