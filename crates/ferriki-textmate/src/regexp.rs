@@ -464,6 +464,10 @@ pub(crate) struct RegExpSource<T> {
     anchor_cache: Option<AnchorCache>,
 }
 
+/// Maximum cumulative expanded regex pattern bytes allowed for a single scanner
+/// or resolved backreference pattern before allocating/compiling.
+pub(crate) const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
+
 impl<T> RegExpSource<T> {
     #[must_use]
     pub(crate) fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
@@ -492,13 +496,17 @@ impl<T> RegExpSource<T> {
         }
     }
 
-    #[must_use]
     pub(crate) fn resolve_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
-    ) -> String {
-        replace_numeric_back_references(&self.source, line_text, capture_indices)
+    ) -> Result<String, RegexError> {
+        replace_numeric_back_references(
+            &self.source,
+            line_text,
+            capture_indices,
+            MAX_SCANNER_PATTERN_BYTES,
+        )
     }
 
     /// Checks that a serialized dynamic pattern could only have been produced
@@ -764,7 +772,13 @@ fn replace_numeric_back_references(
     source: &str,
     line_text: &str,
     capture_indices: &[CaptureIndex],
-) -> String {
+    max_bytes: usize,
+) -> Result<String, RegexError> {
+    if source.len() > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
     let bytes = source.as_bytes();
     let mut result = String::with_capacity(source.len());
     let mut position = 0;
@@ -793,13 +807,45 @@ fn replace_numeric_back_references(
                 substring_utf16(line_text, capture.start, capture.end)
             });
 
-        result.push_str(&source[last_pushed_position..position]);
-        result.push_str(&escape_reg_exp_characters(captured_value));
+        let literal = &source[last_pushed_position..position];
+        if result.len().saturating_add(literal.len()) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        result.push_str(literal);
+        push_escaped_reg_exp_characters(&mut result, captured_value, max_bytes)?;
         last_pushed_position = digit_end;
         position = digit_end;
     }
-    result.push_str(&source[last_pushed_position..]);
-    result
+    let tail = &source[last_pushed_position..];
+    if result.len().saturating_add(tail.len()) > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
+    result.push_str(tail);
+    Ok(result)
+}
+
+fn push_escaped_reg_exp_characters(
+    out: &mut String,
+    value: &str,
+    max_bytes: usize,
+) -> Result<(), RegexError> {
+    for character in value.chars() {
+        let extra = usize::from(requires_regex_literal_escape(character)) + character.len_utf8();
+        if out.len().saturating_add(extra) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        if requires_regex_literal_escape(character) {
+            out.push('\\');
+        }
+        out.push(character);
+    }
+    Ok(())
 }
 
 fn substring_utf16(value: &str, start: usize, end: usize) -> &str {
@@ -820,17 +866,6 @@ fn utf16_offset_to_utf8(value: &str, offset: usize) -> usize {
         }
     }
     value.len()
-}
-
-fn escape_reg_exp_characters(value: &str) -> String {
-    let mut escaped = String::with_capacity(value.len());
-    for character in value.chars() {
-        if requires_regex_literal_escape(character) {
-            escaped.push('\\');
-        }
-        escaped.push(character);
-    }
-    escaped
 }
 
 #[must_use]
@@ -946,6 +981,7 @@ fn find_capture_placeholder(source: &str, from: usize) -> Option<CapturePlacehol
 
 pub(crate) struct RegExpSourceList<T> {
     items: Vec<RegExpSource<T>>,
+    total_source_bytes: usize,
     has_anchors: bool,
     cached: Option<Arc<CompiledRule<T>>>,
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
@@ -992,6 +1028,7 @@ impl<T> RegExpSourceList<T> {
     ) -> Self {
         Self {
             items: Vec::new(),
+            total_source_bytes: 0,
             has_anchors: false,
             cached: None,
             anchor_cache: array::from_fn(|_| None),
@@ -1016,11 +1053,13 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn push(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
+        self.total_source_bytes = self.total_source_bytes.saturating_add(item.source.len());
         self.items.push(item);
     }
 
     pub(crate) fn unshift(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
+        self.total_source_bytes = self.total_source_bytes.saturating_add(item.source.len());
         self.items.insert(0, item);
     }
 
@@ -1044,17 +1083,9 @@ impl<T> RegExpSourceList<T> {
         index: usize,
         replacement_len: usize,
     ) -> usize {
-        self.items
-            .iter()
-            .enumerate()
-            .fold(0usize, |total, (i, item)| {
-                let len = if i == index {
-                    replacement_len
-                } else {
-                    item.source.len()
-                };
-                total.saturating_add(len)
-            })
+        self.total_source_bytes
+            .saturating_sub(self.items[index].source.len())
+            .saturating_add(replacement_len)
     }
 
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
@@ -1062,6 +1093,10 @@ impl<T> RegExpSourceList<T> {
         self.has_resolved_sources = true;
         if self.items[index].source != new_source {
             self.dispose_caches();
+            self.total_source_bytes = self
+                .total_source_bytes
+                .saturating_sub(self.items[index].source.len())
+                .saturating_add(new_source.len());
             self.items[index].set_source(new_source);
         }
     }
@@ -1403,7 +1438,7 @@ mod tests {
 
         assert!(source.has_back_references);
         assert_eq!(
-            source.resolve_back_references(line, &captures),
+            source.resolve_back_references(line, &captures).unwrap(),
             r"end-a\.b-"
         );
         let mut work = 0;
@@ -1837,8 +1872,31 @@ mod tests {
             },
         ];
         assert_eq!(
-            source.resolve_back_references("a.b", &captures),
+            source.resolve_back_references("a.b", &captures).unwrap(),
             r"prefix-a\.b-suffix"
         );
+    }
+
+    #[test]
+    fn rejects_oversized_backreference_expansion_before_allocating() {
+        let pattern = r"\1".repeat(20_000);
+        let source = RegExpSource::new(pattern, 1_u32);
+        let line = "a".repeat(2_000);
+        let captures = [
+            CaptureIndex {
+                start: 0,
+                end: 2_000,
+                length: 2_000,
+            },
+            CaptureIndex {
+                start: 0,
+                end: 2_000,
+                length: 2_000,
+            },
+        ];
+        let err = source
+            .resolve_back_references(&line, &captures)
+            .expect_err("repeated backreference expansion exceeding 16 MiB must fail");
+        assert!(err.to_string().contains("size limit"));
     }
 }

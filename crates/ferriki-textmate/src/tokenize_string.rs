@@ -254,11 +254,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         name_scopes_list.push_attributed(content_name.as_deref(), grammar);
                     stack = stack.with_content_name_scopes_list(content_name_scopes_list);
                     if pushed_rule.end_has_back_references {
-                        stack =
-                            stack.with_end_rule(pushed_rule.get_end_with_resolved_back_references(
-                                line_text.content(),
-                                &capture_indices,
-                            ));
+                        let resolved = pushed_rule.get_end_with_resolved_back_references(
+                            line_text.content(),
+                            &capture_indices,
+                        )?;
+                        stack = stack.with_end_rule(resolved);
                     }
                     if !has_advanced && before_push.has_same_rule_as(&stack) {
                         stack = stack.pop().expect("newly pushed state must have a parent");
@@ -288,12 +288,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         name_scopes_list.push_attributed(content_name.as_deref(), grammar);
                     stack = stack.with_content_name_scopes_list(content_name_scopes_list);
                     if pushed_rule.while_has_back_references {
-                        stack = stack.with_end_rule(
-                            pushed_rule.get_while_with_resolved_back_references(
-                                line_text.content(),
-                                &capture_indices,
-                            ),
-                        );
+                        let resolved = pushed_rule.get_while_with_resolved_back_references(
+                            line_text.content(),
+                            &capture_indices,
+                        )?;
+                        stack = stack.with_end_rule(resolved);
                     }
                     if !has_advanced && before_push.has_same_rule_as(&stack) {
                         stack = stack.pop().expect("newly pushed state must have a parent");
