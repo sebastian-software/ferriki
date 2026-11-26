@@ -44,11 +44,12 @@ packages and disable the prefilter. Matching and colors stay the same.
 This is a creation-time option, including the singleton's first creation;
 it is not a `HighlightOptions` field.
 
-Repository builds also expose explicit `regexMode` values: `off`, `auto`,
-`eager`, and `prepared`. Auto/Eager select the classic source paths; Prepared
-restores standard packages where available. These additive options and
-`getRegexDiagnostics()` are not part of the published 1.2.0 package yet.
-Choose either `regexMode` or `regexPrefilter`. New benchmark contenders use
+Since Ferriki 1.3.0, factory options also expose explicit `regexMode` values:
+`off`, `auto`, `eager`, and `prepared`. `auto` and `eager` select the classic
+source paths; `prepared` restores standard packages where available. Choose
+either `regexMode` or `regexPrefilter`. On a returned highlighter instance,
+`highlighter.getRegexDiagnostics()` reports the active mode, scanner
+construction counters, and prepared-archive stats. New benchmark contenders use
 explicit modes and record diagnostics outside timing. The October 24 tables
 retain their original prepared-default "on" meaning.
 

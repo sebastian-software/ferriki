@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-11-26
 
 ## Context
 
@@ -41,3 +41,4 @@ Ferroni stays external.
 - 2026-10-22: Raised the floor to 2.5.2 and enabled Ferroni's `precompiled` feature, the base for publishing precompiled scanner archives (#325).
 
 - 2026-10-24: Raise the floor to 2.7 and enable stable prepared Eager archives while keeping engine types behind crate-owned APIs.
+- 2026-11-26: Raised the floor to 2.9.0 (matching `Cargo.toml`) while keeping engine types behind crate-owned APIs and prepared Eager archives.

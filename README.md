@@ -5,8 +5,8 @@ Part of [Ferramenta](https://ferramenta.dev), a family of Rust tools.
 # Ferriki
 
 [![Powered by Sebastian Software](https://img.shields.io/badge/Powered_by-Sebastian_Software-005164?style=flat)](https://oss.sebastian-software.com) [![CI](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastian-software/ferriki/actions/workflows/ci.yml)
-[![Coverage gate >= 89%](https://img.shields.io/badge/coverage%20gate-%3E%3D%2089%25-brightgreen.svg)](./.github/workflows/ci.yml)
-[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](./LICENSE-MIT)
+[![Coverage gate >= 89%](https://img.shields.io/badge/coverage%20gate-%3E%3D%2089%25-brightgreen.svg)](https://github.com/sebastian-software/ferriki/blob/main/.github/workflows/ci.yml)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT)
 [![Supported Node.js majors 22, 24, and 26. The 22 series starts at 22.13.0.](https://img.shields.io/badge/Node.js-22%20%7C%2024%20%7C%2026-339933?logo=nodedotjs&logoColor=white)](#see-your-first-result-in-nodejs)
 [![npm version](https://img.shields.io/npm/v/%40ferriki%2Fcore.svg?logo=npm&label=npm)](https://www.npmjs.com/package/@ferriki/core)
 [![crates.io](https://img.shields.io/crates/v/ferriki.svg?logo=rust)](https://crates.io/crates/ferriki)
@@ -28,7 +28,7 @@ Matching stays in Ferroni's native, Oniguruma-compatible engine, with no
 translation into JavaScript RegExp. Capture-dependent end and while patterns
 remain dynamic to preserve TextMate behavior.
 
-Powered by Ferroni 2.8, we move static regex compilation and Eager scanner
+Powered by Ferroni 2.9.0, we move static regex compilation and Eager scanner
 preparation into the asset pipeline. The CDN delivers that prepared work
 alongside the grammar. Each new process restores the scanners it needs,
 with their static optimizations already in place.
@@ -62,9 +62,9 @@ times. [See every mode, machine, and raw result](https://ferriki.dev/evidence/be
 
 | If you build with… | Start with… | Guide |
 | --- | --- | --- |
-| Node.js | `npm install @ferriki/core` | [Node.js package guide](node/ferriki/README.md) |
-| Rust | `cargo add ferriki --features remote` | [Rust API guide](docs/rust-api.md) |
-| Vite 8 and React | `npm install @ferriki/core @ferriki/vite` | [Vite macros guide](node/vite/README.md) |
+| Node.js | `npm install @ferriki/core` | [Node.js package guide](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/README.md) |
+| Rust | `cargo add ferriki --features remote` | [Rust API guide](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md) |
+| Vite 8 and React | `npm install @ferriki/core @ferriki/vite` | [Vite macros guide](https://github.com/sebastian-software/ferriki/blob/main/node/vite/README.md) |
 
 ## See your first result in Node.js
 
@@ -80,7 +80,7 @@ npm install @ferriki/core
 
 Language and theme payloads download from the release-pinned CDN on first use,
 are verified with SHA-256, and are cached locally. For offline builds, populate
-the cache ahead of time or use a mirror. See [asset loading](docs/asset-loading.md).
+the cache ahead of time or use a mirror. See [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md).
 
 Save this complete ESM file as `highlight.mjs`, then run `node highlight.mjs`:
 
@@ -138,7 +138,7 @@ Grammar-only is Ferriki's unoptimized grammar payload; Prepared keeps that
 payload and adds compiled programs and automata. Sizes are decimal and
 exclude themes and HTTP overhead. Optional fenced-code languages are not
 loaded. Keep the cache to reuse these downloads; decoded data takes additional
-disk space. [See the exact sizes and source-definition comparison](docs/benchmarks/precompiled-patterns/download-footprint-2026-10-27.md).
+disk space. [See the exact sizes and source-definition comparison](https://github.com/sebastian-software/ferriki/blob/main/docs/benchmarks/precompiled-patterns/download-footprint-2026-10-27.md).
 
 Memory looks good in the new capture, too. After 600 documents across twelve
 loaded languages, Prepared's whole-process RSS was **45% lower than Shiki/WASM**
@@ -154,9 +154,9 @@ and build tools from shell scripts and Docker to Terraform and Nix.
 
 TextMate grammars follow the context inside your code: embedded JavaScript
 and CSS in HTML, component expressions, tagged templates, and registered
-languages in Markdown fences. The catalog contains **67 standard entries for
-languages and formats**, plus **27 support grammars** for embeddings and
-injections, with **65 themes**. Register custom TextMate grammars for syntax
+languages in Markdown fences. The catalog contains **70 standard entries for
+languages and formats**, plus **47 dependency grammars** for embeddings and
+injections (**117 grammars total**), with **65 themes**. Register custom TextMate grammars for syntax
 outside the curated catalog. [Browse the coverage and examples](https://ferriki.dev/guide/languages-and-themes).
 
 ## More ways to use Ferriki
@@ -165,14 +165,14 @@ outside the curated catalog. [Browse the coverage and examples](https://ferriki.
 | --- | --- |
 | Shiki-shaped HTML | `codeToHtml`, highlighters, singleton helpers, and transformer callbacks for Node.js |
 | Stylesheet-driven themes | Nested TextMate scope classes, generated CSS, and theme maps that switch without highlighting again |
-| A grammar of your own | Ferriki's curated catalog plus custom TextMate grammars, aliases, and injections; see the [grammar guide](docs/grammars.md) |
+| A grammar of your own | Ferriki's curated catalog plus custom TextMate grammars, aliases, and injections; see the [grammar guide](https://github.com/sebastian-software/ferriki/blob/main/docs/grammars.md) |
 | Code in Vite components | `code()` and React `<Code />` macros that prepare highlighted output at build time on Vite 8 |
 | Native Rust highlighting | The [`ferriki` crate](https://docs.rs/ferriki): tokens, line HTML, and class-based HTML |
 
 Import `@ferriki/core/macro` or `@ferriki/core/react/macro` in the modules whose
 examples you want prepared. The build delivers highlighted output, and React
 `<Code />` uses a small framework-free presentation module in the browser.
-Grammar payloads stay on the build side; see the [Vite guide](node/vite/README.md)
+Grammar payloads stay on the build side; see the [Vite guide](https://github.com/sebastian-software/ferriki/blob/main/node/vite/README.md)
 for the quickstart, SSR behavior, and limits.
 
 ## Start with Rust
@@ -200,30 +200,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Compatibility
 
 Ferriki follows semantic versioning: breaking changes to its public API
-require a major version; see the [changelog](node/ferriki/CHANGELOG.md). It
+require a major version; see the [changelog](https://github.com/sebastian-software/ferriki/blob/main/node/ferriki/CHANGELOG.md). It
 pins Shiki v4.4.3 and vscode-textmate v9.3.2 as behavioral references.
 Shiki's tests run unchanged from a pinned mirror, each classified as supported,
 deferred, or out of scope; the tokenizer is checked against the full
 vscode-textmate oracle. Node's public output is HTML, while transformer
 callbacks can inspect token and HAST data. The Rust crate exposes tokens and
-HTML rendering. See the [compatibility policy](docs/compatibility.md) and
-[Shiki migration guide](docs/migrations/shiki-to-ferriki.md).
+HTML rendering. See the [compatibility policy](https://github.com/sebastian-software/ferriki/blob/main/docs/compatibility.md) and
+[Shiki migration guide](https://github.com/sebastian-software/ferriki/blob/main/docs/migrations/shiki-to-ferriki.md).
 
 ## Documentation
 
 - [ferriki.dev](https://ferriki.dev): guides and [benchmarks](https://ferriki.dev/evidence/benchmarks)
-- [API reference](docs/ferriki-api.md), [class-based highlighting](docs/class-highlighting.md), and [asset loading](docs/asset-loading.md)
-- [Inline code macros](docs/inline-code-macros.md) and [code example authoring](docs/code-example-authoring.md)
-- [Rust API and Ferromark](docs/rust-api.md), plus [troubleshooting](docs/troubleshooting.md)
+- [API reference](https://github.com/sebastian-software/ferriki/blob/main/docs/ferriki-api.md), [class-based highlighting](https://github.com/sebastian-software/ferriki/blob/main/docs/class-highlighting.md), and [asset loading](https://github.com/sebastian-software/ferriki/blob/main/docs/asset-loading.md)
+- [Inline code macros](https://github.com/sebastian-software/ferriki/blob/main/docs/inline-code-macros.md) and [code example authoring](https://github.com/sebastian-software/ferriki/blob/main/docs/code-example-authoring.md)
+- [Rust API and Ferromark](https://github.com/sebastian-software/ferriki/blob/main/docs/rust-api.md), plus [troubleshooting](https://github.com/sebastian-software/ferriki/blob/main/docs/troubleshooting.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the build, test lanes, and repository
-layout, and [`adr/`](adr/README.md) for the decisions behind the project.
+See [CONTRIBUTING.md](https://github.com/sebastian-software/ferriki/blob/main/CONTRIBUTING.md) for the build, test lanes, and repository
+layout, and [`adr/`](https://github.com/sebastian-software/ferriki/blob/main/adr/README.md) for the decisions behind the project.
 
 ## License
 
-Licensed under either of [MIT](./LICENSE-MIT) or [Apache-2.0](./LICENSE-APACHE)
+Licensed under either of [MIT](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-MIT) or [Apache-2.0](https://github.com/sebastian-software/ferriki/blob/main/LICENSE-APACHE)
 at your option.
 
 ### <a href="https://ferramenta.dev"><img src="https://raw.githubusercontent.com/sebastian-software/ferramenta/main/app/assets/brand/logo-light.svg" width="24" height="24" alt="" /> More from Ferramenta</a>

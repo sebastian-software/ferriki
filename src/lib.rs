@@ -3,6 +3,8 @@
 //! The library has no Node.js or N-API dependency. Asset catalogs are loaded
 //! explicitly and cached for reuse across code blocks and documents.
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 mod asset_catalog;
 mod asset_settings;
 mod asset_source;

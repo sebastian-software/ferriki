@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-25
+Last updated: 2026-11-26
 
 ## Context
 
@@ -94,13 +94,17 @@ being mistaken for parity.
 
 ## Explicit regex policies
 
-Repository builds add `regexMode` and `getRegexDiagnostics()` as additive
-configuration/diagnostic extensions. The existing boolean option and product
-default retain their behavior. [ADR 0021](0021-precompiled-pattern-sidecars.md#regex-mode-isolation-october-25-2026)
+Since Ferriki 1.3.0, the published API includes `regexMode` (`RegexMode`) and
+`getRegexDiagnostics()` (`RegexDiagnostics`) as additive configuration and
+diagnostic extensions. The existing `regexPrefilter` boolean option and
+Prepared default retain their behavior. [ADR 0021](0021-precompiled-pattern-sidecars.md#regex-mode-isolation-october-25-2026)
 owns the mode semantics and benchmark separation.
 
 ## History
 
+- 2026-11-26: Updated explicit regex policies to reflect that `regexMode`,
+  `RegexMode`, `RegexDiagnostics`, and `getRegexDiagnostics()` shipped in
+  Ferriki 1.3.0.
 - 2026-10-25: Separate source Off/Auto/Eager from Prepared in configuration and
   benchmark contenders; retain default and legacy boolean behavior. Record
   policy and archive-use diagnostics without claiming complete coverage.

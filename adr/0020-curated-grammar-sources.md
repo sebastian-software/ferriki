@@ -98,8 +98,9 @@ language coverage.
 - External source snapshots and generated files are materialized locally and ignored by
   Git. `assets/catalog.json` owns the compiled catalog metadata and theme source
   hashes; `sources.json` owns grammar source hashes. Bunny stores original,
-  normalized, and compiled grammar bytes under `<id>/<sha256>` and themes under
-  `themes/<id>/<sha256>`. ADR 0013 defines publication and legacy URL handling.
+  normalized, and compiled grammar bytes under `<id>/<short-hash>` and themes under
+  `themes/<id>/<short-hash>`, using eight-character Base62 short hashes
+  (`storageLayout: "language-hash-v2"`). ADR 0013 defines publication and legacy URL handling.
   The compatibility mirrors remain immutable test references.
 
 ## Consequences
@@ -188,3 +189,6 @@ package and crate version updates.
 - 2026-11-26: Hardened `ferriki grammar fetch` to require direct `https://`
   URLs without credentials or HTTP redirects and reject traversal or malformed
   path segments in `github:` sources (#386).
+- 2026-11-26: Updated Bunny Storage object paths from `<id>/<sha256>` to
+  eight-character Base62 `<id>/<short-hash>` and `themes/<id>/<short-hash>`
+  (`storageLayout: "language-hash-v2"`) (#391).
