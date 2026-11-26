@@ -11,7 +11,7 @@ use crate::raw_grammar::{RawCaptures, RawGrammar, RawRule, RuleId};
 use crate::regexp::ScannerPatternCache;
 use crate::rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
-    CaptureRules, CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry,
+    CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry,
 };
 
 /// Supplies raw grammars referenced by top-level `include` expressions.
@@ -258,45 +258,171 @@ impl<'a> RuleFactory<'a> {
         description: Arc<RawRule>,
         repository: RepositoryContext,
     ) -> RuleId {
-        let identity = Arc::as_ptr(&description) as usize;
-        if let Some(id) = self.compiled_rule_ids.get(&identity) {
-            return *id;
+        let root_identity = Arc::as_ptr(&description) as usize;
+        if let Some(&id) = self.compiled_rule_ids.get(&root_identity) {
+            return id;
         }
 
-        let id = self.registry.reserve_rule();
-        self.compiled_rule_ids.insert(identity, id);
-        let scope_name = repository.scope_name().to_owned();
-        let mut rule = self.compile_rule(id, &description, repository);
-        rule.set_source_scope_name(scope_name);
-        self.registry.set_rule(id, rule);
-        id
+        let root_id = self.registry.reserve_rule();
+        self.compiled_rule_ids.insert(root_identity, root_id);
+
+        let mut frames = Vec::new();
+        let mut tasks = Vec::new();
+        self.push_rule_compilation(root_id, description, repository, &mut frames, &mut tasks);
+
+        while let Some(task) = tasks.pop() {
+            match task {
+                CompileTask::FinishRule => {
+                    let frame = frames.pop().expect("FinishRule must match a RuleFrame");
+                    let id = frame.id;
+                    let rule = frame.into_rule();
+                    self.registry.set_rule(id, rule);
+                }
+                CompileTask::EnterCapture {
+                    slot,
+                    capture_id,
+                    capture,
+                    repository,
+                } => {
+                    if capture.patterns.is_some() {
+                        let identity = Arc::as_ptr(&capture) as usize;
+                        if let Some(&existing_id) = self.compiled_rule_ids.get(&identity) {
+                            tasks.push(CompileTask::FinishCapture {
+                                slot,
+                                capture_id,
+                                capture,
+                                retokenize_rule_id: Some(existing_id),
+                            });
+                        } else {
+                            let retok_id = self.registry.reserve_rule();
+                            self.compiled_rule_ids.insert(identity, retok_id);
+                            tasks.push(CompileTask::FinishCapture {
+                                slot,
+                                capture_id,
+                                capture: Arc::clone(&capture),
+                                retokenize_rule_id: Some(retok_id),
+                            });
+                            self.push_rule_compilation(
+                                retok_id,
+                                capture,
+                                repository,
+                                &mut frames,
+                                &mut tasks,
+                            );
+                        }
+                    } else {
+                        let rule = self.create_capture_rule(
+                            capture.location.clone(),
+                            capture.name.clone(),
+                            capture.content_name.clone(),
+                            None,
+                        );
+                        frames
+                            .last_mut()
+                            .expect("capture must belong to an active rule frame")
+                            .insert_capture(slot, capture_id, rule);
+                    }
+                }
+                CompileTask::FinishCapture {
+                    slot,
+                    capture_id,
+                    capture,
+                    retokenize_rule_id,
+                } => {
+                    let rule = self.create_capture_rule(
+                        capture.location.clone(),
+                        capture.name.clone(),
+                        capture.content_name.clone(),
+                        retokenize_rule_id,
+                    );
+                    frames
+                        .last_mut()
+                        .expect("FinishCapture must belong to an active rule frame")
+                        .insert_capture(slot, capture_id, rule);
+                }
+                CompileTask::EnterPattern {
+                    pattern,
+                    repository,
+                } => {
+                    let resolved = if let Some(include) = pattern.include.as_ref() {
+                        self.resolve_include(include, repository)
+                    } else {
+                        Some((pattern, repository))
+                    };
+                    let Some((target, target_repository)) = resolved else {
+                        continue;
+                    };
+                    let identity = Arc::as_ptr(&target) as usize;
+                    if let Some(&existing_id) = self.compiled_rule_ids.get(&identity) {
+                        tasks.push(CompileTask::FinishPattern {
+                            rule_id: existing_id,
+                        });
+                    } else {
+                        let child_id = self.registry.reserve_rule();
+                        self.compiled_rule_ids.insert(identity, child_id);
+                        tasks.push(CompileTask::FinishPattern { rule_id: child_id });
+                        self.push_rule_compilation(
+                            child_id,
+                            target,
+                            target_repository,
+                            &mut frames,
+                            &mut tasks,
+                        );
+                    }
+                }
+                CompileTask::FinishPattern { rule_id } => {
+                    if !self
+                        .registry
+                        .try_get_rule(rule_id)
+                        .is_some_and(rule_has_only_missing_patterns)
+                    {
+                        frames
+                            .last_mut()
+                            .expect("FinishPattern must belong to an active rule frame")
+                            .push_pattern(rule_id);
+                    }
+                }
+            }
+        }
+
+        root_id
     }
 
-    fn compile_rule(
-        &mut self,
+    fn push_rule_compilation(
+        &self,
         id: RuleId,
-        description: &Arc<RawRule>,
+        description: Arc<RawRule>,
         repository: RepositoryContext,
-    ) -> Rule {
+        frames: &mut Vec<RuleFrame>,
+        tasks: &mut Vec<CompileTask>,
+    ) {
+        let scope_name = repository.scope_name().to_owned();
+        tasks.push(CompileTask::FinishRule);
+
         // vscode-textmate selects match and while rules with JavaScript truthiness.
         if let Some(match_pattern) = description
             .match_pattern
             .as_ref()
             .filter(|pattern| !pattern.is_empty())
         {
-            let captures = self.compile_captures(description.captures.as_ref(), repository);
-            return Rule::Match(MatchRule::new(
-                description.location.clone(),
+            let match_pattern = match_pattern.clone();
+            let captures = description.captures.as_ref();
+            Self::push_capture_tasks(CaptureSlot::Match, captures, &repository, tasks);
+            frames.push(RuleFrame {
                 id,
-                description.name.clone(),
-                match_pattern,
-                captures,
-            ));
+                scope_name,
+                description,
+                kind: BuildRuleKind::Match {
+                    match_pattern,
+                    captures: BTreeMap::new(),
+                },
+            });
+            return;
         }
 
         let Some(begin) = description.begin.as_ref() else {
             let repository = if description.repository.is_some() {
-                repository.with_overlay(description)
+                repository.with_overlay(&description)
             } else {
                 repository
             };
@@ -312,104 +438,140 @@ impl<'a> RuleFactory<'a> {
             } else {
                 None
             };
-            let patterns = self.compile_patterns(patterns, repository);
-            return Rule::IncludeOnly(IncludeOnlyRule::new(
-                description.location.clone(),
+            let raw_pattern_count = patterns.map_or(0, <[Arc<RawRule>]>::len);
+            Self::push_pattern_tasks(patterns, &repository, tasks);
+            frames.push(RuleFrame {
                 id,
-                description.name.clone(),
-                description.content_name.clone(),
-                patterns,
-            ));
+                scope_name,
+                description,
+                kind: BuildRuleKind::IncludeOnly {
+                    raw_pattern_count,
+                    compiled_patterns: Vec::new(),
+                },
+            });
+            return;
         };
 
-        let begin_captures = self.compile_captures(
-            description
-                .begin_captures
-                .as_ref()
-                .or(description.captures.as_ref()),
-            repository.clone(),
-        );
+        let begin = begin.clone();
+        let raw_pattern_count = description
+            .patterns
+            .as_deref()
+            .map_or(0, <[Arc<RawRule>]>::len);
 
         if let Some(while_pattern) = description
             .while_pattern
             .as_ref()
             .filter(|pattern| !pattern.is_empty())
         {
-            let while_captures = self.compile_captures(
+            let while_pattern = while_pattern.clone();
+            // Push in reverse of recursive execution order:
+            // begin_captures -> while_captures -> patterns.
+            Self::push_pattern_tasks(description.patterns.as_deref(), &repository, tasks);
+            Self::push_capture_tasks(
+                CaptureSlot::While,
                 description
                     .while_captures
                     .as_ref()
                     .or(description.captures.as_ref()),
-                repository.clone(),
+                &repository,
+                tasks,
             );
-            let patterns = self.compile_patterns(description.patterns.as_deref(), repository);
-            return Rule::BeginWhile(BeginWhileRule::new(BeginWhileRuleOptions {
-                location: description.location.clone(),
+            Self::push_capture_tasks(
+                CaptureSlot::Begin,
+                description
+                    .begin_captures
+                    .as_ref()
+                    .or(description.captures.as_ref()),
+                &repository,
+                tasks,
+            );
+            frames.push(RuleFrame {
                 id,
-                name: description.name.clone(),
-                content_name: description.content_name.clone(),
-                begin: begin.clone(),
-                begin_captures,
-                while_pattern: while_pattern.clone(),
-                while_captures,
-                patterns,
-            }));
+                scope_name,
+                description,
+                kind: BuildRuleKind::BeginWhile {
+                    begin,
+                    while_pattern,
+                    begin_captures: BTreeMap::new(),
+                    while_captures: BTreeMap::new(),
+                    raw_pattern_count,
+                    compiled_patterns: Vec::new(),
+                },
+            });
+            return;
         }
 
-        let end_captures = self.compile_captures(
+        // Push in reverse of recursive execution order:
+        // begin_captures -> end_captures -> patterns.
+        Self::push_pattern_tasks(description.patterns.as_deref(), &repository, tasks);
+        Self::push_capture_tasks(
+            CaptureSlot::End,
             description
                 .end_captures
                 .as_ref()
                 .or(description.captures.as_ref()),
-            repository.clone(),
+            &repository,
+            tasks,
         );
-        let patterns = self.compile_patterns(description.patterns.as_deref(), repository);
-        Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
-            location: description.location.clone(),
+        Self::push_capture_tasks(
+            CaptureSlot::Begin,
+            description
+                .begin_captures
+                .as_ref()
+                .or(description.captures.as_ref()),
+            &repository,
+            tasks,
+        );
+        frames.push(RuleFrame {
             id,
-            name: description.name.clone(),
-            content_name: description.content_name.clone(),
-            begin: begin.clone(),
-            begin_captures,
-            end: description.end.clone(),
-            end_captures,
-            apply_end_pattern_last: description.apply_end_pattern_last,
-            patterns,
-        }))
+            scope_name,
+            description,
+            kind: BuildRuleKind::BeginEnd {
+                begin,
+                begin_captures: BTreeMap::new(),
+                end_captures: BTreeMap::new(),
+                raw_pattern_count,
+                compiled_patterns: Vec::new(),
+            },
+        });
     }
 
-    fn compile_captures(
-        &mut self,
+    fn push_capture_tasks(
+        slot: CaptureSlot,
         captures: Option<&RawCaptures>,
-        repository: RepositoryContext,
-    ) -> CaptureRules {
+        repository: &RepositoryContext,
+        tasks: &mut Vec<CompileTask>,
+    ) {
         let Some(captures) = captures else {
-            return Vec::new();
+            return;
         };
-
-        let mut compiled = BTreeMap::new();
-        for (capture_id, capture) in captures {
+        for (capture_id, capture) in captures.iter().rev() {
             if capture_id == "$vscodeTextmateLocation" {
                 continue;
             }
             let Some(capture_id) = parse_capture_id(capture_id) else {
                 continue;
             };
-            let retokenize_captured_with_rule_id = capture
-                .patterns
-                .as_ref()
-                .map(|_| self.get_compiled_rule_id(Arc::clone(capture), repository.clone()));
-            compiled.insert(
+            tasks.push(CompileTask::EnterCapture {
+                slot,
                 capture_id,
-                self.create_capture_rule(
-                    capture.location.clone(),
-                    capture.name.clone(),
-                    capture.content_name.clone(),
-                    retokenize_captured_with_rule_id,
-                ),
-            );
+                capture: Arc::clone(capture),
+                repository: repository.clone(),
+            });
         }
-        compiled.into_iter().collect()
+    }
+
+    fn push_pattern_tasks(
+        patterns: Option<&[Arc<RawRule>]>,
+        repository: &RepositoryContext,
+        tasks: &mut Vec<CompileTask>,
+    ) {
+        for pattern in patterns.unwrap_or_default().iter().rev() {
+            tasks.push(CompileTask::EnterPattern {
+                pattern: Arc::clone(pattern),
+                repository: repository.clone(),
+            });
+        }
     }
 
     fn create_capture_rule(
@@ -432,52 +594,23 @@ impl<'a> RuleFactory<'a> {
         capture
     }
 
-    fn compile_patterns(
+    fn resolve_include(
         &mut self,
-        patterns: Option<&[Arc<RawRule>]>,
+        include: &str,
         repository: RepositoryContext,
-    ) -> CompilePatternsResult {
-        let mut compiled = Vec::new();
-
-        for pattern in patterns.unwrap_or_default() {
-            let rule_id = if let Some(include) = pattern.include.as_ref() {
-                self.compile_include(include, repository.clone())
-            } else {
-                Some(self.get_compiled_rule_id(Arc::clone(pattern), repository.clone()))
-            };
-            let Some(rule_id) = rule_id else {
-                continue;
-            };
-
-            if self
-                .registry
-                .try_get_rule(rule_id)
-                .is_some_and(rule_has_only_missing_patterns)
-            {
-                continue;
-            }
-            compiled.push(rule_id);
-        }
-
-        CompilePatternsResult {
-            has_missing_patterns: patterns.map_or(0, <[Arc<RawRule>]>::len) != compiled.len(),
-            patterns: compiled,
-        }
-    }
-
-    fn compile_include(&mut self, include: &str, repository: RepositoryContext) -> Option<RuleId> {
+    ) -> Option<(Arc<RawRule>, RepositoryContext)> {
         match parse_include(include) {
-            IncludeReference::Base | IncludeReference::SelfReference => repository
-                .get(include)
-                .map(|rule| self.get_compiled_rule_id(rule, repository)),
-            IncludeReference::RelativeReference { rule_name } => repository
-                .get(rule_name)
-                .map(|rule| self.get_compiled_rule_id(rule, repository)),
+            IncludeReference::Base | IncludeReference::SelfReference => {
+                repository.get(include).map(|rule| (rule, repository))
+            }
+            IncludeReference::RelativeReference { rule_name } => {
+                repository.get(rule_name).map(|rule| (rule, repository))
+            }
             IncludeReference::TopLevelReference { scope_name } => {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
                 let repository = RepositoryContext::new(&grammar);
                 let rule = repository.get("$self")?;
-                Some(self.get_compiled_rule_id(rule, repository))
+                Some((rule, repository))
             }
             IncludeReference::TopLevelRepositoryReference {
                 scope_name,
@@ -486,7 +619,7 @@ impl<'a> RuleFactory<'a> {
                 let grammar = self.get_external_grammar(scope_name, &repository)?;
                 let repository = RepositoryContext::new(&grammar);
                 let rule = repository.get(rule_name)?;
-                Some(self.get_compiled_rule_id(rule, repository))
+                Some((rule, repository))
             }
         }
     }
@@ -521,6 +654,196 @@ fn parse_capture_id(value: &str) -> Option<usize> {
     (digits != 0)
         .then(|| value[..digits].parse::<usize>().ok())
         .flatten()
+}
+
+#[derive(Clone, Copy)]
+enum CaptureSlot {
+    Match,
+    Begin,
+    While,
+    End,
+}
+
+enum CompileTask {
+    FinishRule,
+    EnterCapture {
+        slot: CaptureSlot,
+        capture_id: usize,
+        capture: Arc<RawRule>,
+        repository: RepositoryContext,
+    },
+    FinishCapture {
+        slot: CaptureSlot,
+        capture_id: usize,
+        capture: Arc<RawRule>,
+        retokenize_rule_id: Option<RuleId>,
+    },
+    EnterPattern {
+        pattern: Arc<RawRule>,
+        repository: RepositoryContext,
+    },
+    FinishPattern {
+        rule_id: RuleId,
+    },
+}
+
+enum BuildRuleKind {
+    Match {
+        match_pattern: String,
+        captures: BTreeMap<usize, Arc<CaptureRule>>,
+    },
+    IncludeOnly {
+        raw_pattern_count: usize,
+        compiled_patterns: Vec<RuleId>,
+    },
+    BeginWhile {
+        begin: String,
+        while_pattern: String,
+        begin_captures: BTreeMap<usize, Arc<CaptureRule>>,
+        while_captures: BTreeMap<usize, Arc<CaptureRule>>,
+        raw_pattern_count: usize,
+        compiled_patterns: Vec<RuleId>,
+    },
+    BeginEnd {
+        begin: String,
+        begin_captures: BTreeMap<usize, Arc<CaptureRule>>,
+        end_captures: BTreeMap<usize, Arc<CaptureRule>>,
+        raw_pattern_count: usize,
+        compiled_patterns: Vec<RuleId>,
+    },
+}
+
+struct RuleFrame {
+    id: RuleId,
+    scope_name: String,
+    description: Arc<RawRule>,
+    kind: BuildRuleKind,
+}
+
+impl RuleFrame {
+    fn insert_capture(&mut self, slot: CaptureSlot, capture_id: usize, rule: Arc<CaptureRule>) {
+        match (&mut self.kind, slot) {
+            (BuildRuleKind::Match { captures, .. }, CaptureSlot::Match)
+            | (
+                BuildRuleKind::BeginWhile {
+                    begin_captures: captures,
+                    ..
+                },
+                CaptureSlot::Begin,
+            )
+            | (
+                BuildRuleKind::BeginWhile {
+                    while_captures: captures,
+                    ..
+                },
+                CaptureSlot::While,
+            )
+            | (
+                BuildRuleKind::BeginEnd {
+                    begin_captures: captures,
+                    ..
+                },
+                CaptureSlot::Begin,
+            )
+            | (
+                BuildRuleKind::BeginEnd {
+                    end_captures: captures,
+                    ..
+                },
+                CaptureSlot::End,
+            ) => {
+                captures.insert(capture_id, rule);
+            }
+            _ => unreachable!("capture slot must match active rule frame"),
+        }
+    }
+
+    fn push_pattern(&mut self, rule_id: RuleId) {
+        match &mut self.kind {
+            BuildRuleKind::IncludeOnly {
+                compiled_patterns, ..
+            }
+            | BuildRuleKind::BeginWhile {
+                compiled_patterns, ..
+            }
+            | BuildRuleKind::BeginEnd {
+                compiled_patterns, ..
+            } => compiled_patterns.push(rule_id),
+            BuildRuleKind::Match { .. } => unreachable!("match rules do not compile patterns"),
+        }
+    }
+
+    fn into_rule(self) -> Rule {
+        let mut rule = match self.kind {
+            BuildRuleKind::Match {
+                match_pattern,
+                captures,
+            } => Rule::Match(MatchRule::new(
+                self.description.location.clone(),
+                self.id,
+                self.description.name.clone(),
+                match_pattern,
+                captures.into_iter().collect(),
+            )),
+            BuildRuleKind::IncludeOnly {
+                raw_pattern_count,
+                compiled_patterns,
+            } => Rule::IncludeOnly(IncludeOnlyRule::new(
+                self.description.location.clone(),
+                self.id,
+                self.description.name.clone(),
+                self.description.content_name.clone(),
+                CompilePatternsResult {
+                    has_missing_patterns: raw_pattern_count != compiled_patterns.len(),
+                    patterns: compiled_patterns,
+                },
+            )),
+            BuildRuleKind::BeginWhile {
+                begin,
+                while_pattern,
+                begin_captures,
+                while_captures,
+                raw_pattern_count,
+                compiled_patterns,
+            } => Rule::BeginWhile(BeginWhileRule::new(BeginWhileRuleOptions {
+                location: self.description.location.clone(),
+                id: self.id,
+                name: self.description.name.clone(),
+                content_name: self.description.content_name.clone(),
+                begin,
+                begin_captures: begin_captures.into_iter().collect(),
+                while_pattern,
+                while_captures: while_captures.into_iter().collect(),
+                patterns: CompilePatternsResult {
+                    has_missing_patterns: raw_pattern_count != compiled_patterns.len(),
+                    patterns: compiled_patterns,
+                },
+            })),
+            BuildRuleKind::BeginEnd {
+                begin,
+                begin_captures,
+                end_captures,
+                raw_pattern_count,
+                compiled_patterns,
+            } => Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: self.description.location.clone(),
+                id: self.id,
+                name: self.description.name.clone(),
+                content_name: self.description.content_name.clone(),
+                begin,
+                begin_captures: begin_captures.into_iter().collect(),
+                end: self.description.end.clone(),
+                end_captures: end_captures.into_iter().collect(),
+                apply_end_pattern_last: self.description.apply_end_pattern_last,
+                patterns: CompilePatternsResult {
+                    has_missing_patterns: raw_pattern_count != compiled_patterns.len(),
+                    patterns: compiled_patterns,
+                },
+            })),
+        };
+        rule.set_source_scope_name(self.scope_name);
+        rule
+    }
 }
 
 fn rule_has_only_missing_patterns(rule: &Rule) -> bool {

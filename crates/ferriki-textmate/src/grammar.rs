@@ -1905,4 +1905,41 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn compiles_long_acyclic_repository_include_chain_without_stack_overflow() {
+        const CHAIN_LEN: usize = 15_000;
+        let mut repo = serde_json::Map::with_capacity(CHAIN_LEN);
+        for index in 0..CHAIN_LEN - 1 {
+            repo.insert(
+                format!("r{index}"),
+                serde_json::json!({ "patterns": [{ "include": format!("#r{}", index + 1) }] }),
+            );
+        }
+        repo.insert(
+            format!("r{}", CHAIN_LEN - 1),
+            serde_json::json!({ "patterns": [{ "match": "ok", "name": "keyword.ok" }] }),
+        );
+        let source = serde_json::json!({
+            "scopeName": "source.chain",
+            "patterns": [{ "include": "#r0" }],
+            "repository": repo,
+        })
+        .to_string();
+        let root = raw_grammar(&source);
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let result = grammar.tokenize_line("ok", None, 0).unwrap();
+        assert!(
+            result
+                .tokens
+                .iter()
+                .any(|token| token.scopes.iter().any(|scope| scope == "keyword.ok")),
+            "long acyclic repository chain should compile and tokenize without stack overflow"
+        );
+    }
 }

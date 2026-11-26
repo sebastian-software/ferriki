@@ -83,7 +83,8 @@ named `ferriki-textmate`.
   with explicit runtime safety bounds as deliberate parity exceptions against
   process-aborting stack overflows or memory exhaustion on adversarial inputs:
   scanner include expansion tracks active paths to break cycles and rejects
-  graphs exceeding 65,536 rule visits per scanner, grammar tokenization rejects
+  graphs exceeding 65,536 rule visits or 16 MiB of expanded pattern bytes per
+  scanner before cloning regex sources, grammar tokenization rejects
   state stacks deeper than 4,096 frames, and capture retokenization rejects
   recursion deeper than 64 levels. Exceeding any bound returns a recoverable
   `RegexError` rather than emitting truncated continuation states or silently
@@ -149,7 +150,7 @@ this decision.
 
 ## History
 
-- 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).
+- 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit / 16 MiB per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).
 
 - 2026-10-24: Prepare standard static scanner groups offline and consume them in
   Eager mode from first use, rather than waiting for Auto thresholds.

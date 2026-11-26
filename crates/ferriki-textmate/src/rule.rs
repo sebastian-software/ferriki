@@ -943,6 +943,10 @@ fn rule_index(id: RuleId) -> Option<usize> {
 /// for a single scanner. Prevents exponential blowup on adversarial branching
 /// include graphs while preserving repeated sibling includes in normal grammars.
 const MAX_SCANNER_INCLUDE_VISITS: usize = 65_536;
+/// Maximum cumulative expanded regex pattern bytes allowed for a single scanner
+/// before cloning `RegExpSource`s. Prevents memory exhaustion from branching
+/// includes sharing long patterns.
+const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
 
 enum CollectFrame {
     Visit(RuleId),
@@ -956,6 +960,8 @@ fn collect_pattern_ids(
     active_path: &mut HashSet<RuleId>,
 ) -> Result<(), RegexError> {
     let mut visits = 0usize;
+    let mut total_pattern_bytes = 0usize;
+    let mut leaf_ids = Vec::new();
     let mut pending: Vec<CollectFrame> = patterns
         .iter()
         .rev()
@@ -976,7 +982,16 @@ fn collect_pattern_ids(
                 }
                 match registry.get_rule(pattern_id) {
                     Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-                    Rule::Match(rule) => output.push(rule.match_source.clone()),
+                    Rule::Match(rule) => {
+                        total_pattern_bytes =
+                            total_pattern_bytes.saturating_add(rule.match_source.source.len());
+                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                            return Err(RegexError::depth_limit(
+                                "rule pattern expansion size limit exceeded",
+                            ));
+                        }
+                        leaf_ids.push(pattern_id);
+                    }
                     Rule::IncludeOnly(rule) => {
                         if active_path.insert(rule.data.id) {
                             pending.push(CollectFrame::Exit(rule.data.id));
@@ -985,9 +1000,38 @@ fn collect_pattern_ids(
                             );
                         }
                     }
-                    Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
-                    Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+                    Rule::BeginEnd(rule) => {
+                        total_pattern_bytes =
+                            total_pattern_bytes.saturating_add(rule.begin.source.len());
+                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                            return Err(RegexError::depth_limit(
+                                "rule pattern expansion size limit exceeded",
+                            ));
+                        }
+                        leaf_ids.push(pattern_id);
+                    }
+                    Rule::BeginWhile(rule) => {
+                        total_pattern_bytes =
+                            total_pattern_bytes.saturating_add(rule.begin.source.len());
+                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                            return Err(RegexError::depth_limit(
+                                "rule pattern expansion size limit exceeded",
+                            ));
+                        }
+                        leaf_ids.push(pattern_id);
+                    }
                 }
+            }
+        }
+    }
+
+    for pattern_id in leaf_ids {
+        match registry.get_rule(pattern_id) {
+            Rule::Match(rule) => output.push(rule.match_source.clone()),
+            Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
+            Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+            Rule::Capture(_) | Rule::IncludeOnly(_) => {
+                unreachable!("only leaf pattern rules are queued for materialization")
             }
         }
     }
@@ -1330,5 +1374,39 @@ mod tests {
             .err()
             .expect("exponential include graph must return a recoverable error");
         assert!(err.to_string().contains("expansion limit"));
+    }
+
+    #[test]
+    fn large_repeated_pattern_expansion_fails_before_cloning_sources() {
+        let mut registry = RuleRegistry::new();
+        let big_pattern = "a".repeat(32 * 1024);
+        let leaf = match_rule(&mut registry, &big_pattern);
+        let mut current = leaf;
+        // 10 levels -> 1,024 leaf copies * 32 KiB = 32 MiB (> 16 MiB cap),
+        // well below the 65,536 visit cap.
+        for _ in 0..10 {
+            let node = registry.reserve_rule();
+            registry.set_rule(
+                node,
+                Rule::IncludeOnly(IncludeOnlyRule::new(
+                    None,
+                    node,
+                    None,
+                    None,
+                    CompilePatternsResult {
+                        patterns: vec![current, current],
+                        has_missing_patterns: false,
+                    },
+                )),
+            );
+            current = node;
+        }
+
+        let err = registry
+            .get_rule(current)
+            .compile(&registry, None)
+            .err()
+            .expect("oversized repeated pattern expansion must fail before cloning");
+        assert!(err.to_string().contains("size limit"));
     }
 }
