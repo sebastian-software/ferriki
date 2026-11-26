@@ -393,13 +393,13 @@ fn collect_pattern(
     patterns: &mut BTreeSet<String>,
 ) -> Result<(), PrecompiledPatternsError> {
     let source = RegExpSource::new(pattern, ());
+    if dynamic && source.has_back_references {
+        return Ok(());
+    }
     if source.is_oversized() {
         return Err(PrecompiledPatternsError::new(
             "rule pattern expansion size limit exceeded",
         ));
-    }
-    if dynamic && source.has_back_references {
-        return Ok(());
     }
     for allow_a in [false, true] {
         for allow_g in [false, true] {
