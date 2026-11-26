@@ -278,48 +278,73 @@ impl<'a> RuleFactory<'a> {
         self.compiled_rule_ids.insert(root_identity, root_id);
 
         let mut frames = Vec::new();
-        let mut tasks = Vec::new();
-        self.push_rule_compilation(root_id, description, repository, &mut frames, &mut tasks);
+        Self::push_rule_frame(root_id, description, repository, &mut frames);
 
-        while let Some(task) = tasks.pop() {
-            match task {
-                CompileTask::FinishRule => {
-                    let frame = frames.pop().expect("FinishRule must match a RuleFrame");
-                    let id = frame.id;
-                    let rule = frame.into_rule();
-                    self.registry.set_rule(id, rule);
+        while let Some(frame) = frames.last_mut() {
+            if let Some(pending) = frame.pending.take() {
+                match pending {
+                    PendingChild::Capture {
+                        slot,
+                        capture_id,
+                        capture,
+                        retokenize_rule_id,
+                    } => {
+                        let rule = self.create_capture_rule(
+                            capture.location.clone(),
+                            capture.name.clone(),
+                            capture.content_name.clone(),
+                            Some(retokenize_rule_id),
+                        );
+                        frame.insert_capture(slot, capture_id, rule);
+                    }
+                    PendingChild::Pattern { rule_id } => {
+                        if !self
+                            .registry
+                            .try_get_rule(rule_id)
+                            .is_some_and(rule_has_only_missing_patterns)
+                        {
+                            frame.push_pattern(rule_id);
+                        }
+                    }
                 }
-                CompileTask::EnterCapture {
+                continue;
+            }
+
+            let Some(step) = frame.next_step() else {
+                let frame = frames.pop().expect("active rule frame must exist");
+                let id = frame.id;
+                let rule = frame.into_rule();
+                self.registry.set_rule(id, rule);
+                continue;
+            };
+
+            match step {
+                ChildStep::Capture {
                     slot,
                     capture_id,
                     capture,
-                    repository,
                 } => {
                     if capture.patterns.is_some() {
                         let identity = Arc::as_ptr(&capture) as usize;
                         if let Some(&existing_id) = self.compiled_rule_ids.get(&identity) {
-                            tasks.push(CompileTask::FinishCapture {
-                                slot,
-                                capture_id,
-                                capture,
-                                retokenize_rule_id: Some(existing_id),
-                            });
+                            let rule = self.create_capture_rule(
+                                capture.location.clone(),
+                                capture.name.clone(),
+                                capture.content_name.clone(),
+                                Some(existing_id),
+                            );
+                            frame.insert_capture(slot, capture_id, rule);
                         } else {
                             let retok_id = self.registry.reserve_rule();
                             self.compiled_rule_ids.insert(identity, retok_id);
-                            tasks.push(CompileTask::FinishCapture {
+                            let child_repository = frame.repository.clone();
+                            frame.pending = Some(PendingChild::Capture {
                                 slot,
                                 capture_id,
                                 capture: Arc::clone(&capture),
-                                retokenize_rule_id: Some(retok_id),
+                                retokenize_rule_id: retok_id,
                             });
-                            self.push_rule_compilation(
-                                retok_id,
-                                capture,
-                                repository,
-                                &mut frames,
-                                &mut tasks,
-                            );
+                            Self::push_rule_frame(retok_id, capture, child_repository, &mut frames);
                         }
                     } else {
                         let rule = self.create_capture_rule(
@@ -328,69 +353,33 @@ impl<'a> RuleFactory<'a> {
                             capture.content_name.clone(),
                             None,
                         );
-                        frames
-                            .last_mut()
-                            .expect("capture must belong to an active rule frame")
-                            .insert_capture(slot, capture_id, rule);
+                        frame.insert_capture(slot, capture_id, rule);
                     }
                 }
-                CompileTask::FinishCapture {
-                    slot,
-                    capture_id,
-                    capture,
-                    retokenize_rule_id,
-                } => {
-                    let rule = self.create_capture_rule(
-                        capture.location.clone(),
-                        capture.name.clone(),
-                        capture.content_name.clone(),
-                        retokenize_rule_id,
-                    );
-                    frames
-                        .last_mut()
-                        .expect("FinishCapture must belong to an active rule frame")
-                        .insert_capture(slot, capture_id, rule);
-                }
-                CompileTask::EnterPattern {
-                    pattern,
-                    repository,
-                } => {
+                ChildStep::Pattern { pattern } => {
                     let resolved = if let Some(include) = pattern.include.as_ref() {
-                        self.resolve_include(include, repository)
+                        let repo = frame.repository.clone();
+                        self.resolve_include(include, repo)
                     } else {
-                        Some((pattern, repository))
+                        Some((pattern, frame.repository.clone()))
                     };
                     let Some((target, target_repository)) = resolved else {
                         continue;
                     };
                     let identity = Arc::as_ptr(&target) as usize;
                     if let Some(&existing_id) = self.compiled_rule_ids.get(&identity) {
-                        tasks.push(CompileTask::FinishPattern {
-                            rule_id: existing_id,
-                        });
+                        if !self
+                            .registry
+                            .try_get_rule(existing_id)
+                            .is_some_and(rule_has_only_missing_patterns)
+                        {
+                            frame.push_pattern(existing_id);
+                        }
                     } else {
                         let child_id = self.registry.reserve_rule();
                         self.compiled_rule_ids.insert(identity, child_id);
-                        tasks.push(CompileTask::FinishPattern { rule_id: child_id });
-                        self.push_rule_compilation(
-                            child_id,
-                            target,
-                            target_repository,
-                            &mut frames,
-                            &mut tasks,
-                        );
-                    }
-                }
-                CompileTask::FinishPattern { rule_id } => {
-                    if !self
-                        .registry
-                        .try_get_rule(rule_id)
-                        .is_some_and(rule_has_only_missing_patterns)
-                    {
-                        frames
-                            .last_mut()
-                            .expect("FinishPattern must belong to an active rule frame")
-                            .push_pattern(rule_id);
+                        frame.pending = Some(PendingChild::Pattern { rule_id: child_id });
+                        Self::push_rule_frame(child_id, target, target_repository, &mut frames);
                     }
                 }
             }
@@ -399,16 +388,13 @@ impl<'a> RuleFactory<'a> {
         root_id
     }
 
-    fn push_rule_compilation(
-        &self,
+    fn push_rule_frame(
         id: RuleId,
         description: Arc<RawRule>,
         repository: RepositoryContext,
         frames: &mut Vec<RuleFrame>,
-        tasks: &mut Vec<CompileTask>,
     ) {
         let scope_name = repository.scope_name().to_owned();
-        tasks.push(CompileTask::FinishRule);
 
         // vscode-textmate selects match and while rules with JavaScript truthiness.
         if let Some(match_pattern) = description
@@ -417,12 +403,15 @@ impl<'a> RuleFactory<'a> {
             .filter(|pattern| !pattern.is_empty())
         {
             let match_pattern = match_pattern.clone();
-            let captures = description.captures.as_ref();
-            Self::push_capture_tasks(CaptureSlot::Match, captures, &repository, tasks);
             frames.push(RuleFrame {
                 id,
                 scope_name,
                 description,
+                repository,
+                cursor: FrameCursor::Match {
+                    last_capture_key: None,
+                },
+                pending: None,
                 kind: BuildRuleKind::Match {
                     match_pattern,
                     captures: BTreeMap::new(),
@@ -437,24 +426,30 @@ impl<'a> RuleFactory<'a> {
             } else {
                 repository
             };
-            let shorthand;
-            let patterns = if let Some(patterns) = description.patterns.as_deref() {
-                Some(patterns)
-            } else if let Some(include) = description.include.as_ref() {
-                shorthand = vec![Arc::new(RawRule {
-                    include: Some(include.clone()),
-                    ..RawRule::default()
-                })];
-                Some(shorthand.as_slice())
+            let shorthand_include = if description.patterns.is_none() {
+                description.include.as_ref().map(|include| {
+                    Arc::new(RawRule {
+                        include: Some(include.clone()),
+                        ..RawRule::default()
+                    })
+                })
             } else {
                 None
             };
-            let raw_pattern_count = patterns.map_or(0, <[Arc<RawRule>]>::len);
-            Self::push_pattern_tasks(patterns, &repository, tasks);
+            let raw_pattern_count = description.patterns.as_deref().map_or(
+                usize::from(shorthand_include.is_some()),
+                <[Arc<RawRule>]>::len,
+            );
             frames.push(RuleFrame {
                 id,
                 scope_name,
                 description,
+                repository,
+                cursor: FrameCursor::IncludeOnly {
+                    shorthand_include,
+                    next_pattern: 0,
+                },
+                pending: None,
                 kind: BuildRuleKind::IncludeOnly {
                     raw_pattern_count,
                     compiled_patterns: Vec::new(),
@@ -475,31 +470,17 @@ impl<'a> RuleFactory<'a> {
             .filter(|pattern| !pattern.is_empty())
         {
             let while_pattern = while_pattern.clone();
-            // Push in reverse of recursive execution order:
-            // begin_captures -> while_captures -> patterns.
-            Self::push_pattern_tasks(description.patterns.as_deref(), &repository, tasks);
-            Self::push_capture_tasks(
-                CaptureSlot::While,
-                description
-                    .while_captures
-                    .as_ref()
-                    .or(description.captures.as_ref()),
-                &repository,
-                tasks,
-            );
-            Self::push_capture_tasks(
-                CaptureSlot::Begin,
-                description
-                    .begin_captures
-                    .as_ref()
-                    .or(description.captures.as_ref()),
-                &repository,
-                tasks,
-            );
             frames.push(RuleFrame {
                 id,
                 scope_name,
                 description,
+                repository,
+                cursor: FrameCursor::BeginWhile {
+                    phase: BeginWhilePhase::BeginCaptures,
+                    last_capture_key: None,
+                    next_pattern: 0,
+                },
+                pending: None,
                 kind: BuildRuleKind::BeginWhile {
                     begin,
                     while_pattern,
@@ -512,31 +493,17 @@ impl<'a> RuleFactory<'a> {
             return;
         }
 
-        // Push in reverse of recursive execution order:
-        // begin_captures -> end_captures -> patterns.
-        Self::push_pattern_tasks(description.patterns.as_deref(), &repository, tasks);
-        Self::push_capture_tasks(
-            CaptureSlot::End,
-            description
-                .end_captures
-                .as_ref()
-                .or(description.captures.as_ref()),
-            &repository,
-            tasks,
-        );
-        Self::push_capture_tasks(
-            CaptureSlot::Begin,
-            description
-                .begin_captures
-                .as_ref()
-                .or(description.captures.as_ref()),
-            &repository,
-            tasks,
-        );
         frames.push(RuleFrame {
             id,
             scope_name,
             description,
+            repository,
+            cursor: FrameCursor::BeginEnd {
+                phase: BeginEndPhase::BeginCaptures,
+                last_capture_key: None,
+                next_pattern: 0,
+            },
+            pending: None,
             kind: BuildRuleKind::BeginEnd {
                 begin,
                 begin_captures: BTreeMap::new(),
@@ -545,44 +512,6 @@ impl<'a> RuleFactory<'a> {
                 compiled_patterns: Vec::new(),
             },
         });
-    }
-
-    fn push_capture_tasks(
-        slot: CaptureSlot,
-        captures: Option<&RawCaptures>,
-        repository: &RepositoryContext,
-        tasks: &mut Vec<CompileTask>,
-    ) {
-        let Some(captures) = captures else {
-            return;
-        };
-        for (capture_id, capture) in captures.iter().rev() {
-            if capture_id == "$vscodeTextmateLocation" {
-                continue;
-            }
-            let Some(capture_id) = parse_capture_id(capture_id) else {
-                continue;
-            };
-            tasks.push(CompileTask::EnterCapture {
-                slot,
-                capture_id,
-                capture: Arc::clone(capture),
-                repository: repository.clone(),
-            });
-        }
-    }
-
-    fn push_pattern_tasks(
-        patterns: Option<&[Arc<RawRule>]>,
-        repository: &RepositoryContext,
-        tasks: &mut Vec<CompileTask>,
-    ) {
-        for pattern in patterns.unwrap_or_default().iter().rev() {
-            tasks.push(CompileTask::EnterPattern {
-                pattern: Arc::clone(pattern),
-                repository: repository.clone(),
-            });
-        }
     }
 
     fn create_capture_rule(
@@ -675,27 +604,104 @@ enum CaptureSlot {
     End,
 }
 
-enum CompileTask {
-    FinishRule,
-    EnterCapture {
+#[derive(Clone, Copy)]
+enum BeginWhilePhase {
+    BeginCaptures,
+    WhileCaptures,
+    Patterns,
+}
+
+#[derive(Clone, Copy)]
+enum BeginEndPhase {
+    BeginCaptures,
+    EndCaptures,
+    Patterns,
+}
+
+enum FrameCursor {
+    Match {
+        last_capture_key: Option<String>,
+    },
+    IncludeOnly {
+        shorthand_include: Option<Arc<RawRule>>,
+        next_pattern: usize,
+    },
+    BeginWhile {
+        phase: BeginWhilePhase,
+        last_capture_key: Option<String>,
+        next_pattern: usize,
+    },
+    BeginEnd {
+        phase: BeginEndPhase,
+        last_capture_key: Option<String>,
+        next_pattern: usize,
+    },
+}
+
+enum PendingChild {
+    Capture {
         slot: CaptureSlot,
         capture_id: usize,
         capture: Arc<RawRule>,
-        repository: RepositoryContext,
+        retokenize_rule_id: RuleId,
     },
-    FinishCapture {
-        slot: CaptureSlot,
-        capture_id: usize,
-        capture: Arc<RawRule>,
-        retokenize_rule_id: Option<RuleId>,
-    },
-    EnterPattern {
-        pattern: Arc<RawRule>,
-        repository: RepositoryContext,
-    },
-    FinishPattern {
+    Pattern {
         rule_id: RuleId,
     },
+}
+
+enum ChildStep {
+    Capture {
+        slot: CaptureSlot,
+        capture_id: usize,
+        capture: Arc<RawRule>,
+    },
+    Pattern {
+        pattern: Arc<RawRule>,
+    },
+}
+
+fn next_capture_entry(
+    captures: Option<&RawCaptures>,
+    last_key: &mut Option<String>,
+) -> Option<(usize, Arc<RawRule>)> {
+    let captures = captures?;
+    loop {
+        let next = match last_key.as_deref() {
+            None => captures.iter().next(),
+            Some(prev) => captures
+                .range::<str, _>((std::ops::Bound::Excluded(prev), std::ops::Bound::Unbounded))
+                .next(),
+        };
+        let (key, capture) = next?;
+        *last_key = Some(key.clone());
+        if key == "$vscodeTextmateLocation" {
+            continue;
+        }
+        let Some(capture_id) = parse_capture_id(key) else {
+            continue;
+        };
+        return Some((capture_id, Arc::clone(capture)));
+    }
+}
+
+fn next_pattern_entry(
+    patterns: Option<&[Arc<RawRule>]>,
+    shorthand: Option<&Arc<RawRule>>,
+    next_pattern: &mut usize,
+) -> Option<Arc<RawRule>> {
+    if let Some(patterns) = patterns {
+        let item = patterns.get(*next_pattern)?;
+        *next_pattern += 1;
+        return Some(Arc::clone(item));
+    }
+    if *next_pattern == 0
+        && let Some(item) = shorthand
+    {
+        *next_pattern = 1;
+        return Some(Arc::clone(item));
+    }
+    None
 }
 
 enum BuildRuleKind {
@@ -728,10 +734,139 @@ struct RuleFrame {
     id: RuleId,
     scope_name: String,
     description: Arc<RawRule>,
+    repository: RepositoryContext,
+    cursor: FrameCursor,
+    pending: Option<PendingChild>,
     kind: BuildRuleKind,
 }
 
 impl RuleFrame {
+    fn next_step(&mut self) -> Option<ChildStep> {
+        match &mut self.cursor {
+            FrameCursor::Match { last_capture_key } => {
+                let (capture_id, capture) =
+                    next_capture_entry(self.description.captures.as_ref(), last_capture_key)?;
+                Some(ChildStep::Capture {
+                    slot: CaptureSlot::Match,
+                    capture_id,
+                    capture,
+                })
+            }
+            FrameCursor::IncludeOnly {
+                shorthand_include,
+                next_pattern,
+            } => {
+                let pattern = next_pattern_entry(
+                    self.description.patterns.as_deref(),
+                    shorthand_include.as_ref(),
+                    next_pattern,
+                )?;
+                Some(ChildStep::Pattern { pattern })
+            }
+            FrameCursor::BeginWhile {
+                phase,
+                last_capture_key,
+                next_pattern,
+            } => loop {
+                match *phase {
+                    BeginWhilePhase::BeginCaptures => {
+                        let captures = self
+                            .description
+                            .begin_captures
+                            .as_ref()
+                            .or(self.description.captures.as_ref());
+                        if let Some((capture_id, capture)) =
+                            next_capture_entry(captures, last_capture_key)
+                        {
+                            return Some(ChildStep::Capture {
+                                slot: CaptureSlot::Begin,
+                                capture_id,
+                                capture,
+                            });
+                        }
+                        *phase = BeginWhilePhase::WhileCaptures;
+                        *last_capture_key = None;
+                    }
+                    BeginWhilePhase::WhileCaptures => {
+                        let captures = self
+                            .description
+                            .while_captures
+                            .as_ref()
+                            .or(self.description.captures.as_ref());
+                        if let Some((capture_id, capture)) =
+                            next_capture_entry(captures, last_capture_key)
+                        {
+                            return Some(ChildStep::Capture {
+                                slot: CaptureSlot::While,
+                                capture_id,
+                                capture,
+                            });
+                        }
+                        *phase = BeginWhilePhase::Patterns;
+                    }
+                    BeginWhilePhase::Patterns => {
+                        let pattern = next_pattern_entry(
+                            self.description.patterns.as_deref(),
+                            None,
+                            next_pattern,
+                        )?;
+                        return Some(ChildStep::Pattern { pattern });
+                    }
+                }
+            },
+            FrameCursor::BeginEnd {
+                phase,
+                last_capture_key,
+                next_pattern,
+            } => loop {
+                match *phase {
+                    BeginEndPhase::BeginCaptures => {
+                        let captures = self
+                            .description
+                            .begin_captures
+                            .as_ref()
+                            .or(self.description.captures.as_ref());
+                        if let Some((capture_id, capture)) =
+                            next_capture_entry(captures, last_capture_key)
+                        {
+                            return Some(ChildStep::Capture {
+                                slot: CaptureSlot::Begin,
+                                capture_id,
+                                capture,
+                            });
+                        }
+                        *phase = BeginEndPhase::EndCaptures;
+                        *last_capture_key = None;
+                    }
+                    BeginEndPhase::EndCaptures => {
+                        let captures = self
+                            .description
+                            .end_captures
+                            .as_ref()
+                            .or(self.description.captures.as_ref());
+                        if let Some((capture_id, capture)) =
+                            next_capture_entry(captures, last_capture_key)
+                        {
+                            return Some(ChildStep::Capture {
+                                slot: CaptureSlot::End,
+                                capture_id,
+                                capture,
+                            });
+                        }
+                        *phase = BeginEndPhase::Patterns;
+                    }
+                    BeginEndPhase::Patterns => {
+                        let pattern = next_pattern_entry(
+                            self.description.patterns.as_deref(),
+                            None,
+                            next_pattern,
+                        )?;
+                        return Some(ChildStep::Pattern { pattern });
+                    }
+                }
+            },
+        }
+    }
     fn insert_capture(&mut self, slot: CaptureSlot, capture_id: usize, rule: Arc<CaptureRule>) {
         match (&mut self.kind, slot) {
             (BuildRuleKind::Match { captures, .. }, CaptureSlot::Match)

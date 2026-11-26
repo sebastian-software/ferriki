@@ -414,7 +414,7 @@ impl BeginWhileRule {
             .lock()
             .expect("compiled while-pattern cache lock poisoned");
         if cached.is_none() {
-            if self.while_source.source.len() > MAX_SCANNER_PATTERN_BYTES {
+            if self.while_source.is_oversized() {
                 return Err(RegexError::depth_limit(
                     "rule pattern expansion size limit exceeded",
                 ));
@@ -647,7 +647,7 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 if cached.is_none() {
-                    if rule.match_source.source.len() > MAX_SCANNER_PATTERN_BYTES {
+                    if rule.match_source.is_oversized() {
                         return Err(RegexError::depth_limit(
                             "rule pattern expansion size limit exceeded",
                         ));
@@ -681,6 +681,11 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 if cached.is_none() {
+                    if rule.end.is_oversized() {
+                        return Err(RegexError::depth_limit(
+                            "rule pattern expansion size limit exceeded",
+                        ));
+                    }
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
                         registry
@@ -1012,6 +1017,11 @@ fn collect_pattern_ids(
         match registry.get_rule(pattern_id) {
             Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
             Rule::Match(rule) => {
+                if rule.match_source.is_oversized() {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
                 total_pattern_bytes =
                     total_pattern_bytes.saturating_add(rule.match_source.source.len());
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
@@ -1027,6 +1037,11 @@ fn collect_pattern_ids(
                 }
             }
             Rule::BeginEnd(rule) => {
+                if rule.begin.is_oversized() {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
                 total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(
@@ -1036,6 +1051,11 @@ fn collect_pattern_ids(
                 leaf_ids.push(pattern_id);
             }
             Rule::BeginWhile(rule) => {
+                if rule.begin.is_oversized() {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
                 total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(

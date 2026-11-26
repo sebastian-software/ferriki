@@ -7,7 +7,7 @@ use crate::RawGrammar;
 use crate::grammar::{Grammar, GrammarConfiguration, ThemeProvider};
 use crate::raw_grammar::RawRule;
 use crate::regexp::ScannerPatternCache;
-use crate::regexp::{RegExpSource, normalize_ferroni_pattern};
+use crate::regexp::{MAX_SCANNER_PATTERN_BYTES, RegExpSource, normalize_ferroni_pattern_bounded};
 use crate::rule_factory::{GrammarProvider, GrammarStore};
 use crate::theme::Theme;
 use ferroni::scanner::PrecompiledEager;
@@ -385,14 +385,18 @@ fn collect_rule(rule: &RawRule, patterns: &mut BTreeSet<String>) {
 
 fn collect_pattern(pattern: &str, dynamic: bool, patterns: &mut BTreeSet<String>) {
     let source = RegExpSource::new(pattern, ());
-    if dynamic && source.has_back_references {
+    if source.is_oversized() || (dynamic && source.has_back_references) {
         return;
     }
     for allow_a in [false, true] {
         for allow_g in [false, true] {
-            patterns.insert(normalize_ferroni_pattern(
-                source.resolve_anchors(allow_a, allow_g),
-            ));
+            if let Ok(resolved) =
+                source.resolve_anchors_bounded(allow_a, allow_g, MAX_SCANNER_PATTERN_BYTES)
+                && let Ok(normalized) =
+                    normalize_ferroni_pattern_bounded(&resolved, MAX_SCANNER_PATTERN_BYTES)
+            {
+                patterns.insert(normalized);
+            }
         }
     }
 }
