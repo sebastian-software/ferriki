@@ -403,6 +403,11 @@ fn collect_pattern(
     }
     for allow_a in [false, true] {
         for allow_g in [false, true] {
+            if source.normalized_byte_len(allow_a, allow_g) > MAX_SCANNER_PATTERN_BYTES {
+                return Err(PrecompiledPatternsError::new(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
             let resolved = source
                 .resolve_anchors_bounded(allow_a, allow_g, MAX_SCANNER_PATTERN_BYTES)
                 .map_err(PrecompiledPatternsError::new)?;

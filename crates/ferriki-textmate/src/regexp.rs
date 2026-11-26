@@ -517,22 +517,6 @@ impl<T> RegExpSource<T> {
         self.normalized_lens[usize::from(allow_a) * 2 + usize::from(allow_g)]
     }
 
-    #[cfg(test)]
-    pub(crate) fn set_source(&mut self, new_source: impl Into<String>) {
-        let new_source = new_source.into();
-        if new_source.len() > MAX_SCANNER_PATTERN_BYTES {
-            self.source.clear();
-            self.oversized = true;
-            self.normalized_lens = OVERSIZED_LENS;
-            return;
-        }
-        if !self.oversized && self.source == new_source {
-            return;
-        }
-        let new_lens = normalized_pattern_byte_lens(&new_source, self.has_anchor);
-        self.set_source_with_lens(new_source, new_lens);
-    }
-
     fn set_source_with_lens(&mut self, new_source: String, new_lens: [usize; 4]) {
         self.source = new_source;
         self.oversized = false;
@@ -1217,26 +1201,6 @@ impl<T> RegExpSourceList<T> {
             *total = total.saturating_sub(old_len).saturating_add(new_len);
         }
         Ok(())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
-        let new_source = new_source.into();
-        self.has_resolved_sources = true;
-        if self.items[index].is_oversized() || self.items[index].source != new_source {
-            self.dispose_caches();
-            let old_lens = self.items[index].normalized_lens;
-            self.items[index].set_source(new_source);
-            let new_lens = self.items[index].normalized_lens;
-            for ((total, old_len), new_len) in self
-                .total_normalized_bytes
-                .iter_mut()
-                .zip(old_lens)
-                .zip(new_lens)
-            {
-                *total = total.saturating_sub(old_len).saturating_add(new_len);
-            }
-        }
     }
 }
 
@@ -2088,7 +2052,7 @@ mod tests {
         let first = sources.compile().unwrap();
         assert!(Arc::ptr_eq(&first, &sources.compile().unwrap()));
 
-        sources.set_source(0, "b");
+        sources.try_set_source(0, "b", true, true).unwrap();
         let second = sources.compile().unwrap();
         assert!(!Arc::ptr_eq(&first, &second));
         let line = OnigString::new("b");
