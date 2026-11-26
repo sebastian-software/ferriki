@@ -785,12 +785,13 @@ fn replace_numeric_back_references(
         while bytes.get(digit_end).is_some_and(u8::is_ascii_digit) {
             digit_end += 1;
         }
-        let capture_index = source[digit_start..digit_end]
+        let captured_value = source[digit_start..digit_end]
             .parse::<usize>()
-            .expect("ASCII digits must parse as an index");
-        let captured_value = capture_indices.get(capture_index).map_or("", |capture| {
-            substring_utf16(line_text, capture.start, capture.end)
-        });
+            .ok()
+            .and_then(|capture_index| capture_indices.get(capture_index))
+            .map_or("", |capture| {
+                substring_utf16(line_text, capture.start, capture.end)
+            });
 
         result.push_str(&source[last_pushed_position..position]);
         result.push_str(&escape_reg_exp_characters(captured_value));
@@ -1788,6 +1789,27 @@ mod tests {
                 .unwrap()
                 .find_next_match(&line, 0, ScannerFindOptions::NONE)
                 .is_some()
+        );
+    }
+
+    #[test]
+    fn resolves_overflowing_numeric_backreference_to_empty_string() {
+        let source = RegExpSource::new(r"prefix\999999999999999999999-\1-suffix", 1_u32);
+        let captures = [
+            CaptureIndex {
+                start: 0,
+                end: 3,
+                length: 3,
+            },
+            CaptureIndex {
+                start: 0,
+                end: 3,
+                length: 3,
+            },
+        ];
+        assert_eq!(
+            source.resolve_back_references("a.b", &captures),
+            r"prefix-a\.b-suffix"
         );
     }
 }

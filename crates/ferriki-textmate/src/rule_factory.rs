@@ -387,13 +387,18 @@ impl<'a> RuleFactory<'a> {
             return Vec::new();
         };
 
-        let maximum_capture_id = captures
+        let Some(maximum_capture_id) = captures
             .keys()
             .filter(|capture_id| capture_id.as_str() != "$vscodeTextmateLocation")
             .filter_map(|capture_id| parse_capture_id(capture_id))
             .max()
-            .unwrap_or(0);
-        let mut compiled = vec![None; maximum_capture_id + 1];
+        else {
+            return Vec::new();
+        };
+        let Some(len) = maximum_capture_id.checked_add(1) else {
+            return Vec::new();
+        };
+        let mut compiled = vec![None; len];
 
         for (capture_id, capture) in captures {
             if capture_id == "$vscodeTextmateLocation" {
@@ -516,6 +521,11 @@ impl<'a> RuleFactory<'a> {
     }
 }
 
+/// Upper bound on capture group indices accepted from grammar definitions.
+/// Real Oniguruma patterns use far fewer capture groups; ignoring oversized
+/// keys prevents OOM aborts and `usize` overflow on untrusted grammars.
+const MAX_CAPTURE_ID: usize = 1_024;
+
 fn parse_capture_id(value: &str) -> Option<usize> {
     let digits = value
         .as_bytes()
@@ -523,8 +533,9 @@ fn parse_capture_id(value: &str) -> Option<usize> {
         .take_while(|byte| byte.is_ascii_digit())
         .count();
     (digits != 0)
-        .then(|| value[..digits].parse().ok())
+        .then(|| value[..digits].parse::<usize>().ok())
         .flatten()
+        .filter(|&id| id <= MAX_CAPTURE_ID)
 }
 
 fn rule_has_only_missing_patterns(rule: &Rule) -> bool {
@@ -768,5 +779,78 @@ mod tests {
 
         assert_eq!(root.get(), 1);
         assert_eq!(factory.registry().len(), 3);
+    }
+
+    #[test]
+    fn ignores_oversized_and_overflowing_capture_ids() {
+        let grammar = grammar(
+            r##"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "match": "(a)",
+                        "captures": {
+                            "1": { "name": "valid.test" },
+                            "1000000000": { "name": "huge.test" },
+                            "18446744073709551615": { "name": "u64max.test" },
+                            "99999999999999999999999": { "name": "overflow.test" }
+                        }
+                    },
+                    {
+                        "match": "(b)",
+                        "captures": {
+                            "18446744073709551615": {}
+                        }
+                    },
+                    {
+                        "match": "(c)",
+                        "captures": {
+                            "1024": { "name": "boundary.test" },
+                            "1025": { "name": "over.test" }
+                        }
+                    }
+                ]
+            }"##,
+        );
+        let store = GrammarStore::new();
+        let mut factory = RuleFactory::new(&grammar, &store);
+        let root = factory.compile_root();
+        let root_rule = factory.registry().get_rule(root).as_include_only().unwrap();
+
+        let first = factory
+            .registry()
+            .get_rule(root_rule.patterns[0])
+            .as_match()
+            .unwrap();
+        assert_eq!(first.captures.len(), 2);
+        assert!(first.captures[0].is_none());
+        assert_eq!(
+            first.captures[1]
+                .as_ref()
+                .and_then(|capture| capture.get_name(None, None))
+                .as_deref(),
+            Some("valid.test")
+        );
+
+        let second = factory
+            .registry()
+            .get_rule(root_rule.patterns[1])
+            .as_match()
+            .unwrap();
+        assert!(second.captures.is_empty());
+
+        let third = factory
+            .registry()
+            .get_rule(root_rule.patterns[2])
+            .as_match()
+            .unwrap();
+        assert_eq!(third.captures.len(), 1025);
+        assert_eq!(
+            third.captures[1024]
+                .as_ref()
+                .and_then(|capture| capture.get_name(None, None))
+                .as_deref(),
+            Some("boundary.test")
+        );
     }
 }

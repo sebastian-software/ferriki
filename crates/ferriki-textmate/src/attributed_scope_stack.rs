@@ -240,6 +240,17 @@ impl AttributedScopeStack {
     }
 }
 
+impl Drop for AttributedScopeStack {
+    fn drop(&mut self) {
+        let mut parent = self.parent.take();
+        while let Some(node) = parent {
+            parent = Arc::try_unwrap(node)
+                .ok()
+                .and_then(|mut inner| inner.parent.take());
+        }
+    }
+}
+
 impl fmt::Display for AttributedScopeStack {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.scope_names().join(" "))
@@ -387,5 +398,18 @@ mod tests {
             FontAttribute::default(),
         );
         assert!(pushed.extension_if_defined(Some(&unrelated)).is_none());
+    }
+
+    #[test]
+    fn drops_deep_attributed_scope_stack_chain_iteratively() {
+        let mut stack = AttributedScopeStack::create_root(
+            "source.test",
+            EncodedTokenAttributes::new(1),
+            FontAttribute::default(),
+        );
+        for _ in 0..50_000 {
+            stack = stack.push_attributed(Some("meta.nested"), &TestProvider);
+        }
+        drop(stack);
     }
 }

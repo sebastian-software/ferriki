@@ -181,28 +181,45 @@ fn utf16_slice(text: &str, start: usize, end: usize) -> Option<&str> {
     Some(&text[start_byte?..end_byte?])
 }
 
-fn write_node(nodes: &[Node], index: usize, html: &mut String) {
-    let node = &nodes[index];
-    let Some(tag) = &node.tag else {
-        html.push_str(&escape_html(&node.text));
-        return;
-    };
-    html.push('<');
-    html.push_str(tag);
-    for (key, value) in &node.properties {
-        html.push(' ');
-        html.push_str(key);
-        html.push_str("=\"");
-        html.push_str(&escape_attribute(value));
-        html.push('"');
+enum WriteFrame {
+    Enter(usize),
+    Exit(usize),
+}
+
+fn write_node(nodes: &[Node], root: usize, html: &mut String) {
+    let mut stack = vec![WriteFrame::Enter(root)];
+    while let Some(frame) = stack.pop() {
+        match frame {
+            WriteFrame::Enter(index) => {
+                let node = &nodes[index];
+                let Some(tag) = &node.tag else {
+                    html.push_str(&escape_html(&node.text));
+                    continue;
+                };
+                html.push('<');
+                html.push_str(tag);
+                for (key, value) in &node.properties {
+                    html.push(' ');
+                    html.push_str(key);
+                    html.push_str("=\"");
+                    html.push_str(&escape_attribute(value));
+                    html.push('"');
+                }
+                html.push('>');
+                stack.push(WriteFrame::Exit(index));
+                for &child in node.children.iter().rev() {
+                    stack.push(WriteFrame::Enter(child));
+                }
+            }
+            WriteFrame::Exit(index) => {
+                if let Some(tag) = &nodes[index].tag {
+                    html.push_str("</");
+                    html.push_str(tag);
+                    html.push('>');
+                }
+            }
+        }
     }
-    html.push('>');
-    for child in &node.children {
-        write_node(nodes, *child, html);
-    }
-    html.push_str("</");
-    html.push_str(tag);
-    html.push('>');
 }
 
 #[cfg(test)]
@@ -341,5 +358,31 @@ mod tests {
             .unwrap()
             .is_none()
         );
+    }
+
+    #[test]
+    fn renders_deeply_nested_always_wrap_decorations_without_stack_overflow() {
+        const DEPTH: usize = 20_000;
+        let decorations: Vec<_> = (0..DEPTH)
+            .map(|_| HtmlDecoration {
+                range: DecorationRange {
+                    start: DecorationPosition::Offset(0),
+                    end: DecorationPosition::Offset(1),
+                    always_wrap: true,
+                },
+                tag_name: "span".into(),
+                properties: vec![("class".into(), "w".into())],
+            })
+            .collect();
+        let html = render_html_with_decorations(
+            "a",
+            &result("a"),
+            &RenderOptions::default(),
+            &decorations,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(html.matches("<span class=\"w\">").count(), DEPTH);
+        assert!(html.contains(">a</span>"));
     }
 }

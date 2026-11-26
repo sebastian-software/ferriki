@@ -250,6 +250,17 @@ impl StateStack {
     }
 }
 
+impl Drop for StateStack {
+    fn drop(&mut self) {
+        let mut parent = self.parent.take();
+        while let Some(node) = parent {
+            parent = Arc::try_unwrap(node)
+                .ok()
+                .and_then(|mut inner| inner.parent.take());
+        }
+    }
+}
+
 impl fmt::Display for StateStack {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut elements = Vec::new();
@@ -461,5 +472,42 @@ mod tests {
         assert_eq!(rebuilt.enter_pos(), -1);
         assert_eq!(rebuilt.anchor_pos(), -1);
         assert_eq!(frame.rule_id, 7);
+    }
+
+    #[test]
+    fn drops_deep_state_stack_chain_iteratively() {
+        let mut scope = scopes("source.test", 1);
+        let mut stack = StateStack::new(
+            None,
+            RuleId::new(1),
+            0,
+            0,
+            false,
+            None,
+            Some(Arc::clone(&scope)),
+            Some(Arc::clone(&scope)),
+        );
+        for index in 0..50_000_usize {
+            scope = AttributedScopeStack::from_extension(
+                Some(scope),
+                &[crate::AttributedScopeStackFrame {
+                    encoded_token_attributes: EncodedTokenAttributes::new(index as u32),
+                    scope_names: vec!["meta.nested".into()],
+                }],
+            )
+            .unwrap();
+            stack = stack.push(
+                RuleId::new(2),
+                index as isize,
+                0,
+                false,
+                None,
+                Some(Arc::clone(&scope)),
+                Some(Arc::clone(&scope)),
+            );
+        }
+        assert_eq!(stack.depth, 50_001);
+        drop(scope);
+        drop(stack);
     }
 }

@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -570,16 +570,23 @@ impl Rule {
         }
     }
 
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     pub(crate) fn collect_patterns(
         &self,
         registry: &RuleRegistry,
         output: &mut RegExpSourceList<RuleScannerId>,
+        visited: &mut HashSet<RuleId>,
     ) {
         match self {
             Self::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
             Self::Match(rule) => output.push(rule.match_source.clone()),
             Self::IncludeOnly(rule) => {
-                collect_pattern_ids(registry, &rule.patterns, output);
+                if visited.insert(rule.data.id) {
+                    collect_pattern_ids(registry, &rule.patterns, output, visited);
+                }
             }
             Self::BeginEnd(rule) => output.push(rule.begin.clone()),
             Self::BeginWhile(rule) => output.push(rule.begin.clone()),
@@ -627,6 +634,7 @@ impl Rule {
             Self::IncludeOnly(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
                 registry,
+                Some(rule.data.id),
                 Some(&rule.patterns),
                 &rule.data.source_scope_name,
                 allow_a,
@@ -644,7 +652,8 @@ impl Rule {
                             .scanner_pattern_cache
                             .for_owner(&rule.data.source_scope_name),
                     );
-                    collect_pattern_ids(registry, &rule.patterns, &mut sources);
+                    let mut visited = HashSet::new();
+                    collect_pattern_ids(registry, &rule.patterns, &mut sources, &mut visited);
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
                     } else {
@@ -665,6 +674,7 @@ impl Rule {
             Self::BeginWhile(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
                 registry,
+                None,
                 Some(&rule.patterns),
                 &rule.data.source_scope_name,
                 allow_a,
@@ -810,9 +820,8 @@ impl RuleRegistry {
             rule.id(),
             "registered rule identity must match its slot"
         );
-        let slot = self
-            .rules
-            .get_mut(rule_index(id))
+        let slot = rule_index(id)
+            .and_then(|index| self.rules.get_mut(index))
             .expect("registered rule identity must have been reserved");
         assert!(slot.is_none(), "registered rule identity must be vacant");
         *slot = Some(rule);
@@ -830,7 +839,7 @@ impl RuleRegistry {
 
     #[must_use]
     pub(crate) fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
-        self.rules.get(rule_index(id)).and_then(Option::as_ref)
+        self.rules.get(rule_index(id)?).and_then(Option::as_ref)
     }
 
     pub(crate) fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
@@ -907,25 +916,38 @@ impl RuleRegistry {
     }
 }
 
-fn rule_index(id: RuleId) -> usize {
-    usize::try_from(id.get() - 1).expect("u32 must fit usize")
+fn rule_index(id: RuleId) -> Option<usize> {
+    id.get()
+        .checked_sub(1)
+        .and_then(|index| usize::try_from(index).ok())
 }
 
 fn collect_pattern_ids(
     registry: &RuleRegistry,
     patterns: &[RuleId],
     output: &mut RegExpSourceList<RuleScannerId>,
+    visited: &mut HashSet<RuleId>,
 ) {
-    for pattern in patterns {
-        registry
-            .get_rule(*pattern)
-            .collect_patterns(registry, output);
+    let mut pending: Vec<RuleId> = patterns.iter().rev().copied().collect();
+    while let Some(pattern_id) = pending.pop() {
+        match registry.get_rule(pattern_id) {
+            Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
+            Rule::Match(rule) => output.push(rule.match_source.clone()),
+            Rule::IncludeOnly(rule) => {
+                if visited.insert(rule.data.id) {
+                    pending.extend(rule.patterns.iter().rev().copied());
+                }
+            }
+            Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
+            Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+        }
     }
 }
 
 fn compile_patterns(
     cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
     registry: &RuleRegistry,
+    owner_include_only: Option<RuleId>,
     patterns: Option<&[RuleId]>,
     owner_scope: &str,
     allow_a: bool,
@@ -938,7 +960,11 @@ fn compile_patterns(
             registry.scanner_pattern_cache.for_owner(owner_scope),
         );
         if let Some(patterns) = patterns {
-            collect_pattern_ids(registry, patterns, &mut sources);
+            let mut visited = HashSet::new();
+            if let Some(owner_id) = owner_include_only {
+                visited.insert(owner_id);
+            }
+            collect_pattern_ids(registry, patterns, &mut sources, &mut visited);
         }
         sources
     });
@@ -1111,5 +1137,52 @@ mod tests {
                 .rule_id,
             RuleScannerId::While
         );
+    }
+
+    #[test]
+    fn try_get_rule_returns_none_for_zero_rule_id() {
+        let mut registry = RuleRegistry::new();
+        let _ = match_rule(&mut registry, "x");
+        assert!(registry.try_get_rule(crate::RuleId::new(0)).is_none());
+    }
+
+    #[test]
+    fn cyclic_include_only_patterns_terminate_without_stack_overflow() {
+        let mut registry = RuleRegistry::new();
+        let matched = match_rule(&mut registry, "hit");
+        let a = registry.reserve_rule();
+        let b = registry.reserve_rule();
+        registry.set_rule(
+            a,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                a,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![b, a],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            b,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                b,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![a, matched],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+
+        let compiled = registry.get_rule(a).compile(&registry, None).unwrap();
+        let result = compiled
+            .find_next_match(&OnigString::new("hit"), 0, ScannerFindOptions::NONE)
+            .unwrap();
+        assert_eq!(result.rule_id, RuleScannerId::Rule(matched));
     }
 }

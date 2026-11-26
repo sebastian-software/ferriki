@@ -47,8 +47,40 @@ pub(crate) struct TokenizeStringResult {
     pub stopped_early: bool,
 }
 
+/// Upper bound on persistent `StateStack` depth during tokenization.
+const MAX_STATE_STACK_DEPTH: usize = 4_096;
+
+/// Upper bound on nested capture retokenization recursion on the call stack.
+const MAX_CAPTURE_RETOKENIZE_DEPTH: usize = 64;
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn tokenize_string<G: TokenizerGrammar>(
+    grammar: &G,
+    line_text: &OnigString,
+    is_first_line: bool,
+    line_pos: usize,
+    stack: Arc<StateStack>,
+    line_tokens: &mut LineTokens,
+    line_fonts: &mut LineFonts,
+    check_while_conditions: bool,
+    time_limit_millis: u64,
+) -> Result<TokenizeStringResult, RegexError> {
+    tokenize_string_inner(
+        grammar,
+        line_text,
+        is_first_line,
+        line_pos,
+        stack,
+        line_tokens,
+        line_fonts,
+        check_while_conditions,
+        time_limit_millis,
+        0,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn tokenize_string_inner<G: TokenizerGrammar>(
     grammar: &G,
     line_text: &OnigString,
     mut is_first_line: bool,
@@ -58,6 +90,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
     line_fonts: &mut LineFonts,
     check_while_conditions: bool,
     time_limit_millis: u64,
+    capture_depth: usize,
 ) -> Result<TokenizeStringResult, RegexError> {
     let line_length = line_text.utf16_len();
     let mut anchor_position = -1;
@@ -72,6 +105,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
             stack,
             line_tokens,
             line_fonts,
+            capture_depth,
         )?;
         stack = result.stack;
         line_pos = result.line_pos;
@@ -150,6 +184,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
                     line_fonts,
                     &popped_rule.end_captures,
                     &capture_indices,
+                    capture_depth,
                 )?;
                 produce(&stack, full_match.end, line_tokens, line_fonts);
 
@@ -171,6 +206,16 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
             }
             RuleScannerId::Rule(matched_rule_id) => {
                 let matched_rule = grammar.rule_registry().get_rule(matched_rule_id);
+                if (matched_rule.as_begin_end().is_some()
+                    || matched_rule.as_begin_while().is_some())
+                    && stack.depth >= MAX_STATE_STACK_DEPTH
+                {
+                    produce(&stack, line_length, line_tokens, line_fonts);
+                    return Ok(TokenizeStringResult {
+                        stack,
+                        stopped_early: true,
+                    });
+                }
                 produce(&stack, full_match.start, line_tokens, line_fonts);
 
                 let before_push = Arc::clone(&stack);
@@ -201,6 +246,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
                         line_fonts,
                         &pushed_rule.begin_captures,
                         &capture_indices,
+                        capture_depth,
                     )?;
                     produce(&stack, full_match.end, line_tokens, line_fonts);
                     anchor_position = full_match.end as isize;
@@ -234,6 +280,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
                         line_fonts,
                         &pushed_rule.begin_captures,
                         &capture_indices,
+                        capture_depth,
                     )?;
                     produce(&stack, full_match.end, line_tokens, line_fonts);
                     anchor_position = full_match.end as isize;
@@ -268,6 +315,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
                         line_fonts,
                         &matching_rule.captures,
                         &capture_indices,
+                        capture_depth,
                     )?;
                     produce(&stack, full_match.end, line_tokens, line_fonts);
                     stack = stack.pop().expect("MatchRule state must have a parent");
@@ -315,6 +363,7 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
     mut stack: Arc<StateStack>,
     line_tokens: &mut LineTokens,
     line_fonts: &mut LineFonts,
+    capture_depth: usize,
 ) -> Result<WhileCheckResult, RegexError> {
     let mut anchor_position = if stack.begin_rule_captured_eol { 0 } else { -1 };
     let mut while_rules = Vec::new();
@@ -365,6 +414,7 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
                 line_fonts,
                 &while_rule.while_captures,
                 &matched.capture_indices,
+                capture_depth,
             )?;
             produce(&while_stack, full_match.end, line_tokens, line_fonts);
             anchor_position = full_match.end as isize;
@@ -522,6 +572,7 @@ fn handle_captures<G: TokenizerGrammar>(
     line_fonts: &mut LineFonts,
     captures: &[Option<Arc<CaptureRule>>],
     capture_indices: &[CaptureIndex],
+    capture_depth: usize,
 ) -> Result<(), RegexError> {
     if captures.is_empty() {
         return Ok(());
@@ -563,7 +614,9 @@ fn handle_captures<G: TokenizerGrammar>(
             produce(stack, capture_index.start, line_tokens, line_fonts);
         }
 
-        if let Some(retokenize_rule_id) = capture_rule.retokenize_captured_with_rule_id {
+        if let Some(retokenize_rule_id) = capture_rule.retokenize_captured_with_rule_id
+            && capture_depth < MAX_CAPTURE_RETOKENIZE_DEPTH
+        {
             let scope_name = capture_rule.get_name(Some(line_text_content), Some(capture_indices));
             let name_scopes_list = stack
                 .content_name_scopes_list
@@ -584,7 +637,7 @@ fn handle_captures<G: TokenizerGrammar>(
             );
             let prefix = utf16_prefix(line_text_content, capture_index.end);
             let substring = OnigString::new(prefix);
-            tokenize_string(
+            tokenize_string_inner(
                 grammar,
                 &substring,
                 is_first_line && capture_index.start == 0,
@@ -594,6 +647,7 @@ fn handle_captures<G: TokenizerGrammar>(
                 line_fonts,
                 false,
                 0,
+                capture_depth + 1,
             )?;
             continue;
         }
@@ -1114,5 +1168,49 @@ mod tests {
         )
         .unwrap();
         (result, started.elapsed())
+    }
+
+    #[test]
+    fn caps_state_stack_depth_on_deeply_nested_begin_end_rules() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "\\(",
+                    "end": "\\)",
+                    "name": "meta.group",
+                    "patterns": [{ "include": "$self" }]
+                }]
+            }"#,
+        );
+        let opens = "(".repeat(super::MAX_STATE_STACK_DEPTH + 100);
+        let (_, result) = tokenize_line(&grammar, &opens, None);
+        assert!(result.stopped_early);
+        assert_eq!(result.stack.depth, super::MAX_STATE_STACK_DEPTH);
+
+        let (_, popped) = tokenize_line(&grammar, ")", Some(result.stack));
+        assert!(!popped.stopped_early);
+        assert_eq!(popped.stack.depth, super::MAX_STATE_STACK_DEPTH - 1);
+    }
+
+    #[test]
+    fn caps_recursive_capture_retokenization_depth() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "match": "(a+)",
+                    "captures": {
+                        "1": {
+                            "name": "meta.capture",
+                            "patterns": [{ "include": "$self" }]
+                        }
+                    }
+                }]
+            }"#,
+        );
+        let (tokens, result) = tokenize_line(&grammar, "a", None);
+        assert!(!result.stopped_early);
+        assert!(!tokens.is_empty());
     }
 }

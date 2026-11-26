@@ -1823,4 +1823,72 @@ mod tests {
             "font attributes must participate in the shared scan"
         );
     }
+
+    #[test]
+    fn rejects_rule_id_zero_in_serialized_state_stack() {
+        let root = raw_grammar(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "begin": "\\(", "end": "\\)", "name": "meta.paren" }]
+            }"#,
+        );
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let baseline = grammar.serialize_state_stack(None).unwrap();
+        let mut parsed: serde_json::Value = serde_json::from_str(&baseline).unwrap();
+        parsed["frames"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({
+                "ruleId": 0,
+                "beginRuleCapturedEol": false,
+                "endRule": null,
+                "nameScopes": [],
+                "contentNameScopes": []
+            }));
+        let tampered = serde_json::to_string(&parsed).unwrap();
+        let Err(error) = grammar.deserialize_state_stack(&tampered) else {
+            panic!("ruleId 0 must return an error instead of underflowing");
+        };
+        assert!(error.contains("unknown rule"), "unexpected error: {error}");
+    }
+
+    #[test]
+    fn compiles_and_tokenizes_cyclic_include_only_grammars() {
+        for source in [
+            r##"{
+                "scopeName": "source.cycle",
+                "patterns": [{ "include": "#a" }],
+                "repository": {
+                    "a": { "patterns": [{ "include": "#b" }] },
+                    "b": { "patterns": [{ "include": "#a" }, { "match": "ok", "name": "keyword.ok" }] }
+                }
+            }"##,
+            r##"{
+                "scopeName": "source.self",
+                "patterns": [{ "include": "$self" }, { "match": "ok", "name": "keyword.ok" }]
+            }"##,
+        ] {
+            let root = raw_grammar(source);
+            let grammar = Grammar::new(
+                &root,
+                &GrammarStore::new(),
+                default_theme(),
+                GrammarConfiguration::default(),
+            );
+            grammar.compile_all_scanners().unwrap();
+            let result = grammar.tokenize_line("ok", None, 0).unwrap();
+            assert!(
+                result
+                    .tokens
+                    .iter()
+                    .any(|token| token.scopes.iter().any(|scope| scope == "keyword.ok")),
+                "cyclic include-only grammar should still match reachable patterns"
+            );
+        }
+    }
 }
