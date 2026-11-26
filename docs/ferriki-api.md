@@ -7,7 +7,8 @@ The CI docs gate checks that every generated public symbol is represented here.
 
 The retained declaration symbols are `LanguageRegistration`,
 `ThemeRegistration`, `LanguageInput`, `ThemeInput`, `SyncRegistrationInput`,
-`RegistrationInput`, `AssetOptions`, `HighlighterOptions`, `HighlighterSyncOptions`,
+`RegistrationInput`, `AssetOptions`, `RegexMode`, `RegexDiagnostics`,
+`HighlighterOptions`, `HighlighterSyncOptions`,
 `HighlightOptions`, `HtmlWithCss`, `ThemedToken`, `HastText`, `HastElement`,
 `HastRoot`, `HastNode`, `DecorationItem`, `ShikiTransformerContextCommon`,
 `ShikiTransformerContext`, `ShikiTransformer`, `GrammarState`, `Highlighter`,
@@ -110,7 +111,7 @@ highlighter is no longer needed.
 | `transformers`   | `ShikiTransformer[]`                 | JavaScript-only callbacks that inspect or change data during HTML rendering.                    |
 | `assets`         | `AssetOptions`                       | Where standard grammars and themes come from; see below.                                        |
 | `regexPrefilter` | `boolean`                            | Regex prefiltering (default `true`); `false` avoids construction for a short-lived highlighter. |
-| `regexMode` | `RegexMode` | Explicit regex policy; source modes skip prepared standard assets. Mutually exclusive with `regexPrefilter`. Available in repository builds after 1.2.0. |
+| `regexMode`      | `RegexMode`                          | Explicit regex policy (`'off' \| 'auto' \| 'eager' \| 'prepared'`); source modes skip prepared standard assets. Mutually exclusive with `regexPrefilter`. |
 
 `HighlighterSyncOptions` has the same fields but excludes promises and loader
 functions. Unknown options are rejected by the public TypeScript declarations
@@ -217,6 +218,7 @@ the immutable `<language-id>/<short-hash>` and `themes/<theme-id>/<short-hash>` 
 | `loadThemeSync(...inputs)`                       | `void`                  | Synchronous form for resolved registrations.                  |
 | `getLoadedLanguages()`                           | `string[]`              | Loaded canonical language IDs plus configured aliases.        |
 | `getLoadedThemes()`                              | `string[]`              | Loaded theme IDs.                                             |
+| `getRegexDiagnostics()`                          | `RegexDiagnostics`      | Return regex policy, scanner construction counters, and prepared-archive stats. |
 | `resolveLangAlias(language)`                     | `string`                | Resolve the configured alias chain.                           |
 | `dispose()`                                      | `void`                  | Mark the highlighter disposed and release native state.       |
 | `[Symbol.dispose]()`                             | `void`                  | Equivalent to `dispose()`.                                    |
@@ -245,7 +247,7 @@ an explicit worker boundary; create one highlighter per worker instead.
 | `tabindex`              | `string \| number \| false \| null`     | Root `tabindex` attribute.                                                                                                           |
 | `tokenizeMaxLineLength` | `number`                                | Maximum tokenized line length.                                                                                                       |
 | `tokenizeTimeLimit`     | `number`                                | Best-effort per-line time budget in milliseconds; one synchronous regex search can exceed it.                                        |
-| `structure`             | `'classic'                              | 'inline'`                                                                                                                            | Select the classic `<pre><code>` tree or inline token tree. |
+| `structure`             | `'classic' \| 'inline'`                 | Select the classic `<pre><code>` tree or inline token tree.                                                                          |
 | `meta`                  | `Record<string, unknown>`               | Fence metadata copied to the root HAST element, except private `_` keys.                                                             |
 | `data`                  | `Record<string, unknown>`               | Callback-only metadata on the classic root `<pre>` HAST node; omitted from HTML serialization. Inline structure has no `<pre>` node. |
 | `transformers`          | `ShikiTransformer[]`                    | Ordered JS hooks; callbacks never cross the native boundary.                                                                         |
@@ -528,16 +530,40 @@ for registration, the full lifecycle, CSS delivery, and policy limits.
 
 ### Explicit regex policies
 
-Repository builds additionally accept `regexMode: 'off' | 'auto' | 'eager' |
-'prepared'`. This additive API is not in the published 1.2.0 package yet.
-Prepared is the unchanged default. Auto and Eager use standard grammar sources
-without opening prepared packages; Off disables prefiltering. Eager prepares
-helpers when each scanner is constructed, not all grammar paths up front.
-Captured dynamic scanners remain Auto under Prepared; explicit Eager also
-applies when those dynamic scanners are constructed.
+Since Ferriki 1.3.0, factory options accept `regexMode: RegexMode` (`'off' |
+'auto' | 'eager' | 'prepared'`), mutually exclusive with `regexPrefilter`.
+`prepared` is the unchanged default. `auto` and `eager` use standard grammar
+sources without opening prepared packages; `off` disables prefiltering. `eager`
+prepares helpers when each scanner is constructed, not all grammar paths up
+front. Captured dynamic scanners remain `auto` under `prepared`; explicit
+`eager` also applies when those dynamic scanners are constructed.
 
-`highlighter.getRegexDiagnostics()` returns the selected mode, scanner
-construction counters, opened prepared archives, decoded/invalid groups and
-assembly retries. Read it outside benchmark timing. Loaded groups confirm
-archive use, not complete coverage or the absence of ordinary group fallback.
-Rust repository builds expose `Highlighter::builder().with_regex_mode(RegexMode::Auto)`.
+`highlighter.getRegexDiagnostics()` returns a `RegexDiagnostics` snapshot with
+the selected mode, scanner construction counters, opened prepared archives,
+and indexed payload stats:
+
+```ts
+type RegexMode = "off" | "auto" | "eager" | "prepared";
+
+interface RegexDiagnostics {
+  mode: RegexMode;
+  staticScanners: number;
+  dynamicScanners: number;
+  offScanners: number;
+  autoScanners: number;
+  eagerScanners: number;
+  assemblyFallbacks: number;
+  preparedArchives: number;
+  loadedPreparedGroups: number;
+  preparedBytesRead: number;
+  invalidPreparedGroups: number;
+}
+```
+
+Read `getRegexDiagnostics()` outside benchmark timing. `loadedPreparedGroups`
+confirms archive use, not complete coverage or the absence of ordinary group
+fallback; `assemblyFallbacks` counts cached-scanner assembly failures that fell
+back to source construction, and `preparedBytesRead` reports program/group
+payload bytes read from indexed local archives (excluding index bytes). The
+`ferriki` Rust crate exposes the matching builder option via
+`Highlighter::builder().with_regex_mode(RegexMode::Auto)`.

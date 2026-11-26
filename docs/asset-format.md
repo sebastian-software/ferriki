@@ -58,16 +58,16 @@ enough metadata for lazy lookup.
 The generator writes `<id>.fkbc` alongside each grammar. This is a deterministic,
 checksummed Zstd level-19 frame with an 8 MiB maximum window. Its decoded layout is:
 
-| Field            | Encoding                                  |
-| ---------------- | ----------------------------------------- |
-| Magic            | `FKBC002\0` (8 bytes)                     |
-| Combined version | `u32`, little endian                      |
-| Scope length     | `u32`, little endian                      |
-| Program length   | `u64`, little endian                      |
-| Group length     | `u64`, little endian                      |
-| Scope            | UTF-8 bytes                               |
-| Programs         | Ferroni program archive v2                |
-| Groups           | Matched Ferroni portable Eager archive v3 |
+| Field            | Encoding                                                     |
+| ---------------- | ------------------------------------------------------------ |
+| Magic            | `FKBC003\0` (8 bytes; legacy complete roots use `FKBC002\0`) |
+| Combined version | `u32`, little endian                                         |
+| Scope length     | `u32`, little endian                                         |
+| Program length   | `u64`, little endian                                         |
+| Group length     | `u64`, little endian                                         |
+| Scope            | UTF-8 bytes                                                  |
+| Programs         | Ferroni program archive v2                                   |
+| Groups           | Matched Ferroni portable Eager archive v3                    |
 
 `SyncRegistry::add_precompiled_patterns` also accepts ordinary uncompressed
 program archives from `export_precompiled_patterns`; their raw version is
@@ -82,7 +82,8 @@ the decoder window to 8 MiB, and rejects inconsistent sizes or trailing frames.
 The trusted release manifest pins the compressed bytes by SHA-256 and size.
 `ReleaseAsset::format_version` identifies
 `ferriki_textmate::PRECOMPILED_PATTERNS_VERSION`; its 8/12/12-bit fields identify
-the container, program and group formats. Grammar/theme/catalog postcard schemas
+the container (version 3 for cooperating language packages; version 2 for legacy
+complete roots), program, and group formats. Grammar/theme/catalog postcard schemas
 remain at format 3.
 
 Standard generation prepares statically known ordered scanner lists with Eager,
@@ -101,9 +102,13 @@ in-process caches already reuse scanners across repeated highlights and edits.
 
 Both prefilter settings and every anchor variant are generated from the same
 normalization as runtime scanners. Captured end/while patterns remain dynamic.
-With prefiltering enabled, only explicitly requested roots download/open sidecars;
-Node Off mode skips their download and every Off highlighter skips their opening; each root pair already
-includes its dependency scanner groups. Missing, corrupt or incompatible sidecars,
+With prefiltering enabled, cooperating v3 packages download and open for explicitly
+requested roots and their required registered dependencies; optional code-fence
+languages remain unloaded unless explicitly registered. Each language package keeps
+its intrinsic scanners and host-specific combinations while delegating identical
+foreign scanners to the package that defines them ([ADR 0022](../adr/0022-cooperating-prepared-language-packages.md)).
+Legacy `FKBC002\0` version-2 roots retain root-only sidecar loading. Source
+Off/Auto/Eager modes skip prepared sidecar downloads and opening. Missing, corrupt or incompatible sidecars,
 and scanner assembly failures with mixed decoded/source programs, fall back to
 source compilation. The [current diagnostic](benchmarks/precompiled-patterns/prepared-eager.md)
 confirms lower startup cost than source Eager and comparable Eager execution on

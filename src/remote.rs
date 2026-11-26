@@ -43,8 +43,11 @@ static NEXT_CACHE_WRITE: AtomicU64 = AtomicU64::new(0);
 /// Every setting left unset falls back to its environment variable and then to
 /// its default: `FERRIKI_ASSETS_REMOTE` (`0` or `false` turns downloads off),
 /// `FERRIKI_ASSETS_BASE_URL` ([`DEFAULT_ASSETS_BASE_URL`]) and
-/// `FERRIKI_CACHE_DIR` (the platform cache directory plus `ferriki`). The
-/// commit defaults to the release commit this crate was published from.
+/// `FERRIKI_CACHE_DIR` (the platform cache directory plus `ferriki`). Standard
+/// `language-hash-v2` catalogs address payloads by language/theme ID and short
+/// hash without needing a commit; [`Self::with_commit`] takes effect only when
+/// a catalog manifest uses legacy commit-routed storage (not the embedded
+/// `language-hash-v2` catalog).
 /// Set `FERRIKI_ASSETS_PROTECTED=1` and `FERRIKI_DOWNLOAD_TOKEN` to authorize
 /// cache misses against the protected default CDN. Cached and offline loads do
 /// not require a token; protected mode does not use a custom mirror.
@@ -79,8 +82,17 @@ impl RemoteAssets {
         self
     }
 
-    /// Sets the commit whose tree serves the payloads. Needed for builds from a
-    /// repository checkout, which have no published release commit.
+    /// Sets the commit path segment for manifests that use legacy commit-routed
+    /// storage.
+    ///
+    /// URL routing is selected by the catalog manifest's `storageLayout`, not
+    /// by [`Self::with_base_url`]. The embedded `language-hash-v2` catalog
+    /// always requests content-addressed `<id>/<short-hash>` and
+    /// `themes/<id>/<short-hash>` paths regardless of mirror URL, and
+    /// commit-based paths on `assets.ferriki.dev` have been retired. Leave
+    /// this unset unless loading a legacy commit-routed manifest (without
+    /// `storageLayout`) against a custom mirror serving
+    /// `<commit>/assets/shiki/<path>` URLs.
     #[must_use]
     pub fn with_commit(mut self, value: Option<String>) -> Self {
         self.commit = value;

@@ -11,6 +11,8 @@ const migrationPath = join(repoRoot, "docs", "migrations", "shiki-to-ferriki.md"
 const compatibilityPath = join(repoRoot, "docs", "compatibility.md");
 const troubleshootingPath = join(repoRoot, "docs", "troubleshooting.md");
 const rootReadmePath = join(repoRoot, "README.md");
+const textmateReadmePath = join(repoRoot, "crates", "ferriki-textmate", "README.md");
+const assetGenReadmePath = join(repoRoot, "crates", "ferriki-asset-gen", "README.md");
 const packageReadmePath = join(nodeRoot, "ferriki", "README.md");
 const sourcePath = join(nodeRoot, "compat", "upstream", "shiki", ".source.json");
 const coverageThresholdPath = join(repoRoot, "coverage-threshold");
@@ -21,6 +23,8 @@ const migration = await readFile(migrationPath, "utf8");
 const compatibility = await readFile(compatibilityPath, "utf8");
 const troubleshooting = await readFile(troubleshootingPath, "utf8");
 const rootReadme = await readFile(rootReadmePath, "utf8");
+const textmateReadme = await readFile(textmateReadmePath, "utf8");
+const assetGenReadme = await readFile(assetGenReadmePath, "utf8");
 const packageReadme = await readFile(packageReadmePath, "utf8");
 const source = JSON.parse(await readFile(sourcePath, "utf8"));
 const coverageThreshold = (await readFile(coverageThresholdPath, "utf8")).trim();
@@ -31,8 +35,12 @@ const exportedNames = [
   ),
 ].map((match) => match[1]);
 
-for (const name of exportedNames)
-  assert(api.includes(name), `docs/ferriki-api.md is missing declared export: ${name}`);
+for (const name of exportedNames) {
+  assert(
+    new RegExp(`\`${name}\``).test(api),
+    `docs/ferriki-api.md is missing declared export: ${name}`,
+  );
+}
 
 assert.match(
   source.ref,
@@ -56,7 +64,7 @@ assert.match(
   /^(100|[1-9]?\d)$/,
   "coverage-threshold must hold the line-coverage gate as a whole percent between 0 and 100",
 );
-const coverageBadge = `[![Coverage gate >= ${coverageThreshold}%](https://img.shields.io/badge/coverage%20gate-%3E%3D%20${coverageThreshold}%25-brightgreen.svg)](./.github/workflows/ci.yml)`;
+const coverageBadge = `[![Coverage gate >= ${coverageThreshold}%](https://img.shields.io/badge/coverage%20gate-%3E%3D%20${coverageThreshold}%25-brightgreen.svg)](https://github.com/sebastian-software/ferriki/blob/main/.github/workflows/ci.yml)`;
 const countOccurrences = (haystack, needle) => haystack.split(needle).length - 1;
 assert.equal(
   countOccurrences(rootReadme, coverageBadge),
@@ -88,6 +96,22 @@ assert.doesNotMatch(
   /\]\(\.\.\//,
   "package README must not use repository-relative links",
 );
+for (const [label, content] of [
+  ["README.md", rootReadme],
+  ["crates/ferriki-textmate/README.md", textmateReadme],
+  ["crates/ferriki-asset-gen/README.md", assetGenReadme],
+]) {
+  assert.doesNotMatch(
+    content,
+    /\]\((?!https?:\/\/|#)[^)]+\)/,
+    `${label} must use absolute URLs rather than repository-relative links, because crates.io renders it outside the repository tree`,
+  );
+  assert.doesNotMatch(
+    content,
+    /\b(?:href|src)=["'](?!https?:\/\/|#)[^"']+["']/i,
+    `${label} must use absolute URLs in HTML links and images, because crates.io renders it outside the repository tree`,
+  );
+}
 
 // The block itself is generated from the family registry and verified against
 // it by `node scripts/sync-readme-family.mjs --check`; this only holds the

@@ -3,7 +3,7 @@
 `ferriki-textmate` is Ferriki's pure-Rust TextMate grammar interpreter.
 
 It is a mechanical port of the vscode-textmate release pinned in
-[`node/compat/upstream/vscode-textmate/.source.json`](../../node/compat/upstream/vscode-textmate/.source.json).
+[`node/compat/upstream/vscode-textmate/.source.json`](https://github.com/sebastian-software/ferriki/blob/main/node/compat/upstream/vscode-textmate/.source.json).
 The upstream source and test mirror is read-only; Rust adaptations and test
 harnesses live in this crate.
 
@@ -32,7 +32,7 @@ lazily; missing or incompatible programs compile from source. Dynamic end/while
 patterns retain their runtime behavior. `PrecompiledPatternsError` keeps engine
 details private, and `PRECOMPILED_PATTERNS_VERSION` identifies the archive version.
 
-`SyncRegistry::precompile_patterns(scope, samples)` prepares Ferroni 2.7's stable
+`SyncRegistry::precompile_patterns(scope, samples)` prepares Ferroni 2.9.0's stable
 Eager group/program pairs using the registry's dependencies and injections.
 Attaching such a pair opts that root into Eager acceleration when prefiltering
 is enabled. Sample coverage is partial, with ordinary Eager fallback for missing

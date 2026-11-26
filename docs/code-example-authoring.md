@@ -109,7 +109,7 @@ reach its lines or tokens. Register additional local rules through
 option. Theme token colors can use the documented semantic custom properties,
 while nested scope rules still need ordinary class selectors. A custom renderer
 can keep ordinary HTML and page
-CSS. See [Shadow code elements](shadow-code-elements.md#css-migration-and-custom-transformers).
+CSS. See [Shadow code elements](shadow-code-elements.md#public-color-overrides).
 
 Keep surrounding context at full text contrast and use a clear leading border and background to focus the relevant lines. Highlight, focus, and diff styles can appear together. Solid and dashed borders distinguish additions from removals without relying on color alone. Highlighted output gives each `<pre>` `tabindex="0"`, so a horizontally scrollable block is reachable from the keyboard; make `:focus-visible` clear. A `<summary>` toggles with Enter or Space, and a copy button uses its native keyboard behavior.
 

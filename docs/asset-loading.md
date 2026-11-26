@@ -51,10 +51,11 @@ The local cache and receipts are trusted; these stat checks detect ordinary
 changes rather than authenticate against malicious local modification. Ferroni
 still validates archive indexes and requested records.
 
-The cache also saves a small derived `.index-v1` file with its own verification
+The cache also saves a small derived `.index-v2` file with its own verification
 receipt. On subsequent loads the registry opens the complete decoded file and
-reads its index. It reads program and group payloads only when a static scanner
-requests them, then passes an owned, reduced pair through Ferroni's ordinary
+reads its index into Ferroni's `PrecompiledEagerRecords` store. It reads program
+and group payloads only when a static scanner requests them and imports those
+records directly without assembling reduced archives, keeping Ferroni's ordinary
 validation. Repeated scanner use reuses the loaded data. File state is checked
 before and after record reads; changed files or read failures fall back to
 source compilation. Missing or changed indexes are rebuilt once from the verified

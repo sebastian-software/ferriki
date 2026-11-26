@@ -34,6 +34,10 @@ include = [
   "/LICENSE-APACHE",
 ]
 
+[package.metadata.docs.rs]
+features = ["remote"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 # Loads standard payloads on demand from the release-pinned CDN mirror,
 # verified and cached by digest (ADR 0013). Off by default, so the library
