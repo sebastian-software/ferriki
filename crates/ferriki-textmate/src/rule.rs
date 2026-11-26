@@ -948,11 +948,6 @@ const MAX_SCANNER_INCLUDE_VISITS: usize = 65_536;
 /// includes sharing long patterns.
 const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
 
-enum CollectFrame {
-    Visit(RuleId),
-    Exit(RuleId),
-}
-
 fn collect_pattern_ids(
     registry: &RuleRegistry,
     patterns: &[RuleId],
@@ -962,65 +957,57 @@ fn collect_pattern_ids(
     let mut visits = 0usize;
     let mut total_pattern_bytes = 0usize;
     let mut leaf_ids = Vec::new();
-    let mut pending: Vec<CollectFrame> = patterns
-        .iter()
-        .rev()
-        .copied()
-        .map(CollectFrame::Visit)
-        .collect();
-    while let Some(frame) = pending.pop() {
-        match frame {
-            CollectFrame::Exit(id) => {
+    let mut frames: Vec<(Option<RuleId>, std::slice::Iter<'_, RuleId>)> =
+        vec![(None, patterns.iter())];
+    while let Some((owner_id, iter)) = frames.last_mut() {
+        let Some(&pattern_id) = iter.next() else {
+            let exiting = *owner_id;
+            frames.pop();
+            if let Some(id) = exiting {
                 active_path.remove(&id);
             }
-            CollectFrame::Visit(pattern_id) => {
-                visits += 1;
-                if visits > MAX_SCANNER_INCLUDE_VISITS {
+            continue;
+        };
+        visits += 1;
+        if visits > MAX_SCANNER_INCLUDE_VISITS {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion limit exceeded",
+            ));
+        }
+        match registry.get_rule(pattern_id) {
+            Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
+            Rule::Match(rule) => {
+                total_pattern_bytes =
+                    total_pattern_bytes.saturating_add(rule.match_source.source.len());
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(
-                        "rule pattern expansion limit exceeded",
+                        "rule pattern expansion size limit exceeded",
                     ));
                 }
-                match registry.get_rule(pattern_id) {
-                    Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-                    Rule::Match(rule) => {
-                        total_pattern_bytes =
-                            total_pattern_bytes.saturating_add(rule.match_source.source.len());
-                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
-                            return Err(RegexError::depth_limit(
-                                "rule pattern expansion size limit exceeded",
-                            ));
-                        }
-                        leaf_ids.push(pattern_id);
-                    }
-                    Rule::IncludeOnly(rule) => {
-                        if active_path.insert(rule.data.id) {
-                            pending.push(CollectFrame::Exit(rule.data.id));
-                            pending.extend(
-                                rule.patterns.iter().rev().copied().map(CollectFrame::Visit),
-                            );
-                        }
-                    }
-                    Rule::BeginEnd(rule) => {
-                        total_pattern_bytes =
-                            total_pattern_bytes.saturating_add(rule.begin.source.len());
-                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
-                            return Err(RegexError::depth_limit(
-                                "rule pattern expansion size limit exceeded",
-                            ));
-                        }
-                        leaf_ids.push(pattern_id);
-                    }
-                    Rule::BeginWhile(rule) => {
-                        total_pattern_bytes =
-                            total_pattern_bytes.saturating_add(rule.begin.source.len());
-                        if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
-                            return Err(RegexError::depth_limit(
-                                "rule pattern expansion size limit exceeded",
-                            ));
-                        }
-                        leaf_ids.push(pattern_id);
-                    }
+                leaf_ids.push(pattern_id);
+            }
+            Rule::IncludeOnly(rule) => {
+                if active_path.insert(rule.data.id) {
+                    frames.push((Some(rule.data.id), rule.patterns.iter()));
                 }
+            }
+            Rule::BeginEnd(rule) => {
+                total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                leaf_ids.push(pattern_id);
+            }
+            Rule::BeginWhile(rule) => {
+                total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                leaf_ids.push(pattern_id);
             }
         }
     }

@@ -949,6 +949,31 @@ fn is_valid_stack_child(
     Ok(false)
 }
 
+fn push_rule_patterns<'a>(
+    rule_id: u32,
+    registry: &'a RuleRegistry,
+    frames: &mut Vec<std::slice::Iter<'a, RuleId>>,
+    validation_work: &mut usize,
+) -> Result<(), String> {
+    *validation_work += 1;
+    if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
+        return Err(invalid_serialized_state(
+            "state validation exceeded its work limit",
+        ));
+    }
+    let Some(parent) = registry.try_get_rule(RuleId::new(rule_id)) else {
+        return Ok(());
+    };
+    let patterns = match parent {
+        Rule::IncludeOnly(rule) => &rule.patterns,
+        Rule::BeginEnd(rule) => &rule.patterns,
+        Rule::BeginWhile(rule) => &rule.patterns,
+        Rule::Capture(_) | Rule::Match(_) => return Ok(()),
+    };
+    frames.push(patterns.iter());
+    Ok(())
+}
+
 fn rule_patterns_reach(
     parent_rule_id: u32,
     child_rule_id: RuleId,
@@ -956,42 +981,30 @@ fn rule_patterns_reach(
     visited: &mut HashSet<u32>,
     validation_work: &mut usize,
 ) -> Result<bool, String> {
-    let mut pending = vec![parent_rule_id];
-    while let Some(current_id) = pending.pop() {
+    let mut frames: Vec<std::slice::Iter<'_, RuleId>> = Vec::new();
+    push_rule_patterns(parent_rule_id, registry, &mut frames, validation_work)?;
+    while let Some(iter) = frames.last_mut() {
+        let Some(&pattern_id) = iter.next() else {
+            frames.pop();
+            continue;
+        };
         *validation_work += 1;
         if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
             return Err(invalid_serialized_state(
                 "state validation exceeded its work limit",
             ));
         }
-        let Some(parent) = registry.try_get_rule(RuleId::new(current_id)) else {
+        if pattern_id == child_rule_id {
+            return Ok(true);
+        }
+        if !visited.insert(pattern_id.get()) {
             continue;
-        };
-        let patterns = match parent {
-            Rule::IncludeOnly(rule) => &rule.patterns,
-            Rule::BeginEnd(rule) => &rule.patterns,
-            Rule::BeginWhile(rule) => &rule.patterns,
-            Rule::Capture(_) | Rule::Match(_) => continue,
-        };
-        for pattern_id in patterns {
-            *validation_work += 1;
-            if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
-                return Err(invalid_serialized_state(
-                    "state validation exceeded its work limit",
-                ));
-            }
-            if *pattern_id == child_rule_id {
-                return Ok(true);
-            }
-            if !visited.insert(pattern_id.get()) {
-                continue;
-            }
-            if registry
-                .try_get_rule(*pattern_id)
-                .is_some_and(|rule| rule.as_include_only().is_some())
-            {
-                pending.push(pattern_id.get());
-            }
+        }
+        if registry
+            .try_get_rule(pattern_id)
+            .is_some_and(|rule| rule.as_include_only().is_some())
+        {
+            push_rule_patterns(pattern_id.get(), registry, &mut frames, validation_work)?;
         }
     }
     Ok(false)
@@ -1909,12 +1922,7 @@ mod tests {
         for index in 0..CHAIN_LEN - 1 {
             repo.insert(
                 format!("r{index}"),
-                serde_json::json!({
-                    "repository": {
-                        "local": { "match": "never" }
-                    },
-                    "patterns": [{ "include": format!("#r{}", index + 1) }]
-                }),
+                serde_json::json!({ "patterns": [{ "include": format!("#r{}", index + 1) }] }),
             );
         }
         repo.insert(
@@ -1953,5 +1961,54 @@ mod tests {
         let restored = grammar.deserialize_state_stack(&serialized).unwrap();
         let closed = grammar.tokenize_line("close]", Some(restored), 0).unwrap();
         assert_eq!(closed.rule_stack.depth, 1);
+    }
+
+    #[test]
+    fn state_validation_descends_first_include_before_unrelated_siblings() {
+        let mut unrelated = Vec::with_capacity(500);
+        for index in 0..500 {
+            unrelated.push(serde_json::json!({
+                "match": format!("unrelated_{index}"),
+                "name": "constant.other"
+            }));
+        }
+        let source = serde_json::json!({
+            "scopeName": "source.order",
+            "patterns": [
+                { "include": "#paren" },
+                { "include": "#unrelated" }
+            ],
+            "repository": {
+                "paren": {
+                    "patterns": [{
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "patterns": [
+                            { "include": "#paren" },
+                            { "include": "#unrelated" }
+                        ]
+                    }]
+                },
+                "unrelated": {
+                    "patterns": unrelated
+                }
+            }
+        })
+        .to_string();
+        let root = raw_grammar(&source);
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line2(&"(".repeat(256), None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .expect("first-include DFS order must not exhaust validation work on later siblings");
+        let restored = grammar
+            .deserialize_state_stack(&serialized)
+            .expect("serialized state must round-trip within work budget");
+        assert_eq!(restored.depth, 257);
     }
 }

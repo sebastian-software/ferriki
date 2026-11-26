@@ -1174,4 +1174,23 @@ mod tests {
             Some("over.test")
         );
     }
+
+    #[test]
+    fn drops_deep_repository_overlay_chain_iteratively() {
+        use std::collections::BTreeMap;
+        use std::sync::Arc;
+
+        let raw = Arc::new(grammar(
+            r##"{ "scopeName": "source.overlay", "patterns": [] }"##,
+        ));
+        let overlay_rule = Arc::new(crate::raw_grammar::RawRule {
+            repository: Some(BTreeMap::new()),
+            ..crate::raw_grammar::RawRule::default()
+        });
+        let mut context = super::RepositoryContext::new(&raw);
+        for _ in 0..50_000 {
+            context = context.with_overlay(&overlay_rule);
+        }
+        drop(context);
+    }
 }
