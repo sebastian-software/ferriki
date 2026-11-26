@@ -6,7 +6,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::thread::JoinHandle;
-use std::time::Instant;
+use std::time::{Instant, UNIX_EPOCH};
 
 const PAYLOAD: &[u8] = b"release-pinned payload";
 
@@ -545,4 +545,61 @@ fn protected_transport_refuses_redirects_and_redacts_signed_query() {
         target.accept().unwrap_err().kind(),
         std::io::ErrorKind::WouldBlock
     );
+}
+
+#[test]
+fn public_transport_refuses_redirects_without_retrying_or_following() {
+    let target = TcpListener::bind("127.0.0.1:0").unwrap();
+    target.set_nonblocking(true).unwrap();
+    let target_address = target.local_addr().unwrap();
+    let redirect = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = redirect.local_addr().unwrap();
+    let hits = Arc::new(AtomicUsize::new(0));
+    let served = Arc::clone(&hits);
+    let stopped = Arc::new(AtomicBool::new(false));
+    let stop = Arc::clone(&stopped);
+    let thread = std::thread::spawn(move || {
+        for stream in redirect.incoming() {
+            let mut stream = stream.unwrap();
+            if stop.load(Ordering::Relaxed) {
+                break;
+            }
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            loop {
+                line.clear();
+                reader.read_line(&mut line).unwrap();
+                if line == "\r\n" {
+                    break;
+                }
+            }
+            served.fetch_add(1, Ordering::Relaxed);
+            write!(
+                stream,
+                "HTTP/1.1 302 Found\r\nLocation: http://{target_address}/other\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+            )
+            .unwrap();
+        }
+    });
+    let mirror = Mirror::start([]);
+    let fixture = Fixture::new(&mirror);
+    let error = fixture
+        .source
+        .read_remote_until(
+            &format!("http://{address}/asset"),
+            PAYLOAD.len() as u64,
+            Instant::now() + Duration::from_secs(5),
+        )
+        .expect_err("redirects must be rejected");
+    assert_eq!(error.kind(), ErrorKind::AssetDownload);
+    assert_eq!(hits.load(Ordering::Relaxed), 1, "redirects are not retried");
+    assert_eq!(
+        target.accept().unwrap_err().kind(),
+        std::io::ErrorKind::WouldBlock,
+        "redirect target must never be contacted"
+    );
+    assert!(!fixture.cache.exists());
+    stopped.store(true, Ordering::Relaxed);
+    let _ = TcpStream::connect(address);
+    thread.join().unwrap();
 }

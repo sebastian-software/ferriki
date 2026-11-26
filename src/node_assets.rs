@@ -8,7 +8,9 @@ use std::str::FromStr;
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
-use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_asset_settings};
+use crate::asset_settings::{
+    AssetSettingsInput, ResolvedAssetSettings, catalog_path, resolve_asset_settings,
+};
 use crate::{
     AssetDigest, AssetMetadata, AssetSource, Error, ErrorKind, Result, StandardAssetCatalogs,
 };
@@ -252,16 +254,21 @@ impl NodeAssetHost {
                     ),
                 ));
             }
+            let url = match crate::asset_settings::asset_url(
+                self.release.storage_layout.as_deref(),
+                &self.settings,
+                &path,
+                digest.as_str(),
+            ) {
+                Ok(url) => url,
+                Err(_) if optional => continue,
+                Err(error) => return Err(error),
+            };
             result.push(PlannedAsset {
                 path: path.to_owned(),
                 digest: digest.as_str().to_owned(),
                 size: asset.size,
-                url: crate::asset_settings::asset_url(
-                    self.release.storage_layout.as_deref(),
-                    &self.settings,
-                    &path,
-                    digest.as_str(),
-                )?,
+                url,
             });
         }
         Ok(result)
@@ -377,16 +384,6 @@ fn read_cache_entry(path: &Path, digest: &str, expected_size: u64) -> Result<Cac
         return Ok(CacheRead::WrongSize);
     }
     Ok(CacheRead::Bytes(bytes))
-}
-
-fn catalog_path(catalog: &str, file: &str) -> Result<String> {
-    if file.is_empty() || file == "." || file == ".." || file.contains('/') || file.contains('\\') {
-        return Err(Error::new(
-            ErrorKind::AssetFormat,
-            format!("Invalid Ferriki asset filename `{file}`."),
-        ));
-    }
-    Ok(format!("{catalog}/{file}"))
 }
 
 fn remove_corrupt_cache_entry(path: &Path) -> Result<()> {
@@ -791,5 +788,76 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&valid_cache);
         let _ = std::fs::remove_dir_all(&oversized_cache);
+    }
+
+    #[test]
+    fn optional_sidecar_url_error_falls_back_to_cached_grammar_while_required_miss_fails() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("optional-sidecar-url-fallback");
+        let cache = temp_dir("optional-sidecar-url-fallback-cache");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        ferriki_asset_gen::generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            ferriki_asset_gen::AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                None,
+                None,
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let mut release: Value = serde_json::from_slice(
+            &std::fs::read(root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        let sidecar_bytes = b"optional sidecar bytes";
+        let sidecar_digest = AssetDigest::of(sidecar_bytes);
+        release["assets"]["languages/javascript.fkbc"] = serde_json::json!({
+            "sha256": sidecar_digest.as_str(),
+            "size": sidecar_bytes.len(),
+            "formatVersion": ferriki_textmate::PRECOMPILED_PATTERNS_VERSION,
+        });
+        std::fs::write(
+            root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE),
+            serde_json::to_vec(&release).expect("serialize release"),
+        )
+        .expect("write release manifest");
+
+        let host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Prepared),
+                remote: Some(true),
+                base_url: Some("http://mirror.internal".to_owned()),
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("node asset host");
+
+        // Populate only the required grammar; the optional .fkbc sidecar remains uncached.
+        let grammar = &host.release.assets["languages/javascript.fkgram"];
+        std::fs::copy(
+            root.join("languages/javascript.fkgram"),
+            cache.join(&grammar.sha256),
+        )
+        .expect("seed grammar cache");
+        let plan = host
+            .plan(&["javascript".to_owned()], &[])
+            .expect("optional sidecar URL failure must fall back to cached grammar");
+        assert!(plan.is_empty());
+
+        // Evicting the required grammar must still fail planning with the invalid mirror URL.
+        std::fs::remove_file(cache.join(&grammar.sha256)).expect("evict grammar");
+        let error = host
+            .plan(&["javascript".to_owned()], &[])
+            .expect_err("required grammar miss must reject invalid mirror URL");
+        assert_eq!(error.kind(), ErrorKind::AssetDownload);
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
     }
 }

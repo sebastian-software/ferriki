@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -149,20 +148,23 @@ const grammar = JSON.stringify({
   patterns: [{ match: "\\bTODO\\b", name: "keyword.control" }],
 });
 const digest = createHash("sha256").update(grammar).digest("hex");
-const server = createServer((request, response) => {
-  if (request.url === "/grammar.json") response.end(grammar);
-  else {
-    response.statusCode = 404;
-    response.end();
-  }
-});
-await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-const input = `http://127.0.0.1:${server.address().port}/grammar.json`;
+const input = "https://grammar-fixture.test/grammar.json";
+const fetchStub = `data:text/javascript,${encodeURIComponent(
+  `const expectedUrl = ${JSON.stringify(input)};
+  const payload = ${JSON.stringify(grammar)};
+  globalThis.fetch = async (url, options) => {
+    if (options?.redirect !== "error") throw new Error("expected redirect: error");
+    if (url === expectedUrl) return new Response(payload, { status: 200 });
+    return new Response(null, { status: 404 });
+  };`,
+)}`;
 const cli = fileURLToPath(new URL("../ferriki/grammar.mjs", import.meta.url));
 const run = promisify(execFile);
 try {
   const output = join(directory, "external.json");
   await run(process.execPath, [
+    "--import",
+    fetchStub,
     cli,
     "grammar",
     "fetch",
@@ -190,6 +192,8 @@ try {
   }
   await assert.rejects(
     run(process.execPath, [
+      "--import",
+      fetchStub,
       cli,
       "grammar",
       "fetch",
@@ -203,6 +207,8 @@ try {
   );
   await assert.rejects(
     run(process.execPath, [
+      "--import",
+      fetchStub,
       cli,
       "grammar",
       "fetch",
@@ -218,6 +224,8 @@ try {
   await writeFile(`${blocked}.lock.json`, "existing provenance");
   await assert.rejects(
     run(process.execPath, [
+      "--import",
+      fetchStub,
       cli,
       "grammar",
       "fetch",
@@ -231,6 +239,19 @@ try {
   );
   await assert.rejects(access(blocked), /ENOENT/);
   assert.equal(await readFile(`${blocked}.lock.json`, "utf8"), "existing provenance");
+  await assert.rejects(
+    run(process.execPath, [
+      "--import",
+      fetchStub,
+      cli,
+      "grammar",
+      "fetch",
+      "http://127.0.0.1/grammar.json",
+      "--name",
+      "example",
+    ]),
+    /Grammar URL must use https:/,
+  );
   await assert.rejects(
     run(process.execPath, [
       cli,
@@ -251,7 +272,6 @@ try {
     run(process.execPath, [cli, "grammar", "fetch", invalid, "--name", "example"]),
   );
 } finally {
-  await new Promise((resolve) => server.close(resolve));
   await rm(directory, { recursive: true, force: true });
 }
 console.log(

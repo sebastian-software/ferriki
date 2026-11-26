@@ -175,6 +175,7 @@ dependencies = [
  "ferriki-asset-gen",
  "ferriki-textmate",
  "httpdate",
+ "libc",
  "rustls",
  "rustls-webpki",
  "serde",

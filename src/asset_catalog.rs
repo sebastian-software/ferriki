@@ -251,16 +251,16 @@ impl AssetStore {
                         if let Some(bytes) = crate::precompiled_cache::read(root, decoded) {
                             return Ok(Cow::Owned(bytes));
                         }
-                        let bytes = source.read(metadata.digest())?;
+                        let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
                         metadata.verify_bytes(&bytes)?;
                         return crate::precompiled_cache::prepare(root, decoded, &bytes)
                             .map(Cow::Owned);
                     }
-                    let bytes = source.read(metadata.digest())?;
+                    let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
                     metadata.verify_bytes(&bytes)?;
                     return Ok(bytes);
                 }
-                let bytes = source.read(metadata.digest())?;
+                let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
                 metadata.verify(&bytes)?;
                 Ok(bytes)
             }
@@ -871,5 +871,68 @@ mod tests {
         fs::write(&root, b"cache root is a file").unwrap();
         assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
         fs::remove_file(root).unwrap();
+    }
+
+    #[test]
+    fn verified_catalog_with_directory_source_bounds_reads_to_manifest_size() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let output_dir = temp_output_dir("verified-dir-source-size");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &output_dir,
+            AssetSourceRef::new("textmate-grammars-themes".to_owned(), None, None),
+        )
+        .expect("generate");
+
+        let language_manifest =
+            fs::read(output_dir.join("languages/manifest.fkindex")).expect("language manifest");
+        let theme_manifest =
+            fs::read(output_dir.join("themes/manifest.fkindex")).expect("theme manifest");
+        let release = ReleaseManifest::from_json(
+            &fs::read_to_string(output_dir.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release");
+
+        let cache_dir = temp_output_dir("verified-dir-source-cache");
+        fs::create_dir_all(&cache_dir).expect("cache dir");
+        let theme_asset = &release.assets["themes/vitesse-light.fktheme"];
+        let target = cache_dir.join(&theme_asset.sha256);
+
+        // Sparse oversized file must fail before reading/allocating based on manifest size.
+        let sparse = fs::File::create(&target).expect("sparse file");
+        sparse
+            .set_len(theme_asset.size + 128 * 1024 * 1024)
+            .expect("set_len");
+        drop(sparse);
+        let catalogs = StandardAssetCatalogs::from_release_manifest(
+            &language_manifest,
+            &theme_manifest,
+            &release,
+            crate::DirectoryAssetSource::new(&cache_dir),
+        )
+        .expect("catalogs");
+        assert_eq!(
+            catalogs
+                .themes
+                .load_asset("vitesse-light")
+                .expect_err("oversized entry must fail")
+                .kind(),
+            ErrorKind::AssetIntegrity
+        );
+
+        // Valid exact-size file loads cleanly through the exact-size DirectoryAssetSource path.
+        fs::copy(output_dir.join("themes/vitesse-light.fktheme"), &target).expect("copy theme");
+        assert!(
+            catalogs
+                .themes
+                .load_asset("vitesse-light")
+                .expect("valid theme")
+                .is_some()
+        );
+
+        fs::remove_dir_all(cache_dir).expect("cleanup cache");
+        fs::remove_dir_all(output_dir).expect("cleanup output");
     }
 }

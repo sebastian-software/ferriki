@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { createWriteStream, readFileSync } from "node:fs";
+import { createWriteStream, constants as fsConstants, readFileSync } from "node:fs";
 import { mkdir, open, rename, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
@@ -28,6 +28,8 @@ const TRANSIENT_NETWORK_CODES = new Set([
 // Identifies the client like the Rust loader's `ferriki/<version>`.
 const USER_AGENT = `ferriki/${JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version} (node)`;
 const MAX_DOWNLOAD_WORKERS = 6;
+const IPV4_LOOPBACK =
+  /^127\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
 const inFlight = new Map();
 
 /** Plans native manifest assets, then downloads cache misses with Node fetch. */
@@ -82,11 +84,132 @@ function downloadOnce(asset, cacheDir) {
   return pending;
 }
 
+function hasControlOrSpace(value) {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+
+function hexValue(code) {
+  if (code >= 0x30 && code <= 0x39) return code - 0x30;
+  if (code >= 0x41 && code <= 0x46) return code - 0x41 + 10;
+  if (code >= 0x61 && code <= 0x66) return code - 0x61 + 10;
+  return undefined;
+}
+
+function decodePercentBytes(segment) {
+  const bytes = [];
+  for (let i = 0; i < segment.length; i++) {
+    const code = segment.charCodeAt(i);
+    if (code === 0x25) {
+      if (i + 2 >= segment.length) return undefined;
+      const high = hexValue(segment.charCodeAt(i + 1));
+      const low = hexValue(segment.charCodeAt(i + 2));
+      if (high === undefined || low === undefined) return undefined;
+      bytes.push((high << 4) | low);
+      i += 2;
+    } else {
+      bytes.push(code);
+    }
+  }
+  return bytes;
+}
+
+export function isValidAssetUrl(rawUrl) {
+  if (
+    typeof rawUrl !== "string" ||
+    !rawUrl ||
+    rawUrl.includes("\\") ||
+    rawUrl.includes("?") ||
+    rawUrl.includes("#") ||
+    hasControlOrSpace(rawUrl) ||
+    !/^https?:\/\//i.test(rawUrl)
+  )
+    return false;
+  const schemeEnd = rawUrl.indexOf("://") + 3;
+  const slashIndex = rawUrl.indexOf("/", schemeEnd);
+  const authority =
+    slashIndex === -1 ? rawUrl.slice(schemeEnd) : rawUrl.slice(schemeEnd, slashIndex);
+  if (!authority || authority.includes("@") || authority.includes("%")) return false;
+  if (slashIndex !== -1) {
+    let end = rawUrl.length;
+    while (end > slashIndex + 1 && rawUrl.charCodeAt(end - 1) === 47) end--;
+    const rawPath = rawUrl.slice(slashIndex + 1, end);
+    if (rawPath) {
+      for (const segment of rawPath.split("/")) {
+        if (!segment || segment === "." || segment === "..") return false;
+        const decoded = decodePercentBytes(segment);
+        if (
+          !decoded ||
+          decoded.length === 0 ||
+          (decoded.length === 1 && decoded[0] === 0x2e) ||
+          (decoded.length === 2 && decoded[0] === 0x2e && decoded[1] === 0x2e)
+        )
+          return false;
+        for (const byte of decoded) {
+          if (
+            byte < 0x20 ||
+            byte === 0x7f ||
+            byte === 0x2f ||
+            byte === 0x5c ||
+            byte === 0x3f ||
+            byte === 0x23
+          )
+            return false;
+        }
+      }
+    }
+  }
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash || parsed.port === "0")
+    return false;
+  if (parsed.protocol === "https:") return isValidHostname(parsed.hostname);
+  if (parsed.protocol === "http:") return isLoopbackHost(parsed.hostname);
+  return false;
+}
+
+function isLoopbackHost(hostname) {
+  const lower = hostname.toLowerCase();
+  return (
+    lower === "localhost" ||
+    lower === "localhost." ||
+    lower === "[::1]" ||
+    lower === "::1" ||
+    IPV4_LOOPBACK.test(lower)
+  );
+}
+
+function isValidHostname(hostname) {
+  if (!hostname) return false;
+  if (hostname.startsWith("[") && hostname.endsWith("]")) return true;
+  const labels = hostname.endsWith(".") ? hostname.slice(0, -1) : hostname;
+  if (!labels) return false;
+  return labels.split(".").every((label) => /^[a-z0-9-]+$/i.test(label));
+}
+
+function trimTrailingSlashes(value) {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end--;
+  return value.slice(0, end);
+}
+
+export function normalizeAssetBaseUrl(rawUrl) {
+  if (!isValidAssetUrl(rawUrl)) return undefined;
+  return trimTrailingSlashes(new URL(rawUrl).href);
+}
+
 function validatePlanAsset(asset) {
   if (
     !asset ||
     typeof asset.path !== "string" ||
-    typeof asset.url !== "string" ||
+    !isValidAssetUrl(asset.url) ||
     !/^[0-9a-f]{64}$/.test(asset.digest) ||
     !Number.isSafeInteger(asset.size) ||
     asset.size < 0
@@ -152,8 +275,8 @@ async function downloadAttempt(asset, target, signal, url, isProtected) {
     await mkdir(dirname(target), { recursive: true });
     const response = await fetch(url, {
       headers: { "user-agent": USER_AGENT },
+      redirect: "error",
       signal,
-      ...(isProtected ? { redirect: "error" } : {}),
     });
     if (response.status !== 200) {
       await response.body?.cancel().catch(() => {});
@@ -184,17 +307,7 @@ async function downloadAttempt(asset, target, signal, url, isProtected) {
         `${asset.url} did not match its release-pinned SHA-256 and size; it was not cached.`,
       );
 
-    try {
-      await rename(temporary, target);
-    } catch (error) {
-      // Another process can finish the same immutable digest between planning
-      // and rename. Reuse it only if it is the exact pinned payload.
-      if (!isAlreadyPresent(error)) throw error;
-      if (!(await matchesCachedAsset(target, asset))) {
-        await rm(target, { force: true });
-        await rename(temporary, target);
-      }
-    }
+    await publishTemporaryAsset(temporary, target, asset);
   } catch (error) {
     if (isProtected) throw new Error("Protected asset download failed.");
     throw error;
@@ -205,12 +318,55 @@ async function downloadAttempt(asset, target, signal, url, isProtected) {
   }
 }
 
-/** Checks a concurrent cache winner without reading beyond its pinned size. */
-export async function matchesCachedAsset(target, asset) {
-  const file = await open(target, "r");
+/**
+ * Publishes a verified temporary file into the immutable cache without
+ * unlinking a target that disappeared concurrently (ENOENT).
+ */
+export async function publishTemporaryAsset(
+  temporary,
+  target,
+  asset,
+  ops = { rename, rm, inspect: inspectCachedAsset },
+) {
+  try {
+    await ops.rename(temporary, target);
+  } catch (error) {
+    // Another process can finish the same immutable digest between planning
+    // and rename. Reuse it only if it is the exact pinned payload.
+    if (!isAlreadyPresent(error)) throw error;
+    const state = await ops.inspect(target, asset);
+    if (state === "valid") return;
+    if (state === "missing") {
+      try {
+        await ops.rename(temporary, target);
+        return;
+      } catch (retryError) {
+        if (!isAlreadyPresent(retryError)) throw retryError;
+        if ((await ops.inspect(target, asset)) === "valid") return;
+        throw retryError;
+      }
+    }
+    if (isLockContention(error)) throw error;
+    await ops.rm(target, { force: true });
+    await ops.rename(temporary, target);
+  }
+}
+
+function isLockContention(error) {
+  return Boolean(error && (error.code === "EACCES" || error.code === "EBUSY"));
+}
+
+async function inspectCachedAsset(target, asset) {
+  let file;
+  try {
+    file = await open(target, fsConstants.O_RDONLY | (fsConstants.O_NONBLOCK || 0));
+  } catch (error) {
+    if (error?.code === "ENOENT") return "missing";
+    throw error;
+  }
   try {
     const metadata = await file.stat();
-    if (!metadata.isFile() || metadata.size !== asset.size) return false;
+    if (!metadata.isFile() || metadata.size !== asset.size) return "corrupt";
 
     const hash = createHash("sha256");
     let size = 0;
@@ -221,15 +377,27 @@ export async function matchesCachedAsset(target, asset) {
     });
     for await (const chunk of stream) {
       size += chunk.byteLength;
-      if (size > asset.size) return false;
+      if (size > asset.size) return "corrupt";
       hash.update(chunk);
     }
-    return size === asset.size && hash.digest("hex") === asset.digest;
+    return size === asset.size && hash.digest("hex") === asset.digest ? "valid" : "corrupt";
   } finally {
     await file.close();
   }
 }
 
-function isAlreadyPresent(error) {
-  return error && (error.code === "EEXIST" || error.code === "EPERM" || error.code === "ENOTEMPTY");
+/** Checks a concurrent cache winner without reading beyond its pinned size. */
+export async function matchesCachedAsset(target, asset) {
+  return (await inspectCachedAsset(target, asset)) === "valid";
+}
+
+export function isAlreadyPresent(error) {
+  return (
+    error &&
+    (error.code === "EEXIST" ||
+      error.code === "EPERM" ||
+      error.code === "ENOTEMPTY" ||
+      error.code === "EACCES" ||
+      error.code === "EBUSY")
+  );
 }

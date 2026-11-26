@@ -63,6 +63,9 @@ ureq = { version = "3", default-features = false, features = [ "rustls-no-provid
 rustls-webpki = { version = "0.103.16", default-features = false, optional = true }
 webpki-root-certs = { version = "1.0.10", default-features = false, optional = true }
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [[example]]
 name = "remote_assets"
 required-features = ["remote"]

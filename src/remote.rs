@@ -8,16 +8,22 @@
 //! network deadline; permanent failures and invalid payloads fail directly.
 
 use std::borrow::Cow;
+use std::collections::hash_map::RandomState;
 use std::collections::{BTreeSet, HashMap};
-use std::io::Read;
+use std::fs::OpenOptions;
+use std::hash::{BuildHasher, Hash, Hasher};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
 pub use crate::asset_settings::DEFAULT_ASSETS_BASE_URL;
-use crate::asset_settings::{AssetSettingsInput, ResolvedAssetSettings, resolve_asset_settings};
+use crate::asset_settings::{
+    AssetSettingsInput, ResolvedAssetSettings, catalog_path, resolve_asset_settings,
+};
 use crate::asset_source::{AssetDigest, AssetSource};
 use crate::{Error, ErrorKind, Result, StandardAssetCatalogs};
 
@@ -29,6 +35,8 @@ const DOWNLOAD_ATTEMPTS: usize = 3;
 const RETRY_DELAY: Duration = Duration::from_millis(250);
 const MAX_RETRY_DELAY: Duration = Duration::from_secs(5);
 const PREFETCH_WORKERS: usize = 6;
+const MAX_TEMP_FILE_ATTEMPTS: usize = 64;
+static NEXT_CACHE_WRITE: AtomicU64 = AtomicU64::new(0);
 
 /// Where and whether [`crate::StandardAssetCatalogs::remote`] loads payloads.
 ///
@@ -195,7 +203,11 @@ impl RemoteAssetSource {
             return None;
         }
         let mut bytes = Vec::with_capacity(usize::try_from(size).ok()?);
-        if file.take(size).read_to_end(&mut bytes).is_err() {
+        if file
+            .take(size.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .is_err()
+        {
             return None;
         }
         if bytes.len() as u64 == size && AssetDigest::of(&bytes) == *digest {
@@ -364,6 +376,7 @@ impl RemoteAssetSource {
             .agent
             .get(url)
             .config()
+            .max_redirects(0)
             .timeout_global(Some(remaining))
             .build()
             .call()
@@ -390,9 +403,26 @@ impl RemoteAssetSource {
         Ok(bytes)
     }
 
-    /// Writes through a unique temporary file and a rename, so concurrent
+    /// Writes through an exclusive temporary file and a rename, so concurrent
     /// processes never observe a partial cache entry.
     fn store(&self, digest: &AssetDigest, bytes: &[u8]) -> Result<()> {
+        self.store_with_rename(
+            digest,
+            bytes,
+            &NEXT_CACHE_WRITE,
+            process_temp_nonce(),
+            |from, to| std::fs::rename(from, to),
+        )
+    }
+
+    fn store_with_rename(
+        &self,
+        digest: &AssetDigest,
+        bytes: &[u8],
+        counter: &AtomicU64,
+        nonce: u64,
+        rename: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
+    ) -> Result<()> {
         let io = |error: std::io::Error| {
             Error::new(
                 ErrorKind::AssetIo,
@@ -405,20 +435,96 @@ impl RemoteAssetSource {
             .with_source(error)
         };
         std::fs::create_dir_all(&self.settings.cache_dir).map_err(io)?;
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(0, |elapsed| elapsed.as_nanos());
-        let temporary = self.settings.cache_dir.join(format!(
-            "{}.{}-{nanos}.tmp",
-            digest.as_str(),
-            std::process::id()
-        ));
-        std::fs::write(&temporary, bytes).map_err(io)?;
-        std::fs::rename(&temporary, self.cache_path(digest)).map_err(|error| {
+        let mut attempts = 0;
+        let (temporary, mut file) = loop {
+            // Relaxed ordering suffices for a unique filename; no data is published by this counter.
+            let serial = counter.fetch_add(1, Ordering::Relaxed);
+            let candidate = self
+                .settings
+                .cache_dir
+                .join(temp_file_name(digest, nonce, serial));
+            match OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&candidate)
+            {
+                Ok(file) => break (candidate, file),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                    attempts += 1;
+                    if attempts >= MAX_TEMP_FILE_ATTEMPTS {
+                        return Err(io(error));
+                    }
+                }
+                Err(error) => return Err(io(error)),
+            }
+        };
+        if let Err(error) = file.write_all(bytes) {
+            drop(file);
             let _ = std::fs::remove_file(&temporary);
-            io(error)
-        })
+            return Err(io(error));
+        }
+        drop(file);
+        let target = self.cache_path(digest);
+        if let Err(error) = rename(&temporary, &target) {
+            let _ = std::fs::remove_file(&temporary);
+            if self.verify_cached_readonly(digest, bytes.len() as u64) {
+                return Ok(());
+            }
+            return Err(io(error));
+        }
+        Ok(())
     }
+
+    /// Read-only verification of a concurrent cache winner; never unlinks the target path.
+    fn verify_cached_readonly(&self, digest: &AssetDigest, size: u64) -> bool {
+        let path = self.cache_path(digest);
+        let Ok(file) = crate::asset_source::open_nonblocking(&path) else {
+            return false;
+        };
+        let Ok(metadata) = file.metadata() else {
+            return false;
+        };
+        if !metadata.is_file() || metadata.len() != size {
+            return false;
+        }
+        let Ok(capacity) = usize::try_from(size) else {
+            return false;
+        };
+        let mut bytes = Vec::new();
+        if bytes.try_reserve_exact(capacity).is_err() {
+            return false;
+        }
+        if file
+            .take(size.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .is_err()
+        {
+            return false;
+        }
+        bytes.len() as u64 == size && AssetDigest::of(&bytes) == *digest
+    }
+}
+
+fn process_temp_nonce() -> u64 {
+    static NONCE: OnceLock<u64> = OnceLock::new();
+    *NONCE.get_or_init(|| {
+        let mut hasher = RandomState::new().build_hasher();
+        std::process::id().hash(&mut hasher);
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |elapsed| elapsed.as_nanos())
+            .hash(&mut hasher);
+        (&NONCE as *const OnceLock<u64> as usize).hash(&mut hasher);
+        hasher.finish()
+    })
+}
+
+fn temp_file_name(digest: &AssetDigest, nonce: u64, serial: u64) -> String {
+    format!(
+        "{}.{}-{nonce:016x}-{serial}.tmp",
+        digest.as_str(),
+        std::process::id()
+    )
 }
 
 fn protected_error() -> Error {
@@ -624,6 +730,10 @@ impl AssetSource for SharedRemoteSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
         self.0.read(digest)
     }
+
+    fn read_bounded(&self, digest: &AssetDigest, expected_size: u64) -> Result<Cow<'_, [u8]>> {
+        self.0.read_bounded(digest, expected_size)
+    }
 }
 
 /// Standard assets for internal Rust hosts: catalogs that read only the cache,
@@ -677,23 +787,18 @@ impl RemoteAssetHost {
             .map_err(format)?
             .entries
         {
+            let path = catalog_path("languages", &entry.asset_file)?;
             for alias in &entry.aliases {
                 language_aliases.insert(alias.clone(), entry.id.clone());
             }
-            languages.insert(
-                entry.id.clone(),
-                (
-                    format!("languages/{}", entry.asset_file),
-                    entry.embedded_langs,
-                ),
-            );
+            languages.insert(entry.id, (path, entry.embedded_langs));
         }
         let themes = decode_theme_manifest(&theme_manifest)
             .map_err(format)?
             .entries
             .into_iter()
-            .map(|entry| (entry.id, format!("themes/{}", entry.asset_file)))
-            .collect();
+            .map(|entry| Ok((entry.id, catalog_path("themes", &entry.asset_file)?)))
+            .collect::<Result<_>>()?;
         let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
         let source = Arc::new(RemoteAssetSource::new(&release, resolved, false)?);
         Ok(Self {
@@ -1068,5 +1173,150 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::AssetFormat);
         assert!(error.to_string().contains(&missing_path));
         std::fs::remove_dir_all(root).expect("remove catalog fixture");
+    }
+
+    #[test]
+    fn store_retries_temp_file_collisions_and_handles_rename_races() {
+        let expected = b"release-pinned payload";
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("store-hardening");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let source = offline_source(&release, &cache);
+
+        // Pre-occupy serial 0 for this nonce so create_new hits AlreadyExists and retries serial 1.
+        let nonce = process_temp_nonce();
+        let expected_name = temp_file_name(&digest, nonce, 0);
+        assert!(expected_name.contains(&format!("-{nonce:016x}-0.tmp")));
+        assert_ne!(
+            temp_file_name(&digest, nonce, 0),
+            temp_file_name(&digest, nonce ^ 1, 0)
+        );
+        let occupied = cache.join(&expected_name);
+        std::fs::write(&occupied, b"pre-existing").expect("pre-existing temp file");
+        let counter = AtomicU64::new(0);
+        source
+            .store_with_rename(&digest, expected, &counter, nonce, |from, to| {
+                std::fs::rename(from, to)
+            })
+            .expect("retry temp collision");
+        assert_eq!(counter.load(Ordering::Relaxed), 2);
+        assert_eq!(std::fs::read(&occupied).unwrap(), b"pre-existing");
+        assert_eq!(
+            std::fs::read(cache.join(digest.as_str())).unwrap(),
+            expected
+        );
+        std::fs::remove_file(&occupied).expect("remove occupied temp");
+
+        // Simulate Windows sharing/access-denied rename failure while the verified
+        // target is already cached: store must succeed and remove its temp file.
+        let counter = AtomicU64::new(10);
+        source
+            .store_with_rename(&digest, expected, &counter, nonce, |_, _| {
+                Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied))
+            })
+            .expect("verified target makes rename failure benign");
+        let entries: Vec<_> = std::fs::read_dir(&cache)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(entries, vec![std::ffi::OsString::from(digest.as_str())]);
+
+        // If rename fails and the cached target is corrupt (or missing), store
+        // must fail, clean up its temporary file, and leave the target untouched.
+        std::fs::write(cache.join(digest.as_str()), b"corrupt").expect("corrupt target");
+        let error = source
+            .store_with_rename(&digest, expected, &counter, nonce, |_, _| {
+                Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied))
+            })
+            .expect_err("corrupt target must not mask rename failure");
+        assert_eq!(error.kind(), ErrorKind::AssetIo);
+        assert_eq!(
+            std::fs::read(cache.join(digest.as_str())).unwrap(),
+            b"corrupt",
+            "rename-failure verification must stay read-only and never unlink target"
+        );
+        assert!(
+            std::fs::read_dir(&cache).unwrap().all(|entry| !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .ends_with(".tmp")),
+            "failed store must remove its temporary file"
+        );
+        std::fs::remove_dir_all(cache).expect("remove cache");
+    }
+
+    #[test]
+    fn remote_asset_host_rejects_invalid_catalog_filenames() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("invalid-catalog-filename");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let mut language_manifest = decode_language_manifest(
+            &std::fs::read(root.join("languages/manifest.fkindex")).expect("language manifest"),
+        )
+        .expect("decode language manifest");
+        language_manifest.entries[0].asset_file = "../escape.fkgram".to_owned();
+        std::fs::write(
+            root.join("languages/manifest.fkindex"),
+            ferriki_asset_gen::encode_language_manifest(&language_manifest)
+                .expect("encode language manifest"),
+        )
+        .expect("write tampered language manifest");
+
+        let error = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(temp_dir("invalid-catalog-filename-cache"))),
+        )
+        .err()
+        .expect("traversal filename must be rejected");
+        assert_eq!(error.kind(), ErrorKind::AssetFormat);
+
+        std::fs::remove_dir_all(root).expect("remove catalog fixture");
+    }
+
+    #[test]
+    fn populated_cache_ignores_invalid_inherited_base_url_until_cache_miss() {
+        let expected = b"release-pinned payload";
+        let (release, digest) = release_with_asset(expected);
+        let cache = temp_dir("inherited-invalid-mirror");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let cached_path = cache.join(digest.as_str());
+        std::fs::write(&cached_path, expected).expect("seed cache");
+
+        let settings = RemoteAssets::default()
+            .with_remote(Some(true))
+            .with_cache_dir(Some(cache.clone()))
+            .with_commit(Some("0123456789abcdef0123456789abcdef01234567".to_owned()))
+            .resolve(
+                &release,
+                env(&[("FERRIKI_ASSETS_BASE_URL", "http://mirror.internal")]),
+            )
+            .expect("inherited mirror URL must not fail construction");
+        let source = RemoteAssetSource::new(&release, settings, true).expect("remote source");
+
+        // Cache hit succeeds without touching the mirror URL.
+        assert_eq!(source.read(&digest).expect("cached hit").as_ref(), expected);
+
+        // Cache miss rejects the invalid mirror URL before any network request.
+        std::fs::remove_file(&cached_path).expect("evict cache");
+        let error = source
+            .read(&digest)
+            .expect_err("cache miss must reject plaintext non-loopback mirror");
+        assert_eq!(error.kind(), ErrorKind::AssetDownload);
+        assert!(error.to_string().contains("Invalid asset base URL"));
+        std::fs::remove_dir_all(cache).expect("remove cache");
     }
 }
