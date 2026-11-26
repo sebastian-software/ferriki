@@ -1054,7 +1054,7 @@ fn find_capture_placeholder(source: &str, from: usize) -> Option<CapturePlacehol
 
 pub(crate) struct RegExpSourceList<T> {
     items: Vec<RegExpSource<T>>,
-    total_source_bytes: usize,
+    total_normalized_bytes: [usize; 4],
     has_anchors: bool,
     cached: Option<Arc<CompiledRule<T>>>,
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
@@ -1101,13 +1101,27 @@ impl<T> RegExpSourceList<T> {
     ) -> Self {
         Self {
             items: Vec::new(),
-            total_source_bytes: 0,
+            total_normalized_bytes: [0; 4],
             has_anchors: false,
             cached: None,
             anchor_cache: array::from_fn(|_| None),
             regex_prefilter,
             scanner_pattern_cache,
             has_resolved_sources: false,
+        }
+    }
+
+    fn normalized_byte_lens(item: &RegExpSource<T>) -> [usize; 4] {
+        if !item.has_anchor || item.is_oversized() {
+            let len = item.normalized_byte_len(true, true);
+            [len; 4]
+        } else {
+            [
+                item.normalized_byte_len(false, false),
+                item.normalized_byte_len(false, true),
+                item.normalized_byte_len(true, false),
+                item.normalized_byte_len(true, true),
+            ]
         }
     }
 
@@ -1126,13 +1140,19 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn push(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
-        self.total_source_bytes = self.total_source_bytes.saturating_add(item.source.len());
+        let lens = Self::normalized_byte_lens(&item);
+        for (total, len) in self.total_normalized_bytes.iter_mut().zip(lens) {
+            *total = total.saturating_add(len);
+        }
         self.items.push(item);
     }
 
     pub(crate) fn unshift(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
-        self.total_source_bytes = self.total_source_bytes.saturating_add(item.source.len());
+        let lens = Self::normalized_byte_lens(&item);
+        for (total, len) in self.total_normalized_bytes.iter_mut().zip(lens) {
+            *total = total.saturating_add(len);
+        }
         self.items.insert(0, item);
     }
 
@@ -1151,26 +1171,42 @@ impl<T> RegExpSourceList<T> {
     }
 
     #[must_use]
-    pub(crate) fn total_source_bytes_replacing(
+    pub(crate) fn total_normalized_bytes_replacing(
         &self,
         index: usize,
-        replacement_len: usize,
+        replacement: &str,
+        allow_a: bool,
+        allow_g: bool,
     ) -> usize {
-        self.total_source_bytes
-            .saturating_sub(self.items[index].source.len())
-            .saturating_add(replacement_len)
+        let slot = usize::from(allow_a) * 2 + usize::from(allow_g);
+        let item = &self.items[index];
+        let old_len = item.normalized_byte_len(allow_a, allow_g);
+        let new_len = normalized_pattern_byte_len(
+            replacement,
+            !item.has_anchor || allow_a,
+            !item.has_anchor || allow_g,
+        );
+        self.total_normalized_bytes[slot]
+            .saturating_sub(old_len)
+            .saturating_add(new_len)
     }
 
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
         let new_source = new_source.into();
         self.has_resolved_sources = true;
-        if self.items[index].source != new_source {
+        if self.items[index].is_oversized() || self.items[index].source != new_source {
             self.dispose_caches();
-            self.total_source_bytes = self
-                .total_source_bytes
-                .saturating_sub(self.items[index].source.len())
-                .saturating_add(new_source.len());
+            let old_lens = Self::normalized_byte_lens(&self.items[index]);
             self.items[index].set_source(new_source);
+            let new_lens = Self::normalized_byte_lens(&self.items[index]);
+            for ((total, old_len), new_len) in self
+                .total_normalized_bytes
+                .iter_mut()
+                .zip(old_lens)
+                .zip(new_lens)
+            {
+                *total = total.saturating_sub(old_len).saturating_add(new_len);
+            }
         }
     }
 }

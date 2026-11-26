@@ -773,7 +773,8 @@ impl Rule {
                         } else {
                             0
                         };
-                        if sources.total_source_bytes_replacing(end_index, resolved.len())
+                        if sources
+                            .total_normalized_bytes_replacing(end_index, resolved, allow_a, allow_g)
                             > MAX_SCANNER_PATTERN_BYTES
                         {
                             return Err(RegexError::depth_limit(
