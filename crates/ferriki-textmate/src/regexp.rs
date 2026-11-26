@@ -455,11 +455,13 @@ pub(crate) struct RegExpSource<T> {
     pub has_anchor: bool,
     pub has_back_references: bool,
     oversized: bool,
+    normalized_lens: [usize; 4],
 }
 
 /// Maximum cumulative expanded regex pattern bytes allowed for a single scanner
 /// or resolved backreference pattern before allocating/compiling.
 pub(crate) const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
+const OVERSIZED_LENS: [usize; 4] = [MAX_SCANNER_PATTERN_BYTES + 1; 4];
 
 impl<T> RegExpSource<T> {
     #[must_use]
@@ -471,8 +473,9 @@ impl<T> RegExpSource<T> {
                 original_source: String::new(),
                 rule_id,
                 has_anchor: false,
-                has_back_references: false,
+                has_back_references: has_back_references(raw_source),
                 oversized: true,
+                normalized_lens: OVERSIZED_LENS,
             };
         }
         let Some((source, has_anchor)) =
@@ -483,11 +486,13 @@ impl<T> RegExpSource<T> {
                 original_source: String::new(),
                 rule_id,
                 has_anchor: false,
-                has_back_references: false,
+                has_back_references: has_back_references(raw_source),
                 oversized: true,
+                normalized_lens: OVERSIZED_LENS,
             };
         };
         let has_back_references = has_back_references(&source);
+        let normalized_lens = normalized_pattern_byte_lens(&source, has_anchor);
         Self {
             source,
             original_source: raw_source.to_owned(),
@@ -495,6 +500,7 @@ impl<T> RegExpSource<T> {
             has_anchor,
             has_back_references,
             oversized: false,
+            normalized_lens,
         }
     }
 
@@ -508,25 +514,29 @@ impl<T> RegExpSource<T> {
         if self.is_oversized() {
             return MAX_SCANNER_PATTERN_BYTES.saturating_add(1);
         }
-        normalized_pattern_byte_len(
-            &self.source,
-            !self.has_anchor || allow_a,
-            !self.has_anchor || allow_g,
-        )
+        self.normalized_lens[usize::from(allow_a) * 2 + usize::from(allow_g)]
     }
 
+    #[cfg(test)]
     pub(crate) fn set_source(&mut self, new_source: impl Into<String>) {
         let new_source = new_source.into();
         if new_source.len() > MAX_SCANNER_PATTERN_BYTES {
             self.source.clear();
             self.oversized = true;
+            self.normalized_lens = OVERSIZED_LENS;
             return;
         }
         if !self.oversized && self.source == new_source {
             return;
         }
+        let new_lens = normalized_pattern_byte_lens(&new_source, self.has_anchor);
+        self.set_source_with_lens(new_source, new_lens);
+    }
+
+    fn set_source_with_lens(&mut self, new_source: String, new_lens: [usize; 4]) {
         self.source = new_source;
         self.oversized = false;
+        self.normalized_lens = new_lens;
     }
 
     pub(crate) fn resolve_back_references(
@@ -1111,20 +1121,6 @@ impl<T> RegExpSourceList<T> {
         }
     }
 
-    fn normalized_byte_lens(item: &RegExpSource<T>) -> [usize; 4] {
-        if !item.has_anchor || item.is_oversized() {
-            let len = item.normalized_byte_len(true, true);
-            [len; 4]
-        } else {
-            [
-                item.normalized_byte_len(false, false),
-                item.normalized_byte_len(false, true),
-                item.normalized_byte_len(true, false),
-                item.normalized_byte_len(true, true),
-            ]
-        }
-    }
-
     #[allow(
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"
@@ -1140,8 +1136,11 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn push(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
-        let lens = Self::normalized_byte_lens(&item);
-        for (total, len) in self.total_normalized_bytes.iter_mut().zip(lens) {
+        for (total, len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(item.normalized_lens)
+        {
             *total = total.saturating_add(len);
         }
         self.items.push(item);
@@ -1149,8 +1148,11 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn unshift(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
-        let lens = Self::normalized_byte_lens(&item);
-        for (total, len) in self.total_normalized_bytes.iter_mut().zip(lens) {
+        for (total, len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(item.normalized_lens)
+        {
             *total = total.saturating_add(len);
         }
         self.items.insert(0, item);
@@ -1187,34 +1189,45 @@ impl<T> RegExpSourceList<T> {
             }
             return Ok(());
         }
-        let item = &self.items[index];
-        let old_len = item.normalized_byte_len(allow_a, allow_g);
-        let new_len = normalized_pattern_byte_len(
-            replacement,
-            !item.has_anchor || allow_a,
-            !item.has_anchor || allow_g,
-        );
+        if replacement.len() > MAX_SCANNER_PATTERN_BYTES {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        let old_lens = self.items[index].normalized_lens;
+        let new_lens = normalized_pattern_byte_lens(replacement, self.items[index].has_anchor);
         if self.total_normalized_bytes[slot]
-            .saturating_sub(old_len)
-            .saturating_add(new_len)
+            .saturating_sub(old_lens[slot])
+            .saturating_add(new_lens[slot])
             > MAX_SCANNER_PATTERN_BYTES
         {
             return Err(RegexError::depth_limit(
                 "rule pattern expansion size limit exceeded",
             ));
         }
-        self.set_source(index, replacement);
+        self.has_resolved_sources = true;
+        self.dispose_caches();
+        self.items[index].set_source_with_lens(replacement.to_owned(), new_lens);
+        for ((total, old_len), new_len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(old_lens)
+            .zip(new_lens)
+        {
+            *total = total.saturating_sub(old_len).saturating_add(new_len);
+        }
         Ok(())
     }
 
+    #[cfg(test)]
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
         let new_source = new_source.into();
         self.has_resolved_sources = true;
         if self.items[index].is_oversized() || self.items[index].source != new_source {
             self.dispose_caches();
-            let old_lens = Self::normalized_byte_lens(&self.items[index]);
+            let old_lens = self.items[index].normalized_lens;
             self.items[index].set_source(new_source);
-            let new_lens = Self::normalized_byte_lens(&self.items[index]);
+            let new_lens = self.items[index].normalized_lens;
             for ((total, old_len), new_len) in self
                 .total_normalized_bytes
                 .iter_mut()
@@ -1440,9 +1453,11 @@ impl<T: Copy> CompiledRule<T> {
 }
 
 #[must_use]
-pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g: bool) -> usize {
+fn normalized_pattern_byte_lens(pattern: &str, has_anchor: bool) -> [usize; 4] {
     let bytes = pattern.as_bytes();
-    let mut len = pattern.len();
+    let mut base_len = pattern.len();
+    let mut a_count = 0usize;
+    let mut g_count = 0usize;
     let mut position = 0;
     let mut in_character_class = false;
 
@@ -1450,9 +1465,12 @@ pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g:
         if bytes[position] == b'\\' {
             position += 1;
             if let Some(character) = pattern[position..].chars().next() {
-                if (character == 'A' && !allow_a) || (character == 'G' && !allow_g) {
-                    // '\u{ffff}' is 3 UTF-8 bytes vs 1 byte for 'A'/'G'.
-                    len = len.saturating_add(2);
+                if has_anchor {
+                    match character {
+                        'A' => a_count = a_count.saturating_add(1),
+                        'G' => g_count = g_count.saturating_add(1),
+                        _ => {}
+                    }
                 }
                 position += character.len_utf8();
             }
@@ -1465,7 +1483,7 @@ pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g:
                 && !starts_valid_interval(&pattern[position..])
                 && !starts_special_brace_expression(pattern, position) =>
             {
-                len = len.saturating_add(1);
+                base_len = base_len.saturating_add(1);
             }
             _ => {}
         }
@@ -1475,7 +1493,26 @@ pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g:
             .expect("pattern position must be on a character boundary");
         position += character.len_utf8();
     }
-    len
+
+    if !has_anchor {
+        return [base_len; 4];
+    }
+    // '\u{ffff}' is 3 UTF-8 bytes vs 1 byte for 'A'/'G' (+2 bytes per disabled anchor).
+    let a_extra = a_count.saturating_mul(2);
+    let g_extra = g_count.saturating_mul(2);
+    [
+        base_len.saturating_add(a_extra).saturating_add(g_extra),
+        base_len.saturating_add(a_extra),
+        base_len.saturating_add(g_extra),
+        base_len,
+    ]
+}
+
+#[must_use]
+pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g: bool) -> usize {
+    let has_anchor = !allow_a || !allow_g;
+    let lens = normalized_pattern_byte_lens(pattern, has_anchor);
+    lens[usize::from(allow_a) * 2 + usize::from(allow_g)]
 }
 
 #[cfg(test)]
@@ -2149,6 +2186,11 @@ mod tests {
         assert!(z_source.is_oversized());
         assert!(z_source.source.is_empty());
         assert!(z_source.original_source.is_empty());
+
+        let oversized_backref = format!("\\1{}", "a".repeat(super::MAX_SCANNER_PATTERN_BYTES));
+        let backref_source = RegExpSource::new(&oversized_backref, 4_u32);
+        assert!(backref_source.is_oversized());
+        assert!(backref_source.has_back_references);
 
         let anchor_pattern = "\\A".repeat(5_000_000);
         let mut anchor_list = RegExpSourceList::new();
