@@ -106,6 +106,17 @@ struct RepositoryOverlay {
     parent: Option<Arc<RepositoryOverlay>>,
 }
 
+impl Drop for RepositoryOverlay {
+    fn drop(&mut self) {
+        let mut parent = self.parent.take();
+        while let Some(node) = parent {
+            parent = Arc::try_unwrap(node)
+                .ok()
+                .and_then(|mut owned| owned.parent.take());
+        }
+    }
+}
+
 impl RepositoryContext {
     fn new(grammar: &Arc<RawGrammar>) -> Self {
         Self {

@@ -956,46 +956,42 @@ fn rule_patterns_reach(
     visited: &mut HashSet<u32>,
     validation_work: &mut usize,
 ) -> Result<bool, String> {
-    *validation_work += 1;
-    if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
-        return Err(invalid_serialized_state(
-            "state validation exceeded its work limit",
-        ));
-    }
-    let Some(parent) = registry.try_get_rule(RuleId::new(parent_rule_id)) else {
-        return Ok(false);
-    };
-    let patterns = match parent {
-        Rule::IncludeOnly(rule) => &rule.patterns,
-        Rule::BeginEnd(rule) => &rule.patterns,
-        Rule::BeginWhile(rule) => &rule.patterns,
-        Rule::Capture(_) | Rule::Match(_) => return Ok(false),
-    };
-    for pattern_id in patterns {
+    let mut pending = vec![parent_rule_id];
+    while let Some(current_id) = pending.pop() {
         *validation_work += 1;
         if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
             return Err(invalid_serialized_state(
                 "state validation exceeded its work limit",
             ));
         }
-        if *pattern_id == child_rule_id {
-            return Ok(true);
-        }
-        if !visited.insert(pattern_id.get()) {
+        let Some(parent) = registry.try_get_rule(RuleId::new(current_id)) else {
             continue;
-        }
-        if registry
-            .try_get_rule(*pattern_id)
-            .is_some_and(|rule| rule.as_include_only().is_some())
-            && rule_patterns_reach(
-                pattern_id.get(),
-                child_rule_id,
-                registry,
-                visited,
-                validation_work,
-            )?
-        {
-            return Ok(true);
+        };
+        let patterns = match parent {
+            Rule::IncludeOnly(rule) => &rule.patterns,
+            Rule::BeginEnd(rule) => &rule.patterns,
+            Rule::BeginWhile(rule) => &rule.patterns,
+            Rule::Capture(_) | Rule::Match(_) => continue,
+        };
+        for pattern_id in patterns {
+            *validation_work += 1;
+            if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
+                return Err(invalid_serialized_state(
+                    "state validation exceeded its work limit",
+                ));
+            }
+            if *pattern_id == child_rule_id {
+                return Ok(true);
+            }
+            if !visited.insert(pattern_id.get()) {
+                continue;
+            }
+            if registry
+                .try_get_rule(*pattern_id)
+                .is_some_and(|rule| rule.as_include_only().is_some())
+            {
+                pending.push(pattern_id.get());
+            }
         }
     }
     Ok(false)
@@ -1913,12 +1909,23 @@ mod tests {
         for index in 0..CHAIN_LEN - 1 {
             repo.insert(
                 format!("r{index}"),
-                serde_json::json!({ "patterns": [{ "include": format!("#r{}", index + 1) }] }),
+                serde_json::json!({
+                    "repository": {
+                        "local": { "match": "never" }
+                    },
+                    "patterns": [{ "include": format!("#r{}", index + 1) }]
+                }),
             );
         }
         repo.insert(
             format!("r{}", CHAIN_LEN - 1),
-            serde_json::json!({ "patterns": [{ "match": "ok", "name": "keyword.ok" }] }),
+            serde_json::json!({
+                "patterns": [{
+                    "begin": "\\[",
+                    "end": "\\]",
+                    "name": "meta.bracket.ok"
+                }]
+            }),
         );
         let source = serde_json::json!({
             "scopeName": "source.chain",
@@ -1933,13 +1940,18 @@ mod tests {
             default_theme(),
             GrammarConfiguration::default(),
         );
-        let result = grammar.tokenize_line("ok", None, 0).unwrap();
+        let open = grammar.tokenize_line("[open", None, 0).unwrap();
         assert!(
-            result
-                .tokens
+            open.tokens
                 .iter()
-                .any(|token| token.scopes.iter().any(|scope| scope == "keyword.ok")),
-            "long acyclic repository chain should compile and tokenize without stack overflow"
+                .any(|token| token.scopes.iter().any(|scope| scope == "meta.bracket.ok")),
+            "long acyclic repository chain should compile and open begin/end rule"
         );
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .unwrap();
+        let restored = grammar.deserialize_state_stack(&serialized).unwrap();
+        let closed = grammar.tokenize_line("close]", Some(restored), 0).unwrap();
+        assert_eq!(closed.rule_stack.depth, 1);
     }
 }
