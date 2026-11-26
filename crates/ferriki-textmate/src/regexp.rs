@@ -1038,6 +1038,25 @@ impl<T> RegExpSourceList<T> {
         self.items.is_empty()
     }
 
+    #[must_use]
+    pub(crate) fn total_source_bytes_replacing(
+        &self,
+        index: usize,
+        replacement_len: usize,
+    ) -> usize {
+        self.items
+            .iter()
+            .enumerate()
+            .fold(0usize, |total, (i, item)| {
+                let len = if i == index {
+                    replacement_len
+                } else {
+                    item.source.len()
+                };
+                total.saturating_add(len)
+            })
+    }
+
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
         let new_source = new_source.into();
         self.has_resolved_sources = true;

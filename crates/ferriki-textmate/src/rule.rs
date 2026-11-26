@@ -591,7 +591,8 @@ impl Rule {
             }
             Self::IncludeOnly(rule) => {
                 if active_path.insert(rule.data.id) {
-                    let result = collect_pattern_ids(registry, &rule.patterns, output, active_path);
+                    let result =
+                        collect_pattern_ids(registry, &rule.patterns, output, active_path, 0);
                     active_path.remove(&rule.data.id);
                     result
                 } else {
@@ -669,7 +670,13 @@ impl Rule {
                             .for_owner(&rule.data.source_scope_name),
                     );
                     let mut active_path = HashSet::new();
-                    collect_pattern_ids(registry, &rule.patterns, &mut sources, &mut active_path)?;
+                    collect_pattern_ids(
+                        registry,
+                        &rule.patterns,
+                        &mut sources,
+                        &mut active_path,
+                        rule.end.source.len(),
+                    )?;
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
                     } else {
@@ -684,7 +691,15 @@ impl Rule {
                     } else {
                         0
                     };
-                    sources.set_source(end_index, end_regex_source.unwrap_or("\u{ffff}"));
+                    let resolved_end = end_regex_source.unwrap_or("\u{ffff}");
+                    if sources.total_source_bytes_replacing(end_index, resolved_end.len())
+                        > MAX_SCANNER_PATTERN_BYTES
+                    {
+                        return Err(RegexError::depth_limit(
+                            "rule pattern expansion size limit exceeded",
+                        ));
+                    }
+                    sources.set_source(end_index, resolved_end);
                 }
                 sources.compile_ag(allow_a, allow_g)
             }
@@ -953,9 +968,15 @@ fn collect_pattern_ids(
     patterns: &[RuleId],
     output: &mut RegExpSourceList<RuleScannerId>,
     active_path: &mut HashSet<RuleId>,
+    initial_pattern_bytes: usize,
 ) -> Result<(), RegexError> {
+    if initial_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
     let mut visits = 0usize;
-    let mut total_pattern_bytes = 0usize;
+    let mut total_pattern_bytes = initial_pattern_bytes;
     let mut leaf_ids = Vec::new();
     let mut frames: Vec<(Option<RuleId>, std::slice::Iter<'_, RuleId>)> =
         vec![(None, patterns.iter())];
@@ -1045,7 +1066,7 @@ fn compile_patterns(
             if let Some(owner_id) = owner_include_only {
                 active_path.insert(owner_id);
             }
-            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path)?;
+            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path, 0)?;
         }
         *cached = Some(sources);
     }
@@ -1394,6 +1415,64 @@ mod tests {
             .compile(&registry, None)
             .err()
             .expect("oversized repeated pattern expansion must fail before cloning");
+        assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn begin_end_pattern_size_budget_includes_static_and_resolved_end_patterns() {
+        let mut registry = RuleRegistry::new();
+        let half = "a".repeat(9 * 1024 * 1024);
+        let child = match_rule(&mut registry, &half);
+        let static_id = registry.reserve_rule();
+        registry.set_rule(
+            static_id,
+            Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: None,
+                id: static_id,
+                name: None,
+                content_name: None,
+                begin: "(".into(),
+                begin_captures: Vec::new(),
+                end: Some(half.clone()),
+                end_captures: Vec::new(),
+                apply_end_pattern_last: false,
+                patterns: CompilePatternsResult {
+                    patterns: vec![child],
+                    has_missing_patterns: false,
+                },
+            })),
+        );
+        let err = registry
+            .get_rule(static_id)
+            .compile(&registry, None)
+            .err()
+            .expect("begin/end static end pattern must count toward byte budget");
+        assert!(err.to_string().contains("size limit"));
+
+        let dynamic_id = registry.reserve_rule();
+        registry.set_rule(
+            dynamic_id,
+            Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: None,
+                id: dynamic_id,
+                name: None,
+                content_name: None,
+                begin: "(.+)".into(),
+                begin_captures: Vec::new(),
+                end: Some("\\1".into()),
+                end_captures: Vec::new(),
+                apply_end_pattern_last: false,
+                patterns: CompilePatternsResult {
+                    patterns: vec![child],
+                    has_missing_patterns: false,
+                },
+            })),
+        );
+        let err = registry
+            .get_rule(dynamic_id)
+            .compile(&registry, Some(&half))
+            .err()
+            .expect("resolved backreference end pattern must count toward byte budget");
         assert!(err.to_string().contains("size limit"));
     }
 }
