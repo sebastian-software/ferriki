@@ -15,7 +15,7 @@ use crate::RegexError;
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{
     CaptureIndex, CompiledRule, MAX_SCANNER_PATTERN_BYTES, RegExpSource, RegExpSourceList,
-    ScannerPatternCache, has_captures, replace_captures,
+    ScannerPatternCache, has_captures, normalized_pattern_byte_len, replace_captures,
 };
 
 /// The scanner identity for a compiled grammar pattern.
@@ -410,8 +410,25 @@ impl BeginWhileRule {
             .cached_compiled_while_patterns
             .lock()
             .expect("compiled while-pattern cache lock poisoned");
+        let resolved_while = self
+            .while_has_back_references
+            .then(|| end_regex_source.unwrap_or("\u{ffff}"));
         if cached.is_none() {
-            if self.while_source.is_oversized() {
+            let initial_bytes = if let Some(resolved) = resolved_while {
+                if self.while_source.is_oversized() {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                normalized_pattern_byte_len(
+                    resolved,
+                    !self.while_source.has_anchor || allow_a,
+                    !self.while_source.has_anchor || allow_g,
+                )
+            } else {
+                self.while_source.normalized_byte_len(allow_a, allow_g)
+            };
+            if initial_bytes > MAX_SCANNER_PATTERN_BYTES {
                 return Err(RegexError::depth_limit(
                     "rule pattern expansion size limit exceeded",
                 ));
@@ -423,17 +440,26 @@ impl BeginWhileRule {
                     .for_owner(&self.data.source_scope_name),
             );
             sources.push(self.while_source.clone());
+            if let Some(resolved) = resolved_while {
+                sources.set_source(0, resolved);
+            }
+            let compiled = sources.compile_ag(allow_a, allow_g)?;
             *cached = Some(sources);
+            return Ok(compiled);
         }
         let sources = cached.as_mut().expect("cached sources must be populated");
-        if self.while_has_back_references {
-            let resolved_while = end_regex_source.unwrap_or("\u{ffff}");
-            if resolved_while.len() > MAX_SCANNER_PATTERN_BYTES {
+        if let Some(resolved) = resolved_while {
+            if normalized_pattern_byte_len(
+                resolved,
+                !self.while_source.has_anchor || allow_a,
+                !self.while_source.has_anchor || allow_g,
+            ) > MAX_SCANNER_PATTERN_BYTES
+            {
                 return Err(RegexError::depth_limit(
                     "rule pattern expansion size limit exceeded",
                 ));
             }
-            sources.set_source(0, resolved_while);
+            sources.set_source(0, resolved);
         }
         sources.compile_ag(allow_a, allow_g)
     }
@@ -598,8 +624,15 @@ impl Rule {
             }
             Self::IncludeOnly(rule) => {
                 if active_path.insert(rule.data.id) {
-                    let result =
-                        collect_pattern_ids(registry, &rule.patterns, output, active_path, 0);
+                    let result = collect_pattern_ids(
+                        registry,
+                        &rule.patterns,
+                        output,
+                        active_path,
+                        0,
+                        true,
+                        true,
+                    );
                     active_path.remove(&rule.data.id);
                     result
                 } else {
@@ -644,7 +677,9 @@ impl Rule {
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
                 if cached.is_none() {
-                    if rule.match_source.is_oversized() {
+                    if rule.match_source.normalized_byte_len(allow_a, allow_g)
+                        > MAX_SCANNER_PATTERN_BYTES
+                    {
                         return Err(RegexError::depth_limit(
                             "rule pattern expansion size limit exceeded",
                         ));
@@ -656,12 +691,15 @@ impl Rule {
                             .for_owner(&rule.data.source_scope_name),
                     );
                     sources.push(rule.match_source.clone());
+                    let compiled = sources.compile_ag(allow_a, allow_g)?;
                     *cached = Some(sources);
+                    Ok(compiled)
+                } else {
+                    cached
+                        .as_mut()
+                        .expect("cached sources must be populated")
+                        .compile_ag(allow_a, allow_g)
                 }
-                cached
-                    .as_mut()
-                    .expect("cached sources must be populated")
-                    .compile_ag(allow_a, allow_g)
             }
             Self::IncludeOnly(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
@@ -677,16 +715,23 @@ impl Rule {
                     .cached_compiled_patterns
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
+                let resolved_end = rule
+                    .end_has_back_references
+                    .then(|| end_regex_source.unwrap_or("\u{ffff}"));
                 if cached.is_none() {
                     if rule.end.is_oversized() {
                         return Err(RegexError::depth_limit(
                             "rule pattern expansion size limit exceeded",
                         ));
                     }
-                    let initial_end_bytes = if rule.end_has_back_references {
-                        end_regex_source.unwrap_or("\u{ffff}").len()
+                    let initial_end_bytes = if let Some(resolved) = resolved_end {
+                        normalized_pattern_byte_len(
+                            resolved,
+                            !rule.end.has_anchor || allow_a,
+                            !rule.end.has_anchor || allow_g,
+                        )
                     } else {
-                        rule.end.source.len()
+                        rule.end.normalized_byte_len(allow_a, allow_g)
                     };
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
@@ -701,32 +746,44 @@ impl Rule {
                         &mut sources,
                         &mut active_path,
                         initial_end_bytes,
+                        allow_a,
+                        allow_g,
                     )?;
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
                     } else {
                         sources.unshift(rule.end.clone());
                     }
-                    *cached = Some(sources);
-                }
-                let sources = cached.as_mut().expect("cached sources must be populated");
-                if rule.end_has_back_references {
-                    let end_index = if rule.apply_end_pattern_last {
-                        sources.len() - 1
-                    } else {
-                        0
-                    };
-                    let resolved_end = end_regex_source.unwrap_or("\u{ffff}");
-                    if sources.total_source_bytes_replacing(end_index, resolved_end.len())
-                        > MAX_SCANNER_PATTERN_BYTES
-                    {
-                        return Err(RegexError::depth_limit(
-                            "rule pattern expansion size limit exceeded",
-                        ));
+                    if let Some(resolved) = resolved_end {
+                        let end_index = if rule.apply_end_pattern_last {
+                            sources.len() - 1
+                        } else {
+                            0
+                        };
+                        sources.set_source(end_index, resolved);
                     }
-                    sources.set_source(end_index, resolved_end);
+                    let compiled = sources.compile_ag(allow_a, allow_g)?;
+                    *cached = Some(sources);
+                    Ok(compiled)
+                } else {
+                    let sources = cached.as_mut().expect("cached sources must be populated");
+                    if let Some(resolved) = resolved_end {
+                        let end_index = if rule.apply_end_pattern_last {
+                            sources.len() - 1
+                        } else {
+                            0
+                        };
+                        if sources.total_source_bytes_replacing(end_index, resolved.len())
+                            > MAX_SCANNER_PATTERN_BYTES
+                        {
+                            return Err(RegexError::depth_limit(
+                                "rule pattern expansion size limit exceeded",
+                            ));
+                        }
+                        sources.set_source(end_index, resolved);
+                    }
+                    sources.compile_ag(allow_a, allow_g)
                 }
-                sources.compile_ag(allow_a, allow_g)
             }
             Self::BeginWhile(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
@@ -990,6 +1047,8 @@ fn collect_pattern_ids(
     output: &mut RegExpSourceList<RuleScannerId>,
     active_path: &mut HashSet<RuleId>,
     initial_pattern_bytes: usize,
+    allow_a: bool,
+    allow_g: bool,
 ) -> Result<(), RegexError> {
     if initial_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
         return Err(RegexError::depth_limit(
@@ -1019,13 +1078,8 @@ fn collect_pattern_ids(
         match registry.get_rule(pattern_id) {
             Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
             Rule::Match(rule) => {
-                if rule.match_source.is_oversized() {
-                    return Err(RegexError::depth_limit(
-                        "rule pattern expansion size limit exceeded",
-                    ));
-                }
-                total_pattern_bytes =
-                    total_pattern_bytes.saturating_add(rule.match_source.source.len());
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.match_source.normalized_byte_len(allow_a, allow_g));
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(
                         "rule pattern expansion size limit exceeded",
@@ -1039,12 +1093,8 @@ fn collect_pattern_ids(
                 }
             }
             Rule::BeginEnd(rule) => {
-                if rule.begin.is_oversized() {
-                    return Err(RegexError::depth_limit(
-                        "rule pattern expansion size limit exceeded",
-                    ));
-                }
-                total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.begin.normalized_byte_len(allow_a, allow_g));
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(
                         "rule pattern expansion size limit exceeded",
@@ -1053,12 +1103,8 @@ fn collect_pattern_ids(
                 leaf_ids.push(pattern_id);
             }
             Rule::BeginWhile(rule) => {
-                if rule.begin.is_oversized() {
-                    return Err(RegexError::depth_limit(
-                        "rule pattern expansion size limit exceeded",
-                    ));
-                }
-                total_pattern_bytes = total_pattern_bytes.saturating_add(rule.begin.source.len());
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.begin.normalized_byte_len(allow_a, allow_g));
                 if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
                     return Err(RegexError::depth_limit(
                         "rule pattern expansion size limit exceeded",
@@ -1102,9 +1148,19 @@ fn compile_patterns(
             if let Some(owner_id) = owner_include_only {
                 active_path.insert(owner_id);
             }
-            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path, 0)?;
+            collect_pattern_ids(
+                registry,
+                patterns,
+                &mut sources,
+                &mut active_path,
+                0,
+                allow_a,
+                allow_g,
+            )?;
         }
+        let compiled = sources.compile_ag(allow_a, allow_g)?;
         *cached = Some(sources);
+        return Ok(compiled);
     }
     let sources = cached.as_mut().expect("cached sources must be populated");
     sources.compile_ag(allow_a, allow_g)

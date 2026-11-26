@@ -503,6 +503,18 @@ impl<T> RegExpSource<T> {
         self.oversized || self.source.len() > MAX_SCANNER_PATTERN_BYTES
     }
 
+    #[must_use]
+    pub(crate) fn normalized_byte_len(&self, allow_a: bool, allow_g: bool) -> usize {
+        if self.is_oversized() {
+            return MAX_SCANNER_PATTERN_BYTES.saturating_add(1);
+        }
+        normalized_pattern_byte_len(
+            &self.source,
+            !self.has_anchor || allow_a,
+            !self.has_anchor || allow_g,
+        )
+    }
+
     pub(crate) fn set_source(&mut self, new_source: impl Into<String>) {
         let new_source = new_source.into();
         if new_source.len() > MAX_SCANNER_PATTERN_BYTES {
@@ -1364,6 +1376,45 @@ impl<T: Copy> CompiledRule<T> {
                 .collect(),
         })
     }
+}
+
+#[must_use]
+pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g: bool) -> usize {
+    let bytes = pattern.as_bytes();
+    let mut len = pattern.len();
+    let mut position = 0;
+    let mut in_character_class = false;
+
+    while position < bytes.len() {
+        if bytes[position] == b'\\' {
+            position += 1;
+            if let Some(character) = pattern[position..].chars().next() {
+                if (character == 'A' && !allow_a) || (character == 'G' && !allow_g) {
+                    // '\u{ffff}' is 3 UTF-8 bytes vs 1 byte for 'A'/'G'.
+                    len = len.saturating_add(2);
+                }
+                position += character.len_utf8();
+            }
+            continue;
+        }
+        match bytes[position] {
+            b'[' => in_character_class = true,
+            b']' => in_character_class = false,
+            b'{' if !in_character_class
+                && !starts_valid_interval(&pattern[position..])
+                && !starts_special_brace_expression(pattern, position) =>
+            {
+                len = len.saturating_add(1);
+            }
+            _ => {}
+        }
+        let character = pattern[position..]
+            .chars()
+            .next()
+            .expect("pattern position must be on a character boundary");
+        position += character.len_utf8();
+    }
+    len
 }
 
 #[cfg(test)]
