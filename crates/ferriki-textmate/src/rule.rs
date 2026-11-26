@@ -441,22 +441,17 @@ impl BeginWhileRule {
             );
             sources.push(self.while_source.clone());
             if let Some(resolved) = resolved_while {
-                sources.set_source(0, resolved);
+                sources.try_set_source(0, resolved, allow_a, allow_g)?;
             }
-            let compiled = sources.compile_ag(allow_a, allow_g)?;
             *cached = Some(sources);
-            return Ok(compiled);
+            return cached
+                .as_mut()
+                .expect("cached sources must be populated")
+                .compile_ag(allow_a, allow_g);
         }
         let sources = cached.as_mut().expect("cached sources must be populated");
         if let Some(resolved) = resolved_while {
-            if sources.total_normalized_bytes_replacing(0, resolved, allow_a, allow_g)
-                > MAX_SCANNER_PATTERN_BYTES
-            {
-                return Err(RegexError::depth_limit(
-                    "rule pattern expansion size limit exceeded",
-                ));
-            }
-            sources.set_source(0, resolved);
+            sources.try_set_source(0, resolved, allow_a, allow_g)?;
         }
         sources.compile_ag(allow_a, allow_g)
     }
@@ -688,15 +683,12 @@ impl Rule {
                             .for_owner(&rule.data.source_scope_name),
                     );
                     sources.push(rule.match_source.clone());
-                    let compiled = sources.compile_ag(allow_a, allow_g)?;
                     *cached = Some(sources);
-                    Ok(compiled)
-                } else {
-                    cached
-                        .as_mut()
-                        .expect("cached sources must be populated")
-                        .compile_ag(allow_a, allow_g)
                 }
+                cached
+                    .as_mut()
+                    .expect("cached sources must be populated")
+                    .compile_ag(allow_a, allow_g)
             }
             Self::IncludeOnly(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
@@ -757,31 +749,22 @@ impl Rule {
                         } else {
                             0
                         };
-                        sources.set_source(end_index, resolved);
+                        sources.try_set_source(end_index, resolved, allow_a, allow_g)?;
                     }
-                    let compiled = sources.compile_ag(allow_a, allow_g)?;
                     *cached = Some(sources);
-                    Ok(compiled)
-                } else {
+                } else if let Some(resolved) = resolved_end {
                     let sources = cached.as_mut().expect("cached sources must be populated");
-                    if let Some(resolved) = resolved_end {
-                        let end_index = if rule.apply_end_pattern_last {
-                            sources.len() - 1
-                        } else {
-                            0
-                        };
-                        if sources
-                            .total_normalized_bytes_replacing(end_index, resolved, allow_a, allow_g)
-                            > MAX_SCANNER_PATTERN_BYTES
-                        {
-                            return Err(RegexError::depth_limit(
-                                "rule pattern expansion size limit exceeded",
-                            ));
-                        }
-                        sources.set_source(end_index, resolved);
-                    }
-                    sources.compile_ag(allow_a, allow_g)
+                    let end_index = if rule.apply_end_pattern_last {
+                        sources.len() - 1
+                    } else {
+                        0
+                    };
+                    sources.try_set_source(end_index, resolved, allow_a, allow_g)?;
                 }
+                cached
+                    .as_mut()
+                    .expect("cached sources must be populated")
+                    .compile_ag(allow_a, allow_g)
             }
             Self::BeginWhile(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
@@ -1156,9 +1139,7 @@ fn compile_patterns(
                 allow_g,
             )?;
         }
-        let compiled = sources.compile_ag(allow_a, allow_g)?;
         *cached = Some(sources);
-        return Ok(compiled);
     }
     let sources = cached.as_mut().expect("cached sources must be populated");
     sources.compile_ag(allow_a, allow_g)

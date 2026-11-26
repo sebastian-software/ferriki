@@ -1170,28 +1170,41 @@ impl<T> RegExpSourceList<T> {
         self.items.is_empty()
     }
 
-    #[must_use]
-    pub(crate) fn total_normalized_bytes_replacing(
-        &self,
+    pub(crate) fn try_set_source(
+        &mut self,
         index: usize,
         replacement: &str,
         allow_a: bool,
         allow_g: bool,
-    ) -> usize {
+    ) -> Result<(), RegexError> {
         let slot = usize::from(allow_a) * 2 + usize::from(allow_g);
-        let item = &self.items[index];
-        if !item.is_oversized() && item.source == replacement {
-            return self.total_normalized_bytes[slot];
+        if !self.items[index].is_oversized() && self.items[index].source == replacement {
+            self.has_resolved_sources = true;
+            if self.total_normalized_bytes[slot] > MAX_SCANNER_PATTERN_BYTES {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            return Ok(());
         }
+        let item = &self.items[index];
         let old_len = item.normalized_byte_len(allow_a, allow_g);
         let new_len = normalized_pattern_byte_len(
             replacement,
             !item.has_anchor || allow_a,
             !item.has_anchor || allow_g,
         );
-        self.total_normalized_bytes[slot]
+        if self.total_normalized_bytes[slot]
             .saturating_sub(old_len)
             .saturating_add(new_len)
+            > MAX_SCANNER_PATTERN_BYTES
+        {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        self.set_source(index, replacement);
+        Ok(())
     }
 
     pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
