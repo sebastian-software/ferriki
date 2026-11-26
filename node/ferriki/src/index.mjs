@@ -16,7 +16,7 @@ import {
   sortTransformers,
   splitTokensAtDecorations,
 } from "../transformers.mjs";
-import { createAssetDownloader } from "./asset-download.mjs";
+import { createAssetDownloader, normalizeAssetBaseUrl } from "./asset-download.mjs";
 import { alignThemeTokens, tokenStyle } from "./theme-tokens.mjs";
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -1153,16 +1153,33 @@ function resolveAssetOptions(assets) {
         throw new ShikiError("Asset option `remote` must be a boolean", "ERR_USAGE");
       resolved.remote = assets.remote;
     }
-    if (assets.baseUrl !== undefined) {
-      if (typeof assets.baseUrl !== "string" || !/^https?:\/\//.test(assets.baseUrl))
-        throw new ShikiError("Asset option `baseUrl` must be an http(s) URL", "ERR_USAGE");
-      resolved.baseUrl = assets.baseUrl;
-    }
     if (assets.cacheDir !== undefined) {
       if (typeof assets.cacheDir !== "string" || !assets.cacheDir)
         throw new ShikiError("Asset option `cacheDir` must be a non-empty path", "ERR_USAGE");
       resolved.cacheDir = assets.cacheDir;
     }
+  }
+  const envRemote = process.env.FERRIKI_ASSETS_REMOTE?.trim().toLowerCase();
+  const effectiveRemote = resolved.remote ?? (envRemote !== "0" && envRemote !== "false");
+  if (assets !== undefined && assets.baseUrl !== undefined) {
+    if (typeof assets.baseUrl !== "string")
+      throw new ShikiError("Asset option `baseUrl` must be an http(s) URL", "ERR_USAGE");
+    if (effectiveRemote) {
+      const normalized = normalizeAssetBaseUrl(assets.baseUrl);
+      if (!normalized)
+        throw new ShikiError(
+          "Asset option `baseUrl` must be an https:// URL (or loopback http:// URL) without credentials, query strings, or fragments",
+          "ERR_USAGE",
+        );
+      resolved.baseUrl = normalized;
+    } else {
+      if (!/^https?:\/\//i.test(assets.baseUrl))
+        throw new ShikiError("Asset option `baseUrl` must be an http(s) URL", "ERR_USAGE");
+      resolved.baseUrl = assets.baseUrl;
+    }
+  } else if (effectiveRemote) {
+    const envBaseUrl = process.env.FERRIKI_ASSETS_BASE_URL?.trim();
+    if (envBaseUrl) resolved.baseUrl = normalizeAssetBaseUrl(envBaseUrl) ?? envBaseUrl;
   }
   if (resolved.cacheDir === undefined && !process.env.FERRIKI_CACHE_DIR) {
     const packageCache = findPackageCacheDir(process.cwd());

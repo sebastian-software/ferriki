@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-23
+Last updated: 2026-11-26
 
 ## Context
 
@@ -83,8 +83,12 @@ language coverage.
   a reason and an expected old value. Changes to that old value
   fail the sync for review. Advisory backtracking diagnostics remain the
   separate contract described in ADR 0014 and issue #153.
-- The npm package provides `ferriki grammar fetch` for local files, URLs, and
-  commit-pinned GitHub files containing JSON TextMate grammars. It validates
+- The npm package provides `ferriki grammar fetch` for local files, direct
+  `https://` URLs, and commit-pinned GitHub files (rejecting traversal or
+  malformed path segments) containing JSON TextMate grammars. Remote downloads
+  require direct `https://` without credentials, plaintext HTTP, or HTTP
+  redirects and enforce response-size (8 MiB) and request-timeout (60 s) bounds;
+  local files are likewise bounded to 8 MiB. It validates
   registration and compilation with the native runtime, writes a reusable
   registration plus provenance lock, and supports an expected SHA-256.
   It does not execute extension code or install a VS Code extension.
@@ -181,3 +185,6 @@ package and crate version updates.
   generated across nested references.
 - 2026-11-23: Added pinned, first-party grammar sources for FCL, shared ICU in
   FCL and gettext, and Mermaid injections tested against Ferrigura's diagrams.
+- 2026-11-26: Hardened `ferriki grammar fetch` to require direct `https://`
+  URLs without credentials or HTTP redirects and reject traversal or malformed
+  path segments in `github:` sources (#386).

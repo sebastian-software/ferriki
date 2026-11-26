@@ -497,10 +497,54 @@ try {
   for (const assets of [
     { remote: "no" },
     { baseUrl: "ftp://mirror" },
+    { remote: true, baseUrl: "http://mirror.example" },
+    { remote: true, baseUrl: "https://user:pass@mirror.example" },
+    { remote: true, baseUrl: "https://mirror.example?a=1" },
+    { remote: true, baseUrl: "https://mirror.example#frag" },
+    { remote: true, baseUrl: "https://mirror..example/assets" },
+    { remote: true, baseUrl: "https://./assets" },
     { cacheDir: "" },
     { commit: COMMIT },
   ])
     assert.throws(() => createHighlighterCoreSync({ assets }), { code: "ERR_USAGE" });
+  const offlineMirror = createHighlighterCoreSync({
+    assets: {
+      remote: false,
+      baseUrl: "http://mirror.internal",
+      cacheDir: join(tempRoot, "facade-empty"),
+    },
+  });
+  offlineMirror.dispose();
+
+  // An inherited plaintext mirror env var must not block inline-only / cached sync highlighters,
+  // but must reject on an actual cache-miss download before contacting the mirror.
+  const previousEnvBaseUrl = process.env.FERRIKI_ASSETS_BASE_URL;
+  const previousEnvRemote = process.env.FERRIKI_ASSETS_REMOTE;
+  process.env.FERRIKI_ASSETS_BASE_URL = "http://mirror.internal";
+  process.env.FERRIKI_ASSETS_REMOTE = "1";
+  try {
+    const inlineWithInheritedMirror = createHighlighterCoreSync({
+      assets: { cacheDir: join(tempRoot, "facade-empty") },
+    });
+    inlineWithInheritedMirror.dispose();
+    await assert.rejects(
+      createHighlighter({
+        langs: ["rust"],
+        themes: ["nord"],
+        assets: { cacheDir: join(tempRoot, "facade-empty") },
+      }),
+      {
+        name: "FerrikiError",
+        code: "ERR_ASSET",
+        message: /Invalid asset base URL/,
+      },
+    );
+  } finally {
+    if (previousEnvBaseUrl === undefined) delete process.env.FERRIKI_ASSETS_BASE_URL;
+    else process.env.FERRIKI_ASSETS_BASE_URL = previousEnvBaseUrl;
+    if (previousEnvRemote === undefined) delete process.env.FERRIKI_ASSETS_REMOTE;
+    else process.env.FERRIKI_ASSETS_REMOTE = previousEnvRemote;
+  }
 } finally {
   await writeFile(packageReleasePath, originalPackageRelease);
   await new Promise((resolve, reject) =>

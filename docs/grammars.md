@@ -76,7 +76,7 @@ Handlebars (`handlebars`, `hbs`, `hjs`), Liquid (`liquid`), and Glimmer componen
 ## Import a language from an external source
 
 After installing `@ferriki/core`, use its CLI to import a JSON TextMate grammar
-from a local file, an HTTP(S) URL, or a commit-pinned GitHub file:
+from a local file, a direct HTTPS URL, or a commit-pinned GitHub file:
 
 ```sh
 pnpm exec ferriki grammar fetch ./example.tmLanguage.json \
@@ -85,7 +85,7 @@ pnpm exec ferriki grammar fetch ./example.tmLanguage.json \
 
 The GitHub source syntax is `github:owner/repo@<40-character-commit>/path`.
 An HTTPS URL can point directly to a grammar in an author's repository or in a
-VS Code extension. The importer accepts grammar data; it does not execute
+VS Code extension (plaintext HTTP URLs and HTTP redirects are rejected). The importer accepts grammar data; it does not execute
 extension code. YAML, PLIST, and CSON inputs must first be converted to JSON.
 
 `--name` chooses the Ferriki language ID independently of the upstream display

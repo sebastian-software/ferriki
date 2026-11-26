@@ -188,6 +188,17 @@ const protectedAssetsCheck = spawnSync(
 );
 if (protectedAssetsCheck.status !== 0) process.exit(protectedAssetsCheck.status || 1);
 
+const assetHardeningCheck = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-asset-hardening.mjs"],
+  {
+    cwd: nodeRoot,
+    env: process.env,
+    stdio: "inherit",
+  },
+);
+if (assetHardeningCheck.status !== 0) process.exit(assetHardeningCheck.status || 1);
+
 const multiThemeCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-multitheme.mjs"], {
   cwd: nodeRoot,
   env: {

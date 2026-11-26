@@ -3,6 +3,7 @@
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -10,6 +11,8 @@ use ferriki_asset_gen::FORMAT_VERSION;
 use sha2::{Digest, Sha256};
 
 use crate::{Error, ErrorKind, Result};
+
+const MAX_DIRECTORY_ASSET_BYTES: u64 = 64 * 1024 * 1024;
 
 /// A normalized SHA-256 digest; safe to use as a cache filename.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -134,6 +137,36 @@ impl AssetMetadata {
 /// Catalogs verify returned bytes before decoding or retaining them.
 pub trait AssetSource: Send + Sync {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>>;
+
+    /// Reads immutable asset bytes bounded by the manifest-pinned `expected_size`.
+    ///
+    /// The default implementation delegates to [`Self::read`] and verifies the
+    /// returned byte length matches `expected_size`; sources backed by external
+    /// files can override it to reject mismatched sizes before allocating.
+    fn read_bounded(&self, digest: &AssetDigest, expected_size: u64) -> Result<Cow<'_, [u8]>> {
+        let bytes = self.read(digest)?;
+        if bytes.len() as u64 != expected_size {
+            return Err(Error::new(
+                ErrorKind::AssetIntegrity,
+                format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    digest.as_str()
+                ),
+            ));
+        }
+        Ok(bytes)
+    }
+}
+
+pub(crate) fn open_nonblocking(path: &Path) -> std::io::Result<std::fs::File> {
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+    options.open(path)
 }
 
 /// Reads a digest-addressed directory, such as a pre-populated offline cache.
@@ -149,16 +182,112 @@ impl DirectoryAssetSource {
     pub fn root(&self) -> &Path {
         &self.root
     }
+
+    fn read_with_limit(
+        &self,
+        digest: &AssetDigest,
+        expected_size: Option<u64>,
+    ) -> Result<Cow<'_, [u8]>> {
+        let io = |source: std::io::Error| {
+            let kind = if source.kind() == std::io::ErrorKind::NotFound {
+                ErrorKind::AssetUnavailable
+            } else {
+                ErrorKind::AssetIo
+            };
+            Error::new(
+                kind,
+                format!(
+                    "Cannot read asset {} from {}. Pre-populate the cache or provide an embedded asset source.",
+                    digest.as_str(),
+                    self.root.display()
+                ),
+            )
+            .with_source(source)
+        };
+        let integrity = |detail: String| Error::new(ErrorKind::AssetIntegrity, detail);
+        let file = open_nonblocking(&self.root.join(digest.as_str())).map_err(io)?;
+        let metadata = file.metadata().map_err(io)?;
+        if !metadata.is_file() {
+            return Err(Error::new(
+                ErrorKind::AssetIo,
+                format!(
+                    "Cannot read asset {} from {}: expected a regular file.",
+                    digest.as_str(),
+                    self.root.display()
+                ),
+            ));
+        }
+        let len = metadata.len();
+        let limit = match expected_size {
+            Some(expected) => {
+                if len != expected {
+                    return Err(integrity(format!(
+                        "Asset {} failed its SHA-256 or byte-size check.",
+                        digest.as_str()
+                    )));
+                }
+                expected
+            }
+            None => {
+                if len > MAX_DIRECTORY_ASSET_BYTES {
+                    return Err(integrity(format!(
+                        "Asset {} in {} exceeds the maximum allowed byte size ({MAX_DIRECTORY_ASSET_BYTES}).",
+                        digest.as_str(),
+                        self.root.display()
+                    )));
+                }
+                MAX_DIRECTORY_ASSET_BYTES
+            }
+        };
+        let capacity = usize::try_from(len).map_err(|_| {
+            integrity(format!(
+                "Asset {} in {} exceeds the maximum allowed byte size.",
+                digest.as_str(),
+                self.root.display()
+            ))
+        })?;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(capacity).map_err(|source| {
+            Error::new(
+                ErrorKind::AssetIo,
+                format!(
+                    "Cannot allocate asset {} from {}.",
+                    digest.as_str(),
+                    self.root.display()
+                ),
+            )
+            .with_source(source)
+        })?;
+        file.take(limit.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .map_err(io)?;
+        match expected_size {
+            Some(expected) if bytes.len() as u64 != expected => {
+                return Err(integrity(format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    digest.as_str()
+                )));
+            }
+            None if bytes.len() as u64 > MAX_DIRECTORY_ASSET_BYTES => {
+                return Err(integrity(format!(
+                    "Asset {} in {} exceeds the maximum allowed byte size ({MAX_DIRECTORY_ASSET_BYTES}).",
+                    digest.as_str(),
+                    self.root.display()
+                )));
+            }
+            _ => {}
+        }
+        Ok(Cow::Owned(bytes))
+    }
 }
 
 impl AssetSource for DirectoryAssetSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
-        std::fs::read(self.root.join(digest.as_str())).map(Cow::Owned).map_err(|source| {
-            let kind = if source.kind() == std::io::ErrorKind::NotFound {
-                ErrorKind::AssetUnavailable
-            } else { ErrorKind::AssetIo };
-            Error::new(kind, format!("Cannot read asset {} from {}. Pre-populate the cache or provide an embedded asset source.", digest.as_str(), self.root.display())).with_source(source)
-        })
+        self.read_with_limit(digest, None)
+    }
+
+    fn read_bounded(&self, digest: &AssetDigest, expected_size: u64) -> Result<Cow<'_, [u8]>> {
+        self.read_with_limit(digest, Some(expected_size))
     }
 }
 
@@ -221,5 +350,103 @@ mod tests {
                 .kind(),
             ErrorKind::AssetFormat
         );
+    }
+
+    #[test]
+    fn directory_asset_source_rejects_non_files_and_oversized_entries() {
+        let root = std::env::temp_dir().join(format!(
+            "ferriki-dir-asset-source-hardening-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let source = DirectoryAssetSource::new(&root);
+
+        let valid_digest = AssetDigest::of(b"ok");
+        std::fs::write(root.join(valid_digest.as_str()), b"ok").unwrap();
+        assert_eq!(source.read(&valid_digest).unwrap().as_ref(), b"ok");
+        assert_eq!(
+            source.read_bounded(&valid_digest, 2).unwrap().as_ref(),
+            b"ok"
+        );
+        assert_eq!(
+            source.read_bounded(&valid_digest, 1).unwrap_err().kind(),
+            ErrorKind::AssetIntegrity
+        );
+        assert_eq!(
+            source.read_bounded(&valid_digest, 3).unwrap_err().kind(),
+            ErrorKind::AssetIntegrity
+        );
+
+        let missing_digest = AssetDigest::of(b"missing");
+        assert_eq!(
+            source.read(&missing_digest).unwrap_err().kind(),
+            ErrorKind::AssetUnavailable
+        );
+
+        let dir_digest = AssetDigest::of(b"directory");
+        std::fs::create_dir(root.join(dir_digest.as_str())).unwrap();
+        assert_eq!(
+            source.read(&dir_digest).unwrap_err().kind(),
+            ErrorKind::AssetIo
+        );
+
+        let oversized_digest = AssetDigest::of(b"oversized");
+        let sparse = std::fs::File::create(root.join(oversized_digest.as_str())).unwrap();
+        sparse.set_len(MAX_DIRECTORY_ASSET_BYTES + 1).unwrap();
+        drop(sparse);
+        assert_eq!(
+            source.read(&oversized_digest).unwrap_err().kind(),
+            ErrorKind::AssetIntegrity
+        );
+        assert_eq!(
+            source
+                .read_bounded(&oversized_digest, 16)
+                .unwrap_err()
+                .kind(),
+            ErrorKind::AssetIntegrity
+        );
+
+        #[cfg(unix)]
+        {
+            let fifo_digest = AssetDigest::of(b"fifo");
+            let fifo_path = root.join(fifo_digest.as_str());
+            let status = std::process::Command::new("mkfifo")
+                .arg(&fifo_path)
+                .status()
+                .expect("mkfifo");
+            assert!(status.success(), "mkfifo should create a named pipe");
+            assert_eq!(
+                source.read(&fifo_digest).unwrap_err().kind(),
+                ErrorKind::AssetIo
+            );
+            assert_eq!(
+                source.read_bounded(&fifo_digest, 0).unwrap_err().kind(),
+                ErrorKind::AssetIo
+            );
+        }
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn default_read_bounded_enforces_expected_size() {
+        let payload: &'static [u8] = b"embedded payload";
+        let digest = AssetDigest::of(payload);
+        let source = EmbeddedAssetSource::new([(digest.clone(), Cow::Borrowed(payload))]);
+
+        assert_eq!(
+            source
+                .read_bounded(&digest, payload.len() as u64)
+                .unwrap()
+                .as_ref(),
+            payload
+        );
+        for wrong in [payload.len() as u64 - 1, payload.len() as u64 + 1] {
+            assert_eq!(
+                source.read_bounded(&digest, wrong).unwrap_err().kind(),
+                ErrorKind::AssetIntegrity
+            );
+        }
     }
 }

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-23
+Last updated: 2026-11-26
 
 ## Context
 
@@ -127,10 +127,14 @@ migration; protected mode fails closed rather than falling back to it.
   failures and HTTP 408, 429 and 5xx responses use 250/500 ms backoff.
   `Retry-After` is honored when the requested delay is at most five seconds;
   a longer delay fails instead of retrying early. Permanent HTTP, certificate,
-  filesystem and integrity failures are not retried. Node removes temporary
+  filesystem and integrity failures are not retried. Both transports refuse HTTP
+  redirects, and remote mirror base URLs require `https://` without credentials,
+  query strings, or fragments (`http://` is restricted to loopback hosts for
+  local test mirrors); offline cache loads ignore unreferenced mirror URLs. Node removes temporary
   files before retrying and shares the complete retry operation between
   concurrent callers; Rust verifies the received bytes before writing the
-  cache. Existing worker limits, proxy, certificate and cache-location
+  cache through exclusive temporary files and reuses a verified concurrent cache
+  entry when a rename race occurs. Existing worker limits, proxy, certificate and cache-location
   behavior are unchanged.
   Prepared sidecars additionally pin the decoded container's SHA-256 and size.
   Their first load writes verified, uncompressed bytes atomically under
@@ -173,6 +177,11 @@ migration; protected mode fails closed rather than falling back to it.
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-11-26: Require `https://` (or loopback `http://`) without credentials,
+  query strings, or fragments for asset mirror URLs, refuse HTTP redirects in
+  both public and protected downloads, and harden cache publication with
+  exclusive temporary files and rename-race reuse (#386).
 
 - 2026-11-23: Add explicitly selected protected downloads for the Rust and
   Node asset hosts while retaining the existing public and offline paths.
