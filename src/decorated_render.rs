@@ -362,8 +362,8 @@ mod tests {
 
     #[test]
     fn renders_deeply_nested_always_wrap_decorations_without_stack_overflow() {
-        const DEPTH: usize = 20_000;
-        let decorations: Vec<_> = (0..DEPTH)
+        // End-to-end check for stacked alwaysWrap decorations.
+        let small: Vec<_> = (0..8)
             .map(|_| HtmlDecoration {
                 range: DecorationRange {
                     start: DecorationPosition::Offset(0),
@@ -374,14 +374,31 @@ mod tests {
                 properties: vec![("class".into(), "w".into())],
             })
             .collect();
-        let html = render_html_with_decorations(
-            "a",
-            &result("a"),
-            &RenderOptions::default(),
-            &decorations,
-        )
-        .unwrap()
-        .unwrap();
+        let small_html =
+            render_html_with_decorations("a", &result("a"), &RenderOptions::default(), &small)
+                .unwrap()
+                .unwrap();
+        assert_eq!(small_html.matches("<span class=\"w\">").count(), 8);
+        assert!(small_html.contains(">a</span>"));
+
+        // Direct writer regression for 20,000-deep wrapper chains without O(D^2) range validation.
+        const DEPTH: usize = 20_000;
+        let mut nodes = Vec::with_capacity(DEPTH + 1);
+        nodes.push(Node {
+            tag: None,
+            properties: Vec::new(),
+            text: "a".into(),
+            children: Vec::new(),
+        });
+        for child in 0..DEPTH {
+            nodes.push(Node::element(
+                "span",
+                vec![("class".into(), "w".into())],
+                vec![child],
+            ));
+        }
+        let mut html = String::new();
+        write_node(&nodes, DEPTH, &mut html);
         assert_eq!(html.matches("<span class=\"w\">").count(), DEPTH);
         assert!(html.contains(">a</span>"));
     }

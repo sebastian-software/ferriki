@@ -626,6 +626,11 @@ impl Grammar {
         Ok(state)
     }
 
+    /// Tokenizes one source line and returns scope tokens and the next rule stack.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line(
         &self,
         line_text: &str,
@@ -648,6 +653,11 @@ impl Grammar {
         })
     }
 
+    /// Tokenizes one source line into compact binary token metadata and the next rule stack.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line2(
         &self,
         line_text: &str,
@@ -673,6 +683,10 @@ impl Grammar {
     /// Produces the outputs of [`Self::tokenize_line`] and [`Self::tokenize_line2`]
     /// together, including captures and injections, without repeating the scan.
     /// The time limit and returned state belong to this single scan.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line_with_scopes(
         &self,
         line_text: &str,

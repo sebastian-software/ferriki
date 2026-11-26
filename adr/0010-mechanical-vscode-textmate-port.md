@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-24
+Last updated: 2026-11-26
 
 ## Context
 
@@ -79,7 +79,15 @@ named `ferriki-textmate`.
 - The documented `tokenize_line_with_scopes` extension collects scope tokens
   and binary theme metadata in one scan. Both outputs retain their upstream
   boundaries and share the returned state, fonts, and time limit. Captures,
-  retokenization, injections, and rule traversal keep the upstream algorithm.
+  retokenization, injections, and rule traversal keep the upstream algorithm,
+  with explicit runtime safety bounds as deliberate parity exceptions against
+  process-aborting stack overflows or memory exhaustion on adversarial inputs:
+  scanner include expansion tracks active paths to break cycles and rejects
+  graphs exceeding 65,536 rule visits per scanner, grammar tokenization rejects
+  state stacks deeper than 4,096 frames, and capture retokenization rejects
+  recursion deeper than 64 levels. Exceeding any bound returns a recoverable
+  `RegexError` rather than emitting truncated continuation states or silently
+  skipping scopes.
 - Port code that has no caller in Ferriki stays for upstream parity and is
   marked with a `dead_code` allowance and its reason, instead of being
   deleted.
@@ -140,6 +148,8 @@ the interpreter boundary or the zero-structural-failure gate established by
 this decision.
 
 ## History
+
+- 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).
 
 - 2026-10-24: Prepare standard static scanner groups offline and consume them in
   Eager mode from first use, rather than waiting for Auto thresholds.

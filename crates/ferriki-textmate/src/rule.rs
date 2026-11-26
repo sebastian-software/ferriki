@@ -582,18 +582,30 @@ impl Rule {
         registry: &RuleRegistry,
         output: &mut RegExpSourceList<RuleScannerId>,
         active_path: &mut HashSet<RuleId>,
-    ) {
+    ) -> Result<(), RegexError> {
         match self {
             Self::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-            Self::Match(rule) => output.push(rule.match_source.clone()),
+            Self::Match(rule) => {
+                output.push(rule.match_source.clone());
+                Ok(())
+            }
             Self::IncludeOnly(rule) => {
                 if active_path.insert(rule.data.id) {
-                    collect_pattern_ids(registry, &rule.patterns, output, active_path);
+                    let result = collect_pattern_ids(registry, &rule.patterns, output, active_path);
                     active_path.remove(&rule.data.id);
+                    result
+                } else {
+                    Ok(())
                 }
             }
-            Self::BeginEnd(rule) => output.push(rule.begin.clone()),
-            Self::BeginWhile(rule) => output.push(rule.begin.clone()),
+            Self::BeginEnd(rule) => {
+                output.push(rule.begin.clone());
+                Ok(())
+            }
+            Self::BeginWhile(rule) => {
+                output.push(rule.begin.clone());
+                Ok(())
+            }
         }
     }
 
@@ -649,22 +661,23 @@ impl Rule {
                     .cached_compiled_patterns
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
-                let sources = cached.get_or_insert_with(|| {
+                if cached.is_none() {
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
                         registry
                             .scanner_pattern_cache
                             .for_owner(&rule.data.source_scope_name),
                     );
-                    let mut visited = HashSet::new();
-                    collect_pattern_ids(registry, &rule.patterns, &mut sources, &mut visited);
+                    let mut active_path = HashSet::new();
+                    collect_pattern_ids(registry, &rule.patterns, &mut sources, &mut active_path)?;
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
                     } else {
                         sources.unshift(rule.end.clone());
                     }
-                    sources
-                });
+                    *cached = Some(sources);
+                }
+                let sources = cached.as_mut().expect("cached sources must be populated");
                 if rule.end_has_back_references {
                     let end_index = if rule.apply_end_pattern_last {
                         sources.len() - 1
@@ -926,6 +939,11 @@ fn rule_index(id: RuleId) -> Option<usize> {
         .and_then(|index| usize::try_from(index).ok())
 }
 
+/// Maximum number of rule visits allowed while expanding `IncludeOnly` patterns
+/// for a single scanner. Prevents exponential blowup on adversarial branching
+/// include graphs while preserving repeated sibling includes in normal grammars.
+const MAX_SCANNER_INCLUDE_VISITS: usize = 65_536;
+
 enum CollectFrame {
     Visit(RuleId),
     Exit(RuleId),
@@ -936,7 +954,8 @@ fn collect_pattern_ids(
     patterns: &[RuleId],
     output: &mut RegExpSourceList<RuleScannerId>,
     active_path: &mut HashSet<RuleId>,
-) {
+) -> Result<(), RegexError> {
+    let mut visits = 0usize;
     let mut pending: Vec<CollectFrame> = patterns
         .iter()
         .rev()
@@ -948,21 +967,31 @@ fn collect_pattern_ids(
             CollectFrame::Exit(id) => {
                 active_path.remove(&id);
             }
-            CollectFrame::Visit(pattern_id) => match registry.get_rule(pattern_id) {
-                Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-                Rule::Match(rule) => output.push(rule.match_source.clone()),
-                Rule::IncludeOnly(rule) => {
-                    if active_path.insert(rule.data.id) {
-                        pending.push(CollectFrame::Exit(rule.data.id));
-                        pending
-                            .extend(rule.patterns.iter().rev().copied().map(CollectFrame::Visit));
-                    }
+            CollectFrame::Visit(pattern_id) => {
+                visits += 1;
+                if visits > MAX_SCANNER_INCLUDE_VISITS {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion limit exceeded",
+                    ));
                 }
-                Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
-                Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
-            },
+                match registry.get_rule(pattern_id) {
+                    Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
+                    Rule::Match(rule) => output.push(rule.match_source.clone()),
+                    Rule::IncludeOnly(rule) => {
+                        if active_path.insert(rule.data.id) {
+                            pending.push(CollectFrame::Exit(rule.data.id));
+                            pending.extend(
+                                rule.patterns.iter().rev().copied().map(CollectFrame::Visit),
+                            );
+                        }
+                    }
+                    Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
+                    Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+                }
+            }
         }
     }
+    Ok(())
 }
 
 fn compile_patterns(
@@ -975,7 +1004,7 @@ fn compile_patterns(
     allow_g: bool,
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
     let mut cached = cache.lock().expect("compiled pattern cache lock poisoned");
-    let sources = cached.get_or_insert_with(|| {
+    if cached.is_none() {
         let mut sources = RegExpSourceList::with_pattern_cache(
             registry.regex_prefilter,
             registry.scanner_pattern_cache.for_owner(owner_scope),
@@ -985,10 +1014,11 @@ fn compile_patterns(
             if let Some(owner_id) = owner_include_only {
                 active_path.insert(owner_id);
             }
-            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path);
+            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path)?;
         }
-        sources
-    });
+        *cached = Some(sources);
+    }
+    let sources = cached.as_mut().expect("cached sources must be populated");
     sources.compile_ag(allow_a, allow_g)
 }
 
@@ -1269,5 +1299,36 @@ mod tests {
                 RuleScannerId::Rule(shared_match),
             ]
         );
+    }
+
+    #[test]
+    fn exponential_include_dag_fails_with_expansion_limit_error() {
+        let mut registry = RuleRegistry::new();
+        let leaf = match_rule(&mut registry, "x");
+        let mut current = leaf;
+        for _ in 0..24 {
+            let node = registry.reserve_rule();
+            registry.set_rule(
+                node,
+                Rule::IncludeOnly(IncludeOnlyRule::new(
+                    None,
+                    node,
+                    None,
+                    None,
+                    CompilePatternsResult {
+                        patterns: vec![current, current],
+                        has_missing_patterns: false,
+                    },
+                )),
+            );
+            current = node;
+        }
+
+        let err = registry
+            .get_rule(current)
+            .compile(&registry, None)
+            .err()
+            .expect("exponential include graph must return a recoverable error");
+        assert!(err.to_string().contains("expansion limit"));
     }
 }
