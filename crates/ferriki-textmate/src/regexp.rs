@@ -1180,6 +1180,9 @@ impl<T> RegExpSourceList<T> {
     ) -> usize {
         let slot = usize::from(allow_a) * 2 + usize::from(allow_g);
         let item = &self.items[index];
+        if !item.is_oversized() && item.source == replacement {
+            return self.total_normalized_bytes[slot];
+        }
         let old_len = item.normalized_byte_len(allow_a, allow_g);
         let new_len = normalized_pattern_byte_len(
             replacement,
@@ -1216,6 +1219,15 @@ impl<T: Copy> RegExpSourceList<T> {
         &self,
         anchors: Option<(bool, bool)>,
     ) -> Result<Arc<CompiledRule<T>>, RegexError> {
+        let slot = match anchors {
+            Some((allow_a, allow_g)) => usize::from(allow_a) * 2 + usize::from(allow_g),
+            None => 3,
+        };
+        if self.total_normalized_bytes[slot] > MAX_SCANNER_PATTERN_BYTES {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
         let mut reg_exps = Vec::with_capacity(self.items.len());
         let mut compiled_reg_exps = Vec::with_capacity(self.items.len());
         let mut total_compiled_bytes = 0usize;

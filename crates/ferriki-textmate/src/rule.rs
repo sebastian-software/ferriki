@@ -449,11 +449,8 @@ impl BeginWhileRule {
         }
         let sources = cached.as_mut().expect("cached sources must be populated");
         if let Some(resolved) = resolved_while {
-            if normalized_pattern_byte_len(
-                resolved,
-                !self.while_source.has_anchor || allow_a,
-                !self.while_source.has_anchor || allow_g,
-            ) > MAX_SCANNER_PATTERN_BYTES
+            if sources.total_normalized_bytes_replacing(0, resolved, allow_a, allow_g)
+                > MAX_SCANNER_PATTERN_BYTES
             {
                 return Err(RegexError::depth_limit(
                     "rule pattern expansion size limit exceeded",
