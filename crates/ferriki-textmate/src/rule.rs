@@ -683,6 +683,11 @@ impl Rule {
                             "rule pattern expansion size limit exceeded",
                         ));
                     }
+                    let initial_end_bytes = if rule.end_has_back_references {
+                        end_regex_source.unwrap_or("\u{ffff}").len()
+                    } else {
+                        rule.end.source.len()
+                    };
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
                         registry
@@ -695,7 +700,7 @@ impl Rule {
                         &rule.patterns,
                         &mut sources,
                         &mut active_path,
-                        rule.end.source.len(),
+                        initial_end_bytes,
                     )?;
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
