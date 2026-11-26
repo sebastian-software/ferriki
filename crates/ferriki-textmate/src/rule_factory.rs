@@ -11,7 +11,7 @@ use crate::raw_grammar::{RawCaptures, RawGrammar, RawRule, RuleId};
 use crate::regexp::ScannerPatternCache;
 use crate::rule::{
     BeginEndRule, BeginEndRuleOptions, BeginWhileRule, BeginWhileRuleOptions, CaptureRule,
-    CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry,
+    CaptureRules, CompilePatternsResult, IncludeOnlyRule, MatchRule, Rule, RuleRegistry,
 };
 
 /// Supplies raw grammars referenced by top-level `include` expressions.
@@ -382,24 +382,12 @@ impl<'a> RuleFactory<'a> {
         &mut self,
         captures: Option<&RawCaptures>,
         repository: RepositoryContext,
-    ) -> Vec<Option<Arc<CaptureRule>>> {
+    ) -> CaptureRules {
         let Some(captures) = captures else {
             return Vec::new();
         };
 
-        let Some(maximum_capture_id) = captures
-            .keys()
-            .filter(|capture_id| capture_id.as_str() != "$vscodeTextmateLocation")
-            .filter_map(|capture_id| parse_capture_id(capture_id))
-            .max()
-        else {
-            return Vec::new();
-        };
-        let Some(len) = maximum_capture_id.checked_add(1) else {
-            return Vec::new();
-        };
-        let mut compiled = vec![None; len];
-
+        let mut compiled = BTreeMap::new();
         for (capture_id, capture) in captures {
             if capture_id == "$vscodeTextmateLocation" {
                 continue;
@@ -411,14 +399,17 @@ impl<'a> RuleFactory<'a> {
                 .patterns
                 .as_ref()
                 .map(|_| self.get_compiled_rule_id(Arc::clone(capture), repository.clone()));
-            compiled[capture_id] = Some(self.create_capture_rule(
-                capture.location.clone(),
-                capture.name.clone(),
-                capture.content_name.clone(),
-                retokenize_captured_with_rule_id,
-            ));
+            compiled.insert(
+                capture_id,
+                self.create_capture_rule(
+                    capture.location.clone(),
+                    capture.name.clone(),
+                    capture.content_name.clone(),
+                    retokenize_captured_with_rule_id,
+                ),
+            );
         }
-        compiled
+        compiled.into_iter().collect()
     }
 
     fn create_capture_rule(
@@ -521,11 +512,6 @@ impl<'a> RuleFactory<'a> {
     }
 }
 
-/// Upper bound on capture group indices accepted from grammar definitions.
-/// Real Oniguruma patterns use far fewer capture groups; ignoring oversized
-/// keys prevents OOM aborts and `usize` overflow on untrusted grammars.
-const MAX_CAPTURE_ID: usize = 1_024;
-
 fn parse_capture_id(value: &str) -> Option<usize> {
     let digits = value
         .as_bytes()
@@ -535,7 +521,6 @@ fn parse_capture_id(value: &str) -> Option<usize> {
     (digits != 0)
         .then(|| value[..digits].parse::<usize>().ok())
         .flatten()
-        .filter(|&id| id <= MAX_CAPTURE_ID)
 }
 
 fn rule_has_only_missing_patterns(rule: &Rule) -> bool {
@@ -623,14 +608,12 @@ mod tests {
             .as_match()
             .unwrap();
 
-        assert_eq!(match_rule.captures.len(), 4);
-        assert!(match_rule.captures[0].is_none());
-        assert!(match_rule.captures[2].is_none());
-        assert!(match_rule.captures[1].is_some());
+        assert_eq!(match_rule.captures.len(), 2);
+        assert_eq!(match_rule.captures[0].0, 1);
+        assert_eq!(match_rule.captures[1].0, 3);
         assert!(
-            match_rule.captures[3]
-                .as_ref()
-                .unwrap()
+            match_rule.captures[1]
+                .1
                 .retokenize_captured_with_rule_id
                 .is_some()
         );
@@ -782,36 +765,38 @@ mod tests {
     }
 
     #[test]
-    fn ignores_oversized_and_overflowing_capture_ids() {
-        let grammar = grammar(
-            r##"{
+    fn stores_sparse_captures_without_oom_or_truncation() {
+        let source = format!(
+            r##"{{
                 "scopeName": "source.test",
                 "patterns": [
-                    {
+                    {{
                         "match": "(a)",
-                        "captures": {
-                            "1": { "name": "valid.test" },
-                            "1000000000": { "name": "huge.test" },
-                            "18446744073709551615": { "name": "u64max.test" },
-                            "99999999999999999999999": { "name": "overflow.test" }
-                        }
-                    },
-                    {
+                        "captures": {{
+                            "1": {{ "name": "valid.test" }},
+                            "1000000000": {{ "name": "huge.test" }},
+                            "{usize_max}": {{ "name": "max.test" }},
+                            "99999999999999999999999": {{ "name": "overflow.test" }}
+                        }}
+                    }},
+                    {{
                         "match": "(b)",
-                        "captures": {
-                            "18446744073709551615": {}
-                        }
-                    },
-                    {
+                        "captures": {{
+                            "99999999999999999999999": {{}}
+                        }}
+                    }},
+                    {{
                         "match": "(c)",
-                        "captures": {
-                            "1024": { "name": "boundary.test" },
-                            "1025": { "name": "over.test" }
-                        }
-                    }
+                        "captures": {{
+                            "1024": {{ "name": "boundary.test" }},
+                            "1025": {{ "name": "over.test" }}
+                        }}
+                    }}
                 ]
-            }"##,
+            }}"##,
+            usize_max = usize::MAX
         );
+        let grammar = grammar(&source);
         let store = GrammarStore::new();
         let mut factory = RuleFactory::new(&grammar, &store);
         let root = factory.compile_root();
@@ -822,15 +807,14 @@ mod tests {
             .get_rule(root_rule.patterns[0])
             .as_match()
             .unwrap();
-        assert_eq!(first.captures.len(), 2);
-        assert!(first.captures[0].is_none());
+        assert_eq!(first.captures.len(), 3);
+        assert_eq!(first.captures[0].0, 1);
         assert_eq!(
-            first.captures[1]
-                .as_ref()
-                .and_then(|capture| capture.get_name(None, None))
-                .as_deref(),
+            first.captures[0].1.get_name(None, None).as_deref(),
             Some("valid.test")
         );
+        assert_eq!(first.captures[1].0, 1_000_000_000);
+        assert_eq!(first.captures[2].0, usize::MAX);
 
         let second = factory
             .registry()
@@ -844,13 +828,16 @@ mod tests {
             .get_rule(root_rule.patterns[2])
             .as_match()
             .unwrap();
-        assert_eq!(third.captures.len(), 1025);
+        assert_eq!(third.captures.len(), 2);
+        assert_eq!(third.captures[0].0, 1_024);
         assert_eq!(
-            third.captures[1024]
-                .as_ref()
-                .and_then(|capture| capture.get_name(None, None))
-                .as_deref(),
+            third.captures[0].1.get_name(None, None).as_deref(),
             Some("boundary.test")
+        );
+        assert_eq!(third.captures[1].0, 1_025);
+        assert_eq!(
+            third.captures[1].1.get_name(None, None).as_deref(),
+            Some("over.test")
         );
     }
 }

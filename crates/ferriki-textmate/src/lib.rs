@@ -87,24 +87,45 @@ pub mod __oracle {
     pub use crate::theme::Theme;
 }
 
-/// A tokenizer regex compilation failure, independent of the regex engine's API.
+/// A tokenizer regex or runtime guard failure, independent of the regex engine's API.
 #[derive(Debug)]
 pub struct RegexError {
-    source: ferroni::error::RegexError,
+    kind: RegexErrorKind,
 }
+
+#[derive(Debug)]
+enum RegexErrorKind {
+    Regex(ferroni::error::RegexError),
+    DepthLimit(&'static str),
+}
+
 impl RegexError {
     pub(crate) fn new(source: ferroni::error::RegexError) -> Self {
-        Self { source }
+        Self {
+            kind: RegexErrorKind::Regex(source),
+        }
+    }
+
+    pub(crate) fn depth_limit(message: &'static str) -> Self {
+        Self {
+            kind: RegexErrorKind::DepthLimit(message),
+        }
     }
 }
 impl std::fmt::Display for RegexError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.source.fmt(f)
+        match &self.kind {
+            RegexErrorKind::Regex(source) => source.fmt(f),
+            RegexErrorKind::DepthLimit(message) => f.write_str(message),
+        }
     }
 }
 impl std::error::Error for RegexError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.source)
+        match &self.kind {
+            RegexErrorKind::Regex(source) => Some(source),
+            RegexErrorKind::DepthLimit(_) => None,
+        }
     }
 }
 

@@ -1154,6 +1154,16 @@ impl<T: Copy> CompiledRule<T> {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn debug_reg_exps(&self) -> &[String] {
+        &self.reg_exps
+    }
+
+    #[cfg(test)]
+    pub(crate) fn debug_rules(&self) -> &[T] {
+        &self.rules
+    }
+
     pub(crate) fn record_backtracking_warnings_once(
         &self,
         mut visit: impl FnMut(T, &str, &FerroniBacktrackWarning),

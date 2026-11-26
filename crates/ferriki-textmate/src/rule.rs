@@ -163,10 +163,13 @@ impl CaptureRule {
     }
 }
 
+/// Sparse capture definitions ordered by capture group index.
+pub(crate) type CaptureRules = Vec<(usize, Arc<CaptureRule>)>;
+
 pub(crate) struct MatchRule {
     data: RuleData,
     match_source: RegExpSource<RuleScannerId>,
-    pub captures: Vec<Option<Arc<CaptureRule>>>,
+    pub captures: CaptureRules,
     cached_compiled_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
@@ -177,7 +180,7 @@ impl MatchRule {
         id: RuleId,
         name: Option<String>,
         match_pattern: impl Into<String>,
-        captures: Vec<Option<Arc<CaptureRule>>>,
+        captures: CaptureRules,
     ) -> Self {
         Self {
             data: RuleData::new(location, id, name, None),
@@ -225,10 +228,10 @@ impl IncludeOnlyRule {
 pub(crate) struct BeginEndRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
     end: RegExpSource<RuleScannerId>,
     pub end_has_back_references: bool,
-    pub end_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub end_captures: CaptureRules,
     pub apply_end_pattern_last: bool,
     pub has_missing_patterns: bool,
     pub patterns: Vec<RuleId>,
@@ -241,9 +244,9 @@ pub(crate) struct BeginEndRuleOptions {
     pub name: Option<String>,
     pub content_name: Option<String>,
     pub begin: String,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
     pub end: Option<String>,
-    pub end_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub end_captures: CaptureRules,
     pub apply_end_pattern_last: bool,
     pub patterns: CompilePatternsResult,
 }
@@ -310,8 +313,8 @@ impl BeginEndRule {
 pub(crate) struct BeginWhileRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
-    pub while_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
+    pub while_captures: CaptureRules,
     while_source: RegExpSource<RuleScannerId>,
     pub while_has_back_references: bool,
     pub has_missing_patterns: bool,
@@ -326,9 +329,9 @@ pub(crate) struct BeginWhileRuleOptions {
     pub name: Option<String>,
     pub content_name: Option<String>,
     pub begin: String,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
     pub while_pattern: String,
-    pub while_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub while_captures: CaptureRules,
     pub patterns: CompilePatternsResult,
 }
 
@@ -578,14 +581,15 @@ impl Rule {
         &self,
         registry: &RuleRegistry,
         output: &mut RegExpSourceList<RuleScannerId>,
-        visited: &mut HashSet<RuleId>,
+        active_path: &mut HashSet<RuleId>,
     ) {
         match self {
             Self::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
             Self::Match(rule) => output.push(rule.match_source.clone()),
             Self::IncludeOnly(rule) => {
-                if visited.insert(rule.data.id) {
-                    collect_pattern_ids(registry, &rule.patterns, output, visited);
+                if active_path.insert(rule.data.id) {
+                    collect_pattern_ids(registry, &rule.patterns, output, active_path);
+                    active_path.remove(&rule.data.id);
                 }
             }
             Self::BeginEnd(rule) => output.push(rule.begin.clone()),
@@ -922,24 +926,41 @@ fn rule_index(id: RuleId) -> Option<usize> {
         .and_then(|index| usize::try_from(index).ok())
 }
 
+enum CollectFrame {
+    Visit(RuleId),
+    Exit(RuleId),
+}
+
 fn collect_pattern_ids(
     registry: &RuleRegistry,
     patterns: &[RuleId],
     output: &mut RegExpSourceList<RuleScannerId>,
-    visited: &mut HashSet<RuleId>,
+    active_path: &mut HashSet<RuleId>,
 ) {
-    let mut pending: Vec<RuleId> = patterns.iter().rev().copied().collect();
-    while let Some(pattern_id) = pending.pop() {
-        match registry.get_rule(pattern_id) {
-            Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-            Rule::Match(rule) => output.push(rule.match_source.clone()),
-            Rule::IncludeOnly(rule) => {
-                if visited.insert(rule.data.id) {
-                    pending.extend(rule.patterns.iter().rev().copied());
-                }
+    let mut pending: Vec<CollectFrame> = patterns
+        .iter()
+        .rev()
+        .copied()
+        .map(CollectFrame::Visit)
+        .collect();
+    while let Some(frame) = pending.pop() {
+        match frame {
+            CollectFrame::Exit(id) => {
+                active_path.remove(&id);
             }
-            Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
-            Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+            CollectFrame::Visit(pattern_id) => match registry.get_rule(pattern_id) {
+                Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
+                Rule::Match(rule) => output.push(rule.match_source.clone()),
+                Rule::IncludeOnly(rule) => {
+                    if active_path.insert(rule.data.id) {
+                        pending.push(CollectFrame::Exit(rule.data.id));
+                        pending
+                            .extend(rule.patterns.iter().rev().copied().map(CollectFrame::Visit));
+                    }
+                }
+                Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
+                Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+            },
         }
     }
 }
@@ -960,11 +981,11 @@ fn compile_patterns(
             registry.scanner_pattern_cache.for_owner(owner_scope),
         );
         if let Some(patterns) = patterns {
-            let mut visited = HashSet::new();
+            let mut active_path = HashSet::new();
             if let Some(owner_id) = owner_include_only {
-                visited.insert(owner_id);
+                active_path.insert(owner_id);
             }
-            collect_pattern_ids(registry, patterns, &mut sources, &mut visited);
+            collect_pattern_ids(registry, patterns, &mut sources, &mut active_path);
         }
         sources
     });
@@ -1184,5 +1205,69 @@ mod tests {
             .find_next_match(&OnigString::new("hit"), 0, ScannerFindOptions::NONE)
             .unwrap();
         assert_eq!(result.rule_id, RuleScannerId::Rule(matched));
+    }
+
+    #[test]
+    fn repeated_sibling_includes_preserve_pattern_order() {
+        let mut registry = RuleRegistry::new();
+        let shared_match = match_rule(&mut registry, "shared");
+        let between_match = match_rule(&mut registry, "between");
+        let shared = registry.reserve_rule();
+        let branch = registry.reserve_rule();
+        let root = registry.reserve_rule();
+
+        registry.set_rule(
+            shared,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                shared,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![shared_match],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            branch,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                branch,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![between_match, shared],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            root,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                root,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![shared, branch],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+
+        let compiled = registry.get_rule(root).compile(&registry, None).unwrap();
+        assert_eq!(
+            compiled.debug_reg_exps(),
+            vec!["shared", "between", "shared"]
+        );
+        assert_eq!(
+            compiled.debug_rules(),
+            &[
+                RuleScannerId::Rule(shared_match),
+                RuleScannerId::Rule(between_match),
+                RuleScannerId::Rule(shared_match),
+            ]
+        );
     }
 }

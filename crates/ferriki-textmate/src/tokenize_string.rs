@@ -210,11 +210,9 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     || matched_rule.as_begin_while().is_some())
                     && stack.depth >= MAX_STATE_STACK_DEPTH
                 {
-                    produce(&stack, line_length, line_tokens, line_fonts);
-                    return Ok(TokenizeStringResult {
-                        stack,
-                        stopped_early: true,
-                    });
+                    return Err(RegexError::depth_limit(
+                        "grammar state stack depth limit exceeded",
+                    ));
                 }
                 produce(&stack, full_match.start, line_tokens, line_fonts);
 
@@ -570,7 +568,7 @@ fn handle_captures<G: TokenizerGrammar>(
     stack: &Arc<StateStack>,
     line_tokens: &mut LineTokens,
     line_fonts: &mut LineFonts,
-    captures: &[Option<Arc<CaptureRule>>],
+    captures: &[(usize, Arc<CaptureRule>)],
     capture_indices: &[CaptureIndex],
     capture_depth: usize,
 ) -> Result<(), RegexError> {
@@ -578,14 +576,13 @@ fn handle_captures<G: TokenizerGrammar>(
         return Ok(());
     }
     let line_text_content = line_text.content();
-    let length = captures.len().min(capture_indices.len());
     let mut local_stack: Vec<LocalStackElement> = Vec::new();
     let max_end = capture_indices[0].end;
 
-    for index in 0..length {
-        let Some(capture_rule) = captures[index].as_ref() else {
-            continue;
-        };
+    for &(index, ref capture_rule) in captures {
+        if index >= capture_indices.len() {
+            break;
+        }
         let capture_index = &capture_indices[index];
         if capture_index.length == 0 {
             continue;
@@ -614,9 +611,12 @@ fn handle_captures<G: TokenizerGrammar>(
             produce(stack, capture_index.start, line_tokens, line_fonts);
         }
 
-        if let Some(retokenize_rule_id) = capture_rule.retokenize_captured_with_rule_id
-            && capture_depth < MAX_CAPTURE_RETOKENIZE_DEPTH
-        {
+        if let Some(retokenize_rule_id) = capture_rule.retokenize_captured_with_rule_id {
+            if capture_depth >= MAX_CAPTURE_RETOKENIZE_DEPTH {
+                return Err(RegexError::depth_limit(
+                    "capture retokenization depth limit exceeded",
+                ));
+            }
             let scope_name = capture_rule.get_name(Some(line_text_content), Some(capture_indices));
             let name_scopes_list = stack
                 .content_name_scopes_list
@@ -1175,22 +1175,60 @@ mod tests {
         let grammar = TestGrammar::new(
             r#"{
                 "scopeName": "source.test",
-                "patterns": [{
-                    "begin": "\\(",
-                    "end": "\\)",
-                    "name": "meta.group",
-                    "patterns": [{ "include": "$self" }]
-                }]
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    {
+                        "match": "top",
+                        "name": "keyword.top"
+                    }
+                ]
             }"#,
         );
-        let opens = "(".repeat(super::MAX_STATE_STACK_DEPTH + 100);
-        let (_, result) = tokenize_line(&grammar, &opens, None);
-        assert!(result.stopped_early);
-        assert_eq!(result.stack.depth, super::MAX_STATE_STACK_DEPTH);
+        let tokenize_binary = |line: &str, state: Option<Arc<StateStack>>| {
+            let line_text = format!("{line}\n");
+            let onig = crate::OnigString::new(&line_text);
+            let is_first_line = state.is_none();
+            let initial = state.unwrap_or_else(|| grammar.initial_state());
+            let mut tokens = LineTokens::new(true, &line_text, Vec::new(), None);
+            let mut fonts = LineFonts::new();
+            tokenize_string(
+                &grammar,
+                &onig,
+                is_first_line,
+                0,
+                initial,
+                &mut tokens,
+                &mut fonts,
+                true,
+                0,
+            )
+        };
 
-        let (_, popped) = tokenize_line(&grammar, ")", Some(result.stack));
-        assert!(!popped.stopped_early);
-        assert_eq!(popped.stack.depth, super::MAX_STATE_STACK_DEPTH - 1);
+        // Balanced nesting up to the limit succeeds and returns to top-level state.
+        let max_nested = super::MAX_STATE_STACK_DEPTH - 1;
+        let balanced = format!("{}{}", "(".repeat(max_nested), ")".repeat(max_nested));
+        let balanced_result = tokenize_binary(&balanced, None).expect("within depth limit");
+        assert!(!balanced_result.stopped_early);
+        assert_eq!(balanced_result.stack.depth, 1);
+        let (next_tokens, next_result) =
+            tokenize_line(&grammar, "top", Some(balanced_result.stack));
+        assert!(!next_result.stopped_early);
+        assert_eq!(next_tokens[0].scopes, vec!["source.test", "keyword.top"]);
+
+        // Exceeding the depth limit returns an explicit error instead of a truncated stack.
+        let too_deep = format!(
+            "{}{}",
+            "(".repeat(super::MAX_STATE_STACK_DEPTH),
+            ")".repeat(super::MAX_STATE_STACK_DEPTH)
+        );
+        let err = tokenize_binary(&too_deep, None)
+            .err()
+            .expect("exceeding state stack depth should return an error");
+        assert!(err.to_string().contains("depth limit"));
     }
 
     #[test]
@@ -1209,8 +1247,24 @@ mod tests {
                 }]
             }"#,
         );
-        let (tokens, result) = tokenize_line(&grammar, "a", None);
-        assert!(!result.stopped_early);
-        assert!(!tokens.is_empty());
+        let line_text = "a\n";
+        let onig = crate::OnigString::new(line_text);
+        let state = grammar.initial_state();
+        let mut tokens = LineTokens::new(true, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let err = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            state,
+            &mut tokens,
+            &mut fonts,
+            true,
+            0,
+        )
+        .err()
+        .expect("self-recursive capture retokenization should return an error");
+        assert!(err.to_string().contains("depth limit"));
     }
 }
