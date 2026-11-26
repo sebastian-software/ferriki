@@ -5,6 +5,7 @@
 //! TextMate regular-expression sources compiled onto ferroni's Scanner API.
 
 use std::array;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -447,58 +448,97 @@ std::thread_local! {
 }
 
 #[derive(Clone, Debug)]
-struct AnchorCache {
-    a0_g0: String,
-    a0_g1: String,
-    a1_g0: String,
-    a1_g1: String,
-}
-
-#[derive(Clone, Debug)]
 pub(crate) struct RegExpSource<T> {
     pub source: String,
     pub original_source: String,
     pub rule_id: T,
     pub has_anchor: bool,
     pub has_back_references: bool,
-    anchor_cache: Option<AnchorCache>,
+    oversized: bool,
+    normalized_lens: [usize; 4],
 }
+
+/// Maximum cumulative expanded regex pattern bytes allowed for a single scanner
+/// or resolved backreference pattern before allocating/compiling.
+pub(crate) const MAX_SCANNER_PATTERN_BYTES: usize = 16 * 1024 * 1024;
+const OVERSIZED_LENS: [usize; 4] = [MAX_SCANNER_PATTERN_BYTES + 1; 4];
 
 impl<T> RegExpSource<T> {
     #[must_use]
-    pub(crate) fn new(reg_exp_source: impl Into<String>, rule_id: T) -> Self {
-        let original_source = reg_exp_source.into();
-        let (source, has_anchor) = rewrite_end_anchor(&original_source);
-        let anchor_cache = has_anchor.then(|| build_anchor_cache(&source));
+    pub(crate) fn new(reg_exp_source: impl AsRef<str>, rule_id: T) -> Self {
+        let raw_source = reg_exp_source.as_ref();
+        if raw_source.len() > MAX_SCANNER_PATTERN_BYTES {
+            return Self {
+                source: String::new(),
+                original_source: String::new(),
+                rule_id,
+                has_anchor: false,
+                has_back_references: has_back_references(raw_source),
+                oversized: true,
+                normalized_lens: OVERSIZED_LENS,
+            };
+        }
+        let Some((source, has_anchor)) =
+            rewrite_end_anchor_bounded(raw_source, MAX_SCANNER_PATTERN_BYTES)
+        else {
+            return Self {
+                source: String::new(),
+                original_source: String::new(),
+                rule_id,
+                has_anchor: false,
+                has_back_references: has_back_references(raw_source),
+                oversized: true,
+                normalized_lens: OVERSIZED_LENS,
+            };
+        };
         let has_back_references = has_back_references(&source);
+        let normalized_lens = normalized_pattern_byte_lens(&source, has_anchor);
         Self {
             source,
-            original_source,
+            original_source: raw_source.to_owned(),
             rule_id,
             has_anchor,
             has_back_references,
-            anchor_cache,
-        }
-    }
-
-    pub(crate) fn set_source(&mut self, new_source: impl Into<String>) {
-        let new_source = new_source.into();
-        if self.source == new_source {
-            return;
-        }
-        self.source = new_source;
-        if self.has_anchor {
-            self.anchor_cache = Some(build_anchor_cache(&self.source));
+            oversized: false,
+            normalized_lens,
         }
     }
 
     #[must_use]
+    pub(crate) fn is_oversized(&self) -> bool {
+        self.oversized || self.source.len() > MAX_SCANNER_PATTERN_BYTES
+    }
+
+    #[must_use]
+    pub(crate) fn normalized_byte_len(&self, allow_a: bool, allow_g: bool) -> usize {
+        if self.is_oversized() {
+            return MAX_SCANNER_PATTERN_BYTES.saturating_add(1);
+        }
+        self.normalized_lens[usize::from(allow_a) * 2 + usize::from(allow_g)]
+    }
+
+    fn set_source_with_lens(&mut self, new_source: String, new_lens: [usize; 4]) {
+        self.source = new_source;
+        self.oversized = false;
+        self.normalized_lens = new_lens;
+    }
+
     pub(crate) fn resolve_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
-    ) -> String {
-        replace_numeric_back_references(&self.source, line_text, capture_indices)
+    ) -> Result<String, RegexError> {
+        if self.is_oversized() {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        replace_numeric_back_references(
+            &self.source,
+            line_text,
+            capture_indices,
+            MAX_SCANNER_PATTERN_BYTES,
+        )
     }
 
     /// Checks that a serialized dynamic pattern could only have been produced
@@ -513,6 +553,9 @@ impl<T> RegExpSource<T> {
         candidate: &str,
         work: &mut usize,
     ) -> bool {
+        if self.is_oversized() {
+            return false;
+        }
         let parts = split_back_reference_source(&self.source);
         let reference_count = parts
             .iter()
@@ -525,17 +568,34 @@ impl<T> RegExpSource<T> {
         matches_back_reference_parts(&parts, candidate, 0, 0, &mut memo, work)
     }
 
-    #[must_use]
-    pub(crate) fn resolve_anchors(&self, allow_a: bool, allow_g: bool) -> &str {
-        let Some(cache) = self.anchor_cache.as_ref() else {
-            return &self.source;
-        };
-        match (allow_a, allow_g) {
-            (false, false) => &cache.a0_g0,
-            (false, true) => &cache.a0_g1,
-            (true, false) => &cache.a1_g0,
-            (true, true) => &cache.a1_g1,
+    pub(crate) fn resolve_anchors_bounded(
+        &self,
+        allow_a: bool,
+        allow_g: bool,
+        max_bytes: usize,
+    ) -> Result<Cow<'_, str>, RegexError> {
+        if self.is_oversized() {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
         }
+        if !self.has_anchor || (allow_a && allow_g) {
+            if self.source.len() > max_bytes {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            return Ok(Cow::Borrowed(&self.source));
+        }
+        resolve_anchor_variant_bounded(&self.source, allow_a, allow_g, max_bytes).map(Cow::Owned)
+    }
+
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) fn resolve_anchors(&self, allow_a: bool, allow_g: bool) -> String {
+        self.resolve_anchors_bounded(allow_a, allow_g, MAX_SCANNER_PATTERN_BYTES)
+            .expect("test anchor resolution must stay within pattern size budget")
+            .into_owned()
     }
 }
 
@@ -656,7 +716,11 @@ fn requires_regex_literal_escape(character: char) -> bool {
     ) || character.is_whitespace()
 }
 
-fn rewrite_end_anchor(source: &str) -> (String, bool) {
+fn rewrite_end_anchor_bounded(source: &str, max_bytes: usize) -> Option<(String, bool)> {
+    const END_ANCHOR_REPLACEMENT: &str = "$(?!\\n)(?<!\\n)";
+    if source.len() > max_bytes {
+        return None;
+    }
     let bytes = source.as_bytes();
     let mut position = 0;
     let mut last_pushed_position = 0;
@@ -671,8 +735,17 @@ fn rewrite_end_anchor(source: &str) -> (String, bool) {
                 .expect("backslash must have a following character");
             match next {
                 'z' => {
-                    output.push_str(&source[last_pushed_position..position]);
-                    output.push_str("$(?!\\n)(?<!\\n)");
+                    let prefix = &source[last_pushed_position..position];
+                    if output
+                        .len()
+                        .saturating_add(prefix.len())
+                        .saturating_add(END_ANCHOR_REPLACEMENT.len())
+                        > max_bytes
+                    {
+                        return None;
+                    }
+                    output.push_str(prefix);
+                    output.push_str(END_ANCHOR_REPLACEMENT);
                     last_pushed_position = position + 1 + next.len_utf8();
                 }
                 'A' | 'G' => has_anchor = true,
@@ -689,15 +762,29 @@ fn rewrite_end_anchor(source: &str) -> (String, bool) {
     }
 
     if last_pushed_position == 0 {
-        (source.to_owned(), has_anchor)
+        Some((source.to_owned(), has_anchor))
     } else {
-        output.push_str(&source[last_pushed_position..]);
-        (output, has_anchor)
+        let tail = &source[last_pushed_position..];
+        if output.len().saturating_add(tail.len()) > max_bytes {
+            return None;
+        }
+        output.push_str(tail);
+        Some((output, has_anchor))
     }
 }
 
-fn build_anchor_cache(source: &str) -> AnchorCache {
-    let mut variants = array::from_fn::<_, 4, _>(|_| String::with_capacity(source.len()));
+fn resolve_anchor_variant_bounded(
+    source: &str,
+    allow_a: bool,
+    allow_g: bool,
+    max_bytes: usize,
+) -> Result<String, RegexError> {
+    if source.len() > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
+    let mut output = String::with_capacity(source.len());
     let bytes = source.as_bytes();
     let mut position = 0;
 
@@ -707,50 +794,38 @@ fn build_anchor_cache(source: &str) -> AnchorCache {
                 .chars()
                 .next()
                 .expect("backslash must have a following character");
-            for variant in &mut variants {
-                variant.push('\\');
+            let replacement = match next {
+                'A' if !allow_a => '\u{ffff}',
+                'G' if !allow_g => '\u{ffff}',
+                other => other,
+            };
+            let extra = 1 + replacement.len_utf8();
+            if output.len().saturating_add(extra) > max_bytes {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
             }
-            match next {
-                'A' => {
-                    variants[0].push('\u{ffff}');
-                    variants[1].push('\u{ffff}');
-                    variants[2].push('A');
-                    variants[3].push('A');
-                }
-                'G' => {
-                    variants[0].push('\u{ffff}');
-                    variants[1].push('G');
-                    variants[2].push('\u{ffff}');
-                    variants[3].push('G');
-                }
-                _ => {
-                    for variant in &mut variants {
-                        variant.push(next);
-                    }
-                }
-            }
+            output.push('\\');
+            output.push(replacement);
             position += 1 + next.len_utf8();
             continue;
         }
 
-        let remainder = &source[position..];
-        let character = remainder
+        let character = source[position..]
             .chars()
             .next()
             .expect("position must be within source");
-        for variant in &mut variants {
-            variant.push(character);
+        let extra = character.len_utf8();
+        if output.len().saturating_add(extra) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
         }
-        position += character.len_utf8();
+        output.push(character);
+        position += extra;
     }
 
-    let [a0_g0, a0_g1, a1_g0, a1_g1] = variants;
-    AnchorCache {
-        a0_g0,
-        a0_g1,
-        a1_g0,
-        a1_g1,
-    }
+    Ok(output)
 }
 
 fn has_back_references(source: &str) -> bool {
@@ -764,7 +839,13 @@ fn replace_numeric_back_references(
     source: &str,
     line_text: &str,
     capture_indices: &[CaptureIndex],
-) -> String {
+    max_bytes: usize,
+) -> Result<String, RegexError> {
+    if source.len() > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
     let bytes = source.as_bytes();
     let mut result = String::with_capacity(source.len());
     let mut position = 0;
@@ -785,20 +866,53 @@ fn replace_numeric_back_references(
         while bytes.get(digit_end).is_some_and(u8::is_ascii_digit) {
             digit_end += 1;
         }
-        let capture_index = source[digit_start..digit_end]
+        let captured_value = source[digit_start..digit_end]
             .parse::<usize>()
-            .expect("ASCII digits must parse as an index");
-        let captured_value = capture_indices.get(capture_index).map_or("", |capture| {
-            substring_utf16(line_text, capture.start, capture.end)
-        });
+            .ok()
+            .and_then(|capture_index| capture_indices.get(capture_index))
+            .map_or("", |capture| {
+                substring_utf16(line_text, capture.start, capture.end)
+            });
 
-        result.push_str(&source[last_pushed_position..position]);
-        result.push_str(&escape_reg_exp_characters(captured_value));
+        let literal = &source[last_pushed_position..position];
+        if result.len().saturating_add(literal.len()) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        result.push_str(literal);
+        push_escaped_reg_exp_characters(&mut result, captured_value, max_bytes)?;
         last_pushed_position = digit_end;
         position = digit_end;
     }
-    result.push_str(&source[last_pushed_position..]);
-    result
+    let tail = &source[last_pushed_position..];
+    if result.len().saturating_add(tail.len()) > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
+    result.push_str(tail);
+    Ok(result)
+}
+
+fn push_escaped_reg_exp_characters(
+    out: &mut String,
+    value: &str,
+    max_bytes: usize,
+) -> Result<(), RegexError> {
+    for character in value.chars() {
+        let extra = usize::from(requires_regex_literal_escape(character)) + character.len_utf8();
+        if out.len().saturating_add(extra) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        if requires_regex_literal_escape(character) {
+            out.push('\\');
+        }
+        out.push(character);
+    }
+    Ok(())
 }
 
 fn substring_utf16(value: &str, start: usize, end: usize) -> &str {
@@ -819,17 +933,6 @@ fn utf16_offset_to_utf8(value: &str, offset: usize) -> usize {
         }
     }
     value.len()
-}
-
-fn escape_reg_exp_characters(value: &str) -> String {
-    let mut escaped = String::with_capacity(value.len());
-    for character in value.chars() {
-        if requires_regex_literal_escape(character) {
-            escaped.push('\\');
-        }
-        escaped.push(character);
-    }
-    escaped
 }
 
 #[must_use]
@@ -945,6 +1048,7 @@ fn find_capture_placeholder(source: &str, from: usize) -> Option<CapturePlacehol
 
 pub(crate) struct RegExpSourceList<T> {
     items: Vec<RegExpSource<T>>,
+    total_normalized_bytes: [usize; 4],
     has_anchors: bool,
     cached: Option<Arc<CompiledRule<T>>>,
     anchor_cache: [Option<Arc<CompiledRule<T>>>; 4],
@@ -991,6 +1095,7 @@ impl<T> RegExpSourceList<T> {
     ) -> Self {
         Self {
             items: Vec::new(),
+            total_normalized_bytes: [0; 4],
             has_anchors: false,
             cached: None,
             anchor_cache: array::from_fn(|_| None),
@@ -1015,11 +1120,25 @@ impl<T> RegExpSourceList<T> {
 
     pub(crate) fn push(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
+        for (total, len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(item.normalized_lens)
+        {
+            *total = total.saturating_add(len);
+        }
         self.items.push(item);
     }
 
     pub(crate) fn unshift(&mut self, item: RegExpSource<T>) {
         self.has_anchors |= item.has_anchor;
+        for (total, len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(item.normalized_lens)
+        {
+            *total = total.saturating_add(len);
+        }
         self.items.insert(0, item);
     }
 
@@ -1037,32 +1156,125 @@ impl<T> RegExpSourceList<T> {
         self.items.is_empty()
     }
 
-    pub(crate) fn set_source(&mut self, index: usize, new_source: impl Into<String>) {
-        let new_source = new_source.into();
-        self.has_resolved_sources = true;
-        if self.items[index].source != new_source {
-            self.dispose_caches();
-            self.items[index].set_source(new_source);
+    pub(crate) fn try_set_source(
+        &mut self,
+        index: usize,
+        replacement: &str,
+        allow_a: bool,
+        allow_g: bool,
+    ) -> Result<(), RegexError> {
+        let slot = usize::from(allow_a) * 2 + usize::from(allow_g);
+        if !self.items[index].is_oversized() && self.items[index].source == replacement {
+            self.has_resolved_sources = true;
+            if self.total_normalized_bytes[slot] > MAX_SCANNER_PATTERN_BYTES {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            return Ok(());
         }
+        if replacement.len() > MAX_SCANNER_PATTERN_BYTES {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        let old_lens = self.items[index].normalized_lens;
+        let new_lens = normalized_pattern_byte_lens(replacement, self.items[index].has_anchor);
+        if self.total_normalized_bytes[slot]
+            .saturating_sub(old_lens[slot])
+            .saturating_add(new_lens[slot])
+            > MAX_SCANNER_PATTERN_BYTES
+        {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        self.has_resolved_sources = true;
+        self.dispose_caches();
+        self.items[index].set_source_with_lens(replacement.to_owned(), new_lens);
+        for ((total, old_len), new_len) in self
+            .total_normalized_bytes
+            .iter_mut()
+            .zip(old_lens)
+            .zip(new_lens)
+        {
+            *total = total.saturating_sub(old_len).saturating_add(new_len);
+        }
+        Ok(())
     }
 }
 
 impl<T: Copy> RegExpSourceList<T> {
+    fn compile_resolved(
+        &self,
+        anchors: Option<(bool, bool)>,
+    ) -> Result<Arc<CompiledRule<T>>, RegexError> {
+        let slot = match anchors {
+            Some((allow_a, allow_g)) => usize::from(allow_a) * 2 + usize::from(allow_g),
+            None => 3,
+        };
+        if self.total_normalized_bytes[slot] > MAX_SCANNER_PATTERN_BYTES {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        let mut reg_exps = Vec::with_capacity(self.items.len());
+        let mut compiled_reg_exps = Vec::with_capacity(self.items.len());
+        let mut total_compiled_bytes = 0usize;
+
+        for item in &self.items {
+            if item.is_oversized() {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            let remaining = MAX_SCANNER_PATTERN_BYTES.saturating_sub(total_compiled_bytes);
+            let resolved = match anchors {
+                Some((allow_a, allow_g)) => {
+                    item.resolve_anchors_bounded(allow_a, allow_g, remaining)?
+                }
+                None => {
+                    if item.source.len() > remaining {
+                        return Err(RegexError::depth_limit(
+                            "rule pattern expansion size limit exceeded",
+                        ));
+                    }
+                    Cow::Borrowed(item.source.as_str())
+                }
+            };
+            let normalized = normalize_ferroni_pattern_bounded(&resolved, remaining)?;
+            total_compiled_bytes = total_compiled_bytes.saturating_add(normalized.len());
+            if total_compiled_bytes > MAX_SCANNER_PATTERN_BYTES {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            reg_exps.push(resolved.into_owned());
+            compiled_reg_exps.push(normalized);
+        }
+
+        let original_patterns = self
+            .items
+            .iter()
+            .map(|item| item.original_source.as_str())
+            .collect();
+        let rules = self.items.iter().map(|item| item.rule_id).collect();
+        Ok(Arc::new(CompiledRule::new(
+            reg_exps,
+            compiled_reg_exps,
+            original_patterns,
+            rules,
+            self.regex_prefilter,
+            &self.scanner_pattern_cache,
+            !self.has_resolved_sources,
+        )?))
+    }
+
     pub(crate) fn compile(&mut self) -> Result<Arc<CompiledRule<T>>, RegexError> {
         if let Some(cached) = self.cached.as_ref() {
             return Ok(Arc::clone(cached));
         }
-        let compiled = Arc::new(CompiledRule::new(
-            self.items.iter().map(|item| item.source.clone()).collect(),
-            self.items
-                .iter()
-                .map(|item| item.original_source.as_str())
-                .collect::<Vec<_>>(),
-            self.items.iter().map(|item| item.rule_id).collect(),
-            self.regex_prefilter,
-            &self.scanner_pattern_cache,
-            !self.has_resolved_sources,
-        )?);
+        let compiled = self.compile_resolved(None)?;
         self.cached = Some(Arc::clone(&compiled));
         Ok(compiled)
     }
@@ -1080,20 +1292,7 @@ impl<T: Copy> RegExpSourceList<T> {
         if let Some(cached) = self.anchor_cache[cache_index].as_ref() {
             return Ok(Arc::clone(cached));
         }
-        let compiled = Arc::new(CompiledRule::new(
-            self.items
-                .iter()
-                .map(|item| item.resolve_anchors(allow_a, allow_g).to_owned())
-                .collect(),
-            self.items
-                .iter()
-                .map(|item| item.original_source.as_str())
-                .collect(),
-            self.items.iter().map(|item| item.rule_id).collect(),
-            self.regex_prefilter,
-            &self.scanner_pattern_cache,
-            !self.has_resolved_sources,
-        )?);
+        let compiled = self.compile_resolved(Some((allow_a, allow_g)))?;
         self.anchor_cache[cache_index] = Some(Arc::clone(&compiled));
         Ok(compiled)
     }
@@ -1116,16 +1315,13 @@ struct CompiledBacktrackingWarning<T> {
 impl<T: Copy> CompiledRule<T> {
     fn new(
         reg_exps: Vec<String>,
+        compiled_reg_exps: Vec<String>,
         original_patterns: Vec<&str>,
         rules: Vec<T>,
         regex_prefilter: bool,
         pattern_cache: &ScannerPatternCache,
         share_patterns: bool,
     ) -> Result<Self, RegexError> {
-        let compiled_reg_exps: Vec<_> = reg_exps
-            .iter()
-            .map(|pattern| normalize_ferroni_pattern(pattern))
-            .collect();
         let scanner_reg_exps: Vec<_> = compiled_reg_exps.iter().map(String::as_str).collect();
         // vscode-oniguruma compiles scanner patterns with CAPTURE_GROUP by
         // default, so unnamed groups keep capturing next to named ones and
@@ -1151,6 +1347,16 @@ impl<T: Copy> CompiledRule<T> {
             backtracking_warnings,
             backtracking_warnings_recorded: OnceLock::new(),
         })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn debug_reg_exps(&self) -> &[String] {
+        &self.reg_exps
+    }
+
+    #[cfg(test)]
+    pub(crate) fn debug_rules(&self) -> &[T] {
+        &self.rules
     }
 
     pub(crate) fn record_backtracking_warnings_once(
@@ -1210,18 +1416,26 @@ impl<T: Copy> CompiledRule<T> {
     }
 }
 
-pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
-    let mut result = String::with_capacity(pattern.len());
+#[must_use]
+fn normalized_pattern_byte_lens(pattern: &str, has_anchor: bool) -> [usize; 4] {
     let bytes = pattern.as_bytes();
+    let mut base_len = pattern.len();
+    let mut a_count = 0usize;
+    let mut g_count = 0usize;
     let mut position = 0;
     let mut in_character_class = false;
 
     while position < bytes.len() {
         if bytes[position] == b'\\' {
-            result.push('\\');
             position += 1;
             if let Some(character) = pattern[position..].chars().next() {
-                result.push(character);
+                if has_anchor {
+                    match character {
+                        'A' => a_count = a_count.saturating_add(1),
+                        'G' => g_count = g_count.saturating_add(1),
+                        _ => {}
+                    }
+                }
                 position += character.len_utf8();
             }
             continue;
@@ -1233,7 +1447,7 @@ pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
                 && !starts_valid_interval(&pattern[position..])
                 && !starts_special_brace_expression(pattern, position) =>
             {
-                result.push('\\');
+                base_len = base_len.saturating_add(1);
             }
             _ => {}
         }
@@ -1241,10 +1455,104 @@ pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
             .chars()
             .next()
             .expect("pattern position must be on a character boundary");
+        position += character.len_utf8();
+    }
+
+    if !has_anchor {
+        return [base_len; 4];
+    }
+    // '\u{ffff}' is 3 UTF-8 bytes vs 1 byte for 'A'/'G' (+2 bytes per disabled anchor).
+    let a_extra = a_count.saturating_mul(2);
+    let g_extra = g_count.saturating_mul(2);
+    [
+        base_len.saturating_add(a_extra).saturating_add(g_extra),
+        base_len.saturating_add(a_extra),
+        base_len.saturating_add(g_extra),
+        base_len,
+    ]
+}
+
+#[must_use]
+pub(crate) fn normalized_pattern_byte_len(pattern: &str, allow_a: bool, allow_g: bool) -> usize {
+    let has_anchor = !allow_a || !allow_g;
+    let lens = normalized_pattern_byte_lens(pattern, has_anchor);
+    lens[usize::from(allow_a) * 2 + usize::from(allow_g)]
+}
+
+#[cfg(test)]
+pub(crate) fn normalize_ferroni_pattern(pattern: &str) -> String {
+    normalize_ferroni_pattern_bounded(pattern, usize::MAX)
+        .expect("unbounded pattern normalization cannot exceed usize::MAX")
+}
+
+pub(crate) fn normalize_ferroni_pattern_bounded(
+    pattern: &str,
+    max_bytes: usize,
+) -> Result<String, RegexError> {
+    if pattern.len() > max_bytes {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
+    }
+    let mut result = String::with_capacity(pattern.len());
+    let bytes = pattern.as_bytes();
+    let mut position = 0;
+    let mut in_character_class = false;
+
+    while position < bytes.len() {
+        if bytes[position] == b'\\' {
+            let mut extra = 1;
+            let next_char = pattern[position + 1..].chars().next();
+            if let Some(character) = next_char {
+                extra += character.len_utf8();
+            }
+            if result.len().saturating_add(extra) > max_bytes {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
+            result.push('\\');
+            position += 1;
+            if let Some(character) = next_char {
+                result.push(character);
+                position += character.len_utf8();
+            }
+            continue;
+        }
+        let escape_brace = match bytes[position] {
+            b'[' => {
+                in_character_class = true;
+                false
+            }
+            b']' => {
+                in_character_class = false;
+                false
+            }
+            b'{' if !in_character_class
+                && !starts_valid_interval(&pattern[position..])
+                && !starts_special_brace_expression(pattern, position) =>
+            {
+                true
+            }
+            _ => false,
+        };
+        let character = pattern[position..]
+            .chars()
+            .next()
+            .expect("pattern position must be on a character boundary");
+        let extra = usize::from(escape_brace) + character.len_utf8();
+        if result.len().saturating_add(extra) > max_bytes {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion size limit exceeded",
+            ));
+        }
+        if escape_brace {
+            result.push('\\');
+        }
         result.push(character);
         position += character.len_utf8();
     }
-    result
+    Ok(result)
 }
 
 fn rejects_artificial_end(pattern: &str) -> bool {
@@ -1373,7 +1681,7 @@ mod tests {
 
         assert!(source.has_back_references);
         assert_eq!(
-            source.resolve_back_references(line, &captures),
+            source.resolve_back_references(line, &captures).unwrap(),
             r"end-a\.b-"
         );
         let mut work = 0;
@@ -1744,7 +2052,7 @@ mod tests {
         let first = sources.compile().unwrap();
         assert!(Arc::ptr_eq(&first, &sources.compile().unwrap()));
 
-        sources.set_source(0, "b");
+        sources.try_set_source(0, "b", true, true).unwrap();
         let second = sources.compile().unwrap();
         assert!(!Arc::ptr_eq(&first, &second));
         let line = OnigString::new("b");
@@ -1789,5 +2097,81 @@ mod tests {
                 .find_next_match(&line, 0, ScannerFindOptions::NONE)
                 .is_some()
         );
+    }
+
+    #[test]
+    fn resolves_overflowing_numeric_backreference_to_empty_string() {
+        let source = RegExpSource::new(r"prefix\999999999999999999999-\1-suffix", 1_u32);
+        let captures = [
+            CaptureIndex {
+                start: 0,
+                end: 3,
+                length: 3,
+            },
+            CaptureIndex {
+                start: 0,
+                end: 3,
+                length: 3,
+            },
+        ];
+        assert_eq!(
+            source.resolve_back_references("a.b", &captures).unwrap(),
+            r"prefix-a\.b-suffix"
+        );
+    }
+
+    #[test]
+    fn rejects_oversized_backreference_expansion_before_allocating() {
+        let pattern = r"\1".repeat(20_000);
+        let source = RegExpSource::new(pattern, 1_u32);
+        let line = "a".repeat(2_000);
+        let captures = [
+            CaptureIndex {
+                start: 0,
+                end: 2_000,
+                length: 2_000,
+            },
+            CaptureIndex {
+                start: 0,
+                end: 2_000,
+                length: 2_000,
+            },
+        ];
+        let err = source
+            .resolve_back_references(&line, &captures)
+            .expect_err("repeated backreference expansion exceeding 16 MiB must fail");
+        assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn bounds_end_anchor_rewrite_disabled_anchor_expansion_and_brace_normalization() {
+        let z_pattern = "\\z".repeat(2_000_000);
+        let z_source = RegExpSource::new(&z_pattern, 1_u32);
+        assert!(z_source.is_oversized());
+        assert!(z_source.source.is_empty());
+        assert!(z_source.original_source.is_empty());
+
+        let oversized_backref = format!("\\1{}", "a".repeat(super::MAX_SCANNER_PATTERN_BYTES));
+        let backref_source = RegExpSource::new(&oversized_backref, 4_u32);
+        assert!(backref_source.is_oversized());
+        assert!(backref_source.has_back_references);
+
+        let anchor_pattern = "\\A".repeat(5_000_000);
+        let mut anchor_list = RegExpSourceList::new();
+        anchor_list.push(RegExpSource::new(anchor_pattern, 2_u32));
+        let err = anchor_list
+            .compile_ag(false, true)
+            .err()
+            .expect("disabled \\A expansion exceeding 16 MiB must fail");
+        assert!(err.to_string().contains("size limit"));
+
+        let brace_pattern = "{".repeat(9 * 1024 * 1024);
+        let mut brace_list = RegExpSourceList::new();
+        brace_list.push(RegExpSource::new(brace_pattern, 3_u32));
+        let err = brace_list
+            .compile()
+            .err()
+            .expect("brace normalization exceeding 16 MiB must fail");
+        assert!(err.to_string().contains("size limit"));
     }
 }

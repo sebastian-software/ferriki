@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -14,8 +14,8 @@ use crate::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{
-    CaptureIndex, CompiledRule, RegExpSource, RegExpSourceList, ScannerPatternCache, has_captures,
-    replace_captures,
+    CaptureIndex, CompiledRule, MAX_SCANNER_PATTERN_BYTES, RegExpSource, RegExpSourceList,
+    ScannerPatternCache, has_captures, normalized_pattern_byte_len, replace_captures,
 };
 
 /// The scanner identity for a compiled grammar pattern.
@@ -163,10 +163,13 @@ impl CaptureRule {
     }
 }
 
+/// Sparse capture definitions ordered by capture group index.
+pub(crate) type CaptureRules = Vec<(usize, Arc<CaptureRule>)>;
+
 pub(crate) struct MatchRule {
     data: RuleData,
     match_source: RegExpSource<RuleScannerId>,
-    pub captures: Vec<Option<Arc<CaptureRule>>>,
+    pub captures: CaptureRules,
     cached_compiled_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
@@ -176,8 +179,8 @@ impl MatchRule {
         location: Option<Location>,
         id: RuleId,
         name: Option<String>,
-        match_pattern: impl Into<String>,
-        captures: Vec<Option<Arc<CaptureRule>>>,
+        match_pattern: impl AsRef<str>,
+        captures: CaptureRules,
     ) -> Self {
         Self {
             data: RuleData::new(location, id, name, None),
@@ -225,36 +228,33 @@ impl IncludeOnlyRule {
 pub(crate) struct BeginEndRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
     end: RegExpSource<RuleScannerId>,
     pub end_has_back_references: bool,
-    pub end_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub end_captures: CaptureRules,
     pub apply_end_pattern_last: bool,
     pub has_missing_patterns: bool,
     pub patterns: Vec<RuleId>,
     cached_compiled_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub(crate) struct BeginEndRuleOptions {
+pub(crate) struct BeginEndRuleOptions<'a> {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
     pub content_name: Option<String>,
-    pub begin: String,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
-    pub end: Option<String>,
-    pub end_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin: &'a str,
+    pub begin_captures: CaptureRules,
+    pub end: Option<&'a str>,
+    pub end_captures: CaptureRules,
     pub apply_end_pattern_last: bool,
     pub patterns: CompilePatternsResult,
 }
 
 impl BeginEndRule {
     #[must_use]
-    pub(crate) fn new(options: BeginEndRuleOptions) -> Self {
-        let end = RegExpSource::new(
-            options.end.unwrap_or_else(|| "\u{ffff}".to_owned()),
-            RuleScannerId::End,
-        );
+    pub(crate) fn new(options: BeginEndRuleOptions<'_>) -> Self {
+        let end = RegExpSource::new(options.end.unwrap_or("\u{ffff}"), RuleScannerId::End);
         let end_has_back_references = end.has_back_references;
         Self {
             data: RuleData::new(
@@ -293,12 +293,11 @@ impl BeginEndRule {
         &self.end.source
     }
 
-    #[must_use]
     pub(crate) fn get_end_with_resolved_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
-    ) -> String {
+    ) -> Result<String, RegexError> {
         self.end.resolve_back_references(line_text, capture_indices)
     }
 
@@ -310,8 +309,8 @@ impl BeginEndRule {
 pub(crate) struct BeginWhileRule {
     data: RuleData,
     begin: RegExpSource<RuleScannerId>,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
-    pub while_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin_captures: CaptureRules,
+    pub while_captures: CaptureRules,
     while_source: RegExpSource<RuleScannerId>,
     pub while_has_back_references: bool,
     pub has_missing_patterns: bool,
@@ -320,21 +319,21 @@ pub(crate) struct BeginWhileRule {
     cached_compiled_while_patterns: Mutex<Option<RegExpSourceList<RuleScannerId>>>,
 }
 
-pub(crate) struct BeginWhileRuleOptions {
+pub(crate) struct BeginWhileRuleOptions<'a> {
     pub location: Option<Location>,
     pub id: RuleId,
     pub name: Option<String>,
     pub content_name: Option<String>,
-    pub begin: String,
-    pub begin_captures: Vec<Option<Arc<CaptureRule>>>,
-    pub while_pattern: String,
-    pub while_captures: Vec<Option<Arc<CaptureRule>>>,
+    pub begin: &'a str,
+    pub begin_captures: CaptureRules,
+    pub while_pattern: &'a str,
+    pub while_captures: CaptureRules,
     pub patterns: CompilePatternsResult,
 }
 
 impl BeginWhileRule {
     #[must_use]
-    pub(crate) fn new(options: BeginWhileRuleOptions) -> Self {
+    pub(crate) fn new(options: BeginWhileRuleOptions<'_>) -> Self {
         let while_source = RegExpSource::new(options.while_pattern, RuleScannerId::While);
         let while_has_back_references = while_source.has_back_references;
         Self {
@@ -374,12 +373,11 @@ impl BeginWhileRule {
         &self.while_source.source
     }
 
-    #[must_use]
     pub(crate) fn get_while_with_resolved_back_references(
         &self,
         line_text: &str,
         capture_indices: &[CaptureIndex],
-    ) -> String {
+    ) -> Result<String, RegexError> {
         self.while_source
             .resolve_back_references(line_text, capture_indices)
     }
@@ -412,7 +410,29 @@ impl BeginWhileRule {
             .cached_compiled_while_patterns
             .lock()
             .expect("compiled while-pattern cache lock poisoned");
-        let sources = cached.get_or_insert_with(|| {
+        let resolved_while = self
+            .while_has_back_references
+            .then(|| end_regex_source.unwrap_or("\u{ffff}"));
+        if cached.is_none() {
+            let initial_bytes = if let Some(resolved) = resolved_while {
+                if self.while_source.is_oversized() {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                normalized_pattern_byte_len(
+                    resolved,
+                    !self.while_source.has_anchor || allow_a,
+                    !self.while_source.has_anchor || allow_g,
+                )
+            } else {
+                self.while_source.normalized_byte_len(allow_a, allow_g)
+            };
+            if initial_bytes > MAX_SCANNER_PATTERN_BYTES {
+                return Err(RegexError::depth_limit(
+                    "rule pattern expansion size limit exceeded",
+                ));
+            }
             let mut sources = RegExpSourceList::with_pattern_cache(
                 registry.regex_prefilter,
                 registry
@@ -420,10 +440,18 @@ impl BeginWhileRule {
                     .for_owner(&self.data.source_scope_name),
             );
             sources.push(self.while_source.clone());
-            sources
-        });
-        if self.while_has_back_references {
-            sources.set_source(0, end_regex_source.unwrap_or("\u{ffff}"));
+            if let Some(resolved) = resolved_while {
+                sources.try_set_source(0, resolved, allow_a, allow_g)?;
+            }
+            *cached = Some(sources);
+            return cached
+                .as_mut()
+                .expect("cached sources must be populated")
+                .compile_ag(allow_a, allow_g);
+        }
+        let sources = cached.as_mut().expect("cached sources must be populated");
+        if let Some(resolved) = resolved_while {
+            sources.try_set_source(0, resolved, allow_a, allow_g)?;
         }
         sources.compile_ag(allow_a, allow_g)
     }
@@ -570,19 +598,47 @@ impl Rule {
         }
     }
 
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     pub(crate) fn collect_patterns(
         &self,
         registry: &RuleRegistry,
         output: &mut RegExpSourceList<RuleScannerId>,
-    ) {
+        active_path: &mut HashSet<RuleId>,
+    ) -> Result<(), RegexError> {
         match self {
             Self::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
-            Self::Match(rule) => output.push(rule.match_source.clone()),
-            Self::IncludeOnly(rule) => {
-                collect_pattern_ids(registry, &rule.patterns, output);
+            Self::Match(rule) => {
+                output.push(rule.match_source.clone());
+                Ok(())
             }
-            Self::BeginEnd(rule) => output.push(rule.begin.clone()),
-            Self::BeginWhile(rule) => output.push(rule.begin.clone()),
+            Self::IncludeOnly(rule) => {
+                if active_path.insert(rule.data.id) {
+                    let result = collect_pattern_ids(
+                        registry,
+                        &rule.patterns,
+                        output,
+                        active_path,
+                        0,
+                        true,
+                        true,
+                    );
+                    active_path.remove(&rule.data.id);
+                    result
+                } else {
+                    Ok(())
+                }
+            }
+            Self::BeginEnd(rule) => {
+                output.push(rule.begin.clone());
+                Ok(())
+            }
+            Self::BeginWhile(rule) => {
+                output.push(rule.begin.clone());
+                Ok(())
+            }
         }
     }
 
@@ -612,7 +668,14 @@ impl Rule {
                     .cached_compiled_patterns
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
-                let sources = cached.get_or_insert_with(|| {
+                if cached.is_none() {
+                    if rule.match_source.normalized_byte_len(allow_a, allow_g)
+                        > MAX_SCANNER_PATTERN_BYTES
+                    {
+                        return Err(RegexError::depth_limit(
+                            "rule pattern expansion size limit exceeded",
+                        ));
+                    }
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
                         registry
@@ -620,13 +683,17 @@ impl Rule {
                             .for_owner(&rule.data.source_scope_name),
                     );
                     sources.push(rule.match_source.clone());
-                    sources
-                });
-                sources.compile_ag(allow_a, allow_g)
+                    *cached = Some(sources);
+                }
+                cached
+                    .as_mut()
+                    .expect("cached sources must be populated")
+                    .compile_ag(allow_a, allow_g)
             }
             Self::IncludeOnly(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
                 registry,
+                Some(rule.data.id),
                 Some(&rule.patterns),
                 &rule.data.source_scope_name,
                 allow_a,
@@ -637,34 +704,72 @@ impl Rule {
                     .cached_compiled_patterns
                     .lock()
                     .expect("compiled pattern cache lock poisoned");
-                let sources = cached.get_or_insert_with(|| {
+                let resolved_end = rule
+                    .end_has_back_references
+                    .then(|| end_regex_source.unwrap_or("\u{ffff}"));
+                if cached.is_none() {
+                    if rule.end.is_oversized() {
+                        return Err(RegexError::depth_limit(
+                            "rule pattern expansion size limit exceeded",
+                        ));
+                    }
+                    let initial_end_bytes = if let Some(resolved) = resolved_end {
+                        normalized_pattern_byte_len(
+                            resolved,
+                            !rule.end.has_anchor || allow_a,
+                            !rule.end.has_anchor || allow_g,
+                        )
+                    } else {
+                        rule.end.normalized_byte_len(allow_a, allow_g)
+                    };
                     let mut sources = RegExpSourceList::with_pattern_cache(
                         registry.regex_prefilter,
                         registry
                             .scanner_pattern_cache
                             .for_owner(&rule.data.source_scope_name),
                     );
-                    collect_pattern_ids(registry, &rule.patterns, &mut sources);
+                    let mut active_path = HashSet::new();
+                    collect_pattern_ids(
+                        registry,
+                        &rule.patterns,
+                        &mut sources,
+                        &mut active_path,
+                        initial_end_bytes,
+                        allow_a,
+                        allow_g,
+                    )?;
                     if rule.apply_end_pattern_last {
                         sources.push(rule.end.clone());
                     } else {
                         sources.unshift(rule.end.clone());
                     }
-                    sources
-                });
-                if rule.end_has_back_references {
+                    if let Some(resolved) = resolved_end {
+                        let end_index = if rule.apply_end_pattern_last {
+                            sources.len() - 1
+                        } else {
+                            0
+                        };
+                        sources.try_set_source(end_index, resolved, allow_a, allow_g)?;
+                    }
+                    *cached = Some(sources);
+                } else if let Some(resolved) = resolved_end {
+                    let sources = cached.as_mut().expect("cached sources must be populated");
                     let end_index = if rule.apply_end_pattern_last {
                         sources.len() - 1
                     } else {
                         0
                     };
-                    sources.set_source(end_index, end_regex_source.unwrap_or("\u{ffff}"));
+                    sources.try_set_source(end_index, resolved, allow_a, allow_g)?;
                 }
-                sources.compile_ag(allow_a, allow_g)
+                cached
+                    .as_mut()
+                    .expect("cached sources must be populated")
+                    .compile_ag(allow_a, allow_g)
             }
             Self::BeginWhile(rule) => compile_patterns(
                 &rule.cached_compiled_patterns,
                 registry,
+                None,
                 Some(&rule.patterns),
                 &rule.data.source_scope_name,
                 allow_a,
@@ -810,9 +915,8 @@ impl RuleRegistry {
             rule.id(),
             "registered rule identity must match its slot"
         );
-        let slot = self
-            .rules
-            .get_mut(rule_index(id))
+        let slot = rule_index(id)
+            .and_then(|index| self.rules.get_mut(index))
             .expect("registered rule identity must have been reserved");
         assert!(slot.is_none(), "registered rule identity must be vacant");
         *slot = Some(rule);
@@ -830,7 +934,7 @@ impl RuleRegistry {
 
     #[must_use]
     pub(crate) fn try_get_rule(&self, id: RuleId) -> Option<&Rule> {
-        self.rules.get(rule_index(id)).and_then(Option::as_ref)
+        self.rules.get(rule_index(id)?).and_then(Option::as_ref)
     }
 
     pub(crate) fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
@@ -907,41 +1011,137 @@ impl RuleRegistry {
     }
 }
 
-fn rule_index(id: RuleId) -> usize {
-    usize::try_from(id.get() - 1).expect("u32 must fit usize")
+fn rule_index(id: RuleId) -> Option<usize> {
+    id.get()
+        .checked_sub(1)
+        .and_then(|index| usize::try_from(index).ok())
 }
+
+/// Maximum number of rule visits allowed while expanding `IncludeOnly` patterns
+/// for a single scanner. Prevents exponential blowup on adversarial branching
+/// include graphs while preserving repeated sibling includes in normal grammars.
+const MAX_SCANNER_INCLUDE_VISITS: usize = 65_536;
 
 fn collect_pattern_ids(
     registry: &RuleRegistry,
     patterns: &[RuleId],
     output: &mut RegExpSourceList<RuleScannerId>,
-) {
-    for pattern in patterns {
-        registry
-            .get_rule(*pattern)
-            .collect_patterns(registry, output);
+    active_path: &mut HashSet<RuleId>,
+    initial_pattern_bytes: usize,
+    allow_a: bool,
+    allow_g: bool,
+) -> Result<(), RegexError> {
+    if initial_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+        return Err(RegexError::depth_limit(
+            "rule pattern expansion size limit exceeded",
+        ));
     }
+    let mut visits = 0usize;
+    let mut total_pattern_bytes = initial_pattern_bytes;
+    let mut leaf_ids = Vec::new();
+    let mut frames: Vec<(Option<RuleId>, std::slice::Iter<'_, RuleId>)> =
+        vec![(None, patterns.iter())];
+    while let Some((owner_id, iter)) = frames.last_mut() {
+        let Some(&pattern_id) = iter.next() else {
+            let exiting = *owner_id;
+            frames.pop();
+            if let Some(id) = exiting {
+                active_path.remove(&id);
+            }
+            continue;
+        };
+        visits += 1;
+        if visits > MAX_SCANNER_INCLUDE_VISITS {
+            return Err(RegexError::depth_limit(
+                "rule pattern expansion limit exceeded",
+            ));
+        }
+        match registry.get_rule(pattern_id) {
+            Rule::Capture(_) => panic!("capture rules cannot collect scanner patterns"),
+            Rule::Match(rule) => {
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.match_source.normalized_byte_len(allow_a, allow_g));
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                leaf_ids.push(pattern_id);
+            }
+            Rule::IncludeOnly(rule) => {
+                if active_path.insert(rule.data.id) {
+                    frames.push((Some(rule.data.id), rule.patterns.iter()));
+                }
+            }
+            Rule::BeginEnd(rule) => {
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.begin.normalized_byte_len(allow_a, allow_g));
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                leaf_ids.push(pattern_id);
+            }
+            Rule::BeginWhile(rule) => {
+                total_pattern_bytes = total_pattern_bytes
+                    .saturating_add(rule.begin.normalized_byte_len(allow_a, allow_g));
+                if total_pattern_bytes > MAX_SCANNER_PATTERN_BYTES {
+                    return Err(RegexError::depth_limit(
+                        "rule pattern expansion size limit exceeded",
+                    ));
+                }
+                leaf_ids.push(pattern_id);
+            }
+        }
+    }
+
+    for pattern_id in leaf_ids {
+        match registry.get_rule(pattern_id) {
+            Rule::Match(rule) => output.push(rule.match_source.clone()),
+            Rule::BeginEnd(rule) => output.push(rule.begin.clone()),
+            Rule::BeginWhile(rule) => output.push(rule.begin.clone()),
+            Rule::Capture(_) | Rule::IncludeOnly(_) => {
+                unreachable!("only leaf pattern rules are queued for materialization")
+            }
+        }
+    }
+    Ok(())
 }
 
 fn compile_patterns(
     cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
     registry: &RuleRegistry,
+    owner_include_only: Option<RuleId>,
     patterns: Option<&[RuleId]>,
     owner_scope: &str,
     allow_a: bool,
     allow_g: bool,
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
     let mut cached = cache.lock().expect("compiled pattern cache lock poisoned");
-    let sources = cached.get_or_insert_with(|| {
+    if cached.is_none() {
         let mut sources = RegExpSourceList::with_pattern_cache(
             registry.regex_prefilter,
             registry.scanner_pattern_cache.for_owner(owner_scope),
         );
         if let Some(patterns) = patterns {
-            collect_pattern_ids(registry, patterns, &mut sources);
+            let mut active_path = HashSet::new();
+            if let Some(owner_id) = owner_include_only {
+                active_path.insert(owner_id);
+            }
+            collect_pattern_ids(
+                registry,
+                patterns,
+                &mut sources,
+                &mut active_path,
+                0,
+                allow_a,
+                allow_g,
+            )?;
         }
-        sources
-    });
+        *cached = Some(sources);
+    }
+    let sources = cached.as_mut().expect("cached sources must be populated");
     sources.compile_ag(allow_a, allow_g)
 }
 
@@ -1049,9 +1249,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: "(['\"])".into(),
+                begin: "(['\"])",
                 begin_captures: Vec::new(),
-                end: Some(r"\1".into()),
+                end: Some(r"\1"),
                 end_captures: Vec::new(),
                 apply_end_pattern_last: false,
                 patterns: CompilePatternsResult {
@@ -1070,7 +1270,8 @@ mod tests {
         let end = rule
             .as_begin_end()
             .unwrap()
-            .get_end_with_resolved_back_references("\"", &[capture]);
+            .get_end_with_resolved_back_references("\"", &[capture])
+            .unwrap();
         let compiled = rule.compile(&registry, Some(&end)).unwrap();
         let result = compiled
             .find_next_match(&OnigString::new("\"x"), 0, ScannerFindOptions::NONE)
@@ -1088,9 +1289,9 @@ mod tests {
                 id,
                 name: None,
                 content_name: None,
-                begin: r"(\w+)".into(),
+                begin: r"(\w+)",
                 begin_captures: Vec::new(),
-                while_pattern: r"\1".into(),
+                while_pattern: r"\1",
                 while_captures: Vec::new(),
                 patterns: CompilePatternsResult::default(),
             }))
@@ -1101,7 +1302,9 @@ mod tests {
             end: 3,
             length: 3,
         };
-        let resolved = rule.get_while_with_resolved_back_references("tag", &[capture]);
+        let resolved = rule
+            .get_while_with_resolved_back_references("tag", &[capture])
+            .unwrap();
         let compiled = rule.compile_while(&registry, Some(&resolved)).unwrap();
 
         assert_eq!(
@@ -1111,5 +1314,297 @@ mod tests {
                 .rule_id,
             RuleScannerId::While
         );
+    }
+
+    #[test]
+    fn try_get_rule_returns_none_for_zero_rule_id() {
+        let mut registry = RuleRegistry::new();
+        let _ = match_rule(&mut registry, "x");
+        assert!(registry.try_get_rule(crate::RuleId::new(0)).is_none());
+    }
+
+    #[test]
+    fn cyclic_include_only_patterns_terminate_without_stack_overflow() {
+        let mut registry = RuleRegistry::new();
+        let matched = match_rule(&mut registry, "hit");
+        let a = registry.reserve_rule();
+        let b = registry.reserve_rule();
+        registry.set_rule(
+            a,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                a,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![b, a],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            b,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                b,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![a, matched],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+
+        let compiled = registry.get_rule(a).compile(&registry, None).unwrap();
+        let result = compiled
+            .find_next_match(&OnigString::new("hit"), 0, ScannerFindOptions::NONE)
+            .unwrap();
+        assert_eq!(result.rule_id, RuleScannerId::Rule(matched));
+    }
+
+    #[test]
+    fn repeated_sibling_includes_preserve_pattern_order() {
+        let mut registry = RuleRegistry::new();
+        let shared_match = match_rule(&mut registry, "shared");
+        let between_match = match_rule(&mut registry, "between");
+        let shared = registry.reserve_rule();
+        let branch = registry.reserve_rule();
+        let root = registry.reserve_rule();
+
+        registry.set_rule(
+            shared,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                shared,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![shared_match],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            branch,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                branch,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![between_match, shared],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+        registry.set_rule(
+            root,
+            Rule::IncludeOnly(IncludeOnlyRule::new(
+                None,
+                root,
+                None,
+                None,
+                CompilePatternsResult {
+                    patterns: vec![shared, branch],
+                    has_missing_patterns: false,
+                },
+            )),
+        );
+
+        let compiled = registry.get_rule(root).compile(&registry, None).unwrap();
+        assert_eq!(
+            compiled.debug_reg_exps(),
+            vec!["shared", "between", "shared"]
+        );
+        assert_eq!(
+            compiled.debug_rules(),
+            &[
+                RuleScannerId::Rule(shared_match),
+                RuleScannerId::Rule(between_match),
+                RuleScannerId::Rule(shared_match),
+            ]
+        );
+    }
+
+    #[test]
+    fn exponential_include_dag_fails_with_expansion_limit_error() {
+        let mut registry = RuleRegistry::new();
+        let leaf = match_rule(&mut registry, "x");
+        let mut current = leaf;
+        for _ in 0..24 {
+            let node = registry.reserve_rule();
+            registry.set_rule(
+                node,
+                Rule::IncludeOnly(IncludeOnlyRule::new(
+                    None,
+                    node,
+                    None,
+                    None,
+                    CompilePatternsResult {
+                        patterns: vec![current, current],
+                        has_missing_patterns: false,
+                    },
+                )),
+            );
+            current = node;
+        }
+
+        let err = registry
+            .get_rule(current)
+            .compile(&registry, None)
+            .err()
+            .expect("exponential include graph must return a recoverable error");
+        assert!(err.to_string().contains("expansion limit"));
+    }
+
+    #[test]
+    fn large_repeated_pattern_expansion_fails_before_cloning_sources() {
+        let mut registry = RuleRegistry::new();
+        let big_pattern = "a".repeat(32 * 1024);
+        let leaf = match_rule(&mut registry, &big_pattern);
+        let mut current = leaf;
+        // 10 levels -> 1,024 leaf copies * 32 KiB = 32 MiB (> 16 MiB cap),
+        // well below the 65,536 visit cap.
+        for _ in 0..10 {
+            let node = registry.reserve_rule();
+            registry.set_rule(
+                node,
+                Rule::IncludeOnly(IncludeOnlyRule::new(
+                    None,
+                    node,
+                    None,
+                    None,
+                    CompilePatternsResult {
+                        patterns: vec![current, current],
+                        has_missing_patterns: false,
+                    },
+                )),
+            );
+            current = node;
+        }
+
+        let err = registry
+            .get_rule(current)
+            .compile(&registry, None)
+            .err()
+            .expect("oversized repeated pattern expansion must fail before cloning");
+        assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn begin_end_pattern_size_budget_includes_static_and_resolved_end_patterns() {
+        let mut registry = RuleRegistry::new();
+        let half = "a".repeat(9 * 1024 * 1024);
+        let child = match_rule(&mut registry, &half);
+        let static_id = registry.reserve_rule();
+        registry.set_rule(
+            static_id,
+            Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: None,
+                id: static_id,
+                name: None,
+                content_name: None,
+                begin: "(",
+                begin_captures: Vec::new(),
+                end: Some(&half),
+                end_captures: Vec::new(),
+                apply_end_pattern_last: false,
+                patterns: CompilePatternsResult {
+                    patterns: vec![child],
+                    has_missing_patterns: false,
+                },
+            })),
+        );
+        let err = registry
+            .get_rule(static_id)
+            .compile(&registry, None)
+            .err()
+            .expect("begin/end static end pattern must count toward byte budget");
+        assert!(err.to_string().contains("size limit"));
+
+        let dynamic_id = registry.reserve_rule();
+        registry.set_rule(
+            dynamic_id,
+            Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: None,
+                id: dynamic_id,
+                name: None,
+                content_name: None,
+                begin: "(.+)",
+                begin_captures: Vec::new(),
+                end: Some("\\1"),
+                end_captures: Vec::new(),
+                apply_end_pattern_last: false,
+                patterns: CompilePatternsResult {
+                    patterns: vec![child],
+                    has_missing_patterns: false,
+                },
+            })),
+        );
+        let err = registry
+            .get_rule(dynamic_id)
+            .compile(&registry, Some(&half))
+            .err()
+            .expect("resolved backreference end pattern must count toward byte budget");
+        assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn standalone_match_and_begin_while_patterns_respect_size_budget() {
+        let mut registry = RuleRegistry::new();
+        let oversized = "a".repeat(crate::regexp::MAX_SCANNER_PATTERN_BYTES + 1);
+
+        let match_id = match_rule(&mut registry, &oversized);
+        let err = registry
+            .get_rule(match_id)
+            .compile(&registry, None)
+            .err()
+            .expect("oversized standalone match pattern must fail");
+        assert!(err.to_string().contains("size limit"));
+
+        let static_while_id = registry.register_rule(|id| {
+            Rule::BeginWhile(BeginWhileRule::new(BeginWhileRuleOptions {
+                location: None,
+                id,
+                name: None,
+                content_name: None,
+                begin: "(",
+                begin_captures: Vec::new(),
+                while_pattern: &oversized,
+                while_captures: Vec::new(),
+                patterns: CompilePatternsResult::default(),
+            }))
+        });
+        let err = registry
+            .get_rule(static_while_id)
+            .as_begin_while()
+            .unwrap()
+            .compile_while(&registry, None)
+            .err()
+            .expect("oversized static while pattern must fail");
+        assert!(err.to_string().contains("size limit"));
+
+        let dynamic_while_id = registry.register_rule(|id| {
+            Rule::BeginWhile(BeginWhileRule::new(BeginWhileRuleOptions {
+                location: None,
+                id,
+                name: None,
+                content_name: None,
+                begin: "(.+)",
+                begin_captures: Vec::new(),
+                while_pattern: "\\1",
+                while_captures: Vec::new(),
+                patterns: CompilePatternsResult::default(),
+            }))
+        });
+        let err = registry
+            .get_rule(dynamic_while_id)
+            .as_begin_while()
+            .unwrap()
+            .compile_while(&registry, Some(&oversized))
+            .err()
+            .expect("oversized resolved while pattern must fail");
+        assert!(err.to_string().contains("size limit"));
     }
 }

@@ -181,11 +181,15 @@ fn utf16_slice(text: &str, start: usize, end: usize) -> Option<&str> {
     Some(&text[start_byte?..end_byte?])
 }
 
-fn write_node(nodes: &[Node], index: usize, html: &mut String) {
-    let node = &nodes[index];
+struct WriteFrame {
+    index: usize,
+    next_child: usize,
+}
+
+fn write_open_node(node: &Node, html: &mut String) -> bool {
     let Some(tag) = &node.tag else {
         html.push_str(&escape_html(&node.text));
-        return;
+        return false;
     };
     html.push('<');
     html.push_str(tag);
@@ -197,12 +201,35 @@ fn write_node(nodes: &[Node], index: usize, html: &mut String) {
         html.push('"');
     }
     html.push('>');
-    for child in &node.children {
-        write_node(nodes, *child, html);
+    true
+}
+
+fn write_node(nodes: &[Node], root: usize, html: &mut String) {
+    if !write_open_node(&nodes[root], html) {
+        return;
     }
-    html.push_str("</");
-    html.push_str(tag);
-    html.push('>');
+    let mut stack = vec![WriteFrame {
+        index: root,
+        next_child: 0,
+    }];
+    while let Some(frame) = stack.last_mut() {
+        if let Some(&child) = nodes[frame.index].children.get(frame.next_child) {
+            frame.next_child += 1;
+            if write_open_node(&nodes[child], html) {
+                stack.push(WriteFrame {
+                    index: child,
+                    next_child: 0,
+                });
+            }
+        } else {
+            let finished = stack.pop().expect("active write frame must exist");
+            if let Some(tag) = &nodes[finished.index].tag {
+                html.push_str("</");
+                html.push_str(tag);
+                html.push('>');
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -341,5 +368,48 @@ mod tests {
             .unwrap()
             .is_none()
         );
+    }
+
+    #[test]
+    fn renders_deeply_nested_always_wrap_decorations_without_stack_overflow() {
+        // End-to-end check for stacked alwaysWrap decorations.
+        let small: Vec<_> = (0..8)
+            .map(|_| HtmlDecoration {
+                range: DecorationRange {
+                    start: DecorationPosition::Offset(0),
+                    end: DecorationPosition::Offset(1),
+                    always_wrap: true,
+                },
+                tag_name: "span".into(),
+                properties: vec![("class".into(), "w".into())],
+            })
+            .collect();
+        let small_html =
+            render_html_with_decorations("a", &result("a"), &RenderOptions::default(), &small)
+                .unwrap()
+                .unwrap();
+        assert_eq!(small_html.matches("<span class=\"w\">").count(), 8);
+        assert!(small_html.contains(">a</span>"));
+
+        // Direct writer regression for 20,000-deep wrapper chains without O(D^2) range validation.
+        const DEPTH: usize = 20_000;
+        let mut nodes = Vec::with_capacity(DEPTH + 1);
+        nodes.push(Node {
+            tag: None,
+            properties: Vec::new(),
+            text: "a".into(),
+            children: Vec::new(),
+        });
+        for child in 0..DEPTH {
+            nodes.push(Node::element(
+                "span",
+                vec![("class".into(), "w".into())],
+                vec![child],
+            ));
+        }
+        let mut html = String::new();
+        write_node(&nodes, DEPTH, &mut html);
+        assert_eq!(html.matches("<span class=\"w\">").count(), DEPTH);
+        assert!(html.contains(">a</span>"));
     }
 }

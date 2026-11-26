@@ -626,6 +626,11 @@ impl Grammar {
         Ok(state)
     }
 
+    /// Tokenizes one source line and returns scope tokens and the next rule stack.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line(
         &self,
         line_text: &str,
@@ -648,6 +653,11 @@ impl Grammar {
         })
     }
 
+    /// Tokenizes one source line into compact binary token metadata and the next rule stack.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line2(
         &self,
         line_text: &str,
@@ -673,6 +683,10 @@ impl Grammar {
     /// Produces the outputs of [`Self::tokenize_line`] and [`Self::tokenize_line2`]
     /// together, including captures and injections, without repeating the scan.
     /// The time limit and returned state belong to this single scan.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
     pub fn tokenize_line_with_scopes(
         &self,
         line_text: &str,
@@ -935,6 +949,31 @@ fn is_valid_stack_child(
     Ok(false)
 }
 
+fn push_rule_patterns<'a>(
+    rule_id: u32,
+    registry: &'a RuleRegistry,
+    frames: &mut Vec<std::slice::Iter<'a, RuleId>>,
+    validation_work: &mut usize,
+) -> Result<(), String> {
+    *validation_work += 1;
+    if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
+        return Err(invalid_serialized_state(
+            "state validation exceeded its work limit",
+        ));
+    }
+    let Some(parent) = registry.try_get_rule(RuleId::new(rule_id)) else {
+        return Ok(());
+    };
+    let patterns = match parent {
+        Rule::IncludeOnly(rule) => &rule.patterns,
+        Rule::BeginEnd(rule) => &rule.patterns,
+        Rule::BeginWhile(rule) => &rule.patterns,
+        Rule::Capture(_) | Rule::Match(_) => return Ok(()),
+    };
+    frames.push(patterns.iter());
+    Ok(())
+}
+
 fn rule_patterns_reach(
     parent_rule_id: u32,
     child_rule_id: RuleId,
@@ -942,46 +981,30 @@ fn rule_patterns_reach(
     visited: &mut HashSet<u32>,
     validation_work: &mut usize,
 ) -> Result<bool, String> {
-    *validation_work += 1;
-    if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
-        return Err(invalid_serialized_state(
-            "state validation exceeded its work limit",
-        ));
-    }
-    let Some(parent) = registry.try_get_rule(RuleId::new(parent_rule_id)) else {
-        return Ok(false);
-    };
-    let patterns = match parent {
-        Rule::IncludeOnly(rule) => &rule.patterns,
-        Rule::BeginEnd(rule) => &rule.patterns,
-        Rule::BeginWhile(rule) => &rule.patterns,
-        Rule::Capture(_) | Rule::Match(_) => return Ok(false),
-    };
-    for pattern_id in patterns {
+    let mut frames: Vec<std::slice::Iter<'_, RuleId>> = Vec::new();
+    push_rule_patterns(parent_rule_id, registry, &mut frames, validation_work)?;
+    while let Some(iter) = frames.last_mut() {
+        let Some(&pattern_id) = iter.next() else {
+            frames.pop();
+            continue;
+        };
         *validation_work += 1;
         if *validation_work > MAX_GRAMMAR_STATE_RULE_VALIDATION_WORK {
             return Err(invalid_serialized_state(
                 "state validation exceeded its work limit",
             ));
         }
-        if *pattern_id == child_rule_id {
+        if pattern_id == child_rule_id {
             return Ok(true);
         }
         if !visited.insert(pattern_id.get()) {
             continue;
         }
         if registry
-            .try_get_rule(*pattern_id)
+            .try_get_rule(pattern_id)
             .is_some_and(|rule| rule.as_include_only().is_some())
-            && rule_patterns_reach(
-                pattern_id.get(),
-                child_rule_id,
-                registry,
-                visited,
-                validation_work,
-            )?
         {
-            return Ok(true);
+            push_rule_patterns(pattern_id.get(), registry, &mut frames, validation_work)?;
         }
     }
     Ok(false)
@@ -1822,5 +1845,170 @@ mod tests {
             font_runs > 0,
             "font attributes must participate in the shared scan"
         );
+    }
+
+    #[test]
+    fn rejects_rule_id_zero_in_serialized_state_stack() {
+        let root = raw_grammar(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "begin": "\\(", "end": "\\)", "name": "meta.paren" }]
+            }"#,
+        );
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let baseline = grammar.serialize_state_stack(None).unwrap();
+        let mut parsed: serde_json::Value = serde_json::from_str(&baseline).unwrap();
+        parsed["frames"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({
+                "ruleId": 0,
+                "beginRuleCapturedEol": false,
+                "endRule": null,
+                "nameScopes": [],
+                "contentNameScopes": []
+            }));
+        let tampered = serde_json::to_string(&parsed).unwrap();
+        let Err(error) = grammar.deserialize_state_stack(&tampered) else {
+            panic!("ruleId 0 must return an error instead of underflowing");
+        };
+        assert!(error.contains("unknown rule"), "unexpected error: {error}");
+    }
+
+    #[test]
+    fn compiles_and_tokenizes_cyclic_include_only_grammars() {
+        for source in [
+            r##"{
+                "scopeName": "source.cycle",
+                "patterns": [{ "include": "#a" }],
+                "repository": {
+                    "a": { "patterns": [{ "include": "#b" }] },
+                    "b": { "patterns": [{ "include": "#a" }, { "match": "ok", "name": "keyword.ok" }] }
+                }
+            }"##,
+            r##"{
+                "scopeName": "source.self",
+                "patterns": [{ "include": "$self" }, { "match": "ok", "name": "keyword.ok" }]
+            }"##,
+        ] {
+            let root = raw_grammar(source);
+            let grammar = Grammar::new(
+                &root,
+                &GrammarStore::new(),
+                default_theme(),
+                GrammarConfiguration::default(),
+            );
+            grammar.compile_all_scanners().unwrap();
+            let result = grammar.tokenize_line("ok", None, 0).unwrap();
+            assert!(
+                result
+                    .tokens
+                    .iter()
+                    .any(|token| token.scopes.iter().any(|scope| scope == "keyword.ok")),
+                "cyclic include-only grammar should still match reachable patterns"
+            );
+        }
+    }
+
+    #[test]
+    fn compiles_long_acyclic_repository_include_chain_without_stack_overflow() {
+        const CHAIN_LEN: usize = 15_000;
+        let mut repo = serde_json::Map::with_capacity(CHAIN_LEN);
+        for index in 0..CHAIN_LEN - 1 {
+            repo.insert(
+                format!("r{index}"),
+                serde_json::json!({ "patterns": [{ "include": format!("#r{}", index + 1) }] }),
+            );
+        }
+        repo.insert(
+            format!("r{}", CHAIN_LEN - 1),
+            serde_json::json!({
+                "patterns": [{
+                    "begin": "\\[",
+                    "end": "\\]",
+                    "name": "meta.bracket.ok"
+                }]
+            }),
+        );
+        let source = serde_json::json!({
+            "scopeName": "source.chain",
+            "patterns": [{ "include": "#r0" }],
+            "repository": repo,
+        })
+        .to_string();
+        let root = raw_grammar(&source);
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line("[open", None, 0).unwrap();
+        assert!(
+            open.tokens
+                .iter()
+                .any(|token| token.scopes.iter().any(|scope| scope == "meta.bracket.ok")),
+            "long acyclic repository chain should compile and open begin/end rule"
+        );
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .unwrap();
+        let restored = grammar.deserialize_state_stack(&serialized).unwrap();
+        let closed = grammar.tokenize_line("close]", Some(restored), 0).unwrap();
+        assert_eq!(closed.rule_stack.depth, 1);
+    }
+
+    #[test]
+    fn state_validation_descends_first_include_before_unrelated_siblings() {
+        let mut unrelated = Vec::with_capacity(500);
+        for index in 0..500 {
+            unrelated.push(serde_json::json!({
+                "match": format!("unrelated_{index}"),
+                "name": "constant.other"
+            }));
+        }
+        let source = serde_json::json!({
+            "scopeName": "source.order",
+            "patterns": [
+                { "include": "#paren" },
+                { "include": "#unrelated" }
+            ],
+            "repository": {
+                "paren": {
+                    "patterns": [{
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "patterns": [
+                            { "include": "#paren" },
+                            { "include": "#unrelated" }
+                        ]
+                    }]
+                },
+                "unrelated": {
+                    "patterns": unrelated
+                }
+            }
+        })
+        .to_string();
+        let root = raw_grammar(&source);
+        let grammar = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        );
+        let open = grammar.tokenize_line2(&"(".repeat(256), None, 0).unwrap();
+        let serialized = grammar
+            .serialize_state_stack(Some(&open.rule_stack))
+            .expect("first-include DFS order must not exhaust validation work on later siblings");
+        let restored = grammar
+            .deserialize_state_stack(&serialized)
+            .expect("serialized state must round-trip within work budget");
+        assert_eq!(restored.depth, 257);
     }
 }

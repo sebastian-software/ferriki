@@ -226,12 +226,14 @@ impl ScopeStack {
         reason = "part of the vscode-textmate port, kept for upstream parity"
     )]
     pub(crate) fn extends(self: &Arc<Self>, other: &Arc<Self>) -> bool {
-        if Arc::ptr_eq(self, other) {
-            return true;
+        let mut current = Some(self);
+        while let Some(scope) = current {
+            if Arc::ptr_eq(scope, other) {
+                return true;
+            }
+            current = scope.parent.as_ref();
         }
-        self.parent
-            .as_ref()
-            .is_some_and(|parent| parent.extends(other))
+        false
     }
 
     #[must_use]
@@ -261,6 +263,17 @@ impl ScopeStack {
 
         result.reverse();
         Some(result)
+    }
+}
+
+impl Drop for ScopeStack {
+    fn drop(&mut self) {
+        let mut parent = self.parent.take();
+        while let Some(node) = parent {
+            parent = Arc::try_unwrap(node)
+                .ok()
+                .and_then(|mut inner| inner.parent.take());
+        }
     }
 }
 
@@ -1448,5 +1461,17 @@ mod tests {
         let result = theme.match_scope(Some(&stack)).unwrap();
         assert_eq!(result.font_style, FontStyle::UNDERLINE);
         assert_eq!(colors[result.foreground_id as usize], "#300000");
+    }
+
+    #[test]
+    fn drops_and_walks_deep_scope_stack_chain_iteratively() {
+        let root = ScopeStack::from(["source.test"]).unwrap();
+        let mut current = std::sync::Arc::clone(&root);
+        for _ in 0..50_000 {
+            current = current.push_scope("meta.nested");
+        }
+        assert!(current.extends(&root));
+        drop(current);
+        drop(root);
     }
 }
