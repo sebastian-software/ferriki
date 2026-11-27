@@ -40,6 +40,9 @@ impl Injection {
 pub(crate) trait TokenizerGrammar: ScopeAttributesProvider {
     fn rule_registry(&self) -> &RuleRegistry;
     fn injections(&self) -> &[Injection];
+    fn theme_id(&self) -> u64 {
+        0
+    }
 }
 
 pub(crate) struct TokenizeStringResult {
@@ -224,8 +227,9 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     .as_ref()
                     .expect("grammar state must have content-name scopes")
                     .push_attributed(scope_name.as_deref(), grammar);
-                stack = stack.push(
+                stack = stack.push_with_theme_id(
                     matched_rule_id,
+                    grammar.theme_id(),
                     line_pos as isize,
                     anchor_position,
                     full_match.end == line_length,
@@ -252,7 +256,10 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         matched_rule.get_content_name(line_text.content(), &capture_indices);
                     let content_name_scopes_list =
                         name_scopes_list.push_attributed(content_name.as_deref(), grammar);
-                    stack = stack.with_content_name_scopes_list(content_name_scopes_list);
+                    stack = stack.with_content_name_scopes_list_with_theme_id(
+                        content_name_scopes_list,
+                        grammar.theme_id(),
+                    );
                     if pushed_rule.end_has_back_references {
                         let resolved = pushed_rule.get_end_with_resolved_back_references(
                             line_text.content(),
@@ -286,7 +293,10 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         matched_rule.get_content_name(line_text.content(), &capture_indices);
                     let content_name_scopes_list =
                         name_scopes_list.push_attributed(content_name.as_deref(), grammar);
-                    stack = stack.with_content_name_scopes_list(content_name_scopes_list);
+                    stack = stack.with_content_name_scopes_list_with_theme_id(
+                        content_name_scopes_list,
+                        grammar.theme_id(),
+                    );
                     if pushed_rule.while_has_back_references {
                         let resolved = pushed_rule.get_while_with_resolved_back_references(
                             line_text.content(),
@@ -625,8 +635,9 @@ fn handle_captures<G: TokenizerGrammar>(
             let content_name = capture_rule.get_content_name(line_text_content, capture_indices);
             let content_name_scopes_list =
                 name_scopes_list.push_attributed(content_name.as_deref(), grammar);
-            let stack_clone = stack.push(
+            let stack_clone = stack.push_with_theme_id(
                 retokenize_rule_id,
+                grammar.theme_id(),
                 capture_index.start as isize,
                 -1,
                 false,

@@ -1,9 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
+use std::sync::Arc;
 
 use ferriki_textmate::{
-    BacktrackingWarning, FontStyle, GrammarConfiguration, RawGrammar, StandardTokenType,
-    SyncRegistry, parse_raw_grammar,
+    BacktrackingWarning, EncodedTokenAttributes, FontStyle, GrammarConfiguration, RawGrammar,
+    StandardTokenType, SyncRegistry, Theme, parse_raw_grammar,
 };
 use serde_json::Value;
 
@@ -33,6 +34,7 @@ pub struct HighlighterCore {
     language_aliases: BTreeMap<String, Vec<String>>,
     injections: BTreeMap<String, Vec<String>>,
     themes: BTreeMap<String, ThemeData>,
+    compiled_themes: BTreeMap<String, Arc<Theme>>,
     active_theme: Option<String>,
     regex_mode: ferriki_textmate::RegexMode,
 }
@@ -393,6 +395,7 @@ impl HighlighterCore {
             language_aliases: BTreeMap::new(),
             injections: BTreeMap::new(),
             themes: BTreeMap::new(),
+            compiled_themes: BTreeMap::new(),
             active_theme: None,
             regex_mode,
         })
@@ -444,6 +447,7 @@ impl HighlighterCore {
         self.language_aliases.clear();
         self.injections.clear();
         self.themes.clear();
+        self.compiled_themes.clear();
         self.active_theme = None;
     }
 
@@ -463,22 +467,36 @@ impl HighlighterCore {
                 format!("Failed to parse standard theme `{}`: {error}", asset.id),
             )
         })?;
+        self.compiled_themes.remove(&asset.id);
         self.themes.insert(asset.id.clone(), theme);
         Ok(true)
     }
 
-    pub fn activate_theme(&mut self, theme_id: &str) -> Result<Option<&ThemeData>> {
+    fn ensure_compiled_theme(&mut self, theme_id: &str) -> Result<Option<Arc<Theme>>> {
         if !self.load_standard_theme(theme_id)? {
             return Ok(None);
         }
+        if let Some(compiled) = self.compiled_themes.get(theme_id) {
+            return Ok(Some(Arc::clone(compiled)));
+        }
+        let theme = self
+            .themes
+            .get(theme_id)
+            .ok_or_else(|| Error::from_reason("Loaded Ferriki theme disappeared."))?;
+        let compiled = Arc::new(
+            Theme::create_from_raw_theme(Some(&theme.raw_theme), None).map_err(theme_error)?,
+        );
+        self.compiled_themes
+            .insert(theme_id.to_owned(), Arc::clone(&compiled));
+        Ok(Some(compiled))
+    }
+
+    pub fn activate_theme(&mut self, theme_id: &str) -> Result<Option<&ThemeData>> {
+        let Some(compiled) = self.ensure_compiled_theme(theme_id)? else {
+            return Ok(None);
+        };
         if self.active_theme.as_deref() != Some(theme_id) {
-            let theme = self
-                .themes
-                .get(theme_id)
-                .ok_or_else(|| Error::from_reason("Loaded Ferriki theme disappeared."))?;
-            self.registry
-                .set_theme(Some(theme.raw_theme.clone()), None)
-                .map_err(theme_error)?;
+            self.registry.set_compiled_theme(compiled);
             self.active_theme = Some(theme_id.to_owned());
         }
         Ok(self.themes.get(theme_id))
@@ -741,6 +759,7 @@ impl HighlighterCore {
         if self.active_theme.as_deref() == Some(&theme.name) {
             self.active_theme = None;
         }
+        self.compiled_themes.remove(&theme.name);
         self.themes.insert(theme.name.clone(), theme);
         Ok(())
     }
@@ -952,7 +971,12 @@ impl HighlighterCore {
                 format!("Unknown language `{language}`."),
             )
         })?;
-        let color_map = self.registry.get_color_map();
+        let compiled_theme = self
+            .compiled_themes
+            .get(theme_id)
+            .cloned()
+            .ok_or_else(|| Error::from_reason("Compiled Ferriki theme disappeared."))?;
+        let color_map = compiled_theme.color_map();
         let mut state = serialized_state
             .map(|serialized| grammar.deserialize_state_stack(serialized))
             .transpose()
@@ -1020,6 +1044,7 @@ impl HighlighterCore {
                 boundaries.dedup();
             }
             let mut token_index = 0;
+            let mut scope_index = 0;
             for range in boundaries.windows(2) {
                 let start_index = range[0];
                 let end_index = range[1];
@@ -1035,15 +1060,15 @@ impl HighlighterCore {
                     start_index..end_index,
                     line_offset,
                     binary_tokens[token_index * 2 + 1],
-                    &color_map,
+                    color_map,
                     options.include_token_type,
-                    scope_tokens.as_ref().and_then(|scopes| {
-                        scopes
-                            .iter()
-                            .find(|token| {
-                                token.start_index <= start_index && token.end_index >= end_index
-                            })
-                            .map(|token| token.scopes.clone())
+                    scope_tokens.as_deref().and_then(|scopes| {
+                        find_covering_scope_monotonic(
+                            scopes,
+                            &mut scope_index,
+                            start_index,
+                            end_index,
+                        )
                     }),
                 ) {
                     line_tokens.push(token);
@@ -1094,98 +1119,408 @@ impl HighlighterCore {
             return Err(Error::from_reason("At least one theme is required."));
         }
 
-        // Use each theme's encoded token boundaries, just like Shiki. Scope
-        // tokens alone split equal metadata (strings, comments and whitespace)
-        // and cannot reproduce theme-dependent boundaries or token overrides.
-        let results = themes
-            .iter()
-            .map(|(_, theme)| {
-                self.tokenize_with_grammar_state(
-                    code,
-                    language,
-                    theme,
-                    options,
-                    serialized_state,
-                    capture_state,
-                )
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let mut output_lines = Vec::new();
-        for line_index in 0..results[0].0.tokens.len() {
-            let lines: Vec<_> = results
-                .iter()
-                .map(|result| &result.0.tokens[line_index])
+        if themes.len() == 1 {
+            let (variant_key, theme_id) = &themes[0];
+            let (result, continuation) = self.tokenize_with_grammar_state(
+                code,
+                language,
+                theme_id,
+                options,
+                serialized_state,
+                capture_state,
+            )?;
+            let tokens = result
+                .tokens
+                .into_iter()
+                .map(|line| {
+                    line.into_iter()
+                        .map(|token| HighlightThemeToken {
+                            content: token.content,
+                            offset: token.offset,
+                            variants: BTreeMap::from([(
+                                variant_key.clone(),
+                                HighlightThemeTokenStyle {
+                                    color: token.color,
+                                    font_style: token.font_style,
+                                },
+                            )]),
+                            token_type: token.token_type,
+                            scope_names: token.scope_names,
+                        })
+                        .collect()
+                })
                 .collect();
-            let mut boundaries = BTreeSet::new();
-            for line in &lines {
-                for token in *line {
-                    boundaries.insert(token.offset);
-                    boundaries.insert(token.offset + token.content.encode_utf16().count());
+            return Ok((
+                HighlightTokensWithThemesResult {
+                    tokens,
+                    themes: vec![HighlightThemeMetadata {
+                        color: variant_key.clone(),
+                        name: result.theme_name,
+                        foreground: result.foreground,
+                        background: result.background,
+                    }],
+                },
+                continuation,
+            ));
+        }
+
+        // Validate and activate the first theme before checking the language so
+        // error precedence matches running each theme independently.
+        let (first_variant, first_theme_id) = &themes[0];
+        let first_meta = {
+            let theme = self.activate_theme(first_theme_id)?.ok_or_else(|| {
+                Error::new(
+                    ErrorKind::UnknownTheme,
+                    format!("Unknown theme `{first_theme_id}`."),
+                )
+            })?;
+            HighlightThemeMetadata {
+                color: first_variant.clone(),
+                name: theme.name.clone(),
+                foreground: theme.foreground.clone(),
+                background: theme.background.clone(),
+            }
+        };
+
+        if is_plain_language(language) || language == "ansi" {
+            if serialized_state.is_some() || capture_state {
+                return Err(Error::new(
+                    ErrorKind::Tokenization,
+                    "Invalid grammar state: plain language does not have grammar state.",
+                ));
+            }
+            let mut theme_metadata = Vec::with_capacity(themes.len());
+            theme_metadata.push(first_meta);
+            for (variant_key, theme_id) in &themes[1..] {
+                let theme = self.activate_theme(theme_id)?.ok_or_else(|| {
+                    Error::new(
+                        ErrorKind::UnknownTheme,
+                        format!("Unknown theme `{theme_id}`."),
+                    )
+                })?;
+                theme_metadata.push(HighlightThemeMetadata {
+                    color: variant_key.clone(),
+                    name: theme.name.clone(),
+                    foreground: theme.foreground.clone(),
+                    background: theme.background.clone(),
+                });
+            }
+            let tokens = split_lines(code)
+                .into_iter()
+                .map(|(line, offset)| {
+                    if line.is_empty() {
+                        Vec::new()
+                    } else {
+                        let mut variants = BTreeMap::new();
+                        for (variant_key, _) in themes {
+                            variants.insert(
+                                variant_key.clone(),
+                                HighlightThemeTokenStyle {
+                                    color: None,
+                                    font_style: None,
+                                },
+                            );
+                        }
+                        vec![HighlightThemeToken {
+                            content: line.to_owned(),
+                            offset,
+                            variants,
+                            token_type: None,
+                            scope_names: None,
+                        }]
+                    }
+                })
+                .collect();
+            return Ok((
+                HighlightTokensWithThemesResult {
+                    tokens,
+                    themes: theme_metadata,
+                },
+                None,
+            ));
+        }
+
+        let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownLanguage,
+                format!("Unknown language `{language}`."),
+            )
+        })?;
+        let mut state = serialized_state
+            .map(|serialized| grammar.deserialize_state_stack(serialized))
+            .transpose()
+            .map_err(|reason| Error::new(ErrorKind::Tokenization, reason))?;
+
+        let mut compiled_themes = Vec::with_capacity(themes.len());
+        let mut theme_metadata = Vec::with_capacity(themes.len());
+        let mut last_valid_theme_id = first_theme_id.as_str();
+        compiled_themes.push(
+            self.compiled_themes
+                .get(first_theme_id)
+                .cloned()
+                .ok_or_else(|| Error::from_reason("Compiled Ferriki theme disappeared."))?,
+        );
+        theme_metadata.push(first_meta);
+
+        // Defer lookup errors for themes[1..] until after the grammar scan and
+        // state capture succeed so a tokenization failure on theme 0 keeps the
+        // same error precedence as sequential per-theme runs.
+        let mut deferred_theme_error = None;
+        for (variant_key, theme_id) in &themes[1..] {
+            match self.ensure_compiled_theme(theme_id) {
+                Ok(Some(compiled)) => {
+                    let theme = self
+                        .themes
+                        .get(theme_id)
+                        .ok_or_else(|| Error::from_reason("Loaded Ferriki theme disappeared."))?;
+                    compiled_themes.push(compiled);
+                    theme_metadata.push(HighlightThemeMetadata {
+                        color: variant_key.clone(),
+                        name: theme.name.clone(),
+                        foreground: theme.foreground.clone(),
+                        background: theme.background.clone(),
+                    });
+                    last_valid_theme_id = theme_id.as_str();
+                }
+                Ok(None) => {
+                    deferred_theme_error = Some(Error::new(
+                        ErrorKind::UnknownTheme,
+                        format!("Unknown theme `{theme_id}`."),
+                    ));
+                    break;
+                }
+                Err(error) => {
+                    deferred_theme_error = Some(error);
+                    break;
                 }
             }
-            let boundaries: Vec<_> = boundaries.into_iter().collect();
-            let mut cursors = vec![0; lines.len()];
-            let mut tokens = Vec::new();
-            for range in boundaries.windows(2) {
-                let start = range[0];
-                let end = range[1];
-                let mut variants = BTreeMap::new();
-                let mut base = None;
-                for (index, line) in lines.iter().enumerate() {
-                    while line[cursors[index]].offset
-                        + line[cursors[index]].content.encode_utf16().count()
-                        <= start
-                    {
-                        cursors[index] += 1;
+        }
+
+        let need_scopes = deferred_theme_error.is_none()
+            && (options.include_scopes || options.preserve_scope_boundaries);
+        let mut output_lines = Vec::new();
+        for (line, line_offset) in split_lines(code) {
+            // Empty lines still advance TextMate rules, even though they emit no output tokens.
+            let line_length = line.encode_utf16().count();
+            if options.max_line_length > 0 && line_length >= options.max_line_length {
+                if deferred_theme_error.is_none() {
+                    let mut variants = BTreeMap::new();
+                    for (variant_key, _) in themes {
+                        variants.insert(
+                            variant_key.clone(),
+                            HighlightThemeTokenStyle {
+                                color: Some(String::new()),
+                                font_style: Some(FontStyle::NONE),
+                            },
+                        );
                     }
-                    let token = &line[cursors[index]];
-                    base.get_or_insert(token);
+                    output_lines.push(vec![HighlightThemeToken {
+                        content: line.to_owned(),
+                        offset: line_offset,
+                        variants,
+                        token_type: options
+                            .include_token_type
+                            .then_some(StandardTokenType::Other),
+                        scope_names: None,
+                    }]);
+                }
+                continue;
+            }
+
+            let line_result = grammar
+                .tokenize_line_with_themes(
+                    line,
+                    state,
+                    if deferred_theme_error.is_some() {
+                        &[]
+                    } else {
+                        &compiled_themes
+                    },
+                    need_scopes,
+                    options.time_limit_millis,
+                )
+                .map_err(|error| {
+                    Error::new(
+                        ErrorKind::Tokenization,
+                        format!("Failed to tokenize `{language}` line: {error}"),
+                    )
+                })?;
+            state = Some(line_result.rule_stack);
+
+            if deferred_theme_error.is_some() {
+                continue;
+            }
+
+            if line_length == 0 {
+                output_lines.push(Vec::new());
+                continue;
+            }
+
+            let utf16_map = utf16_to_byte_map(line);
+            let binary_sets = &line_result.binary_tokens;
+            let scope_tokens = line_result.tokens.as_deref();
+
+            let mut boundaries = Vec::new();
+            for binary_tokens in binary_sets {
+                boundaries.extend(
+                    binary_tokens
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|token| token[0] as usize)
+                        .filter(|start| *start < line_length),
+                );
+            }
+            boundaries.push(line_length);
+            if options.preserve_scope_boundaries {
+                for token in scope_tokens.expect("scope boundaries were requested") {
+                    boundaries.push(token.start_index.min(line_length));
+                    boundaries.push(token.end_index.min(line_length));
+                }
+            }
+            boundaries.sort_unstable();
+            boundaries.dedup();
+
+            let mut cursors = vec![0usize; binary_sets.len()];
+            let mut scope_index = 0usize;
+            let mut line_tokens = Vec::with_capacity(boundaries.len().saturating_sub(1));
+
+            for range in boundaries.windows(2) {
+                let start_index = range[0];
+                let end_index = range[1];
+                if start_index >= end_index {
+                    continue;
+                }
+                let Some(start_byte) = utf16_map.get(start_index) else {
+                    continue;
+                };
+                let Some(end_byte) = utf16_map.get(end_index) else {
+                    continue;
+                };
+                let Some(content) = line.get(start_byte..end_byte) else {
+                    continue;
+                };
+
+                let mut variants = BTreeMap::new();
+                let mut first_token_type = None;
+                for (theme_index, binary_tokens) in binary_sets.iter().enumerate() {
+                    let cursor = &mut cursors[theme_index];
+                    while binary_tokens
+                        .get(*cursor * 2 + 2)
+                        .is_some_and(|next| *next as usize <= start_index)
+                    {
+                        *cursor += 1;
+                    }
+                    let attributes = EncodedTokenAttributes::new(binary_tokens[*cursor * 2 + 1]);
+                    if theme_index == 0 && options.include_token_type {
+                        first_token_type = Some(attributes.token_type());
+                    }
+                    let color_map = compiled_themes[theme_index].color_map();
                     variants.insert(
-                        themes[index].0.clone(),
+                        themes[theme_index].0.clone(),
                         HighlightThemeTokenStyle {
-                            color: token.color.clone(),
-                            font_style: token.font_style,
+                            color: Some(
+                                color_map
+                                    .get(attributes.foreground() as usize)
+                                    .cloned()
+                                    .unwrap_or_default(),
+                            ),
+                            font_style: Some(attributes.font_style()),
                         },
                     );
                 }
-                let token = base.expect("a token boundary has a source token");
-                let map = utf16_to_byte_map(&token.content);
-                let start_byte = map
-                    .get(start - token.offset)
-                    .expect("theme boundary must be within its token");
-                let end_byte = map
-                    .get(end - token.offset)
-                    .expect("theme boundary must be within its token");
-                tokens.push(HighlightThemeToken {
-                    content: token.content[start_byte..end_byte].to_owned(),
-                    offset: start,
+
+                let scope_names = scope_tokens.and_then(|scopes| {
+                    let (scope_start, scope_end) = if options.preserve_scope_boundaries {
+                        (start_index, end_index)
+                    } else {
+                        let binary0 = &binary_sets[0];
+                        let c0 = cursors[0];
+                        let s0 = binary0[c0 * 2] as usize;
+                        let e0 = binary0
+                            .get(c0 * 2 + 2)
+                            .map_or(line_length, |next| (*next as usize).min(line_length));
+                        (s0, e0)
+                    };
+                    find_covering_scope_monotonic(scopes, &mut scope_index, scope_start, scope_end)
+                });
+
+                line_tokens.push(HighlightThemeToken {
+                    content: content.to_owned(),
+                    offset: line_offset + start_index,
                     variants,
-                    token_type: token.token_type,
-                    scope_names: token.scope_names.clone(),
+                    token_type: first_token_type,
+                    scope_names,
                 });
             }
-            output_lines.push(tokens);
+            output_lines.push(line_tokens);
         }
-        let continuation = results
-            .first()
-            .and_then(|(_, continuation)| continuation.clone());
+
+        let continuation = capture_state
+            .then(|| grammar.serialize_state_stack(state.as_ref()))
+            .transpose()
+            .map_err(|reason| Error::new(ErrorKind::Tokenization, reason))?;
+
+        // Leave the last valid theme active, matching multi-pass activation order
+        // only after tokenization and state serialization succeed.
+        if let Some(last_compiled) = compiled_themes.last()
+            && self.active_theme.as_deref() != Some(last_valid_theme_id)
+        {
+            self.registry.set_compiled_theme(Arc::clone(last_compiled));
+            self.active_theme = Some(last_valid_theme_id.to_owned());
+        }
+
+        if let Some(error) = deferred_theme_error {
+            return Err(error);
+        }
         Ok((
             HighlightTokensWithThemesResult {
                 tokens: output_lines,
-                themes: themes
-                    .iter()
-                    .zip(results.iter())
-                    .map(|((color, _), (result, _))| HighlightThemeMetadata {
-                        color: color.clone(),
-                        name: result.theme_name.clone(),
-                        foreground: result.foreground.clone(),
-                        background: result.background.clone(),
-                    })
-                    .collect(),
+                themes: theme_metadata,
             },
             continuation,
         ))
     }
+}
+
+/// Finds the unique non-overlapping scope token covering `[start_index, end_index)`
+/// using a monotonic cursor, matching `scopes.iter().find(...)` in O(1) amortized time.
+fn find_covering_scope_monotonic(
+    scopes: &[ferriki_textmate::Token],
+    scope_index: &mut usize,
+    start_index: usize,
+    end_index: usize,
+) -> Option<Vec<String>> {
+    let mut entries_examined = 0;
+    find_covering_scope_monotonic_counted(
+        scopes,
+        scope_index,
+        start_index,
+        end_index,
+        &mut entries_examined,
+    )
+}
+
+fn find_covering_scope_monotonic_counted(
+    scopes: &[ferriki_textmate::Token],
+    scope_index: &mut usize,
+    start_index: usize,
+    end_index: usize,
+    entries_examined: &mut usize,
+) -> Option<Vec<String>> {
+    while scopes.get(*scope_index).is_some_and(|token| {
+        *entries_examined += 1;
+        token.end_index <= start_index
+    }) {
+        *scope_index += 1;
+    }
+    scopes
+        .get(*scope_index)
+        .filter(|token| {
+            *entries_examined += 1;
+            token.start_index <= start_index && token.end_index >= end_index
+        })
+        .map(|token| token.scopes.clone())
 }
 
 fn scope_matches(candidate: &str, scope_name: &str) -> bool {
@@ -1622,7 +1957,995 @@ mod tests {
 
         assert!(highlighter.standard_assets.is_none());
         assert!(highlighter.themes.is_empty());
+        assert!(highlighter.compiled_themes.is_empty());
         assert!(highlighter.loaded_languages().is_empty());
         assert!(highlighter.registry.lookup("source.js").is_none());
+    }
+
+    /// Reference multi-pass merge mirroring the pre-single-pass implementation,
+    /// used in parity tests and benchmarks to verify exact equivalence.
+    fn reference_multi_theme_tokenize(
+        highlighter: &mut HighlighterCore,
+        code: &str,
+        language: &str,
+        themes: &[(String, String)],
+        options: &TokenizeOptions,
+        serialized_state: Option<&str>,
+        capture_state: bool,
+    ) -> Result<(HighlightTokensWithThemesResult, Option<String>)> {
+        reference_multi_theme_tokenize_with_mode(
+            highlighter,
+            code,
+            language,
+            themes,
+            options,
+            serialized_state,
+            capture_state,
+            false,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn reference_multi_theme_tokenize_with_mode(
+        highlighter: &mut HighlighterCore,
+        code: &str,
+        language: &str,
+        themes: &[(String, String)],
+        options: &TokenizeOptions,
+        serialized_state: Option<&str>,
+        capture_state: bool,
+        recompile_each_switch: bool,
+    ) -> Result<(HighlightTokensWithThemesResult, Option<String>)> {
+        let results = themes
+            .iter()
+            .map(|(_, theme)| {
+                if recompile_each_switch {
+                    highlighter.compiled_themes.remove(theme);
+                    if highlighter.active_theme.as_deref() == Some(theme.as_str()) {
+                        highlighter.active_theme = None;
+                    }
+                }
+                highlighter.tokenize_with_grammar_state(
+                    code,
+                    language,
+                    theme,
+                    options,
+                    serialized_state,
+                    capture_state,
+                )
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let mut output_lines = Vec::new();
+        for line_index in 0..results[0].0.tokens.len() {
+            let lines: Vec<_> = results
+                .iter()
+                .map(|result| &result.0.tokens[line_index])
+                .collect();
+            let mut boundaries = BTreeSet::new();
+            for line in &lines {
+                for token in *line {
+                    boundaries.insert(token.offset);
+                    boundaries.insert(token.offset + token.content.encode_utf16().count());
+                }
+            }
+            let boundaries: Vec<_> = boundaries.into_iter().collect();
+            let mut cursors = vec![0; lines.len()];
+            let mut tokens = Vec::new();
+            for range in boundaries.windows(2) {
+                let start = range[0];
+                let end = range[1];
+                let mut variants = BTreeMap::new();
+                let mut base = None;
+                for (index, line) in lines.iter().enumerate() {
+                    while line[cursors[index]].offset
+                        + line[cursors[index]].content.encode_utf16().count()
+                        <= start
+                    {
+                        cursors[index] += 1;
+                    }
+                    let token = &line[cursors[index]];
+                    base.get_or_insert(token);
+                    variants.insert(
+                        themes[index].0.clone(),
+                        HighlightThemeTokenStyle {
+                            color: token.color.clone(),
+                            font_style: token.font_style,
+                        },
+                    );
+                }
+                let token = base.expect("a token boundary has a source token");
+                let map = utf16_to_byte_map(&token.content);
+                let start_byte = map.get(start - token.offset).expect("start in token");
+                let end_byte = map.get(end - token.offset).expect("end in token");
+                tokens.push(HighlightThemeToken {
+                    content: token.content[start_byte..end_byte].to_owned(),
+                    offset: start,
+                    variants,
+                    token_type: token.token_type,
+                    scope_names: token.scope_names.clone(),
+                });
+            }
+            output_lines.push(tokens);
+        }
+        let continuation = results
+            .first()
+            .and_then(|(_, continuation)| continuation.clone());
+        Ok((
+            HighlightTokensWithThemesResult {
+                tokens: output_lines,
+                themes: themes
+                    .iter()
+                    .zip(results.iter())
+                    .map(|((color, _), (result, _))| HighlightThemeMetadata {
+                        color: color.clone(),
+                        name: result.theme_name.clone(),
+                        foreground: result.foreground.clone(),
+                        background: result.background.clone(),
+                    })
+                    .collect(),
+            },
+            continuation,
+        ))
+    }
+
+    #[test]
+    fn monotonic_scope_cursor_matches_linear_find_and_scales_linearly() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "pair-theme",
+                    r##"{
+                        "colors": { "editor.foreground": "#dddddd", "editor.background": "#111111" },
+                        "tokenColors": [
+                            { "scope": "keyword.a", "settings": { "foreground": "#ff0000" } },
+                            { "scope": "keyword.b", "settings": { "foreground": "#ff0000" } }
+                        ]
+                    }"##,
+                )
+                .expect("theme"),
+            )
+            .expect("theme registration");
+        let raw = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.pairs",
+                "patterns": [
+                    { "match": "a", "name": "keyword.a" },
+                    { "match": "b", "name": "keyword.b" },
+                    { "match": "c", "name": "string.c" }
+                ]
+            }"#,
+            Some("pairs.json"),
+        )
+        .expect("grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("pairs", raw))
+            .expect("grammar registration");
+
+        // Verify exact parity against linear scan across sub-ranges, merged multi-scope spans,
+        // exact boundaries, and trailing ranges past the end of scopes.
+        let grammar = highlighter
+            .grammar_for_language("pairs")
+            .expect("grammar lookup")
+            .expect("grammar");
+        let scopes = grammar
+            .tokenize_line("abccba", None, 0)
+            .expect("scopes")
+            .tokens;
+        let ranges = [
+            (0, 1),
+            (0, 2), // spans two scopes -> None
+            (1, 2),
+            (2, 3),
+            (2, 4), // spans two scopes -> None
+            (3, 4),
+            (4, 5),
+            (5, 6),
+            (6, 7), // past end -> None
+        ];
+        let mut cursor = 0;
+        for (start, end) in ranges {
+            let linear = scopes
+                .iter()
+                .find(|token| token.start_index <= start && token.end_index >= end)
+                .map(|token| token.scopes.clone());
+            let monotonic = find_covering_scope_monotonic(&scopes, &mut cursor, start, end);
+            assert_eq!(monotonic, linear, "range {start}..{end}");
+        }
+        let mut empty_cursor = 0;
+        assert_eq!(
+            find_covering_scope_monotonic(&[], &mut empty_cursor, 0, 1),
+            None
+        );
+
+        // Long line with 24,000 short tokens: verify end-to-end scope output and
+        // deterministically assert O(T) scope-entry examinations via the cursor.
+        let long_line = "ab".repeat(12_000);
+        let options = TokenizeOptions {
+            time_limit_millis: 0,
+            include_scopes: true,
+            preserve_scope_boundaries: true,
+            ..TokenizeOptions::default()
+        };
+        let result = highlighter
+            .tokenize(&long_line, "pairs", "pair-theme", &options)
+            .expect("long line tokens");
+
+        assert_eq!(result.tokens.len(), 1);
+        assert_eq!(result.tokens[0].len(), 24_000);
+        assert_eq!(
+            result.tokens[0][0].scope_names.as_deref(),
+            Some(&["source.pairs".to_owned(), "keyword.a".to_owned()][..])
+        );
+        assert_eq!(
+            result.tokens[0][23_999].scope_names.as_deref(),
+            Some(&["source.pairs".to_owned(), "keyword.b".to_owned()][..])
+        );
+
+        let long_scopes = grammar
+            .tokenize_line(&long_line, None, 0)
+            .expect("long scopes")
+            .tokens;
+        assert_eq!(long_scopes.len(), 24_000);
+        let mut long_cursor = 0;
+        let mut entries_examined = 0;
+        for (index, token) in long_scopes.iter().enumerate() {
+            let matched = find_covering_scope_monotonic_counted(
+                &long_scopes,
+                &mut long_cursor,
+                token.start_index,
+                token.end_index,
+                &mut entries_examined,
+            );
+            assert_eq!(matched.as_ref(), Some(&token.scopes));
+            assert_eq!(
+                result.tokens[0][index].scope_names.as_ref(),
+                matched.as_ref()
+            );
+        }
+        // Linear cursor visits each entry at most O(1) times (vs ~2.88e8 for O(T^2)).
+        assert!(
+            entries_examined <= 3 * long_scopes.len(),
+            "expected linear scope cursor work (<= {}), examined {entries_examined}",
+            3 * long_scopes.len()
+        );
+    }
+
+    #[test]
+    fn repeated_theme_switching_reuses_compiled_arc_and_invalidates_on_reregister() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        let raw = parse_raw_grammar(
+            r#"{"scopeName":"source.switch","patterns":[{"match":"x","name":"keyword.x"}]}"#,
+            Some("switch.json"),
+        )
+        .expect("grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("switch", raw))
+            .expect("grammar registration");
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "light",
+                    r##"{"tokenColors":[{"scope":"keyword.x","settings":{"foreground":"#111111"}}]}"##,
+                )
+                .expect("light"),
+            )
+            .expect("light registration");
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "dark",
+                    r##"{"tokenColors":[{"scope":"keyword.x","settings":{"foreground":"#eeeeee"}}]}"##,
+                )
+                .expect("dark"),
+            )
+            .expect("dark registration");
+
+        let opts = unlimited_tokenize_options();
+        let first_light = highlighter
+            .tokenize("x", "switch", "light", &opts)
+            .expect("light");
+        assert_eq!(first_light.tokens[0][0].color.as_deref(), Some("#111111"));
+        let light_arc = Arc::clone(
+            highlighter
+                .compiled_themes
+                .get("light")
+                .expect("cached light"),
+        );
+
+        let first_dark = highlighter
+            .tokenize("x", "switch", "dark", &opts)
+            .expect("dark");
+        assert_eq!(first_dark.tokens[0][0].color.as_deref(), Some("#EEEEEE"));
+        let dark_arc = Arc::clone(
+            highlighter
+                .compiled_themes
+                .get("dark")
+                .expect("cached dark"),
+        );
+
+        // Repeated alternating switches must keep the exact same compiled Arc<Theme> instances.
+        for _ in 0..5 {
+            let light = highlighter
+                .tokenize("x", "switch", "light", &opts)
+                .expect("light");
+            let dark = highlighter
+                .tokenize("x", "switch", "dark", &opts)
+                .expect("dark");
+            assert_eq!(light, first_light);
+            assert_eq!(dark, first_dark);
+            assert!(Arc::ptr_eq(
+                highlighter
+                    .compiled_themes
+                    .get("light")
+                    .expect("cached light"),
+                &light_arc
+            ));
+            assert!(Arc::ptr_eq(
+                highlighter
+                    .compiled_themes
+                    .get("dark")
+                    .expect("cached dark"),
+                &dark_arc
+            ));
+        }
+
+        // Re-registering both an active theme (`dark`) and an inactive theme (`light`)
+        // must invalidate their cached compiled themes and reflect updated colors.
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "dark",
+                    r##"{"tokenColors":[{"scope":"keyword.x","settings":{"foreground":"#224466"}}]}"##,
+                )
+                .expect("updated dark"),
+            )
+            .expect("re-register dark");
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "light",
+                    r##"{"tokenColors":[{"scope":"keyword.x","settings":{"foreground":"#664422"}}]}"##,
+                )
+                .expect("updated light"),
+            )
+            .expect("re-register light");
+        assert!(!highlighter.compiled_themes.contains_key("dark"));
+        assert!(!highlighter.compiled_themes.contains_key("light"));
+
+        let updated_dark = highlighter
+            .tokenize("x", "switch", "dark", &opts)
+            .expect("updated dark");
+        let updated_light = highlighter
+            .tokenize("x", "switch", "light", &opts)
+            .expect("updated light");
+        assert_eq!(updated_dark.tokens[0][0].color.as_deref(), Some("#224466"));
+        assert_eq!(updated_light.tokens[0][0].color.as_deref(), Some("#664422"));
+        assert!(!Arc::ptr_eq(
+            highlighter.compiled_themes.get("dark").expect("new dark"),
+            &dark_arc
+        ));
+        assert!(!Arc::ptr_eq(
+            highlighter.compiled_themes.get("light").expect("new light"),
+            &light_arc
+        ));
+
+        highlighter.dispose();
+        assert!(highlighter.compiled_themes.is_empty());
+    }
+
+    #[test]
+    fn single_pass_multi_theme_matches_reference_across_options_embedded_and_continuations() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        let host = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.host",
+                "patterns": [
+                    {
+                        "begin": "<%",
+                        "end": "%>",
+                        "name": "meta.embedded.block.inner",
+                        "contentName": "source.inner",
+                        "patterns": [{ "include": "source.inner" }]
+                    },
+                    {
+                        "begin": "BEGIN",
+                        "end": "^$",
+                        "name": "meta.blank-end",
+                        "patterns": [{ "match": "inside", "name": "constant.inside" }]
+                    },
+                    { "match": "foo", "name": "keyword.foo" },
+                    { "match": "bar", "name": "string.bar" },
+                    { "match": "//.*$", "name": "comment.line.host" }
+                ]
+            }"#,
+            Some("host.json"),
+        )
+        .expect("host grammar");
+        let inner = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.inner",
+                "patterns": [
+                    { "match": "baz", "name": "variable.baz" },
+                    { "match": "42", "name": "constant.numeric.inner" }
+                ]
+            }"#,
+            Some("inner.json"),
+        )
+        .expect("inner grammar");
+        let injection = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.inject",
+                "injectionSelector": "L:source.host",
+                "patterns": [{ "match": "TODO", "name": "markup.todo" }]
+            }"#,
+            Some("inject.json"),
+        )
+        .expect("injection grammar");
+
+        highlighter
+            .register_language(LanguageRegistration::new("inner", inner))
+            .expect("register inner");
+        highlighter
+            .register_language(LanguageRegistration::new("host", host))
+            .expect("register host");
+        highlighter
+            .register_language(
+                LanguageRegistration::new("inject", injection)
+                    .with_injections(["source.host".to_owned()]),
+            )
+            .expect("register injection");
+
+        // Notice: `light` gives `keyword.foo` and `string.bar` the same foreground as default
+        // (causing them to merge when adjacent), whereas `dark` splits them and `contrast`
+        // uses parent-scope rules and background differences.
+        for (name, json) in [
+            (
+                "light",
+                r##"{
+                    "colors": { "editor.foreground": "#222222", "editor.background": "#ffffff" },
+                    "tokenColors": [
+                        { "scope": "constant.numeric", "settings": { "foreground": "#0055aa", "fontStyle": "bold" } },
+                        { "scope": "markup.todo", "settings": { "foreground": "#cc0000", "fontStyle": "underline" } }
+                    ]
+                }"##,
+            ),
+            (
+                "dark",
+                r##"{
+                    "colors": { "editor.foreground": "#dddddd", "editor.background": "#121212" },
+                    "tokenColors": [
+                        { "scope": "keyword.foo", "settings": { "foreground": "#88c0d0", "fontStyle": "italic" } },
+                        { "scope": "string.bar", "settings": { "foreground": "#a3be8c" } },
+                        { "scope": "source.inner variable.baz", "settings": { "foreground": "#ebcb8b", "fontStyle": "bold italic" } },
+                        { "scope": "comment.line", "settings": { "foreground": "#616e88", "fontStyle": "italic" } }
+                    ]
+                }"##,
+            ),
+            (
+                "contrast",
+                r##"{
+                    "colors": { "editor.foreground": "#ffffff", "editor.background": "#000000" },
+                    "tokenColors": [
+                        { "scope": "keyword.foo", "settings": { "foreground": "#ffffff", "background": "#222222" } },
+                        { "scope": "constant.inside", "settings": { "foreground": "#ff00ff", "fontStyle": "strikethrough" } }
+                    ]
+                }"##,
+            ),
+        ] {
+            highlighter
+                .register_theme(parse_theme_data(name, json).expect("theme"))
+                .expect("register theme");
+        }
+
+        let themes = vec![
+            ("light".to_owned(), "light".to_owned()),
+            ("dark".to_owned(), "dark".to_owned()),
+            ("contrast".to_owned(), "contrast".to_owned()),
+            ("light-dup".to_owned(), "light".to_owned()),
+        ];
+
+        let chunk1 = "😀foobar <% baz\nBEGIN\ninside TODO";
+        // Use a Unicode escape for U+05D0 (Hebrew alef) so the test exercises
+        // RTL non-merging at runtime without putting a literal RTL code point
+        // into this source file, which the Shiki parity harness highlights.
+        let chunk2 = "\n42 baz %> // TODO\r\n\u{05D0} foobar\n";
+
+        let option_matrix = [
+            unlimited_tokenize_options(),
+            TokenizeOptions {
+                time_limit_millis: 0,
+                include_scopes: true,
+                ..TokenizeOptions::default()
+            },
+            TokenizeOptions {
+                time_limit_millis: 0,
+                include_scopes: true,
+                preserve_scope_boundaries: true,
+                include_token_type: true,
+                ..TokenizeOptions::default()
+            },
+            TokenizeOptions {
+                time_limit_millis: 0,
+                max_line_length: 12,
+                include_token_type: true,
+                ..TokenizeOptions::default()
+            },
+        ];
+
+        let render_options = crate::multi_render::MultiThemeRenderOptions {
+            render: RenderOptions::default(),
+            default_color: Some("light".to_owned()),
+            css_variable_prefix: "--shiki-".to_owned(),
+        };
+
+        for options in &option_matrix {
+            let (actual_1, cont_1) = highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    chunk1, "host", &themes, options, None, true,
+                )
+                .expect("single-pass chunk 1");
+            assert_eq!(highlighter.active_theme.as_deref(), Some("light"));
+
+            let (expected_1, expected_cont_1) = reference_multi_theme_tokenize(
+                &mut highlighter,
+                chunk1,
+                "host",
+                &themes,
+                options,
+                None,
+                true,
+            )
+            .expect("reference chunk 1");
+            assert_eq!(actual_1, expected_1, "chunk 1 tokens for {options:?}");
+            assert_eq!(cont_1, expected_cont_1, "chunk 1 state for {options:?}");
+            assert_eq!(
+                crate::multi_render::render_html_with_themes(&actual_1, &render_options),
+                crate::multi_render::render_html_with_themes(&expected_1, &render_options),
+                "chunk 1 HTML for {options:?}"
+            );
+
+            let (actual_2, cont_2) = highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    chunk2,
+                    "host",
+                    &themes,
+                    options,
+                    cont_1.as_deref(),
+                    true,
+                )
+                .expect("single-pass chunk 2");
+            let (expected_2, expected_cont_2) = reference_multi_theme_tokenize(
+                &mut highlighter,
+                chunk2,
+                "host",
+                &themes,
+                options,
+                expected_cont_1.as_deref(),
+                true,
+            )
+            .expect("reference chunk 2");
+            assert_eq!(actual_2, expected_2, "chunk 2 tokens for {options:?}");
+            assert_eq!(cont_2, expected_cont_2, "chunk 2 state for {options:?}");
+            assert_eq!(
+                crate::multi_render::render_html_with_themes(&actual_2, &render_options),
+                crate::multi_render::render_html_with_themes(&expected_2, &render_options),
+                "chunk 2 HTML for {options:?}"
+            );
+        }
+
+        // Plaintext multi-theme parity and error precedence.
+        let (plain_actual, plain_cont) = highlighter
+            .tokenize_with_grammar_state_and_themes(
+                "hello\n\nworld",
+                "plaintext",
+                &themes[..2],
+                &unlimited_tokenize_options(),
+                None,
+                false,
+            )
+            .expect("plain multi-theme");
+        let (plain_expected, plain_expected_cont) = reference_multi_theme_tokenize(
+            &mut highlighter,
+            "hello\n\nworld",
+            "plaintext",
+            &themes[..2],
+            &unlimited_tokenize_options(),
+            None,
+            false,
+        )
+        .expect("plain reference");
+        assert_eq!(plain_actual, plain_expected);
+        assert_eq!(plain_cont, plain_expected_cont);
+        assert_eq!(highlighter.active_theme.as_deref(), Some("dark"));
+
+        assert_eq!(
+            highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    "x",
+                    "plaintext",
+                    &themes[..2],
+                    &unlimited_tokenize_options(),
+                    None,
+                    true,
+                )
+                .unwrap_err()
+                .kind(),
+            ErrorKind::Tokenization
+        );
+        assert_eq!(
+            highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    "x",
+                    "missing-lang",
+                    &[
+                        ("light".to_owned(), "light".to_owned()),
+                        ("dark".to_owned(), "missing-theme".to_owned()),
+                    ],
+                    &unlimited_tokenize_options(),
+                    None,
+                    false,
+                )
+                .unwrap_err()
+                .kind(),
+            ErrorKind::UnknownLanguage
+        );
+        assert_eq!(
+            highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    "x",
+                    "host",
+                    &[
+                        ("light".to_owned(), "light".to_owned()),
+                        ("dark".to_owned(), "missing-theme".to_owned()),
+                    ],
+                    &unlimited_tokenize_options(),
+                    None,
+                    false,
+                )
+                .unwrap_err()
+                .kind(),
+            ErrorKind::UnknownTheme
+        );
+
+        // Broken grammar compilation on theme 0 must still surface ErrorKind::Tokenization
+        // ahead of an unknown later theme, matching sequential per-theme execution.
+        let broken_grammar = parse_raw_grammar(
+            r#"{"scopeName":"source.broken","patterns":[{"match":"[unclosed","name":"invalid.regex"}]}"#,
+            Some("broken.json"),
+        )
+        .expect("broken grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("broken", broken_grammar))
+            .expect("register broken");
+        assert_eq!(
+            highlighter
+                .tokenize_with_grammar_state_and_themes(
+                    "x",
+                    "broken",
+                    &[
+                        ("light".to_owned(), "light".to_owned()),
+                        ("dark".to_owned(), "missing-theme".to_owned()),
+                    ],
+                    &unlimited_tokenize_options(),
+                    None,
+                    false,
+                )
+                .unwrap_err()
+                .kind(),
+            ErrorKind::Tokenization
+        );
+
+        // Failed continuation serialization (stack depth > 2,048) must leave
+        // theme 0 active rather than switching the registry to a later theme.
+        let deep_grammar = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.deep-limit",
+                "patterns": [{
+                    "begin": "\\(",
+                    "end": "\\)",
+                    "name": "meta.group",
+                    "patterns": [{ "include": "$self" }]
+                }]
+            }"#,
+            Some("deep-limit.json"),
+        )
+        .expect("deep grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("deep-limit", deep_grammar))
+            .expect("register deep grammar");
+        let err = highlighter
+            .tokenize_with_grammar_state_and_themes(
+                &"(".repeat(2_100),
+                "deep-limit",
+                &[
+                    ("light".to_owned(), "light".to_owned()),
+                    ("dark".to_owned(), "dark".to_owned()),
+                ],
+                &unlimited_tokenize_options(),
+                None,
+                true,
+            )
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::Tokenization);
+        assert_eq!(highlighter.active_theme.as_deref(), Some("light"));
+    }
+
+    #[test]
+    #[ignore = "explicit release-mode performance benchmark for #389"]
+    fn bench_warm_multi_theme_vs_sequential() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        let grammar = parse_raw_grammar(
+            r#"{
+                "scopeName": "source.bench",
+                "patterns": [
+                    { "match": "//.*$", "name": "comment.line.double-slash.bench" },
+                    {
+                        "begin": "\"",
+                        "end": "\"",
+                        "name": "string.quoted.double.bench",
+                        "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.bench" }]
+                    },
+                    { "match": "\\b(async|await|const|let|function|return|if|else|for|while|export|import|from|type|interface)\\b", "name": "keyword.control.bench" },
+                    { "match": "\\b(true|false|null|undefined)\\b", "name": "constant.language.bench" },
+                    { "match": "\\b[0-9]+(\\.[0-9]+)?\\b", "name": "constant.numeric.bench" },
+                    { "match": "\\b[A-Z][A-Za-z0-9_]*\\b", "name": "entity.name.type.bench" },
+                    { "match": "\\b[a-z_][A-Za-z0-9_]*(?=\\s*\\()", "name": "entity.name.function.bench" },
+                    { "match": "\\b[a-z_][A-Za-z0-9_]*\\b", "name": "variable.other.bench" },
+                    { "match": "===|!==|=>|<=|>=|&&|\\|\\||[=+\\-*/<>!?:;.,(){}\\[\\]]", "name": "keyword.operator.bench" }
+                ]
+            }"#,
+            Some("bench.json"),
+        )
+        .expect("bench grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("bench", grammar))
+            .expect("register bench");
+
+        let make_theme = |name: &str, base_fg: &str, base_bg: &str, palette: [&str; 8]| {
+            let mut rules = vec![
+                format!(
+                    r#"{{"scope":"comment","settings":{{"foreground":"{}","fontStyle":"italic"}}}}"#,
+                    palette[0]
+                ),
+                format!(
+                    r#"{{"scope":"string","settings":{{"foreground":"{}"}}}}"#,
+                    palette[1]
+                ),
+                format!(
+                    r#"{{"scope":"constant.character.escape","settings":{{"foreground":"{}","fontStyle":"bold"}}}}"#,
+                    palette[2]
+                ),
+                format!(
+                    r#"{{"scope":"keyword.control","settings":{{"foreground":"{}","fontStyle":"bold"}}}}"#,
+                    palette[3]
+                ),
+                format!(
+                    r#"{{"scope":"constant.language","settings":{{"foreground":"{}"}}}}"#,
+                    palette[4]
+                ),
+                format!(
+                    r#"{{"scope":"constant.numeric","settings":{{"foreground":"{}"}}}}"#,
+                    palette[5]
+                ),
+                format!(
+                    r#"{{"scope":"entity.name.type","settings":{{"foreground":"{}"}}}}"#,
+                    palette[6]
+                ),
+                format!(
+                    r#"{{"scope":"entity.name.function","settings":{{"foreground":"{}"}}}}"#,
+                    palette[7]
+                ),
+            ];
+            // Add realistic theme rule count (~120 rules, comparable to standard themes).
+            for index in 0..112 {
+                rules.push(format!(
+                    r##"{{"scope":"meta.extra.rule{index}.bench","settings":{{"foreground":"#{:06x}"}}}}"##,
+                    0x100000 + index * 17
+                ));
+            }
+            let json = format!(
+                r#"{{"name":"{name}","colors":{{"editor.foreground":"{base_fg}","editor.background":"{base_bg}"}},"tokenColors":[{}]}}"#,
+                rules.join(",")
+            );
+            parse_theme_data(name, &json).expect("theme")
+        };
+
+        let light_theme = make_theme(
+            "bench-light",
+            "#24292f",
+            "#ffffff",
+            [
+                "#6e7781", "#0a3069", "#8250df", "#cf222e", "#0550ae", "#0550ae", "#953800",
+                "#8250df",
+            ],
+        );
+        let dark_theme = make_theme(
+            "bench-dark",
+            "#c9d1d9",
+            "#0d1117",
+            [
+                "#8b949e", "#a5d6ff", "#d2a8ff", "#ff7b72", "#79c0ff", "#79c0ff", "#ffa657",
+                "#d2a8ff",
+            ],
+        );
+        highlighter
+            .register_theme(light_theme)
+            .expect("register light");
+        highlighter
+            .register_theme(dark_theme)
+            .expect("register dark");
+
+        let snippet = [
+            "export async function highlightDocument(input: string, count: number): Promise<Result> {",
+            "  // Resolve tokens for each configured theme variant without repeating regex scans.",
+            "  const header = \"escaped \\\"quote\\\" and value = 42\";",
+            "  let total = count + 123.45;",
+            "  if (total >= 100 && input !== null) {",
+            "    return formatOutput(header, total, true);",
+            "  }",
+            "  return fallbackResult(undefined, false);",
+            "}",
+        ]
+        .join("\n");
+        let doc = (0..12)
+            .map(|_| snippet.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let themes = vec![
+            ("light".to_owned(), "bench-light".to_owned()),
+            ("dark".to_owned(), "bench-dark".to_owned()),
+        ];
+        let options = unlimited_tokenize_options();
+
+        // Warm up regex scanners and verify all 3 paths produce identical output.
+        let single_check = highlighter
+            .tokenize_with_themes(&doc, "bench", &themes, &options)
+            .expect("warmup");
+        let (cached_check, _) = reference_multi_theme_tokenize_with_mode(
+            &mut highlighter,
+            &doc,
+            "bench",
+            &themes,
+            &options,
+            None,
+            false,
+            false,
+        )
+        .expect("cached parity check");
+        let (baseline_check, _) = reference_multi_theme_tokenize_with_mode(
+            &mut highlighter,
+            &doc,
+            "bench",
+            &themes,
+            &options,
+            None,
+            false,
+            true,
+        )
+        .expect("baseline parity check");
+        assert_eq!(single_check, cached_check);
+        assert_eq!(single_check, baseline_check);
+
+        let iterations = 400;
+
+        // 1. Pre-#389 baseline: sequential 2-pass + RawTheme recompile on every switch + merge.
+        let baseline_start = std::time::Instant::now();
+        for _ in 0..iterations {
+            let result = reference_multi_theme_tokenize_with_mode(
+                &mut highlighter,
+                &doc,
+                "bench",
+                &themes,
+                &options,
+                None,
+                false,
+                true,
+            )
+            .expect("baseline two-pass");
+            std::hint::black_box(result);
+        }
+        let baseline_ms = baseline_start.elapsed().as_secs_f64() * 1_000.0;
+
+        // 2. Cached Arc<Theme> + 2-pass sequential + merge (isolating theme-cache win).
+        let cached_two_pass_start = std::time::Instant::now();
+        for _ in 0..iterations {
+            let result = reference_multi_theme_tokenize_with_mode(
+                &mut highlighter,
+                &doc,
+                "bench",
+                &themes,
+                &options,
+                None,
+                false,
+                false,
+            )
+            .expect("cached two-pass");
+            std::hint::black_box(result);
+        }
+        let cached_two_pass_ms = cached_two_pass_start.elapsed().as_secs_f64() * 1_000.0;
+
+        // 3. New single-pass + cached Arc<Theme>.
+        let single_pass_start = std::time::Instant::now();
+        for _ in 0..iterations {
+            let result = highlighter
+                .tokenize_with_themes(&doc, "bench", &themes, &options)
+                .expect("single-pass");
+            std::hint::black_box(result);
+        }
+        let single_pass_ms = single_pass_start.elapsed().as_secs_f64() * 1_000.0;
+
+        // 4. Long-line scope lookup: old O(T^2) `.iter().find(...)` vs monotonic cursor.
+        let long_line = "const value = 123; ".repeat(1_500);
+        let grammar = highlighter
+            .grammar_for_language("bench")
+            .expect("grammar")
+            .expect("bench");
+        let long_scopes = grammar
+            .tokenize_line(&long_line, None, 0)
+            .expect("long scopes")
+            .tokens;
+        let linear_start = std::time::Instant::now();
+        let mut linear_hits = 0usize;
+        for token in &long_scopes {
+            if let Some(matched) = long_scopes
+                .iter()
+                .find(|candidate| {
+                    candidate.start_index <= token.start_index
+                        && candidate.end_index >= token.end_index
+                })
+                .map(|candidate| candidate.scopes.clone())
+            {
+                std::hint::black_box(matched);
+                linear_hits += 1;
+            }
+        }
+        let linear_ms = linear_start.elapsed().as_secs_f64() * 1_000.0;
+
+        let monotonic_start = std::time::Instant::now();
+        let mut cursor = 0usize;
+        let mut monotonic_hits = 0usize;
+        for token in &long_scopes {
+            if let Some(matched) = find_covering_scope_monotonic(
+                &long_scopes,
+                &mut cursor,
+                token.start_index,
+                token.end_index,
+            ) {
+                std::hint::black_box(matched);
+                monotonic_hits += 1;
+            }
+        }
+        let monotonic_ms = monotonic_start.elapsed().as_secs_f64() * 1_000.0;
+        assert_eq!(linear_hits, monotonic_hits);
+
+        eprintln!(
+            "=== #389 release benchmark ({iterations} iterations, {} lines, 2 themes x 120 rules) ===",
+            doc.lines().count()
+        );
+        eprintln!(
+            "  baseline (2-pass + RawTheme recompile): {baseline_ms:.2} ms ({:.3} ms/doc)",
+            baseline_ms / f64::from(iterations)
+        );
+        eprintln!(
+            "  cached Arc<Theme> (2-pass + merge):     {cached_two_pass_ms:.2} ms ({:.3} ms/doc, {:.2}x vs baseline)",
+            cached_two_pass_ms / f64::from(iterations),
+            baseline_ms / cached_two_pass_ms
+        );
+        eprintln!(
+            "  single-pass + cached Arc<Theme>:        {single_pass_ms:.2} ms ({:.3} ms/doc, {:.2}x vs baseline, {:.2}x vs cached 2-pass)",
+            single_pass_ms / f64::from(iterations),
+            baseline_ms / single_pass_ms,
+            cached_two_pass_ms / single_pass_ms
+        );
+        eprintln!(
+            "=== #389 scope lookup ({} tokens on 1 line) ===",
+            long_scopes.len()
+        );
+        eprintln!("  O(T^2) linear .find():                  {linear_ms:.2} ms");
+        eprintln!(
+            "  O(T) monotonic cursor:                  {monotonic_ms:.2} ms ({:.1}x faster)",
+            linear_ms / monotonic_ms.max(0.001)
+        );
     }
 }

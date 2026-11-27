@@ -71,7 +71,7 @@ pub struct SyncRegistry {
     grammars: BTreeMap<String, CompiledGrammar>,
     raw_grammars: GrammarStore,
     theme: ThemeProvider,
-    color_map: Vec<String>,
+    has_color_map: bool,
     scanner_pattern_cache: ScannerPatternCache,
 }
 
@@ -84,8 +84,8 @@ impl SyncRegistry {
         Ok(Self {
             grammars: BTreeMap::new(),
             raw_grammars: GrammarStore::new(),
-            color_map: resolved_theme.get_color_map(),
             theme: ThemeProvider::new(resolved_theme),
+            has_color_map: true,
             scanner_pattern_cache: ScannerPatternCache::new(),
         })
     }
@@ -98,7 +98,7 @@ impl SyncRegistry {
             Theme::create_from_raw_theme(None, None)
                 .expect("the default theme has no frozen color map"),
         );
-        self.color_map.clear();
+        self.has_color_map = false;
     }
 
     /// Observes scanner construction and actual prepared-group decoding.
@@ -250,14 +250,35 @@ impl SyncRegistry {
         color_map: Option<Vec<String>>,
     ) -> Result<(), ThemeError> {
         let resolved_theme = Theme::create_from_raw_theme(theme.as_ref(), color_map)?;
-        self.color_map = resolved_theme.get_color_map();
-        self.theme.set_theme(resolved_theme);
+        self.set_compiled_theme(Arc::new(resolved_theme));
         Ok(())
+    }
+
+    /// Replaces the active theme pointer with a precompiled [`Theme`] in O(1)
+    /// under the write lock without rebuilding its rule trie or clearing its
+    /// scope-match cache. If the registry held the last `Arc`, the previous
+    /// theme drops outside the lock.
+    ///
+    /// Compiled grammars stay cached and read the new theme at tokenize time.
+    /// State stacks returned before the change still carry metadata encoded
+    /// with the previous theme.
+    pub fn set_compiled_theme(&mut self, theme: Arc<Theme>) {
+        self.theme.set_compiled_theme(theme);
+        self.has_color_map = true;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn active_theme(&self) -> Arc<Theme> {
+        self.theme.theme()
     }
 
     #[must_use]
     pub fn get_color_map(&self) -> Vec<String> {
-        self.color_map.clone()
+        if self.has_color_map {
+            self.theme.theme().get_color_map()
+        } else {
+            Vec::new()
+        }
     }
 
     /// Registers or replaces `grammar` and sets the injection list of its scope.
@@ -1043,5 +1064,81 @@ mod tests {
                 .map(String::as_str),
             Some("keyword.archive")
         );
+    }
+
+    #[test]
+    fn set_compiled_theme_swaps_in_place_and_preserves_warm_scope_cache() {
+        use std::sync::Arc;
+
+        fn compiled_theme(color: &str) -> Arc<crate::Theme> {
+            Arc::new(
+                crate::Theme::create_from_raw_theme(
+                    Some(&RawTheme {
+                        settings: vec![RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.test".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some(color.into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        }],
+                        ..RawTheme::default()
+                    }),
+                    None,
+                )
+                .unwrap(),
+            )
+        }
+
+        let light = compiled_theme("#112233");
+        let dark = compiled_theme("#445566");
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(
+            grammar(
+                r#"{
+                    "scopeName": "source.test",
+                    "patterns": [{ "match": "x", "name": "keyword.test" }]
+                }"#,
+            ),
+            Vec::new(),
+        );
+        let compiled_grammar = registry
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(light.cached_match_count(), 0);
+        registry.set_compiled_theme(Arc::clone(&light));
+        assert!(Arc::ptr_eq(&registry.active_theme(), &light));
+        let light_tokens = compiled_grammar
+            .tokenize_line2("x", None, 0)
+            .unwrap()
+            .tokens;
+        let light_fg = EncodedTokenAttributes::new(light_tokens[1]).foreground();
+        assert_eq!(light.color_map()[light_fg as usize], "#112233");
+        assert_eq!(registry.get_color_map(), light.color_map());
+        let warm_light_entries = light.cached_match_count();
+        assert!(warm_light_entries >= 2);
+
+        registry.set_compiled_theme(Arc::clone(&dark));
+        assert!(Arc::ptr_eq(&registry.active_theme(), &dark));
+        let dark_tokens = compiled_grammar
+            .tokenize_line2("x", None, 0)
+            .unwrap()
+            .tokens;
+        let dark_fg = EncodedTokenAttributes::new(dark_tokens[1]).foreground();
+        assert_eq!(dark.color_map()[dark_fg as usize], "#445566");
+        assert_eq!(registry.get_color_map(), dark.color_map());
+        assert!(dark.cached_match_count() >= 2);
+
+        // Switching back reuses the exact same Arc<Theme> with its warm cache intact.
+        registry.set_compiled_theme(Arc::clone(&light));
+        assert!(Arc::ptr_eq(&registry.active_theme(), &light));
+        assert_eq!(light.cached_match_count(), warm_light_entries);
+        let light_again = compiled_grammar
+            .tokenize_line2("x", None, 0)
+            .unwrap()
+            .tokens;
+        assert_eq!(light_again, light_tokens);
     }
 }

@@ -44,7 +44,7 @@ pub use basic_scope_attributes::EmbeddedLanguages;
 pub use encoded_token_attributes::{EncodedTokenAttributes, StandardTokenType};
 pub use grammar::{
     Grammar, GrammarConfiguration, TokenizeLineResult, TokenizeLineResult2,
-    TokenizeLineResultWithScopes,
+    TokenizeLineResultWithScopes, TokenizeLineResultWithThemes,
 };
 pub use indexed_precompiled::index_precompiled_patterns;
 pub use line_output::{FontInfo, Token};
@@ -58,7 +58,9 @@ pub use raw_grammar::RawGrammar;
 pub use regex_mode::{RegexDiagnostics, RegexMode};
 pub use registry::SyncRegistry;
 pub use state_stack::StateStack;
-pub use theme::{FontStyle, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle, ThemeError};
+pub use theme::{
+    FontStyle, RawTheme, RawThemeScope, RawThemeSetting, RawThemeStyle, Theme, ThemeError,
+};
 
 pub(crate) use raw_grammar::{Location, RuleId};
 // Unit tests reach these through the crate root, as the upstream specs do.
@@ -73,7 +75,7 @@ pub(crate) use {
     regexp::OnigString,
     rule::{MatchRule, Rule, RuleRegistry, RuleScannerId},
     rule_factory::{GrammarStore, RuleFactory},
-    theme::{ScopeStack, StyleAttributes, Theme},
+    theme::{ScopeStack, StyleAttributes},
 };
 
 /// Test support for the vscode-textmate oracle suite, exempt from semver

@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 use std::collections::HashSet;
-use std::sync::{Arc, PoisonError, RwLock};
+use std::sync::{Arc, Mutex, PoisonError, RwLock};
 
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +17,8 @@ use crate::basic_scope_attributes::{
 use crate::encoded_token_attributes::{EncodedTokenAttributes, FontAttribute, StandardTokenType};
 use crate::grammar_fingerprint::GrammarFingerprint;
 use crate::line_output::{
-    BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, Token, TokenTypeMatcher,
+    BalancedBracketSelectors, FontInfo, LineFonts, LineTokens, MultiThemeAncestry, Token,
+    TokenTypeMatcher,
 };
 use crate::matcher::MatcherPriority;
 use crate::raw_grammar::{RawGrammar, RuleId};
@@ -165,10 +166,85 @@ impl PartialEq for TokenizeLineResultWithScopes {
     }
 }
 
-enum TokenOutput {
+/// Binary token outputs for multiple compiled themes produced by a single grammar scan.
+///
+/// Each entry in `binary_tokens` corresponds to the theme at the same index in
+/// the caller's slice and matches [`Grammar::tokenize_line2`] for that theme,
+/// including theme-specific token merging and RTL boundaries.
+#[derive(Clone)]
+#[non_exhaustive]
+pub struct TokenizeLineResultWithThemes {
+    /// Unmerged grammar tokens with scope paths when requested by the caller.
+    pub tokens: Option<Vec<Token>>,
+    /// One alternating UTF-16 start-offset and encoded-metadata vector per theme.
+    pub binary_tokens: Vec<Vec<u32>>,
+    pub rule_stack: Arc<StateStack>,
+    pub stopped_early: bool,
+}
+
+impl std::fmt::Debug for TokenizeLineResultWithThemes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TokenizeLineResultWithThemes")
+            .field("tokens_len", &self.tokens.as_ref().map(Vec::len))
+            .field("theme_count", &self.binary_tokens.len())
+            .field(
+                "binary_token_entries",
+                &self.binary_tokens.iter().map(Vec::len).sum::<usize>(),
+            )
+            .field("rule_stack_depth", &self.rule_stack.depth)
+            .field("stopped_early", &self.stopped_early)
+            .finish()
+    }
+}
+
+impl PartialEq for TokenizeLineResultWithThemes {
+    fn eq(&self, other: &Self) -> bool {
+        self.tokens == other.tokens
+            && self.binary_tokens == other.binary_tokens
+            && self.rule_stack.equals(&other.rule_stack)
+            && self.stopped_early == other.stopped_early
+    }
+}
+
+enum TokenOutput<'a> {
     Scopes,
     Binary,
     Both,
+    MultiTheme {
+        themes: &'a [Arc<Theme>],
+        include_scopes: bool,
+        pinned_theme: &'a Arc<Theme>,
+        cached_ancestry: Option<MultiThemeAncestry>,
+    },
+}
+
+struct PinnedThemeGrammar<'a> {
+    grammar: &'a Grammar,
+    theme: &'a Theme,
+}
+
+impl ScopeAttributesProvider for PinnedThemeGrammar<'_> {
+    fn metadata_for_scope(&self, scope_name: &str) -> BasicScopeAttributes {
+        self.grammar.metadata_for_scope(scope_name)
+    }
+
+    fn theme_match(&self, scope_path: &ScopeStack) -> Option<StyleAttributes> {
+        self.theme.match_scope(Some(scope_path))
+    }
+}
+
+impl TokenizerGrammar for PinnedThemeGrammar<'_> {
+    fn rule_registry(&self) -> &RuleRegistry {
+        &self.grammar.registry
+    }
+
+    fn injections(&self) -> &[Injection] {
+        &self.grammar.injections
+    }
+
+    fn theme_id(&self) -> u64 {
+        self.theme.id()
+    }
 }
 
 pub struct Grammar {
@@ -177,10 +253,13 @@ pub struct Grammar {
     grammar_fingerprint: GrammarFingerprint,
     registry: RuleRegistry,
     injections: Vec<Injection>,
-    basic_scope_attributes: BasicScopeAttributesProvider,
+    basic_scope_attributes: Arc<BasicScopeAttributesProvider>,
     token_type_matchers: Vec<TokenTypeMatcher>,
     balanced_bracket_selectors: Option<BalancedBracketSelectors>,
     theme_provider: ThemeProvider,
+    multi_theme_cache: Mutex<Option<MultiThemeAncestry>>,
+    #[cfg(test)]
+    last_walk_stats: Mutex<Option<crate::line_output::MultiThemeWalkStats>>,
 }
 
 const MAX_SERIALIZED_GRAMMAR_STATE_BYTES: usize = 1_048_576;
@@ -293,7 +372,15 @@ impl ThemeProvider {
     }
 
     pub(crate) fn set_theme(&self, theme: Theme) {
-        *self.0.write().unwrap_or_else(PoisonError::into_inner) = Arc::new(theme);
+        self.set_compiled_theme(Arc::new(theme));
+    }
+
+    pub(crate) fn set_compiled_theme(&self, theme: Arc<Theme>) {
+        let previous = std::mem::replace(
+            &mut *self.0.write().unwrap_or_else(PoisonError::into_inner),
+            theme,
+        );
+        drop(previous);
     }
 
     pub(crate) fn theme(&self) -> Arc<Theme> {
@@ -442,13 +529,16 @@ impl Grammar {
             grammar_fingerprint,
             registry,
             injections,
-            basic_scope_attributes: BasicScopeAttributesProvider::new(
+            basic_scope_attributes: Arc::new(BasicScopeAttributesProvider::new(
                 configuration.initial_language_id,
                 Some(&configuration.embedded_languages),
-            ),
+            )),
             token_type_matchers,
             balanced_bracket_selectors,
             theme_provider,
+            multi_theme_cache: Mutex::new(None),
+            #[cfg(test)]
+            last_walk_stats: Mutex::new(None),
         }
     }
 
@@ -600,7 +690,12 @@ impl Grammar {
             return Err(invalid_serialized_state("state contains too many scopes"));
         }
 
-        let mut state = self.initial_state();
+        let theme = self.theme_provider.theme();
+        let pinned = PinnedThemeGrammar {
+            grammar: self,
+            theme: &theme,
+        };
+        let mut state = self.initial_state_with_theme(&theme);
         if value.frames.first() != Some(&SerializedStateStackFrame::from_stack(&state)) {
             return Err(invalid_serialized_state("root stack frame is invalid"));
         }
@@ -609,9 +704,12 @@ impl Grammar {
             let rule_id = RuleId::new(frame.rule_id);
             validate_serialized_frame(frame, &value.frames[index - 1], self, &mut validation_work)?;
             let name_scopes_list =
-                extend_scope_stack(state.name_scopes_list.clone(), &frame.name_scopes, self);
-            let content_name_scopes_list =
-                extend_scope_stack(name_scopes_list.clone(), &frame.content_name_scopes, self);
+                extend_scope_stack(state.name_scopes_list.clone(), &frame.name_scopes, &pinned);
+            let content_name_scopes_list = extend_scope_stack(
+                name_scopes_list.clone(),
+                &frame.content_name_scopes,
+                &pinned,
+            );
             state = StateStack::new(
                 Some(state),
                 rule_id,
@@ -712,36 +810,158 @@ impl Grammar {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn last_multi_theme_walk_stats(
+        &self,
+    ) -> Option<crate::line_output::MultiThemeWalkStats> {
+        *self
+            .last_walk_stats
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn last_multi_theme_cached_nodes(&self) -> usize {
+        self.multi_theme_cache
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .as_ref()
+            .map_or(0, MultiThemeAncestry::cached_node_count)
+    }
+
+    /// Tokenizes one source line once and encodes binary token metadata for each
+    /// supplied compiled [`Theme`], optionally collecting unmerged scope tokens.
+    ///
+    /// The time limit and returned continuation state belong to this single scan.
+    ///
+    /// Returns [`RegexError`] if a regex fails to compile or if a runtime safety
+    /// bound is exceeded (scanner include-expansion budget, grammar state stack
+    /// depth, or capture retokenization recursion depth).
+    pub fn tokenize_line_with_themes(
+        &self,
+        line_text: &str,
+        previous_state: Option<Arc<StateStack>>,
+        themes: &[Arc<Theme>],
+        include_scopes: bool,
+        time_limit_millis: u64,
+    ) -> Result<TokenizeLineResultWithThemes, RegexError> {
+        let active_theme_snapshot = self.theme_provider.theme();
+        let previous_state = previous_state.map(|state| {
+            if state.rule_id().get() != 0 && state.theme_id() != active_theme_snapshot.id() {
+                self.rebind_state_stack(&state, &active_theme_snapshot)
+            } else {
+                state
+            }
+        });
+        let is_continuation = previous_state
+            .as_ref()
+            .is_some_and(|state| state.rule_id().get() != 0);
+        let cached_ancestry = if is_continuation && !themes.is_empty() {
+            self.multi_theme_cache
+                .try_lock()
+                .ok()
+                .and_then(|mut guard| guard.take())
+        } else {
+            None
+        };
+        let mut tokenized = self.tokenize(
+            line_text,
+            previous_state,
+            TokenOutput::MultiTheme {
+                themes,
+                include_scopes,
+                pinned_theme: &active_theme_snapshot,
+                cached_ancestry,
+            },
+            time_limit_millis,
+        )?;
+        let tokens = include_scopes.then(|| {
+            tokenized
+                .line_tokens
+                .result(&tokenized.result.stack, tokenized.line_length)
+        });
+        let multi_result = tokenized
+            .line_tokens
+            .multi_binary_result(&tokenized.result.stack, tokenized.line_length);
+        if let Ok(mut guard) = self.multi_theme_cache.try_lock() {
+            *guard = multi_result.ancestry;
+        }
+        #[cfg(test)]
+        {
+            *self
+                .last_walk_stats
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = Some(multi_result.walk_stats);
+        }
+        Ok(TokenizeLineResultWithThemes {
+            tokens,
+            binary_tokens: multi_result.binary_tokens,
+            rule_stack: tokenized.result.stack,
+            stopped_early: tokenized.result.stopped_early,
+        })
+    }
+
     fn tokenize(
         &self,
         line_text: &str,
         previous_state: Option<Arc<StateStack>>,
-        output: TokenOutput,
+        output: TokenOutput<'_>,
         time_limit_millis: u64,
     ) -> Result<TokenizedLine, RegexError> {
+        let owned_theme = match &output {
+            TokenOutput::MultiTheme { .. } => None,
+            _ => Some(self.theme_provider.theme()),
+        };
+        let pinned_theme: &Theme = match &output {
+            TokenOutput::MultiTheme { pinned_theme, .. } => pinned_theme,
+            _ => owned_theme
+                .as_deref()
+                .expect("non-multi-theme snapshots active theme"),
+        };
         let (is_first_line, previous_state) = match previous_state {
             Some(state) if state.rule_id().get() != 0 => {
                 state.reset();
                 (false, state)
             }
-            _ => (true, self.initial_state()),
+            _ => (true, self.initial_state_with_theme(pinned_theme)),
         };
 
         let line_text = format!("{line_text}\n");
         let onig_line_text = OnigString::new(&line_text);
         let line_length = onig_line_text.utf16_len();
         let mut line_tokens = LineTokens::new(
-            !matches!(output, TokenOutput::Scopes),
+            matches!(output, TokenOutput::Binary | TokenOutput::Both),
             &line_text,
             self.token_type_matchers.clone(),
             self.balanced_bracket_selectors.clone(),
         );
-        if matches!(output, TokenOutput::Both) {
-            line_tokens = line_tokens.with_scopes();
+        match output {
+            TokenOutput::Both => {
+                line_tokens = line_tokens.with_scopes();
+            }
+            TokenOutput::MultiTheme {
+                themes,
+                include_scopes,
+                pinned_theme,
+                cached_ancestry,
+            } => {
+                line_tokens = line_tokens.with_themes(
+                    themes,
+                    include_scopes,
+                    Arc::clone(&self.basic_scope_attributes),
+                    Some(pinned_theme),
+                    cached_ancestry,
+                );
+            }
+            TokenOutput::Scopes | TokenOutput::Binary => {}
         }
         let mut line_fonts = LineFonts::new();
+        let pinned = PinnedThemeGrammar {
+            grammar: self,
+            theme: pinned_theme,
+        };
         let result = tokenize_string(
-            self,
+            &pinned,
             &onig_line_text,
             is_first_line,
             0,
@@ -761,8 +981,12 @@ impl Grammar {
     }
 
     fn initial_state(&self) -> Arc<StateStack> {
-        let raw_default_metadata = self.basic_scope_attributes.default_attributes();
         let theme = self.theme_provider.theme();
+        self.initial_state_with_theme(&theme)
+    }
+
+    fn initial_state_with_theme(&self, theme: &Theme) -> Arc<StateStack> {
+        let raw_default_metadata = self.basic_scope_attributes.default_attributes();
         let default_style = theme.get_defaults();
         let default_metadata = EncodedTokenAttributes::default().set(
             raw_default_metadata.language_id,
@@ -782,15 +1006,20 @@ impl Grammar {
             .get_rule(self.root_id)
             .get_name(None, None)
             .unwrap_or_else(|| "unknown".into());
+        let pinned = PinnedThemeGrammar {
+            grammar: self,
+            theme,
+        };
         let scope_list = AttributedScopeStack::create_root_and_lookup_scope_name(
             root_scope_name,
             default_metadata,
             font_attribute,
-            self,
+            &pinned,
         );
-        StateStack::new(
+        StateStack::new_with_theme_id(
             None,
             self.root_id,
+            theme.id(),
             -1,
             -1,
             false,
@@ -798,6 +1027,102 @@ impl Grammar {
             Some(Arc::clone(&scope_list)),
             Some(scope_list),
         )
+    }
+
+    fn rebind_state_stack(&self, state: &Arc<StateStack>, theme: &Theme) -> Arc<StateStack> {
+        let mut frames = Vec::with_capacity(state.depth);
+        let mut current = Some(Arc::clone(state));
+        while let Some(frame) = current {
+            let parent = frame.parent.clone();
+            frames.push(frame);
+            current = parent;
+        }
+        frames.reverse();
+
+        let raw_default_metadata = self.basic_scope_attributes.default_attributes();
+        let default_style = theme.get_defaults();
+        let default_metadata = EncodedTokenAttributes::default().set(
+            raw_default_metadata.language_id,
+            raw_default_metadata.token_type,
+            None,
+            default_style.font_style,
+            default_style.foreground_id,
+            default_style.background_id,
+        );
+        let default_font = FontAttribute::from(
+            Some(default_style.font_family.clone()),
+            Some(default_style.font_size),
+            Some(default_style.line_height),
+        );
+        let pinned = PinnedThemeGrammar {
+            grammar: self,
+            theme,
+        };
+
+        let mut rebuilt_parent: Option<Arc<StateStack>> = None;
+        let mut prev_old_frame: Option<&Arc<StateStack>> = None;
+        for old_frame in &frames {
+            let mut name_bases = Vec::with_capacity(2);
+            if let (Some(old_parent), Some(new_parent)) = (prev_old_frame, rebuilt_parent.as_ref())
+            {
+                if let (Some(old_content), Some(new_content)) = (
+                    old_parent.content_name_scopes_list.as_ref(),
+                    new_parent.content_name_scopes_list.as_ref(),
+                ) {
+                    name_bases.push((old_content, new_content));
+                }
+                if let (Some(old_name), Some(new_name)) = (
+                    old_parent.name_scopes_list.as_ref(),
+                    new_parent.name_scopes_list.as_ref(),
+                ) {
+                    name_bases.push((old_name, new_name));
+                }
+            }
+
+            let new_name_scopes = old_frame.name_scopes_list.as_ref().map(|old_name| {
+                old_name.rebind_extension(&name_bases, default_metadata, &default_font, &pinned)
+            });
+
+            let new_content_scopes = match (
+                old_frame.content_name_scopes_list.as_ref(),
+                old_frame.name_scopes_list.as_ref(),
+                new_name_scopes.as_ref(),
+            ) {
+                (None, _, _) => None,
+                (Some(old_content), Some(old_name), Some(new_name))
+                    if Arc::ptr_eq(old_content, old_name) =>
+                {
+                    Some(Arc::clone(new_name))
+                }
+                (Some(old_content), old_name_opt, new_name_opt) => {
+                    let mut content_bases = Vec::with_capacity(3);
+                    if let (Some(old_name), Some(new_name)) = (old_name_opt, new_name_opt) {
+                        content_bases.push((old_name, new_name));
+                    }
+                    content_bases.extend_from_slice(&name_bases);
+                    Some(old_content.rebind_extension(
+                        &content_bases,
+                        default_metadata,
+                        &default_font,
+                        &pinned,
+                    ))
+                }
+            };
+
+            rebuilt_parent = Some(StateStack::new_with_theme_id(
+                rebuilt_parent,
+                old_frame.rule_id(),
+                theme.id(),
+                old_frame.enter_pos(),
+                old_frame.anchor_pos(),
+                old_frame.begin_rule_captured_eol,
+                old_frame.end_rule.clone(),
+                new_name_scopes,
+                new_content_scopes,
+            ));
+            prev_old_frame = Some(old_frame);
+        }
+        rebuilt_parent.expect("non-empty StateStack must produce a rebound stack")
     }
 }
 
@@ -1028,6 +1353,10 @@ impl TokenizerGrammar for Grammar {
 
     fn injections(&self) -> &[Injection] {
         &self.injections
+    }
+
+    fn theme_id(&self) -> u64 {
+        self.theme_provider.theme().id()
     }
 }
 
@@ -2010,5 +2339,1275 @@ mod tests {
             .deserialize_state_stack(&serialized)
             .expect("serialized state must round-trip within work budget");
         assert_eq!(restored.depth, 257);
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_matches_individual_single_theme_runs_bit_for_bit() {
+        use std::sync::Arc;
+
+        use crate::{
+            EmbeddedLanguages, RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry,
+        };
+
+        let host = raw_grammar(
+            r#"{
+                "scopeName": "source.host",
+                "patterns": [
+                    {
+                        "begin": "<%",
+                        "end": "%>",
+                        "name": "meta.embedded.block.inner",
+                        "contentName": "source.inner",
+                        "patterns": [{ "include": "source.inner" }]
+                    },
+                    { "match": "foo", "name": "keyword.control.host" },
+                    { "match": "bar", "name": "string.quoted.host" },
+                    { "match": "//.*$", "name": "comment.line.host" }
+                ]
+            }"#,
+        );
+        let inner = raw_grammar(
+            r#"{
+                "scopeName": "source.inner",
+                "patterns": [
+                    { "match": "baz", "name": "variable.other.inner" },
+                    { "match": "123", "name": "constant.numeric.inner" }
+                ]
+            }"#,
+        );
+
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: None,
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#111111".into()),
+                                background: Some("#ffffff".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.control".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#aa0000".into()),
+                                font_style: Some("bold".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        // Parent-scope selector + background difference to test
+                        // per-theme merging boundaries.
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String(
+                                "source.inner variable.other".into(),
+                            )),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#00aa00".into()),
+                                background: Some("#f0f0f0".into()),
+                                font_style: Some("italic".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: None,
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#eeeeee".into()),
+                                background: Some("#101010".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("string.quoted".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#00ccff".into()),
+                                font_style: Some("underline".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("constant.numeric".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#ff8800".into()),
+                                font_style: Some("bold strikethrough".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut embedded = EmbeddedLanguages::default();
+        embedded.insert("source.inner".into(), 2);
+        let config = GrammarConfiguration::default()
+            .with_initial_language_id(1)
+            .with_embedded_languages(embedded)
+            .with_token_types(vec![(
+                "variable.other.inner".into(),
+                StandardTokenType::RegEx,
+            )])
+            .with_balanced_bracket_selectors(Some(vec!["*".into()]))
+            .with_unbalanced_bracket_selectors(vec!["comment".into()]);
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(host, Vec::new());
+        registry.add_grammar(inner, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.host", config)
+            .unwrap()
+            .unwrap();
+
+        let lines = [
+            "foo bar <% baz",
+            "",
+            "123 baz %> // comment",
+            "א foo bar",
+            "",
+        ];
+        // Intentionally include a duplicate theme reference and leave the
+        // registry active theme on the default theme (different from both).
+        let themes = [Arc::clone(&light), Arc::clone(&dark), Arc::clone(&light)];
+
+        // Reference: run tokenize_line2 and tokenize_line independently per theme.
+        let mut expected_binary = vec![Vec::new(); themes.len()];
+        let mut expected_scopes = Vec::new();
+        for (theme_index, theme) in themes.iter().enumerate() {
+            registry.set_compiled_theme(Arc::clone(theme));
+            let mut state = None;
+            for line in lines {
+                let res = grammar.tokenize_line2(line, state, 0).unwrap();
+                expected_binary[theme_index].push(res.tokens);
+                state = Some(res.rule_stack);
+            }
+        }
+        {
+            let mut state = None;
+            for line in lines {
+                let res = grammar.tokenize_line(line, state, 0).unwrap();
+                expected_scopes.push(res.tokens);
+                state = Some(res.rule_stack);
+            }
+        }
+
+        // Leave registry on an unrelated default theme to prove multi-theme
+        // resolution does not rely on active-theme state matching.
+        registry.set_theme(None, None).unwrap();
+
+        for include_scopes in [false, true] {
+            let mut state = None;
+            for (line_index, line) in lines.iter().enumerate() {
+                let multi = grammar
+                    .tokenize_line_with_themes(line, state, &themes, include_scopes, 0)
+                    .unwrap();
+                assert_eq!(multi.binary_tokens.len(), themes.len());
+                for (theme_index, (actual, expected)) in multi
+                    .binary_tokens
+                    .iter()
+                    .zip(expected_binary.iter())
+                    .enumerate()
+                {
+                    assert_eq!(
+                        actual, &expected[line_index],
+                        "line {line_index} theme {theme_index} include_scopes={include_scopes}"
+                    );
+                }
+                if include_scopes {
+                    assert_eq!(
+                        multi.tokens.as_ref().unwrap(),
+                        &expected_scopes[line_index],
+                        "line {line_index} scopes"
+                    );
+                } else {
+                    assert!(multi.tokens.is_none());
+                }
+                state = Some(multi.rule_stack);
+            }
+        }
+
+        // Empty theme list still advances state cleanly.
+        let empty = grammar
+            .tokenize_line_with_themes("foo", None, &[], false, 0)
+            .unwrap();
+        assert!(empty.binary_tokens.is_empty());
+        assert!(empty.tokens.is_none());
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_packs_inherited_colors_at_each_scope_for_overflow_ids() {
+        use std::sync::Arc;
+
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        // Build a valid frozen color map with 513 entries so index 512 spills
+        // into the background bit field when packed via EncodedTokenAttributes::set.
+        let mut frozen_colors = Vec::with_capacity(513);
+        frozen_colors.push(String::new());
+        frozen_colors.push("#000000".to_owned()); // index 1: default fg
+        frozen_colors.push("#FFFFFF".to_owned()); // index 2: default bg
+        frozen_colors.push("#000003".to_owned()); // index 3: child fg
+        for index in 4..512 {
+            frozen_colors.push(format!("#{index:06X}"));
+        }
+        frozen_colors.push("#000200".to_owned()); // index 512: parent fg
+
+        let raw_theme = RawTheme {
+            settings: vec![
+                RawThemeSetting {
+                    scope: None,
+                    settings: Some(RawThemeStyle {
+                        foreground: Some("#000000".into()),
+                        background: Some("#FFFFFF".into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                },
+                RawThemeSetting {
+                    scope: Some(RawThemeScope::String("meta.parent".into())),
+                    settings: Some(RawThemeStyle {
+                        foreground: Some("#000200".into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                },
+                RawThemeSetting {
+                    scope: Some(RawThemeScope::String("keyword.child".into())),
+                    settings: Some(RawThemeStyle {
+                        foreground: Some("#000003".into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                },
+            ],
+            ..RawTheme::default()
+        };
+
+        let theme =
+            Arc::new(Theme::create_from_raw_theme(Some(&raw_theme), Some(frozen_colors)).unwrap());
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.overflow",
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "name": "meta.parent",
+                        "patterns": [
+                            { "match": "x", "name": "keyword.child" }
+                        ]
+                    },
+                    { "match": "y", "name": "keyword.child" }
+                ]
+            }"#,
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.overflow", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        registry.set_compiled_theme(Arc::clone(&theme));
+        let single = grammar.tokenize_line2("(x)y", None, 0).unwrap();
+
+        // Confirm the child token inside `meta.parent` carries the packed
+        // overflow bits (`0x03018000` vs `0x02018000` outside `meta.parent`).
+        assert_eq!(single.tokens[3], 0x0301_8000);
+        assert_eq!(single.tokens[7], 0x0201_8000);
+
+        // Run multi-theme tokenization with an unrelated default active theme.
+        registry.set_theme(None, None).unwrap();
+        let multi = grammar
+            .tokenize_line_with_themes("(x)y", None, &[Arc::clone(&theme)], false, 0)
+            .unwrap();
+        assert_eq!(multi.binary_tokens[0], single.tokens);
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_preserves_oversized_language_id_packing() {
+        use std::sync::Arc;
+
+        use crate::SyncRegistry;
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.langoverflow",
+                "patterns": [{ "match": "x", "name": "keyword.x" }]
+            }"#,
+        );
+        let theme = Arc::new(Theme::create_from_raw_theme(None, None).unwrap());
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name(
+                "source.langoverflow",
+                GrammarConfiguration::default().with_initial_language_id(2048),
+            )
+            .unwrap()
+            .unwrap();
+
+        registry.set_compiled_theme(Arc::clone(&theme));
+        let single = grammar.tokenize_line2("x", None, 0).unwrap();
+        // `language_id = 2048` sets bit 11 (0x0000_0800) alongside default fg=1, bg=2.
+        assert_eq!(single.tokens[1], 0x0200_8800);
+
+        let multi = grammar
+            .tokenize_line_with_themes("x", None, &[Arc::clone(&theme)], false, 0)
+            .unwrap();
+        assert_eq!(multi.binary_tokens[0], single.tokens);
+
+        // Concise Debug summary (ADR 0014): reports lengths/counts without dumping payloads.
+        let debug = format!("{multi:?}");
+        assert!(debug.contains("theme_count: 1"));
+        assert!(debug.contains("binary_token_entries: 2"));
+        assert!(debug.contains("rule_stack_depth: 1"));
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_reuses_ancestry_across_continuation_lines_and_stops_at_shared_ancestor()
+     {
+        use std::sync::Arc;
+
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.deep",
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "name": "meta.group",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    { "match": "a", "name": "meta.outer.a keyword.inner.a" },
+                    { "match": "b", "name": "meta.outer.b string.inner.b" }
+                ]
+            }"#,
+        );
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.inner.a".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#aa0000".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("string.inner.b".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#00aa00".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.inner.a".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#112233".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("string.inner.b".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#445566".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.deep", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        let open_line = "(".repeat(400);
+        let body_line = "ababababab";
+        let themes = [Arc::clone(&light), Arc::clone(&dark)];
+
+        // Reference single-theme runs for line 0 + 20 continuation lines.
+        let mut expected = vec![Vec::new(); themes.len()];
+        for (idx, theme) in themes.iter().enumerate() {
+            registry.set_compiled_theme(Arc::clone(theme));
+            let first = grammar.tokenize_line2(&open_line, None, 0).unwrap();
+            expected[idx].push(first.tokens);
+            let mut state = Some(first.rule_stack);
+            for _ in 0..20 {
+                let next = grammar.tokenize_line2(body_line, state, 0).unwrap();
+                expected[idx].push(next.tokens);
+                state = Some(next.rule_stack);
+            }
+        }
+
+        // Single-pass multi-theme run across all lines with `light` active so
+        // slot 0 reuses `scopes.token_attributes` directly without re-resolving.
+        registry.set_compiled_theme(Arc::clone(&light));
+        let first = grammar
+            .tokenize_line_with_themes(&open_line, None, &themes, false, 0)
+            .unwrap();
+        assert_eq!(first.binary_tokens[0], expected[0][0]);
+        assert_eq!(first.binary_tokens[1], expected[1][0]);
+        let open_stats = grammar.last_multi_theme_walk_stats().unwrap();
+        assert!(open_stats.active_slot_reused);
+        assert!(open_stats.nodes_resolved >= 400);
+
+        let mut state = Some(first.rule_stack);
+        for (offset, (expected_light, expected_dark)) in expected[0][1..]
+            .iter()
+            .zip(expected[1][1..].iter())
+            .enumerate()
+        {
+            let line_num = offset + 1;
+            let next = grammar
+                .tokenize_line_with_themes(body_line, state, &themes, false, 0)
+                .unwrap();
+            assert_eq!(&next.binary_tokens[0], expected_light);
+            assert_eq!(&next.binary_tokens[1], expected_dark);
+            let stats = grammar.last_multi_theme_walk_stats().unwrap();
+            assert!(stats.active_slot_reused);
+            // 10 tokens with 2-scope match rules: must reuse all 400 open scopes
+            // from the continuation cache and stop each fallback walk at the
+            // grandparent (at most ~3 steps per token, never walking 400 nodes!).
+            assert!(
+                stats.nodes_resolved <= 25,
+                "continuation line {line_num} should reuse 400 open scopes, resolved {} nodes",
+                stats.nodes_resolved
+            );
+            assert!(
+                stats.fallback_walk_steps <= 40,
+                "2-scope sibling matches at depth 400 must stop at nearest shared ancestor, walked {} steps",
+                stats.fallback_walk_steps
+            );
+            state = Some(next.rule_stack);
+        }
+
+        // Passing only the active theme reuses `scopes.token_attributes` with
+        // zero extra scope-chain resolution even on a depth-400 line.
+        let single_active = grammar
+            .tokenize_line_with_themes(&open_line, None, &[Arc::clone(&light)], false, 0)
+            .unwrap();
+        assert_eq!(single_active.binary_tokens[0], expected[0][0]);
+        let single_active_stats = grammar.last_multi_theme_walk_stats().unwrap();
+        assert!(single_active_stats.active_slot_reused);
+        assert_eq!(single_active_stats.nodes_resolved, 0);
+
+        // Passing a state produced under `light` after switching the active
+        // registry theme to `dark` rebinds the stale continuation stack to
+        // `dark`, preserves active-slot reuse, and produces bit-for-bit exact
+        // metadata for both themes.
+        let stale_state = grammar
+            .tokenize_line2(&open_line, None, 0)
+            .unwrap()
+            .rule_stack;
+        assert_eq!(stale_state.theme_id(), light.id());
+        registry.set_compiled_theme(Arc::clone(&dark));
+        let switched = grammar
+            .tokenize_line_with_themes(body_line, Some(stale_state), &themes, false, 0)
+            .unwrap();
+        assert_eq!(switched.binary_tokens[0], expected[0][1]);
+        assert_eq!(switched.binary_tokens[1], expected[1][1]);
+        assert_eq!(switched.rule_stack.theme_id(), dark.id());
+        assert!(
+            grammar
+                .last_multi_theme_walk_stats()
+                .unwrap()
+                .active_slot_reused
+        );
+
+        // Dropping external Arc<Theme> references must release them immediately
+        // even while the grammar still holds its multi-theme ancestry cache.
+        let light_weak = Arc::downgrade(&light);
+        let dark_weak = Arc::downgrade(&dark);
+        drop(themes);
+        drop(light);
+        drop(dark);
+        registry.set_theme(None, None).unwrap();
+        assert!(
+            light_weak.upgrade().is_none(),
+            "MultiThemeAncestry must not retain strong Arc<Theme> references"
+        );
+        assert!(
+            dark_weak.upgrade().is_none(),
+            "MultiThemeAncestry must not retain strong Arc<Theme> references"
+        );
+        assert!(grammar.last_multi_theme_walk_stats().is_some());
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_keeps_bounded_tail_checkpoint_at_depth_1050() {
+        use std::sync::Arc;
+
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.verydeep",
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "name": "meta.group",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    { "match": "a", "name": "meta.outer.a keyword.inner.a" },
+                    { "match": "b", "name": "meta.outer.b string.inner.b" }
+                ]
+            }"#,
+        );
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("keyword.inner.a".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#aa0000".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("string.inner.b".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#00aa00".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.verydeep", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        let open_line = "(".repeat(1_050);
+        let body_line = "abababab";
+        let themes = [Arc::clone(&light), Arc::clone(&dark)];
+
+        registry.set_compiled_theme(Arc::clone(&light));
+        let ref_light_0 = grammar.tokenize_line2(&open_line, None, 0).unwrap();
+        let ref_light_1 = grammar
+            .tokenize_line2(body_line, Some(Arc::clone(&ref_light_0.rule_stack)), 0)
+            .unwrap();
+        registry.set_compiled_theme(Arc::clone(&dark));
+        let ref_dark_0 = grammar.tokenize_line2(&open_line, None, 0).unwrap();
+        let ref_dark_1 = grammar
+            .tokenize_line2(body_line, Some(Arc::clone(&ref_dark_0.rule_stack)), 0)
+            .unwrap();
+
+        registry.set_compiled_theme(Arc::clone(&light));
+        let first = grammar
+            .tokenize_line_with_themes(&open_line, None, &themes, false, 0)
+            .unwrap();
+        assert_eq!(first.binary_tokens[0], ref_light_0.tokens);
+        assert_eq!(first.binary_tokens[1], ref_dark_0.tokens);
+        assert!(
+            grammar.last_multi_theme_cached_nodes() <= 1_024,
+            "retained tail checkpoint must stay bounded to <= 1,024 nodes"
+        );
+
+        let mut state = Some(first.rule_stack);
+        for line_num in 1..=20 {
+            let next = grammar
+                .tokenize_line_with_themes(body_line, state, &themes, false, 0)
+                .unwrap();
+            assert_eq!(next.binary_tokens[0], ref_light_1.tokens);
+            assert_eq!(next.binary_tokens[1], ref_dark_1.tokens);
+            let stats = grammar.last_multi_theme_walk_stats().unwrap();
+            assert!(
+                stats.nodes_resolved <= 25,
+                "depth-1050 continuation line {line_num} must reuse tail checkpoint, resolved {} nodes",
+                stats.nodes_resolved
+            );
+            assert!(
+                grammar.last_multi_theme_cached_nodes() <= 1_024,
+                "retained tail checkpoint must stay bounded to <= 1,024 nodes"
+            );
+            state = Some(next.rule_stack);
+        }
+
+        // Dropping the returned continuation stack must release the entire
+        // ScopeStack chain (including its root/prefix) even while the grammar
+        // retains its bounded tail checkpoint.
+        let mut root_scope = Arc::clone(
+            &state
+                .as_ref()
+                .unwrap()
+                .content_name_scopes_list
+                .as_ref()
+                .unwrap()
+                .scope_path,
+        );
+        while let Some(parent) = root_scope.parent.as_ref() {
+            root_scope = Arc::clone(parent);
+        }
+        let root_weak = Arc::downgrade(&root_scope);
+        drop(root_scope);
+        drop(state);
+        drop(ref_light_0);
+        drop(ref_light_1);
+        drop(ref_dark_0);
+        drop(ref_dark_1);
+        assert!(
+            root_weak.upgrade().is_none(),
+            "dropping continuation rule_stack must release prefix ScopeStack nodes immediately"
+        );
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_amortizes_tail_trimming_in_batches() {
+        use std::sync::Arc;
+
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.growing",
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "name": "meta.group",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    { "match": "a", "name": "keyword.a" }
+                ]
+            }"#,
+        );
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("keyword.a".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#aa0000".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("keyword.a".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#00aa00".into()),
+                            font_style: Some("bold".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.growing", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        let open_line = "(".repeat(1_000);
+        let grow_line = "(a";
+        let themes = [Arc::clone(&light), Arc::clone(&dark)];
+
+        // Reference single-theme runs for depth 1,000 -> 1,200 across 200 lines.
+        let mut expected = vec![Vec::new(); themes.len()];
+        for (idx, theme) in themes.iter().enumerate() {
+            registry.set_compiled_theme(Arc::clone(theme));
+            let first = grammar.tokenize_line2(&open_line, None, 0).unwrap();
+            expected[idx].push(first.tokens);
+            let mut state = Some(first.rule_stack);
+            for _ in 0..200 {
+                let next = grammar.tokenize_line2(grow_line, state, 0).unwrap();
+                expected[idx].push(next.tokens);
+                state = Some(next.rule_stack);
+            }
+        }
+
+        registry.set_compiled_theme(Arc::clone(&light));
+        let first = grammar
+            .tokenize_line_with_themes(&open_line, None, &themes, false, 0)
+            .unwrap();
+        assert_eq!(first.binary_tokens[0], expected[0][0]);
+        assert_eq!(first.binary_tokens[1], expected[1][0]);
+        assert!(grammar.last_multi_theme_cached_nodes() <= 1_024);
+        let mut total_trim_rebuilds = grammar.last_multi_theme_walk_stats().unwrap().trim_rebuilds;
+
+        let mut state = Some(first.rule_stack);
+        for (expected_light, expected_dark) in expected[0][1..].iter().zip(expected[1][1..].iter())
+        {
+            let next = grammar
+                .tokenize_line_with_themes(grow_line, state, &themes, false, 0)
+                .unwrap();
+            assert_eq!(&next.binary_tokens[0], expected_light);
+            assert_eq!(&next.binary_tokens[1], expected_dark);
+            assert!(
+                grammar.last_multi_theme_cached_nodes() <= 1_024,
+                "retained ancestry must stay strictly <= 1,024 nodes"
+            );
+            total_trim_rebuilds += grammar.last_multi_theme_walk_stats().unwrap().trim_rebuilds;
+            state = Some(next.rule_stack);
+        }
+
+        assert_eq!(
+            total_trim_rebuilds, 1,
+            "growing nesting from depth 1,000 to 1,200 across 200 lines must batch-trim only once"
+        );
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_rebinds_stale_state_stack_for_subsequent_tokenize_line2() {
+        use std::sync::Arc;
+
+        use crate::{FontStyle, RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.rebind",
+                "patterns": [
+                    {
+                        "begin": "/\\*",
+                        "end": "\\*/",
+                        "name": "comment.block"
+                    }
+                ]
+            }"#,
+        );
+        let theme_a = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("comment.block".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#aa0000".into()),
+                            font_style: Some("italic".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let theme_b = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("comment.block".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#00bb00".into()),
+                            font_style: Some("bold".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.rebind", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        // Reference Theme B continuation output produced cleanly under Theme B.
+        registry.set_compiled_theme(Arc::clone(&theme_b));
+        let ref_b_0 = grammar.tokenize_line2("/* open", None, 0).unwrap();
+        let ref_b_1 = grammar
+            .tokenize_line2("still inside", Some(ref_b_0.rule_stack), 0)
+            .unwrap();
+        let ref_b_2 = grammar
+            .tokenize_line2("continued under B", Some(ref_b_1.rule_stack), 0)
+            .unwrap();
+
+        // Open the italic comment scope under Theme A.
+        registry.set_compiled_theme(Arc::clone(&theme_a));
+        let opened_under_a = grammar.tokenize_line2("/* open", None, 0).unwrap();
+        assert_eq!(opened_under_a.rule_stack.theme_id(), theme_a.id());
+        let opened_style = EncodedTokenAttributes::new(opened_under_a.tokens[1]).font_style();
+        assert_eq!(opened_style, FontStyle::ITALIC);
+
+        // Reference Theme A continuation output.
+        let ref_a_1 = grammar
+            .tokenize_line2(
+                "still inside",
+                Some(Arc::clone(&opened_under_a.rule_stack)),
+                0,
+            )
+            .unwrap();
+
+        // Switch active theme to Theme B (bold) and continue Theme A's stack
+        // through `tokenize_line_with_themes`.
+        registry.set_compiled_theme(Arc::clone(&theme_b));
+        let themes = [Arc::clone(&theme_a), Arc::clone(&theme_b)];
+        let multi = grammar
+            .tokenize_line_with_themes(
+                "still inside",
+                Some(opened_under_a.rule_stack),
+                &themes,
+                false,
+                0,
+            )
+            .unwrap();
+        assert_eq!(multi.binary_tokens[0], ref_a_1.tokens);
+        assert_eq!(multi.binary_tokens[1], ref_b_1.tokens);
+        assert_eq!(multi.rule_stack.theme_id(), theme_b.id());
+        assert!(
+            grammar
+                .last_multi_theme_walk_stats()
+                .unwrap()
+                .active_slot_reused
+        );
+
+        // Passing the newly returned `rule_stack` into `tokenize_line2` must
+        // carry Theme B's bold style rather than Theme A's stale italic style.
+        let continued_b = grammar
+            .tokenize_line2("continued under B", Some(multi.rule_stack), 0)
+            .unwrap();
+        assert_eq!(continued_b.tokens, ref_b_2.tokens);
+        let continued_style = EncodedTokenAttributes::new(continued_b.tokens[1]).font_style();
+        assert_eq!(continued_style, FontStyle::BOLD);
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_rebinds_mixed_theme_state_stack_after_a_b_a_switch() {
+        use std::sync::Arc;
+
+        use crate::{FontStyle, RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.mixedtheme",
+                "patterns": [
+                    {
+                        "begin": "/\\*",
+                        "end": "\\*/",
+                        "name": "comment.block",
+                        "contentName": "comment.block.body"
+                    }
+                ]
+            }"#,
+        );
+        let theme_a = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("comment.block".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#aa0000".into()),
+                            font_style: Some("italic".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let theme_b = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("comment.block".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#00bb00".into()),
+                            font_style: Some("bold".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.mixedtheme", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        // Clean reference outputs under Theme A (italic) and Theme B (bold).
+        registry.set_compiled_theme(Arc::clone(&theme_a));
+        let ref_a_0 = grammar.tokenize_line2("plain", None, 0).unwrap();
+        let ref_a_1 = grammar
+            .tokenize_line2("/* open", Some(ref_a_0.rule_stack), 0)
+            .unwrap();
+        let ref_a_2 = grammar
+            .tokenize_line2("inside comment", Some(ref_a_1.rule_stack), 0)
+            .unwrap();
+
+        registry.set_compiled_theme(Arc::clone(&theme_b));
+        let ref_b_0 = grammar.tokenize_line2("plain", None, 0).unwrap();
+        let ref_b_1 = grammar
+            .tokenize_line2("/* open", Some(ref_b_0.rule_stack), 0)
+            .unwrap();
+        let ref_b_2 = grammar
+            .tokenize_line2("inside comment", Some(ref_b_1.rule_stack), 0)
+            .unwrap();
+
+        // Step 1: start under Theme A (root frame gets theme_id = A).
+        registry.set_compiled_theme(Arc::clone(&theme_a));
+        let line0 = grammar.tokenize_line2("plain", None, 0).unwrap();
+        assert_eq!(line0.rule_stack.theme_id(), theme_a.id());
+
+        // Step 2: switch to Theme B and open a comment via `tokenize_line2`.
+        // The pushed frame mixes parent theme A with scan theme B, so it must
+        // be tagged with `theme_id == 0` (mixed-theme).
+        registry.set_compiled_theme(Arc::clone(&theme_b));
+        let line1 = grammar
+            .tokenize_line2("/* open", Some(line0.rule_stack), 0)
+            .unwrap();
+        assert_eq!(line1.rule_stack.theme_id(), 0);
+
+        // Step 3: switch back to Theme A and call `tokenize_line_with_themes`.
+        // Because `line1.rule_stack.theme_id() == 0 != theme_a.id()`, it must
+        // rebind the mixed stack to Theme A so Theme A renders italic and
+        // Theme B renders bold.
+        registry.set_compiled_theme(Arc::clone(&theme_a));
+        let themes = [Arc::clone(&theme_a), Arc::clone(&theme_b)];
+        let line2 = grammar
+            .tokenize_line_with_themes("inside comment", Some(line1.rule_stack), &themes, false, 0)
+            .unwrap();
+        assert_eq!(line2.binary_tokens[0], ref_a_2.tokens);
+        assert_eq!(line2.binary_tokens[1], ref_b_2.tokens);
+        assert_eq!(
+            EncodedTokenAttributes::new(line2.binary_tokens[0][1]).font_style(),
+            FontStyle::ITALIC
+        );
+        assert_eq!(
+            EncodedTokenAttributes::new(line2.binary_tokens[1][1]).font_style(),
+            FontStyle::BOLD
+        );
+        assert_eq!(line2.rule_stack.theme_id(), theme_a.id());
+    }
+
+    #[test]
+    fn tokenize_line_with_themes_pins_active_theme_across_concurrent_switches() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        use super::ThemeProvider;
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle};
+
+        struct StopOnDrop<'a>(&'a AtomicBool);
+        impl Drop for StopOnDrop<'_> {
+            fn drop(&mut self) {
+                self.0.store(true, Ordering::Release);
+            }
+        }
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.concurrent",
+                "patterns": [
+                    { "match": "a", "name": "keyword.a" },
+                    { "match": "b", "name": "string.b" }
+                ]
+            }"#,
+        );
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.a".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#111111".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("string.b".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#222222".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("keyword.a".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#eeeeee".into()),
+                                font_style: Some("bold".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                        RawThemeSetting {
+                            scope: Some(RawThemeScope::String("string.b".into())),
+                            settings: Some(RawThemeStyle {
+                                foreground: Some("#dddddd".into()),
+                                font_style: Some("italic".into()),
+                                ..RawThemeStyle::default()
+                            }),
+                            ..RawThemeSetting::default()
+                        },
+                    ],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+
+        let provider = ThemeProvider::new(Theme::create_from_raw_theme(None, None).unwrap());
+        provider.set_compiled_theme(Arc::clone(&light));
+        let grammar = Grammar::with_theme_provider(
+            &Arc::new(source),
+            &GrammarStore::new(),
+            provider.clone(),
+            GrammarConfiguration::default(),
+            crate::regexp::ScannerPatternCache::new(),
+        );
+
+        let line = "ab".repeat(200);
+        let expected_light = grammar.tokenize_line2(&line, None, 0).unwrap().tokens;
+        provider.set_compiled_theme(Arc::clone(&dark));
+        let expected_dark = grammar.tokenize_line2(&line, None, 0).unwrap().tokens;
+        assert_ne!(
+            expected_light, expected_dark,
+            "encoded binary metadata must differ so any mid-line theme mix fails"
+        );
+
+        let stop = AtomicBool::new(false);
+        let themes = [Arc::clone(&light), Arc::clone(&dark)];
+        std::thread::scope(|scope| {
+            let switcher_provider = provider.clone();
+            let switcher_light = Arc::clone(&light);
+            let switcher_dark = Arc::clone(&dark);
+            let stop_ref = &stop;
+            let _handle = scope.spawn(move || {
+                let mut toggle = false;
+                while !stop_ref.load(Ordering::Acquire) {
+                    switcher_provider.set_compiled_theme(if toggle {
+                        Arc::clone(&switcher_light)
+                    } else {
+                        Arc::clone(&switcher_dark)
+                    });
+                    toggle = !toggle;
+                }
+            });
+            let _stop_guard = StopOnDrop(&stop);
+
+            for _ in 0..100 {
+                let result = grammar
+                    .tokenize_line_with_themes(&line, None, &themes, false, 0)
+                    .unwrap();
+                assert_eq!(result.binary_tokens[0], expected_light);
+                assert_eq!(result.binary_tokens[1], expected_dark);
+            }
+        });
+    }
+
+    #[test]
+    #[ignore = "explicit release-mode deep continuation benchmark for #389"]
+    fn bench_deep_continuation_1char_lines() {
+        use std::sync::Arc;
+        use std::time::Instant;
+
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+
+        let source = raw_grammar(
+            r#"{
+                "scopeName": "source.deep1c",
+                "patterns": [
+                    {
+                        "begin": "\\(",
+                        "end": "\\)",
+                        "name": "meta.group",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    { "match": "a", "name": "keyword.a" }
+                ]
+            }"#,
+        );
+        let light = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("keyword.a".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#aa0000".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let dark = Arc::new(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: vec![RawThemeSetting {
+                        scope: Some(RawThemeScope::String("keyword.a".into())),
+                        settings: Some(RawThemeStyle {
+                            foreground: Some("#00aa00".into()),
+                            font_style: Some("bold".into()),
+                            ..RawThemeStyle::default()
+                        }),
+                        ..RawThemeSetting::default()
+                    }],
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .unwrap(),
+        );
+        let mut registry = SyncRegistry::new(None, None).unwrap();
+        registry.add_grammar(source, Vec::new());
+        let grammar = registry
+            .grammar_for_scope_name("source.deep1c", GrammarConfiguration::default())
+            .unwrap()
+            .unwrap();
+
+        let open_line = "(".repeat(400);
+        let lines = 10_000usize;
+        let themes = [Arc::clone(&light), Arc::clone(&dark)];
+
+        // Two sequential tokenize_line2 passes.
+        let seq_start = Instant::now();
+        for theme in &themes {
+            registry.set_compiled_theme(Arc::clone(theme));
+            let mut state = Some(
+                grammar
+                    .tokenize_line2(&open_line, None, 0)
+                    .unwrap()
+                    .rule_stack,
+            );
+            for _ in 0..lines {
+                let res = grammar.tokenize_line2("a", state, 0).unwrap();
+                std::hint::black_box(&res.tokens);
+                state = Some(res.rule_stack);
+            }
+        }
+        let seq_ms = seq_start.elapsed().as_secs_f64() * 1_000.0;
+
+        // Single-pass tokenize_line_with_themes with O(1) Weak<ScopeStack> ancestry move.
+        registry.set_compiled_theme(Arc::clone(&light));
+        let multi_start = Instant::now();
+        let mut state = Some(
+            grammar
+                .tokenize_line_with_themes(&open_line, None, &themes, false, 0)
+                .unwrap()
+                .rule_stack,
+        );
+        for _ in 0..lines {
+            let res = grammar
+                .tokenize_line_with_themes("a", state, &themes, false, 0)
+                .unwrap();
+            std::hint::black_box(&res.binary_tokens);
+            state = Some(res.rule_stack);
+        }
+        let multi_ms = multi_start.elapsed().as_secs_f64() * 1_000.0;
+
+        eprintln!("=== depth-400 x {lines} 1-char continuation lines ===");
+        eprintln!("  2x sequential tokenize_line2:  {seq_ms:.2} ms");
+        eprintln!(
+            "  1x tokenize_line_with_themes:  {multi_ms:.2} ms ({:.2}x faster)",
+            seq_ms / multi_ms
+        );
     }
 }
