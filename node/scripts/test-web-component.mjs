@@ -575,6 +575,280 @@ test("browser registration uses local styles and a persistent shared stylesheet 
       () => defineCodeElement({ blocks: { first: "<pre>changed</pre>" } }),
       /already registered with different HTML/,
     );
+
+    // Disconnected client-managed elements must pick up stylesheetHref updates on reconnect.
+    const reconnectClient = new constructor();
+    reconnectClient.setAttribute("code-ref", "first");
+    reconnectClient.connectedCallback();
+    const clientLink = reconnectClient.shadowRoot.querySelector("link[data-ferriki-code-css]");
+    assert.ok(clientLink);
+    assert.equal(clientLink.getAttribute("href"), "/client-code-v2.css");
+
+    // Server-rendered DSD element whose link matched configuredStylesheetHref also tracks updates across disconnect/reconnect.
+    const reconnectDsdMarker = new FakeComment("ferriki-code:second");
+    const reconnectDsdStyle = new FakeNode("STYLE");
+    reconnectDsdStyle.setAttribute("data-ferriki-code-base", "");
+    reconnectDsdStyle.textContent = codeElementStyles();
+    const reconnectDsdLink = new FakeLink("/client-code-v2.css", true);
+    const reconnectDsdCode = new FakePre("<pre>two</pre>");
+    const reconnectDsdRoot = new FakeShadowRoot([
+      reconnectDsdMarker,
+      reconnectDsdStyle,
+      reconnectDsdLink,
+      reconnectDsdCode,
+    ]);
+    const reconnectDsdHost = new constructor();
+    reconnectDsdHost.shadowRoot = reconnectDsdRoot;
+    reconnectDsdHost.setAttribute("code-ref", "second");
+    reconnectDsdHost.connectedCallback();
+    assert.equal(reconnectDsdLink.getAttribute("href"), "/client-code-v2.css");
+
+    // Untouched SSR element with a distinct server stylesheet keeps its SSR href across disconnect/reconnect.
+    const untouchedMarker = new FakeComment("ferriki-code:second");
+    const untouchedStyle = new FakeNode("STYLE");
+    untouchedStyle.setAttribute("data-ferriki-code-base", "");
+    untouchedStyle.textContent = codeElementStyles();
+    const untouchedLink = new FakeLink("/assets/untouched-ssr.css", true);
+    const untouchedCode = new FakePre("<pre>two</pre>");
+    const untouchedRoot = new FakeShadowRoot([
+      untouchedMarker,
+      untouchedStyle,
+      untouchedLink,
+      untouchedCode,
+    ]);
+    const untouchedHost = new constructor();
+    untouchedHost.shadowRoot = untouchedRoot;
+    untouchedHost.setAttribute("code-ref", "second");
+    untouchedHost.connectedCallback();
+    assert.equal(untouchedLink.getAttribute("href"), "/assets/untouched-ssr.css");
+
+    reconnectClient.disconnectedCallback();
+    reconnectDsdHost.disconnectedCallback();
+    untouchedHost.disconnectedCallback();
+
+    defineCodeElement({ stylesheetHref: "/client-code-v3.css" });
+    defineCodeElement({ stylesheetHref: "/client-code-v4.css" });
+
+    // While disconnected, links have not yet been touched; on reconnect they sync to v4.
+    assert.equal(clientLink.getAttribute("href"), "/client-code-v2.css");
+    reconnectClient.connectedCallback();
+    assert.equal(
+      reconnectClient.shadowRoot.querySelector("link[data-ferriki-code-css]"),
+      clientLink,
+    );
+    assert.equal(clientLink.getAttribute("href"), "/client-code-v4.css");
+
+    reconnectDsdHost.connectedCallback();
+    assert.equal(reconnectDsdRoot.firstChild, reconnectDsdMarker);
+    assert.equal(reconnectDsdRoot.querySelector("pre"), reconnectDsdCode);
+    assert.equal(reconnectDsdLink.getAttribute("href"), "/client-code-v4.css");
+
+    untouchedHost.connectedCallback();
+    assert.equal(untouchedLink.getAttribute("href"), "/assets/untouched-ssr.css");
+
+    // Once the SSR element's content is replaced client-side, subsequent disconnect/reconnect syncs too.
+    untouchedHost.setAttribute("code-ref", "first");
+    assert.equal(untouchedLink.getAttribute("href"), "/client-code-v4.css");
+    untouchedHost.disconnectedCallback();
+    defineCodeElement({ stylesheetHref: "/client-code-v5.css" });
+    untouchedHost.connectedCallback();
+    assert.equal(untouchedLink.getAttribute("href"), "/client-code-v5.css");
+  } finally {
+    for (const [name, descriptor] of globalDescriptors) {
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else delete globalThis[name];
+    }
+  }
+});
+
+test("disconnected element adopts a newly configured stylesheetHref on reconnect", () => {
+  const globalDescriptors = new Map(
+    ["customElements", "HTMLElement", "document"].map((name) => [
+      name,
+      Object.getOwnPropertyDescriptor(globalThis, name),
+    ]),
+  );
+
+  class FakeNode {
+    constructor(tagName, nodeType = 1) {
+      this.nodeType = nodeType;
+      this.tagName = tagName;
+      this.parentNode = undefined;
+      this.childNodes = [];
+      this.attributes = new Map();
+      this.textContent = "";
+    }
+
+    get firstChild() {
+      return this.childNodes[0];
+    }
+
+    get nextSibling() {
+      if (!this.parentNode) return undefined;
+      const siblings = this.parentNode.childNodes;
+      return siblings[siblings.indexOf(this) + 1];
+    }
+
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+
+    hasAttribute(name) {
+      return this.attributes.has(name);
+    }
+
+    setAttribute(name, value) {
+      this.attributes.set(name, String(value));
+    }
+
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    }
+
+    remove() {
+      this.parentNode?.removeChild(this);
+    }
+  }
+
+  class FakeShadowRoot extends FakeNode {
+    constructor() {
+      super(undefined, 11);
+    }
+
+    insertBefore(node, reference) {
+      if (node.nodeType === 11) {
+        for (const child of [...node.childNodes]) this.insertBefore(child, reference);
+        return node;
+      }
+      if (node === reference) return node;
+      node.parentNode?.removeChild(node);
+      const index =
+        reference === null ? this.childNodes.length : this.childNodes.indexOf(reference);
+      this.childNodes.splice(index, 0, node);
+      node.parentNode = this;
+      return node;
+    }
+
+    appendChild(node) {
+      return this.insertBefore(node, null);
+    }
+
+    removeChild(node) {
+      const index = this.childNodes.indexOf(node);
+      if (index === -1) throw new TypeError("The node is not in this shadow root");
+      this.childNodes.splice(index, 1);
+      node.parentNode = undefined;
+      return node;
+    }
+
+    querySelector(selector) {
+      if (selector === "pre") return this.childNodes.find((node) => node.tagName === "PRE");
+      if (selector === "style[data-ferriki-code-base]")
+        return this.childNodes.find(
+          (node) => node.tagName === "STYLE" && node.hasAttribute("data-ferriki-code-base"),
+        );
+      if (selector === "link[data-ferriki-code-css]")
+        return this.childNodes.find(
+          (node) => node.tagName === "LINK" && node.hasAttribute("data-ferriki-code-css"),
+        );
+      throw new TypeError(`Unexpected selector: ${selector}`);
+    }
+  }
+
+  const fakeDocument = {
+    createElement(tagName) {
+      if (tagName === "template") {
+        const template = new FakeNode("TEMPLATE");
+        template.content = new FakeShadowRoot();
+        Object.defineProperty(template, "innerHTML", {
+          get() {
+            return template._html;
+          },
+          set(markup) {
+            template._html = markup;
+            const node = new FakeNode("PRE");
+            node.markup = markup;
+            template.content.appendChild(node);
+          },
+        });
+        return template;
+      }
+      return new FakeNode(tagName.toUpperCase());
+    },
+  };
+
+  const fakeCustomElements = {
+    definitions: new Map(),
+    get(name) {
+      return this.definitions.get(name);
+    },
+    define(name, constructor) {
+      this.definitions.set(name, constructor);
+    },
+  };
+
+  try {
+    Object.defineProperty(globalThis, "customElements", {
+      configurable: true,
+      value: fakeCustomElements,
+    });
+    Object.defineProperty(globalThis, "HTMLElement", {
+      configurable: true,
+      value: class {
+        constructor() {
+          this.ownerDocument = fakeDocument;
+          this.shadowRoot = new FakeShadowRoot();
+          this.attributes = new Map();
+          this.style = { setProperty() {}, removeProperty() {} };
+        }
+
+        getAttribute(name) {
+          return this.attributes.get(name) ?? null;
+        }
+
+        setAttribute(name, value) {
+          const previous = this.getAttribute(name);
+          const next = String(value);
+          this.attributes.set(name, next);
+          if (this.constructor.observedAttributes.includes(name))
+            this.attributeChangedCallback(name, previous, next);
+        }
+
+        removeAttribute(name) {
+          const previous = this.getAttribute(name);
+          if (previous === null) return;
+          this.attributes.delete(name);
+          if (this.constructor.observedAttributes.includes(name))
+            this.attributeChangedCallback(name, previous, null);
+        }
+      },
+    });
+    Object.defineProperty(globalThis, "document", { configurable: true, value: fakeDocument });
+
+    // Start without a stylesheetHref (inline <style> only).
+    const constructor = defineCodeElement({
+      blocks: { sample: "<pre>sample</pre>" },
+    });
+    const host = new constructor();
+    host.setAttribute("code-ref", "sample");
+    host.connectedCallback();
+    assert.ok(host.shadowRoot.querySelector("style[data-ferriki-code-base]"));
+    assert.equal(host.shadowRoot.querySelector("link[data-ferriki-code-css]"), undefined);
+
+    host.disconnectedCallback();
+    defineCodeElement({ stylesheetHref: "/late-palette-v1.css" });
+    host.connectedCallback();
+    const link = host.shadowRoot.querySelector("link[data-ferriki-code-css]");
+    assert.ok(link);
+    assert.equal(link.getAttribute("href"), "/late-palette-v1.css");
+    assert.equal(host.shadowRoot.querySelector("style[data-ferriki-code-base]").nextSibling, link);
+
+    // Subsequent disconnect + stylesheetHref update + reconnect updates the existing link in place.
+    host.disconnectedCallback();
+    defineCodeElement({ stylesheetHref: "/late-palette-v2.css" });
+    host.connectedCallback();
+    assert.equal(host.shadowRoot.querySelector("link[data-ferriki-code-css]"), link);
+    assert.equal(link.getAttribute("href"), "/late-palette-v2.css");
   } finally {
     for (const [name, descriptor] of globalDescriptors) {
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);
