@@ -25,7 +25,9 @@ const CATALOGS: [(&str, &str); 2] = [("languages", "fkgram"), ("themes", "fkthem
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct ReleaseManifest {
+    /// Version of the release manifest JSON layout (must match [`RELEASE_MANIFEST_VERSION`]).
     pub manifest_version: u32,
+    /// Optional release commit SHA used by legacy commit-addressed storage layouts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
     /// `language-hash-v2` serves immutable payloads by ID and eight Base62 digits.
@@ -33,6 +35,7 @@ pub struct ReleaseManifest {
     /// Absent values retain the legacy release-commit URL layout.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub storage_layout: Option<String>,
+    /// Map of catalog-relative asset paths to their pinned [`ReleaseAsset`] metadata.
     pub assets: BTreeMap<String, ReleaseAsset>,
 }
 
@@ -58,7 +61,9 @@ pub struct ReleaseAsset {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct DecodedAsset {
+    /// Lowercase hexadecimal SHA-256 digest of the decompressed prepared container.
     pub sha256: String,
+    /// Size of the decompressed prepared container in bytes.
     pub size: u64,
 }
 

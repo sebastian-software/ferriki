@@ -4,15 +4,32 @@
 //! explicitly and cached for reuse across code blocks and documents.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
 
 mod asset_catalog;
 mod asset_settings;
 mod asset_source;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __private N-API bridge"
+)]
 mod decorated_render;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __private N-API bridge"
+)]
 mod decorations;
 mod error;
 mod highlighter;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __private N-API bridge"
+)]
 mod multi_render;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __private N-API bridge"
+)]
 mod node_assets;
 mod precompiled_cache;
 #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]

@@ -3,73 +3,117 @@ use serde::{Deserialize, Serialize};
 /// Version of the binary asset format. Every asset and manifest starts with it.
 pub const FORMAT_VERSION: u32 = 3;
 
+/// Provenance metadata identifying the upstream collection a catalog was generated from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct AssetSourceRef {
+    /// Name of the upstream grammar or theme source collection.
     pub upstream: String,
+    /// Optional upstream release version string.
     pub version: Option<String>,
+    /// Optional upstream commit SHA.
     pub commit: Option<String>,
 }
 
+/// Index entry describing one language grammar in a [`LanguageManifest`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct LanguageAssetEntry {
+    /// Canonical language identifier (for example `"rust"` or `"typescript"`).
     pub id: String,
+    /// Root TextMate scope name (for example `"source.rust"`).
     pub scope_name: String,
+    /// Relative filename of the encoded `.fkgram` asset in the language catalog directory.
     pub asset_file: String,
+    /// Optional human-readable language display name.
     pub display_name: Option<String>,
+    /// Alternative language names and aliases that resolve to [`id`](Self::id).
     pub aliases: Vec<String>,
+    /// Canonical IDs of embedded languages loaded eagerly alongside this grammar.
     pub embedded_langs: Vec<String>,
+    /// Catalog metadata listing optional embedded language IDs not loaded
+    /// automatically with this host grammar; load or register them separately.
     pub embedded_langs_lazy: Vec<String>,
+    /// Target TextMate scope names that this grammar injects into.
     pub inject_to: Vec<String>,
 }
 
+/// Index entry describing one color theme in a [`ThemeManifest`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ThemeAssetEntry {
+    /// Canonical theme identifier (for example `"github-dark"` or `"nord"`).
     pub id: String,
+    /// Relative filename of the encoded `.fktheme` asset in the theme catalog directory.
     pub asset_file: String,
+    /// Optional human-readable theme display name.
     pub display_name: Option<String>,
+    /// Optional theme polarity (`"light"` or `"dark"`).
     pub theme_type: Option<String>,
 }
 
+/// Binary index manifest listing all languages in a generated catalog.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct LanguageManifest {
+    /// Binary format version (expected to match [`FORMAT_VERSION`]).
     pub format_version: u32,
+    /// Provenance metadata for the upstream source collection.
     pub source: AssetSourceRef,
+    /// Language entries sorted by canonical ID.
     pub entries: Vec<LanguageAssetEntry>,
 }
 
+/// Binary index manifest listing all themes in a generated catalog.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ThemeManifest {
+    /// Binary format version (expected to match [`FORMAT_VERSION`]).
     pub format_version: u32,
+    /// Provenance metadata for the upstream source collection.
     pub source: AssetSourceRef,
+    /// Theme entries sorted by canonical ID.
     pub entries: Vec<ThemeAssetEntry>,
 }
 
+/// Encoded binary payload for a single TextMate language grammar.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct LanguageAsset {
+    /// Binary format version (expected to match [`FORMAT_VERSION`]).
     pub format_version: u32,
+    /// Canonical language identifier.
     pub id: String,
+    /// Root TextMate scope name.
     pub scope_name: String,
+    /// Optional human-readable language display name.
     pub display_name: Option<String>,
+    /// Alternative names and aliases resolving to this language.
     pub aliases: Vec<String>,
+    /// Canonical IDs of embedded languages loaded eagerly alongside this grammar.
     pub embedded_langs: Vec<String>,
+    /// Catalog metadata listing optional embedded language IDs not loaded
+    /// automatically with this host grammar; load or register them separately.
     pub embedded_langs_lazy: Vec<String>,
+    /// Target TextMate scope names that this grammar injects into.
     pub inject_to: Vec<String>,
+    /// Raw TextMate grammar serialized as JSON.
     pub grammar_json: String,
 }
 
+/// Encoded binary payload for a single TextMate color theme.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ThemeAsset {
+    /// Binary format version (expected to match [`FORMAT_VERSION`]).
     pub format_version: u32,
+    /// Canonical theme identifier.
     pub id: String,
+    /// Optional human-readable theme display name.
     pub display_name: Option<String>,
+    /// Optional theme polarity (`"light"` or `"dark"`).
     pub theme_type: Option<String>,
+    /// Raw TextMate or VS Code theme serialized as JSON.
     pub theme_json: String,
 }
 
@@ -89,34 +133,46 @@ impl AssetSourceRef {
     }
 }
 
+/// Encodes a [`LanguageManifest`] into Ferriki's versioned binary manifest format.
 pub fn encode_language_manifest(manifest: &LanguageManifest) -> Result<Vec<u8>, CodecError> {
     encode(manifest)
 }
 
+/// Decodes a [`LanguageManifest`] from binary bytes, validating [`FORMAT_VERSION`]
+/// and rejecting trailing bytes.
 pub fn decode_language_manifest(bytes: &[u8]) -> Result<LanguageManifest, CodecError> {
     decode(bytes)
 }
 
+/// Encodes a [`ThemeManifest`] into Ferriki's versioned binary manifest format.
 pub fn encode_theme_manifest(manifest: &ThemeManifest) -> Result<Vec<u8>, CodecError> {
     encode(manifest)
 }
 
+/// Decodes a [`ThemeManifest`] from binary bytes, validating [`FORMAT_VERSION`]
+/// and rejecting trailing bytes.
 pub fn decode_theme_manifest(bytes: &[u8]) -> Result<ThemeManifest, CodecError> {
     decode(bytes)
 }
 
+/// Encodes a [`LanguageAsset`] into Ferriki's versioned binary `.fkgram` format.
 pub fn encode_language_asset(asset: &LanguageAsset) -> Result<Vec<u8>, CodecError> {
     encode(asset)
 }
 
+/// Decodes a [`LanguageAsset`] from binary bytes, validating [`FORMAT_VERSION`]
+/// and rejecting trailing bytes.
 pub fn decode_language_asset(bytes: &[u8]) -> Result<LanguageAsset, CodecError> {
     decode(bytes)
 }
 
+/// Encodes a [`ThemeAsset`] into Ferriki's versioned binary `.fktheme` format.
 pub fn encode_theme_asset(asset: &ThemeAsset) -> Result<Vec<u8>, CodecError> {
     encode(asset)
 }
 
+/// Decodes a [`ThemeAsset`] from binary bytes, validating [`FORMAT_VERSION`]
+/// and rejecting trailing bytes.
 pub fn decode_theme_asset(bytes: &[u8]) -> Result<ThemeAsset, CodecError> {
     decode(bytes)
 }

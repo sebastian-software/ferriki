@@ -9,6 +9,7 @@ use std::fmt;
 
 use serde_json::{Map, Number, Value};
 
+/// Error returned when parsing an XML property-list (`.tmLanguage` / `.plist`) grammar.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PlistError {
     offset: usize,

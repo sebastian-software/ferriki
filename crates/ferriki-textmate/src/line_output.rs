@@ -101,11 +101,15 @@ impl TokenTypeMatcher {
     }
 }
 
+/// A single unmerged TextMate scope token produced for a source line.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct Token {
+    /// Inclusive UTF-16 code-unit start offset within the tokenized line.
     pub start_index: usize,
+    /// Exclusive UTF-16 code-unit end offset within the tokenized line.
     pub end_index: usize,
+    /// Ordered TextMate scope stack from root scope to innermost scope.
     pub scopes: Vec<String>,
 }
 
@@ -878,17 +882,25 @@ impl<'a> LineTokens<'a> {
     }
 }
 
+/// Font-family, font-size, and line-height overrides resolved from theme rules for a line span.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct FontInfo {
+    /// Inclusive UTF-16 code-unit start offset within the tokenized line.
     pub start_index: usize,
+    /// Exclusive UTF-16 code-unit end offset within the tokenized line.
     pub end_index: usize,
+    /// Optional font family name override.
     pub font_family: Option<String>,
+    /// Optional font size multiplier override.
     pub font_size_multiplier: Option<f64>,
+    /// Optional line height multiplier override.
     pub line_height_multiplier: Option<f64>,
 }
 
 impl FontInfo {
+    /// Returns `true` if `self` and `other` have identical font styling properties,
+    /// ignoring `start_index` and `end_index`.
     #[must_use]
     pub fn options_equal(&self, other: &Self) -> bool {
         self.font_family == other.font_family

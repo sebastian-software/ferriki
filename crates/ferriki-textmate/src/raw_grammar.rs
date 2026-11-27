@@ -27,23 +27,29 @@ impl RuleId {
 pub(crate) type RawRepository = BTreeMap<String, Arc<RawRule>>;
 pub(crate) type RawCaptures = BTreeMap<String, Arc<RawRule>>;
 
+/// Deserialized TextMate grammar definition produced by [`crate::parse_raw_grammar`].
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct RawGrammar {
     #[serde(default, deserialize_with = "deserialize_raw_repository")]
     pub(crate) repository: RawRepository,
+    /// Root TextMate scope name (for example `"source.rust"`).
     pub scope_name: String,
     #[serde(default)]
     pub(crate) patterns: Vec<Arc<RawRule>>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) injections: BTreeMap<String, Arc<RawRule>>,
+    /// Optional scope selector declaring where this grammar injects into host grammars.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub injection_selector: Option<String>,
+    /// File extensions associated with this grammar.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub file_types: Vec<String>,
+    /// Optional human-readable grammar name.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Optional regular expression used to recognize the grammar from a file's first line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub first_line_match: Option<String>,
     #[serde(

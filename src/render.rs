@@ -16,26 +16,42 @@ const EFFECTIVE_FONT_STYLE_MASK: i32 = FontStyle::ITALIC.bits()
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum StyleMode {
+    /// Emits inline `style="color:..."` attributes on each styled `<span>`.
     #[default]
     Inline,
+    /// Emits semantic scope-derived CSS classes (`fk-s-*`) paired with generated CSS rules.
     Classes,
 }
 
 /// Class-based HTML and the stylesheet required by its resolved theme.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HtmlWithCss {
+    /// Standalone `<pre><code>` HTML using scope-derived class names.
     pub html: String,
+    /// CSS stylesheet defining colors and font styles for the classes emitted in [`html`](Self::html).
     pub css: String,
 }
 
+/// Configuration for [`render_html`], [`render_html_lines`], [`render_html_with_css`],
+/// [`render_hast`], and [`crate::Highlighter::highlight_to_html`].
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct RenderOptions {
+    /// Selects inline `style` attributes ([`StyleMode::Inline`]) or CSS classes ([`StyleMode::Classes`]).
     pub style_mode: StyleMode,
+    /// Merges whitespace-only tokens into adjacent styled spans when `true` (default: `true`).
     pub merge_whitespaces: bool,
+    /// Merges consecutive tokens that share identical visual styles when `true` (default: `false`).
     pub merge_same_style_tokens: bool,
+    /// Optional custom `style` declarations that replace the default root `<pre>`
+    /// style when [`include_root_style`](Self::include_root_style) is `true`.
     pub root_style: Option<String>,
+    /// Emits root `<pre>` styling (custom [`root_style`](Self::root_style) or
+    /// default theme colors) when `true` (default: `true`). In
+    /// [`StyleMode::Classes`], root styling is emitted via a CSS class rather
+    /// than an inline `style` attribute.
     pub include_root_style: bool,
+    /// Optional `tabindex` attribute value emitted on `<pre>` (default: `Some("0")`).
     pub tabindex: Option<String>,
 }
 
@@ -52,6 +68,7 @@ impl Default for RenderOptions {
     }
 }
 
+/// Renders a standalone `<pre><code>` HTML block from highlighted tokens.
 pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> String {
     if options.style_mode == StyleMode::Classes {
         return render_class_html_and_css(

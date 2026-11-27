@@ -67,6 +67,11 @@ impl GrammarProvider for RecordingGrammarProvider<'_> {
     }
 }
 
+/// Synchronous TextMate grammar and theme registry.
+///
+/// Manages registered [`RawGrammar`] definitions, grammar injections,
+/// compiled [`Grammar`] instances, active [`Theme`] state, and shared
+/// regex scanner caches (including optional precompiled pattern packages).
 pub struct SyncRegistry {
     grammars: BTreeMap<String, CompiledGrammar>,
     raw_grammars: GrammarStore,
@@ -76,6 +81,8 @@ pub struct SyncRegistry {
 }
 
 impl SyncRegistry {
+    /// Creates a new registry initialized with an optional [`RawTheme`] and
+    /// optional frozen `color_map`.
     pub fn new(
         theme: Option<RawTheme>,
         color_map: Option<Vec<String>>,
@@ -90,6 +97,8 @@ impl SyncRegistry {
         })
     }
 
+    /// Releases all registered grammars, compiled caches, scanner caches, and
+    /// resets the active theme to the default empty theme.
     pub fn dispose(&mut self) {
         self.grammars.clear();
         self.scanner_pattern_cache.clear();
@@ -277,6 +286,7 @@ impl SyncRegistry {
         self.theme.theme()
     }
 
+    /// Returns the active theme's color table, or an empty vector after [`Self::dispose`].
     #[must_use]
     pub fn get_color_map(&self) -> Vec<String> {
         if self.has_color_map {
@@ -319,16 +329,20 @@ impl SyncRegistry {
             .set_injections(target_scope, injection_scope_names);
     }
 
+    /// Looks up a previously registered [`RawGrammar`] by its root scope name.
     #[must_use]
     pub fn lookup(&self, scope_name: &str) -> Option<Arc<RawGrammar>> {
         self.raw_grammars.lookup(scope_name)
     }
 
+    /// Returns the list of grammar scope names registered to inject into `target_scope`.
     #[must_use]
     pub fn injections(&self, target_scope: &str) -> Vec<String> {
         self.raw_grammars.injections(target_scope)
     }
 
+    /// Compiles and caches the [`Grammar`] for `scope_name` using `configuration`,
+    /// returning `Ok(None)` if `scope_name` has not been registered.
     pub fn grammar_for_scope_name(
         &mut self,
         scope_name: &str,

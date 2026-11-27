@@ -14,7 +14,9 @@ const THEME_MANIFEST_FILE: &str = "manifest.fkindex";
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct GeneratedCatalog {
+    /// Path to the written binary `manifest.fkindex` file.
     pub manifest_path: PathBuf,
+    /// Paths to the written binary grammar (`.fkgram`) or theme (`.fktheme`) asset files.
     pub asset_paths: Vec<PathBuf>,
     /// Optional bytecode sidecars written for a language catalog; empty for themes.
     pub precompiled_paths: Vec<PathBuf>,

@@ -3,9 +3,15 @@
 //! The module boundaries intentionally follow the pinned upstream source so
 //! semantic changes remain reviewable against the oracle mirror.
 
+#![warn(missing_docs)]
+
 mod attributed_scope_stack;
 mod backtracking;
 mod basic_scope_attributes;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __oracle test support"
+)]
 mod diff_state_stacks;
 mod encoded_token_attributes;
 mod grammar;
@@ -29,6 +35,10 @@ mod regex_mode;
 mod regexp;
 mod registry;
 mod rule;
+#[allow(
+    missing_docs,
+    reason = "re-exported only through #[doc(hidden)] __oracle test support"
+)]
 mod rule_factory;
 mod state_stack;
 mod theme;

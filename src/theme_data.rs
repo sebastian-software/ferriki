@@ -8,15 +8,25 @@ const FALLBACK_LIGHT_BG: &str = "#fffffe";
 const FALLBACK_DARK_FG: &str = "#bbbbbb";
 const FALLBACK_DARK_BG: &str = "#1e1e1e";
 
+/// Normalized color theme ready to register with [`crate::Highlighter::register_theme`].
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct ThemeData {
+    /// Theme name reported on highlighting results.
     pub name: String,
+    /// Resolved default foreground color (for example `"#d8dee9"`).
     pub foreground: String,
+    /// Resolved default background color (for example `"#2e3440"`).
     pub background: String,
+    /// Underlying TextMate [`RawTheme`] token-color rules.
     pub raw_theme: RawTheme,
 }
 
+/// Parses a VS Code or TextMate JSON theme into a normalized [`ThemeData`].
+///
+/// Uses `id` as the fallback theme name when the JSON omits `"name"`, and
+/// resolves default foreground and background colors from `"fg"`/`"bg"`,
+/// global settings, `"colors"`, or light/dark fallbacks.
 pub fn parse_theme_data(id: &str, source: &str) -> Result<ThemeData> {
     let value: Value = serde_json::from_str(source).map_err(|error| {
         Error::new(

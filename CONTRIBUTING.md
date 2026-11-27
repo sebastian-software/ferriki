@@ -83,6 +83,25 @@ its decision record is
 options, errors, lifecycle, or compatibility classifications update that
 contract and the corresponding tests together.
 
+## Build and development environment variables
+
+Contributor scripts and test harnesses read the following `FERRIKI_*` variables.
+For runtime asset-loading variables (`FERRIKI_ASSETS_REMOTE`,
+`FERRIKI_ASSETS_BASE_URL`, `FERRIKI_CACHE_DIR`, `FERRIKI_ASSETS_PROTECTED`,
+`FERRIKI_DOWNLOAD_TOKEN`) and the build-time `FERRIKI_RELEASE_COMMIT` variable,
+see [docs/asset-loading.md](docs/asset-loading.md#environment-variables).
+
+| Variable                         | Used by                                             | Purpose                                                                                                                                              |
+| -------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FERRIKI_FERRONI_PATH`           | `node/ferriki/scripts/build-native.mjs`             | Path to a local `ferroni` checkout; passes `patch.crates-io.ferroni.path` and runs `cargo update --offline -p ferroni` before building `ferriki-core` (`build-native.mjs` still runs `materialize-assets.mjs` first, which may use the network). |
+| `FERRIKI_RUST_TARGET`            | `node/ferriki/scripts/build-native.mjs`             | Rust target triple (for example `x86_64-unknown-linux-musl`) for cross-compiling the native addon; also derives `FERRIKI_PLATFORM_ID`.                |
+| `FERRIKI_PLATFORM_ID`            | `build-native.mjs`, `node/scripts/bench-*.mjs`      | Sidecar platform package ID (for example `linux-x64-gnu`, `darwin-arm64`) used when staging or benchmarking a specific target.                       |
+| `FERRIKI_PLATFORM_TARGET`        | `node/ferriki/scripts/build-native.mjs`             | Short addon suffix (for example `linux-x64`) for `dist/ferriki.<target>.node` (defaults to `FERRIKI_PLATFORM_ID` without `-gnu`/`-msvc`).            |
+| `FERRIKI_HONEST_ALIAS`           | `node/vitest.config.ts`                             | When set (for example `1`), aliases remaining upstream imports in the mirrored compatibility suite to Ferriki's native runtime.                      |
+| `FERRIKI_ASSETS_BOOTSTRAP`       | `scripts/materialize-assets.mjs`                    | When set to `1`, skips the CDN for missing files and uses configured bootstrap sources while preserving files that already pass verification (same as `--bootstrap`). |
+| `FERRIKI_PROFILE_PREPARED_PAIRS` | `crates/ferriki-textmate` (`prepared-load-profile`) | Emits JSON lines on `stderr` for indexed prepared-record loads in diagnostic builds; ignored in ordinary builds.                                     |
+| `FERRIKI_BENCH_OUTPUT`           | `crates/ferriki-textmate` (`precompiled_bench.rs`)  | Optional output path for writing results from the internal precompiled benchmark test.                                                               |
+
 ## Highlighting performance
 
 The [TIOBE benchmark](node/benchmarks/tiobe/README.md) compares Ferriki/Ferroni,

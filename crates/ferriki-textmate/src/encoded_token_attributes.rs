@@ -29,10 +29,14 @@ pub(crate) const MAX_BACKGROUND_COLOR_ID: u32 = BACKGROUND_MASK >> BACKGROUND_OF
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 #[repr(u8)]
 pub enum StandardTokenType {
+    /// Any token that is not a comment, string, or regular expression (`0`).
     #[default]
     Other = 0,
+    /// Comment token (`1`).
     Comment = 1,
+    /// String literal token (`2`).
     String = 2,
+    /// Regular expression literal token (`3`).
     RegEx = 3,
 }
 
@@ -108,46 +112,55 @@ pub(crate) const fn to_optional_token_type(
 pub struct EncodedTokenAttributes(u32);
 
 impl EncodedTokenAttributes {
+    /// Wraps a raw 32-bit packed token attribute word.
     #[must_use]
     pub const fn new(value: u32) -> Self {
         Self(value)
     }
 
+    /// Returns the raw 32-bit packed metadata word.
     #[must_use]
     pub const fn bits(self) -> u32 {
         self.0
     }
 
+    /// Formats the packed metadata word as a 32-character binary string.
     #[must_use]
     pub fn to_binary_str(self) -> String {
         format!("{:032b}", self.0)
     }
 
+    /// Extracts the 8-bit language identifier.
     #[must_use]
     pub const fn language_id(self) -> u32 {
         (self.0 & LANGUAGE_ID_MASK) >> LANGUAGE_ID_OFFSET
     }
 
+    /// Extracts the [`StandardTokenType`] classification.
     #[must_use]
     pub fn token_type(self) -> StandardTokenType {
         StandardTokenType::from_bits((self.0 & TOKEN_TYPE_MASK) >> TOKEN_TYPE_OFFSET)
     }
 
+    /// Returns whether balanced-bracket tracking is active for this token.
     #[must_use]
     pub const fn contains_balanced_brackets(self) -> bool {
         self.0 & BALANCED_BRACKETS_MASK != 0
     }
 
+    /// Extracts the packed [`FontStyle`] flags.
     #[must_use]
     pub const fn font_style(self) -> FontStyle {
         FontStyle::from_bits(((self.0 & FONT_STYLE_MASK) >> FONT_STYLE_OFFSET) as i32)
     }
 
+    /// Extracts the 9-bit foreground color table index.
     #[must_use]
     pub const fn foreground(self) -> u32 {
         (self.0 & FOREGROUND_MASK) >> FOREGROUND_OFFSET
     }
 
+    /// Extracts the 8-bit background color table index.
     #[must_use]
     pub const fn background(self) -> u32 {
         (self.0 & BACKGROUND_MASK) >> BACKGROUND_OFFSET

@@ -21,10 +21,12 @@ const MAX_DIRECTORY_ASSET_BYTES: u64 = 64 * 1024 * 1024;
 pub struct AssetDigest(String);
 
 impl AssetDigest {
+    /// Computes the lowercase hexadecimal SHA-256 digest of `bytes`.
     pub fn of(bytes: &[u8]) -> Self {
         Self(sha256_hex(bytes))
     }
 
+    /// Returns the normalized 64-character lowercase hexadecimal digest string.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -80,6 +82,7 @@ pub struct AssetMetadata {
 }
 
 impl AssetMetadata {
+    /// Creates release-pinned integrity metadata for a single payload.
     pub fn new(digest: AssetDigest, size: u64, format_version: u32) -> Self {
         Self {
             digest,
@@ -109,12 +112,15 @@ impl AssetMetadata {
         self.decoded.as_deref()
     }
 
+    /// Returns the expected SHA-256 digest of the payload.
     pub fn digest(&self) -> &AssetDigest {
         &self.digest
     }
+    /// Returns the expected payload size in bytes.
     pub fn size(&self) -> u64 {
         self.size
     }
+    /// Returns the expected binary format version for the payload.
     pub fn format_version(&self) -> u32 {
         self.format_version
     }
@@ -150,6 +156,7 @@ impl AssetMetadata {
 /// I/O while explicitly loading assets; they must not implement retries here.
 /// Catalogs verify returned bytes before decoding or retaining them.
 pub trait AssetSource: Send + Sync {
+    /// Reads the raw payload bytes identified by `digest`.
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>>;
 
     /// Reads immutable asset bytes bounded by the manifest-pinned `expected_size`.
@@ -444,9 +451,11 @@ pub struct DirectoryAssetSource {
 }
 
 impl DirectoryAssetSource {
+    /// Creates an asset source rooted at a digest-addressed directory.
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }
+    /// Returns the directory path this source reads payload files from.
     pub fn root(&self) -> &Path {
         &self.root
     }
@@ -574,6 +583,7 @@ impl std::fmt::Debug for EmbeddedAssetSource {
 }
 
 impl EmbeddedAssetSource {
+    /// Creates an in-memory asset source from `(digest, bytes)` pairs.
     pub fn new(assets: impl IntoIterator<Item = (AssetDigest, Cow<'static, [u8]>)>) -> Self {
         Self {
             assets: assets.into_iter().collect(),
