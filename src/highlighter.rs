@@ -83,9 +83,13 @@ impl std::fmt::Debug for Highlighter {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct HighlightedLines {
+    /// Escaped, tag-balanced inner HTML fragment for each source line.
     pub lines: Vec<String>,
+    /// Resolved default theme foreground color (for example `"#d8dee9"`).
     pub foreground: String,
+    /// Resolved default theme background color (for example `"#2e3440"`).
     pub background: String,
+    /// Name of the resolved theme applied to this code block.
     pub theme_name: String,
 }
 
@@ -2187,11 +2191,13 @@ impl LanguageRegistration {
             inject_to: Vec::new(),
         }
     }
+    /// Sets alternative language identifiers that resolve to this grammar.
     #[must_use]
     pub fn with_aliases(mut self, aliases: impl IntoIterator<Item = String>) -> Self {
         self.aliases = aliases.into_iter().collect();
         self
     }
+    /// Sets target TextMate scope names that this grammar injects into.
     #[must_use]
     pub fn with_injections(mut self, scopes: impl IntoIterator<Item = String>) -> Self {
         self.inject_to = scopes.into_iter().collect();

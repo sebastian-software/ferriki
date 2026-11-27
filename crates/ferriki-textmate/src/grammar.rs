@@ -30,13 +30,21 @@ use crate::state_stack::StateStack;
 use crate::theme::{ScopeStack, StyleAttributes, Theme};
 use crate::tokenize_string::{Injection, TokenizeStringResult, TokenizerGrammar, tokenize_string};
 
+/// Configuration passed to [`crate::SyncRegistry::grammar_for_scope_name`] when
+/// compiling a [`Grammar`].
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct GrammarConfiguration {
+    /// Numeric language ID (0–255) encoded into tokens of the root grammar.
     pub initial_language_id: u32,
+    /// Map from embedded scope names to their numeric language IDs.
     pub embedded_languages: EmbeddedLanguages,
+    /// Scope-selector overrides mapping scopes to [`StandardTokenType`] values.
     pub token_types: Vec<(String, StandardTokenType)>,
+    /// Scope selectors whose brackets participate in balanced-bracket tracking;
+    /// `None` disables balanced-bracket tracking.
     pub balanced_bracket_selectors: Option<Vec<String>>,
+    /// Scope selectors excluded from balanced-bracket tracking.
     pub unbalanced_bracket_selectors: Vec<String>,
     /// Enables the scanner prefilter. Defaults to `true`; prepared archives use
     /// Eager for static scanners, while source-only scanners retain Auto.
@@ -113,19 +121,29 @@ impl GrammarConfiguration {
     }
 }
 
+/// Scope-token output returned by [`Grammar::tokenize_line`].
 #[non_exhaustive]
 pub struct TokenizeLineResult {
+    /// Unmerged grammar tokens with UTF-16 start/end indices and full scope stacks.
     pub tokens: Vec<Token>,
+    /// Theme font-family/size/line-height spans emitted for the line, if any.
     pub fonts: Vec<FontInfo>,
+    /// Rule stack state at the end of the line, to pass to the next line.
     pub rule_stack: Arc<StateStack>,
+    /// `true` if tokenization stopped early due to the configured per-line time limit.
     pub stopped_early: bool,
 }
 
+/// Packed binary token output returned by [`Grammar::tokenize_line2`].
 #[non_exhaustive]
 pub struct TokenizeLineResult2 {
+    /// Alternating UTF-16 start offsets and packed [`EncodedTokenAttributes`] words.
     pub tokens: Vec<u32>,
+    /// Theme font-family/size/line-height spans emitted for the line, if any.
     pub fonts: Vec<FontInfo>,
+    /// Rule stack state at the end of the line, to pass to the next line.
     pub rule_stack: Arc<StateStack>,
+    /// `true` if tokenization stopped early due to the configured per-line time limit.
     pub stopped_early: bool,
 }
 
@@ -140,8 +158,11 @@ pub struct TokenizeLineResultWithScopes {
     pub tokens: Vec<Token>,
     /// Alternating UTF-16 start offsets and encoded metadata, as in `tokenize_line2`.
     pub binary_tokens: Vec<u32>,
+    /// Theme font-family/size/line-height spans emitted for the line, if any.
     pub fonts: Vec<FontInfo>,
+    /// Rule stack state at the end of the line, to pass to the next line.
     pub rule_stack: Arc<StateStack>,
+    /// `true` if tokenization stopped early due to the configured per-line time limit.
     pub stopped_early: bool,
 }
 
@@ -179,7 +200,9 @@ pub struct TokenizeLineResultWithThemes {
     pub tokens: Option<Vec<Token>>,
     /// One alternating UTF-16 start-offset and encoded-metadata vector per theme.
     pub binary_tokens: Vec<Vec<u32>>,
+    /// Rule stack state at the end of the line, to pass to the next line.
     pub rule_stack: Arc<StateStack>,
+    /// `true` if tokenization stopped early due to the configured per-line time limit.
     pub stopped_early: bool,
 }
 
@@ -248,6 +271,10 @@ impl TokenizerGrammar for PinnedThemeGrammar<'_> {
     }
 }
 
+/// A compiled TextMate grammar capable of tokenizing source lines against
+/// the registry's active theme or an explicit slice of compiled [`Theme`]s.
+///
+/// Obtain instances from [`crate::SyncRegistry::grammar_for_scope_name`].
 pub struct Grammar {
     root_id: RuleId,
     root_scope_name: String,
@@ -590,6 +617,7 @@ impl Grammar {
         first_error.map_or(Ok(()), Err)
     }
 
+    /// Returns the root TextMate scope name of this grammar (for example `"source.rust"`).
     #[must_use]
     pub fn root_scope_name(&self) -> &str {
         &self.root_scope_name
@@ -616,6 +644,7 @@ impl Grammar {
         self.root_id
     }
 
+    /// Returns a copy of the active theme's color table indexed by encoded color IDs.
     #[must_use]
     pub fn color_map(&self) -> Vec<String> {
         self.theme_provider.theme().get_color_map()

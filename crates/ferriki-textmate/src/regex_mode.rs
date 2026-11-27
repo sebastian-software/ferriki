@@ -17,11 +17,13 @@ pub enum RegexMode {
 }
 
 impl RegexMode {
+    /// Returns `true` when this policy allows regex prefiltering (everything except [`Self::Off`]).
     #[must_use]
     pub const fn prefilter(self) -> bool {
         !matches!(self, Self::Off)
     }
 
+    /// Maps a boolean prefilter toggle to [`Self::Prepared`] (`true`) or [`Self::Off`] (`false`).
     #[must_use]
     pub const fn from_prefilter(enabled: bool) -> Self {
         if enabled { Self::Prepared } else { Self::Off }
@@ -38,14 +40,23 @@ impl RegexMode {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct RegexDiagnostics {
+    /// Number of static scanner-group construction attempts (including failed attempts).
     pub static_scanners: usize,
+    /// Number of dynamic scanner construction attempts for captured `end`/`while` patterns (including failed attempts).
     pub dynamic_scanners: usize,
+    /// Number of scanner construction attempts with prefiltering disabled (`RegexMode::Off`, including failed attempts).
     pub off_scanners: usize,
+    /// Number of scanner construction attempts with lazy DFA warm-up (`RegexMode::Auto`, including failed attempts).
     pub auto_scanners: usize,
+    /// Number of scanner construction attempts with eager acceleration (`RegexMode::Eager` / `Prepared`, including failed attempts).
     pub eager_scanners: usize,
+    /// Number of attempts to retry cached scanner assembly from source.
     pub assembly_fallbacks: usize,
+    /// Number of prepared pattern archives attached to the registry.
     pub prepared_archives: usize,
+    /// Number of precompiled scanner groups successfully loaded from attached archives.
     pub loaded_prepared_groups: usize,
+    /// Number of prepared group load failures (including invalid/incompatible records and indexed file read errors).
     pub invalid_prepared_groups: usize,
     /// Program/group payload bytes read by indexed file sources, excluding indexes.
     pub prepared_bytes_read: u64,

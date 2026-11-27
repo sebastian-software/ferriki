@@ -19,6 +19,11 @@ const fn combine_theme_id(parent_theme_id: u64, scan_theme_id: u64) -> u64 {
     }
 }
 
+/// Persistent tokenizer rule stack carried from the end of one line to the start
+/// of the next.
+///
+/// Start tokenization with `None` or [`StateStack::null`] and pass each line's
+/// returned `rule_stack` to the subsequent call.
 pub struct StateStack {
     pub(crate) parent: Option<Arc<Self>>,
     rule_id: RuleId,
@@ -29,10 +34,13 @@ pub struct StateStack {
     pub(crate) end_rule: Option<String>,
     pub(crate) name_scopes_list: Option<Arc<AttributedScopeStack>>,
     pub(crate) content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
+    /// Number of nested rule frames in this stack (1 for the root sentinel).
     pub depth: usize,
 }
 
 impl StateStack {
+    /// Returns the shared empty sentinel stack representing the initial state
+    /// before line 1 is tokenized.
     #[must_use]
     pub fn null() -> Arc<Self> {
         static NULL: OnceLock<Arc<StateStack>> = OnceLock::new();
@@ -105,6 +113,7 @@ impl StateStack {
         self.theme_id
     }
 
+    /// Returns `true` if `self` and `other` represent equivalent rule and scope stacks.
     #[must_use]
     pub fn equals(self: &Arc<Self>, other: &Arc<Self>) -> bool {
         if Arc::ptr_eq(self, other) {
@@ -117,6 +126,7 @@ impl StateStack {
             )
     }
 
+    /// Returns a cheap reference-counted handle to this immutable stack node.
     #[must_use]
     pub fn clone_stack(self: &Arc<Self>) -> Arc<Self> {
         Arc::clone(self)

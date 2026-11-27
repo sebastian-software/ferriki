@@ -16,6 +16,13 @@ use std::sync::Arc;
 use crate::asset_source::InternalVerifiedSource;
 use crate::{AssetMetadata, AssetSource, Error, ErrorKind, Result};
 
+/// Lazy, cached standard language and theme catalogs passed to
+/// [`crate::HighlighterBuilder::with_assets`].
+///
+/// Construct from a local catalog directory ([`Self::load_from_root`]),
+/// embedded bytes ([`Self::from_embedded`]), a release-verified source
+/// ([`Self::from_release_manifest`] / [`Self::from_source`]), or the optional
+/// release-pinned CDN (`StandardAssetCatalogs::remote` with the `remote` feature).
 pub struct StandardAssetCatalogs {
     pub(crate) languages: LanguageAssetCatalog,
     pub(crate) themes: ThemeAssetCatalog,
@@ -31,6 +38,13 @@ impl std::fmt::Debug for StandardAssetCatalogs {
 }
 
 impl StandardAssetCatalogs {
+    /// Loads language and theme manifests from `<root_dir>/languages/manifest.fkindex`
+    /// and `<root_dir>/themes/manifest.fkindex`.
+    ///
+    /// Grammar and theme payloads remain lazy on disk until first use. This
+    /// constructor validates asset filenames, binary format versions, and
+    /// decoded structure, but does not verify release SHA-256 digests; use
+    /// [`Self::from_release_manifest`] for digest-verified offline catalogs.
     pub fn load_from_root(root_dir: &Path) -> Result<Self> {
         Ok(Self {
             languages: LanguageAssetCatalog::load_from_dir(&root_dir.join("languages"))?,
@@ -61,9 +75,10 @@ impl StandardAssetCatalogs {
         })
     }
 
-    /// Creates lazy, verified catalogs from binary manifests, a release manifest
-    /// that pins every payload, and a digest-addressed source. This is
-    /// [`Self::from_source`] with the metadata taken from the release manifest.
+    /// Creates lazy, verified catalogs from binary manifests, a caller-supplied
+    /// trusted release manifest that pins every payload, and a digest-addressed
+    /// source. This is [`Self::from_source`] with the metadata taken from the
+    /// release manifest.
     pub fn from_release_manifest(
         language_manifest: &[u8],
         theme_manifest: &[u8],

@@ -10,11 +10,16 @@ use std::fmt;
 use crate::RawGrammar;
 use crate::plist::{PlistError, parse_plist};
 
+/// Failure returned by [`parse_raw_grammar`] when JSON, PLIST, or grammar
+/// deserialization fails.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ParseRawGrammarError {
+    /// Failed to parse a `.json` grammar file.
     Json(serde_json::Error),
+    /// Failed to parse an XML property-list (`.tmLanguage` or `.plist`) file.
     Plist(PlistError),
+    /// Parsed the property-list structure, but it did not match the [`RawGrammar`] schema.
     Grammar(serde_json::Error),
 }
 

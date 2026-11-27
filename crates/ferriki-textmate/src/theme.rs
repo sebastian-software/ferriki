@@ -17,40 +17,59 @@ use serde::{Deserialize, Serialize};
 
 use crate::encoded_token_attributes::{MAX_BACKGROUND_COLOR_ID, MAX_FOREGROUND_COLOR_ID};
 
+/// Raw TextMate theme definition passed to [`Theme::create_from_raw_theme`]
+/// or [`crate::SyncRegistry::new`].
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct RawTheme {
+    /// Optional human-readable theme name.
     pub name: Option<String>,
+    /// Ordered list of theme token-color rules; all scope-less entries are
+    /// merged in source order as theme defaults (later entries override earlier values).
     #[serde(default)]
     pub settings: Vec<RawThemeSetting>,
 }
 
+/// A single token-coloring rule within a [`RawTheme`].
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct RawThemeSetting {
+    /// Optional descriptive name for the rule.
     pub name: Option<String>,
+    /// Scope selector(s) matched by this rule; `None` applies as theme defaults.
     pub scope: Option<RawThemeScope>,
+    /// Visual styling attributes applied when [`scope`](Self::scope) matches.
     pub settings: Option<RawThemeStyle>,
 }
 
+/// Scope selector representation in a [`RawThemeSetting`].
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum RawThemeScope {
+    /// Single scope selector string (may contain comma-separated selectors).
     String(String),
+    /// List of individual scope selector strings.
     Array(Vec<String>),
 }
 
+/// Visual styling properties carried by a [`RawThemeSetting`].
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct RawThemeStyle {
+    /// Space-separated font style tokens (for example `"italic bold underline"`).
     pub font_style: Option<String>,
+    /// Hex foreground color string (for example `"#d8dee9"`).
     pub foreground: Option<String>,
+    /// Hex background color string (for example `"#2e3440"`).
     pub background: Option<String>,
+    /// Optional font family override.
     pub font_family: Option<String>,
+    /// Optional font size multiplier override.
     pub font_size: Option<f64>,
+    /// Optional line height multiplier override.
     pub line_height: Option<f64>,
 }
 
@@ -60,23 +79,32 @@ pub struct RawThemeStyle {
 pub struct FontStyle(i32);
 
 impl FontStyle {
+    /// Sentinel indicating that a theme rule did not specify a font style (`-1`).
     pub const NOT_SET: Self = Self(-1);
+    /// Normal font style with no decorations (`0`).
     pub const NONE: Self = Self(0);
+    /// Italic style bit (`1`).
     pub const ITALIC: Self = Self(1);
+    /// Bold style bit (`2`).
     pub const BOLD: Self = Self(2);
+    /// Underline style bit (`4`).
     pub const UNDERLINE: Self = Self(4);
+    /// Strikethrough style bit (`8`).
     pub const STRIKETHROUGH: Self = Self(8);
 
+    /// Wraps a raw integer bitmask into a [`FontStyle`].
     #[must_use]
     pub const fn from_bits(value: i32) -> Self {
         Self(value)
     }
 
+    /// Returns the underlying integer bitmask (`-1` for [`Self::NOT_SET`]).
     #[must_use]
     pub const fn bits(self) -> i32 {
         self.0
     }
 
+    /// Returns `true` if any bit set in `other` is also set in `self`.
     #[must_use]
     pub const fn contains(self, other: Self) -> bool {
         self.0 & other.0 != 0
@@ -362,18 +390,28 @@ impl RawThemeStyle {
     }
 }
 
+/// Error returned when compiling a [`Theme`] or configuring grammar metadata.
 #[derive(Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ThemeError {
+    /// A theme referenced a color that was absent from a caller-provided frozen color map.
     MissingFrozenColor(String),
+    /// A scope selector was malformed or exceeded the nesting depth limit.
     InvalidScopeSelector(String),
+    /// The theme required more distinct colors than fit in the encoded token bitfield.
     ColorMapOverflow {
+        /// Color string that could not be inserted.
         color: String,
+        /// Assigned color ID that overflowed the encodable range.
         id: u32,
+        /// Maximum encodable color ID for the target slot.
         max_id: u32,
     },
+    /// A configured language ID exceeded the 8-bit encodable limit.
     InvalidLanguageId {
+        /// Out-of-range language ID supplied by the caller.
         language_id: u32,
+        /// Maximum supported language ID (`255`).
         max_language_id: u32,
     },
 }
@@ -443,6 +481,8 @@ impl fmt::Debug for Theme {
 }
 
 impl Theme {
+    /// Compiles a [`RawTheme`] into an indexed [`Theme`] trie, optionally
+    /// constraining colors to a frozen `color_map`.
     pub fn create_from_raw_theme(
         source: Option<&RawTheme>,
         color_map: Option<Vec<String>>,

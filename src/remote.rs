@@ -57,9 +57,13 @@ static NEXT_CACHE_WRITE: AtomicU64 = AtomicU64::new(0);
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct RemoteAssets {
+    /// Whether network downloads are allowed on cache misses (`None` reads `FERRIKI_ASSETS_REMOTE`, defaulting to `true`).
     pub remote: Option<bool>,
+    /// Mirror base URL (`None` reads `FERRIKI_ASSETS_BASE_URL`, defaulting to [`DEFAULT_ASSETS_BASE_URL`]).
     pub base_url: Option<String>,
+    /// Local digest-addressed cache directory (`None` reads `FERRIKI_CACHE_DIR`, defaulting to the platform cache directory plus `ferriki`).
     pub cache_dir: Option<PathBuf>,
+    /// Release commit SHA for legacy commit-routed manifests (`None` falls back to the manifest `commit` and then the compile-time `FERRIKI_RELEASE_COMMIT`).
     pub commit: Option<String>,
 }
 

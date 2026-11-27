@@ -5,6 +5,8 @@ use std::ops::Range;
 
 use crate::{Error, ErrorKind, Result};
 
+/// Resource limits and metadata controls for [`crate::Highlighter::highlight_with_options`]
+/// and [`crate::Highlighter::highlight_with_themes_and_options`].
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct TokenizeOptions {
@@ -13,8 +15,13 @@ pub struct TokenizeOptions {
     /// regex search cannot be interrupted and may run past the budget. `0`
     /// disables the time limit.
     pub time_limit_millis: u64,
+    /// Maximum line length in UTF-16 code units; lines whose length reaches
+    /// (`>=`) this threshold fall back to a single plain token. `0` disables
+    /// the length limit (default: `0`).
     pub max_line_length: usize,
+    /// Includes [`HighlightToken::token_type`] metadata when `true` (default: `false`).
     pub include_token_type: bool,
+    /// Includes full TextMate scope stacks in [`HighlightToken::scope_names`] when `true` (default: `false`).
     pub include_scopes: bool,
     /// Retains grammar boundaries even when adjacent tokens have equal styles.
     pub preserve_scope_boundaries: bool,
@@ -32,31 +39,43 @@ impl Default for TokenizeOptions {
     }
 }
 
+/// A single themed source token produced by [`crate::Highlighter::highlight`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct HighlightToken {
+    /// Source text covered by this token, excluding line endings.
     pub content: String,
+    /// Starting UTF-8 byte offset within the full highlighted input string.
     pub offset: usize,
+    /// Resolved foreground color, or `None` for unstyled plain text.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
+    /// Resolved TextMate [`FontStyle`] bits, or `None` for unstyled plain text.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub font_style: Option<FontStyle>,
+    /// Standard token classification, populated when [`TokenizeOptions::include_token_type`] is enabled.
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub token_type: Option<StandardTokenType>,
+    /// TextMate scope stack from root to innermost scope, populated when [`TokenizeOptions::include_scopes`] is enabled.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope_names: Option<Vec<String>>,
 }
 
+/// Tokenized lines and resolved theme metadata returned by [`crate::Highlighter::highlight`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct HighlightTokensResult {
+    /// Highlighted tokens grouped by source line, including any trailing empty line.
     pub tokens: Vec<Vec<HighlightToken>>,
+    /// Default theme foreground color (serialized as `fg`).
     #[serde(rename = "fg")]
     pub foreground: String,
+    /// Default theme background color (serialized as `bg`).
     #[serde(rename = "bg")]
     pub background: String,
+    /// Name of the resolved theme applied to this result.
     pub theme_name: String,
 }
 

@@ -8,6 +8,7 @@ use std::sync::{Mutex, MutexGuard};
 use crate::encoded_token_attributes::{MAX_LANGUAGE_ID, OptionalStandardTokenType};
 use crate::theme::ThemeError;
 
+/// Map from embedded TextMate scope names to numeric language IDs (0–255).
 pub type EmbeddedLanguages = BTreeMap<String, u32>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

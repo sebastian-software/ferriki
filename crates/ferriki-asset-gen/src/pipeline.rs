@@ -6,16 +6,24 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+/// Output paths written by [`generate_catalogs_from_upstream`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct GeneratedCatalogSet {
+    /// Generated language catalog manifest, grammar assets, and precompiled sidecars.
     pub languages: GeneratedCatalog,
+    /// Generated theme catalog manifest and theme assets.
     pub themes: GeneratedCatalog,
+    /// Directory containing the generated language catalog files.
     pub languages_dir: PathBuf,
+    /// Directory containing the generated theme catalog files.
     pub themes_dir: PathBuf,
+    /// Path to the generated `release-manifest.json` file.
     pub release_manifest_path: PathBuf,
 }
 
+/// Generates binary language and theme catalogs, precompiled bytecode sidecars,
+/// and a [`ReleaseManifest`] from an upstream grammar and theme directory.
 pub fn generate_catalogs_from_upstream(
     upstream_dir: &Path,
     output_dir: &Path,

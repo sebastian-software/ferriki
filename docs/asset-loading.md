@@ -93,9 +93,10 @@ or `FERRIKI_ASSETS_REMOTE=0` to require a populated cache. The default mirror
 is `https://assets.ferriki.dev`.
 
 An explicit `assets.cacheDir` takes priority over `FERRIKI_CACHE_DIR`. Without
-either, Ferriki uses `node_modules/.cache/ferriki` under the nearest package
-root that has a `node_modules` directory, then falls back to the platform
-cache. The cache stores one file per SHA-256 digest and reuses unchanged
+either, Node searches upward to the nearest directory containing `package.json`;
+if that directory has a `node_modules` directory, it uses
+`node_modules/.cache/ferriki`, and otherwise falls back to the platform cache
+without searching farther up. The cache stores one file per SHA-256 digest and reuses unchanged
 payloads across releases. Set `FERRIKI_ASSETS_BASE_URL` or `assets.baseUrl` to
 the root of a mirror that serves `<language-id>/<short-hash>` and
 `themes/<theme-id>/<short-hash>`. The manifest verifies the complete compiled payload with SHA-256;
@@ -110,6 +111,89 @@ existing installs need a populated cache or a custom mirror. See the
 Synchronous factories, loads and highlighting read only the cache. Load
 standard grammars and themes through the asynchronous API first, or prepopulate
 the cache for offline use.
+
+## Cache maintenance and permissions
+
+### Disk layout and sizing
+
+The cache directory holds two tiers of content-addressed files:
+
+- `<cacheDir>/<sha256>`: release payloads — Postcard-encoded `.fkgram` and
+  `.fktheme` assets, and Zstd-compressed `.fkbc` sidecars.
+- `<cacheDir>/decoded/<sha256>`: decompressed prepared regex containers, plus
+  their derived `<sha256>.index-v2` record indexes and small JSON `.verified`
+  stat receipts (`size`, `modified_secs`, `modified_nanos`).
+
+Prepared `.fkbc` containers expand substantially on decompression (up to ~38x
+across the standard catalog, bounded by a 512 MiB per-container safety cap and a
+16 MiB cap per `.index-v2` file). Size persistent CI or container volumes for
+the decoded set of languages your workload actually loads rather than only the
+compressed download sizes. Temporary atomic write files are renamed into place
+on completion (root download temp files start with `<sha256>.` and derived-cache
+temp files under `decoded/` use `.*.tmp`); any leftover temp file from a crashed
+process can be deleted when idle.
+
+### Safe pruning
+
+- **Legacy `.index-v1` files:** Older releases wrote `decoded/<sha256>.index-v1`
+  (and `.index-v1.verified`). Current runtimes read `.index-v2` only; legacy
+  `.index-v1*` files can be removed safely at any time.
+- **Derived `decoded/` files:** Deleting any file under `decoded/` (containers,
+  `.index-v2`, or `.verified` receipts) while idle is safe (avoid deleting
+  active temporary files while another process is publishing cache entries).
+  Ferriki re-verifies or rebuilds decoded entries on demand from the compressed
+  `<cacheDir>/<sha256>` payload, or falls back to compiling the grammar from
+  source. Deleting a container's `.verified` receipt forces full SHA-256
+  re-verification of that container on the next read without discarding cached
+  data; deleting only an index `.verified` receipt triggers an index rebuild
+  while reusing the container's valid receipt.
+- **Stale release digests:** Because cache entries are named by SHA-256 digest,
+  upgrading Ferriki leaves superseded digests behind so older versions can share
+  one cache. Prune shared caches while idle and retain the digests required by
+  every Ferriki release still sharing that directory. To reclaim space when only
+  the current release is needed, remove files whose digest is not listed in the
+  active `release-manifest.json` (`assets[path].sha256` at the root and
+  `assets[path].decoded.sha256` under `decoded/`), or clear the cache directory
+  and re-warm it during a build step.
+
+### Multi-tenant and CI directory permissions
+
+`.verified` receipts store file size and modification time so warm restarts can
+skip repeating SHA-256 over unchanged decoded containers and reuse unchanged
+derived indexes (derived indexes are checked against their stat receipts and
+rebuilt on mismatch rather than SHA-256 hashed). They are a local change
+detector, **not** a cryptographic authentication boundary against a user who
+already has write access to `FERRIKI_CACHE_DIR`.
+
+- Isolate `FERRIKI_CACHE_DIR` per OS user, tenant, or CI trust boundary. Do not
+  point it at a shared world-writable directory (such as `/tmp` directly) or
+  share a writable cache across mutually untrusted tenants.
+- Restrict write access on single-user caches to the owning service account
+  (for example `0700`).
+- In shared containers or CI runners, pre-warm the cache during image build or a
+  trusted setup step and mount it read-only (`0555`/`0444`) at runtime. An
+  unwritable derived container, index, or `.verified` receipt is recoverable
+  (highlighting falls back to in-memory decoding or source compilation), whereas
+  a cache miss for a required grammar or theme payload still fails on a
+  read-only mount.
+
+## Environment variables
+
+All `FERRIKI_*` asset-loading and diagnostic environment variables recognized by
+`@ferriki/core` and the Rust `ferriki` crate (with the `remote` feature):
+
+| Variable                         | Scope / Default & Accepted values                                                                                | Effect                                                                                                                                                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FERRIKI_ASSETS_REMOTE`          | Runtime; enabled by default (`0` or `false`, trimmed & case-insensitive, disables downloads)                     | Enables or disables network fetches on cache misses. Overridden by `assets.remote` (Node) or `RemoteAssets::with_remote` (Rust).                                                                        |
+| `FERRIKI_ASSETS_BASE_URL`        | Runtime; `https://assets.ferriki.dev`                                                                            | Mirror base URL serving `<language-id>/<short-hash>` and `themes/<theme-id>/<short-hash>`. Overridden by `assets.baseUrl` / `with_base_url`.                                                            |
+| `FERRIKI_CACHE_DIR`              | Runtime; Node: `node_modules/.cache/ferriki` under nearest `package.json` dir if present, else platform cache; Rust: `<platform>/ferriki` | Digest-addressed cache directory. Overridden by `assets.cacheDir` (Node) or `RemoteAssets::with_cache_dir` (Rust).                                                                                      |
+| `FERRIKI_ASSETS_PROTECTED`       | Runtime; unset, empty/whitespace, `0`, or `false` disables; `1` or `true` enables (trimmed & case-insensitive)   | Selects the protected default CDN for cache misses (requires `FERRIKI_DOWNLOAD_TOKEN`, rejects custom mirrors). Invalid values fail when planning or attempting a download that consults this setting.  |
+| `FERRIKI_DOWNLOAD_TOKEN`         | Runtime; unset (required on cache misses when `FERRIKI_ASSETS_PROTECTED=1`)                                      | Bearer token sent to the protected download issuer. Never sent to custom mirrors or CDN object URLs; unused on cache hits or offline loads.                                                             |
+| `FERRIKI_RELEASE_COMMIT`         | Build-time only (`option_env!`); crates.io builds embed the 40-hex commit from `.cargo_vcs_info.json`            | Fallback commit SHA for legacy commit-routed manifests (`40` or `64` hex digits validated on URL build). Rust precedence: `RemoteAssets::commit` → manifest `commit` → compile-time `FERRIKI_RELEASE_COMMIT`; Node uses manifest `commit` → compile-time value. Not read from the running process; unused by current `language-hash-v2` catalogs. |
+| `FERRIKI_PROFILE_PREPARED_PAIRS` | Runtime (diagnostic builds only, requires `ferriki-textmate` feature `prepared-load-profile`)                    | When set to any value, emits JSON lines on `stderr` for indexed prepared-record reads and insertions. No effect in ordinary release builds.                                                             |
+
+For contributor build, cross-compilation, and test-harness variables, see
+[CONTRIBUTING.md](../CONTRIBUTING.md#build-and-development-environment-variables).
 
 ## Proxies and certificates
 

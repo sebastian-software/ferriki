@@ -5,6 +5,8 @@
 //! `#[non_exhaustive]`: read them through their public fields and create
 //! catalogs with [`generate_catalogs_from_upstream`].
 
+#![warn(missing_docs)]
+
 mod generate;
 mod import;
 mod pipeline;
