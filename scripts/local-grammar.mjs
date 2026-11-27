@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { digest } from "./grammar-repositories.mjs";
+import { digest } from "./asset-store.mjs";
 
 // Local grammars are reviewed source, not generated artifacts or repository pins.
 export function localGrammarPath(file) {

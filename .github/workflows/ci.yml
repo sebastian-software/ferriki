@@ -38,6 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Verify the pin check itself
         run: node scripts/test-check-workflow-pins.mjs
@@ -56,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Verify the decision record check itself
         run: node scripts/test-check-adrs.mjs
@@ -70,6 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -95,6 +101,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -128,6 +136,8 @@ jobs:
           - windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -146,6 +156,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       # `rust-version` in the root Cargo.toml is the single source of truth for
       # the MSRV; nothing here restates the number.
@@ -153,7 +165,10 @@ jobs:
         id: msrv
         run: |
           version=$(sed -n 's/^rust-version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
-          test -n "$version"
+          if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "rust-version in Cargo.toml must be a toolchain version (X.Y or X.Y.Z), found '$version'" >&2
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Declared MSRV is $version"
 
@@ -167,12 +182,16 @@ jobs:
       # `cargo +<toolchain>` beats rust-toolchain.toml, which would otherwise
       # pull this job back to stable and make it prove nothing.
       - name: Check against the MSRV
-        run: cargo +${{ steps.msrv.outputs.version }} check --workspace --all-targets --all-features --locked
+        env:
+          MSRV_VERSION: ${{ steps.msrv.outputs.version }}
+        run: cargo +"$MSRV_VERSION" check --workspace --all-targets --all-features --locked
 
   rust-docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -190,6 +209,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
@@ -199,6 +220,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -265,6 +288,8 @@ jobs:
         working-directory: node
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -276,17 +301,18 @@ jobs:
         with:
           node-version: 26
 
-      - name: Setup
-        run: npm i -g @antfu/ni
-
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Lint
-        run: nr lint
+        run: pnpm run lint
 
       - name: Verify the release workflow and checklist contract
         run: pnpm run check:release
+
+      - name: Verify the grammar update workflow contract
+        working-directory: ${{ github.workspace }}
+        run: node scripts/test-grammar-update-workflow.mjs
 
       # The npm package family block is generated from the registry in
       # sebastian-software/ferramenta; the root README has its own mdtheme check.
@@ -301,6 +327,8 @@ jobs:
         working-directory: node
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -312,9 +340,6 @@ jobs:
         with:
           node-version: 26
 
-      - name: Setup
-        run: npm i -g @antfu/ni
-
       - name: Install
         run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -322,13 +347,13 @@ jobs:
         run: pnpm run build:compat
 
       - name: Build
-        run: nr build
+        run: pnpm run build
 
       - name: Verify generated API is committed
-        run: nr check:api
+        run: pnpm run check:api
 
       - name: Typecheck
-        run: nr typecheck
+        run: pnpm run typecheck
 
   textmate-compat:
     runs-on: ubuntu-latest
@@ -337,6 +362,8 @@ jobs:
         working-directory: node
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -377,6 +404,8 @@ jobs:
         working-directory: node
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Set Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
@@ -413,21 +442,22 @@ jobs:
       - name: Verify inline macro hydration, navigation and HMR
         # Match the fixture's Playwright version; the image includes browsers and OS dependencies.
         run: |
-          docker run --rm --init --shm-size=1gb -e CI \
+          docker run --rm --init --shm-size=1gb -e CI -e npm_config_ignore_scripts=true \
             -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/node" \
-            mcr.microsoft.com/playwright:v1.63.0-noble bash -euc '
-              npm install --global pnpm@10.28.2
+            mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 bash -euc '
+              npm install --global --ignore-scripts pnpm@10.28.2
               node scripts/check-inline-macro-browser.mjs
             '
 
       - name: Verify code element SSR, hydration and browser lifecycle
         run: |
-          npm install --prefix "$RUNNER_TEMP/ferriki-shadow-deps" --no-save --package-lock=false \
+          npm install --prefix "$RUNNER_TEMP/ferriki-shadow-deps" --no-save --package-lock=false --ignore-scripts \
             react@19.3.0 react-dom@19.3.0 scheduler@0.28.0 playwright@1.63.0
           docker run --rm --init --shm-size=1gb -e CI \
             -e FERRIKI_SHADOW_BENCH_DEPS_ROOT="$RUNNER_TEMP/ferriki-shadow-deps" \
             -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -v "$RUNNER_TEMP:$RUNNER_TEMP" \
-            -w "$GITHUB_WORKSPACE/node" mcr.microsoft.com/playwright:v1.63.0-noble \
+            -w "$GITHUB_WORKSPACE/node" \
+            mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 \
             node scripts/check-shadow-dom-spike.mjs --browsers chromium,firefox,webkit
 
       - name: Verify TIOBE benchmark outputs and comparison contracts
@@ -442,6 +472,8 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
           package_json_file: node/package.json
@@ -466,6 +498,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -525,8 +559,9 @@ jobs:
         if: ${{ matrix.libc == 'musl' }}
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node \
-            -e FERRIKI_PLATFORM_ID="$FERRIKI_PLATFORM_ID" node:22-alpine sh -euc '
-              npm install --global pnpm@10.28.2
+            -e FERRIKI_PLATFORM_ID="$FERRIKI_PLATFORM_ID" \
+            node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a sh -euc '
+              npm install --global --ignore-scripts pnpm@10.28.2
               node -e "if (process.report.getReport().header.glibcVersionRuntime) throw new Error(\"not a musl host\")"
               node ./scripts/check-packed-consumer.mjs
               node ./scripts/check-packed-sidecar.mjs
@@ -538,7 +573,8 @@ jobs:
       - name: Measure native addon size and cold require on Alpine musl
         if: ${{ matrix.libc == 'musl' }}
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node node:22-alpine \
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w/node \
+            node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a \
             node ./scripts/measure-native-load.mjs --addon build=ferriki/ferriki.node \
             --published "$FERRIKI_PLATFORM_ID" >> "$GITHUB_STEP_SUMMARY"
         env:

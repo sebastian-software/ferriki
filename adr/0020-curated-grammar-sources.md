@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 ## Context
 
@@ -63,15 +63,24 @@ language coverage.
   and 64 nested variables. Imports have an 8 MiB limit and a 60-second request
   timeout. No Shiki build or package is needed for sync.
 - `--locked` reproduces accepted snapshots without resolving moving refs.
-  Native candidate validation precedes application. The weekly/manual Grammar
-  updates workflow runs the compatibility gate and creates or refreshes one
-  draft update PR on its dedicated `codex/grammar-updates` branch. A manual
-  commit on that branch stops automatic replacement; concurrent changes are
-  protected by a push lease. Merging and releasing remain maintainer actions.
-  Passing candidates publish source and compiled objects to Bunny Storage before
-  the metadata PR is opened. Normalized diffs remain workflow artifacts.
-  Commit and payload hashes are generated, never maintained by hand. Newly
-  discovered primary languages appear in the report instead of silently
+  Native candidate validation precedes application. While local preparation
+  resolves repository refs in `prepare-grammar-update.mjs`, the weekly/manual
+  Grammar updates workflow resolves all configured repository refs once in a
+  trusted read-only `resolve-base` job, passes immutable `repo_pins` to both
+  `prepare` (which runs the compatibility gate and corpus checks) and an
+  isolated read-only `verify` job (with `contents: read`, no Bunny storage
+  secret, and read-only `GITHUB_TOKEN` exported as `GH_TOKEN` for authenticated
+  GitHub API reads; it rebuilds the publish bundle from `BASE_SHA` and the
+  locked pins using only the locked Node grammar converters and
+  `ferriki-asset-gen`, compares every file byte-for-byte, and uploads the
+  verified review diffs), before a separate write-scoped `publish` job
+  verifies the bundle digest, uploads source and compiled objects to Bunny
+  Storage, and creates or refreshes one draft update PR on its dedicated
+  `codex/grammar-updates` branch. A manual commit on that branch stops automatic
+  replacement; concurrent changes are protected by a push lease. Merging and
+  releasing remain maintainer actions. Normalized diffs remain workflow
+  artifacts. Commit and payload hashes are generated, never maintained by hand.
+  Newly discovered primary languages appear in the report instead of silently
   becoming defaults.
 - Sublime's `.sublime-syntax` context-stack format and Tree-sitter descriptors
   are outside this TextMate converter. Supporting either needs a separate
@@ -192,3 +201,7 @@ package and crate version updates.
 - 2026-11-26: Updated Bunny Storage object paths from `<id>/<sha256>` to
   eight-character Base62 `<id>/<short-hash>` and `themes/<id>/<short-hash>`
   (`storageLayout: "language-hash-v2"`) (#391).
+- 2026-11-27: Split automated grammar updates into `resolve-base`, `prepare`,
+  isolated `verify`, and write-scoped `publish` jobs so repository pins are
+  resolved once up front and the compiled publish bundle is independently
+  rebuilt and digest-verified before Bunny Storage upload (#387).

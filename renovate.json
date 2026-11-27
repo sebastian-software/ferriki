@@ -3,7 +3,63 @@
   "extends": [
     "github>sebastian-software/renovate-config"
   ],
+  "customManagers": [
+    {
+      "description": "Track pinned Docker image digests invoked via docker run inside GitHub Actions workflows.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "(?<depName>(?:[a-z0-9.-]+(?:/[a-z0-9._-]+)+|node)):(?<currentValue>[a-zA-Z0-9._-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
+    {
+      "description": "Refresh digests only for the Node 22 Alpine container image so its tag stays aligned with the supported Node 22 musl test baseline.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Refresh digests only for the Playwright container image so its tag stays aligned with the pinned playwright@1.63.0 test dependency.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mcr.microsoft.com/playwright"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Allow Playwright container digest updates when MCR does not provide Docker Hub release timestamps.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mcr.microsoft.com/playwright"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
     {
       "description": "Keep the upstream Shiki and vscode-textmate compatibility mirrors immutable (AGENTS.md and ADR 0003).",
       "matchFileNames": [

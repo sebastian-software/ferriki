@@ -87,6 +87,7 @@ try {
     npm,
     [
       "install",
+      "--ignore-scripts",
       "--no-audit",
       "--no-fund",
       `vite@${viteVersion}`,
