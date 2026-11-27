@@ -22,20 +22,24 @@ export type FerrikiViteOptions = {
 };
 
 export type FerrikiViteApi = {
-  /** Snapshot of prepared React HTML, suitable for a saved server-side registry. */
-  codeElementBlocks(): Readonly<Record<string, string>>;
+  /** Snapshot of prepared React HTML, optionally scoped to one Vite environment. */
+  codeElementBlocks(environment?: string): Readonly<Record<string, string>>;
   /**
    * Fill manually authored empty `ferriki-code` hosts in complete SSR HTML with
    * Declarative Shadow DOM. React Code macros already emit their own templates.
    * Call after rendering; this does not process a stream.
    */
-  renderCodeElements(markup: string, options?: { stylesheetHref?: string }): string;
+  renderCodeElements(
+    markup: string,
+    options?: { stylesheetHref?: string; environment?: string },
+  ): string;
   /**
-   * Shared class-palette CSS for transformed React macros, or empty in inline mode.
+   * Shared class-palette CSS for transformed React macros, or empty in inline mode,
+   * optionally scoped to one Vite environment.
    * The plugin serves/emits it automatically; manual consumers can use this
    * snapshot for their own stylesheet endpoint or asset. Base rules stay local.
    */
-  codeElementCss(): string;
+  codeElementCss(environment?: string): string;
 };
 
 export type FerrikiVitePlugin = Plugin & { api: FerrikiViteApi };

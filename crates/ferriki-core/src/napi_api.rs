@@ -13,7 +13,7 @@ use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
 #[napi]
 pub struct FerrikiHighlighter {
     core: RefCell<HighlighterCore>,
-    assets: Option<Arc<NodeAssetHost>>,
+    assets: RefCell<Option<Arc<NodeAssetHost>>>,
 }
 
 /// Plans payloads on the libuv thread pool without doing network I/O.
@@ -198,7 +198,7 @@ impl FerrikiHighlighter {
         themes: Vec<String>,
     ) -> AsyncTask<PlanAssetsTask> {
         AsyncTask::new(PlanAssetsTask {
-            assets: self.assets.clone(),
+            assets: self.assets.borrow().clone(),
             languages,
             themes,
         })
@@ -207,6 +207,7 @@ impl FerrikiHighlighter {
     #[napi(js_name = "assetCacheDir")]
     pub fn asset_cache_dir(&self) -> Option<String> {
         self.assets
+            .borrow()
             .as_ref()
             .map(|assets| assets.cache_dir().to_string_lossy().into_owned())
     }
@@ -218,7 +219,7 @@ impl FerrikiHighlighter {
 
     #[napi(js_name = "evictVerifiedAssets")]
     pub fn evict_verified_assets(&self, languages: Vec<String>, themes: Vec<String>) {
-        if let Some(assets) = &self.assets {
+        if let Some(assets) = self.assets.borrow().as_ref() {
             for language in &languages {
                 assets.evict_verified_language(language);
             }
@@ -231,7 +232,7 @@ impl FerrikiHighlighter {
     #[napi]
     pub fn dispose(&self) {
         self.core.borrow_mut().dispose();
-        if let Some(assets) = &self.assets {
+        if let Some(assets) = self.assets.borrow_mut().take() {
             assets.close_verified_cache();
         }
     }
@@ -322,7 +323,7 @@ pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHi
     let Some(root) = options.standard_asset_root else {
         return Ok(FerrikiHighlighter {
             core: RefCell::new(native(HighlighterCore::new_with_regex_mode(regex_mode))?),
-            assets: None,
+            assets: RefCell::new(None),
         });
     };
     let options = options.assets.unwrap_or_default();
@@ -342,7 +343,7 @@ pub fn create_highlighter(options: NativeHighlighterOptions) -> Result<FerrikiHi
     ))?;
     Ok(FerrikiHighlighter {
         core: RefCell::new(core),
-        assets: Some(assets),
+        assets: RefCell::new(Some(assets)),
     })
 }
 
@@ -668,6 +669,10 @@ pub(crate) mod tests {
 
         highlighter.dispose();
         assert!(highlighter.get_loaded_languages().is_empty());
+        assert!(highlighter.asset_cache_dir().is_none());
+        // Calling dispose again is idempotent.
+        highlighter.dispose();
+        assert!(highlighter.asset_cache_dir().is_none());
         let bare = create_highlighter(NativeHighlighterOptions::default()).expect("bare");
         assert!(bare.asset_cache_dir().is_none());
     }
@@ -787,6 +792,7 @@ pub(crate) mod tests {
         // including `typescript.fkbc`.
         let planned = highlighter
             .assets
+            .borrow()
             .as_ref()
             .expect("node assets")
             .plan(&["vue".into(), "typescript".into()], &[])
@@ -821,5 +827,31 @@ pub(crate) mod tests {
 
         highlighter.evict_verified_assets(vec!["vue".into(), "typescript".into()], vec![]);
         let _ = std::fs::remove_dir_all(cache);
+    }
+
+    #[test]
+    fn dispose_releases_asset_host_immediately() {
+        let highlighter = standard_highlighter();
+        assert!(highlighter.asset_cache_dir().is_some());
+        let weak = Arc::downgrade(
+            highlighter
+                .assets
+                .borrow()
+                .as_ref()
+                .expect("asset host should be present before dispose"),
+        );
+        assert!(weak.upgrade().is_some());
+
+        highlighter.dispose();
+
+        assert!(highlighter.assets.borrow().is_none());
+        assert!(highlighter.asset_cache_dir().is_none());
+        assert!(
+            weak.upgrade().is_none(),
+            "NodeAssetHost should be dropped immediately on dispose()"
+        );
+        // Second dispose remains idempotent.
+        highlighter.dispose();
+        assert!(highlighter.assets.borrow().is_none());
     }
 }

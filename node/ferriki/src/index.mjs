@@ -75,7 +75,7 @@ export const createShikiPrimitiveAsync = createHighlighter;
 
 export function createHighlighterCoreSync(options = {}) {
   options = validateHighlighterOptions(options);
-  const defaultTransformers = sortTransformers(options.transformers);
+  let defaultTransformers = sortTransformers(options.transformers);
   const assets = resolveAssetOptions(options.assets);
   let native;
   try {
@@ -102,7 +102,7 @@ export function createHighlighterCoreSync(options = {}) {
   const missingSidecarLanguages = new Set();
   const loadedThemes = new Set();
   const loadedStandardThemes = new Set();
-  const downloadStandardAssets = createAssetDownloader(native);
+  let downloadStandardAssets = createAssetDownloader(native, assertActive);
   const languageAliases = { ...(options.langAlias || {}) };
   const pendingPrefetchLangCounts = new Map();
   const pendingPrefetchThemeCounts = new Map();
@@ -113,6 +113,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function resolveAlias(language) {
+    assertActive();
     const visited = new Set();
     while (languageAliases[language]) {
       if (visited.has(language))
@@ -134,14 +135,17 @@ export function createHighlighterCoreSync(options = {}) {
       if (!name) continue;
       const resolved = resolveAlias(name);
       const custom = isCustomLanguageRegistration(registration);
-      const scope = custom
-        ? callCustomRegistration(
-            () => native.loadCustomGrammar(JSON.stringify(registration)),
-            "language",
-          )
-        : callNativeOperation(`Ferriki could not load language \`${resolved}\``, () =>
-            native.loadStandardGrammar(resolved),
-          );
+      let scope;
+      if (custom) {
+        const serialized = callCustomRegistration(() => JSON.stringify(registration), "language");
+        assertActive();
+        scope = callCustomRegistration(() => native.loadCustomGrammar(serialized), "language");
+      } else {
+        assertActive();
+        scope = callNativeOperation(`Ferriki could not load language \`${resolved}\``, () =>
+          native.loadStandardGrammar(resolved),
+        );
+      }
       if (!scope)
         throw new ShikiError(
           `Language \`${resolved}\` not found, you may need to load it first`,
@@ -287,7 +291,9 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   async function loadLanguage(...inputs) {
+    assertActive();
     const registrations = await resolveRegistrations(inputs);
+    assertActive();
     await withPrefetchedAssets(languagePrefetchNames(registrations), [], () =>
       loadLanguageSync(...registrations),
     );
@@ -357,14 +363,17 @@ export function createHighlighterCoreSync(options = {}) {
       if (!name) continue;
       if (name !== "none") {
         const custom = isCustomThemeRegistration(registration);
-        const loaded = custom
-          ? callCustomRegistration(
-              () => native.loadCustomTheme(JSON.stringify(registration)),
-              "theme",
-            )
-          : callNativeOperation(`Ferriki could not load theme \`${name}\``, () =>
-              native.loadStandardTheme(name),
-            );
+        let loaded;
+        if (custom) {
+          const serialized = callCustomRegistration(() => JSON.stringify(registration), "theme");
+          assertActive();
+          loaded = callCustomRegistration(() => native.loadCustomTheme(serialized), "theme");
+        } else {
+          assertActive();
+          loaded = callNativeOperation(`Ferriki could not load theme \`${name}\``, () =>
+            native.loadStandardTheme(name),
+          );
+        }
         if (!loaded)
           throw new ShikiError(
             `Theme \`${name}\` not found, you may need to load it first`,
@@ -377,6 +386,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   async function loadTheme(...inputs) {
+    assertActive();
     const registrations = await resolveRegistrations(inputs);
     await withPrefetchedAssets([], themePrefetchNames(registrations), () =>
       loadThemesAfterPrefetch(registrations),
@@ -397,6 +407,7 @@ export function createHighlighterCoreSync(options = {}) {
         "Invalid options, either `theme` or `themes` must be provided",
         "ERR_USAGE",
       );
+    assertActive();
     if (
       !isSpecialLanguage(language) &&
       !callNativeOperation(`Ferriki could not load language \`${language}\``, () =>
@@ -451,17 +462,22 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function getHtmlRenderData(code, options = {}) {
+    assertActive();
     assertAnsiInput(code, options);
-    const result = callNativeOperation("Ferriki tokenization failed", () =>
-      native.getHtmlRenderData(code, prepareOptions(options)),
-    );
+    const result = callNativeOperation("Ferriki tokenization failed", () => {
+      const prepared = prepareOptions(options);
+      assertActive();
+      return native.getHtmlRenderData(code, prepared);
+    });
     if (registrationName(options.theme) === "none") return normalizeNoneThemeResult(result);
     return result;
   }
 
   function getHtmlRenderDataWithThemes(code, options, themes = resolveThemeEntries(options)) {
+    assertActive();
     assertAnsiInput(code, options);
     loadThemeSync(...themes.map((theme) => theme.input));
+    assertActive();
     if (
       typeof native.getHtmlRenderDataWithThemes === "function" &&
       !themes.some((theme) => theme.name === "none") &&
@@ -469,12 +485,13 @@ export function createHighlighterCoreSync(options = {}) {
       options?.[GRAMMAR_STATE_CONTINUATION] === undefined &&
       !options?.[GRAMMAR_STATE_CAPTURE]
     ) {
-      const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
-      prepared.themeEntries = themes;
       return combineNativeThemeResult(
-        callNativeOperation("Ferriki multi-theme tokenization failed", () =>
-          native.getHtmlRenderDataWithThemes(code, prepared),
-        ),
+        callNativeOperation("Ferriki multi-theme tokenization failed", () => {
+          const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
+          prepared.themeEntries = themes;
+          assertActive();
+          return native.getHtmlRenderDataWithThemes(code, prepared);
+        }),
         options,
       );
     }
@@ -489,20 +506,24 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function getHtmlRenderDataForTheme(code, options, theme) {
+    assertActive();
     assertAnsiInput(code, options);
-    const prepared = prepareOptions({ ...options, theme, themes: undefined });
-    return callNativeOperation("Ferriki tokenization failed", () =>
-      native.getHtmlRenderData(code, prepared),
-    );
+    return callNativeOperation("Ferriki tokenization failed", () => {
+      const prepared = prepareOptions({ ...options, theme, themes: undefined });
+      assertActive();
+      return native.getHtmlRenderData(code, prepared);
+    });
   }
 
   function renderHtmlDataRaw(code, options) {
+    assertActive();
     if (hasThemes(options)) return getHtmlRenderDataWithThemes(code, options);
-    return registrationName(options?.theme) === "none"
-      ? getHtmlRenderData(code, options)
-      : callNativeOperation("Ferriki tokenization failed", () =>
-          native.getHtmlRenderData(code, prepareOptions(options)),
-        );
+    if (registrationName(options?.theme) === "none") return getHtmlRenderData(code, options);
+    return callNativeOperation("Ferriki tokenization failed", () => {
+      const prepared = prepareOptions(options);
+      assertActive();
+      return native.getHtmlRenderData(code, prepared);
+    });
   }
 
   function grammarLanguage(options) {
@@ -658,6 +679,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function getGrammarState(code, options) {
+    assertActive();
     if (typeof code !== "string")
       throw new ShikiError("Grammar state source must be a string", "ERR_USAGE");
     const validated = validateHighlightOptions(options);
@@ -692,6 +714,7 @@ export function createHighlighterCoreSync(options = {}) {
     let source = code;
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
+    assertActive();
     context.source = source;
     const result = renderHtmlDataRaw(source, validated);
     result.tokens = applyTokenTransformers(result.tokens, transformers, context);
@@ -707,6 +730,7 @@ export function createHighlighterCoreSync(options = {}) {
     let source = code;
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
+    assertActive();
     context.source = source;
     assertAnsiInput(source, validated);
     const input = prepareGrammarInput(source, validated);
@@ -738,20 +762,23 @@ export function createHighlighterCoreSync(options = {}) {
   function renderHtmlWithThemes(code, options) {
     const themes = resolveThemeEntries(options);
     const strings = [options.rootStyle, options.tabindex, options.cssVariablePrefix];
+    assertActive();
     if (
       typeof native.codeToHtmlWithThemes === "function" &&
       !themes.some((theme) => theme.name === "none") &&
       strings.every((value) => typeof value !== "string" || value.isWellFormed())
     ) {
       loadThemeSync(...themes.map((theme) => theme.input));
-      const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
-      prepared.themeEntries = themes;
-      return callNativeOperation("Ferriki multi-theme HTML rendering failed", () =>
-        native.codeToHtmlWithThemes(code, prepared, {
+      return callNativeOperation("Ferriki multi-theme HTML rendering failed", () => {
+        const prepared = prepareOptions({ ...options, theme: themes[0].name, themes: undefined });
+        prepared.themeEntries = themes;
+        const themeOptions = {
           defaultColor: options.defaultColor,
           cssVariablePrefix: options.cssVariablePrefix,
-        }),
-      );
+        };
+        assertActive();
+        return native.codeToHtmlWithThemes(code, prepared, themeOptions);
+      });
     }
     return hastToHtml(
       renderTokenResultHast(getHtmlRenderDataWithThemes(code, options, themes), options),
@@ -760,6 +787,7 @@ export function createHighlighterCoreSync(options = {}) {
 
   const highlighter = {
     codeToHtmlWithCss(code, options) {
+      assertActive();
       options = withTransformerDefaults(options);
       const validated = validateHighlightOptions(options);
       const classOptions = { ...validated, styleMode: "classes" };
@@ -770,6 +798,7 @@ export function createHighlighterCoreSync(options = {}) {
       };
     },
     codeToHtml(code, options) {
+      assertActive();
       options = withTransformerDefaults(options);
       assertAnsiInput(code, options);
       if (options?.styleMode === "classes")
@@ -779,9 +808,11 @@ export function createHighlighterCoreSync(options = {}) {
       const decorations = nativeDecorationInputs(code, options);
       if (decorations) {
         const html = callNativeOperation("Ferriki HTML rendering failed", () =>
-          decorationNative(() =>
-            native.codeToHtmlWithDecorations(code, prepareOptions(options), decorations),
-          ),
+          decorationNative(() => {
+            const prepared = prepareOptions(options);
+            assertActive();
+            return native.codeToHtmlWithDecorations(code, prepared, decorations);
+          }),
         );
         if (html !== null && html !== undefined) return html;
       }
@@ -793,11 +824,14 @@ export function createHighlighterCoreSync(options = {}) {
       if (hasThemes(options)) return renderHtmlWithThemes(code, options);
       if (registrationName(options?.theme) === "none")
         return hastToHtml(renderTokenResultHast(getHtmlRenderData(code, options), options));
-      return callNativeOperation("Ferriki HTML rendering failed", () =>
-        native.codeToHtml(code, prepareOptions(options)),
-      );
+      return callNativeOperation("Ferriki HTML rendering failed", () => {
+        const prepared = prepareOptions(options);
+        assertActive();
+        return native.codeToHtml(code, prepared);
+      });
     },
     getLoadedLanguages() {
+      assertActive();
       const nativeLanguages = native.getLoadedLanguages();
       const configuredAliases = Object.entries(languageAliases)
         .filter(([, target]) => nativeLanguages.includes(resolveAlias(target)))
@@ -805,9 +839,11 @@ export function createHighlighterCoreSync(options = {}) {
       return [...new Set([...nativeLanguages, ...configuredAliases])];
     },
     getRegexDiagnostics() {
+      assertActive();
       return JSON.parse(native.getRegexDiagnosticsJson());
     },
     getLoadedThemes() {
+      assertActive();
       return [...loadedThemes];
     },
     loadLanguage,
@@ -821,7 +857,19 @@ export function createHighlighterCoreSync(options = {}) {
       if (!disposed) {
         disposed = true;
         disposedHighlighters.add(highlighter);
-        native.dispose();
+        loadedLanguages.clear();
+        loadedStandardLanguages.clear();
+        missingSidecarLanguages.clear();
+        loadedThemes.clear();
+        loadedStandardThemes.clear();
+        pendingPrefetchLangCounts.clear();
+        pendingPrefetchThemeCounts.clear();
+        for (const key of Object.keys(languageAliases)) delete languageAliases[key];
+        defaultTransformers = [];
+        const handle = native;
+        native = undefined;
+        downloadStandardAssets = undefined;
+        handle?.dispose();
       }
     },
     [Symbol.dispose]() {
@@ -829,9 +877,14 @@ export function createHighlighterCoreSync(options = {}) {
     },
   };
 
-  loadLanguageSync(...(options.langs || []));
-  loadThemeSync(...(options.themes || []));
-  return highlighter;
+  try {
+    loadLanguageSync(...(options.langs || []));
+    loadThemeSync(...(options.themes || []));
+    return highlighter;
+  } catch (error) {
+    highlighter.dispose();
+    throw error;
+  }
 }
 
 export function createShikiPrimitive(options = {}) {

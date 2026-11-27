@@ -162,9 +162,8 @@ export function defineCodeElement(options = {}) {
     assertProfile(nextAliases);
     assertBlocksCompatible(blockRegistry, nextBlocks);
     if (nextCss) cssChunks.add(nextCss);
-    const previousStylesheetHref = configuredStylesheetHref;
     if (nextStylesheetHref !== undefined) configuredStylesheetHref = nextStylesheetHref;
-    for (const element of connectedElements) element[STYLES_CHANGED](previousStylesheetHref);
+    for (const element of connectedElements) element[STYLES_CHANGED]();
     const changedBlockIds = mergeBlocks(blockRegistry, nextBlocks);
     if (changedBlockIds.size > 0) {
       for (const element of connectedElements) element[BLOCKS_CHANGED](changedBlockIds);
@@ -191,6 +190,7 @@ export function defineCodeElement(options = {}) {
     #reflectingMaxLines = false;
     #pendingMaxLinesReflection = false;
     #managedTabIndexTarget;
+    #managedStylesheetHref;
 
     static get observedAttributes() {
       return ["highlightedcode", "highlighted-code", "code-ref", "max-lines", "maxlines"];
@@ -469,6 +469,27 @@ export function defineCodeElement(options = {}) {
         link.setAttribute("rel", "stylesheet");
         link.setAttribute("href", configuredStylesheetHref);
         link.setAttribute(CSS_LINK_ATTRIBUTE, "");
+        this.#managedStylesheetHref = configuredStylesheetHref;
+      } else if (link) {
+        const currentHref = link.getAttribute("href");
+        if (configuredStylesheetHref === undefined) {
+          if (
+            this.#managedStylesheetHref !== undefined &&
+            currentHref === this.#managedStylesheetHref
+          ) {
+            link.remove();
+            link = undefined;
+            this.#managedStylesheetHref = undefined;
+          }
+        } else if (currentHref === configuredStylesheetHref) {
+          this.#managedStylesheetHref = configuredStylesheetHref;
+        } else if (
+          this.#managedStylesheetHref !== undefined &&
+          currentHref === this.#managedStylesheetHref
+        ) {
+          link.setAttribute("href", configuredStylesheetHref);
+          this.#managedStylesheetHref = configuredStylesheetHref;
+        }
       }
       if (link) moveNodeBefore(root, link, style.nextSibling);
       this.#installedDocument = this.ownerDocument;
@@ -531,12 +552,11 @@ export function defineCodeElement(options = {}) {
       const root = this.shadowRoot;
       const infrastructure = Array.from(root.childNodes).filter(isInfrastructureNode);
       const stylesheetLink = root.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
-      if (
-        stylesheetLink &&
-        configuredStylesheetHref !== undefined &&
-        stylesheetLink.getAttribute("href") !== configuredStylesheetHref
-      )
-        stylesheetLink.setAttribute("href", configuredStylesheetHref);
+      if (stylesheetLink && configuredStylesheetHref !== undefined) {
+        if (stylesheetLink.getAttribute("href") !== configuredStylesheetHref)
+          stylesheetLink.setAttribute("href", configuredStylesheetHref);
+        this.#managedStylesheetHref = configuredStylesheetHref;
+      }
       for (const node of Array.from(root.childNodes))
         if (!infrastructure.includes(node)) root.removeChild(node);
       if (content === undefined) {
@@ -547,16 +567,8 @@ export function defineCodeElement(options = {}) {
       }
     }
 
-    [STYLES_CHANGED](previousStylesheetHref) {
+    [STYLES_CHANGED]() {
       if (!this.#connected) return;
-      if (
-        previousStylesheetHref !== undefined &&
-        configuredStylesheetHref !== previousStylesheetHref
-      ) {
-        const link = this.shadowRoot?.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
-        if (link?.getAttribute("href") === previousStylesheetHref)
-          link.setAttribute("href", configuredStylesheetHref);
-      }
       this.#installStyles();
     }
 

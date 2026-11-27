@@ -33,34 +33,47 @@ const IPV4_LOOPBACK =
 const inFlight = new Map();
 
 /** Plans native manifest assets, then downloads cache misses with Node fetch. */
-export function createAssetDownloader(native) {
+export function createAssetDownloader(native, assertActive) {
   return async (languages, themes, options = {}) => {
+    assertActive?.();
     let plan;
     try {
       plan = await native.planAssets(languages, themes);
     } catch (planError) {
+      assertActive?.();
       if (languages.length > 0 && themes.length > 0) {
         // Combined planning can fail on a theme cache error before required
         // languages are planned or downloaded. Run the language-only path so
         // any language planning/download error takes precedence.
         const langPlan = await native.planAssets(languages, []);
+        assertActive?.();
         if (Array.isArray(langPlan) && langPlan.length > 0) {
           const cacheDir = native.assetCacheDir();
           if (typeof cacheDir !== "string" || !cacheDir)
             throw new Error("Native asset planner did not provide a cache directory.");
           await downloadAssets(langPlan, cacheDir);
+          assertActive?.();
         }
         if (options.onLanguagesReady) options.onLanguagesReady();
       }
       throw planError;
     }
+    assertActive?.();
     if (!Array.isArray(plan)) throw new Error("Native asset planner returned an invalid plan.");
     if (plan.length === 0) return { failedSidecars: new Set() };
 
     const cacheDir = native.assetCacheDir();
     if (typeof cacheDir !== "string" || !cacheDir)
       throw new Error("Native asset planner did not provide a cache directory.");
-    return downloadAssets(plan, cacheDir, options);
+    let result;
+    try {
+      result = await downloadAssets(plan, cacheDir, options);
+    } catch (error) {
+      assertActive?.();
+      throw error;
+    }
+    assertActive?.();
+    return result;
   };
 }
 

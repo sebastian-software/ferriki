@@ -166,6 +166,20 @@ const errorCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-errors.
 });
 if (errorCheck.status !== 0) process.exit(errorCheck.status || 1);
 
+const lifecycleCleanupTest = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-lifecycle-cleanup.mjs"],
+  {
+    cwd: nodeRoot,
+    env: {
+      ...process.env,
+      FERRIKI_HONEST_ALIAS: "1",
+    },
+    stdio: "inherit",
+  },
+);
+if (lifecycleCleanupTest.status !== 0) process.exit(lifecycleCleanupTest.status || 1);
+
 const remoteAssetsCheck = spawnSync(
   process.execPath,
   ["./scripts/check-ferriki-remote-assets.mjs"],

@@ -11,8 +11,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { code } from "../../ferriki/macro.mjs";
 import * as codeElementRuntime from "../../ferriki/web-component.mjs";
+import { TEST_ASSET_CACHE_DIR } from "../../scripts/test-asset-env.mjs";
 import { ferriki } from "../index.mjs";
-import "../../scripts/test-asset-env.mjs";
 
 // Count the adapter's parses: it imports `parseAst` from Vite, and this
 // pass-through wrapper records the module ID of every call.
@@ -2375,5 +2375,368 @@ const outer = <Code source="outer" language="ts" render={(text) => <Code source=
         "/src/react-types.tsx",
       ),
     ).resolves.toBeNull();
+  });
+});
+
+describe("@ferriki/vite lifecycle, HMR, and multi-environment isolation", () => {
+  it("recovers after a transient highlighter initialization failure", async () => {
+    const cacheRoot = await mkdtemp(join(tmpdir(), "ferriki-vite-transient-"));
+    tempRoots.push(cacheRoot);
+    const cachePath = join(cacheRoot, "cache");
+    await mkdir(cachePath);
+    const vitePlugin = ferriki({
+      theme: "github-dark-default",
+      assets: { remote: false, cacheDir: cachePath },
+    });
+    const source = `import { code } from "@ferriki/core/macro"; export const block = code("const x = 1;", { language: "ts" });`;
+
+    await expect(transformModule(vitePlugin, source, "/src/transient.ts")).rejects.toThrow();
+
+    await rm(cachePath, { recursive: true, force: true });
+    await symlink(TEST_ASSET_CACHE_DIR, cachePath, "dir");
+    const recovered = await transformModule(vitePlugin, source, "/src/transient.ts");
+    expect(recovered.code).toContain("const x = 1;");
+    await vitePlugin.closeBundle();
+  });
+
+  it("clears prior buildStylesheets references on buildStart when the last React macro is removed", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    vitePlugin.configResolved({ command: "build", base: "/" });
+    const ssrEnv = { name: "ssr", config: { consumer: "server" } };
+    const envContext = () => ({ ...context(), environment: ssrEnv });
+
+    // First build emits a stylesheet asset.
+    vitePlugin.buildStart.call({ environment: ssrEnv });
+    await vitePlugin.transform.handler.call(
+      envContext(),
+      'import { Code } from "@ferriki/core/react/macro"; export const block = <Code source="const x = 1;" language="js" />;',
+      "/src/watch-ssr.tsx",
+    );
+    const knownRefs = new Map();
+    vitePlugin.buildEnd.call({
+      environment: ssrEnv,
+      emitFile(file) {
+        knownRefs.set("ref-1", `assets/${file.name}`);
+        return "ref-1";
+      },
+    });
+    const emittedInGenerate = [];
+    vitePlugin.generateBundle.handler.call(
+      {
+        environment: ssrEnv,
+        getFileName(ref) {
+          if (!knownRefs.has(ref))
+            throw new Error(`Unable to get file name for unknown file ${ref}`);
+          return knownRefs.get(ref);
+        },
+        emitFile(file) {
+          emittedInGenerate.push(file);
+        },
+      },
+      {},
+      {},
+    );
+    expect(emittedInGenerate).toHaveLength(1);
+
+    // Second watch build removes the last React macro; old asset refs are no longer valid.
+    knownRefs.clear();
+    vitePlugin.buildStart.call({ environment: ssrEnv });
+    expect(
+      await vitePlugin.transform.handler.call(
+        envContext(),
+        "export const block = <p>plain</p>;",
+        "/src/watch-ssr.tsx",
+      ),
+    ).toBeNull();
+    const emitInSecondBuildEnd = vi.fn();
+    vitePlugin.buildEnd.call({ environment: ssrEnv, emitFile: emitInSecondBuildEnd });
+    expect(emitInSecondBuildEnd).not.toHaveBeenCalled();
+
+    const getFileNameInSecondBuild = vi.fn((ref) => {
+      throw new Error(`Unable to get file name for unknown file ${ref}`);
+    });
+    expect(() =>
+      vitePlugin.generateBundle.handler.call(
+        {
+          environment: ssrEnv,
+          getFileName: getFileNameInSecondBuild,
+          emitFile: vi.fn(),
+        },
+        {},
+        {},
+      ),
+    ).not.toThrow();
+    expect(getFileNameInSecondBuild).not.toHaveBeenCalled();
+    await vitePlugin.closeBundle();
+  });
+
+  it("keeps recently superseded virtualCss resolvable and stops tracking files once macro imports are removed", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    const sourceA = `import { code } from "@ferriki/core/macro"; export const a = code("const shared = 1;", { language: "ts" });`;
+    const sourceAUpdated = `import { code } from "@ferriki/core/macro"; export const a = code("const updated = 'hello';", { language: "ts" });`;
+
+    const firstA = await transformModule(vitePlugin, sourceA, "/src/a.ts");
+    const firstB = await transformModule(vitePlugin, sourceA, "/src/b.ts");
+    const sharedCssId = cssImportId(firstA.code);
+    expect(sharedCssId).toBe(cssImportId(firstB.code));
+    expect(vitePlugin.resolveId(sharedCssId)).toBe(`\0${sharedCssId}`);
+    expect(vitePlugin.load(`\0${sharedCssId}`)).toContain(".ferriki-style-");
+
+    // Updating /src/a.ts keeps sharedCssId alive because /src/b.ts still owns it.
+    const nextA = await transformModule(vitePlugin, sourceAUpdated, "/src/a.ts");
+    const updatedCssId = cssImportId(nextA.code);
+    expect(updatedCssId).not.toBe(sharedCssId);
+    expect(vitePlugin.resolveId(sharedCssId)).toBe(`\0${sharedCssId}`);
+    expect(vitePlugin.load(`\0${sharedCssId}`)).toContain(".ferriki-style-");
+    expect(vitePlugin.resolveId(updatedCssId)).toBe(`\0${updatedCssId}`);
+
+    // Removing the macro import from /src/b.ts via hotUpdate keeps sharedCssId
+    // resolvable in the bounded superseded cache for in-flight module loads,
+    // while removing tracking so subsequent ordinary edits skip `read()`.
+    await vitePlugin.hotUpdate({
+      type: "update",
+      file: "/src/b.ts",
+      read: () => "export const b = 2;",
+    });
+    expect(vitePlugin.resolveId(sharedCssId)).toBe(`\0${sharedCssId}`);
+    const subsequentRead = vi.fn(() => "export const b = 3;");
+    await vitePlugin.hotUpdate({
+      type: "update",
+      file: "/src/b.ts",
+      read: subsequentRead,
+    });
+    expect(subsequentRead).not.toHaveBeenCalled();
+
+    vitePlugin.watchChange("/src/a.ts", { event: "delete" });
+    await vitePlugin.closeBundle();
+  });
+
+  it("deduplicates unknown-language warnings across unchanged transforms and resets them on edits", async () => {
+    const vitePlugin = plugin();
+    const source = `import { code } from "@ferriki/core/macro";
+export const first = code("a", { language: "unknown-lang-1" });
+export const second = code("b", { language: "unknown-lang-2" });`;
+
+    const firstWarnings = [];
+    await vitePlugin.transform.handler.call(
+      { ...context(firstWarnings), environment: { name: "client" } },
+      source,
+      "/src/warn-hmr.ts",
+    );
+    expect(firstWarnings).toHaveLength(1);
+
+    // Transforming the same unchanged file in another environment, query ID, or no-op `?raw`
+    // query must neither duplicate nor reset the warning.
+    const unchangedWarnings = [];
+    await vitePlugin.transform.handler.call(
+      { ...context(unchangedWarnings), environment: { name: "ssr" } },
+      source,
+      "/src/warn-hmr.ts",
+    );
+    await transformModule(
+      vitePlugin,
+      `export default ${JSON.stringify(source)};`,
+      "/src/warn-hmr.ts?raw",
+      unchangedWarnings,
+    );
+    await transformModule(vitePlugin, source, "/src/warn-hmr.ts?import", unchangedWarnings);
+    expect(unchangedWarnings).toHaveLength(0);
+
+    // Editing the file via hotUpdate permits a fresh warning on the next transform.
+    await vitePlugin.hotUpdate({
+      type: "update",
+      file: "/src/warn-hmr.ts",
+      read: () => source,
+    });
+
+    const editedWarnings = [];
+    await transformModule(vitePlugin, source, "/src/warn-hmr.ts", editedWarnings);
+    expect(editedWarnings).toHaveLength(1);
+
+    // Deleting the file via watchChange also clears its warned state.
+    vitePlugin.watchChange("/src/warn-hmr.ts", { event: "delete" });
+    const afterDeleteWarnings = [];
+    await transformModule(vitePlugin, source, "/src/warn-hmr.ts", afterDeleteWarnings);
+    expect(afterDeleteWarnings).toHaveLength(1);
+    await vitePlugin.closeBundle();
+  });
+
+  it("extracts pathname from absolute server.config.base URLs for dev stylesheet middleware", async () => {
+    for (const [base, expectedPathname, expectedHrefPrefix] of [
+      [
+        "http://localhost:5173/app/",
+        "/app/@ferriki/code-elements.css",
+        "http://localhost:5173/app/@ferriki/code-elements.css",
+      ],
+      [
+        "http://localhost:5173/app",
+        "/app/@ferriki/code-elements.css",
+        "http://localhost:5173/app/@ferriki/code-elements.css",
+      ],
+      [
+        "https://cdn.example.test/",
+        "/@ferriki/code-elements.css",
+        "https://cdn.example.test/@ferriki/code-elements.css",
+      ],
+    ]) {
+      const vitePlugin = plugin({ styleMode: "classes" });
+      let middleware;
+      const send = vi.fn();
+      vitePlugin.configResolved({ command: "serve", base });
+      vitePlugin.configureServer({
+        config: { base },
+        middlewares: {
+          use(handler) {
+            middleware = handler;
+          },
+        },
+        ws: { send },
+      });
+
+      await transformModule(
+        vitePlugin,
+        'import { Code } from "@ferriki/core/react/macro"; export const block = <Code source="const x = 1;" language="js" />;',
+        "/src/abs-base.tsx",
+      );
+
+      expect(send).toHaveBeenCalledOnce();
+      expect(send.mock.calls[0][0].data.href.startsWith(`${expectedHrefPrefix}?v=`)).toBe(true);
+
+      const headers = new Map();
+      let body;
+      const next = vi.fn();
+      middleware(
+        { url: `${expectedPathname}?v=abc` },
+        {
+          setHeader(name, value) {
+            headers.set(name, value);
+          },
+          end(payload) {
+            body = payload;
+          },
+        },
+        next,
+      );
+      expect(next).not.toHaveBeenCalled();
+      expect(headers.get("Content-Type")).toBe("text/css; charset=utf-8");
+      expect(body).toContain(".ferriki-style-");
+
+      const otherNext = vi.fn();
+      middleware({ url: "/unrelated/@ferriki/code-elements.css" }, {}, otherNext);
+      expect(otherNext).toHaveBeenCalledOnce();
+      await vitePlugin.closeBundle();
+    }
+  });
+
+  it("isolates React macro blocks and emitted CSS per Vite 8 environment", async () => {
+    const vitePlugin = plugin({ styleMode: "classes" });
+    vitePlugin.configResolved({ command: "build", base: "/" });
+
+    const clientEnv = { name: "client", config: { consumer: "client" } };
+    const ssrEnv = { name: "ssr", config: { consumer: "server" } };
+    const envContext = (environment) => ({ ...context(), environment });
+
+    await vitePlugin.transform.handler.call(
+      envContext(clientEnv),
+      'import { Code } from "@ferriki/core/react/macro"; export const block = <Code source="const clientCount = 42;" language="js" />;',
+      "/src/client-only.tsx",
+    );
+    await vitePlugin.transform.handler.call(
+      envContext(ssrEnv),
+      'import { Code } from "@ferriki/core/react/macro"; export const block = <Code source="const ssrLabel = \'server\';" language="js" />;',
+      "/src/ssr-only.tsx",
+    );
+
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("client"))).toHaveLength(1);
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("ssr"))).toHaveLength(1);
+    expect(Object.values(vitePlugin.api.codeElementBlocks("client"))[0]).toContain("clientCount");
+    expect(Object.values(vitePlugin.api.codeElementBlocks("client"))[0]).not.toContain("ssrLabel");
+    expect(Object.values(vitePlugin.api.codeElementBlocks("ssr"))[0]).toContain("ssrLabel");
+    expect(Object.values(vitePlugin.api.codeElementBlocks("ssr"))[0]).not.toContain("clientCount");
+
+    expect(vitePlugin.api.codeElementCss("client")).toContain("--ferriki-number-color");
+    expect(vitePlugin.api.codeElementCss("client")).not.toContain("--ferriki-string-color");
+    expect(vitePlugin.api.codeElementCss("ssr")).toContain("--ferriki-string-color");
+    expect(vitePlugin.api.codeElementCss("ssr")).not.toContain("--ferriki-number-color");
+
+    const [ssrRef] = Object.keys(vitePlugin.api.codeElementBlocks("ssr"));
+    const ssrMarkup = `<ferriki-code code-ref="${ssrRef}"></ferriki-code>`;
+    expect(vitePlugin.api.renderCodeElements(ssrMarkup, { environment: "ssr" })).toContain(
+      "ssrLabel",
+    );
+    expect(() => vitePlugin.api.renderCodeElements(ssrMarkup, { environment: "client" })).toThrow(
+      /No trusted HTML block/,
+    );
+
+    const emittedByEnv = new Map();
+    for (const environment of [clientEnv, ssrEnv]) {
+      vitePlugin.buildEnd.call({
+        environment,
+        emitFile(file) {
+          emittedByEnv.set(environment.name, file);
+          return `${environment.name}-ref`;
+        },
+      });
+    }
+    expect(emittedByEnv.get("client").source).toContain("--ferriki-number-color");
+    expect(emittedByEnv.get("client").source).not.toContain("--ferriki-string-color");
+    expect(emittedByEnv.get("ssr").source).toContain("--ferriki-string-color");
+    expect(emittedByEnv.get("ssr").source).not.toContain("--ferriki-number-color");
+
+    // Environment-scoped hotUpdate removes only the target environment's entry.
+    await vitePlugin.hotUpdate.call(
+      { environment: clientEnv },
+      { type: "delete", file: "/src/client-only.tsx", read: () => "" },
+    );
+    expect(vitePlugin.api.codeElementBlocks("client")).toEqual({});
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("ssr"))).toHaveLength(1);
+
+    // A physical file delete reported by watchChange on client (e.g. with server.hmr: false)
+    // evicts the deleted file across every environment, including SSR blocks and virtual CSS.
+    const sharedSsrCss = await vitePlugin.transform.handler.call(
+      envContext(ssrEnv),
+      'import { code } from "@ferriki/core/macro"; export const snippet = code("const onlySsr = 1;", { language: "ts" });',
+      "/src/ssr-only.tsx",
+    );
+    const ssrCssId = cssImportId(sharedSsrCss.code);
+    expect(ssrCssId).toBeTruthy();
+    expect(vitePlugin.resolveId(ssrCssId)).toBe(`\0${ssrCssId}`);
+
+    await vitePlugin.transform.handler.call(
+      envContext(ssrEnv),
+      'import { Code } from "@ferriki/core/react/macro"; export const block = <Code source="const ssrLabel = \'server\';" language="js" />;',
+      "/src/ssr-deleted.tsx",
+    );
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("ssr"))).toHaveLength(1);
+
+    vitePlugin.watchChange.call({ environment: clientEnv }, "/src/ssr-only.tsx", {
+      event: "delete",
+    });
+    vitePlugin.watchChange.call({ environment: clientEnv }, "/src/ssr-deleted.tsx", {
+      event: "delete",
+    });
+    expect(vitePlugin.api.codeElementBlocks("ssr")).toEqual({});
+    expect(vitePlugin.api.codeElementCss("ssr")).toBe("");
+    await vitePlugin.closeBundle();
+  });
+
+  it("keeps shebangs at byte 0 even when there is no LF newline in the module", async () => {
+    const crSource =
+      '#!/usr/bin/env node\rimport { Code } from "@ferriki/core/react/macro";\rexport const block = <Code source="const x = 1;" language="ts" />;';
+    const crResult = await transformModule(plugin(), crSource, "/src/cr-shebang.tsx");
+    expect(crResult.code.startsWith("#!/usr/bin/env node\r\nimport ")).toBe(true);
+    expect(() => parseOutput(crResult.code)).not.toThrow();
+
+    const lsSource =
+      '#!/usr/bin/env node\u2028import { Code } from "@ferriki/core/react/macro";\u2028export const block = <Code source="const y = 2;" language="ts" />;';
+    const lsResult = await transformModule(plugin(), lsSource, "/src/ls-shebang.tsx");
+    expect(lsResult.code.startsWith("#!/usr/bin/env node\u2028\nimport ")).toBe(true);
+    expect(() => parseOutput(lsResult.code)).not.toThrow();
+
+    const lfDirectiveSource =
+      '#!/usr/bin/env node\n"use client";\nimport { Code } from "@ferriki/core/react/macro";\nexport const block = <Code source="const z = 3;" language="ts" />;';
+    const lfResult = await transformModule(plugin(), lfDirectiveSource, "/src/lf-shebang.tsx");
+    expect(lfResult.code.startsWith('#!/usr/bin/env node\n"use client";\nimport ')).toBe(true);
+    expect(() => parseOutput(lfResult.code)).not.toThrow();
   });
 });
