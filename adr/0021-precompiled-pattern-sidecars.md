@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 ## Context
 
@@ -162,6 +162,13 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-11-27: Eliminate precompiled-source cache thrashing on indexed archive
+  hits and same-scope record loads, switch in-memory group/load lookups to a
+  fast 128-bit non-cryptographic key, coalesce nearby record reads with bounded
+  spans and before/after file-state checks, build `PreparedArchive` group
+  lookups lazily on demand, and preallocate index reads in `precompiled_cache`
+  (#394).
 
 - 2026-11-26: Replace upfront `Frame_Content_Size` bulk allocation with
   streaming bounded Zstd decompression, a 160x decoded-to-compressed expansion

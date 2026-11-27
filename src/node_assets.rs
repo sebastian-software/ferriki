@@ -1,19 +1,21 @@
 //! Cache planning for the Node host. Network I/O stays in Node's fetch runtime.
 
-use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::Arc;
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
 
 use crate::asset_settings::{
     AssetSettingsInput, ResolvedAssetSettings, catalog_path, resolve_asset_settings,
 };
-use crate::{
-    AssetDigest, AssetMetadata, AssetSource, Error, ErrorKind, Result, StandardAssetCatalogs,
+use crate::asset_source::{
+    InternalVerifiedSource, SharedVerifiedPayloadCache, VerifiedBytes, VerifiedPayloadCache,
+    open_nonblocking,
 };
+use crate::{AssetDigest, AssetMetadata, Error, ErrorKind, Result, StandardAssetCatalogs};
 
 /// Settings supplied by the private N-API host. Unset fields use the same
 /// environment and platform defaults as the Rust `remote` feature.
@@ -44,7 +46,11 @@ pub struct NodeAssetHost {
     theme_manifest: Vec<u8>,
     languages: HashMap<String, (String, Vec<String>)>,
     language_aliases: HashMap<String, String>,
+    language_scopes: HashMap<String, String>,
     themes: HashMap<String, String>,
+    /// Bounded one-shot handoff of verified cached bytes from `plan` to the
+    /// immediate synchronous catalog load, avoiding redundant disk+SHA-256 passes.
+    verified_cache: Arc<SharedVerifiedPayloadCache>,
 }
 
 impl NodeAssetHost {
@@ -80,6 +86,7 @@ impl NodeAssetHost {
         };
         let mut languages = HashMap::new();
         let mut language_aliases = HashMap::new();
+        let mut language_scopes = HashMap::new();
         for entry in decode_language_manifest(&language_manifest)
             .map_err(format)?
             .entries
@@ -88,6 +95,7 @@ impl NodeAssetHost {
             for alias in &entry.aliases {
                 language_aliases.insert(alias.clone(), entry.id.clone());
             }
+            language_scopes.insert(entry.scope_name, entry.id.clone());
             languages.insert(entry.id, (path, entry.embedded_langs));
         }
         let themes = decode_theme_manifest(&theme_manifest)
@@ -119,8 +127,72 @@ impl NodeAssetHost {
             theme_manifest,
             languages,
             language_aliases,
+            language_scopes,
             themes,
+            verified_cache: Arc::new(SharedVerifiedPayloadCache::new()),
         })
+    }
+
+    /// Releases any unconsumed verified payloads held between `plan` and load.
+    pub fn clear_verified_cache(&self) {
+        self.verified_cache.clear();
+    }
+
+    /// Permanently empties and closes the verified payload handoff cache so
+    /// in-flight background `plan()` tasks cannot repopulate it after disposal.
+    pub fn close_verified_cache(&self) {
+        self.verified_cache.close();
+    }
+
+    /// Drops any unconsumed verified payloads for the single standard language
+    /// `requested` (its grammar and optional bytecode sidecar) once a load
+    /// settles. Embedded dependencies are evicted individually by the host only
+    /// when their own pending refcounts reach zero.
+    pub fn evict_verified_language(&self, requested: &str) {
+        if self.verified_cache.is_empty() {
+            return;
+        }
+        let id = self
+            .language_aliases
+            .get(requested)
+            .or_else(|| self.language_scopes.get(requested))
+            .map_or(requested, String::as_str);
+        let Some((path, _)) = self.languages.get(id) else {
+            return;
+        };
+        let bytecode = path.replace(".fkgram", ".fkbc");
+        let mut digests = Vec::with_capacity(2);
+        for asset_path in [path.as_str(), bytecode.as_str()] {
+            if let Some(asset) = self.release.assets.get(asset_path)
+                && let Ok(digest) = AssetDigest::from_str(&asset.sha256)
+            {
+                digests.push(digest);
+            }
+        }
+        self.verified_cache.take_many(&digests);
+    }
+
+    /// Drops any unconsumed verified payload for `requested` once a theme load
+    /// settles.
+    pub fn evict_verified_theme(&self, requested: &str) {
+        if self.verified_cache.is_empty() {
+            return;
+        }
+        let Some(path) = self.themes.get(requested) else {
+            return;
+        };
+        let Some(asset) = self.release.assets.get(path) else {
+            return;
+        };
+        let Ok(digest) = AssetDigest::from_str(&asset.sha256) else {
+            return;
+        };
+        let _ = self.verified_cache.take(&digest);
+    }
+
+    #[cfg(test)]
+    fn verified_cache_stats(&self) -> (usize, usize) {
+        self.verified_cache.stats()
     }
 
     /// Catalogs read only the verified digest-addressed cache. Missing bytes
@@ -140,13 +212,14 @@ impl NodeAssetHost {
                 ))
             })
             .collect::<Result<HashMap<_, _>>>()?;
-        StandardAssetCatalogs::from_release_manifest(
+        StandardAssetCatalogs::from_verified_release_manifest(
             &self.language_manifest,
             &self.theme_manifest,
             &self.release,
             NodeAssetSource {
                 cache_dir: self.settings.cache_dir.clone(),
                 assets_by_digest,
+                verified_cache: Arc::clone(&self.verified_cache),
             },
         )
         .map(|catalogs| catalogs.with_decoded_cache(self.settings.cache_dir.clone()))
@@ -201,6 +274,7 @@ impl NodeAssetHost {
         );
 
         let mut result = Vec::new();
+        let mut staged = VerifiedPayloadCache::new();
         for path in paths {
             let optional = path.ends_with(".fkbc");
             let asset = self.release.assets.get(&path).ok_or_else(|| {
@@ -222,15 +296,19 @@ impl NodeAssetHost {
                 Err(error) => return Err(error),
             };
             let corrupt = match cached {
-                CacheRead::Bytes(bytes) => match if optional {
-                    metadata.verify_bytes(&bytes)
-                } else {
-                    metadata.verify(&bytes)
-                } {
-                    Ok(()) => continue,
-                    Err(error) if error.kind() == ErrorKind::AssetIntegrity => true,
-                    Err(error) => return Err(error),
-                },
+                CacheRead::Bytes(bytes) => {
+                    if !optional {
+                        metadata.validate_format()?;
+                    }
+                    match VerifiedBytes::verify(bytes, &digest, asset.size) {
+                        Ok(verified) => {
+                            staged.insert(verified);
+                            continue;
+                        }
+                        Err(error) if error.kind() == ErrorKind::AssetIntegrity => true,
+                        Err(error) => return Err(error),
+                    }
+                }
                 CacheRead::Missing => false,
                 CacheRead::WrongSize => true,
             };
@@ -271,6 +349,9 @@ impl NodeAssetHost {
                 url,
             });
         }
+        if !staged.is_empty() {
+            self.verified_cache.insert_batch(staged.into_payloads());
+        }
         Ok(result)
     }
 }
@@ -283,19 +364,35 @@ struct NodeCachedAsset {
 struct NodeAssetSource {
     cache_dir: PathBuf,
     assets_by_digest: HashMap<AssetDigest, NodeCachedAsset>,
+    verified_cache: Arc<SharedVerifiedPayloadCache>,
 }
 
-impl AssetSource for NodeAssetSource {
-    fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
+impl InternalVerifiedSource for NodeAssetSource {
+    fn read_verified(&self, digest: &AssetDigest, expected_size: u64) -> Result<VerifiedBytes> {
         let Some(asset) = self.assets_by_digest.get(digest) else {
             return Err(Error::new(
                 ErrorKind::AssetUnavailable,
                 format!("Asset {} is not part of this release.", digest.as_str()),
             ));
         };
+        if asset.size != expected_size {
+            return Err(Error::new(
+                ErrorKind::AssetIntegrity,
+                format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    digest.as_str()
+                ),
+            ));
+        }
+        if let Some(verified) = self.verified_cache.take(digest)
+            && verified.digest() == digest
+            && verified.len() as u64 == expected_size
+        {
+            return Ok(verified);
+        }
         let cache_path = self.cache_dir.join(digest.as_str());
         match read_cache_entry(&cache_path, digest.as_str(), asset.size)? {
-            CacheRead::Bytes(bytes) => Ok(Cow::Owned(bytes)),
+            CacheRead::Bytes(bytes) => VerifiedBytes::verify(bytes, digest, asset.size),
             CacheRead::WrongSize => Err(Error::new(
                 ErrorKind::AssetIntegrity,
                 format!(
@@ -325,7 +422,7 @@ enum CacheRead {
 /// Checks the opened file's manifest-pinned size before allocating its bytes,
 /// then caps the read in case the cache entry grows after the metadata check.
 fn read_cache_entry(path: &Path, digest: &str, expected_size: u64) -> Result<CacheRead> {
-    let file = match std::fs::File::open(path) {
+    let file = match open_nonblocking(path) {
         Ok(file) => file,
         Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
             return Ok(CacheRead::Missing);
@@ -856,6 +953,451 @@ mod tests {
             .plan(&["javascript".to_owned()], &[])
             .expect_err("required grammar miss must reject invalid mirror URL");
         assert_eq!(error.kind(), ErrorKind::AssetDownload);
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn planned_verified_cache_eliminates_duplicate_sha256_and_disk_reads() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("verified-handoff");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Off),
+                remote: Some(false),
+                base_url: None,
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("asset host");
+
+        let json_asset = host.release.assets["languages/json.fkgram"].clone();
+        let nord_asset = host.release.assets["themes/nord.fktheme"].clone();
+        std::fs::copy(
+            source.join("languages/json.fkgram"),
+            cache.join(&json_asset.sha256),
+        )
+        .expect("seed json grammar");
+        std::fs::copy(
+            source.join("themes/nord.fktheme"),
+            cache.join(&nord_asset.sha256),
+        )
+        .expect("seed nord theme");
+
+        let catalogs = host.catalogs().expect("catalogs");
+
+        crate::asset_source::reset_sha256_count();
+        let plan = host
+            .plan(&["json".to_owned()], &["nord".to_owned()])
+            .expect("plan cached assets");
+        assert!(plan.is_empty());
+        assert_eq!(
+            crate::asset_source::sha256_count(),
+            2,
+            "plan must verify each cached payload once"
+        );
+
+        // Removing the disk files after planning proves immediate catalog loads
+        // consume the in-memory verified handoff with zero disk reads and zero
+        // duplicate SHA-256 passes.
+        std::fs::remove_file(cache.join(&json_asset.sha256)).expect("remove json from disk");
+        std::fs::remove_file(cache.join(&nord_asset.sha256)).expect("remove nord from disk");
+        assert!(catalogs.languages.load_asset("json").unwrap().is_some());
+        assert!(catalogs.themes.load_asset("nord").unwrap().is_some());
+        assert_eq!(
+            crate::asset_source::sha256_count(),
+            2,
+            "catalog load after plan must not re-hash verified bytes"
+        );
+
+        // Clearing unconsumed entries forces fresh disk reads + SHA-256 verification.
+        let mut tampered_nord = std::fs::read(source.join("themes/nord.fktheme")).unwrap();
+        tampered_nord[0] ^= 0xff;
+        std::fs::write(cache.join(&nord_asset.sha256), &tampered_nord).unwrap();
+        host.clear_verified_cache();
+        let fresh_catalogs = host.catalogs().expect("fresh catalogs");
+        crate::asset_source::reset_sha256_count();
+        let error = fresh_catalogs
+            .themes
+            .load_asset("nord")
+            .expect_err("tampered disk entry must still fail SHA-256 verification");
+        assert_eq!(error.kind(), ErrorKind::AssetIntegrity);
+        assert_eq!(crate::asset_source::sha256_count(), 1);
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn repeated_warm_plan_and_load_retains_zero_unconsumed_verified_bytes() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("warm-zero-retention");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Prepared),
+                remote: Some(false),
+                base_url: None,
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("asset host");
+
+        for asset_path in [
+            "languages/json.fkgram",
+            "languages/json.fkbc",
+            "themes/nord.fktheme",
+        ] {
+            let asset = &host.release.assets[asset_path];
+            std::fs::copy(source.join(asset_path), cache.join(&asset.sha256))
+                .expect("seed cache entry");
+        }
+
+        let mut core = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+            host.catalogs().expect("catalogs"),
+            crate::RegexMode::Prepared,
+        )
+        .expect("core");
+
+        // First plan + load consumes and evicts all planned entries.
+        assert!(
+            host.plan(&["json".to_owned()], &["nord".to_owned()])
+                .unwrap()
+                .is_empty()
+        );
+        assert!(host.verified_cache_stats().0 > 0);
+        assert!(core.load_standard_language("json").unwrap().is_some());
+        host.evict_verified_language("json");
+        // Theme handoff entry stays intact until the theme itself is loaded.
+        assert_eq!(host.verified_cache_stats().0, 1);
+        assert!(core.load_standard_theme("nord").unwrap());
+        host.evict_verified_theme("nord");
+        assert_eq!(host.verified_cache_stats(), (0, 0));
+
+        // Second plan for already-loaded language + theme: catalog returns early
+        // without calling AssetStore::read, yet eviction leaves 0 bytes retained.
+        assert!(
+            host.plan(&["json".to_owned()], &["nord".to_owned()])
+                .unwrap()
+                .is_empty()
+        );
+        assert!(host.verified_cache_stats().1 > 0);
+        assert!(core.load_standard_language("json").unwrap().is_some());
+        host.evict_verified_language("json");
+        assert!(core.load_standard_theme("nord").unwrap());
+        host.evict_verified_theme("nord");
+        assert_eq!(
+            host.verified_cache_stats(),
+            (0, 0),
+            "already-loaded warm assets must not leave unconsumed verified buffers behind"
+        );
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn failed_plan_does_not_retain_staged_verified_payloads() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("failed-plan-staging");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Off),
+                remote: Some(false),
+                base_url: None,
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("asset host");
+
+        // Seed only `languages/json.fkgram` (sorts before `themes/nord.fktheme`),
+        // leaving `themes/nord.fktheme` missing offline so `plan()` fails mid-way.
+        let json_asset = &host.release.assets["languages/json.fkgram"];
+        std::fs::copy(
+            source.join("languages/json.fkgram"),
+            cache.join(&json_asset.sha256),
+        )
+        .expect("seed json grammar");
+
+        let error = host
+            .plan(&["json".to_owned()], &["nord".to_owned()])
+            .expect_err("missing offline theme must fail plan");
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert_eq!(
+            host.verified_cache_stats(),
+            (0, 0),
+            "staged verified payloads must be discarded when plan() returns Err"
+        );
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn standard_language_readiness_tracks_sidecar_attachment_across_sync_and_fallback_loads() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("sidecar-readiness");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        let host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Prepared),
+                remote: Some(false),
+                base_url: None,
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("asset host");
+
+        // Seed only the grammar (no .fkbc sidecar): loading succeeds via source
+        // fallback, but readiness stays false so a later async loadLanguage can
+        // still plan and fetch the missing sidecar.
+        let json_grammar = &host.release.assets["languages/json.fkgram"];
+        let json_bytecode = &host.release.assets["languages/json.fkbc"];
+        std::fs::copy(
+            source.join("languages/json.fkgram"),
+            cache.join(&json_grammar.sha256),
+        )
+        .expect("seed json grammar");
+
+        let mut prepared = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+            host.catalogs().expect("catalogs"),
+            crate::RegexMode::Prepared,
+        )
+        .expect("prepared core");
+        assert!(!prepared.is_standard_language_ready("json"));
+        assert!(prepared.load_standard_language("json").unwrap().is_some());
+        assert!(
+            !prepared.is_standard_language_ready("json"),
+            "missing sidecar must keep readiness false for later recovery"
+        );
+
+        // Once the sidecar arrives and is attached on reload, readiness turns true.
+        std::fs::copy(
+            source.join("languages/json.fkbc"),
+            cache.join(&json_bytecode.sha256),
+        )
+        .expect("seed json bytecode");
+        assert!(prepared.load_standard_language("json").unwrap().is_some());
+        assert!(prepared.is_standard_language_ready("json"));
+
+        // In source-only modes (e.g. Off), readiness only requires the grammar.
+        let mut off = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+            host.catalogs().expect("catalogs"),
+            crate::RegexMode::Off,
+        )
+        .expect("off core");
+        assert!(off.load_standard_language("json").unwrap().is_some());
+        assert!(off.is_standard_language_ready("json"));
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn sidecar_readiness_matches_planner_when_intermediate_embedded_sidecars_are_absent() {
+        let (source, root) = fixture_root();
+        let cache = temp_dir("sidecar-readiness-delegation");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+
+        // Remove the intermediate embedded sidecars directly below `javascript`
+        // (`es-tag-css` and `es-tag-html`) from the release manifest so the
+        // planner stops requesting sidecars below them (`typescript`, `html`,
+        // `css-styled`, `css`).
+        let release_path = root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE);
+        let mut release: Value =
+            serde_json::from_slice(&std::fs::read(&release_path).expect("read release"))
+                .expect("parse release");
+        let assets_obj = release["assets"].as_object_mut().expect("assets map");
+        assert!(assets_obj.remove("languages/es-tag-css.fkbc").is_some());
+        assert!(assets_obj.remove("languages/es-tag-html.fkbc").is_some());
+        assert!(
+            assets_obj.contains_key("languages/typescript.fkbc"),
+            "child sidecar remains pinned in the release manifest"
+        );
+        std::fs::write(
+            &release_path,
+            serde_json::to_vec(&release).expect("serialize release"),
+        )
+        .expect("write release");
+
+        let host = host(&root, &cache);
+        // Seed every grammar in javascript's closure plus javascript.fkbc,
+        // leaving child sidecars (typescript.fkbc, css-styled.fkbc, html.fkbc,
+        // css.fkbc) uncached.
+        for path in [
+            "languages/javascript.fkgram",
+            "languages/javascript.fkbc",
+            "languages/es-tag-css.fkgram",
+            "languages/es-tag-html.fkgram",
+            "languages/typescript.fkgram",
+            "languages/css-styled.fkgram",
+            "languages/html.fkgram",
+            "languages/css.fkgram",
+        ] {
+            let asset = &host.release.assets[path];
+            std::fs::copy(source.join(path), cache.join(&asset.sha256)).expect("seed asset");
+        }
+
+        let missing = host
+            .plan(&["javascript".to_owned()], &[])
+            .expect("plan javascript");
+        assert!(
+            missing.is_empty(),
+            "planner must not request sidecars below non-delegated intermediates, got: {missing:?}"
+        );
+
+        let mut prepared = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+            host.catalogs().expect("catalogs"),
+            crate::RegexMode::Prepared,
+        )
+        .expect("prepared core");
+        assert!(
+            prepared
+                .load_standard_language("javascript")
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            prepared.is_standard_language_ready("javascript"),
+            "readiness must agree with planner when intermediate embedded languages have no sidecar"
+        );
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    #[ignore = "explicit release-mode startup/asset perf benchmark for #394"]
+    fn bench_warm_node_plan_load_and_indexed_precompiled_startup() {
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        let (source, root) = fixture_root();
+        let cache = temp_dir("bench-warm-startup");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+
+        // Seed cache with standard payloads + prewarmed decoded/indexed .fkbc for typescript + vue + nord.
+        let seed_host = NodeAssetHost::from_root(
+            &root,
+            &NodeAssetOptions {
+                regex_prefilter: None,
+                regex_mode: Some(crate::RegexMode::Prepared),
+                remote: Some(false),
+                base_url: None,
+                cache_dir: Some(cache.clone()),
+            },
+        )
+        .expect("seed host");
+        for (path, asset) in &seed_host.release.assets {
+            let src = source.join(path);
+            if src.exists() {
+                std::fs::copy(&src, cache.join(&asset.sha256)).expect("seed asset");
+            }
+        }
+        // Prewarm decoded/indexed cache once (warm steady-state restart).
+        {
+            let mut warm = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+                seed_host.catalogs().unwrap(),
+                crate::RegexMode::Prepared,
+            )
+            .unwrap();
+            warm.load_standard_language("vue").unwrap();
+            warm.load_standard_language("typescript").unwrap();
+            warm.load_standard_theme("nord").unwrap();
+        }
+
+        let ts_code = "export interface Config<T> { name: string; values: Array<T>; }\n\
+                       export function format(cfg: Config<number>): string {\n\
+                         const sum = cfg.values.reduce((a, b) => a + b, 0);\n\
+                         return `${cfg.name}: ${sum}`;\n\
+                       }\n";
+        let vue_code = "<script setup lang=\"ts\">\nconst count: number = 42;\n</script>\n\
+                        <template><div :data-n=\"count\">{{ count }}</div></template>\n";
+
+        let iterations = 40;
+        let mut plan_load_ms = Vec::with_capacity(iterations);
+        let mut first_highlight_ms = Vec::with_capacity(iterations);
+        let mut total_ms = Vec::with_capacity(iterations);
+        let mut sha256_per_iter = 0;
+
+        for iter in 0..=iterations {
+            let host = NodeAssetHost::from_root(
+                &root,
+                &NodeAssetOptions {
+                    regex_prefilter: None,
+                    regex_mode: Some(crate::RegexMode::Prepared),
+                    remote: Some(false),
+                    base_url: None,
+                    cache_dir: Some(cache.clone()),
+                },
+            )
+            .unwrap();
+            let mut core = crate::highlighter::HighlighterCore::with_assets_and_regex_mode(
+                host.catalogs().unwrap(),
+                crate::RegexMode::Prepared,
+            )
+            .unwrap();
+
+            crate::asset_source::reset_sha256_count();
+            let t0 = Instant::now();
+            let plan = host
+                .plan(
+                    &["vue".to_owned(), "typescript".to_owned()],
+                    &["nord".to_owned()],
+                )
+                .unwrap();
+            assert!(plan.is_empty());
+            core.load_standard_language("vue").unwrap();
+            core.load_standard_language("typescript").unwrap();
+            core.load_standard_theme("nord").unwrap();
+            let t1 = Instant::now();
+            let opts = crate::TokenizeOptions::default();
+            black_box(core.tokenize(ts_code, "typescript", "nord", &opts).unwrap());
+            black_box(core.tokenize(vue_code, "vue", "nord", &opts).unwrap());
+            let t2 = Instant::now();
+
+            if iter == 0 {
+                let diagnostics = core.regex_diagnostics();
+                assert!(
+                    diagnostics["preparedBytesRead"].as_u64().unwrap_or(0) > 0,
+                    "benchmark must exercise indexed precompiled record reads: {diagnostics}"
+                );
+                assert!(
+                    diagnostics["loadedPreparedGroups"].as_u64().unwrap_or(0) > 0,
+                    "benchmark must load prepared Eager groups: {diagnostics}"
+                );
+                assert_eq!(
+                    diagnostics["invalidPreparedGroups"].as_u64().unwrap_or(0),
+                    0
+                );
+                assert_eq!(diagnostics["assemblyFallbacks"].as_u64().unwrap_or(0), 0);
+            } else {
+                plan_load_ms.push((t1 - t0).as_secs_f64() * 1000.0);
+                first_highlight_ms.push((t2 - t1).as_secs_f64() * 1000.0);
+                total_ms.push((t2 - t0).as_secs_f64() * 1000.0);
+                sha256_per_iter = crate::asset_source::sha256_count();
+            }
+        }
+        plan_load_ms.sort_by(f64::total_cmp);
+        first_highlight_ms.sort_by(f64::total_cmp);
+        total_ms.sort_by(f64::total_cmp);
+        let mid = iterations / 2;
+        eprintln!(
+            "warm startup (vue+typescript+nord, n={iterations}): plan+load median={:.3} ms, \
+             first-highlight median={:.3} ms, total median={:.3} ms, sha256_hashes={sha256_per_iter}",
+            plan_load_ms[mid], first_highlight_ms[mid], total_ms[mid]
+        );
 
         std::fs::remove_dir_all(&cache).expect("cleanup cache");
         std::fs::remove_dir_all(&root).expect("cleanup root");

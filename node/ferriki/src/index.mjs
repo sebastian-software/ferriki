@@ -24,8 +24,13 @@ const standardAssetRoot = join(packageDir, "assets", "standard");
 const NONE_THEME_BACKING = "nord";
 const GRAMMAR_STATE_SOURCE_PREFIX = "\0ferriki-grammar-state-v1\0";
 const MAX_GRAMMAR_STATE_JSON_BYTES = 1_048_576;
+const MAX_REGISTRATION_UNWRAP_STEPS = 64;
+const MAX_DEFAULT_UNWRAP_STEPS = 256;
+const MAX_REGISTRATION_ARRAY_DEPTH = 10_000;
+const MAX_REGISTRATION_ITEMS = 20_000;
 const GRAMMAR_STATE_CONTINUATION = Symbol("ferriki.grammar-state-continuation");
 const GRAMMAR_STATE_CAPTURE = Symbol("ferriki.grammar-state-capture");
+const LOAD_ASSETS_BATCH = Symbol("ferriki.load-assets-batch");
 let singleton;
 const disposedHighlighters = new WeakSet();
 
@@ -57,8 +62,7 @@ export async function createHighlighter(options = {}) {
       resolveRegistrations(langs),
       resolveRegistrations(themes),
     ]);
-    await highlighter.loadLanguage(...languages);
-    await highlighter.loadTheme(...resolvedThemes);
+    await highlighter[LOAD_ASSETS_BATCH](languages, resolvedThemes);
     return highlighter;
   } catch (error) {
     highlighter.dispose();
@@ -94,9 +98,14 @@ export function createHighlighterCoreSync(options = {}) {
     );
   }
   const loadedLanguages = new Set();
+  const loadedStandardLanguages = new Set();
+  const missingSidecarLanguages = new Set();
   const loadedThemes = new Set();
+  const loadedStandardThemes = new Set();
   const downloadStandardAssets = createAssetDownloader(native);
   const languageAliases = { ...(options.langAlias || {}) };
+  const pendingPrefetchLangCounts = new Map();
+  const pendingPrefetchThemeCounts = new Map();
   let disposed = false;
 
   function assertActive() {
@@ -146,38 +155,198 @@ export function createHighlighterCoreSync(options = {}) {
             loadedLanguages.add(alias);
           }
         }
+      } else {
+        const canonical = canonicalStandardLanguage(resolved);
+        if (canonical) loadedStandardLanguages.add(canonical);
+      }
+    }
+  }
+
+  function languagePrefetchNames(registrations) {
+    return registrations.flatMap((registration) =>
+      isCustomLanguageRegistration(registration)
+        ? (registration.embeddedLanguages ?? registration.embeddedLangs ?? [])
+        : [resolveAlias(registrationName(registration))],
+    );
+  }
+
+  function themePrefetchNames(registrations) {
+    return registrations.map((registration) => {
+      if (isCustomThemeRegistration(registration)) return registration.include;
+      return registrationName(registration);
+    });
+  }
+
+  function canBatchLanguagesWithThemes(languages) {
+    for (const registration of languages) {
+      try {
+        if (typeof registration === "string") {
+          if (!registration) continue;
+          const resolved = resolveAlias(registration);
+          if (!isStandardLanguageKey(resolved) && !loadedLanguages.has(resolved)) return false;
+          continue;
+        }
+        if (!registration || typeof registration !== "object" || Array.isArray(registration))
+          return false;
+        if (isCustomLanguageRegistration(registration)) return false;
+        const name = registrationName(registration);
+        if (!name) return false;
+        validateLanguageRegistration(registration);
+        const resolved = resolveAlias(name);
+        if (!isStandardLanguageKey(resolved) && !loadedLanguages.has(resolved)) return false;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function isStandardLanguageReadyForSkip(canonical) {
+    if (!loadedStandardLanguages.has(canonical) || missingSidecarLanguages.has(canonical))
+      return false;
+    if (typeof native.isStandardLanguageReady === "function")
+      return native.isStandardLanguageReady(canonical);
+    return true;
+  }
+
+  function retainPendingKeys(counts, keys) {
+    for (const key of keys) counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  function releasePendingKeys(counts, keys) {
+    const releasable = [];
+    for (const key of keys) {
+      const next = (counts.get(key) || 0) - 1;
+      if (next <= 0) {
+        counts.delete(key);
+        releasable.push(key);
+      } else {
+        counts.set(key, next);
+      }
+    }
+    return releasable;
+  }
+
+  async function withPrefetchedAssets(languages, themes, register, options = {}) {
+    assertActive();
+    const standardLanguages = [
+      ...new Set(
+        languages.filter((name) => {
+          if (!name || !isStandardLanguageKey(name)) return false;
+          return !isStandardLanguageReadyForSkip(canonicalStandardLanguage(name));
+        }),
+      ),
+    ];
+    const standardThemes = [
+      ...new Set(
+        themes
+          .map((name) => (name === "none" ? NONE_THEME_BACKING : name))
+          .filter((name) => isStandardThemeKey(name) && !loadedStandardThemes.has(name)),
+      ),
+    ];
+    if (standardLanguages.length === 0 && standardThemes.length === 0) {
+      register();
+      return;
+    }
+    const canonicalLanguages = [
+      ...new Set(standardLanguages.map((name) => canonicalStandardLanguage(name))),
+    ];
+    const trackedLanguages = expandStandardLanguageClosure(canonicalLanguages);
+    retainPendingKeys(pendingPrefetchLangCounts, trackedLanguages);
+    retainPendingKeys(pendingPrefetchThemeCounts, standardThemes);
+    try {
+      const result = await callNativeOperationAsync("Ferriki could not download assets", () =>
+        downloadStandardAssets(
+          standardLanguages,
+          standardThemes,
+          options.onLanguagesReady ? { onLanguagesReady: options.onLanguagesReady } : undefined,
+        ),
+      );
+      const failedSidecars = result?.failedSidecars;
+      if (failedSidecars?.size > 0) {
+        for (const id of failedSidecars) missingSidecarLanguages.add(id);
+        for (const id of canonicalLanguages) {
+          if (standardLanguageDependsOnAny(id, failedSidecars)) missingSidecarLanguages.add(id);
+          else missingSidecarLanguages.delete(id);
+        }
+      } else {
+        for (const id of canonicalLanguages) missingSidecarLanguages.delete(id);
+      }
+      register();
+    } finally {
+      const releasableLanguages = releasePendingKeys(pendingPrefetchLangCounts, trackedLanguages);
+      const releasableThemes = releasePendingKeys(pendingPrefetchThemeCounts, standardThemes);
+      if (
+        !disposed &&
+        (releasableLanguages.length > 0 || releasableThemes.length > 0) &&
+        typeof native.evictVerifiedAssets === "function"
+      ) {
+        native.evictVerifiedAssets(releasableLanguages, releasableThemes);
       }
     }
   }
 
   async function loadLanguage(...inputs) {
     const registrations = await resolveRegistrations(inputs);
-    const names = registrations.flatMap((registration) =>
-      isCustomLanguageRegistration(registration)
-        ? (registration.embeddedLanguages ?? registration.embeddedLangs ?? [])
-        : [resolveAlias(registrationName(registration))],
+    await withPrefetchedAssets(languagePrefetchNames(registrations), [], () =>
+      loadLanguageSync(...registrations),
     );
-    await prefetchAssets(names, []);
-    loadLanguageSync(...registrations);
   }
 
-  // Downloads what the synchronous loads below will read from the cache.
-  async function prefetchAssets(languages, themes) {
+  async function loadAssetsBatch(languages, themes) {
     assertActive();
-    const standardLanguages = [
-      ...new Set(languages.filter((name) => name && isStandardLanguageKey(name))),
-    ];
-    const standardThemes = [
-      ...new Set(
-        themes
-          .map((name) => (name === "none" ? NONE_THEME_BACKING : name))
-          .filter((name) => isStandardThemeKey(name)),
-      ),
-    ];
-    if (standardLanguages.length === 0 && standardThemes.length === 0) return;
-    await callNativeOperationAsync("Ferriki could not download assets", () =>
-      downloadStandardAssets(standardLanguages, standardThemes),
+    const languageNames = languagePrefetchNames(languages);
+    let themeNames;
+    let themePrefetchError;
+    let hasThemePrefetchError = false;
+    if (themes.length > 0 && canBatchLanguagesWithThemes(languages)) {
+      try {
+        themeNames = themePrefetchNames(themes);
+      } catch (error) {
+        themePrefetchError = error;
+        hasThemePrefetchError = true;
+      }
+    }
+    if (themes.length > 0 && themeNames === undefined) {
+      await withPrefetchedAssets(languageNames, [], () => loadLanguageSync(...languages));
+      if (hasThemePrefetchError) throw themePrefetchError;
+      await withPrefetchedAssets([], themePrefetchNames(themes), () =>
+        loadThemesAfterPrefetch(themes),
+      );
+      return;
+    }
+    let languagesRegistered = false;
+    const registerLanguagesOnce = () => {
+      if (languagesRegistered) return;
+      loadLanguageSync(...languages);
+      languagesRegistered = true;
+    };
+    await withPrefetchedAssets(
+      languageNames,
+      themeNames ?? [],
+      () => {
+        registerLanguagesOnce();
+        loadThemesAfterPrefetch(themes);
+      },
+      languages.length > 0 && themes.length > 0
+        ? { onLanguagesReady: registerLanguagesOnce }
+        : undefined,
     );
+  }
+
+  function loadThemesAfterPrefetch(registrations) {
+    loadThemeSync(...registrations);
+    if (
+      registrations.includes("none") &&
+      !loadedStandardThemes.has(NONE_THEME_BACKING) &&
+      !loadedThemes.has(NONE_THEME_BACKING)
+    ) {
+      const loaded = callNativeOperation(
+        `Ferriki could not load theme \`${NONE_THEME_BACKING}\``,
+        () => native.loadStandardTheme(NONE_THEME_BACKING),
+      );
+      if (loaded) loadedStandardThemes.add(NONE_THEME_BACKING);
+    }
   }
 
   function loadThemeSync(...inputs) {
@@ -187,7 +356,8 @@ export function createHighlighterCoreSync(options = {}) {
       const name = registrationName(registration);
       if (!name) continue;
       if (name !== "none") {
-        const loaded = isCustomThemeRegistration(registration)
+        const custom = isCustomThemeRegistration(registration);
+        const loaded = custom
           ? callCustomRegistration(
               () => native.loadCustomTheme(JSON.stringify(registration)),
               "theme",
@@ -200,6 +370,7 @@ export function createHighlighterCoreSync(options = {}) {
             `Theme \`${name}\` not found, you may need to load it first`,
             "ERR_UNSUPPORTED",
           );
+        if (!custom && isStandardThemeKey(name)) loadedStandardThemes.add(name);
       }
       loadedThemes.add(name);
     }
@@ -207,12 +378,9 @@ export function createHighlighterCoreSync(options = {}) {
 
   async function loadTheme(...inputs) {
     const registrations = await resolveRegistrations(inputs);
-    const themes = registrations.map((registration) => {
-      if (isCustomThemeRegistration(registration)) return registration.include;
-      return registrationName(registration);
-    });
-    await prefetchAssets([], themes);
-    loadThemeSync(...registrations);
+    await withPrefetchedAssets([], themePrefetchNames(registrations), () =>
+      loadThemesAfterPrefetch(registrations),
+    );
   }
 
   function prepareOptions(options) {
@@ -646,6 +814,7 @@ export function createHighlighterCoreSync(options = {}) {
     loadLanguageSync,
     loadTheme,
     loadThemeSync,
+    [LOAD_ASSETS_BATCH]: loadAssetsBatch,
     resolveLangAlias: resolveAlias,
     getLastGrammarState: getGrammarState,
     dispose() {
@@ -671,7 +840,9 @@ export function createShikiPrimitive(options = {}) {
 
 export async function getSingletonHighlighter(options = {}) {
   let highlighter;
+  let created = false;
   do {
+    created = !singleton;
     const pending = (singleton ||= createHighlighter(options));
     try {
       highlighter = await pending;
@@ -681,8 +852,10 @@ export async function getSingletonHighlighter(options = {}) {
     }
     if (disposedHighlighters.has(highlighter) && singleton === pending) singleton = undefined;
   } while (disposedHighlighters.has(highlighter));
-  if (options.langs?.length) await highlighter.loadLanguage(...options.langs);
-  if (options.themes?.length) await highlighter.loadTheme(...options.themes);
+  if (!created) {
+    if (options.langs?.length) await highlighter.loadLanguage(...options.langs);
+    if (options.themes?.length) await highlighter.loadTheme(...options.themes);
+  }
   return highlighter;
 }
 
@@ -735,6 +908,53 @@ export const bundledLanguagesAlias = createLanguageAliasBundle(languageCatalog);
 const standardLanguageKeys = new Set(
   languageCatalog.flatMap((entry) => [entry.id, ...entry.aliases]),
 );
+const standardLanguageCanonicalIds = new Map(
+  languageCatalog.flatMap((entry) => [
+    [entry.id, entry.id],
+    ...entry.aliases.map((alias) => [alias, entry.id]),
+  ]),
+);
+function canonicalStandardLanguage(name) {
+  return standardLanguageCanonicalIds.get(name);
+}
+const standardLanguageEmbeddedIds = new Map(
+  languageCatalog.map((entry) => [entry.id, entry.embeddedLangs || []]),
+);
+function expandStandardLanguageClosure(canonicalIds) {
+  const seen = new Set();
+  const expanded = [];
+  for (const id of canonicalIds) {
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      expanded.push(id);
+    }
+  }
+  for (let i = 0; i < expanded.length; i++) {
+    for (const embedded of standardLanguageEmbeddedIds.get(expanded[i]) || []) {
+      const canonical = canonicalStandardLanguage(embedded) || embedded;
+      if (canonical && !seen.has(canonical)) {
+        seen.add(canonical);
+        expanded.push(canonical);
+      }
+    }
+  }
+  return expanded;
+}
+function standardLanguageDependsOnAny(rootId, targets) {
+  if (targets.size === 0) return false;
+  const pending = [rootId];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || visited.has(current)) continue;
+    visited.add(current);
+    if (targets.has(current)) return true;
+    for (const embedded of standardLanguageEmbeddedIds.get(current) || []) {
+      pending.push(canonicalStandardLanguage(embedded) || embedded);
+    }
+  }
+  return false;
+}
 const standardThemeKeys = new Set(themeCatalog.map((entry) => entry.id));
 
 function createLanguageBundle(catalog) {
@@ -1751,14 +1971,161 @@ function resolveSyncRegistrations(inputs) {
   });
 }
 
+function flattenRegistrationArrayTree(rootArray, active, baseDepth, budget) {
+  const items = [];
+  const length = rootArray.length;
+  if (length > budget.remaining)
+    throw new ShikiError("Language/theme registration limit exceeded", "ERR_USAGE");
+  const localStack = [{ source: rootArray, index: 0, length }];
+
+  try {
+    while (localStack.length > 0) {
+      const frame = localStack.at(-1);
+      if (frame.index >= frame.length) {
+        localStack.pop();
+        if (frame.source !== rootArray) active.delete(frame.source);
+        continue;
+      }
+      if (--budget.remaining < 0)
+        throw new ShikiError("Language/theme registration limit exceeded", "ERR_USAGE");
+      const value = frame.source[frame.index++];
+      if (Array.isArray(value)) {
+        if (active.has(value))
+          throw new ShikiError("Cyclic language/theme registration input", "ERR_USAGE");
+        if (baseDepth + localStack.length >= MAX_REGISTRATION_ARRAY_DEPTH)
+          throw new ShikiError("Language/theme registration nesting limit exceeded", "ERR_USAGE");
+        const childLength = value.length;
+        if (childLength > budget.remaining)
+          throw new ShikiError("Language/theme registration limit exceeded", "ERR_USAGE");
+        active.add(value);
+        localStack.push({ source: value, index: 0, length: childLength });
+      } else if (value != null) {
+        items.push(value);
+      }
+    }
+  } finally {
+    for (const frame of localStack) {
+      if (frame.source !== rootArray) active.delete(frame.source);
+    }
+  }
+  return items;
+}
+
+function awaitNonPromiseThenable(thenable, then) {
+  return new Promise((resolve, reject) => {
+    queueMicrotask(() => {
+      try {
+        Reflect.apply(then, thenable, [(value) => resolve({ value }), reject]);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
 async function resolveRegistrations(inputs) {
   const output = [];
-  for (let input of inputs.flat(Infinity)) {
-    if (typeof input === "function") input = input();
-    input = await input;
-    if (input?.default) input = input.default;
-    if (Array.isArray(input)) output.push(...(await resolveRegistrations(input)));
-    else if (input != null) output.push(input);
+  const active = new Set([inputs]);
+  const budget = { remaining: MAX_REGISTRATION_ITEMS };
+  const stack = [
+    {
+      source: inputs,
+      items: flattenRegistrationArrayTree(inputs, active, 0, budget),
+      index: 0,
+      wrappers: [],
+    },
+  ];
+  let activeDynamicUnwraps = 0;
+  let activeDefaultUnwraps = 0;
+
+  while (stack.length > 0) {
+    const frame = stack.at(-1);
+    if (frame.index >= frame.items.length) {
+      stack.pop();
+      active.delete(frame.source);
+      for (const entry of frame.wrappers) {
+        if (entry.trackedInActive) active.delete(entry.value);
+        if (entry.dynamic) activeDynamicUnwraps -= 1;
+        else activeDefaultUnwraps -= 1;
+      }
+      continue;
+    }
+
+    let input = frame.items[frame.index++];
+    const unwrapped = [];
+    let preferThenable = false;
+    try {
+      while (input != null) {
+        // After invoking a loader `fn()`, treat its return value like `await fn()`:
+        // check native Promise / `.then` before invoking it as another loader so
+        // callable thenables resolve via `.then`.
+        const isNativePromise = types.isPromise(input);
+        const isFn = !isNativePromise && !preferThenable && typeof input === "function";
+        const then = !isFn && !isNativePromise ? input.then : undefined;
+        const isThenable = typeof then === "function";
+        const isDeferredFn =
+          !isFn && !isNativePromise && !isThenable && typeof input === "function";
+        const nextDefault =
+          !isFn && !isDeferredFn && !isNativePromise && !isThenable ? input.default : undefined;
+        preferThenable = false;
+        if (!isFn && !isDeferredFn && !isNativePromise && !isThenable && !nextDefault) break;
+
+        const callFn = isFn || isDeferredFn;
+        // Function loaders may be stateful (bounded by MAX_REGISTRATION_UNWRAP_STEPS);
+        // non-function wrappers/thenables still receive identity cycle checks.
+        if (!callFn && active.has(input))
+          throw new ShikiError("Cyclic language/theme registration input", "ERR_USAGE");
+
+        const dynamic = callFn || isNativePromise || isThenable;
+        if (dynamic) {
+          if (activeDynamicUnwraps >= MAX_REGISTRATION_UNWRAP_STEPS)
+            throw new ShikiError("Language/theme registration nesting limit exceeded", "ERR_USAGE");
+          activeDynamicUnwraps += 1;
+        } else {
+          if (activeDefaultUnwraps >= MAX_DEFAULT_UNWRAP_STEPS)
+            throw new ShikiError("Language/theme registration nesting limit exceeded", "ERR_USAGE");
+          activeDefaultUnwraps += 1;
+        }
+        if (!callFn) active.add(input);
+        unwrapped.push({ value: input, dynamic, trackedInActive: !callFn });
+
+        if (callFn) {
+          input = input();
+          preferThenable = true;
+        } else if (isNativePromise) {
+          input = await input;
+          preferThenable = true;
+        } else if (isThenable) {
+          input = (await awaitNonPromiseThenable(input, then)).value;
+          preferThenable = true;
+        } else {
+          input = nextDefault;
+        }
+      }
+      if (Array.isArray(input)) {
+        if (active.has(input))
+          throw new ShikiError("Cyclic language/theme registration input", "ERR_USAGE");
+        if (stack.length >= MAX_REGISTRATION_ARRAY_DEPTH)
+          throw new ShikiError("Language/theme registration nesting limit exceeded", "ERR_USAGE");
+        active.add(input);
+        stack.push({
+          source: input,
+          items: flattenRegistrationArrayTree(input, active, stack.length, budget),
+          index: 0,
+          wrappers: unwrapped.splice(0),
+        });
+      } else if (input != null) {
+        if (output.length >= MAX_REGISTRATION_ITEMS)
+          throw new ShikiError("Language/theme registration limit exceeded", "ERR_USAGE");
+        output.push(input);
+      }
+    } finally {
+      for (const entry of unwrapped) {
+        if (entry.trackedInActive) active.delete(entry.value);
+        if (entry.dynamic) activeDynamicUnwraps -= 1;
+        else activeDefaultUnwraps -= 1;
+      }
+    }
   }
   return output;
 }

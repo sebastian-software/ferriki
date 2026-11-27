@@ -46,13 +46,21 @@ impl FileStamp {
 }
 
 fn read_stamp(path: &Path) -> Option<FileStamp> {
-    let file = fs::File::open(stamp_path(path)).ok()?;
-    if file.metadata().ok()?.len() > MAX_STAMP_BYTES {
+    let mut file = fs::File::open(stamp_path(path)).ok()?;
+    let mut buf = [0_u8; MAX_STAMP_BYTES as usize + 1];
+    let mut len = 0;
+    while len < buf.len() {
+        match file.read(&mut buf[len..]) {
+            Ok(0) => break,
+            Ok(n) => len += n,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(_) => return None,
+        }
+    }
+    if len as u64 > MAX_STAMP_BYTES {
         return None;
     }
-    let mut bytes = Vec::new();
-    file.take(MAX_STAMP_BYTES).read_to_end(&mut bytes).ok()?;
-    serde_json::from_slice(&bytes).ok()
+    serde_json::from_slice(&buf[..len]).ok()
 }
 
 fn write_stamp(path: &Path, stamp: &FileStamp) -> std::io::Result<()> {
@@ -79,9 +87,11 @@ pub(crate) fn read(root: &Path, decoded: &AssetMetadata) -> Option<Vec<u8>> {
     if metadata.is_file() && metadata.len() == decoded.size() {
         let before = FileStamp::of(&metadata);
         let verified = before.is_some() && read_stamp(&path).as_ref() == before.as_ref();
-        let mut bytes = Vec::with_capacity(usize::try_from(decoded.size()).ok()?);
+        let capacity = usize::try_from(decoded.size()).ok()?;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(capacity).ok()?;
         if (&mut file)
-            .take(decoded.size())
+            .take(decoded.size().saturating_add(1))
             .read_to_end(&mut bytes)
             .is_ok()
             && bytes.len() as u64 == decoded.size()
@@ -119,7 +129,7 @@ pub(crate) fn read_indexed(root: &Path, decoded: &AssetMetadata) -> Option<(fs::
     }
     let target = path(root, decoded);
     let index_path = target.with_extension("index-v2");
-    let open = || {
+    let open_verified_target = || {
         let file = fs::File::open(&target).ok()?;
         let metadata = file.metadata().ok()?;
         let before = FileStamp::of(&metadata)?;
@@ -129,36 +139,49 @@ pub(crate) fn read_indexed(root: &Path, decoded: &AssetMetadata) -> Option<(fs::
         {
             return None;
         }
+        Some((file, before))
+    };
+    let open_existing = || {
+        let (file, before) = open_verified_target()?;
         let index_file = fs::File::open(&index_path).ok()?;
-        let index_before = FileStamp::of(&index_file.metadata().ok()?)?;
-        if index_before.size > MAX_INDEX_BYTES
+        let index_metadata = index_file.metadata().ok()?;
+        let index_before = FileStamp::of(&index_metadata)?;
+        if !index_metadata.is_file()
+            || index_before.size > MAX_INDEX_BYTES
             || read_stamp(&index_path).as_ref() != Some(&index_before)
         {
             return None;
         }
+        let index_len = usize::try_from(index_before.size).ok()?;
         let mut index = Vec::new();
+        index.try_reserve_exact(index_len).ok()?;
         (&index_file)
-            .take(MAX_INDEX_BYTES)
+            .take(index_before.size.saturating_add(1))
             .read_to_end(&mut index)
             .ok()?;
-        if FileStamp::of(&index_file.metadata().ok()?).as_ref() != Some(&index_before)
+        if index.len() as u64 != index_before.size
+            || FileStamp::of(&index_file.metadata().ok()?).as_ref() != Some(&index_before)
             || FileStamp::of(&file.metadata().ok()?).as_ref() != Some(&before)
         {
             return None;
         }
         Some((file, index))
     };
-    if let Some(source) = open() {
+    if let Some(source) = open_existing() {
         return Some(source);
     }
     let bytes = read(root, decoded)?;
-    write_index(&target, &bytes).ok()?;
-    open()
+    let index = write_index(&target, &bytes).ok()?;
+    let (file, before) = open_verified_target()?;
+    if FileStamp::of(&file.metadata().ok()?).as_ref() != Some(&before) {
+        return None;
+    }
+    Some((file, index))
 }
 
 const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 
-fn write_index(target: &Path, bytes: &[u8]) -> std::io::Result<()> {
+fn write_index(target: &Path, bytes: &[u8]) -> std::io::Result<Vec<u8>> {
     let bytes =
         ferriki_textmate::index_precompiled_patterns(bytes).map_err(std::io::Error::other)?;
     let target = target.with_extension("index-v2");
@@ -166,7 +189,7 @@ fn write_index(target: &Path, bytes: &[u8]) -> std::io::Result<()> {
     if let Some(stamp) = FileStamp::of(&fs::metadata(&target)?) {
         write_stamp(&target, &stamp)?;
     }
-    Ok(())
+    Ok(bytes)
 }
 
 pub(crate) fn prepare(root: &Path, decoded: &AssetMetadata, compressed: &[u8]) -> Result<Vec<u8>> {

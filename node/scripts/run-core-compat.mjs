@@ -199,6 +199,20 @@ const assetHardeningCheck = spawnSync(
 );
 if (assetHardeningCheck.status !== 0) process.exit(assetHardeningCheck.status || 1);
 
+const createHighlighterBatchCheck = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-create-highlighter-batch.mjs"],
+  {
+    cwd: nodeRoot,
+    env: {
+      ...process.env,
+      FERRIKI_ASSETS_PROTECTED: "0",
+    },
+    stdio: "inherit",
+  },
+);
+if (createHighlighterBatchCheck.status !== 0) process.exit(createHighlighterBatchCheck.status || 1);
+
 const multiThemeCheck = spawnSync(process.execPath, ["./scripts/check-ferriki-multitheme.mjs"], {
   cwd: nodeRoot,
   env: {

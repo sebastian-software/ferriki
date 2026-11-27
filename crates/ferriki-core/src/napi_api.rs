@@ -211,9 +211,29 @@ impl FerrikiHighlighter {
             .map(|assets| assets.cache_dir().to_string_lossy().into_owned())
     }
 
+    #[napi(js_name = "isStandardLanguageReady")]
+    pub fn is_standard_language_ready(&self, language: String) -> bool {
+        self.core.borrow().is_standard_language_ready(&language)
+    }
+
+    #[napi(js_name = "evictVerifiedAssets")]
+    pub fn evict_verified_assets(&self, languages: Vec<String>, themes: Vec<String>) {
+        if let Some(assets) = &self.assets {
+            for language in &languages {
+                assets.evict_verified_language(language);
+            }
+            for theme in &themes {
+                assets.evict_verified_theme(theme);
+            }
+        }
+    }
+
     #[napi]
     pub fn dispose(&self) {
         self.core.borrow_mut().dispose();
+        if let Some(assets) = &self.assets {
+            assets.close_verified_cache();
+        }
     }
 }
 
@@ -705,6 +725,101 @@ pub(crate) mod tests {
             assert!(asset.size > 0.0);
             assert!(asset.url.starts_with("https://example.test/assets/"));
         }
+        let _ = std::fs::remove_dir_all(cache);
+    }
+
+    #[test]
+    fn batch_load_preserves_staged_dependency_sidecar_until_batch_eviction() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/standard");
+        let cache =
+            std::env::temp_dir().join(format!("ferriki-batch-dep-sidecar-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&cache);
+        let planned_root = cache.join("catalogs");
+        for relative in ["languages/manifest.fkindex", "themes/manifest.fkindex"] {
+            let destination = planned_root.join(relative);
+            std::fs::create_dir_all(destination.parent().expect("parent")).expect("catalog dir");
+            std::fs::copy(root.join(relative), destination).expect("catalog");
+        }
+        let mut release: Value = serde_json::from_slice(
+            &std::fs::read(root.join("release-manifest.json")).expect("release"),
+        )
+        .expect("manifest");
+        release["commit"] = Value::String("0123456789abcdef0123456789abcdef01234567".into());
+        std::fs::write(
+            planned_root.join("release-manifest.json"),
+            serde_json::to_vec(&release).expect("manifest bytes"),
+        )
+        .expect("write manifest");
+
+        // Seed every standard grammar and sidecar except `vue.fkbc`, so loading
+        // `vue` first does not consume `typescript.fkbc` via delegation while
+        // `typescript` and its embedded sidecars are all staged in memory.
+        let assets_map = release["assets"].as_object().expect("assets map");
+        for (path, entry) in assets_map {
+            if path.ends_with(".fkgram")
+                || (path.ends_with(".fkbc") && path != "languages/vue.fkbc")
+            {
+                let src = root.join(path);
+                if src.exists() {
+                    let sha = entry["sha256"].as_str().expect("sha256");
+                    std::fs::copy(&src, cache.join(sha)).expect("seed cache entry");
+                }
+            }
+        }
+        let ts_sidecar_sha = assets_map["languages/typescript.fkbc"]["sha256"]
+            .as_str()
+            .expect("ts sidecar sha256")
+            .to_owned();
+
+        let highlighter = create_highlighter(NativeHighlighterOptions {
+            standard_asset_root: Some(planned_root.to_string_lossy().into_owned()),
+            assets: Some(NativeAssetOptions {
+                remote: Some(true),
+                base_url: Some("https://example.test/assets".into()),
+                cache_dir: Some(cache.to_string_lossy().into_owned()),
+            }),
+            regex_prefilter: None,
+            regex_mode: Some("prepared".into()),
+        })
+        .expect("highlighter");
+
+        // Plan the batch `["vue", "typescript"]`, staging verified cache hits
+        // including `typescript.fkbc`.
+        let planned = highlighter
+            .assets
+            .as_ref()
+            .expect("node assets")
+            .plan(&["vue".into(), "typescript".into()], &[])
+            .expect("plan batch");
+        assert!(
+            planned
+                .iter()
+                .any(|entry| entry.path == "languages/vue.fkbc"),
+            "vue.fkbc should be reported missing while cached assets are staged"
+        );
+
+        // Remove typescript.fkbc from disk so loading typescript succeeds with
+        // prepared sidecar ONLY if loading vue kept the staged verified bytes.
+        std::fs::remove_file(cache.join(&ts_sidecar_sha)).expect("remove disk ts sidecar");
+
+        assert!(
+            highlighter
+                .load_standard_grammar("vue".into())
+                .expect("load vue")
+                .is_some()
+        );
+        assert!(
+            highlighter
+                .load_standard_grammar("typescript".into())
+                .expect("load typescript")
+                .is_some()
+        );
+        assert!(
+            highlighter.is_standard_language_ready("typescript".into()),
+            "loading vue before typescript must not evict staged typescript.fkbc before typescript loads"
+        );
+
+        highlighter.evict_verified_assets(vec!["vue".into(), "typescript".into()], vec![]);
         let _ = std::fs::remove_dir_all(cache);
     }
 }

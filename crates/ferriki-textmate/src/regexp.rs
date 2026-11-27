@@ -42,8 +42,11 @@ struct PatternCacheState {
     sources: BTreeMap<String, PreparedSource>,
     ordinary_sources: Vec<PrecompiledPatterns>,
     active_scope: Option<String>,
+    active_file_attached: bool,
     diagnostics: crate::RegexDiagnostics,
     preparation_owners: HashMap<[u8; 32], String>,
+    #[cfg(test)]
+    precompiled_rebuilds: usize,
 }
 
 enum PreparedSource {
@@ -54,11 +57,7 @@ enum PreparedSource {
 impl PreparedSource {
     fn contains_group(&self, patterns: &[&str], config: &ScannerConfig) -> bool {
         match self {
-            Self::Memory(source) => source.groups.as_ref().is_none_or(|groups| {
-                groups.contains(&crate::indexed_precompiled::pattern_fingerprint(
-                    patterns.iter().copied(),
-                ))
-            }),
+            Self::Memory(source) => source.contains_group(patterns),
             Self::File(source) => source.contains_group(patterns, config),
         }
     }
@@ -87,8 +86,11 @@ impl ScannerPatternCache {
                 sources: BTreeMap::new(),
                 ordinary_sources: Vec::new(),
                 active_scope: None,
+                active_file_attached: false,
                 diagnostics: crate::RegexDiagnostics::default(),
                 preparation_owners: HashMap::new(),
+                #[cfg(test)]
+                precompiled_rebuilds: 0,
             })),
             scope: String::new(),
             owner_scope: String::new(),
@@ -161,6 +163,7 @@ impl ScannerPatternCache {
         state.sources.clear();
         state.ordinary_sources.clear();
         state.active_scope = None;
+        state.active_file_attached = false;
         state.diagnostics = crate::RegexDiagnostics::default();
         state.preparation_owners.clear();
     }
@@ -183,6 +186,7 @@ impl ScannerPatternCache {
             .expect("scanner pattern cache lock poisoned");
         state.ordinary_sources.push(source);
         state.active_scope = None;
+        state.active_file_attached = false;
         state.cache.clear_precompiled();
         Ok(())
     }
@@ -203,6 +207,7 @@ impl ScannerPatternCache {
             .sources
             .insert(source.scope.clone(), PreparedSource::Memory(source));
         state.active_scope = None;
+        state.active_file_attached = false;
         state.cache.clear_precompiled();
         Ok(())
     }
@@ -222,6 +227,7 @@ impl ScannerPatternCache {
                 .expect("scanner pattern cache lock poisoned");
             state.ordinary_sources.push(source);
             state.active_scope = None;
+            state.active_file_attached = false;
             state.cache.clear_precompiled();
         } else {
             let source = crate::precompiled::open_owned_archive(archive)?;
@@ -233,6 +239,7 @@ impl ScannerPatternCache {
                 .sources
                 .insert(source.scope.clone(), PreparedSource::Memory(source));
             state.active_scope = None;
+            state.active_file_attached = false;
             state.cache.clear_precompiled();
         }
         Ok(())
@@ -252,6 +259,7 @@ impl ScannerPatternCache {
             .sources
             .insert(source.scope.clone(), PreparedSource::File(source));
         state.active_scope = None;
+        state.active_file_attached = false;
         state.cache.clear_precompiled();
         Ok(())
     }
@@ -348,7 +356,11 @@ impl ScannerPatternCache {
             drop(state);
             return Scanner::with_config(patterns, &config);
         }
-        let selected_scope = if eager && self.mode == crate::RegexMode::Prepared {
+        let selected_scope = if eager
+            && self.mode == crate::RegexMode::Prepared
+            && self.owner_scope != self.scope
+            && state.sources.contains_key(&self.owner_scope)
+        {
             [&self.scope, &self.owner_scope]
                 .into_iter()
                 .find(|scope| {
@@ -361,15 +373,15 @@ impl ScannerPatternCache {
         } else {
             &self.scope
         };
-        let requested_source = if eager && self.mode == crate::RegexMode::Prepared {
+        let file_ready = if eager && self.mode == crate::RegexMode::Prepared {
             match state.sources.get_mut(selected_scope) {
-                Some(PreparedSource::File(source)) => source.load(patterns, &config),
-                _ => None,
+                Some(PreparedSource::File(source)) => source.ensure_loaded(patterns, &config),
+                _ => false,
             }
         } else {
-            None
+            false
         };
-        if state.active_scope.as_deref() != Some(selected_scope) || requested_source.is_some() {
+        if state.active_scope.as_deref() != Some(selected_scope) {
             // Ferroni selects one group source. Bind the selected host or defining
             // language while retaining shared programs and decoded groups.
             state.cache.clear_precompiled();
@@ -389,10 +401,37 @@ impl ScannerPatternCache {
             for source in sources {
                 state.cache.add_precompiled_eager(source);
             }
-            if let Some(source) = requested_source {
-                state.cache.add_precompiled_eager_records(source);
+            let file_records = if file_ready
+                && let Some(PreparedSource::File(source)) = state.sources.get(selected_scope)
+            {
+                Some(source.records())
+            } else {
+                None
+            };
+            if let Some(records) = file_records {
+                state.cache.add_precompiled_eager_records(records);
+                state.active_file_attached = true;
+            } else {
+                state.active_file_attached = false;
             }
             state.active_scope = Some(selected_scope.clone());
+            #[cfg(test)]
+            {
+                state.precompiled_rebuilds += 1;
+            }
+        } else if file_ready && !state.active_file_attached {
+            // The scope is already active; attach the file source incrementally
+            // without clearing already-attached sources. Clones of
+            // `PrecompiledEagerRecords` share their payload map, so subsequent
+            // loads in the same scope are visible without re-attaching.
+            let file_records = match state.sources.get(selected_scope) {
+                Some(PreparedSource::File(source)) => Some(source.records()),
+                _ => None,
+            };
+            if let Some(records) = file_records {
+                state.cache.add_precompiled_eager_records(records);
+                state.active_file_attached = true;
+            }
         }
         // An optional archive must not turn a source-valid scanner into a
         // load error, including a mixed decoded/source program set. Retry the
@@ -401,6 +440,14 @@ impl ScannerPatternCache {
             state.diagnostics.assembly_fallbacks += 1;
             Scanner::with_config(patterns, &config)
         })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn precompiled_rebuilds(&self) -> usize {
+        self.shared
+            .lock()
+            .expect("scanner pattern cache lock poisoned")
+            .precompiled_rebuilds
     }
 
     #[cfg(test)]

@@ -6,11 +6,13 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
+#[cfg(not(unix))]
 use std::io::{Read, Seek, SeekFrom};
 use std::time::SystemTime;
 
 use ferroni::scanner::{
-    PrecompiledEager, PrecompiledEagerRecordKind, PrecompiledEagerRecords, ScannerConfig,
+    PrecompiledBytes, PrecompiledEager, PrecompiledEagerRecordKind, PrecompiledEagerRecords,
+    ScannerConfig,
 };
 use sha2::{Digest, Sha256};
 
@@ -22,16 +24,25 @@ const INDEX_MAGIC: &[u8; 8] = b"FKIX002\0";
 pub(crate) const MAX_INDEX_BYTES: u64 = 16 * 1024 * 1024;
 const PROGRAM_MAGIC: &[u8; 8] = b"FERRONI\0";
 const GROUP_MAGIC: &[u8; 8] = b"FPRT003\0";
+const COALESCE_GAP_BYTES: u64 = 4 * 1024;
+const MAX_COALESCED_SPAN_BYTES: u64 = 256 * 1024;
+const MAX_SHARED_GAP_BYTES: usize = 512;
 
-pub(crate) fn group_lookup(source: &PrecompiledEager) -> Result<HashSet<[u8; 32]>> {
+/// Fast non-cryptographic 128-bit in-memory key for ordered pattern lists.
+/// Cryptographic SHA-256 (`pattern_fingerprint`) remains used for build-time
+/// delegation ownership and on-disk asset integrity.
+pub(crate) type PatternListKey = [u64; 2];
+
+pub(crate) fn group_lookup(source: &PrecompiledEager) -> Result<HashSet<PatternListKey>> {
     let mut programs = Input(source.program_bytes());
     if programs.take(8)? != PROGRAM_MAGIC || programs.u32()? != 2 {
         return Err(invalid());
     }
     let size = programs.u32()? as usize;
     let mut entries = Input(programs.take(size)?);
-    let mut keys = Vec::new();
-    for _ in 0..entries.count(100_000)? {
+    let program_count = entries.count(100_000)?;
+    let mut keys = Vec::with_capacity(program_count.min(4096));
+    for _ in 0..program_count {
         keys.push(entries.vector()?);
         entries.take(12)?;
     }
@@ -46,16 +57,16 @@ pub(crate) fn group_lookup(source: &PrecompiledEager) -> Result<HashSet<[u8; 32]
         return Err(invalid());
     }
     input.take(5)?;
-    let mut groups = HashSet::new();
-    for _ in 0..input.count(100_000)? {
-        let ids = (0..input.count(65_535)?)
-            .map(|_| input.u32())
-            .collect::<Result<Vec<_>>>()?;
-        let list = ids
-            .iter()
-            .map(|id| patterns.get(*id as usize).copied().ok_or_else(invalid))
-            .collect::<Result<Vec<_>>>()?;
-        groups.insert(pattern_fingerprint(list));
+    let group_count = input.count(100_000)?;
+    let mut groups = HashSet::with_capacity(group_count.min(4096));
+    for _ in 0..group_count {
+        let id_count = input.count(65_535)?;
+        let mut list = Vec::with_capacity(id_count.min(256));
+        for _ in 0..id_count {
+            let id = input.u32()?;
+            list.push(*patterns.get(id as usize).ok_or_else(invalid)?);
+        }
+        groups.insert(pattern_list_key(list));
         input.u32()?;
         let size = input.u32()? as usize;
         input.take(size)?;
@@ -344,14 +355,20 @@ pub(crate) struct IndexedArchive {
     program_start: u64,
     group_start: u64,
     records: PrecompiledEagerRecords,
-    loaded: HashMap<[u8; 32], bool>,
+    loaded: HashMap<(PatternListKey, bool), bool>,
     failures: usize,
     pub(crate) bytes_read: u64,
+    #[cfg(test)]
+    pub(crate) read_calls: usize,
 }
 
 impl IndexedArchive {
     pub(crate) fn contains_group(&self, patterns: &[&str], config: &ScannerConfig) -> bool {
         self.records.group(patterns, config, false).is_some()
+    }
+
+    pub(crate) fn records(&self) -> PrecompiledEagerRecords {
+        self.records.clone()
     }
 
     pub(crate) fn open(file: File, bytes: &[u8]) -> Result<Self> {
@@ -407,6 +424,8 @@ impl IndexedArchive {
             loaded: HashMap::new(),
             failures: 0,
             bytes_read: 0,
+            #[cfg(test)]
+            read_calls: 0,
         })
     }
 
@@ -415,23 +434,32 @@ impl IndexedArchive {
         (stats.loaded_groups, stats.invalid_groups + self.failures)
     }
 
+    /// Ensures all records for `(patterns, config)` are present in `self.records`.
+    ///
+    /// Because clones of `PrecompiledEagerRecords` share their underlying payload
+    /// storage, callers that already attached `self.records()` do not need to
+    /// clear or re-attach precompiled sources after this returns `true`.
+    pub(crate) fn ensure_loaded(&mut self, patterns: &[&str], config: &ScannerConfig) -> bool {
+        let key = (pattern_list_key(patterns.iter().copied()), config.prefilter);
+        if let Some(&loaded) = self.loaded.get(&key) {
+            return loaded;
+        }
+        let loaded = self.read_records(patterns, config).is_ok();
+        if !loaded {
+            self.failures += 1;
+        }
+        self.loaded.insert(key, loaded);
+        loaded
+    }
+
+    #[cfg(test)]
     pub(crate) fn load(
         &mut self,
         patterns: &[&str],
         config: &ScannerConfig,
     ) -> Option<PrecompiledEagerRecords> {
-        let key = pattern_fingerprint(patterns.iter().copied());
-        let loaded = if let Some(loaded) = self.loaded.get(&key) {
-            *loaded
-        } else {
-            let loaded = self.read_records(patterns, config).is_ok();
-            if !loaded {
-                self.failures += 1;
-            }
-            self.loaded.insert(key, loaded);
-            loaded
-        };
-        loaded.then(|| self.records.clone())
+        self.ensure_loaded(patterns, config)
+            .then(|| self.records.clone())
     }
 
     fn unchanged(&self) -> Result<()> {
@@ -450,37 +478,112 @@ impl IndexedArchive {
     fn read_records(&mut self, patterns: &[&str], config: &ScannerConfig) -> Result<()> {
         #[cfg(feature = "prepared-load-profile")]
         let started = std::time::Instant::now();
-        self.unchanged()?;
-        let mut requested = patterns
-            .iter()
-            .filter_map(|pattern| self.records.program(pattern, config, false))
-            .collect::<Vec<_>>();
-        requested.extend(self.records.group(patterns, config, false));
-        let mut pending = Vec::new();
+        let mut missing = Vec::new();
         let mut seen = HashSet::new();
-        for record in requested {
-            let kind = matches!(record.kind(), PrecompiledEagerRecordKind::Group);
-            if self.records.contains(&record) || !seen.insert((kind, record.id())) {
-                continue;
+        for pattern in patterns {
+            if let Some(record) = self.records.program(pattern, config, false)
+                && !self.records.contains(&record)
+                && seen.insert((false, record.id()))
+            {
+                let range = record.range();
+                let start = self
+                    .program_start
+                    .checked_add(range.start as u64)
+                    .ok_or_else(invalid)?;
+                let len = range.len();
+                let end = start.checked_add(len as u64).ok_or_else(invalid)?;
+                if end > self.group_start {
+                    return Err(invalid());
+                }
+                missing.push((start, len, record));
             }
-            let offset = if kind {
-                self.group_start
-            } else {
-                self.program_start
-            };
+        }
+        if let Some(record) = self.records.group(patterns, config, false)
+            && !self.records.contains(&record)
+            && seen.insert((true, record.id()))
+        {
             let range = record.range();
-            let mut bytes = Vec::new();
-            read_record(
-                &mut self.file,
-                &Record {
-                    start: offset + range.start as u64,
-                    len: u32::try_from(range.len()).map_err(PrecompiledPatternsError::new)?,
-                    checksum: 0, // Ferroni owns the expected checksum in its record index.
-                },
-                &mut bytes,
-            )?;
-            self.bytes_read += bytes.len() as u64;
-            pending.push((record, bytes));
+            let start = self
+                .group_start
+                .checked_add(range.start as u64)
+                .ok_or_else(invalid)?;
+            let len = range.len();
+            let end = start.checked_add(len as u64).ok_or_else(invalid)?;
+            if end > self.size {
+                return Err(invalid());
+            }
+            missing.push((start, len, record));
+        }
+        if missing.is_empty() {
+            return Ok(());
+        }
+        self.unchanged()?;
+        missing.sort_unstable_by_key(|(start, _, _)| *start);
+
+        let mut pending = Vec::with_capacity(missing.len());
+        let mut i = 0;
+        while i < missing.len() {
+            let span_start = missing[i].0;
+            let mut span_end = span_start
+                .checked_add(missing[i].1 as u64)
+                .ok_or_else(invalid)?;
+            let mut total_record_bytes = missing[i].1;
+            let mut j = i + 1;
+            while j < missing.len() {
+                let (next_start, next_len, _) = missing[j];
+                let next_end = next_start
+                    .checked_add(next_len as u64)
+                    .ok_or_else(invalid)?;
+                let gap = next_start.saturating_sub(span_end);
+                let merged_end = span_end.max(next_end);
+                let merged_len = merged_end.saturating_sub(span_start);
+                if gap <= COALESCE_GAP_BYTES && merged_len <= MAX_COALESCED_SPAN_BYTES {
+                    span_end = merged_end;
+                    total_record_bytes = total_record_bytes.saturating_add(next_len);
+                    j += 1;
+                } else {
+                    break;
+                }
+            }
+            if span_end > self.size {
+                return Err(invalid());
+            }
+            let span_len =
+                usize::try_from(span_end - span_start).map_err(PrecompiledPatternsError::new)?;
+            let mut buf = Vec::new();
+            buf.try_reserve_exact(span_len)
+                .map_err(PrecompiledPatternsError::new)?;
+            buf.resize(span_len, 0);
+            read_exact_at_offset(&mut self.file, span_start, &mut buf)?;
+            #[cfg(test)]
+            {
+                self.read_calls += 1;
+            }
+            self.bytes_read += span_len as u64;
+
+            if j - i == 1 {
+                pending.push((missing[i].2.clone(), PrecompiledBytes::new(buf)));
+            } else if span_len.saturating_sub(total_record_bytes) <= MAX_SHARED_GAP_BYTES {
+                let shared = PrecompiledBytes::new(buf);
+                for (start, len, record) in &missing[i..j] {
+                    let rel_start = (*start - span_start) as usize;
+                    let rel_end = rel_start + *len;
+                    let slice = shared
+                        .slice(rel_start..rel_end)
+                        .map_err(PrecompiledPatternsError::from_engine)?;
+                    pending.push((record.clone(), slice));
+                }
+            } else {
+                for (start, len, record) in &missing[i..j] {
+                    let rel_start = (*start - span_start) as usize;
+                    let rel_end = rel_start + *len;
+                    pending.push((
+                        record.clone(),
+                        PrecompiledBytes::new(buf[rel_start..rel_end].to_vec()),
+                    ));
+                }
+            }
+            i = j;
         }
         self.unchanged()?;
         #[cfg(feature = "prepared-load-profile")]
@@ -491,7 +594,7 @@ impl IndexedArchive {
         let count = pending.len();
         for (record, bytes) in pending {
             self.records
-                .insert(&record, bytes.into())
+                .insert(&record, bytes)
                 .map_err(PrecompiledPatternsError::from_engine)?;
         }
         #[cfg(feature = "prepared-load-profile")]
@@ -507,16 +610,19 @@ impl IndexedArchive {
     }
 }
 
-fn read_record(file: &mut File, record: &Record, bytes: &mut Vec<u8>) -> Result<()> {
-    file.seek(SeekFrom::Start(record.start))
-        .map_err(PrecompiledPatternsError::new)?;
-    let start = bytes.len();
-    bytes.resize(
-        start.checked_add(record.len as usize).ok_or_else(invalid)?,
-        0,
-    );
-    file.read_exact(&mut bytes[start..])
-        .map_err(PrecompiledPatternsError::new)
+fn read_exact_at_offset(file: &mut File, offset: u64, buf: &mut [u8]) -> Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::FileExt;
+        file.read_exact_at(buf, offset)
+            .map_err(PrecompiledPatternsError::new)
+    }
+    #[cfg(not(unix))]
+    {
+        file.seek(SeekFrom::Start(offset))
+            .map_err(PrecompiledPatternsError::new)?;
+        file.read_exact(buf).map_err(PrecompiledPatternsError::new)
+    }
 }
 
 // Read only the stable program key envelope. Ferroni checks the exact current
@@ -633,6 +739,49 @@ fn binding_checksum(bytes: &[u8]) -> u32 {
     hash = hash.wrapping_mul(0xff51_afd7_ed55_8ccd);
     hash ^= hash >> 33;
     (hash ^ (hash >> 32)) as u32
+}
+
+/// Fast non-cryptographic 128-bit in-memory key for ordered pattern lists.
+/// Lengths and order distinguish duplicates and scanner-list boundaries.
+pub(crate) fn pattern_list_key<'a>(patterns: impl IntoIterator<Item = &'a str>) -> PatternListKey {
+    const PRIME_A: u64 = 0x0000_0100_0000_01b3;
+    const PRIME_B: u64 = 0x9e37_79b9_7f4a_7c15;
+    let mut h0: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut h1: u64 = 0x1656_67b1_9e37_79f9;
+    let mut count: u64 = 0;
+    for pattern in patterns {
+        count = count.wrapping_add(1);
+        let bytes = pattern.as_bytes();
+        let len = bytes.len() as u64;
+        h0 = (h0 ^ len).wrapping_mul(PRIME_A);
+        h1 = (h1 ^ len.rotate_left(17)).wrapping_mul(PRIME_B);
+        let (chunks, tail) = bytes.as_chunks::<8>();
+        for chunk in chunks {
+            let word = u64::from_le_bytes(*chunk);
+            h0 = (h0 ^ word).wrapping_mul(PRIME_A);
+            h0 ^= h0 >> 29;
+            h1 = (h1 ^ word.rotate_left(23)).wrapping_mul(PRIME_B);
+            h1 ^= h1 >> 31;
+        }
+        if !tail.is_empty() {
+            let mut last = [0_u8; 8];
+            last[..tail.len()].copy_from_slice(tail);
+            let word = u64::from_le_bytes(last);
+            h0 = (h0 ^ word).wrapping_mul(PRIME_A);
+            h0 ^= h0 >> 29;
+            h1 = (h1 ^ word.rotate_left(23)).wrapping_mul(PRIME_B);
+            h1 ^= h1 >> 31;
+        }
+    }
+    h0 ^= count;
+    h0 ^= h0 >> 33;
+    h0 = h0.wrapping_mul(0xff51_afd7_ed55_8ccd);
+    h0 ^= h0 >> 33;
+    h1 ^= count.rotate_left(32);
+    h1 ^= h1 >> 33;
+    h1 = h1.wrapping_mul(0xc4ce_b9fe_1a85_ec53);
+    h1 ^= h1 >> 33;
+    [h0, h1]
 }
 
 /// Lengths and order distinguish duplicates and scanner-list boundaries.
@@ -753,6 +902,108 @@ mod tests {
         let mut bad_index = index.clone();
         bad_index[12..20].copy_from_slice(&u64::MAX.to_le_bytes());
         assert!(IndexedArchive::open(File::open(&path).unwrap(), &bad_index).is_err());
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn pattern_list_key_distinguishes_order_lengths_and_duplicates() {
+        assert_ne!(pattern_list_key(["ab", "c"]), pattern_list_key(["a", "bc"]));
+        assert_ne!(pattern_list_key(["a", "b"]), pattern_list_key(["b", "a"]));
+        assert_ne!(pattern_list_key(["a"]), pattern_list_key(["a", "a"]));
+        assert_ne!(pattern_list_key([] as [&str; 0]), pattern_list_key([""]));
+        assert_eq!(
+            pattern_list_key(["alpha", "beta", "gamma"]),
+            pattern_list_key(["alpha", "beta", "gamma"])
+        );
+    }
+
+    #[test]
+    fn coalesced_record_reads_reduce_syscalls_and_reject_truncation() {
+        static NEXT: AtomicUsize = AtomicUsize::new(100);
+        let raw = crate::parse_raw_grammar(
+            r#"{"scopeName":"source.coalesce","patterns":[
+                {"match":"alpha"},
+                {"match":"beta"},
+                {"match":"gamma"},
+                {"match":"delta"},
+                {"match":"epsilon"},
+                {"match":"zeta"},
+                {"match":"eta"},
+                {"match":"theta"}
+            ]}"#,
+            Some("coalesce.json"),
+        )
+        .unwrap();
+        let bytes = crate::decompress_precompiled_patterns(
+            &crate::precompile_grammar_patterns(&raw).unwrap(),
+        )
+        .unwrap();
+        let original = archive_index(&bytes).unwrap();
+        let index = index_precompiled_patterns(&bytes).unwrap();
+        let path = std::env::temp_dir().join(format!(
+            "ferriki-indexed-coalesce-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        let config =
+            crate::regexp::scanner_config(true).acceleration(ferroni::AccelerationMode::Eager);
+        let group = original
+            .groups
+            .iter()
+            .max_by_key(|group| group.ids.len())
+            .unwrap();
+        assert!(group.ids.len() >= 8);
+        let patterns: Vec<String> = group
+            .ids
+            .iter()
+            .map(|id| {
+                pattern_key(&original.programs[*id as usize].key)
+                    .unwrap()
+                    .0
+                    .to_owned()
+            })
+            .collect();
+        let pattern_refs: Vec<&str> = patterns.iter().map(String::as_str).collect();
+
+        std::fs::write(&path, &bytes).unwrap();
+        let mut source = IndexedArchive::open(File::open(&path).unwrap(), &index).unwrap();
+        let records = source.load(&pattern_refs, &config).unwrap();
+        let read_calls = source.read_calls;
+        let bytes_read = source.bytes_read;
+        assert!(
+            read_calls > 0 && read_calls < group.ids.len(),
+            "expected coalesced reads ({read_calls}) to be fewer than individual records ({})",
+            group.ids.len() + 1
+        );
+        for pattern in &pattern_refs {
+            let record = records.program(pattern, &config, false).unwrap();
+            assert!(records.validate_record(&record).unwrap());
+        }
+        assert!(
+            records
+                .validate_record(&records.group(&pattern_refs, &config, false).unwrap())
+                .unwrap()
+        );
+        // Repeat load is an in-memory cache hit with zero extra syscalls or I/O.
+        assert!(source.ensure_loaded(&pattern_refs, &config));
+        assert_eq!(source.read_calls, read_calls);
+        assert_eq!(source.bytes_read, bytes_read);
+        drop(source);
+
+        // Truncating the backing file after open must be rejected cleanly before inserting records.
+        let mut truncated_source =
+            IndexedArchive::open(File::open(&path).unwrap(), &index).unwrap();
+        File::options()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_len(bytes.len() as u64 / 2)
+            .unwrap();
+        assert!(!truncated_source.ensure_loaded(&pattern_refs, &config));
+        assert_eq!(truncated_source.read_calls, 0);
+        assert_eq!(truncated_source.bytes_read, 0);
+        assert_eq!(truncated_source.stats().1, 1);
+        drop(truncated_source);
         std::fs::remove_file(path).unwrap();
     }
 }

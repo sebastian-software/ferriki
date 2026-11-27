@@ -13,6 +13,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::asset_source::InternalVerifiedSource;
 use crate::{AssetMetadata, AssetSource, Error, ErrorKind, Result};
 
 pub struct StandardAssetCatalogs {
@@ -99,8 +100,29 @@ impl StandardAssetCatalogs {
         let resolved = settings.resolve(&release, |key| std::env::var(key).ok())?;
         let cache_dir = resolved.cache_dir.clone();
         let source = RemoteAssetSource::new(&release, resolved, true)?;
-        Self::from_release_manifest(LANGUAGES, THEMES, &release, source)
+        Self::from_verified_release_manifest(LANGUAGES, THEMES, &release, source)
             .map(|catalogs| catalogs.with_decoded_cache(cache_dir))
+    }
+
+    /// Creates lazy, verified catalogs backed by a crate-internal source that
+    /// returns proof-carrying [`crate::asset_source::VerifiedBytes`].
+    pub(crate) fn from_verified_release_manifest(
+        language_manifest: &[u8],
+        theme_manifest: &[u8],
+        release: &ReleaseManifest,
+        source: impl InternalVerifiedSource + 'static,
+    ) -> Result<Self> {
+        let metadata = release
+            .assets
+            .iter()
+            .map(|(path, asset)| Ok((path.clone(), AssetMetadata::from_release_asset(asset)?)))
+            .collect::<Result<Vec<_>>>()?;
+        Self::from_verified_source(
+            language_manifest,
+            theme_manifest,
+            metadata,
+            VerifiedSource::Internal(Arc::new(source)),
+        )
     }
 
     /// Creates lazy, verified catalogs from binary manifests and a digest-addressed source.
@@ -112,6 +134,20 @@ impl StandardAssetCatalogs {
         theme_manifest: &[u8],
         metadata: impl IntoIterator<Item = (String, AssetMetadata)>,
         source: impl AssetSource + 'static,
+    ) -> Result<Self> {
+        Self::from_verified_source(
+            language_manifest,
+            theme_manifest,
+            metadata,
+            VerifiedSource::External(Arc::new(source)),
+        )
+    }
+
+    fn from_verified_source(
+        language_manifest: &[u8],
+        theme_manifest: &[u8],
+        metadata: impl IntoIterator<Item = (String, AssetMetadata)>,
+        source: VerifiedSource,
     ) -> Result<Self> {
         let languages = decode_language_manifest(language_manifest).map_err(|source| {
             Error::new(
@@ -147,14 +183,13 @@ impl StandardAssetCatalogs {
                 .validate_format()?;
         }
         let metadata = Arc::new(metadata);
-        let source: Arc<dyn AssetSource> = Arc::new(source);
         Ok(Self {
             languages: LanguageAssetCatalog::from_manifest(
                 languages,
                 AssetStore::Verified {
                     prefix: "languages",
                     metadata: Arc::clone(&metadata),
-                    source: Arc::clone(&source),
+                    source: source.clone(),
                     decoded_cache: None,
                 },
             )?,
@@ -201,13 +236,53 @@ impl StandardAssetCatalogs {
     }
 }
 
+#[derive(Clone)]
+enum VerifiedSource {
+    External(Arc<dyn AssetSource>),
+    Internal(Arc<dyn InternalVerifiedSource>),
+}
+
+impl VerifiedSource {
+    fn read_verified_or_check(
+        &self,
+        metadata: &AssetMetadata,
+        validate_format: bool,
+    ) -> Result<Cow<'_, [u8]>> {
+        if validate_format {
+            metadata.validate_format()?;
+        }
+        match self {
+            Self::External(source) => {
+                let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
+                metadata.verify_bytes(&bytes)?;
+                Ok(bytes)
+            }
+            Self::Internal(source) => {
+                let verified = source.read_verified(metadata.digest(), metadata.size())?;
+                if verified.digest() != metadata.digest()
+                    || verified.len() as u64 != metadata.size()
+                {
+                    return Err(Error::new(
+                        ErrorKind::AssetIntegrity,
+                        format!(
+                            "Asset {} failed its SHA-256 or byte-size check.",
+                            metadata.digest().as_str()
+                        ),
+                    ));
+                }
+                Ok(Cow::Owned(verified.into_bytes()))
+            }
+        }
+    }
+}
+
 enum AssetStore {
     Directory(PathBuf),
     Embedded(HashMap<String, Cow<'static, [u8]>>),
     Verified {
         prefix: &'static str,
         metadata: Arc<HashMap<String, AssetMetadata>>,
-        source: Arc<dyn AssetSource>,
+        source: VerifiedSource,
         decoded_cache: Option<PathBuf>,
     },
 }
@@ -251,18 +326,13 @@ impl AssetStore {
                         if let Some(bytes) = crate::precompiled_cache::read(root, decoded) {
                             return Ok(Cow::Owned(bytes));
                         }
-                        let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
-                        metadata.verify_bytes(&bytes)?;
+                        let bytes = source.read_verified_or_check(metadata, false)?;
                         return crate::precompiled_cache::prepare(root, decoded, &bytes)
                             .map(Cow::Owned);
                     }
-                    let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
-                    metadata.verify_bytes(&bytes)?;
-                    return Ok(bytes);
+                    return source.read_verified_or_check(metadata, false);
                 }
-                let bytes = source.read_bounded(metadata.digest(), metadata.size())?;
-                metadata.verify(&bytes)?;
-                Ok(bytes)
+                source.read_verified_or_check(metadata, true)
             }
             Self::Directory(dir) => read_bytes(&dir.join(file)).map(Cow::Owned),
             Self::Embedded(assets) => assets
@@ -414,6 +484,28 @@ impl LanguageAssetCatalog {
         self.entries_by_id
             .get(id)
             .map(|entry| entry.scope_name.as_str())
+    }
+
+    pub(crate) fn embedded_langs(&self, id: &str) -> Option<&[String]> {
+        self.entries_by_id
+            .get(id)
+            .map(|entry| entry.embedded_langs.as_slice())
+    }
+
+    /// Returns the verified release manifest's `.fkbc` format version for `id`,
+    /// if the release pins a precompiled sidecar for this language.
+    pub(crate) fn precompiled_format_version(&self, id: &str) -> Option<u32> {
+        let entry = self.entries_by_id.get(id)?;
+        let stem = entry.asset_file.strip_suffix(".fkgram")?;
+        let AssetStore::Verified {
+            prefix, metadata, ..
+        } = &self.asset_store
+        else {
+            return None;
+        };
+        metadata
+            .get(&format!("{prefix}/{stem}.fkbc"))
+            .map(AssetMetadata::format_version)
     }
 
     pub(crate) fn load_asset(&self, requested: &str) -> Result<Option<Arc<LanguageAsset>>> {
@@ -823,10 +915,10 @@ mod tests {
                 "languages/cache.fkbc".into(),
                 metadata.clone(),
             )])),
-            source: Arc::new(Source {
+            source: VerifiedSource::External(Arc::new(Source {
                 bytes: compressed.clone(),
                 reads: Arc::clone(&reads),
-            }),
+            })),
             decoded_cache: Some(root.clone()),
         };
         assert_eq!(store().read("cache.fkbc").unwrap().as_ref(), decoded);
