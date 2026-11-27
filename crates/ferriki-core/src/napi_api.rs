@@ -8,7 +8,7 @@ use napi::{Env, Error, Result, Task};
 use napi_derive::napi;
 
 use crate::native_types::*;
-use crate::{HighlighterCore, RenderOptions, TokenizeOptions, render_html};
+use crate::{HighlighterCore, RenderOptions, TokenizeOptions};
 
 #[napi]
 pub struct FerrikiHighlighter {
@@ -75,9 +75,7 @@ impl FerrikiHighlighter {
 
     #[napi(js_name = "resolveGrammarScope")]
     pub fn resolve_grammar_scope(&self, language: String) -> Result<Option<String>> {
-        let mut core = self.core.borrow_mut();
-        native(core.load_standard_language(&language))?;
-        Ok(core.resolve_scope(&language))
+        native(self.core.borrow_mut().resolve_or_load_language(&language))
     }
 
     #[napi(js_name = "getLoadedGrammarScopes")]
@@ -90,12 +88,12 @@ impl FerrikiHighlighter {
         self.core.borrow().loaded_languages()
     }
 
-    #[napi(js_name = "getHtmlRenderData")]
+    #[napi(js_name = "getHtmlRenderData", ts_return_type = "HtmlRenderData")]
     pub fn get_html_render_data(
         &self,
         code: String,
         options: NativeTokenOptions,
-    ) -> Result<HtmlRenderData> {
+    ) -> Result<NativeHtmlRenderData> {
         if options.continuation_state.is_none()
             && !options.capture_continuation_state.unwrap_or(false)
         {
@@ -105,25 +103,64 @@ impl FerrikiHighlighter {
         Ok(result.into())
     }
 
-    #[napi(js_name = "getHtmlRenderDataWithThemes")]
+    #[napi(
+        js_name = "getHtmlRenderDataWithThemes",
+        ts_return_type = "HtmlRenderDataWithThemes"
+    )]
     pub fn get_html_render_data_with_themes(
         &self,
         code: String,
         options: NativeTokenOptions,
-    ) -> Result<HtmlRenderDataWithThemes> {
+    ) -> Result<NativeHtmlRenderDataWithThemes> {
         Ok(self.tokenize_with_themes_with_state(&code, options)?.into())
     }
 
     #[napi(js_name = "codeToHtml")]
     pub fn code_to_html(&self, code: String, options: NativeHighlightOptions) -> Result<String> {
-        let options = HighlightOptions::from(options);
+        let mut options = HighlightOptions::from(options);
+        if options.render.style_mode == ferriki::StyleMode::Classes {
+            options.tokenize.preserve_scope_boundaries = true;
+            let tokens = native(self.core.borrow_mut().tokenize(
+                &code,
+                &options.language,
+                &options.theme,
+                &options.tokenize,
+            ))?;
+            return Ok(ferriki::__private::render_html_node_classes(
+                &tokens,
+                &options.render,
+            ));
+        }
+        native(self.core.borrow_mut().highlight_to_html(
+            &code,
+            &options.language,
+            &options.theme,
+            &options.tokenize,
+            &options.render,
+        ))
+    }
+
+    /// Render class-based HTML and resolved theme CSS without transporting tokens to JS.
+    #[napi(js_name = "codeToHtmlWithCss")]
+    pub fn code_to_html_with_css(
+        &self,
+        code: String,
+        options: NativeHighlightOptions,
+    ) -> Result<HtmlWithCss> {
+        let mut options = HighlightOptions::from(options);
+        options.tokenize.preserve_scope_boundaries = true;
+        options.render.style_mode = ferriki::StyleMode::Classes;
         let tokens = native(self.core.borrow_mut().tokenize(
             &code,
             &options.language,
             &options.theme,
             &options.tokenize,
         ))?;
-        Ok(render_html(&tokens, &options.render))
+        let rendered = ferriki::__private::render_html_with_css_node(&tokens, &options.render);
+        Ok(HtmlWithCss {
+            html: rendered.html,
+            css: rendered.css,
+        })
     }
 
     /// Render inline multi-theme HTML without creating JavaScript token objects.
@@ -131,11 +168,23 @@ impl FerrikiHighlighter {
     pub fn code_to_html_with_themes(
         &self,
         code: String,
-        options: NativeHighlightOptions,
+        mut options: NativeHighlightOptions,
         presentation: NativeMultiRenderOptions,
     ) -> Result<String> {
-        let render = HighlightOptions::from(options.clone()).render;
-        let tokens = self.tokenize_with_themes(&code, options.into())?;
+        let themes = options
+            .theme_entries
+            .take()
+            .ok_or_else(|| Error::from_reason("Multi-theme options require `themeEntries`."))?
+            .into_iter()
+            .map(|entry| (entry.color, entry.name))
+            .collect::<Vec<_>>();
+        let parsed = HighlightOptions::from(options);
+        let tokens = native(self.core.borrow_mut().tokenize_with_themes(
+            &code,
+            &parsed.language,
+            &themes,
+            &parsed.tokenize,
+        ))?;
         let default_color = match presentation.default_color {
             Some(Either::B(false)) => None,
             Some(Either::A(value)) => (!value.is_empty()).then_some(value),
@@ -148,7 +197,7 @@ impl FerrikiHighlighter {
         ferriki::__private::render_html_with_themes(
             &tokens,
             &ferriki::__private::MultiThemeRenderOptions {
-                render,
+                render: parsed.render,
                 default_color,
                 css_variable_prefix,
             },
@@ -381,6 +430,11 @@ impl From<NativeHighlightOptions> for HighlightOptions {
                 .filter(|v| v.is_finite() && *v >= 0.0 && v.fract() == 0.0 && *v < u64::MAX as f64)
                 .map_or(default, |v| v as u64)
         };
+        let style_mode = if options.style_mode.as_deref() == Some("classes") {
+            ferriki::StyleMode::Classes
+        } else {
+            ferriki::StyleMode::Inline
+        };
         Self {
             language: options.lang,
             theme: options.theme,
@@ -392,10 +446,11 @@ impl From<NativeHighlightOptions> for HighlightOptions {
                 .with_include_token_type(include_token_type)
                 .with_include_scopes(include_scopes)
                 .with_preserve_scope_boundaries(
-                    options.style_mode.as_deref() == Some("classes")
+                    style_mode == ferriki::StyleMode::Classes
                         || options.preserve_scope_boundaries == Some(true),
                 ),
             render: RenderOptions::default()
+                .with_style_mode(style_mode)
                 .with_merge_whitespaces(options.merge_whitespaces.unwrap_or(true))
                 .with_merge_same_style_tokens(options.merge_same_style_tokens.unwrap_or(false))
                 .with_root_style(root_style)
@@ -464,8 +519,8 @@ pub(crate) mod tests {
         let html = highlighter
             .code_to_html("const x = 1".into(), options)
             .expect("html");
-        assert_eq!(tokens.theme_name, "nord");
-        assert!(tokens.tokens[0][0].token_type.is_some());
+        assert_eq!(tokens.result.theme_name, "nord");
+        assert!(tokens.result.tokens[0][0].token_type.is_some());
         assert!(html.starts_with("<pre class=\"shiki nord\""));
     }
 
@@ -549,17 +604,14 @@ pub(crate) mod tests {
         let result = highlighter
             .get_html_render_data_with_themes("const x = 1".into(), options.into())
             .expect("tokens");
-        assert_eq!(result.themes.len(), 2);
-        assert_eq!(result.tokens[0][0].content, "const");
-        let variants = &result.tokens[0][0].variants.0;
+        assert_eq!(result.result.themes.len(), 2);
+        assert_eq!(result.result.tokens[0][0].content, "const");
+        let variants = &result.result.tokens[0][0].variants;
         assert_eq!(
-            variants
-                .iter()
-                .map(|(name, _)| name.as_str())
-                .collect::<Vec<_>>(),
+            variants.keys().map(String::as_str).collect::<Vec<_>>(),
             ["dark", "light"]
         );
-        assert!(variants.iter().all(|(_, style)| style.color.is_some()));
+        assert!(variants.values().all(|style| style.color.is_some()));
     }
     #[test]
     fn typed_options_preserve_explanations_styles_and_numeric_fallbacks() {
@@ -664,8 +716,11 @@ pub(crate) mod tests {
                 },
             )
             .expect("custom tokens");
-        assert_eq!(tokens.tokens[0][0].content, "x");
-        assert_ne!(tokens.tokens[0][0].color, tokens.tokens[0][1].color);
+        assert_eq!(tokens.result.tokens[0][0].content, "x");
+        assert_ne!(
+            tokens.result.tokens[0][0].color,
+            tokens.result.tokens[0][1].color
+        );
         assert!(highlighter.load_custom_grammar("[]".into()).is_err());
 
         highlighter.dispose();
@@ -854,5 +909,83 @@ pub(crate) mod tests {
         // Second dispose remains idempotent.
         highlighter.dispose();
         assert!(highlighter.assets.borrow().is_none());
+    }
+
+    #[test]
+    fn native_code_to_html_with_css_and_class_mode_match_node_contract() {
+        let highlighter = create_highlighter(NativeHighlighterOptions::default()).expect("bare");
+        highlighter
+            .load_custom_grammar(
+                r#"{
+                    "name": "cls-probe",
+                    "scopeName": "source.cls",
+                    "patterns": [
+                        { "match": "kw", "name": "keyword.control.cls" }
+                    ]
+                }"#
+                .into(),
+            )
+            .expect("grammar");
+        highlighter
+            .load_custom_theme(
+                r##"{
+                    "name": "cls-theme",
+                    "type": "dark",
+                    "fg": "#D8DEE9",
+                    "bg": "#2E3440",
+                    "settings": [
+                        { "scope": "keyword.control", "settings": { "foreground": "#81A1C1", "fontStyle": "bold" } }
+                    ]
+                }"##
+                .into(),
+            )
+            .expect("theme");
+
+        assert_eq!(
+            highlighter
+                .resolve_grammar_scope("cls-probe".into())
+                .expect("resolve")
+                .as_deref(),
+            Some("source.cls")
+        );
+
+        let options = NativeHighlightOptions {
+            lang: "cls-probe".into(),
+            theme: "cls-theme".into(),
+            style_mode: Some("classes".into()),
+            root_style: Some(Either::A(String::new())),
+            ..Default::default()
+        };
+        let with_css = highlighter
+            .code_to_html_with_css("kw <x>".into(), options.clone())
+            .expect("html with css");
+        let html_only = highlighter
+            .code_to_html("kw <x>".into(), options)
+            .expect("html only");
+
+        assert_eq!(with_css.html, html_only);
+        assert!(
+            with_css
+                .html
+                .starts_with("<pre class=\"ferriki cls-theme ferriki-style-")
+        );
+        assert!(with_css.html.contains("exact-keyword-control-cls"));
+        assert!(with_css.html.contains("&#x3C;x>"));
+        assert!(!with_css.html.contains(" style="));
+        assert!(
+            with_css
+                .css
+                .contains("{background-color:#2E3440;color:#D8DEE9}")
+        );
+        assert!(
+            with_css.css.contains(
+                "{color:#81A1C1;font-style:normal;font-weight:bold;text-decoration:none}"
+            )
+        );
+        assert!(
+            with_css.css.contains(
+                "{color:#D8DEE9;font-style:normal;font-weight:normal;text-decoration:none}"
+            )
+        );
     }
 }

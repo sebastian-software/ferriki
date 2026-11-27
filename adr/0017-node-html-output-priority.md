@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-17
+Last updated: 2026-11-27
 
 ## Context
 
@@ -56,10 +56,13 @@ measurements.
 - Classic inline multi-theme HTML without callbacks uses a complete native
   render operation. Rust serializes the aligned theme tokens directly, including
   CSS variables, default-color selection, whitespace merging, and root controls.
+  Eligible single-theme class-mode HTML and CSS (`codeToHtmlWithCss` and
+  `codeToHtml` with `styleMode: "classes"`) likewise use a complete native
+  render operation without crossing N-API with token and scope trees.
   The private bridge adds no public structured output or stable Rust multi-theme
-  rendering API. CSS classes, callbacks, decorations, inline structure, grammar
-  continuation, `none` themes, and presentation strings with lone surrogates
-  retain the host pipeline.
+  rendering API. Multi-theme CSS classes, callbacks, decorations, inline
+  structure, grammar continuation, `none` themes, and presentation strings with
+  lone surrogates retain the host pipeline.
 - Keep `getLastGrammarState(code, options)` as the source of serializable
   grammar state for HTML continuation. Do not expose token-result or HAST-result
   overloads. Keep the public Rust token APIs and native tokenizer unchanged.
@@ -96,3 +99,7 @@ measurements.
   presentation; both preserve the HTML output contract (#257, #263).
 - 2026-10-17: Adds complete native rendering for eligible inline multi-theme
   HTML while preserving the JavaScript callback and presentation fallbacks.
+- 2026-11-27: Adds complete native rendering for eligible single-theme
+  class-mode HTML and CSS (`codeToHtmlWithCss` / `styleMode: "classes"`) while
+  preserving host fallbacks for multi-theme classes, callbacks, decorations,
+  inline structure, grammar continuation, `none` themes, and lone surrogates (#393).

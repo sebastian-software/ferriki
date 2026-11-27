@@ -206,6 +206,28 @@ impl Highlighter {
         Ok(result)
     }
 
+    /// Highlights source directly into escaped, balanced HTML.
+    ///
+    /// In inline mode, tokens stream directly into the HTML buffer without
+    /// materializing an intermediate token tree.
+    pub fn highlight_to_html(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme: &str,
+        render_options: &RenderOptions,
+    ) -> Result<String> {
+        self.core.highlight_to_html(
+            code,
+            language,
+            theme,
+            &TokenizeOptions::default().with_preserve_scope_boundaries(
+                render_options.style_mode == crate::StyleMode::Classes,
+            ),
+            render_options,
+        )
+    }
+
     /// Highlights directly to escaped, balanced inner HTML per source line.
     ///
     /// This avoids converting token offsets when a Markdown renderer only
@@ -217,13 +239,20 @@ impl Highlighter {
         theme: &str,
         render_options: &RenderOptions,
     ) -> Result<HighlightedLines> {
+        if render_options.style_mode == crate::StyleMode::Inline {
+            return self.core.highlight_html_lines_inline(
+                code,
+                language,
+                theme,
+                &TokenizeOptions::default(),
+                render_options,
+            );
+        }
         let tokens = self.core.tokenize(
             code,
             language,
             theme,
-            &TokenizeOptions::default().with_preserve_scope_boundaries(
-                render_options.style_mode == crate::StyleMode::Classes,
-            ),
+            &TokenizeOptions::default().with_preserve_scope_boundaries(true),
         )?;
         let lines = render_html_lines(&tokens, render_options);
         Ok(HighlightedLines {
@@ -242,7 +271,7 @@ impl Highlighter {
         theme: &str,
         render_options: &RenderOptions,
     ) -> Result<crate::HtmlWithCss> {
-        let result = self.highlight_with_options(
+        let result = self.core.tokenize(
             code,
             language,
             theme,
@@ -374,6 +403,16 @@ impl HighlighterBuilder {
         }
         Ok(Highlighter { core })
     }
+}
+
+enum InlineLineEvent<'a> {
+    Header {
+        theme_name: &'a str,
+        background: &'a str,
+        foreground: &'a str,
+    },
+    Tokens(usize, &'a [crate::render::BorrowedInlineToken<'a>]),
+    PlainLine(usize, &'a str),
 }
 
 impl HighlighterCore {
@@ -510,6 +549,16 @@ impl HighlighterCore {
         self.load_standard_language_with_retry(requested, true)
     }
 
+    /// Resolves an already-loaded grammar scope without retrying optional
+    /// precompiled sidecars, falling back to a non-retrying standard load.
+    pub fn resolve_or_load_language(&mut self, requested: &str) -> Result<Option<String>> {
+        if let Some(scope) = self.resolve_scope(requested) {
+            return Ok(Some(scope));
+        }
+        self.load_standard_language_with_retry(requested, false)?;
+        Ok(self.resolve_scope(requested))
+    }
+
     /// Whether `requested` (and its cooperating embedded languages when
     /// delegated) is already loaded with every applicable prepared sidecar
     /// attached, so an async host can skip re-planning without suppressing
@@ -574,10 +623,11 @@ impl HighlighterCore {
         if let Some(scope) = &scope
             && self.regex_mode == ferriki_textmate::RegexMode::Prepared
             && !self.prepared_language_scopes.contains(scope)
-            && self.attempted_precompiled_scopes.insert(scope.clone())
+            && !self.attempted_precompiled_scopes.contains(scope)
             && let Some(catalogs) = &self.standard_assets
             && let Some(id) = catalogs.languages.resolve_id(scope)
         {
+            self.attempted_precompiled_scopes.insert(scope.clone());
             // Attach the requested root first. Legacy complete roots remain
             // self-contained; cooperating roots attach registered packages below.
             if let Some(coverage) = catalogs
@@ -605,16 +655,18 @@ impl HighlighterCore {
                     self.attempted_precompiled_scopes.remove(dependency_scope);
                 }
                 if !self.prepared_language_scopes.contains(dependency_scope)
-                    && self
-                        .attempted_precompiled_scopes
-                        .insert(dependency_scope.to_owned())
-                    && catalogs
+                    && !self.attempted_precompiled_scopes.contains(dependency_scope)
+                {
+                    self.attempted_precompiled_scopes
+                        .insert(dependency_scope.to_owned());
+                    if catalogs
                         .languages
                         .attach_precompiled(id, &mut self.registry)
                         .is_some()
-                {
-                    self.prepared_language_scopes
-                        .insert(dependency_scope.to_owned());
+                    {
+                        self.prepared_language_scopes
+                            .insert(dependency_scope.to_owned());
+                    }
                 }
             }
         }
@@ -1004,6 +1056,258 @@ impl HighlighterCore {
     ) -> Result<HighlightTokensResult> {
         self.tokenize_with_grammar_state(code, language, theme_id, options, None, false)
             .map(|(result, _)| result)
+    }
+
+    /// Streams tokenization directly into escaped, balanced HTML for inline
+    /// single-theme rendering without allocating an intermediate token tree.
+    pub fn highlight_to_html(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme_id: &str,
+        tokenize_options: &TokenizeOptions,
+        render_options: &RenderOptions,
+    ) -> Result<String> {
+        if render_options.style_mode == crate::StyleMode::Classes
+            || tokenize_options.preserve_scope_boundaries
+        {
+            let tokens = self.tokenize(code, language, theme_id, tokenize_options)?;
+            return Ok(crate::render::render_html(&tokens, render_options));
+        }
+
+        let mut html =
+            String::with_capacity(crate::render::bounded_source_html_capacity(code.len()));
+        self.stream_inline_lines(
+            code,
+            language,
+            theme_id,
+            tokenize_options,
+            |event| match event {
+                InlineLineEvent::Header {
+                    theme_name,
+                    background,
+                    foreground,
+                } => {
+                    crate::render::write_inline_pre_open(
+                        &mut html,
+                        theme_name,
+                        background,
+                        foreground,
+                        render_options,
+                    );
+                }
+                InlineLineEvent::Tokens(line_index, tokens) => {
+                    if line_index > 0 {
+                        html.push('\n');
+                    }
+                    html.push_str("<span class=\"line\">");
+                    crate::render::render_borrowed_inline_tokens(&mut html, tokens, render_options);
+                    html.push_str("</span>");
+                }
+                InlineLineEvent::PlainLine(line_index, raw_line) => {
+                    if line_index > 0 {
+                        html.push('\n');
+                    }
+                    html.push_str("<span class=\"line\">");
+                    if !raw_line.is_empty() {
+                        html.push_str("<span>");
+                        crate::render::write_escaped_html(&mut html, raw_line);
+                        html.push_str("</span>");
+                    }
+                    html.push_str("</span>");
+                }
+            },
+        )?;
+        html.push_str("</code></pre>");
+        Ok(html)
+    }
+
+    pub(crate) fn highlight_html_lines_inline(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme_id: &str,
+        tokenize_options: &TokenizeOptions,
+        render_options: &RenderOptions,
+    ) -> Result<HighlightedLines> {
+        let mut lines = Vec::new();
+        let (theme_name, background, foreground) = self.stream_inline_lines(
+            code,
+            language,
+            theme_id,
+            tokenize_options,
+            |event| match event {
+                InlineLineEvent::Header { .. } => {}
+                InlineLineEvent::Tokens(_, tokens) => {
+                    let mut content_bytes = 0usize;
+                    for token in tokens {
+                        content_bytes = content_bytes.saturating_add(token.content.len());
+                    }
+                    let cap = crate::render::bounded_token_html_capacity(
+                        content_bytes,
+                        tokens.len().saturating_mul(32),
+                    );
+                    let mut html = String::with_capacity(cap);
+                    crate::render::render_borrowed_inline_tokens(&mut html, tokens, render_options);
+                    lines.push(html);
+                }
+                InlineLineEvent::PlainLine(_, raw_line) => {
+                    if raw_line.is_empty() {
+                        lines.push(String::new());
+                    } else {
+                        let mut html = String::with_capacity(13 + raw_line.len());
+                        html.push_str("<span>");
+                        crate::render::write_escaped_html(&mut html, raw_line);
+                        html.push_str("</span>");
+                        lines.push(html);
+                    }
+                }
+            },
+        )?;
+        Ok(HighlightedLines {
+            lines,
+            foreground,
+            background,
+            theme_name,
+        })
+    }
+
+    fn stream_inline_lines(
+        &mut self,
+        code: &str,
+        language: &str,
+        theme_id: &str,
+        tokenize_options: &TokenizeOptions,
+        mut on_event: impl FnMut(InlineLineEvent<'_>),
+    ) -> Result<(String, String, String)> {
+        let theme = self.activate_theme(theme_id)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownTheme,
+                format!("Unknown theme `{theme_id}`."),
+            )
+        })?;
+        let foreground = theme.foreground.clone();
+        let background = theme.background.clone();
+        let theme_name = theme.name.clone();
+
+        if is_plain_language(language) || language == "ansi" {
+            on_event(InlineLineEvent::Header {
+                theme_name: &theme_name,
+                background: &background,
+                foreground: &foreground,
+            });
+            for (line_index, (line, _)) in split_lines(code).into_iter().enumerate() {
+                on_event(InlineLineEvent::PlainLine(line_index, line));
+            }
+            return Ok((theme_name, background, foreground));
+        }
+
+        let grammar = self.grammar_for_language(language)?.ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnknownLanguage,
+                format!("Unknown language `{language}`."),
+            )
+        })?;
+        let compiled_theme = self
+            .compiled_themes
+            .get(theme_id)
+            .cloned()
+            .ok_or_else(|| Error::from_reason("Compiled Ferriki theme disappeared."))?;
+        let color_map = compiled_theme.color_map();
+        let sanitized_colors: Vec<Option<std::borrow::Cow<'_, str>>> = color_map
+            .iter()
+            .map(|color| crate::render::normalize_safe_css_color(color))
+            .collect();
+
+        on_event(InlineLineEvent::Header {
+            theme_name: &theme_name,
+            background: &background,
+            foreground: &foreground,
+        });
+
+        let mut state = None;
+        let lines = split_lines(code);
+        let mut boundaries = Vec::new();
+        let mut line_tokens = Vec::new();
+
+        for (line_index, (line, _)) in lines.into_iter().enumerate() {
+            let line_is_ascii = line.is_ascii();
+            let line_length = if line_is_ascii {
+                line.len()
+            } else {
+                line.encode_utf16().count()
+            };
+            if tokenize_options.max_line_length > 0
+                && line_length >= tokenize_options.max_line_length
+            {
+                on_event(InlineLineEvent::PlainLine(line_index, line));
+                continue;
+            }
+
+            let result = grammar
+                .tokenize_line2(line, state, tokenize_options.time_limit_millis)
+                .map_err(|error| {
+                    Error::new(
+                        ErrorKind::Tokenization,
+                        format!("Failed to tokenize `{language}` line: {error}"),
+                    )
+                })?;
+            let binary_tokens = result.tokens;
+            state = Some(result.rule_stack);
+
+            let utf16_map = if line_is_ascii {
+                Utf16ToByteMap::Ascii(line.len())
+            } else {
+                utf16_to_byte_map_non_ascii(line, line_length)
+            };
+
+            boundaries.clear();
+            boundaries.extend(
+                binary_tokens
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|token| token[0] as usize)
+                    .filter(|start| *start < line_length),
+            );
+            boundaries.push(line_length);
+
+            line_tokens.clear();
+            let mut token_index = 0;
+            for range in boundaries.windows(2) {
+                let start_index = range[0];
+                let end_index = range[1];
+                while binary_tokens
+                    .get(token_index * 2 + 2)
+                    .is_some_and(|next| *next as usize <= start_index)
+                {
+                    token_index += 1;
+                }
+                if start_index >= end_index {
+                    continue;
+                }
+                let (Some(start_byte), Some(end_byte)) =
+                    (utf16_map.get(start_index), utf16_map.get(end_index))
+                else {
+                    continue;
+                };
+                let Some(content) = line.get(start_byte..end_byte) else {
+                    continue;
+                };
+                let attributes = EncodedTokenAttributes::new(binary_tokens[token_index * 2 + 1]);
+                let color = sanitized_colors
+                    .get(attributes.foreground() as usize)
+                    .and_then(|color| color.as_deref());
+                line_tokens.push(crate::render::BorrowedInlineToken {
+                    content,
+                    color,
+                    font_style: attributes.font_style(),
+                });
+            }
+            on_event(InlineLineEvent::Tokens(line_index, &line_tokens));
+        }
+
+        Ok((theme_name, background, foreground))
     }
 
     /// Node's serializable continuation bridge. The public Rust highlighter
@@ -3810,5 +4114,136 @@ mod tests {
             .expect_err("trailing tokens after JSON must fail");
         assert_eq!(trailing.kind(), ErrorKind::InvalidRegistration);
         assert!(trailing.to_string().contains("line 1"));
+    }
+
+    #[test]
+    fn streaming_highlight_to_html_and_lines_match_tokenized_render_byte_for_byte() {
+        let mut highlighter = Highlighter::builder().build().expect("builder");
+        highlighter
+            .register_language_json(
+                r#"{
+                    "name": "stream-probe",
+                    "scopeName": "source.stream",
+                    "aliases": ["sp"],
+                    "patterns": [
+                        { "match": "\\b(fn|let)\\b", "name": "keyword.control.stream" },
+                        { "match": "\"[^\"]*\"", "name": "string.quoted.stream" },
+                        { "match": "UNDER", "name": "markup.underline.stream" },
+                        { "match": "STRIKE", "name": "markup.strikethrough.stream" },
+                        { "match": "[<&>]+", "name": "keyword.operator.stream" }
+                    ]
+                }"#,
+            )
+            .expect("lang");
+        highlighter
+            .register_theme_json(
+                r##"{
+                    "name": "stream-theme",
+                    "type": "dark",
+                    "fg": "#D8DEE9",
+                    "bg": "#2E3440",
+                    "settings": [
+                        { "scope": "keyword.control", "settings": { "foreground": "#81A1C1", "fontStyle": "bold" } },
+                        { "scope": "string", "settings": { "foreground": "#A3BE8C", "fontStyle": "italic" } },
+                        { "scope": "markup.underline", "settings": { "foreground": "#EBCB8B", "fontStyle": "underline" } },
+                        { "scope": "markup.strikethrough", "settings": { "foreground": "#BF616A", "fontStyle": "strikethrough" } },
+                        { "scope": "keyword.operator", "settings": { "foreground": "#81A1C1", "fontStyle": "bold" } }
+                    ]
+                }"##,
+            )
+            .expect("theme");
+
+        let code = "fn  let \"a<&😀\"\r\n  UNDER  STRIKE  <&>\n\nplain   ";
+        for lang in ["stream-probe", "sp", "text", "ansi"] {
+            for style_mode in [crate::StyleMode::Inline, crate::StyleMode::Classes] {
+                for merge_whitespaces in [false, true] {
+                    for merge_same_style_tokens in [false, true] {
+                        for include_root_style in [false, true] {
+                            let options = RenderOptions::default()
+                                .with_style_mode(style_mode)
+                                .with_merge_whitespaces(merge_whitespaces)
+                                .with_merge_same_style_tokens(merge_same_style_tokens)
+                                .with_include_root_style(include_root_style);
+                            let tokens = highlighter
+                                .highlight_with_options(
+                                    code,
+                                    lang,
+                                    "stream-theme",
+                                    &TokenizeOptions::default().with_preserve_scope_boundaries(
+                                        style_mode == crate::StyleMode::Classes,
+                                    ),
+                                )
+                                .expect("tokens");
+                            let expected_html = crate::render_html(&tokens, &options);
+                            let streamed_html = highlighter
+                                .highlight_to_html(code, lang, "stream-theme", &options)
+                                .expect("streamed html");
+                            assert_eq!(streamed_html, expected_html, "{lang} {options:?}");
+
+                            let expected_lines = crate::render_html_lines(&tokens, &options);
+                            let streamed_lines = highlighter
+                                .highlight_html_lines(code, lang, "stream-theme", &options)
+                                .expect("streamed lines");
+                            assert_eq!(streamed_lines.lines, expected_lines, "{lang} {options:?}");
+                            assert_eq!(streamed_lines.theme_name, tokens.theme_name);
+                            assert_eq!(streamed_lines.foreground, tokens.foreground);
+                            assert_eq!(streamed_lines.background, tokens.background);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Verify max_line_length parity in streaming core path.
+        let tok_opts = TokenizeOptions::default().with_max_line_length(10);
+        let render_opts = RenderOptions::default();
+        let tokens = highlighter
+            .core
+            .tokenize(code, "stream-probe", "stream-theme", &tok_opts)
+            .expect("max len tokens");
+        let streamed = highlighter
+            .core
+            .highlight_to_html(
+                code,
+                "stream-probe",
+                "stream-theme",
+                &tok_opts,
+                &render_opts,
+            )
+            .expect("max len streamed");
+        assert_eq!(streamed, crate::render_html(&tokens, &render_opts));
+
+        // Verify resolve_or_load_language returns cached scope for already-loaded custom languages.
+        assert_eq!(
+            highlighter
+                .core
+                .resolve_or_load_language("stream-probe")
+                .expect("resolve"),
+            Some("source.stream".to_owned())
+        );
+        assert_eq!(
+            highlighter
+                .core
+                .resolve_or_load_language("sp")
+                .expect("resolve alias"),
+            Some("source.stream".to_owned())
+        );
+        assert_eq!(
+            highlighter
+                .core
+                .resolve_or_load_language("unknown-lang")
+                .expect("unknown"),
+            None
+        );
+
+        // Verify error precedence matches `highlight`.
+        let err = highlighter
+            .highlight_to_html("fn", "stream-probe", "no-such-theme", &render_opts)
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::UnknownTheme);
+        let err = highlighter
+            .highlight_to_html("fn", "no-such-lang", "stream-theme", &render_opts)
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::UnknownLanguage);
     }
 }

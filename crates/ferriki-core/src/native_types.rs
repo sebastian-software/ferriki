@@ -249,6 +249,68 @@ impl From<(ferriki::HighlightTokensWithThemesResult, Option<String>)> for HtmlRe
     }
 }
 
+#[napi(object, object_from_js = false)]
+pub struct HtmlWithCss {
+    pub html: String,
+    pub css: String,
+}
+
+/// Zero-copy N-API wrapper that serializes `HighlightTokensResult` directly
+/// into V8 objects without allocating an intermediate `Vec<Vec<HtmlToken>>`.
+pub struct NativeHtmlRenderData {
+    pub result: ferriki::HighlightTokensResult,
+    pub continuation_state: Option<String>,
+}
+
+impl From<ferriki::HighlightTokensResult> for NativeHtmlRenderData {
+    fn from(result: ferriki::HighlightTokensResult) -> Self {
+        Self {
+            result,
+            continuation_state: None,
+        }
+    }
+}
+
+impl From<(ferriki::HighlightTokensResult, Option<String>)> for NativeHtmlRenderData {
+    fn from(
+        (result, continuation_state): (ferriki::HighlightTokensResult, Option<String>),
+    ) -> Self {
+        Self {
+            result,
+            continuation_state,
+        }
+    }
+}
+
+/// Zero-copy N-API wrapper that serializes `HighlightTokensWithThemesResult`
+/// directly into V8 objects without intermediate token/variant allocations.
+pub struct NativeHtmlRenderDataWithThemes {
+    pub result: ferriki::HighlightTokensWithThemesResult,
+    pub continuation_state: Option<String>,
+}
+
+impl From<ferriki::HighlightTokensWithThemesResult> for NativeHtmlRenderDataWithThemes {
+    fn from(result: ferriki::HighlightTokensWithThemesResult) -> Self {
+        Self {
+            result,
+            continuation_state: None,
+        }
+    }
+}
+
+impl From<(ferriki::HighlightTokensWithThemesResult, Option<String>)>
+    for NativeHtmlRenderDataWithThemes
+{
+    fn from(
+        (result, continuation_state): (ferriki::HighlightTokensWithThemesResult, Option<String>),
+    ) -> Self {
+        Self {
+            result,
+            continuation_state,
+        }
+    }
+}
+
 #[napi(object, object_from_js = false, object_to_js = false)]
 pub struct AssetPlanEntry {
     pub path: String,

@@ -130,30 +130,43 @@ impl DecorationSource {
         &self,
         ranges: &[DecorationRange],
     ) -> Result<Vec<ResolvedDecoration>, String> {
-        let items = ranges
-            .iter()
-            .map(|range| {
-                Ok(ResolvedDecoration {
-                    start: self.resolve(range.start)?,
-                    end: self.resolve(range.end)?,
-                    always_wrap: range.always_wrap,
-                })
-            })
-            .collect::<Result<Vec<_>, String>>()?;
-        for (index, current) in items.iter().enumerate() {
-            if current.start.offset > current.end.offset {
+        let mut items = Vec::with_capacity(ranges.len());
+        for range in ranges {
+            let resolved = ResolvedDecoration {
+                start: self.resolve(range.start)?,
+                end: self.resolve(range.end)?,
+                always_wrap: range.always_wrap,
+            };
+            if resolved.start.offset > resolved.end.offset {
                 return Err("Invalid decoration range: start follows end".into());
             }
-            for other in &items[index + 1..] {
-                let nested = (current.start.offset <= other.start.offset
-                    && other.end.offset <= current.end.offset)
-                    || (other.start.offset <= current.start.offset
-                        && current.end.offset <= other.end.offset);
-                let intersects = current.start.offset < other.end.offset
-                    && other.start.offset < current.end.offset;
-                if intersects && !nested {
+            items.push(resolved);
+        }
+        if items.len() > 1 {
+            // Empty ranges never cross any interval. Sort non-empty spans by
+            // ascending start and descending end so enclosing ranges precede
+            // nested ones, then sweep active end offsets in O(D log D).
+            let mut spans: Vec<(usize, usize)> = items
+                .iter()
+                .filter_map(|item| {
+                    (item.start.offset < item.end.offset)
+                        .then_some((item.start.offset, item.end.offset))
+                })
+                .collect();
+            spans.sort_unstable_by(|left, right| {
+                left.0.cmp(&right.0).then_with(|| right.1.cmp(&left.1))
+            });
+            let mut active_ends: Vec<usize> = Vec::new();
+            for (start, end) in spans {
+                while active_ends.last().is_some_and(|&top_end| top_end <= start) {
+                    active_ends.pop();
+                }
+                if let Some(&top_end) = active_ends.last()
+                    && end > top_end
+                {
                     return Err("Decorations intersect without nesting".into());
                 }
+                active_ends.push(end);
             }
         }
         Ok(items)
@@ -1051,5 +1064,82 @@ mod tests {
             next_decoration_section(max_range, 0, DecorationCursor::AfterStart).unwrap();
         assert_eq!(section.line, usize::MAX);
         assert_eq!(next, DecorationCursor::Done);
+    }
+
+    #[test]
+    fn sweep_line_range_validation_matches_pairwise_oracle_and_scales() {
+        let source = DecorationSource::utf8("0123456789");
+        let mk = |start, end| DecorationRange {
+            start: DecorationPosition::Offset(start),
+            end: DecorationPosition::Offset(end),
+            always_wrap: false,
+        };
+        let naive_ok = |spans: &[(usize, usize)]| -> bool {
+            for (i, &(s1, e1)) in spans.iter().enumerate() {
+                if s1 > e1 {
+                    return false;
+                }
+                for &(s2, e2) in &spans[i + 1..] {
+                    let nested = (s1 <= s2 && e2 <= e1) || (s2 <= s1 && e1 <= e2);
+                    let intersects = s1 < e2 && s2 < e1;
+                    if intersects && !nested {
+                        return false;
+                    }
+                }
+            }
+            true
+        };
+
+        // Test tricky edge cases: identical, same-start, same-end, nested, empty, reverse-order crossing.
+        let cases: &[&[(usize, usize)]] = &[
+            &[],
+            &[(2, 5)],
+            &[(2, 5), (2, 5)],
+            &[(1, 6), (1, 4), (4, 6), (1, 1), (4, 4), (6, 6)],
+            &[(1, 4), (1, 6)],
+            &[(3, 6), (1, 6)],
+            &[(0, 10), (1, 5), (3, 7)],
+            &[(2, 6), (0, 4)],
+            &[(0, 4), (4, 8), (5, 7), (2, 2)],
+            &[(0, 8), (2, 6), (2, 4), (4, 6), (3, 5)],
+            &[(0, 8), (2, 4), (3, 3), (4, 6)],
+            &[(5, 2), (0, 4)],
+            &[(0, 4), (3, 1)],
+        ];
+        for spans in cases {
+            let input: Vec<_> = spans.iter().map(|&(s, e)| mk(s, e)).collect();
+            assert_eq!(
+                source.resolve_ranges(&input).is_ok(),
+                naive_ok(spans),
+                "mismatch for {spans:?}"
+            );
+        }
+
+        // Exhaustive check over triples of intervals on [0..=4].
+        let mut all_valid = Vec::new();
+        for s in 0..=4 {
+            for e in s..=4 {
+                all_valid.push((s, e));
+            }
+        }
+        for &a in &all_valid {
+            for &b in &all_valid {
+                for &c in &all_valid {
+                    let spans = [a, b, c];
+                    let input = [mk(a.0, a.1), mk(b.0, b.1), mk(c.0, c.1)];
+                    assert_eq!(
+                        source.resolve_ranges(&input).is_ok(),
+                        naive_ok(&spans),
+                        "triple mismatch for {spans:?}"
+                    );
+                }
+            }
+        }
+
+        // Scale check: 10,000 disjoint/nested ranges validate cleanly in O(D log D).
+        let long_code = "a".repeat(20_000);
+        let long_source = DecorationSource::utf8(&long_code);
+        let many: Vec<_> = (0..10_000).map(|i| mk(i * 2, i * 2 + 2)).collect();
+        assert_eq!(long_source.resolve_ranges(&many).unwrap().len(), 10_000);
     }
 }
