@@ -68,7 +68,7 @@ pub fn render_html_with_decorations(
             let token = &line[slice.token];
             let Some(content) = utf16_slice(&token.content, slice.start, slice.end) else {
                 unsupported = true;
-                return;
+                return Ok(());
             };
             let style = token_style(token);
             let properties = if style.is_empty() {
@@ -85,7 +85,8 @@ pub fn render_html_with_decorations(
                 children: Vec::new(),
             });
             nodes[line_id].children.push(span);
-        });
+            Ok(())
+        })?;
         if unsupported {
             return Ok(None);
         }
@@ -411,5 +412,19 @@ mod tests {
         write_node(&nodes, DEPTH, &mut html);
         assert_eq!(html.matches("<span class=\"w\">").count(), DEPTH);
         assert!(html.contains(">a</span>"));
+    }
+
+    #[test]
+    fn rejects_overflowing_token_offset_in_decorated_render() {
+        let mut tokens = result("abc");
+        tokens.tokens[0][0].offset = usize::MAX;
+        let err = render_html_with_decorations(
+            "abc",
+            &tokens,
+            &RenderOptions::default(),
+            &[decoration(0, 3, false)],
+        )
+        .unwrap_err();
+        assert!(err.contains("overflow"));
     }
 }

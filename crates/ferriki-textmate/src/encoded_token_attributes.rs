@@ -18,6 +18,13 @@ const FONT_STYLE_OFFSET: u32 = 11;
 const FOREGROUND_OFFSET: u32 = 15;
 const BACKGROUND_OFFSET: u32 = 24;
 
+pub(crate) const MAX_LANGUAGE_ID: u32 = LANGUAGE_ID_MASK >> LANGUAGE_ID_OFFSET;
+const MAX_TOKEN_TYPE: u32 = TOKEN_TYPE_MASK >> TOKEN_TYPE_OFFSET;
+const MAX_BALANCED_BRACKETS: u32 = BALANCED_BRACKETS_MASK >> BALANCED_BRACKETS_OFFSET;
+const MAX_FONT_STYLE_BITS: u32 = FONT_STYLE_MASK >> FONT_STYLE_OFFSET;
+pub(crate) const MAX_FOREGROUND_COLOR_ID: u32 = FOREGROUND_MASK >> FOREGROUND_OFFSET;
+pub(crate) const MAX_BACKGROUND_COLOR_ID: u32 = BACKGROUND_MASK >> BACKGROUND_OFFSET;
+
 /// The standard token type of vscode-textmate. Serializes as its numeric value.
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 #[repr(u8)]
@@ -163,7 +170,7 @@ impl EncodedTokenAttributes {
         let language_id = if language_id == 0 {
             self.language_id()
         } else {
-            language_id
+            language_id & MAX_LANGUAGE_ID
         };
         let token_type = if token_type == OptionalStandardTokenType::NotSet {
             self.token_type()
@@ -173,28 +180,29 @@ impl EncodedTokenAttributes {
         let balanced_brackets =
             contains_balanced_brackets.unwrap_or_else(|| self.contains_balanced_brackets());
         let font_style = if font_style == FontStyle::NOT_SET {
-            self.font_style()
+            self.font_style().bits() as u32
         } else {
-            font_style
+            (font_style.bits() as u32) & MAX_FONT_STYLE_BITS
         };
         let foreground = if foreground == 0 {
             self.foreground()
         } else {
-            foreground
+            foreground & MAX_FOREGROUND_COLOR_ID
         };
         let background = if background == 0 {
             self.background()
         } else {
-            background
+            background & MAX_BACKGROUND_COLOR_ID
         };
 
         Self(
-            (language_id << LANGUAGE_ID_OFFSET)
-                | ((token_type as u32) << TOKEN_TYPE_OFFSET)
-                | (u32::from(balanced_brackets) << BALANCED_BRACKETS_OFFSET)
-                | ((font_style.bits() as u32) << FONT_STYLE_OFFSET)
-                | (foreground << FOREGROUND_OFFSET)
-                | (background << BACKGROUND_OFFSET),
+            ((language_id & MAX_LANGUAGE_ID) << LANGUAGE_ID_OFFSET)
+                | (((token_type as u32) & MAX_TOKEN_TYPE) << TOKEN_TYPE_OFFSET)
+                | ((u32::from(balanced_brackets) & MAX_BALANCED_BRACKETS)
+                    << BALANCED_BRACKETS_OFFSET)
+                | ((font_style & MAX_FONT_STYLE_BITS) << FONT_STYLE_OFFSET)
+                | ((foreground & MAX_FOREGROUND_COLOR_ID) << FOREGROUND_OFFSET)
+                | ((background & MAX_BACKGROUND_COLOR_ID) << BACKGROUND_OFFSET),
         )
     }
 }
@@ -411,5 +419,169 @@ mod tests {
         assert_eq!(overridden.font_family.as_deref(), Some("Serif"));
         assert_eq!(overridden.font_size, Some(1.5));
         assert_eq!(overridden.line_height, Some(2.0));
+    }
+
+    #[test]
+    fn masks_out_of_range_fields_without_bleeding_into_neighbors() {
+        let base = EncodedTokenAttributes::default().set(
+            7,
+            OptionalStandardTokenType::Comment,
+            Some(true),
+            FontStyle::BOLD,
+            42,
+            84,
+        );
+
+        // Out-of-range language_id must not bleed into token_type, balanced_brackets,
+        // font_style, foreground, or background.
+        let lang_256 = base.set(
+            256,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::NOT_SET,
+            0,
+            0,
+        );
+        assert_attributes(
+            lang_256,
+            0,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD,
+            42,
+            84,
+        );
+
+        let lang_overflow = base.set(
+            0xFFFF_FFAB,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::NOT_SET,
+            0,
+            0,
+        );
+        assert_attributes(
+            lang_overflow,
+            0xAB,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD,
+            42,
+            84,
+        );
+
+        // Out-of-range font_style (including negative values other than NOT_SET)
+        // must mask to the 4 font-style bits and leave foreground/background intact.
+        let negative_font = base.set(
+            0,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::from_bits(-2),
+            0,
+            0,
+        );
+        assert_attributes(
+            negative_font,
+            7,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD | FontStyle::UNDERLINE | FontStyle::STRIKETHROUGH,
+            42,
+            84,
+        );
+
+        let high_font = base.set(
+            0,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::from_bits(0xFFFF_0010_u32 as i32),
+            0,
+            0,
+        );
+        assert_attributes(
+            high_font,
+            7,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::NONE,
+            42,
+            84,
+        );
+
+        // Out-of-range foreground (> 511) must not bleed into background.
+        let fg_overflow = base.set(
+            0,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::NOT_SET,
+            512,
+            0,
+        );
+        assert_attributes(
+            fg_overflow,
+            7,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD,
+            0,
+            84,
+        );
+
+        let fg_max_bits = base.set(
+            0,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::NOT_SET,
+            0xFFFF_FFFF,
+            0,
+        );
+        assert_attributes(
+            fg_max_bits,
+            7,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD,
+            511,
+            84,
+        );
+
+        // Out-of-range background (> 255) must mask cleanly to 8 bits without
+        // disturbing any lower fields.
+        let bg_overflow = base.set(
+            0,
+            OptionalStandardTokenType::NotSet,
+            None,
+            FontStyle::NOT_SET,
+            0,
+            0xFFFF_FFFE,
+        );
+        assert_attributes(
+            bg_overflow,
+            7,
+            StandardTokenType::Comment,
+            true,
+            FontStyle::BOLD,
+            42,
+            254,
+        );
+
+        // Exact upper boundaries for every bitfield round-trip cleanly.
+        let max_valid = EncodedTokenAttributes::default().set(
+            255,
+            OptionalStandardTokenType::RegEx,
+            Some(true),
+            FontStyle::ITALIC | FontStyle::BOLD | FontStyle::UNDERLINE | FontStyle::STRIKETHROUGH,
+            511,
+            255,
+        );
+        assert_attributes(
+            max_valid,
+            255,
+            StandardTokenType::RegEx,
+            true,
+            FontStyle::ITALIC | FontStyle::BOLD | FontStyle::UNDERLINE | FontStyle::STRIKETHROUGH,
+            511,
+            255,
+        );
     }
 }

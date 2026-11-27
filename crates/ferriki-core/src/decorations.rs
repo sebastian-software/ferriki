@@ -92,10 +92,9 @@ fn position(
             "Invalid decoration character",
         ));
     }
-    Ok(core::DecorationPosition::Line {
-        line,
-        character: character as isize,
-    })
+    let character = isize::try_from(character as i64)
+        .map_err(|_| Error::new(Status::InvalidArg, "Invalid decoration character"))?;
+    Ok(core::DecorationPosition::Line { line, character })
 }
 fn ranges(
     source: &str,
@@ -124,6 +123,27 @@ fn usage(reason: String) -> Error {
     Error::new(Status::InvalidArg, reason)
 }
 
+fn to_u32(value: usize, label: &str) -> Result<u32> {
+    u32::try_from(value)
+        .map_err(|_| usage(format!("Decoration {label} exceeds u32 range: {value}")))
+}
+
+fn pack_decoration_slice(
+    slices: &mut Vec<u32>,
+    slice: core::DecorationSlice,
+) -> std::result::Result<(), String> {
+    let field = |value: usize, label: &str| {
+        u32::try_from(value).map_err(|_| format!("Decoration {label} exceeds u32 range: {value}"))
+    };
+    slices.extend_from_slice(&[
+        field(slice.token, "token index")?,
+        field(slice.start, "slice start")?,
+        field(slice.end, "slice end")?,
+        field(slice.offset, "slice offset")?,
+    ]);
+    Ok(())
+}
+
 #[napi(js_name = "splitDecorationTokens")]
 pub fn split_decoration_tokens(
     source: String,
@@ -142,21 +162,19 @@ pub fn split_decoration_tokens(
             // Pairs carry exact JS numbers; validate before converting to Rust indices.
             tokens.clear();
             for pair in values.as_chunks::<2>().0 {
-                tokens.push(core::DecorationToken {
-                    offset: integer(pair[0])?,
-                    length: integer(pair[1])?,
-                });
+                let offset = integer(pair[0])?;
+                let length = integer(pair[1])?;
+                offset
+                    .checked_add(length)
+                    .and_then(|end| u32::try_from(end).ok())
+                    .ok_or_else(|| usage("Decoration token offset overflows u32 range".into()))?;
+                tokens.push(core::DecorationToken { offset, length });
             }
             // Four-word records: source token index, slice start, slice end, offset.
-            let mut slices = Vec::with_capacity(tokens.len() * 4);
-            boundaries.split_tokens(&tokens, |s| {
-                slices.extend_from_slice(&[
-                    s.token as u32,
-                    s.start as u32,
-                    s.end as u32,
-                    s.offset as u32,
-                ]);
-            });
+            let mut slices = Vec::with_capacity(tokens.len().saturating_mul(4));
+            boundaries
+                .split_tokens(&tokens, |slice| pack_decoration_slice(&mut slices, slice))
+                .map_err(usage)?;
             Ok(slices.into())
         })
         .collect()
@@ -170,28 +188,34 @@ pub fn decoration_sections(
     let ranges = ranges(&source, input)?;
     let sections = core::decoration_sections(&ranges)
         .into_iter()
-        .map(|s| NativeDecorationSection {
-            decoration: s.decoration as u32,
-            line: s.line as u32,
-            start: s.start as f64,
-            end: s.end.map(|end| end as f64),
-            whole_line: s.whole_line,
-            always_wrap: s.always_wrap,
+        .map(|s| {
+            Ok(NativeDecorationSection {
+                decoration: to_u32(s.decoration, "decoration index")?,
+                line: to_u32(s.line, "line index")?,
+                start: s.start as f64,
+                end: s.end.map(|end| end as f64),
+                whole_line: s.whole_line,
+                always_wrap: s.always_wrap,
+            })
         })
-        .collect();
-    let position = |p: core::ResolvedPosition| NativeDecorationPosition {
-        line: p.line as u32,
-        character: p.character as f64,
-        offset: p.offset as f64,
+        .collect::<Result<Vec<_>>>()?;
+    let position = |p: core::ResolvedPosition| -> Result<NativeDecorationPosition> {
+        Ok(NativeDecorationPosition {
+            line: to_u32(p.line, "line index")?,
+            character: p.character as f64,
+            offset: p.offset as f64,
+        })
     };
     Ok(NativeDecorationPreparation {
         ranges: ranges
             .into_iter()
-            .map(|r| NativeResolvedDecoration {
-                start: position(r.start),
-                end: position(r.end),
+            .map(|r| {
+                Ok(NativeResolvedDecoration {
+                    start: position(r.start)?,
+                    end: position(r.end)?,
+                })
             })
-            .collect(),
+            .collect::<Result<Vec<_>>>()?,
         sections,
     })
 }
@@ -229,7 +253,7 @@ pub fn next_decoration_section(
         3 => core::DecorationCursor::Done,
         _ => return Err(usage("Invalid decoration cursor".into())),
     };
-    Ok(core::next_decoration_section(
+    core::next_decoration_section(
         core::ResolvedDecoration {
             start: position(range.start)?,
             end: position(range.end)?,
@@ -242,21 +266,22 @@ pub fn next_decoration_section(
         let (phase, line) = match cursor {
             core::DecorationCursor::Start => (0, 0),
             core::DecorationCursor::AfterStart => (1, 0),
-            core::DecorationCursor::Middle(line) => (2, line as u32),
+            core::DecorationCursor::Middle(line) => (2, to_u32(line, "cursor line")?),
             core::DecorationCursor::Done => (3, 0),
         };
-        NativeDecorationContinuation {
+        Ok(NativeDecorationContinuation {
             section: NativeDecorationSection {
-                decoration: s.decoration as u32,
-                line: s.line as u32,
+                decoration: to_u32(s.decoration, "decoration index")?,
+                line: to_u32(s.line, "line index")?,
                 start: s.start as f64,
                 end: s.end.map(|end| end as f64),
                 whole_line: s.whole_line,
                 always_wrap: s.always_wrap,
             },
             cursor: NativeDecorationCursor { phase, line },
-        }
-    }))
+        })
+    })
+    .transpose()
 }
 
 #[napi(js_name = "planDecorationMutations")]
@@ -266,16 +291,22 @@ pub fn plan_decoration_mutations(
     sections: Vec<NativeDecorationSection>,
 ) -> Result<NativeDecorationPlan> {
     let mut nodes = Vec::new();
-    let mut cursor = 0;
+    let mut cursor = 0usize;
     // Variable-length records: element flag, text length, child count, child IDs.
     // The host transports shape only; opaque node data never enters this buffer.
     while cursor < input.len() {
+        let children_start = cursor
+            .checked_add(3)
+            .ok_or_else(|| usage("Invalid decoration node metadata".into()))?;
         let header = input
-            .get(cursor..cursor + 3)
+            .get(cursor..children_start)
             .ok_or_else(|| usage("Invalid decoration node metadata".into()))?;
         let count = integer(header[2])?;
+        let next_cursor = children_start
+            .checked_add(count)
+            .ok_or_else(|| usage("Invalid decoration child metadata".into()))?;
         let children = input
-            .get(cursor + 3..cursor + 3 + count)
+            .get(children_start..next_cursor)
             .ok_or_else(|| usage("Invalid decoration child metadata".into()))?;
         let element = match header[0] {
             0.0 => false,
@@ -291,7 +322,7 @@ pub fn plan_decoration_mutations(
                 .map(integer)
                 .collect::<Result<Vec<_>>>()?,
         });
-        cursor += 3 + count;
+        cursor = next_cursor;
     }
     if nodes
         .iter()
@@ -323,20 +354,22 @@ pub fn plan_decoration_mutations(
         mutations: plan
             .mutations
             .into_iter()
-            .map(|p| NativeDecorationMutation {
-                decoration: p.decoration as u32,
-                node: p.node as u32,
-                line: p.line as u32,
-                start: p.start as u32,
-                count: p.count as u32,
-                target: match p.target {
-                    core::DecorationTarget::Line => "line",
-                    core::DecorationTarget::Token => "token",
-                    core::DecorationTarget::Wrapper => "wrapper",
-                }
-                .into(),
+            .map(|p| {
+                Ok(NativeDecorationMutation {
+                    decoration: to_u32(p.decoration, "decoration index")?,
+                    node: to_u32(p.node, "node index")?,
+                    line: to_u32(p.line, "line index")?,
+                    start: to_u32(p.start, "mutation start")?,
+                    count: to_u32(p.count, "mutation count")?,
+                    target: match p.target {
+                        core::DecorationTarget::Line => "line",
+                        core::DecorationTarget::Token => "token",
+                        core::DecorationTarget::Wrapper => "wrapper",
+                    }
+                    .into(),
+                })
             })
-            .collect(),
+            .collect::<Result<Vec<_>>>()?,
     })
 }
 
@@ -476,5 +509,74 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn rejects_near_u32_max_token_offsets_and_overflowing_packed_streams() {
+        // offset + length > u32::MAX must fail cleanly rather than silently truncating in Uint32Array.
+        for metadata in [
+            vec![f64::from(u32::MAX), 1.0],
+            vec![f64::from(u32::MAX - 3), 10.0],
+            vec![f64::from(u32::MAX) + 1.0, 0.0],
+        ] {
+            let err = split_decoration_tokens(
+                "abcd".into(),
+                vec![range(0.0, 1.0)],
+                vec![metadata.into()],
+            )
+            .err()
+            .expect("overflowing token metadata must return an error");
+            assert_eq!(err.status, Status::InvalidArg);
+        }
+
+        // Packed node command stream with huge child count (u32::MAX) must fail cleanly via checked_add.
+        for malformed in [
+            vec![1.0, 0.0, f64::from(u32::MAX)],
+            vec![1.0, 0.0, f64::from(u32::MAX), 0.0],
+            vec![1.0, 0.0, 0.0, 1.0, 0.0],
+        ] {
+            let err = plan_decoration_mutations(malformed.into(), vec![0], vec![])
+                .err()
+                .expect("malformed packed node stream must return an error");
+            assert_eq!(err.status, Status::InvalidArg);
+        }
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn pack_decoration_slice_rejects_fields_exceeding_u32_max() {
+        let over = (u32::MAX as usize) + 1;
+        let cases = [
+            core::DecorationSlice {
+                token: over,
+                start: 0,
+                end: 1,
+                offset: 0,
+            },
+            core::DecorationSlice {
+                token: 0,
+                start: over,
+                end: over,
+                offset: 0,
+            },
+            core::DecorationSlice {
+                token: 0,
+                start: 0,
+                end: over,
+                offset: 0,
+            },
+            core::DecorationSlice {
+                token: 0,
+                start: 0,
+                end: 1,
+                offset: over,
+            },
+        ];
+        for slice in cases {
+            let mut out = Vec::new();
+            let err = pack_decoration_slice(&mut out, slice).unwrap_err();
+            assert!(err.contains("exceeds u32 range"), "{err}");
+            assert!(out.is_empty());
+        }
     }
 }

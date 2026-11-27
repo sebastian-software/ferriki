@@ -5,7 +5,8 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Mutex;
 
-use crate::encoded_token_attributes::OptionalStandardTokenType;
+use crate::encoded_token_attributes::{MAX_LANGUAGE_ID, OptionalStandardTokenType};
+use crate::theme::ThemeError;
 
 pub type EmbeddedLanguages = BTreeMap<String, u32>;
 
@@ -29,12 +30,27 @@ pub(crate) struct BasicScopeAttributesProvider {
 }
 
 impl BasicScopeAttributesProvider {
-    #[must_use]
-    pub(crate) fn new(
+    pub(crate) fn try_new(
         initial_language_id: u32,
         embedded_languages: Option<&EmbeddedLanguages>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, ThemeError> {
+        if initial_language_id > MAX_LANGUAGE_ID {
+            return Err(ThemeError::InvalidLanguageId {
+                language_id: initial_language_id,
+                max_language_id: MAX_LANGUAGE_ID,
+            });
+        }
+        if let Some(embedded_languages) = embedded_languages {
+            for &language_id in embedded_languages.values() {
+                if language_id > MAX_LANGUAGE_ID {
+                    return Err(ThemeError::InvalidLanguageId {
+                        language_id,
+                        max_language_id: MAX_LANGUAGE_ID,
+                    });
+                }
+            }
+        }
+        Ok(Self {
             default_attributes: BasicScopeAttributes {
                 language_id: initial_language_id,
                 token_type: OptionalStandardTokenType::NotSet,
@@ -43,7 +59,17 @@ impl BasicScopeAttributesProvider {
                 embedded_languages.into_iter().flat_map(BTreeMap::iter),
             ),
             cache: Mutex::new(HashMap::new()),
-        }
+        })
+    }
+
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) fn new(
+        initial_language_id: u32,
+        embedded_languages: Option<&EmbeddedLanguages>,
+    ) -> Self {
+        Self::try_new(initial_language_id, embedded_languages)
+            .expect("test language IDs must fit in 8 bits")
     }
 
     #[must_use]
@@ -221,6 +247,34 @@ mod tests {
                 .basic_scope_attributes(Some("source.tsx"))
                 .language_id,
             0
+        );
+    }
+
+    #[test]
+    fn rejects_language_ids_exceeding_8_bit_field_width() {
+        assert!(BasicScopeAttributesProvider::try_new(255, None).is_ok());
+        assert_eq!(
+            BasicScopeAttributesProvider::try_new(256, None)
+                .err()
+                .unwrap(),
+            crate::ThemeError::InvalidLanguageId {
+                language_id: 256,
+                max_language_id: 255,
+            }
+        );
+
+        let valid_embedded = EmbeddedLanguages::from([("source.embedded".into(), 255)]);
+        assert!(BasicScopeAttributesProvider::try_new(1, Some(&valid_embedded)).is_ok());
+
+        let invalid_embedded = EmbeddedLanguages::from([("source.embedded".into(), 300)]);
+        assert_eq!(
+            BasicScopeAttributesProvider::try_new(1, Some(&invalid_embedded))
+                .err()
+                .unwrap(),
+            crate::ThemeError::InvalidLanguageId {
+                language_id: 300,
+                max_language_id: 255,
+            }
         );
     }
 }

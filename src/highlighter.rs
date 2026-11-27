@@ -758,10 +758,14 @@ impl HighlighterCore {
                 "Theme registration requires a non-empty `name`.",
             ));
         }
+        let compiled = Arc::new(
+            Theme::create_from_raw_theme(Some(&theme.raw_theme), None)
+                .map_err(custom_theme_registration_error)?,
+        );
         if self.active_theme.as_deref() == Some(&theme.name) {
             self.active_theme = None;
         }
-        self.compiled_themes.remove(&theme.name);
+        self.compiled_themes.insert(theme.name.clone(), compiled);
         self.themes.insert(theme.name.clone(), theme);
         Ok(())
     }
@@ -1585,11 +1589,25 @@ fn is_plain_language(language: &str) -> bool {
     matches!(language, "text" | "txt" | "plain" | "plaintext")
 }
 
+fn custom_theme_registration_error(error: ferriki_textmate::ThemeError) -> Error {
+    match error {
+        ferriki_textmate::ThemeError::ColorMapOverflow { .. } => Error::new(
+            ErrorKind::InvalidRegistration,
+            format!("Invalid TextMate theme registration: {error}"),
+        ),
+        other => theme_error(other),
+    }
+}
+
 fn theme_error(error: ferriki_textmate::ThemeError) -> Error {
     match error {
         ferriki_textmate::ThemeError::InvalidScopeSelector(message) => Error::new(
             ErrorKind::InvalidRegistration,
             format!("Invalid TextMate scope selector: {message}"),
+        ),
+        ferriki_textmate::ThemeError::InvalidLanguageId { .. } => Error::new(
+            ErrorKind::InvalidRegistration,
+            format!("Invalid TextMate language configuration: {error}"),
         ),
         other => Error::new(
             ErrorKind::Theme,
@@ -2344,8 +2362,20 @@ mod tests {
                 .expect("updated light"),
             )
             .expect("re-register light");
-        assert!(!highlighter.compiled_themes.contains_key("dark"));
-        assert!(!highlighter.compiled_themes.contains_key("light"));
+        assert!(!Arc::ptr_eq(
+            highlighter
+                .compiled_themes
+                .get("dark")
+                .expect("replaced dark"),
+            &dark_arc
+        ));
+        assert!(!Arc::ptr_eq(
+            highlighter
+                .compiled_themes
+                .get("light")
+                .expect("replaced light"),
+            &light_arc
+        ));
 
         let updated_dark = highlighter
             .tokenize("x", "switch", "dark", &opts)
@@ -2366,6 +2396,63 @@ mod tests {
 
         highlighter.dispose();
         assert!(highlighter.compiled_themes.is_empty());
+    }
+
+    #[test]
+    fn failed_theme_reregistration_with_overflowing_colors_preserves_working_theme() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        let raw = parse_raw_grammar(
+            r#"{"scopeName":"source.overflowtheme","patterns":[{"match":"x","name":"keyword.x"}]}"#,
+            Some("overflowtheme.json"),
+        )
+        .expect("grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("overflowtheme", raw))
+            .expect("grammar registration");
+        highlighter
+            .register_theme(
+                parse_theme_data(
+                    "t",
+                    r##"{"tokenColors":[{"scope":"keyword.x","settings":{"foreground":"#112233"}}]}"##,
+                )
+                .expect("working theme"),
+            )
+            .expect("register working theme");
+
+        let opts = unlimited_tokenize_options();
+        let before = highlighter
+            .tokenize("x", "overflowtheme", "t", &opts)
+            .expect("initial highlight");
+        assert_eq!(before.tokens[0][0].color.as_deref(), Some("#112233"));
+
+        // Attempt to replace "t" with a theme exceeding the 9-bit foreground color cap (512 distinct colors).
+        let token_colors: Vec<String> = (3..=512)
+            .map(|id| {
+                format!(
+                    r##"{{"scope":"scope.fg{id:03}","settings":{{"foreground":"#{id:06X}"}}}}"##
+                )
+            })
+            .collect();
+        let oversized_json = format!(
+            r#"{{"name":"t","tokenColors":[{}]}}"#,
+            token_colors.join(",")
+        );
+        let oversized = parse_theme_data("t", &oversized_json).expect("parse oversized theme");
+        let err = highlighter
+            .register_theme(oversized)
+            .expect_err("oversized theme registration must fail");
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+
+        let json_err = highlighter
+            .load_custom_theme(&oversized_json)
+            .expect_err("oversized JSON theme registration must fail");
+        assert_eq!(json_err.kind(), ErrorKind::InvalidRegistration);
+
+        // Existing working theme "t" must remain active and usable after the failed replacement.
+        let after = highlighter
+            .tokenize("x", "overflowtheme", "t", &opts)
+            .expect("highlight after failed re-register");
+        assert_eq!(after, before);
     }
 
     #[test]

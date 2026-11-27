@@ -528,16 +528,18 @@ impl Grammar {
             .transpose()
             .map_err(invalid_selector)?;
 
+        let basic_scope_attributes = Arc::new(BasicScopeAttributesProvider::try_new(
+            configuration.initial_language_id,
+            Some(&configuration.embedded_languages),
+        )?);
+
         Ok(Self {
             root_id,
             root_scope_name: root_grammar.scope_name.clone(),
             grammar_fingerprint,
             registry,
             injections,
-            basic_scope_attributes: Arc::new(BasicScopeAttributesProvider::new(
-                configuration.initial_language_id,
-                Some(&configuration.embedded_languages),
-            )),
+            basic_scope_attributes,
             token_type_matchers,
             balanced_bracket_selectors,
             theme_provider,
@@ -2581,13 +2583,13 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_line_with_themes_packs_inherited_colors_at_each_scope_for_overflow_ids() {
+    fn rejects_foreground_id_512_and_packs_max_valid_foreground_511_across_scopes() {
         use std::sync::Arc;
 
-        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry};
+        use crate::{RawThemeScope, RawThemeSetting, RawThemeStyle, SyncRegistry, ThemeError};
 
-        // Build a valid frozen color map with 513 entries so index 512 spills
-        // into the background bit field when packed via EncodedTokenAttributes::set.
+        // Build a frozen color map with 513 entries so index 512 exceeds the 9-bit
+        // foreground field while index 511 is the maximum encodable foreground ID.
         let mut frozen_colors = Vec::with_capacity(513);
         frozen_colors.push(String::new());
         frozen_colors.push("#000000".to_owned()); // index 1: default fg
@@ -2596,7 +2598,40 @@ mod tests {
         for index in 4..512 {
             frozen_colors.push(format!("#{index:06X}"));
         }
-        frozen_colors.push("#000200".to_owned()); // index 512: parent fg
+        frozen_colors.push("#000200".to_owned()); // index 512: out-of-range fg
+
+        let overflow_theme = RawTheme {
+            settings: vec![
+                RawThemeSetting {
+                    scope: None,
+                    settings: Some(RawThemeStyle {
+                        foreground: Some("#000000".into()),
+                        background: Some("#FFFFFF".into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                },
+                RawThemeSetting {
+                    scope: Some(RawThemeScope::String("meta.parent".into())),
+                    settings: Some(RawThemeStyle {
+                        foreground: Some("#000200".into()),
+                        ..RawThemeStyle::default()
+                    }),
+                    ..RawThemeSetting::default()
+                },
+            ],
+            ..RawTheme::default()
+        };
+        let err = Theme::create_from_raw_theme(Some(&overflow_theme), Some(frozen_colors.clone()))
+            .unwrap_err();
+        assert_eq!(
+            err,
+            ThemeError::ColorMapOverflow {
+                color: "#000200".to_owned(),
+                id: 512,
+                max_id: 511,
+            }
+        );
 
         let raw_theme = RawTheme {
             settings: vec![
@@ -2612,7 +2647,7 @@ mod tests {
                 RawThemeSetting {
                     scope: Some(RawThemeScope::String("meta.parent".into())),
                     settings: Some(RawThemeStyle {
-                        foreground: Some("#000200".into()),
+                        foreground: Some("#0001FF".into()), // index 511: max valid fg
                         ..RawThemeStyle::default()
                     }),
                     ..RawThemeSetting::default()
@@ -2658,10 +2693,15 @@ mod tests {
         registry.set_compiled_theme(Arc::clone(&theme));
         let single = grammar.tokenize_line2("(x)y", None, 0).unwrap();
 
-        // Confirm the child token inside `meta.parent` carries the packed
-        // overflow bits (`0x03018000` vs `0x02018000` outside `meta.parent`).
-        assert_eq!(single.tokens[3], 0x0301_8000);
-        assert_eq!(single.tokens[7], 0x0201_8000);
+        let parent_attrs = EncodedTokenAttributes::new(single.tokens[1]);
+        assert_eq!(parent_attrs.foreground(), 511);
+        assert_eq!(parent_attrs.background(), 2);
+
+        // Child token inside `meta.parent` keeps default background 2 (no bleed).
+        assert_eq!(single.tokens[3], single.tokens[7]);
+        let child_attrs = EncodedTokenAttributes::new(single.tokens[3]);
+        assert_eq!(child_attrs.foreground(), 3);
+        assert_eq!(child_attrs.background(), 2);
 
         // Run multi-theme tokenization with an unrelated default active theme.
         registry.set_theme(None, None).unwrap();
@@ -2672,10 +2712,10 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_line_with_themes_preserves_oversized_language_id_packing() {
+    fn rejects_oversized_language_ids_and_preserves_max_8_bit_language_id_packing() {
         use std::sync::Arc;
 
-        use crate::SyncRegistry;
+        use crate::{EmbeddedLanguages, FontStyle, SyncRegistry, ThemeError};
 
         let source = raw_grammar(
             r#"{
@@ -2687,18 +2727,54 @@ mod tests {
 
         let mut registry = SyncRegistry::new(None, None).unwrap();
         registry.add_grammar(source, Vec::new());
-        let grammar = registry
+
+        let initial_err = registry
             .grammar_for_scope_name(
                 "source.langoverflow",
                 GrammarConfiguration::default().with_initial_language_id(2048),
+            )
+            .err()
+            .expect("initial_language_id > 255 must be rejected");
+        assert_eq!(
+            initial_err,
+            ThemeError::InvalidLanguageId {
+                language_id: 2048,
+                max_language_id: 255,
+            }
+        );
+
+        let embedded_err = registry
+            .grammar_for_scope_name(
+                "source.langoverflow",
+                GrammarConfiguration::default()
+                    .with_embedded_languages(EmbeddedLanguages::from([("keyword.x".into(), 256)])),
+            )
+            .err()
+            .expect("embedded language_id > 255 must be rejected");
+        assert_eq!(
+            embedded_err,
+            ThemeError::InvalidLanguageId {
+                language_id: 256,
+                max_language_id: 255,
+            }
+        );
+
+        let grammar = registry
+            .grammar_for_scope_name(
+                "source.langoverflow",
+                GrammarConfiguration::default().with_initial_language_id(255),
             )
             .unwrap()
             .unwrap();
 
         registry.set_compiled_theme(Arc::clone(&theme));
         let single = grammar.tokenize_line2("x", None, 0).unwrap();
-        // `language_id = 2048` sets bit 11 (0x0000_0800) alongside default fg=1, bg=2.
-        assert_eq!(single.tokens[1], 0x0200_8800);
+        let attrs = EncodedTokenAttributes::new(single.tokens[1]);
+        assert_eq!(attrs.language_id(), 255);
+        assert_eq!(attrs.token_type(), StandardTokenType::Other);
+        assert_eq!(attrs.font_style(), FontStyle::NONE);
+        assert_eq!(attrs.foreground(), 1);
+        assert_eq!(attrs.background(), 2);
 
         let multi = grammar
             .tokenize_line_with_themes("x", None, &[Arc::clone(&theme)], false, 0)
