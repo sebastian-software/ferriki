@@ -210,18 +210,6 @@ impl ScopeStack {
     }
 
     #[must_use]
-    pub(crate) fn get_borrowed_segments(&self) -> Vec<&str> {
-        let mut item = Some(self);
-        let mut result = Vec::new();
-        while let Some(scope) = item {
-            result.push(scope.scope_name.as_str());
-            item = scope.parent.as_deref();
-        }
-        result.reverse();
-        result
-    }
-
-    #[must_use]
     #[allow(
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"
@@ -371,6 +359,7 @@ impl RawThemeStyle {
 #[non_exhaustive]
 pub enum ThemeError {
     MissingFrozenColor(String),
+    InvalidScopeSelector(String),
 }
 
 impl fmt::Display for ThemeError {
@@ -378,6 +367,9 @@ impl fmt::Display for ThemeError {
         match self {
             Self::MissingFrozenColor(color) => {
                 write!(formatter, "missing color in color map - {color}")
+            }
+            Self::InvalidScopeSelector(message) => {
+                write!(formatter, "invalid scope selector - {message}")
             }
         }
     }
@@ -982,8 +974,8 @@ impl ThemeTrieElement {
     #[allow(clippy::too_many_arguments)]
     fn insert(
         &mut self,
-        scope_depth: usize,
-        scope: &str,
+        mut scope_depth: usize,
+        mut scope: &str,
         parent_scopes: Option<Vec<String>>,
         font_style: FontStyle,
         foreground: u32,
@@ -992,35 +984,28 @@ impl ThemeTrieElement {
         font_size: f64,
         line_height: f64,
     ) {
-        if scope.is_empty() {
-            self.insert_here(
-                scope_depth,
-                parent_scopes,
-                font_style,
-                foreground,
-                background,
-                font_family,
-                font_size,
-                line_height,
-            );
-            return;
+        let mut current = self;
+        while !scope.is_empty() {
+            let (head, tail) = scope
+                .split_once('.')
+                .map_or((scope, ""), |(head, tail)| (head, tail));
+            let main_rule = &current.main_rule;
+            let rules_with_parent_scopes = &current.rules_with_parent_scopes;
+            current = current
+                .children
+                .entry(head.to_owned())
+                .or_insert_with(|| Self {
+                    main_rule: main_rule.clone(),
+                    rules_with_parent_scopes: rules_with_parent_scopes.clone(),
+                    children: BTreeMap::new(),
+                    matched_rules: OnceLock::new(),
+                });
+            scope_depth += 1;
+            scope = tail;
         }
 
-        let (head, tail) = scope
-            .split_once('.')
-            .map_or((scope, ""), |(head, tail)| (head, tail));
-        let child = self
-            .children
-            .entry(head.to_owned())
-            .or_insert_with(|| Self {
-                main_rule: self.main_rule.clone(),
-                rules_with_parent_scopes: self.rules_with_parent_scopes.clone(),
-                children: BTreeMap::new(),
-                matched_rules: OnceLock::new(),
-            });
-        child.insert(
-            scope_depth + 1,
-            tail,
+        current.insert_here(
+            scope_depth,
             parent_scopes,
             font_style,
             foreground,
@@ -1103,6 +1088,24 @@ impl ThemeTrieElement {
                 font_size,
                 line_height,
             ));
+    }
+}
+
+impl Drop for ThemeTrieElement {
+    fn drop(&mut self) {
+        if self.children.is_empty() {
+            return;
+        }
+        let mut stack = vec![std::mem::take(&mut self.children).into_values()];
+        while let Some(iter) = stack.last_mut() {
+            let Some(mut child) = iter.next() else {
+                stack.pop();
+                continue;
+            };
+            if !child.children.is_empty() {
+                stack.push(std::mem::take(&mut child.children).into_values());
+            }
+        }
     }
 }
 
@@ -1622,5 +1625,41 @@ mod tests {
             before_oversized,
             "oversized dynamic scope names must bypass cached_match_root"
         );
+    }
+
+    #[test]
+    fn handles_and_drops_deeply_dotted_theme_scopes_iteratively() {
+        let deep_scope = format!("{}leaf", "a.".repeat(10_000));
+        let deeper_scope = format!("{deep_scope}.extra");
+        let trailing_dot_scope = "b.".repeat(10_000);
+        let theme = theme(vec![
+            setting(None, style(None, Some("#100000"), Some("#200000"))),
+            setting(
+                string_scope(&deep_scope),
+                style(Some("bold"), Some("#300000"), None),
+            ),
+            setting(
+                string_scope(&trailing_dot_scope),
+                style(Some("italic"), Some("#400000"), None),
+            ),
+        ]);
+
+        assert_eq!(
+            match_theme(&theme, &[&deep_scope]),
+            ("bold".to_owned(), Some("#300000".to_owned()), None)
+        );
+        assert_eq!(
+            match_theme(&theme, &[&deeper_scope]),
+            ("bold".to_owned(), Some("#300000".to_owned()), None)
+        );
+        assert_eq!(
+            match_theme(&theme, &[&trailing_dot_scope]),
+            ("italic".to_owned(), Some("#400000".to_owned()), None)
+        );
+        assert_eq!(
+            match_theme(&theme, &[&format!("{}other", "a.".repeat(10_000))]),
+            ("not set".to_owned(), None, None)
+        );
+        drop(theme);
     }
 }

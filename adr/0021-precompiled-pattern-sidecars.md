@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-27
+Last updated: 2026-11-26
 
 ## Context
 
@@ -23,7 +23,14 @@ compatible Ferroni, so archived programs cannot be required for correctness.
   and injections. End/while patterns resolved from begin captures stay dynamic.
 - `ferriki-asset-gen` writes a deterministic, checksummed Zstd level-19 `.fkbc`
   beside each `.fkgram`, matching Ferroni's transport choice. Its window is capped
-  at 8 MiB and its decoded payload at 512 MiB. A fixed-width length header pairs
+  at 8 MiB and its decoded payload at 512 MiB, with a 160x maximum
+  decoded-to-compressed expansion ratio (and a 1 MiB floor for small archives,
+  providing >4x headroom over the ~38x maximum observed across the standard
+  catalog). Decompression streams
+  incrementally with fallible `try_reserve_exact` growth and validates the
+  32-byte container header (magic, version, and total section lengths) before
+  allocating any payload buffer, preventing forged `Frame_Content_Size` headers
+  and highly-compressible Zstd bombs from triggering large allocations. A fixed-width length header pairs
   the grammar scope, programs and portable Eager groups without postcard byte
   vector encoding or duplicate program indexing. Zstd adds a native C build
   dependency. Ferroni validates indexes on opening and requested records lazily.
@@ -155,6 +162,12 @@ source contenders must not open archives. Comparisons preserve identical input
 and output checks, with no merging of timings across corpus VMs.
 
 ## History
+
+- 2026-11-26: Replace upfront `Frame_Content_Size` bulk allocation with
+  streaming bounded Zstd decompression, a 160x decoded-to-compressed expansion
+  ratio cap (1 MiB floor), 32-byte pre-allocation header validation, and
+  fallible `try_reserve_exact` buffer growth while retaining the 8 MiB window
+  and 512 MiB payload caps for v2/v3 archive compatibility (#385).
 
 - 2026-10-27: Require Ferroni 2.8 and use its record-backed imports for indexed
   disk caches. Replace runtime subset assembly with shared record insertion;

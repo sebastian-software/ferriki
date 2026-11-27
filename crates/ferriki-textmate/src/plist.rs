@@ -32,6 +32,9 @@ impl fmt::Display for PlistError {
 
 impl Error for PlistError {}
 
+/// Upper bound on nested `<dict>` / `<array>` containers in a property list.
+const MAX_PLIST_DEPTH: usize = 128;
+
 /// Parse an XML property list into its JSON-compatible value representation.
 ///
 /// vscode-textmate's grammar reader only needs dictionaries, arrays, scalar
@@ -59,12 +62,12 @@ impl<'a> Parser<'a> {
         let value = if self.peek_open_tag_name()?.starts_with("plist") {
             self.parse_open_tag()?;
             self.skip_trivia()?;
-            let value = self.parse_value()?;
+            let value = self.parse_value(0)?;
             self.skip_trivia()?;
             self.parse_close_tag("plist")?;
             value
         } else {
-            self.parse_value()?
+            self.parse_value(0)?
         };
         self.skip_trivia()?;
         if self.position != self.content.len() {
@@ -73,12 +76,22 @@ impl<'a> Parser<'a> {
         Ok(value)
     }
 
-    fn parse_value(&mut self) -> Result<Value, PlistError> {
+    fn parse_value(&mut self, depth: usize) -> Result<Value, PlistError> {
         self.skip_trivia()?;
         let tag = self.parse_open_tag()?;
         match tag.name.as_str() {
-            "dict" => self.parse_dict(tag.is_closed),
-            "array" => self.parse_array(tag.is_closed),
+            "dict" => {
+                if depth >= MAX_PLIST_DEPTH {
+                    return Err(self.fail("property list nesting depth limit exceeded"));
+                }
+                self.parse_dict(tag.is_closed, depth + 1)
+            }
+            "array" => {
+                if depth >= MAX_PLIST_DEPTH {
+                    return Err(self.fail("property list nesting depth limit exceeded"));
+                }
+                self.parse_array(tag.is_closed, depth + 1)
+            }
             "string" | "date" | "data" => Ok(Value::String(self.parse_tag_value(&tag)?)),
             "real" => {
                 let value = self.parse_tag_value(&tag)?;
@@ -108,7 +121,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_dict(&mut self, is_closed: bool) -> Result<Value, PlistError> {
+    fn parse_dict(&mut self, is_closed: bool, depth: usize) -> Result<Value, PlistError> {
         let mut result = Map::new();
         if is_closed {
             return Ok(Value::Object(result));
@@ -124,12 +137,12 @@ impl<'a> Parser<'a> {
                 return Err(self.fail("missing <key>"));
             }
             let key = self.parse_tag_value(&key_tag)?;
-            let value = self.parse_value()?;
+            let value = self.parse_value(depth)?;
             result.insert(key, value);
         }
     }
 
-    fn parse_array(&mut self, is_closed: bool) -> Result<Value, PlistError> {
+    fn parse_array(&mut self, is_closed: bool, depth: usize) -> Result<Value, PlistError> {
         let mut result = Vec::new();
         if is_closed {
             return Ok(Value::Array(result));
@@ -140,7 +153,7 @@ impl<'a> Parser<'a> {
                 self.parse_close_tag("array")?;
                 return Ok(Value::Array(result));
             }
-            result.push(self.parse_value()?);
+            result.push(self.parse_value(depth)?);
         }
     }
 
@@ -380,5 +393,44 @@ mod tests {
         .unwrap();
 
         assert_eq!(value, json!(["A😀&<>\"'", "&#65;"]));
+    }
+
+    #[test]
+    fn enforces_property_list_nesting_depth_limit() {
+        // Exactly MAX_PLIST_DEPTH nested containers holding a scalar leaf succeeds.
+        let within_limit = format!(
+            "<plist>{}{}{}</plist>",
+            "<array>".repeat(super::MAX_PLIST_DEPTH),
+            "<string>x</string>",
+            "</array>".repeat(super::MAX_PLIST_DEPTH)
+        );
+        assert!(parse_plist(&within_limit).is_ok());
+
+        // MAX_PLIST_DEPTH + 1 nested arrays or dicts is rejected.
+        let too_deep_arrays = format!(
+            "<plist>{}{}{}</plist>",
+            "<array>".repeat(super::MAX_PLIST_DEPTH),
+            "<array/>",
+            "</array>".repeat(super::MAX_PLIST_DEPTH)
+        );
+        let err = parse_plist(&too_deep_arrays).unwrap_err();
+        assert!(err.to_string().contains("depth limit"));
+
+        let too_deep_dicts = format!(
+            "<plist>{}{}{}</plist>",
+            "<dict><key>k</key>".repeat(super::MAX_PLIST_DEPTH),
+            "<dict/>",
+            "</dict>".repeat(super::MAX_PLIST_DEPTH)
+        );
+        let err = parse_plist(&too_deep_dicts).unwrap_err();
+        assert!(err.to_string().contains("depth limit"));
+
+        let adversarial = format!(
+            "<plist>{}{}</plist>",
+            "<array>".repeat(10_000),
+            "</array>".repeat(10_000)
+        );
+        let err = parse_plist(&adversarial).unwrap_err();
+        assert!(err.to_string().contains("depth limit"));
     }
 }

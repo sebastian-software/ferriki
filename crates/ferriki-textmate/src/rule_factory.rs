@@ -73,12 +73,11 @@ impl GrammarProvider for GrammarStore {
 #[must_use]
 pub(crate) fn initialize_grammar(grammar: &RawGrammar, base: Option<Arc<RawRule>>) -> RawGrammar {
     let mut grammar = grammar.clone();
-    let self_rule = Arc::new(RawRule {
-        name: Some(grammar.scope_name.clone()),
-        patterns: Some(grammar.patterns.clone()),
-        location: grammar.location.clone(),
-        ..RawRule::default()
-    });
+    let mut self_rule = RawRule::default();
+    self_rule.name = Some(grammar.scope_name.clone());
+    self_rule.patterns = Some(grammar.patterns.clone());
+    self_rule.location = grammar.location.clone();
+    let self_rule = Arc::new(self_rule);
     grammar
         .repository
         .insert("$self".into(), Arc::clone(&self_rule));
@@ -426,10 +425,9 @@ impl<'a> RuleFactory<'a> {
             };
             let shorthand_include = if description.patterns.is_none() {
                 description.include.as_ref().map(|include| {
-                    Arc::new(RawRule {
-                        include: Some(include.clone()),
-                        ..RawRule::default()
-                    })
+                    let mut rule = RawRule::default();
+                    rule.include = Some(include.clone());
+                    Arc::new(rule)
                 })
             } else {
                 None
@@ -1316,10 +1314,9 @@ mod tests {
         let raw = Arc::new(grammar(
             r##"{ "scopeName": "source.overlay", "patterns": [] }"##,
         ));
-        let overlay_rule = Arc::new(crate::raw_grammar::RawRule {
-            repository: Some(BTreeMap::new()),
-            ..crate::raw_grammar::RawRule::default()
-        });
+        let mut overlay_rule = crate::raw_grammar::RawRule::default();
+        overlay_rule.repository = Some(BTreeMap::new());
+        let overlay_rule = Arc::new(overlay_rule);
         let mut context = super::RepositoryContext::new(&raw);
         for _ in 0..50_000 {
             context = context.with_overlay(&overlay_rule);

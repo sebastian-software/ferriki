@@ -96,7 +96,8 @@ fn prepared_eager_startup() {
                 ThemeProvider::new(Theme::create_from_raw_theme(None, None).unwrap()),
                 GrammarConfiguration::default().with_regex_prefilter(lane != 0),
                 cache.clone(),
-            );
+            )
+            .unwrap();
             (grammar, cache)
         };
         let expected = tokenize(&construct(0).0, &code);

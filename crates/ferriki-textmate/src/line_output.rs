@@ -10,7 +10,7 @@ use crate::basic_scope_attributes::{BasicScopeAttributes, BasicScopeAttributesPr
 use crate::encoded_token_attributes::{
     EncodedTokenAttributes, OptionalStandardTokenType, StandardTokenType, to_optional_token_type,
 };
-use crate::matcher::{Matcher, create_matchers};
+use crate::matcher::{Matcher, MatcherError, create_matchers};
 use crate::state_stack::StateStack;
 use crate::theme::{FontStyle, ScopeStack, Theme};
 
@@ -22,39 +22,36 @@ pub(crate) struct BalancedBracketSelectors {
 }
 
 impl BalancedBracketSelectors {
-    #[must_use]
     pub(crate) fn new(
         balanced_bracket_scopes: &[String],
         unbalanced_bracket_scopes: &[String],
-    ) -> Self {
+    ) -> Result<Self, MatcherError> {
         let mut allow_any = false;
-        let balanced_bracket_scopes = balanced_bracket_scopes
-            .iter()
-            .flat_map(|selector| {
-                if selector == "*" {
-                    allow_any = true;
-                    Vec::new()
-                } else {
-                    create_matchers(selector)
+        let mut balanced = Vec::new();
+        for selector in balanced_bracket_scopes {
+            if selector == "*" {
+                allow_any = true;
+            } else {
+                balanced.extend(
+                    create_matchers(selector)?
                         .into_iter()
-                        .map(|matcher| matcher.matcher)
-                        .collect()
-                }
-            })
-            .collect();
-        let unbalanced_bracket_scopes = unbalanced_bracket_scopes
-            .iter()
-            .flat_map(|selector| {
-                create_matchers(selector)
-                    .into_iter()
-                    .map(|matcher| matcher.matcher)
-            })
-            .collect();
-        Self {
-            balanced_bracket_scopes,
-            unbalanced_bracket_scopes,
-            allow_any,
+                        .map(|matcher| matcher.matcher),
+                );
+            }
         }
+        let mut unbalanced = Vec::new();
+        for selector in unbalanced_bracket_scopes {
+            unbalanced.extend(
+                create_matchers(selector)?
+                    .into_iter()
+                    .map(|matcher| matcher.matcher),
+            );
+        }
+        Ok(Self {
+            balanced_bracket_scopes: balanced,
+            unbalanced_bracket_scopes: unbalanced,
+            allow_any,
+        })
     }
 
     #[must_use]
@@ -90,15 +87,17 @@ pub(crate) struct TokenTypeMatcher {
 }
 
 impl TokenTypeMatcher {
-    #[must_use]
-    pub(crate) fn from_selector(selector: &str, token_type: StandardTokenType) -> Vec<Self> {
-        create_matchers(selector)
+    pub(crate) fn from_selector(
+        selector: &str,
+        token_type: StandardTokenType,
+    ) -> Result<Vec<Self>, MatcherError> {
+        Ok(create_matchers(selector)?
             .into_iter()
             .map(|matcher| Self {
                 matcher: matcher.matcher,
                 token_type,
             })
-            .collect()
+            .collect())
     }
 }
 
@@ -1071,14 +1070,14 @@ mod tests {
 
     #[test]
     fn matches_balanced_and_unbalanced_scope_selectors() {
-        let selectors = BalancedBracketSelectors::new(&["*".into()], &["comment".into()]);
+        let selectors = BalancedBracketSelectors::new(&["*".into()], &["comment".into()]).unwrap();
 
         assert!(!selectors.matches_always());
         assert!(!selectors.matches_never());
         assert!(selectors.matches(&["source.js".into()]));
         assert!(!selectors.matches(&["source.js".into(), "comment.block".into()]));
 
-        let never = BalancedBracketSelectors::new(&[], &[]);
+        let never = BalancedBracketSelectors::new(&[], &[]).unwrap();
         assert!(never.matches_never());
     }
 
@@ -1188,8 +1187,9 @@ mod tests {
             FontAttribute::default(),
         );
         let stack = state(Arc::clone(&scopes));
-        let overrides = TokenTypeMatcher::from_selector("meta.embedded", StandardTokenType::String);
-        let selectors = BalancedBracketSelectors::new(&["*".into()], &[]);
+        let overrides =
+            TokenTypeMatcher::from_selector("meta.embedded", StandardTokenType::String).unwrap();
+        let selectors = BalancedBracketSelectors::new(&["*".into()], &[]).unwrap();
         let mut tokens = LineTokens::new(true, "x\n", overrides, Some(selectors));
         tokens.produce_from_scopes(Some(&scopes), 1);
 

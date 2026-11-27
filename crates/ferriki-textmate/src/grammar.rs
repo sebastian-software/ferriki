@@ -436,16 +436,16 @@ impl Grammar {
             .collect()
     }
 
-    /// Compiles a grammar directly. Applications obtain grammars from
+    /// Compiles a grammar directly, returning an error if any scope selector is
+    /// invalid. Applications obtain grammars from
     /// [`crate::SyncRegistry::grammar_for_scope_name`].
     #[doc(hidden)]
-    #[must_use]
     pub fn new(
         raw_grammar: &RawGrammar,
         grammar_provider: &dyn GrammarProvider,
         theme: Theme,
         configuration: GrammarConfiguration,
-    ) -> Self {
+    ) -> Result<Self, crate::ThemeError> {
         Self::with_factory(
             grammar_provider,
             ThemeProvider::new(theme),
@@ -460,7 +460,7 @@ impl Grammar {
         theme_provider: ThemeProvider,
         configuration: GrammarConfiguration,
         scanner_pattern_cache: ScannerPatternCache,
-    ) -> Self {
+    ) -> Result<Self, crate::ThemeError> {
         let scanner_pattern_cache = scanner_pattern_cache.with_mode(configuration.regex_mode);
         Self::with_factory(
             grammar_provider,
@@ -479,14 +479,21 @@ impl Grammar {
         theme_provider: ThemeProvider,
         configuration: GrammarConfiguration,
         mut factory: RuleFactory<'_>,
-    ) -> Self {
+    ) -> Result<Self, crate::ThemeError> {
+        let invalid_selector = |error: crate::matcher::MatcherError| {
+            crate::ThemeError::InvalidScopeSelector(error.to_string())
+        };
         let root_id = factory.compile_root();
         let root_grammar = Arc::clone(factory.root_grammar());
+        if let Some(selector) = root_grammar.injection_selector.as_deref() {
+            crate::matcher::create_matchers(selector).map_err(invalid_selector)?;
+        }
         let mut injections = Vec::new();
 
         for (selector, rule) in &root_grammar.injections {
             let rule_id = factory.compile_raw_rule(Arc::clone(rule));
-            injections.extend(Injection::from_selector(selector, rule_id));
+            injections
+                .extend(Injection::from_selector(selector, rule_id).map_err(invalid_selector)?);
         }
 
         let external_injection_scopes = grammar_provider.injections(&root_grammar.scope_name);
@@ -497,7 +504,8 @@ impl Grammar {
                 continue;
             };
             if let Some(selector) = injection_grammar.injection_selector.as_deref() {
-                injections.extend(Injection::from_selector(selector, rule_id));
+                injections
+                    .extend(Injection::from_selector(selector, rule_id).map_err(invalid_selector)?);
             }
         }
         injections.sort_by_key(|injection| priority_order(injection.priority));
@@ -505,25 +513,22 @@ impl Grammar {
         let grammar_fingerprint = factory.grammar_fingerprint(external_injection_scopes);
         let (_, mut registry) = factory.into_parts();
         registry.regex_prefilter = configuration.regex_prefilter;
-        let token_type_matchers = configuration
-            .token_types
-            .iter()
-            .flat_map(|(selector, token_type)| {
-                TokenTypeMatcher::from_selector(selector, *token_type)
+        let mut token_type_matchers = Vec::new();
+        for (selector, token_type) in &configuration.token_types {
+            token_type_matchers.extend(
+                TokenTypeMatcher::from_selector(selector, *token_type).map_err(invalid_selector)?,
+            );
+        }
+        let balanced_bracket_selectors = configuration
+            .balanced_bracket_selectors
+            .as_ref()
+            .map(|balanced| {
+                BalancedBracketSelectors::new(balanced, &configuration.unbalanced_bracket_selectors)
             })
-            .collect();
-        let balanced_bracket_selectors =
-            configuration
-                .balanced_bracket_selectors
-                .as_ref()
-                .map(|balanced| {
-                    BalancedBracketSelectors::new(
-                        balanced,
-                        &configuration.unbalanced_bracket_selectors,
-                    )
-                });
+            .transpose()
+            .map_err(invalid_selector)?;
 
-        Self {
+        Ok(Self {
             root_id,
             root_scope_name: root_grammar.scope_name.clone(),
             grammar_fingerprint,
@@ -539,7 +544,7 @@ impl Grammar {
             multi_theme_cache: Mutex::new(None),
             #[cfg(test)]
             last_walk_stats: Mutex::new(None),
-        }
+        })
     }
 
     /// Ferriki extension: compiles the scanners of every rule this grammar
@@ -1442,7 +1447,8 @@ mod tests {
             &store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
 
         assert!(grammar.backtracking_warnings().is_empty());
         grammar.tokenize_line("123.45 clean", None, 0).unwrap();
@@ -1518,7 +1524,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
 
         let begin_state = grammar.tokenize_line("aaa", None, 0).unwrap().rule_stack;
         grammar.tokenize_line("aaa", Some(begin_state), 0).unwrap();
@@ -1571,7 +1578,8 @@ mod tests {
                 initial_language_id: 7,
                 ..GrammarConfiguration::default()
             },
-        );
+        )
+        .unwrap();
 
         let first = grammar.tokenize_line("\"open", None, 0).unwrap();
         assert_eq!(first.rule_stack.depth, 2);
@@ -1601,7 +1609,8 @@ mod tests {
             &store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let first = grammar.tokenize_line2("\"open", None, 0).unwrap();
         let serialized = grammar
             .serialize_state_stack(Some(&first.rule_stack))
@@ -1615,7 +1624,8 @@ mod tests {
             &store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let restored = fresh_grammar.deserialize_state_stack(&serialized).unwrap();
         let continued = fresh_grammar
             .tokenize_line2("close\"", Some(restored), 0)
@@ -1646,7 +1656,8 @@ mod tests {
             &store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let unnamed_state = unnamed_grammar.tokenize_line("O", None, 0).unwrap();
         let unnamed_json = unnamed_grammar
             .serialize_state_stack(Some(&unnamed_state.rule_stack))
@@ -1682,7 +1693,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = grammar.tokenize_line("\"open", None, 0).unwrap();
         let serialized = grammar
             .serialize_state_stack(Some(&open.rule_stack))
@@ -1772,7 +1784,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let nested = grammar.tokenize_line("OI", None, 0).unwrap();
         assert_eq!(nested.rule_stack.depth, 3);
         let sibling = grammar.tokenize_line("S", None, 0).unwrap();
@@ -1817,7 +1830,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = grammar.tokenize_line("aaa", None, 0).unwrap();
         let serialized = grammar
             .serialize_state_stack(Some(&open.rule_stack))
@@ -1859,7 +1873,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = grammar.tokenize_line(&"a".repeat(15_000), None, 0).unwrap();
         let serialized = grammar
             .serialize_state_stack(Some(&open.rule_stack))
@@ -1905,13 +1920,15 @@ mod tests {
             &empty_store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let second = Grammar::new(
             &relocated,
             &empty_store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = first.tokenize_line("\"open", None, 0).unwrap();
         let portable = first.serialize_state_stack(Some(&open.rule_stack)).unwrap();
         assert!(second.deserialize_state_stack(&portable).is_ok());
@@ -1948,13 +1965,15 @@ mod tests {
             &store_ab,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let grammar_ba = Grammar::new(
             &root,
             &store_ba,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let state = grammar_ab.serialize_state_stack(None).unwrap();
         assert!(grammar_ba.deserialize_state_stack(&state).is_err());
     }
@@ -1980,7 +1999,8 @@ mod tests {
                 balanced_bracket_selectors: Some(vec!["*".into()]),
                 ..GrammarConfiguration::default()
             },
-        );
+        )
+        .unwrap();
 
         let result = grammar.tokenize_line2("x", None, 0).unwrap();
         let metadata = EncodedTokenAttributes::new(result.tokens[1]);
@@ -2023,7 +2043,8 @@ mod tests {
             &store,
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
 
         let root_result = grammar.tokenize_line("a", None, 0).unwrap();
         assert_eq!(
@@ -2062,7 +2083,8 @@ mod tests {
             &GrammarStore::new(),
             Theme::create_from_raw_theme(Some(&raw_theme), None).unwrap(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
 
         let result = grammar.tokenize_line2("x", None, 0).unwrap();
         let metadata = EncodedTokenAttributes::new(result.tokens[1]);
@@ -2124,7 +2146,8 @@ mod tests {
                 .with_token_types(vec![("inner.test".into(), StandardTokenType::String)])
                 .with_balanced_bracket_selectors(Some(vec!["source.embedded".into()]))
                 .with_unbalanced_bracket_selectors(vec!["comment".into()]),
-        );
+        )
+        .unwrap();
         let mut scope_state = None;
         let mut binary_state = None;
         let mut combined_state = None;
@@ -2189,7 +2212,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let baseline = grammar.serialize_state_stack(None).unwrap();
         let mut parsed: serde_json::Value = serde_json::from_str(&baseline).unwrap();
         parsed["frames"]
@@ -2231,7 +2255,8 @@ mod tests {
                 &GrammarStore::new(),
                 default_theme(),
                 GrammarConfiguration::default(),
-            );
+            )
+            .unwrap();
             grammar.compile_all_scanners().unwrap();
             let result = grammar.tokenize_line("ok", None, 0).unwrap();
             assert!(
@@ -2276,7 +2301,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = grammar.tokenize_line("[open", None, 0).unwrap();
         assert!(
             open.tokens
@@ -2330,7 +2356,8 @@ mod tests {
             &GrammarStore::new(),
             default_theme(),
             GrammarConfiguration::default(),
-        );
+        )
+        .unwrap();
         let open = grammar.tokenize_line2(&"(".repeat(256), None, 0).unwrap();
         let serialized = grammar
             .serialize_state_stack(Some(&open.rule_stack))
@@ -3458,7 +3485,8 @@ mod tests {
             provider.clone(),
             GrammarConfiguration::default(),
             crate::regexp::ScannerPatternCache::new(),
-        );
+        )
+        .unwrap();
 
         let line = "ab".repeat(200);
         let expected_light = grammar.tokenize_line2(&line, None, 0).unwrap().tokens;
@@ -3609,5 +3637,29 @@ mod tests {
             "  1x tokenize_line_with_themes:  {multi_ms:.2} ms ({:.2}x faster)",
             seq_ms / multi_ms
         );
+    }
+
+    #[test]
+    fn new_rejects_overly_deep_scope_selector() {
+        let deep_selector = format!("{}source.test{}", "(".repeat(200), ")".repeat(200));
+        let source = serde_json::json!({
+            "scopeName": "source.test",
+            "patterns": [],
+            "injections": {
+                deep_selector: { "match": "x", "name": "keyword.x" }
+            }
+        })
+        .to_string();
+        let root = raw_grammar(&source);
+        let err = Grammar::new(
+            &root,
+            &GrammarStore::new(),
+            default_theme(),
+            GrammarConfiguration::default(),
+        )
+        .err()
+        .expect("Grammar::new must return Err on over-depth injection selector");
+        assert!(matches!(err, crate::ThemeError::InvalidScopeSelector(_)));
+        assert!(err.to_string().contains("depth limit"));
     }
 }

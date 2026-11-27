@@ -511,8 +511,7 @@ impl HighlighterCore {
         requested: &str,
         retry_optional: bool,
     ) -> Result<Option<String>> {
-        let mut visiting = BTreeSet::new();
-        let scope = self.load_standard_language_inner(requested, &mut visiting)?;
+        let scope = self.load_standard_language_inner(requested)?;
         if retry_optional && let Some(scope) = &scope {
             // An explicit load can follow a host prefetch that made a previously
             // absent optional file available. Tokenization does not retry I/O.
@@ -637,6 +636,9 @@ impl HighlighterCore {
         if self.loaded_custom_language_ids.contains(&id) {
             return Ok(grammar.scope_name);
         }
+        grammar
+            .validate_scope_selector_depths()
+            .map_err(theme_error)?;
         let scope_name = grammar.scope_name.clone();
         self.registry.add_grammar(
             grammar,
@@ -764,10 +766,25 @@ impl HighlighterCore {
         Ok(())
     }
 
-    fn load_standard_language_inner(
-        &mut self,
+    fn load_standard_language_inner(&mut self, requested: &str) -> Result<Option<String>> {
+        let mut staged = Vec::new();
+        let mut staged_ids = BTreeSet::new();
+        let Some(scope) = self.stage_standard_language(requested, &mut staged_ids, &mut staged)?
+        else {
+            return Ok(None);
+        };
+        for (asset, raw_grammar) in staged {
+            self.register_loaded_grammar(&asset, raw_grammar);
+            self.refresh_injections(&asset.scope_name);
+        }
+        Ok(Some(scope))
+    }
+
+    fn stage_standard_language(
+        &self,
         requested: &str,
-        visiting: &mut BTreeSet<String>,
+        staged_ids: &mut BTreeSet<String>,
+        staged: &mut Vec<(std::sync::Arc<ferriki_asset_gen::LanguageAsset>, RawGrammar)>,
     ) -> Result<Option<String>> {
         if self.registry.lookup(requested).is_some() {
             return Ok(Some(requested.to_owned()));
@@ -779,19 +796,17 @@ impl HighlighterCore {
         let Some(catalogs) = self.standard_assets.as_ref() else {
             return Ok(None);
         };
-        let Some(asset) = catalogs.languages.load_asset(requested)? else {
+        let Some(id) = catalogs.languages.resolve_id(requested) else {
             return Ok(None);
         };
-        let asset = (*asset).clone();
-        if self.loaded_language_ids.contains(&asset.id) {
-            return Ok(Some(asset.scope_name));
+        if self.loaded_language_ids.contains(id) || staged_ids.contains(id) {
+            return Ok(catalogs.languages.scope_name(id).map(str::to_owned));
         }
-        if !visiting.insert(asset.id.clone()) {
-            return Ok(Some(asset.scope_name));
-        }
-
-        for dependency in &asset.embedded_langs {
-            self.load_standard_language_inner(dependency, visiting)?;
+        let Some(asset) = catalogs.languages.load_asset(id)? else {
+            return Ok(None);
+        };
+        if self.loaded_language_ids.contains(&asset.id) || !staged_ids.insert(asset.id.clone()) {
+            return Ok(Some(asset.scope_name.clone()));
         }
 
         let raw_grammar =
@@ -801,12 +816,25 @@ impl HighlighterCore {
                     format!("Failed to parse standard grammar `{}`: {error}", asset.id),
                 )
             })?;
-        self.register_loaded_grammar(&asset, raw_grammar);
+        raw_grammar
+            .validate_scope_selector_depths()
+            .map_err(|error| {
+                Error::new(
+                    ErrorKind::AssetFormat,
+                    format!(
+                        "Invalid scope selector in standard grammar `{}`: {error}",
+                        asset.id
+                    ),
+                )
+            })?;
 
-        self.refresh_injections(&asset.scope_name);
+        for dependency in &asset.embedded_langs {
+            self.stage_standard_language(dependency, staged_ids, staged)?;
+        }
 
-        visiting.remove(&asset.id);
-        Ok(Some(asset.scope_name))
+        let scope_name = asset.scope_name.clone();
+        staged.push((asset, raw_grammar));
+        Ok(Some(scope_name))
     }
 
     fn register_loaded_grammar(
@@ -1558,10 +1586,16 @@ fn is_plain_language(language: &str) -> bool {
 }
 
 fn theme_error(error: ferriki_textmate::ThemeError) -> Error {
-    Error::new(
-        ErrorKind::Theme,
-        format!("Failed to resolve TextMate theme: {error}"),
-    )
+    match error {
+        ferriki_textmate::ThemeError::InvalidScopeSelector(message) => Error::new(
+            ErrorKind::InvalidRegistration,
+            format!("Invalid TextMate scope selector: {message}"),
+        ),
+        other => Error::new(
+            ErrorKind::Theme,
+            format!("Failed to resolve TextMate theme: {other}"),
+        ),
+    }
 }
 
 impl LanguageRegistration {
@@ -2947,5 +2981,336 @@ mod tests {
             "  O(T) monotonic cursor:                  {monotonic_ms:.2} ms ({:.1}x faster)",
             linear_ms / monotonic_ms.max(0.001)
         );
+    }
+
+    #[test]
+    fn rejects_invalid_custom_injection_selector_atomically_and_allows_retry() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+        highlighter
+            .register_theme(ThemeData::new(
+                "custom-theme",
+                "#112233",
+                "#ffffff",
+                ferriki_textmate::RawTheme::default(),
+            ))
+            .expect("theme");
+
+        let host_grammar = ferriki_textmate::parse_raw_grammar(
+            r#"{
+                "scopeName": "source.host",
+                "patterns": [{ "match": "HOST", "name": "keyword.host" }]
+            }"#,
+            Some("host.json"),
+        )
+        .expect("host grammar");
+        highlighter
+            .register_language(LanguageRegistration::new("host", host_grammar))
+            .expect("host registration");
+
+        let deep_selector = format!("{}source.host{}", "(".repeat(200), ")".repeat(200));
+
+        // 1) Over-depth external injectionSelector must fail atomically with InvalidRegistration.
+        let bad_external = ferriki_textmate::parse_raw_grammar(
+            &serde_json::json!({
+                "scopeName": "source.bad-ext",
+                "injectionSelector": deep_selector,
+                "patterns": [{ "match": "TODO", "name": "comment.todo" }]
+            })
+            .to_string(),
+            Some("bad-ext.json"),
+        )
+        .expect("bad external grammar");
+        let err = highlighter
+            .register_language(
+                LanguageRegistration::new("my-inj", bad_external)
+                    .with_injections(["source.host".to_owned()]),
+            )
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(err.to_string().contains("depth limit"));
+        assert!(
+            !highlighter
+                .loaded_languages()
+                .iter()
+                .any(|id| id == "my-inj")
+        );
+
+        // 2) Over-depth embedded injections key must also fail atomically.
+        let bad_embedded = ferriki_textmate::parse_raw_grammar(
+            &serde_json::json!({
+                "scopeName": "source.bad-emb",
+                "patterns": [],
+                "injections": {
+                    deep_selector: { "match": "TODO", "name": "comment.todo" }
+                }
+            })
+            .to_string(),
+            Some("bad-emb.json"),
+        )
+        .expect("bad embedded grammar");
+        let err = highlighter
+            .register_language(LanguageRegistration::new("bad-emb", bad_embedded))
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(
+            !highlighter
+                .loaded_languages()
+                .iter()
+                .any(|id| id == "bad-emb")
+        );
+
+        // 3) Target language remains completely functional after the failed registration.
+        let before_retry = highlighter
+            .tokenize(
+                "HOST TODO",
+                "host",
+                "custom-theme",
+                &unlimited_tokenize_options(),
+            )
+            .expect("host must remain usable after failed injection registration");
+        assert!(
+            before_retry.tokens[0]
+                .iter()
+                .all(|token| !token.content.eq("TODO") || token.color.as_deref() == Some("#112233"))
+        );
+
+        // 4) Retrying registration under the same ID with a valid selector succeeds and applies.
+        let good_external = ferriki_textmate::parse_raw_grammar(
+            r#"{
+                "scopeName": "source.good-ext",
+                "injectionSelector": "L:source.host",
+                "patterns": [{ "match": "TODO", "name": "comment.todo" }]
+            }"#,
+            Some("good-ext.json"),
+        )
+        .expect("good external grammar");
+        highlighter
+            .register_language(
+                LanguageRegistration::new("my-inj", good_external)
+                    .with_injections(["source.host".to_owned()]),
+            )
+            .expect("retry with valid selector under same ID must succeed");
+        assert!(
+            highlighter
+                .loaded_languages()
+                .iter()
+                .any(|id| id == "my-inj")
+        );
+
+        let grammar = highlighter
+            .grammar_for_language("host")
+            .expect("host grammar")
+            .expect("registered host");
+        let tokenized = grammar.tokenize_line("HOST TODO", None, 0).expect("tokens");
+        assert!(
+            tokenized
+                .tokens
+                .iter()
+                .any(|token| token.scopes.iter().any(|scope| scope == "comment.todo")),
+            "valid retried injection must apply to target language"
+        );
+    }
+
+    #[test]
+    fn rejects_catalog_grammar_with_overly_deep_selector_before_mutating_registry() {
+        use std::borrow::Cow;
+        use std::collections::HashMap;
+
+        use ferriki_asset_gen::{
+            FORMAT_VERSION, LanguageAsset, LanguageManifest, ThemeManifest, encode_language_asset,
+            encode_language_manifest, encode_theme_manifest,
+        };
+
+        let deep_selector = format!("{}source.host{}", "(".repeat(200), ")".repeat(200));
+        let host_asset: LanguageAsset = serde_json::from_value(serde_json::json!({
+            "format_version": FORMAT_VERSION,
+            "id": "host",
+            "scope_name": "source.host",
+            "display_name": null,
+            "aliases": [],
+            "embedded_langs": [],
+            "embedded_langs_lazy": [],
+            "inject_to": [],
+            "grammar_json": r#"{
+                "scopeName": "source.host",
+                "patterns": [{ "match": "HOST", "name": "keyword.host" }]
+            }"#,
+        }))
+        .expect("host asset struct");
+        let valid_dep_asset: LanguageAsset = serde_json::from_value(serde_json::json!({
+            "format_version": FORMAT_VERSION,
+            "id": "valid-dep",
+            "scope_name": "source.valid-dep",
+            "display_name": null,
+            "aliases": [],
+            "embedded_langs": [],
+            "embedded_langs_lazy": [],
+            "inject_to": ["source.host"],
+            "grammar_json": r#"{
+                "scopeName": "source.valid-dep",
+                "injectionSelector": "L:source.host",
+                "patterns": [{ "match": "VALID", "name": "keyword.valid" }]
+            }"#,
+        }))
+        .expect("valid-dep asset struct");
+        let bad_inj_asset: LanguageAsset = serde_json::from_value(serde_json::json!({
+            "format_version": FORMAT_VERSION,
+            "id": "bad-inj",
+            "scope_name": "source.bad-inj",
+            "display_name": null,
+            "aliases": [],
+            "embedded_langs": ["valid-dep"],
+            "embedded_langs_lazy": [],
+            "inject_to": ["source.host"],
+            "grammar_json": serde_json::json!({
+                "scopeName": "source.bad-inj",
+                "injectionSelector": deep_selector,
+                "patterns": [{ "match": "TODO", "name": "comment.todo" }]
+            })
+            .to_string(),
+        }))
+        .expect("bad-inj asset struct");
+        let wrapper_root_asset: LanguageAsset = serde_json::from_value(serde_json::json!({
+            "format_version": FORMAT_VERSION,
+            "id": "wrapper-root",
+            "scope_name": "source.wrapper-root",
+            "display_name": null,
+            "aliases": [],
+            "embedded_langs": ["valid-dep", "bad-inj"],
+            "embedded_langs_lazy": [],
+            "inject_to": [],
+            "grammar_json": r#"{
+                "scopeName": "source.wrapper-root",
+                "patterns": [{ "match": "WRAP", "name": "keyword.wrap" }]
+            }"#,
+        }))
+        .expect("wrapper-root asset struct");
+
+        let language_manifest_struct: LanguageManifest =
+            serde_json::from_value(serde_json::json!({
+                "format_version": FORMAT_VERSION,
+                "source": { "upstream": "test", "version": null, "commit": null },
+                "entries": [
+                    {
+                        "id": "host",
+                        "scope_name": "source.host",
+                        "asset_file": "host.fkgram",
+                        "display_name": null,
+                        "aliases": [],
+                        "embedded_langs": [],
+                        "embedded_langs_lazy": [],
+                        "inject_to": []
+                    },
+                    {
+                        "id": "valid-dep",
+                        "scope_name": "source.valid-dep",
+                        "asset_file": "valid-dep.fkgram",
+                        "display_name": null,
+                        "aliases": [],
+                        "embedded_langs": [],
+                        "embedded_langs_lazy": [],
+                        "inject_to": ["source.host"]
+                    },
+                    {
+                        "id": "bad-inj",
+                        "scope_name": "source.bad-inj",
+                        "asset_file": "bad-inj.fkgram",
+                        "display_name": null,
+                        "aliases": [],
+                        "embedded_langs": ["valid-dep"],
+                        "embedded_langs_lazy": [],
+                        "inject_to": ["source.host"]
+                    },
+                    {
+                        "id": "wrapper-root",
+                        "scope_name": "source.wrapper-root",
+                        "asset_file": "wrapper-root.fkgram",
+                        "display_name": null,
+                        "aliases": [],
+                        "embedded_langs": ["valid-dep", "bad-inj"],
+                        "embedded_langs_lazy": [],
+                        "inject_to": []
+                    }
+                ]
+            }))
+            .expect("language manifest struct");
+        let theme_manifest_struct: ThemeManifest = serde_json::from_value(serde_json::json!({
+            "format_version": FORMAT_VERSION,
+            "source": { "upstream": "test", "version": null, "commit": null },
+            "entries": []
+        }))
+        .expect("theme manifest struct");
+
+        let language_manifest =
+            encode_language_manifest(&language_manifest_struct).expect("language manifest");
+        let theme_manifest = encode_theme_manifest(&theme_manifest_struct).expect("theme manifest");
+
+        let mut language_assets: HashMap<String, Cow<'static, [u8]>> = HashMap::new();
+        language_assets.insert(
+            "host.fkgram".to_owned(),
+            Cow::Owned(encode_language_asset(&host_asset).expect("host asset")),
+        );
+        language_assets.insert(
+            "valid-dep.fkgram".to_owned(),
+            Cow::Owned(encode_language_asset(&valid_dep_asset).expect("valid-dep asset")),
+        );
+        language_assets.insert(
+            "bad-inj.fkgram".to_owned(),
+            Cow::Owned(encode_language_asset(&bad_inj_asset).expect("bad-inj asset")),
+        );
+        language_assets.insert(
+            "wrapper-root.fkgram".to_owned(),
+            Cow::Owned(encode_language_asset(&wrapper_root_asset).expect("wrapper-root asset")),
+        );
+
+        let catalogs = StandardAssetCatalogs::from_embedded(
+            &language_manifest,
+            language_assets,
+            &theme_manifest,
+            HashMap::new(),
+        )
+        .expect("embedded catalogs");
+
+        let mut highlighter = HighlighterCore::with_assets(catalogs).expect("highlighter");
+        assert_eq!(
+            highlighter.load_standard_language("host").expect("host"),
+            Some("source.host".to_owned())
+        );
+
+        // 1) Loading a root with [valid-dep, bad-inj] must fail atomically:
+        // neither valid-dep (with its injection) nor wrapper-root may be registered.
+        let err = highlighter
+            .load_standard_language("wrapper-root")
+            .expect_err("transitive over-depth selector must fail atomically");
+        assert_eq!(err.kind(), ErrorKind::AssetFormat);
+        assert!(err.to_string().contains("depth limit"));
+        for rejected in ["wrapper-root", "valid-dep", "bad-inj"] {
+            assert!(
+                !highlighter
+                    .loaded_languages()
+                    .iter()
+                    .any(|id| id == rejected),
+                "{rejected} must not be left loaded after failed closure validation"
+            );
+        }
+        assert!(highlighter.registry.lookup("source.wrapper-root").is_none());
+        assert!(highlighter.registry.lookup("source.valid-dep").is_none());
+        assert!(highlighter.registry.lookup("source.bad-inj").is_none());
+
+        // 2) Loading bad-inj directly must also fail without registering valid-dep.
+        let err = highlighter
+            .load_standard_language("bad-inj")
+            .expect_err("over-depth catalog injection selector must fail load");
+        assert_eq!(err.kind(), ErrorKind::AssetFormat);
+        assert!(highlighter.registry.lookup("source.bad-inj").is_none());
+        assert!(highlighter.registry.lookup("source.valid-dep").is_none());
+
+        // Host language remains compilable and usable after the rejected catalog load.
+        let host_grammar = highlighter
+            .grammar_for_language("host")
+            .expect("host grammar must stay healthy")
+            .expect("host loaded");
+        let result = host_grammar.tokenize_line("HOST", None, 0).expect("tokens");
+        assert_eq!(result.tokens[0].scopes, ["source.host", "keyword.host"]);
     }
 }

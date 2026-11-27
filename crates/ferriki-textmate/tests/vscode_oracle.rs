@@ -91,7 +91,8 @@ fn perform_test(test_location: &Path, test: &RawTest) {
         &store,
         Theme::create_from_raw_theme(None, None).unwrap(),
         GrammarConfiguration::default(),
-    );
+    )
+    .unwrap();
     let mut previous_state: Option<Arc<StateStack>> = None;
     let mut binary_state = None;
     let mut combined_state = None;
