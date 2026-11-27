@@ -10,7 +10,8 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::ops::{BitOr, BitOrAssign};
-use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
+use std::sync::{Arc, OnceLock, RwLock};
 
 use serde::{Deserialize, Serialize};
 
@@ -384,11 +385,38 @@ impl fmt::Display for ThemeError {
 
 impl std::error::Error for ThemeError {}
 
+/// Maximum number of exact scope-name entries retained in `Theme::cached_match_root`.
+/// Capture-derived dynamic scope names cannot grow a long-lived cached theme past
+/// this bound; misses still hit per-node pre-sorted rules on the static trie.
+const MAX_CACHED_SCOPE_MATCHES: usize = 4_096;
+
+/// Scope names longer than this threshold bypass `cached_match_root` and resolve
+/// directly against the static trie's per-node rule cache.
+const MAX_CACHED_SCOPE_NAME_BYTES: usize = 256;
+
+/// Monotonic non-zero identity assigned to each compiled [`Theme`].
+static NEXT_THEME_ID: AtomicU64 = AtomicU64::new(1);
+
+/// A compiled TextMate theme trie, color map, and thread-safe scope-match cache.
+///
+/// Compile once with [`Self::create_from_raw_theme`] and share across
+/// [`crate::SyncRegistry::set_compiled_theme`] or
+/// [`crate::Grammar::tokenize_line_with_themes`] without rebuilding the trie.
 pub struct Theme {
+    id: u64,
     color_map: ColorMap,
     defaults: StyleAttributes,
     root: ThemeTrieElement,
     cached_match_root: RwLock<HashMap<String, Arc<[ThemeTrieElementRule]>>>,
+}
+
+impl fmt::Debug for Theme {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("Theme")
+            .field("colors", &self.color_map.as_slice().len())
+            .finish_non_exhaustive()
+    }
 }
 
 impl Theme {
@@ -407,13 +435,75 @@ impl Theme {
     }
 
     #[must_use]
-    pub fn get_color_map(&self) -> Vec<String> {
+    pub(crate) fn get_color_map(&self) -> Vec<String> {
         self.color_map.get_color_map()
+    }
+
+    /// Borrows the resolved color table indexed by encoded foreground/background IDs.
+    #[must_use]
+    pub fn color_map(&self) -> &[String] {
+        self.color_map.as_slice()
+    }
+
+    #[must_use]
+    pub(crate) const fn id(&self) -> u64 {
+        self.id
     }
 
     #[must_use]
     pub(crate) const fn get_defaults(&self) -> &StyleAttributes {
         &self.defaults
+    }
+
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) fn cached_match_count(&self) -> usize {
+        self.cached_match_root
+            .read()
+            .expect("theme match cache lock poisoned")
+            .len()
+    }
+
+    fn match_scope_rules(&self, scope_name: &str) -> Arc<[ThemeTrieElementRule]> {
+        if scope_name.len() > MAX_CACHED_SCOPE_NAME_BYTES {
+            return self.root.match_scope(scope_name);
+        }
+        let cached_rules = self
+            .cached_match_root
+            .read()
+            .expect("theme match cache lock poisoned")
+            .get(scope_name)
+            .cloned();
+        cached_rules.unwrap_or_else(|| {
+            let rules = self.root.match_scope(scope_name);
+            let mut cache = self
+                .cached_match_root
+                .write()
+                .expect("theme match cache lock poisoned");
+            if !cache.contains_key(scope_name) {
+                if cache.len() >= MAX_CACHED_SCOPE_MATCHES {
+                    cache.clear();
+                }
+                cache.insert(scope_name.to_owned(), Arc::clone(&rules));
+            }
+            rules
+        })
+    }
+
+    #[must_use]
+    pub(crate) fn match_scope_token_style(
+        &self,
+        scope_path: &ScopeStack,
+    ) -> Option<(FontStyle, u32, u32)> {
+        let matching_trie_elements = self.match_scope_rules(&scope_path.scope_name);
+        let effective_rule = matching_trie_elements.iter().find(|rule| {
+            scope_path_matches_parent_scopes(scope_path.parent.as_deref(), &rule.parent_scopes)
+        })?;
+        Some((
+            effective_rule.font_style,
+            effective_rule.foreground,
+            effective_rule.background,
+        ))
     }
 
     #[must_use]
@@ -422,22 +512,7 @@ impl Theme {
             return Some(self.defaults.clone());
         };
 
-        let scope_name = &scope_path.scope_name;
-        let cached_rules = self
-            .cached_match_root
-            .read()
-            .expect("theme match cache lock poisoned")
-            .get(scope_name)
-            .cloned();
-        let matching_trie_elements = cached_rules.unwrap_or_else(|| {
-            let rules: Arc<[ThemeTrieElementRule]> = self.root.match_scope(scope_name).into();
-            self.cached_match_root
-                .write()
-                .expect("theme match cache lock poisoned")
-                .insert(scope_name.clone(), Arc::clone(&rules));
-            rules
-        });
-
+        let matching_trie_elements = self.match_scope_rules(&scope_path.scope_name);
         let effective_rule = matching_trie_elements.iter().find(|rule| {
             scope_path_matches_parent_scopes(scope_path.parent.as_deref(), &rule.parent_scopes)
         })?;
@@ -665,6 +740,7 @@ fn resolve_parsed_theme_rules(
     }
 
     Ok(Theme {
+        id: NEXT_THEME_ID.fetch_add(1, AtomicOrdering::Relaxed),
         color_map,
         defaults,
         root,
@@ -740,6 +816,10 @@ impl ColorMap {
 
     fn get_color_map(&self) -> Vec<String> {
         self.id_to_color.clone()
+    }
+
+    fn as_slice(&self) -> &[String] {
+        &self.id_to_color
     }
 }
 
@@ -818,6 +898,7 @@ struct ThemeTrieElement {
     main_rule: ThemeTrieElementRule,
     rules_with_parent_scopes: Vec<ThemeTrieElementRule>,
     children: BTreeMap<String, Self>,
+    matched_rules: OnceLock<Arc<[ThemeTrieElementRule]>>,
 }
 
 impl ThemeTrieElement {
@@ -826,6 +907,7 @@ impl ThemeTrieElement {
             main_rule,
             rules_with_parent_scopes: Vec::new(),
             children: BTreeMap::new(),
+            matched_rules: OnceLock::new(),
         }
     }
 
@@ -875,20 +957,26 @@ impl ThemeTrieElement {
         second.parent_scopes.len().cmp(&first.parent_scopes.len())
     }
 
-    fn match_scope(&self, scope: &str) -> Vec<ThemeTrieElementRule> {
-        if !scope.is_empty() {
-            let (head, tail) = scope
+    fn match_scope(&self, scope: &str) -> Arc<[ThemeTrieElementRule]> {
+        let mut node = self;
+        let mut rest = scope;
+        while !rest.is_empty() {
+            let (head, tail) = rest
                 .split_once('.')
-                .map_or((scope, ""), |(head, tail)| (head, tail));
-            if let Some(child) = self.children.get(head) {
-                return child.match_scope(tail);
-            }
+                .map_or((rest, ""), |(head, tail)| (head, tail));
+            let Some(child) = node.children.get(head) else {
+                break;
+            };
+            node = child;
+            rest = tail;
         }
 
-        let mut rules = self.rules_with_parent_scopes.clone();
-        rules.push(self.main_rule.clone());
-        rules.sort_by(Self::compare_by_specificity);
-        rules
+        Arc::clone(node.matched_rules.get_or_init(|| {
+            let mut rules = node.rules_with_parent_scopes.clone();
+            rules.push(node.main_rule.clone());
+            rules.sort_by(Self::compare_by_specificity);
+            rules.into()
+        }))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -928,6 +1016,7 @@ impl ThemeTrieElement {
                 main_rule: self.main_rule.clone(),
                 rules_with_parent_scopes: self.rules_with_parent_scopes.clone(),
                 children: BTreeMap::new(),
+                matched_rules: OnceLock::new(),
             });
         child.insert(
             scope_depth + 1,
@@ -1473,5 +1562,65 @@ mod tests {
         assert!(current.extends(&root));
         drop(current);
         drop(root);
+    }
+
+    #[test]
+    fn compiled_theme_is_send_sync_debug_and_borrows_color_map() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Theme>();
+
+        let theme = theme(vec![RawThemeSetting {
+            scope: Some(RawThemeScope::String("keyword.test".into())),
+            settings: Some(RawThemeStyle {
+                foreground: Some("#112233".into()),
+                ..RawThemeStyle::default()
+            }),
+            ..RawThemeSetting::default()
+        }]);
+        assert_eq!(theme.color_map(), theme.get_color_map().as_slice());
+        assert!(theme.color_map().iter().any(|color| color == "#112233"));
+        let debug = format!("{theme:?}");
+        assert!(debug.starts_with("Theme {"));
+    }
+
+    #[test]
+    fn bounds_cached_scope_matches_for_dynamic_capture_derived_scopes() {
+        let theme = theme(vec![RawThemeSetting {
+            scope: Some(RawThemeScope::String("markup.underline.link".into())),
+            settings: Some(RawThemeStyle {
+                foreground: Some("#2266aa".into()),
+                ..RawThemeStyle::default()
+            }),
+            ..RawThemeSetting::default()
+        }]);
+        let expected_color = "#2266AA";
+
+        for index in 0..(super::MAX_CACHED_SCOPE_MATCHES * 2 + 17) {
+            let scope = format!("markup.underline.link.rfc.{index}.hyperlink");
+            let stack = ScopeStack::from([scope.as_str()]).unwrap();
+            let style = theme.match_scope(Some(&stack)).unwrap();
+            assert_eq!(
+                theme.color_map()[style.foreground_id as usize],
+                expected_color
+            );
+            assert!(theme.cached_match_count() <= super::MAX_CACHED_SCOPE_MATCHES);
+        }
+
+        let before_oversized = theme.cached_match_count();
+        let oversized = format!(
+            "markup.underline.link.{}.hyperlink",
+            "x".repeat(super::MAX_CACHED_SCOPE_NAME_BYTES + 32)
+        );
+        let stack = ScopeStack::from([oversized.as_str()]).unwrap();
+        let style = theme.match_scope(Some(&stack)).unwrap();
+        assert_eq!(
+            theme.color_map()[style.foreground_id as usize],
+            expected_color
+        );
+        assert_eq!(
+            theme.cached_match_count(),
+            before_oversized,
+            "oversized dynamic scope names must bypass cached_match_root"
+        );
     }
 }

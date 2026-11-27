@@ -2,15 +2,17 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Weak};
 
 use crate::attributed_scope_stack::AttributedScopeStack;
+use crate::basic_scope_attributes::{BasicScopeAttributes, BasicScopeAttributesProvider};
 use crate::encoded_token_attributes::{
     EncodedTokenAttributes, OptionalStandardTokenType, StandardTokenType, to_optional_token_type,
 };
 use crate::matcher::{Matcher, create_matchers};
 use crate::state_stack::StateStack;
-use crate::theme::FontStyle;
+use crate::theme::{FontStyle, ScopeStack, Theme};
 
 #[derive(Clone)]
 pub(crate) struct BalancedBracketSelectors {
@@ -108,11 +110,394 @@ pub struct Token {
     pub scopes: Vec<String>,
 }
 
+/// Maximum surviving scope depth retained in `MultiThemeAncestry`. When active
+/// depth exceeds this bound, we batch-trim down to `TRIMMED_CACHED_ANCESTRY_DEPTH`
+/// so progressively growing continuations amortize index rebuilds across 512 lines.
+const MAX_CACHED_ANCESTRY_DEPTH: usize = 1_024;
+const TRIMMED_CACHED_ANCESTRY_DEPTH: usize = MAX_CACHED_ANCESTRY_DEPTH / 2;
+
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct MultiThemeWalkStats {
+    pub nodes_resolved: usize,
+    pub fallback_walk_steps: usize,
+    pub active_slot_reused: bool,
+    pub trim_rebuilds: usize,
+}
+
+/// Returns true when `weak` refers to the exact live `Arc<ScopeStack>` `node`.
+/// Because a live `Weak` keeps the `ArcInner` allocation address pinned until
+/// all `Weak`s drop, pointer equality with `strong_count() > 0` is ABA-free.
+#[inline]
+fn weak_matches(weak: &Weak<ScopeStack>, node: &Arc<ScopeStack>) -> bool {
+    std::ptr::eq(weak.as_ptr(), Arc::as_ptr(node)) && weak.strong_count() > 0
+}
+
+/// Reusable root-to-leaf scope ancestry and packed per-theme attributes carried
+/// between consecutive continuation lines of a multi-theme scan.
+///
+/// Stores [`Weak`] references for themes and scope nodes so idle grammars never
+/// keep superseded themes or scope chains alive, and moves directly into/out of
+/// `MultiThemeTokens` in O(1) per line.
+pub(crate) struct MultiThemeAncestry {
+    resolved_themes: Vec<Weak<Theme>>,
+    active_attrs: Vec<Vec<EncodedTokenAttributes>>,
+    active_nodes: Vec<Weak<ScopeStack>>,
+    active_node_index: HashMap<usize, usize>,
+}
+
+impl MultiThemeAncestry {
+    #[cfg(test)]
+    pub(crate) fn cached_node_count(&self) -> usize {
+        self.active_nodes.len()
+    }
+}
+
+pub(crate) struct MultiBinaryResult {
+    pub binary_tokens: Vec<Vec<u32>>,
+    pub ancestry: Option<MultiThemeAncestry>,
+    #[cfg(test)]
+    pub walk_stats: MultiThemeWalkStats,
+}
+
+struct MultiThemeSlot {
+    theme: Arc<Theme>,
+    default_attrs: EncodedTokenAttributes,
+    binary_tokens: Vec<u32>,
+    /// When true, `scopes.token_attributes` is guaranteed to be encoded with
+    /// this slot's exact theme, so we reuse it directly without re-resolving
+    /// the scope chain.
+    reuse_active_attributes: bool,
+    /// Full packed `EncodedTokenAttributes` aligned 1:1 with
+    /// `MultiThemeTokens::active_nodes` (empty when `reuse_active_attributes`).
+    /// Packing both grammar (`language_id`, `token_type`) and theme (`font_style`,
+    /// `foreground`, `background`) fields via `EncodedTokenAttributes::set` at
+    /// every scope matches `AttributedScopeStack` bit-for-bit, including overflow bits.
+    active_attrs: Vec<EncodedTokenAttributes>,
+}
+
+impl MultiThemeSlot {
+    fn new(
+        theme: Arc<Theme>,
+        raw_default: BasicScopeAttributes,
+        reuse_active_attributes: bool,
+        active_attrs: Vec<EncodedTokenAttributes>,
+    ) -> Self {
+        let defaults = theme.get_defaults();
+        let default_attrs = EncodedTokenAttributes::default().set(
+            raw_default.language_id,
+            raw_default.token_type,
+            None,
+            defaults.font_style,
+            defaults.foreground_id,
+            defaults.background_id,
+        );
+        Self {
+            theme,
+            default_attrs,
+            binary_tokens: Vec::new(),
+            reuse_active_attributes,
+            active_attrs,
+        }
+    }
+
+    fn push_scope(&mut self, scope: &ScopeStack, basic: BasicScopeAttributes) {
+        let parent = self
+            .active_attrs
+            .last()
+            .copied()
+            .unwrap_or(self.default_attrs);
+        let (font_style, foreground, background) = self
+            .theme
+            .match_scope_token_style(scope)
+            .unwrap_or((FontStyle::NOT_SET, 0, 0));
+        let next = parent.set(
+            basic.language_id,
+            basic.token_type,
+            None,
+            font_style,
+            foreground,
+            background,
+        );
+        self.active_attrs.push(next);
+    }
+
+    fn current_attrs(&self) -> EncodedTokenAttributes {
+        self.active_attrs
+            .last()
+            .copied()
+            .unwrap_or(self.default_attrs)
+    }
+}
+
+struct MultiThemeTokens {
+    slots: Vec<MultiThemeSlot>,
+    mapping: Vec<usize>,
+    has_non_active_slots: bool,
+    basic_scope_attributes: Arc<BasicScopeAttributesProvider>,
+    /// Active root-to-leaf `Weak<ScopeStack>` path for the most recently resolved
+    /// token, moved O(1) into/out of `MultiThemeAncestry` across continuation lines
+    /// without per-line upgrade/downgrade loops or strong retention of scope nodes.
+    active_nodes: Vec<Weak<ScopeStack>>,
+    /// Maps `active_nodes[i].as_ptr() as usize -> i` so the general walk stops
+    /// immediately at the nearest shared ancestor in O(changed_depth).
+    active_node_index: HashMap<usize, usize>,
+    scratch: Vec<Arc<ScopeStack>>,
+    #[cfg(test)]
+    walk_stats: MultiThemeWalkStats,
+}
+
+impl MultiThemeTokens {
+    fn new(
+        themes: &[Arc<Theme>],
+        basic_scope_attributes: Arc<BasicScopeAttributesProvider>,
+        active_theme: Option<&Arc<Theme>>,
+        cached: Option<MultiThemeAncestry>,
+    ) -> Self {
+        let mut unique_themes: Vec<Arc<Theme>> = Vec::with_capacity(themes.len());
+        let mut mapping = Vec::with_capacity(themes.len());
+        if themes.len() <= 4 {
+            for theme in themes {
+                if let Some(index) = unique_themes
+                    .iter()
+                    .position(|existing| Arc::ptr_eq(existing, theme))
+                {
+                    mapping.push(index);
+                } else {
+                    let index = unique_themes.len();
+                    unique_themes.push(Arc::clone(theme));
+                    mapping.push(index);
+                }
+            }
+        } else {
+            let mut seen = HashMap::with_capacity(themes.len());
+            for theme in themes {
+                let key = Arc::as_ptr(theme) as usize;
+                let index = *seen.entry(key).or_insert_with(|| {
+                    let index = unique_themes.len();
+                    unique_themes.push(Arc::clone(theme));
+                    index
+                });
+                mapping.push(index);
+            }
+        }
+
+        let raw_default = basic_scope_attributes.default_attributes();
+        let mut non_active_themes = Vec::with_capacity(unique_themes.len());
+        let mut active_slot_reused = false;
+        for theme in &unique_themes {
+            if active_theme.is_some_and(|active| Arc::ptr_eq(active, theme)) {
+                active_slot_reused = true;
+            } else {
+                non_active_themes.push(theme);
+            }
+        }
+        let has_non_active_slots = !non_active_themes.is_empty();
+
+        let cached = cached.filter(|ancestry| {
+            has_non_active_slots
+                && !ancestry.active_nodes.is_empty()
+                && ancestry.resolved_themes.len() == non_active_themes.len()
+                && ancestry
+                    .resolved_themes
+                    .iter()
+                    .zip(non_active_themes.iter())
+                    .all(|(cached_theme, incoming)| {
+                        cached_theme
+                            .upgrade()
+                            .is_some_and(|theme| Arc::ptr_eq(&theme, incoming))
+                    })
+        });
+
+        let (slots, active_nodes, active_node_index) = if let Some(ancestry) = cached {
+            let mut cached_attrs = ancestry.active_attrs.into_iter();
+            let slots = unique_themes
+                .into_iter()
+                .map(|theme| {
+                    let reuse = active_theme.is_some_and(|active| Arc::ptr_eq(active, &theme));
+                    let attrs = if reuse {
+                        Vec::new()
+                    } else {
+                        cached_attrs.next().unwrap_or_default()
+                    };
+                    MultiThemeSlot::new(theme, raw_default, reuse, attrs)
+                })
+                .collect();
+            (slots, ancestry.active_nodes, ancestry.active_node_index)
+        } else {
+            let slots = unique_themes
+                .into_iter()
+                .map(|theme| {
+                    let reuse = active_theme.is_some_and(|active| Arc::ptr_eq(active, &theme));
+                    MultiThemeSlot::new(theme, raw_default, reuse, Vec::new())
+                })
+                .collect();
+            (slots, Vec::new(), HashMap::new())
+        };
+
+        #[cfg(not(test))]
+        let _ = active_slot_reused;
+
+        Self {
+            slots,
+            mapping,
+            has_non_active_slots,
+            basic_scope_attributes,
+            active_nodes,
+            active_node_index,
+            scratch: Vec::new(),
+            #[cfg(test)]
+            walk_stats: MultiThemeWalkStats {
+                active_slot_reused,
+                ..MultiThemeWalkStats::default()
+            },
+        }
+    }
+
+    fn sync_active_scope(&mut self, scope_path: &Arc<ScopeStack>) {
+        if !self.has_non_active_slots {
+            return;
+        }
+
+        // Fast path 1: identical scope to previous token.
+        if self
+            .active_nodes
+            .last()
+            .is_some_and(|node| weak_matches(node, scope_path))
+        {
+            return;
+        }
+
+        // Fast path 2: direct child of current active scope.
+        if scope_path.parent.as_ref().is_some_and(|parent| {
+            self.active_nodes
+                .last()
+                .is_some_and(|node| weak_matches(node, parent))
+        }) {
+            let depth = self.active_nodes.len();
+            self.active_node_index
+                .insert(Arc::as_ptr(scope_path) as usize, depth);
+            self.active_nodes.push(Arc::downgrade(scope_path));
+            let basic = self
+                .basic_scope_attributes
+                .basic_scope_attributes(Some(&scope_path.scope_name));
+            #[cfg(test)]
+            {
+                self.walk_stats.nodes_resolved += 1;
+            }
+            for slot in &mut self.slots {
+                if !slot.reuse_active_attributes {
+                    slot.push_scope(scope_path, basic);
+                }
+            }
+            return;
+        }
+
+        // Fast path 3: pop directly back to parent scope.
+        if self.active_nodes.len() >= 2
+            && weak_matches(&self.active_nodes[self.active_nodes.len() - 2], scope_path)
+        {
+            if let Some(removed) = self.active_nodes.pop() {
+                self.active_node_index.remove(&(removed.as_ptr() as usize));
+            }
+            for slot in &mut self.slots {
+                if !slot.reuse_active_attributes {
+                    slot.active_attrs.pop();
+                }
+            }
+            return;
+        }
+
+        // Fast path 4: sibling replacement sharing the same immediate parent.
+        if self.active_nodes.len() >= 2
+            && scope_path.parent.as_ref().is_some_and(|parent| {
+                weak_matches(&self.active_nodes[self.active_nodes.len() - 2], parent)
+            })
+        {
+            if let Some(removed) = self.active_nodes.pop() {
+                self.active_node_index.remove(&(removed.as_ptr() as usize));
+            }
+            let depth = self.active_nodes.len();
+            self.active_node_index
+                .insert(Arc::as_ptr(scope_path) as usize, depth);
+            self.active_nodes.push(Arc::downgrade(scope_path));
+            let basic = self
+                .basic_scope_attributes
+                .basic_scope_attributes(Some(&scope_path.scope_name));
+            #[cfg(test)]
+            {
+                self.walk_stats.nodes_resolved += 1;
+            }
+            for slot in &mut self.slots {
+                if !slot.reuse_active_attributes {
+                    slot.active_attrs.pop();
+                    slot.push_scope(scope_path, basic);
+                }
+            }
+            return;
+        }
+
+        // General path: walk upward only until the nearest shared ancestor in
+        // `active_node_index` (O(changed_depth)), drop completed nodes, and
+        // resolve only the new suffix.
+        self.scratch.clear();
+        let mut prefix_len = 0;
+        let mut current = Some(Arc::clone(scope_path));
+        while let Some(node) = current {
+            #[cfg(test)]
+            {
+                self.walk_stats.fallback_walk_steps += 1;
+            }
+            if let Some(&depth) = self.active_node_index.get(&(Arc::as_ptr(&node) as usize))
+                && self
+                    .active_nodes
+                    .get(depth)
+                    .is_some_and(|weak| weak_matches(weak, &node))
+            {
+                prefix_len = depth + 1;
+                break;
+            }
+            let parent = node.parent.clone();
+            self.scratch.push(node);
+            current = parent;
+        }
+        self.scratch.reverse();
+
+        for removed in self.active_nodes.drain(prefix_len..) {
+            self.active_node_index.remove(&(removed.as_ptr() as usize));
+        }
+        for slot in &mut self.slots {
+            if !slot.reuse_active_attributes {
+                slot.active_attrs.truncate(prefix_len);
+            }
+        }
+        for node in self.scratch.drain(..) {
+            let depth = self.active_nodes.len();
+            self.active_node_index
+                .insert(Arc::as_ptr(&node) as usize, depth);
+            self.active_nodes.push(Arc::downgrade(&node));
+            let basic = self
+                .basic_scope_attributes
+                .basic_scope_attributes(Some(&node.scope_name));
+            #[cfg(test)]
+            {
+                self.walk_stats.nodes_resolved += 1;
+            }
+            for slot in &mut self.slots {
+                if !slot.reuse_active_attributes {
+                    slot.push_scope(&node, basic);
+                }
+            }
+        }
+    }
+}
+
 pub(crate) struct LineTokens {
     emit_binary_tokens: bool,
     emit_scope_tokens: bool,
     tokens: Vec<Token>,
     binary_tokens: Vec<u32>,
+    multi_theme: Option<MultiThemeTokens>,
     last_token_end_index: isize,
     token_type_overrides: Vec<TokenTypeMatcher>,
     balanced_bracket_selectors: Option<BalancedBracketSelectors>,
@@ -132,6 +517,7 @@ impl LineTokens {
             emit_scope_tokens: !emit_binary_tokens,
             tokens: Vec::new(),
             binary_tokens: Vec::new(),
+            multi_theme: None,
             last_token_end_index: 0,
             token_type_overrides,
             balanced_bracket_selectors,
@@ -142,6 +528,26 @@ impl LineTokens {
     /// Collect the upstream scope boundaries alongside binary metadata.
     pub(crate) fn with_scopes(mut self) -> Self {
         self.emit_scope_tokens = true;
+        self
+    }
+
+    /// Collect binary metadata for multiple compiled themes in one scan.
+    pub(crate) fn with_themes(
+        mut self,
+        themes: &[Arc<Theme>],
+        include_scopes: bool,
+        basic_scope_attributes: Arc<BasicScopeAttributesProvider>,
+        active_theme: Option<&Arc<Theme>>,
+        cached: Option<MultiThemeAncestry>,
+    ) -> Self {
+        self.emit_binary_tokens = false;
+        self.emit_scope_tokens = include_scopes;
+        self.multi_theme = Some(MultiThemeTokens::new(
+            themes,
+            basic_scope_attributes,
+            active_theme,
+            cached,
+        ));
         self
     }
 
@@ -169,13 +575,17 @@ impl LineTokens {
         if self.emit_binary_tokens {
             self.produce_binary(scopes_list);
         }
+        if self.multi_theme.is_some() {
+            self.produce_multi_binary(scopes_list);
+        }
         self.last_token_end_index = end_index as isize;
     }
 
-    fn produce_binary(&mut self, scopes_list: Option<&Arc<AttributedScopeStack>>) {
-        let mut metadata = scopes_list.map_or_else(EncodedTokenAttributes::default, |scopes| {
-            scopes.token_attributes
-        });
+    fn resolve_scope_metadata_overrides(
+        &self,
+        scopes_list: Option<&Arc<AttributedScopeStack>>,
+    ) -> (OptionalStandardTokenType, bool) {
+        let mut override_token_type = OptionalStandardTokenType::NotSet;
         let mut contains_balanced_brackets = self
             .balanced_bracket_selectors
             .as_ref()
@@ -194,31 +604,44 @@ impl LineTokens {
                     .matcher
                     .matches(&scope_slice, &matches_scope_identifiers)
                 {
-                    metadata = metadata.set(
-                        0,
-                        to_optional_token_type(token_type.token_type),
-                        None,
-                        FontStyle::NOT_SET,
-                        0,
-                        0,
-                    );
+                    override_token_type = to_optional_token_type(token_type.token_type);
                 }
             }
             if let Some(selectors) = self.balanced_bracket_selectors.as_ref() {
                 contains_balanced_brackets = selectors.matches(&scopes);
             }
         }
+        (override_token_type, contains_balanced_brackets)
+    }
 
-        if contains_balanced_brackets {
-            metadata = metadata.set(
-                0,
-                OptionalStandardTokenType::NotSet,
-                Some(true),
-                FontStyle::NOT_SET,
-                0,
-                0,
-            );
+    fn apply_scope_metadata_overrides(
+        metadata: EncodedTokenAttributes,
+        override_token_type: OptionalStandardTokenType,
+        contains_balanced_brackets: bool,
+    ) -> EncodedTokenAttributes {
+        if override_token_type == OptionalStandardTokenType::NotSet && !contains_balanced_brackets {
+            return metadata;
         }
+        metadata.set(
+            0,
+            override_token_type,
+            contains_balanced_brackets.then_some(true),
+            FontStyle::NOT_SET,
+            0,
+            0,
+        )
+    }
+
+    fn produce_binary(&mut self, scopes_list: Option<&Arc<AttributedScopeStack>>) {
+        let (override_token_type, contains_balanced_brackets) =
+            self.resolve_scope_metadata_overrides(scopes_list);
+        let metadata = Self::apply_scope_metadata_overrides(
+            scopes_list.map_or_else(EncodedTokenAttributes::default, |scopes| {
+                scopes.token_attributes
+            }),
+            override_token_type,
+            contains_balanced_brackets,
+        );
         if self.merge_consecutive_tokens_with_equal_metadata
             && self.binary_tokens.last() == Some(&metadata.bits())
         {
@@ -228,6 +651,37 @@ impl LineTokens {
         self.binary_tokens
             .push(self.last_token_end_index.max(0) as u32);
         self.binary_tokens.push(metadata.bits());
+    }
+
+    fn produce_multi_binary(&mut self, scopes_list: Option<&Arc<AttributedScopeStack>>) {
+        let (override_token_type, contains_balanced_brackets) =
+            self.resolve_scope_metadata_overrides(scopes_list);
+        let start_index = self.last_token_end_index.max(0) as u32;
+        let merge = self.merge_consecutive_tokens_with_equal_metadata;
+        let Some(multi) = self.multi_theme.as_mut() else {
+            return;
+        };
+        if let Some(scopes) = scopes_list {
+            multi.sync_active_scope(&scopes.scope_path);
+        }
+        for slot in &mut multi.slots {
+            let base = match scopes_list {
+                Some(scopes) if slot.reuse_active_attributes => scopes.token_attributes,
+                Some(_) => slot.current_attrs(),
+                None => EncodedTokenAttributes::default(),
+            };
+            let metadata_bits = Self::apply_scope_metadata_overrides(
+                base,
+                override_token_type,
+                contains_balanced_brackets,
+            )
+            .bits();
+            if merge && slot.binary_tokens.last() == Some(&metadata_bits) {
+                continue;
+            }
+            slot.binary_tokens.push(start_index);
+            slot.binary_tokens.push(metadata_bits);
+        }
     }
 
     #[must_use]
@@ -269,6 +723,137 @@ impl LineTokens {
             self.binary_tokens[start_index] = 0;
         }
         std::mem::take(&mut self.binary_tokens)
+    }
+
+    #[must_use]
+    pub(crate) fn multi_binary_result(
+        &mut self,
+        stack: &StateStack,
+        line_length: usize,
+    ) -> MultiBinaryResult {
+        let Some(mut multi) = self.multi_theme.take() else {
+            return MultiBinaryResult {
+                binary_tokens: Vec::new(),
+                ancestry: None,
+                #[cfg(test)]
+                walk_stats: MultiThemeWalkStats::default(),
+            };
+        };
+        let newline_start = line_length.saturating_sub(1) as u32;
+        let scopes_list = stack.content_name_scopes_list.as_ref();
+        let mut any_empty = false;
+
+        for slot in &mut multi.slots {
+            if slot.binary_tokens.len() >= 2
+                && slot.binary_tokens[slot.binary_tokens.len() - 2] == newline_start
+            {
+                slot.binary_tokens.truncate(slot.binary_tokens.len() - 2);
+            }
+            if slot.binary_tokens.is_empty() {
+                any_empty = true;
+            }
+        }
+
+        if any_empty {
+            let (override_token_type, contains_balanced_brackets) =
+                self.resolve_scope_metadata_overrides(scopes_list);
+            if let Some(scopes) = scopes_list {
+                multi.sync_active_scope(&scopes.scope_path);
+            }
+            for slot in &mut multi.slots {
+                if slot.binary_tokens.is_empty() {
+                    let base = match scopes_list {
+                        Some(scopes) if slot.reuse_active_attributes => scopes.token_attributes,
+                        Some(_) => slot.current_attrs(),
+                        None => EncodedTokenAttributes::default(),
+                    };
+                    let metadata_bits = Self::apply_scope_metadata_overrides(
+                        base,
+                        override_token_type,
+                        contains_balanced_brackets,
+                    )
+                    .bits();
+                    slot.binary_tokens.push(0);
+                    slot.binary_tokens.push(metadata_bits);
+                }
+            }
+        }
+
+        let mut remaining_uses = vec![0usize; multi.slots.len()];
+        for &slot_index in &multi.mapping {
+            remaining_uses[slot_index] += 1;
+        }
+        let mut results = Vec::with_capacity(multi.mapping.len());
+        for slot_index in multi.mapping {
+            remaining_uses[slot_index] -= 1;
+            if remaining_uses[slot_index] == 0 {
+                results.push(std::mem::take(&mut multi.slots[slot_index].binary_tokens));
+            } else {
+                results.push(multi.slots[slot_index].binary_tokens.clone());
+            }
+        }
+
+        // Retain nested ancestry whenever at least 2 scopes remain open. Moves
+        // `active_nodes`, `active_node_index`, and `active_attrs` in O(1) unless
+        // depth exceeds MAX_CACHED_ANCESTRY_DEPTH (batch-trimmed down to
+        // TRIMMED_CACHED_ANCESTRY_DEPTH for amortized O(1) growth) or unwound
+        // peak capacity exceeds 4x the retained length (shrink).
+        let keep_ancestry = multi.has_non_active_slots && multi.active_nodes.len() > 1;
+        let ancestry = if keep_ancestry {
+            let trim_count = if multi.active_nodes.len() > MAX_CACHED_ANCESTRY_DEPTH {
+                multi.active_nodes.len() - TRIMMED_CACHED_ANCESTRY_DEPTH
+            } else {
+                0
+            };
+            if trim_count > 0 {
+                multi.active_nodes.drain(..trim_count);
+                multi.active_node_index.clear();
+                for (index, weak) in multi.active_nodes.iter().enumerate() {
+                    multi
+                        .active_node_index
+                        .insert(weak.as_ptr() as usize, index);
+                }
+                #[cfg(test)]
+                {
+                    multi.walk_stats.trim_rebuilds += 1;
+                }
+            }
+            let target_cap = multi.active_nodes.len().max(16);
+            if multi.active_nodes.capacity() > target_cap * 4 {
+                multi.active_nodes.shrink_to(target_cap);
+            }
+            if multi.active_node_index.capacity() > target_cap * 4 {
+                multi.active_node_index.shrink_to(target_cap);
+            }
+            let mut resolved_themes = Vec::with_capacity(multi.slots.len());
+            let mut active_attrs = Vec::with_capacity(multi.slots.len());
+            for mut slot in multi.slots {
+                if !slot.reuse_active_attributes {
+                    if trim_count > 0 {
+                        slot.active_attrs.drain(..trim_count);
+                    }
+                    if slot.active_attrs.capacity() > target_cap * 4 {
+                        slot.active_attrs.shrink_to(target_cap);
+                    }
+                    resolved_themes.push(Arc::downgrade(&slot.theme));
+                    active_attrs.push(slot.active_attrs);
+                }
+            }
+            Some(MultiThemeAncestry {
+                resolved_themes,
+                active_attrs,
+                active_nodes: multi.active_nodes,
+                active_node_index: multi.active_node_index,
+            })
+        } else {
+            None
+        };
+        MultiBinaryResult {
+            binary_tokens: results,
+            ancestry,
+            #[cfg(test)]
+            walk_stats: multi.walk_stats,
+        }
     }
 }
 
@@ -641,5 +1226,169 @@ mod tests {
                 line_height_multiplier: Some(3.0),
             }]
         );
+    }
+
+    #[test]
+    fn multi_theme_scan_releases_completed_sibling_scopes_and_deduplicates_many_themes() {
+        let theme_a = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        let theme_b = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        let theme_c = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        let theme_d = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        let theme_e = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        // >4 themes exercises the HashMap deduplication path with duplicates.
+        let themes = [
+            Arc::clone(&theme_a),
+            Arc::clone(&theme_b),
+            Arc::clone(&theme_c),
+            Arc::clone(&theme_d),
+            Arc::clone(&theme_e),
+            Arc::clone(&theme_a),
+            Arc::clone(&theme_c),
+        ];
+
+        let root = AttributedScopeStack::create_root(
+            "source.test",
+            EncodedTokenAttributes::default(),
+            FontAttribute::default(),
+        );
+        let child = |name: &str| {
+            Arc::new(AttributedScopeStack {
+                parent: Some(Arc::clone(&root)),
+                scope_path: crate::ScopeStack::push(Some(Arc::clone(&root.scope_path)), [name])
+                    .unwrap(),
+                token_attributes: EncodedTokenAttributes::default(),
+                font_attributes: None,
+                style_attributes: None,
+            })
+        };
+
+        let basic_provider = Arc::new(crate::BasicScopeAttributesProvider::new(0, None));
+        let mut line_tokens = LineTokens::new(false, "abab\n", Vec::new(), None).with_themes(
+            &themes,
+            false,
+            Arc::clone(&basic_provider),
+            None,
+            None,
+        );
+        assert_eq!(line_tokens.multi_theme.as_ref().unwrap().slots.len(), 5);
+
+        let first_sibling = child("keyword.a");
+        let first_weak = Arc::downgrade(&first_sibling.scope_path);
+        line_tokens.produce_from_scopes(Some(&first_sibling), 1);
+        drop(first_sibling);
+        // Active ancestry holds only Weak<ScopeStack>, so completed sibling
+        // nodes are released as soon as the caller drops them.
+        assert!(first_weak.upgrade().is_none());
+
+        // Subsequent siblings stay bounded to depth 2.
+        for index in 2..=100 {
+            let next_sibling = child("keyword.b");
+            line_tokens.produce_from_scopes(Some(&next_sibling), index);
+            drop(next_sibling);
+        }
+        assert!(
+            first_weak.upgrade().is_none(),
+            "completed sibling ScopeStack must be dropped during the scan"
+        );
+        assert_eq!(
+            line_tokens.multi_theme.as_ref().unwrap().active_nodes.len(),
+            2
+        );
+        assert_eq!(
+            line_tokens
+                .multi_theme
+                .as_ref()
+                .unwrap()
+                .active_node_index
+                .len(),
+            2
+        );
+
+        let stack = state(Arc::clone(&root));
+        let multi_result = line_tokens.multi_binary_result(&stack, 101);
+        assert!(multi_result.ancestry.is_some());
+        assert_eq!(multi_result.binary_tokens.len(), themes.len());
+        assert_eq!(multi_result.binary_tokens[0], multi_result.binary_tokens[5]);
+        assert_eq!(multi_result.binary_tokens[2], multi_result.binary_tokens[6]);
+    }
+
+    #[test]
+    fn compacts_or_drops_multi_theme_ancestry_after_deep_scope_unwinds() {
+        let theme = Arc::new(crate::Theme::create_from_raw_theme(None, None).unwrap());
+        let basic_provider = Arc::new(crate::BasicScopeAttributesProvider::new(0, None));
+
+        let root = AttributedScopeStack::create_root(
+            "source.test",
+            EncodedTokenAttributes::default(),
+            FontAttribute::default(),
+        );
+        let child = Arc::new(AttributedScopeStack {
+            parent: Some(Arc::clone(&root)),
+            scope_path: crate::ScopeStack::push(Some(Arc::clone(&root.scope_path)), ["meta.outer"])
+                .unwrap(),
+            token_attributes: EncodedTokenAttributes::default(),
+            font_attributes: None,
+            style_attributes: None,
+        });
+        let mut deep = Arc::clone(&child);
+        for _ in 0..300 {
+            deep = Arc::new(AttributedScopeStack {
+                parent: Some(Arc::clone(&deep)),
+                scope_path: crate::ScopeStack::push(
+                    Some(Arc::clone(&deep.scope_path)),
+                    ["meta.nested"],
+                )
+                .unwrap(),
+                token_attributes: EncodedTokenAttributes::default(),
+                font_attributes: None,
+                style_attributes: None,
+            });
+        }
+
+        // Unwinding from depth 302 down to depth 2 shrinks over-allocated capacities.
+        let mut unwound = LineTokens::new(false, "ab\n", Vec::new(), None).with_themes(
+            &[Arc::clone(&theme)],
+            false,
+            Arc::clone(&basic_provider),
+            None,
+            None,
+        );
+        unwound.produce_from_scopes(Some(&deep), 1);
+        unwound.produce_from_scopes(Some(&child), 2);
+        let ancestry = unwound
+            .multi_binary_result(&state(Arc::clone(&child)), 3)
+            .ancestry
+            .expect("depth 2 retains compacted ancestry");
+        assert_eq!(ancestry.active_nodes.len(), 2);
+        assert!(ancestry.active_nodes.capacity() <= 64);
+        assert!(ancestry.active_node_index.capacity() <= 64);
+        assert!(ancestry.active_attrs[0].capacity() <= 64);
+
+        // Unwinding all the way to depth 1 (root only) drops the ancestry entry.
+        let mut root_only = LineTokens::new(false, "ab\n", Vec::new(), None).with_themes(
+            &[Arc::clone(&theme)],
+            false,
+            basic_provider,
+            None,
+            None,
+        );
+        root_only.produce_from_scopes(Some(&deep), 1);
+        root_only.produce_from_scopes(Some(&root), 2);
+        let root_ancestry = root_only
+            .multi_binary_result(&state(Arc::clone(&root)), 3)
+            .ancestry;
+        assert!(root_ancestry.is_none());
+
+        // Dropping the caller's scopes must free the entire ScopeStack chain
+        // even while `ancestry` is still retained.
+        let root_weak = Arc::downgrade(&root.scope_path);
+        drop(deep);
+        drop(child);
+        drop(root);
+        assert!(
+            root_weak.upgrade().is_none(),
+            "MultiThemeAncestry must store Weak<ScopeStack> so prefix chains drop with the caller's stack"
+        );
+        assert_eq!(ancestry.active_nodes.len(), 2);
     }
 }

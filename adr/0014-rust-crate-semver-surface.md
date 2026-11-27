@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-26
+Last updated: 2026-11-26
 
 ## Context
 
@@ -36,7 +36,10 @@ Each crate publishes a deliberate, curated surface.
 - **Private modules, root re-exports.** Modules are private; the public API is
   the list of re-exports at the crate root. `ferriki-textmate` follows
   vscode-textmate's `main.ts` exports, plus the documented combined scope/binary
-  result extension from [ADR 0010](0010-mechanical-vscode-textmate-port.md) and
+  and multi-theme line extensions from
+  [ADR 0010](0010-mechanical-vscode-textmate-port.md) (`TokenizeLineResultWithScopes`,
+  `TokenizeLineResultWithThemes`, `Grammar::tokenize_line_with_themes`,
+  `Theme` with `Theme::color_map`, and `SyncRegistry::set_compiled_theme`) and
   crate-owned advisory backtracking diagnostics (#153). These extensions are
   documented and have the same semver guarantee as other results.
 - **No third-party types in public signatures.** Engine and codec types stay
@@ -179,6 +182,8 @@ without leaking Ferroni types. [ADR 0021](0021-precompiled-pattern-sidecars.md#r
 owns policy semantics and the limits of those counters.
 
 ## History
+
+- 2026-11-26: Re-export `Theme` (with `color_map`) and add `SyncRegistry::set_compiled_theme`, `Grammar::tokenize_line_with_themes`, and `TokenizeLineResultWithThemes` to the documented `ferriki-textmate` surface (#389).
 
 - 2026-10-26: Document cooperating package preparation and the supported-format
   query without exposing origin maps, engine records or dependency types.

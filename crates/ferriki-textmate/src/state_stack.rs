@@ -10,9 +10,19 @@ use crate::attributed_scope_stack::{AttributedScopeStack, AttributedScopeStackFr
 use crate::raw_grammar::RuleId;
 use crate::rule::{Rule, RuleRegistry};
 
+#[inline]
+const fn combine_theme_id(parent_theme_id: u64, scan_theme_id: u64) -> u64 {
+    if parent_theme_id == scan_theme_id {
+        scan_theme_id
+    } else {
+        0
+    }
+}
+
 pub struct StateStack {
     pub(crate) parent: Option<Arc<Self>>,
     rule_id: RuleId,
+    theme_id: u64,
     enter_pos: AtomicIsize,
     anchor_pos: AtomicIsize,
     pub(crate) begin_rule_captured_eol: bool,
@@ -43,10 +53,38 @@ impl StateStack {
         name_scopes_list: Option<Arc<AttributedScopeStack>>,
         content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
     ) -> Arc<Self> {
+        let theme_id = parent.as_ref().map_or(0, |parent| parent.theme_id);
+        Self::new_with_theme_id(
+            parent,
+            rule_id,
+            theme_id,
+            enter_pos,
+            anchor_pos,
+            begin_rule_captured_eol,
+            end_rule,
+            name_scopes_list,
+            content_name_scopes_list,
+        )
+    }
+
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new_with_theme_id(
+        parent: Option<Arc<Self>>,
+        rule_id: RuleId,
+        theme_id: u64,
+        enter_pos: isize,
+        anchor_pos: isize,
+        begin_rule_captured_eol: bool,
+        end_rule: Option<String>,
+        name_scopes_list: Option<Arc<AttributedScopeStack>>,
+        content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
+    ) -> Arc<Self> {
         let depth = parent.as_ref().map_or(1, |parent| parent.depth + 1);
         Arc::new(Self {
             parent,
             rule_id,
+            theme_id,
             enter_pos: AtomicIsize::new(enter_pos),
             anchor_pos: AtomicIsize::new(anchor_pos),
             begin_rule_captured_eol,
@@ -60,6 +98,11 @@ impl StateStack {
     #[must_use]
     pub(crate) const fn rule_id(&self) -> RuleId {
         self.rule_id
+    }
+
+    #[must_use]
+    pub(crate) const fn theme_id(&self) -> u64 {
+        self.theme_id
     }
 
     #[must_use]
@@ -100,6 +143,7 @@ impl StateStack {
             .map_or_else(|| Arc::clone(self), Arc::clone)
     }
 
+    #[cfg(test)]
     #[must_use]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn push(
@@ -112,9 +156,35 @@ impl StateStack {
         name_scopes_list: Option<Arc<AttributedScopeStack>>,
         content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
     ) -> Arc<Self> {
-        Self::new(
+        self.push_with_theme_id(
+            rule_id,
+            self.theme_id,
+            enter_pos,
+            anchor_pos,
+            begin_rule_captured_eol,
+            end_rule,
+            name_scopes_list,
+            content_name_scopes_list,
+        )
+    }
+
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn push_with_theme_id(
+        self: &Arc<Self>,
+        rule_id: RuleId,
+        scan_theme_id: u64,
+        enter_pos: isize,
+        anchor_pos: isize,
+        begin_rule_captured_eol: bool,
+        end_rule: Option<String>,
+        name_scopes_list: Option<Arc<AttributedScopeStack>>,
+        content_name_scopes_list: Option<Arc<AttributedScopeStack>>,
+    ) -> Arc<Self> {
+        Self::new_with_theme_id(
             Some(Arc::clone(self)),
             rule_id,
+            combine_theme_id(self.theme_id, scan_theme_id),
             enter_pos,
             anchor_pos,
             begin_rule_captured_eol,
@@ -144,6 +214,15 @@ impl StateStack {
         self: &Arc<Self>,
         content_name_scope_stack: Arc<AttributedScopeStack>,
     ) -> Arc<Self> {
+        self.with_content_name_scopes_list_with_theme_id(content_name_scope_stack, self.theme_id)
+    }
+
+    #[must_use]
+    pub(crate) fn with_content_name_scopes_list_with_theme_id(
+        self: &Arc<Self>,
+        content_name_scope_stack: Arc<AttributedScopeStack>,
+        scan_theme_id: u64,
+    ) -> Arc<Self> {
         if self
             .content_name_scopes_list
             .as_ref()
@@ -151,18 +230,21 @@ impl StateStack {
         {
             return Arc::clone(self);
         }
-        self.parent
-            .as_ref()
-            .expect("root state cannot replace its content-name scope stack")
-            .push(
-                self.rule_id,
-                self.enter_pos(),
-                self.anchor_pos(),
-                self.begin_rule_captured_eol,
-                self.end_rule.clone(),
-                self.name_scopes_list.clone(),
-                Some(content_name_scope_stack),
-            )
+        assert!(
+            self.parent.is_some(),
+            "root state cannot replace its content-name scope stack"
+        );
+        Self::new_with_theme_id(
+            self.parent.clone(),
+            self.rule_id,
+            combine_theme_id(self.theme_id, scan_theme_id),
+            self.enter_pos(),
+            self.anchor_pos(),
+            self.begin_rule_captured_eol,
+            self.end_rule.clone(),
+            self.name_scopes_list.clone(),
+            Some(content_name_scope_stack),
+        )
     }
 
     #[must_use]
@@ -171,9 +253,10 @@ impl StateStack {
         if self.end_rule.as_deref() == Some(&end_rule) {
             return Arc::clone(self);
         }
-        Self::new(
+        Self::new_with_theme_id(
             self.parent.clone(),
             self.rule_id,
+            self.theme_id,
             self.enter_pos(),
             self.anchor_pos(),
             self.begin_rule_captured_eol,
@@ -202,6 +285,7 @@ impl StateStack {
     pub(crate) fn to_frame(self: &Arc<Self>) -> StateStackFrame {
         StateStackFrame {
             rule_id: self.rule_id.get(),
+            theme_id: self.theme_id,
             enter_pos: None,
             anchor_pos: None,
             begin_rule_captured_eol: self.begin_rule_captured_eol,
@@ -237,9 +321,14 @@ impl StateStack {
             names_scope_list.clone(),
             &frame.content_name_scopes_list,
         );
-        Self::new(
+        let theme_id = match parent.as_ref() {
+            Some(parent) => combine_theme_id(parent.theme_id, frame.theme_id),
+            None => frame.theme_id,
+        };
+        Self::new_with_theme_id(
             parent,
             RuleId::new(frame.rule_id),
+            theme_id,
             frame.enter_pos.unwrap_or(-1),
             frame.anchor_pos.unwrap_or(-1),
             frame.begin_rule_captured_eol,
@@ -288,6 +377,7 @@ impl fmt::Display for StateStack {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct StateStackFrame {
     pub rule_id: u32,
+    pub theme_id: u64,
     pub enter_pos: Option<isize>,
     pub anchor_pos: Option<isize>,
     pub begin_rule_captured_eol: bool,

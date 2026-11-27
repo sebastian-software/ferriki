@@ -238,6 +238,72 @@ impl AttributedScopeStack {
             result
         })
     }
+
+    /// Recomputes scope and theme attributes for the chain ending at `self`,
+    /// stopping at the first matching `(old_base, new_base)` ancestor pair and
+    /// attaching the rebuilt suffix onto `new_base` while preserving the
+    /// existing `Arc<ScopeStack>` nodes.
+    #[must_use]
+    pub(crate) fn rebind_extension(
+        self: &Arc<Self>,
+        bases: &[(&Arc<Self>, &Arc<Self>)],
+        default_token_attributes: EncodedTokenAttributes,
+        default_font_attribute: &FontAttribute,
+        provider: &impl ScopeAttributesProvider,
+    ) -> Arc<Self> {
+        let mut nodes = Vec::new();
+        let mut current = Some(Arc::clone(self));
+        let mut rebuilt = None;
+        while let Some(node) = current {
+            if let Some(&(_, new_base)) = bases
+                .iter()
+                .find(|(old_base, _)| Arc::ptr_eq(&node, old_base))
+            {
+                rebuilt = Some(Arc::clone(new_base));
+                break;
+            }
+            let parent = node.parent.clone();
+            nodes.push(node);
+            current = parent;
+        }
+        nodes.reverse();
+
+        for old_node in nodes {
+            let scope_name = old_node.scope_name();
+            let raw_metadata = provider.metadata_for_scope(scope_name);
+            let style = provider.theme_match(&old_node.scope_path);
+            rebuilt = Some(match rebuilt {
+                Some(parent) => {
+                    let metadata =
+                        merge_attributes(parent.token_attributes, raw_metadata, style.as_ref());
+                    let font_attributes = parent
+                        .font_attributes
+                        .as_ref()
+                        .map(|font| font.with(style.as_ref()));
+                    Arc::new(Self {
+                        parent: Some(parent),
+                        scope_path: Arc::clone(&old_node.scope_path),
+                        token_attributes: metadata,
+                        font_attributes,
+                        style_attributes: style,
+                    })
+                }
+                None => {
+                    let metadata =
+                        merge_attributes(default_token_attributes, raw_metadata, style.as_ref());
+                    let font_attributes = default_font_attribute.with(style.as_ref());
+                    Arc::new(Self {
+                        parent: None,
+                        scope_path: Arc::clone(&old_node.scope_path),
+                        token_attributes: metadata,
+                        font_attributes: Some(font_attributes),
+                        style_attributes: style,
+                    })
+                }
+            });
+        }
+        rebuilt.expect("rebind_extension requires at least one scope node or matching base")
+    }
 }
 
 impl Drop for AttributedScopeStack {

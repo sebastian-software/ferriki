@@ -78,7 +78,14 @@ named `ferriki-textmate`.
   ([ADR 0014](0014-rust-crate-semver-surface.md)).
 - The documented `tokenize_line_with_scopes` extension collects scope tokens
   and binary theme metadata in one scan. Both outputs retain their upstream
-  boundaries and share the returned state, fonts, and time limit. Captures,
+  boundaries and share the returned state, fonts, and time limit. The
+  companion `tokenize_line_with_themes` extension encodes binary token metadata
+  for multiple precompiled `Arc<Theme>` instances (with optional scope tokens)
+  in one grammar scan while preserving each theme's independent merging and RTL
+  boundaries, and `SyncRegistry::set_compiled_theme` swaps the active theme
+  pointer in O(1) under the write lock without rebuilding the theme trie or
+  discarding its scope-match cache (if the registry held the last `Arc`, the
+  previous theme drops outside the lock). Captures,
   retokenization, injections, and rule traversal keep the upstream algorithm,
   with explicit runtime safety bounds as deliberate parity exceptions against
   process-aborting stack overflows or memory exhaustion on adversarial inputs:
@@ -150,6 +157,7 @@ this decision.
 
 ## History
 
+- 2026-11-26: Adds `SyncRegistry::set_compiled_theme` for O(1) precompiled `Arc<Theme>` switching and `Grammar::tokenize_line_with_themes` for single-pass multi-theme binary encoding without altering grammar traversal (#389).
 - 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit / 16 MiB per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).
 
 - 2026-10-24: Prepare standard static scanner groups offline and consume them in
