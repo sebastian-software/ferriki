@@ -51,6 +51,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
@@ -75,7 +77,7 @@ jobs:
 
       - name: Install Ferriki dependencies
         working-directory: node
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build Shiki reference and native Ferriki package, and seed the asset cache
         working-directory: node
@@ -83,8 +85,10 @@ jobs:
           pnpm run build:compat
           pnpm run build:native
 
+      # homepage/pnpm-workspace.yaml denies all dependency build scripts and
+      # esbuild/sharp ship prebuilt platform optional dependencies.
       - name: Install homepage dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Check source samples, the footprint record and packed-package guide examples
         run: |
@@ -109,7 +113,8 @@ jobs:
         run: |
           docker run --rm --init --shm-size=1gb -e CI \
             -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE/homepage" \
-            mcr.microsoft.com/playwright:v1.63.0-noble node scripts/check-browser.mjs
+            mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 \
+            node scripts/check-browser.mjs
 
       - name: Upload artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

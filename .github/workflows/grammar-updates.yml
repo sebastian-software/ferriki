@@ -13,25 +13,74 @@ on:
     - cron: "0 6 * * 1"
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: grammar-updates
   cancel-in-progress: false
 
 jobs:
-  update:
+  resolve-base:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 5
+    permissions:
+      contents: read
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       UPDATE_BRANCH: codex/grammar-updates
+    outputs:
+      sha: ${{ steps.base.outputs.sha }}
+      expected_update_sha: ${{ steps.base.outputs.expected_update_sha }}
+      repo_pins: ${{ steps.base.outputs.repo_pins }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.x
+      - name: Record default-branch commit and update branch tip
+        id: base
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GH_TOKEN:-}" ]; then
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL:-https://github.com}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          remote_line=$(git ls-remote --heads origin "refs/heads/$UPDATE_BRANCH")
+          expected_update_sha=${remote_line%%$'\t'*}
+          echo "expected_update_sha=$expected_update_sha" >> "$GITHUB_OUTPUT"
+          repo_pins=$(node scripts/write-grammar-notices.mjs --resolve-pins)
+          echo "repo_pins=$repo_pins" >> "$GITHUB_OUTPUT"
+
+  prepare:
+    needs: resolve-base
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.prepare.outputs.changed }}
+      publish_bundle_artifact: grammar-publish-bundle-${{ github.run_attempt }}
+      candidate_artifact: grammar-candidate-${{ github.run_attempt }}
+    steps:
+      - name: Verify resolved base commit
+        env:
+          BASE_SHA: ${{ needs.resolve-base.outputs.sha }}
+        run: |
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Missing or invalid resolved base commit SHA: '${BASE_SHA:-<empty>}'" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.resolve-base.outputs.sha }}
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
           toolchain: stable
@@ -43,6 +92,8 @@ jobs:
         with:
           node-version: 22.x
       - name: Install data converters
+        env:
+          npm_config_ignore_scripts: "true"
         run: pnpm -C node install --frozen-lockfile --ignore-scripts
       - name: Materialize the accepted snapshot
         run: |
@@ -51,9 +102,11 @@ jobs:
       - name: Prepare repository snapshots
         id: prepare
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CANDIDATE: ${{ runner.temp }}/grammar-candidate
+          REPO_PINS: ${{ needs.resolve-base.outputs.repo_pins }}
         run: |
-          node scripts/prepare-grammar-update.mjs --output-dir "$CANDIDATE"
+          node scripts/prepare-grammar-update.mjs --repo-pins "$REPO_PINS" --output-dir "$CANDIDATE"
           bytecode_version=$(cargo run --quiet --release -p ferriki-asset-gen -- bytecode-version)
           BYTECODE_VERSION="$bytecode_version" node --input-type=module -e 'import fs from "node:fs"; import { needsBytecodeRefresh } from "./scripts/asset-store.mjs"; const report = JSON.parse(fs.readFileSync(process.env.CANDIDATE + "/report.json")); const lock = JSON.parse(fs.readFileSync("assets/catalog.json")); const refresh = needsBytecodeRefresh(lock, Number(process.env.BYTECODE_VERSION)); fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + (report.changed || refresh) + "\n")'
       - name: Build the native candidate validator
@@ -77,8 +130,279 @@ jobs:
         run: |
           pnpm -C node run check:bench-curated
           pnpm -C node run check:bench-tiobe
-      - name: Publish immutable source and payload objects
+      - name: Stage verified assets for publication
         if: steps.prepare.outputs.changed == 'true'
+        env:
+          CANDIDATE: ${{ runner.temp }}/grammar-candidate
+          BUNDLE: ${{ runner.temp }}/grammar-publish-bundle
+        run: |
+          node scripts/write-grammar-update-report.mjs --pre-publish "$CANDIDATE/report.json" "$CANDIDATE/report.md"
+          node scripts/materialize-assets.mjs --metadata-only
+          node scripts/publish-assets.mjs --check
+          mkdir -p "$BUNDLE/assets/grammars" "$BUNDLE/assets/upstream"
+          cp assets/grammars/sources.json "$BUNDLE/assets/grammars/sources.json"
+          cp assets/grammars/catalog.json "$BUNDLE/assets/grammars/catalog.json"
+          cp -R assets/grammars/licenses "$BUNDLE/assets/grammars/licenses"
+          cp assets/catalog.json "$BUNDLE/assets/catalog.json"
+          cp -R assets/grammar-raw "$BUNDLE/assets/grammar-raw"
+          cp -R assets/upstream/curated "$BUNDLE/assets/upstream/curated"
+          cp -R assets/standard "$BUNDLE/assets/standard"
+          cp "$CANDIDATE/report.json" "$BUNDLE/report.json"
+      - name: Upload prepared publish bundle
+        if: steps.prepare.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: grammar-publish-bundle-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/grammar-publish-bundle
+          overwrite: true
+          retention-days: 14
+      - name: Keep the candidate and its report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: grammar-candidate-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/grammar-candidate
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 14
+
+  # Independently rebuild every normalized grammar, compiled .fkgram/.fkbc
+  # payload, notice file, lock, and report from BASE_SHA and the candidate's
+  # locked commits without executing compat tests, native addons, or sharing a
+  # Rust build cache with prepare.
+  verify:
+    needs:
+      - resolve-base
+      - prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      bundle_sha256: ${{ steps.verify.outputs.bundle_sha256 }}
+      bundle_artifact: grammar-verified-bundle-${{ github.run_attempt }}
+      diffs_artifact: grammar-verified-diffs-${{ github.run_attempt }}
+    steps:
+      - name: Verify resolved base commit
+        env:
+          BASE_SHA: ${{ needs.resolve-base.outputs.sha }}
+        run: |
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Missing or invalid resolved base commit SHA: '${BASE_SHA:-<empty>}'" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.resolve-base.outputs.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          package_json_file: node/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.x
+      - name: Install data converters
+        env:
+          npm_config_ignore_scripts: "true"
+        run: pnpm -C node install --frozen-lockfile --ignore-scripts
+      - name: Download prepared publish bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.prepare.outputs.publish_bundle_artifact }}
+          path: ${{ runner.temp }}/prepare-bundle
+      - name: Build asset generator
+        run: cargo build --release --locked -p ferriki-asset-gen
+      - name: Rebuild and verify candidate bundle from locked pins
+        id: verify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_PINS: ${{ needs.resolve-base.outputs.repo_pins }}
+          PREPARE_BUNDLE: ${{ runner.temp }}/prepare-bundle
+          REBUILT_CANDIDATE: ${{ runner.temp }}/rebuilt-candidate
+          VERIFIED_BUNDLE: ${{ runner.temp }}/verified-bundle
+          VERIFIED_ARCHIVE_DIR: ${{ runner.temp }}/grammar-verified-bundle
+          VERIFIED_DIFFS_DIR: ${{ runner.temp }}/grammar-verified-diffs
+        run: |
+          set -euo pipefail
+          base_catalog=$(mktemp)
+          base_sources=$(mktemp)
+          base_asset_catalog=$(mktemp)
+          trap 'rm -f "$base_catalog" "$base_sources" "$base_asset_catalog"' EXIT
+          cp assets/grammars/catalog.json "$base_catalog"
+          cp assets/grammars/sources.json "$base_sources"
+          cp assets/catalog.json "$base_asset_catalog"
+          node scripts/materialize-assets.mjs --sources
+          node scripts/prepare-grammar-update.mjs --locked-from "$PREPARE_BUNDLE/assets/grammars/sources.json" --repo-pins "$REPO_PINS" --output-dir "$REBUILT_CANDIDATE"
+          node scripts/write-grammar-diffs.mjs "$REBUILT_CANDIDATE"
+          node scripts/apply-grammar-update.mjs "$REBUILT_CANDIDATE"
+          node scripts/materialize-assets.mjs --metadata-only
+          node scripts/publish-assets.mjs --check --base-asset-catalog "$base_asset_catalog"
+          node scripts/write-grammar-notices.mjs --check --base-catalog "$base_catalog" --base-sources "$base_sources" --repo-pins "$REPO_PINS"
+          node scripts/write-grammar-update-report.mjs --check-locks --base-sources "$base_sources" --base-catalog "$base_catalog" --sources assets/grammars/sources.json --catalog assets/grammars/catalog.json "$REBUILT_CANDIDATE/report.json"
+          mkdir -p "$VERIFIED_BUNDLE/assets/grammars" "$VERIFIED_BUNDLE/assets/upstream" "$VERIFIED_ARCHIVE_DIR" "$VERIFIED_DIFFS_DIR"
+          cp assets/grammars/sources.json "$VERIFIED_BUNDLE/assets/grammars/sources.json"
+          cp assets/grammars/catalog.json "$VERIFIED_BUNDLE/assets/grammars/catalog.json"
+          cp -R assets/grammars/licenses "$VERIFIED_BUNDLE/assets/grammars/licenses"
+          cp assets/catalog.json "$VERIFIED_BUNDLE/assets/catalog.json"
+          cp -R assets/grammar-raw "$VERIFIED_BUNDLE/assets/grammar-raw"
+          cp -R assets/upstream/curated "$VERIFIED_BUNDLE/assets/upstream/curated"
+          cp -R assets/standard "$VERIFIED_BUNDLE/assets/standard"
+          cp "$REBUILT_CANDIDATE/report.json" "$VERIFIED_BUNDLE/report.json"
+          node scripts/verify-grammar-bundle.mjs "$VERIFIED_BUNDLE" "$PREPARE_BUNDLE"
+          cp -R "$REBUILT_CANDIDATE/diffs" "$VERIFIED_DIFFS_DIR/diffs"
+          cp "$REBUILT_CANDIDATE/report.json" "$VERIFIED_DIFFS_DIR/report.json"
+          tar -czf "$VERIFIED_ARCHIVE_DIR/bundle.tar.gz" -C "$VERIFIED_BUNDLE" .
+          bundle_sha256=$(sha256sum "$VERIFIED_ARCHIVE_DIR/bundle.tar.gz" | awk '{print $1}')
+          echo "bundle_sha256=$bundle_sha256" >> "$GITHUB_OUTPUT"
+      - name: Upload verified publish bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: grammar-verified-bundle-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/grammar-verified-bundle/bundle.tar.gz
+          overwrite: true
+          retention-days: 14
+      - name: Upload verified review diffs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: grammar-verified-diffs-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/grammar-verified-diffs
+          overwrite: true
+          retention-days: 14
+
+  publish:
+    needs:
+      - resolve-base
+      - prepare
+      - verify
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      UPDATE_BRANCH: codex/grammar-updates
+    steps:
+      - name: Verify resolved base commit
+        env:
+          BASE_SHA: ${{ needs.resolve-base.outputs.sha }}
+        run: |
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Missing or invalid resolved base commit SHA: '${BASE_SHA:-<empty>}'" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.resolve-base.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.x
+      - name: Download verified publish bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.verify.outputs.bundle_artifact }}
+          path: ${{ runner.temp }}/grammar-verified-bundle
+      - name: Restore verified candidate files
+        env:
+          BUNDLE_ARCHIVE: ${{ runner.temp }}/grammar-verified-bundle/bundle.tar.gz
+          BUNDLE_SHA256: ${{ needs.verify.outputs.bundle_sha256 }}
+          BUNDLE: ${{ runner.temp }}/grammar-publish-bundle
+          CANDIDATE: ${{ runner.temp }}/grammar-candidate
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_PINS: ${{ needs.resolve-base.outputs.repo_pins }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BUNDLE_SHA256:-}" ]; then
+            echo "Missing verified bundle digest from verify job." >&2
+            exit 1
+          fi
+          printf '%s  %s\n' "$BUNDLE_SHA256" "$BUNDLE_ARCHIVE" | sha256sum -c -
+          rm -rf "$BUNDLE"
+          mkdir -p "$BUNDLE"
+          tar --no-same-owner --no-same-permissions -xzf "$BUNDLE_ARCHIVE" -C "$BUNDLE"
+          base_catalog=$(mktemp)
+          base_sources=$(mktemp)
+          base_asset_catalog=$(mktemp)
+          trap 'rm -f "$base_catalog" "$base_sources" "$base_asset_catalog"' EXIT
+          cp assets/grammars/catalog.json "$base_catalog"
+          cp assets/grammars/sources.json "$base_sources"
+          cp assets/catalog.json "$base_asset_catalog"
+          rm -rf assets/grammars/licenses assets/grammar-raw assets/upstream/curated assets/standard
+          mkdir -p assets/grammars assets/upstream "$CANDIDATE"
+          cp "$BUNDLE/assets/grammars/sources.json" assets/grammars/sources.json
+          cp "$BUNDLE/assets/grammars/catalog.json" assets/grammars/catalog.json
+          cp -R "$BUNDLE/assets/grammars/licenses" assets/grammars/licenses
+          cp "$BUNDLE/assets/catalog.json" assets/catalog.json
+          cp -R "$BUNDLE/assets/grammar-raw" assets/grammar-raw
+          cp -R "$BUNDLE/assets/upstream/curated" assets/upstream/curated
+          cp -R "$BUNDLE/assets/standard" assets/standard
+          cp "$BUNDLE/report.json" "$CANDIDATE/report.json"
+          node scripts/publish-assets.mjs --check --base-asset-catalog "$base_asset_catalog"
+          node scripts/write-grammar-notices.mjs --check --base-catalog "$base_catalog" --base-sources "$base_sources" --repo-pins "$REPO_PINS" --verify-linguist-modules --verify-upstream-pins
+          node scripts/write-grammar-update-report.mjs --check-locks --base-sources "$base_sources" --base-catalog "$base_catalog" --sources assets/grammars/sources.json --catalog assets/grammars/catalog.json "$CANDIDATE/report.json"
+      # Refuse stale retries or manual-commit branches before uploading objects
+      # to Bunny Storage so superseded runs do not leave orphaned CDN objects.
+      - name: Verify update target before publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_SHA: ${{ needs.resolve-base.outputs.sha }}
+          EXPECTED_UPDATE_SHA: ${{ needs.resolve-base.outputs.expected_update_sha }}
+        run: |
+          if [ -n "${GH_TOKEN:-}" ]; then
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL:-https://github.com}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          fi
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Missing or invalid resolved base commit SHA: '${BASE_SHA:-<empty>}'" >&2
+            exit 1
+          fi
+          default_line=$(git ls-remote --heads origin "refs/heads/$DEFAULT_BRANCH")
+          default_tip=${default_line%%$'\t'*}
+          if [ "$default_tip" != "$BASE_SHA" ]; then
+            echo "The default branch moved from '$BASE_SHA' to '${default_tip:-<none>}' since resolve-base ran. Re-run the workflow instead of retrying publish." >&2
+            exit 1
+          fi
+          remote_line=$(git ls-remote --heads origin "refs/heads/$UPDATE_BRANCH")
+          remote_tip=${remote_line%%$'\t'*}
+          if [ -n "$remote_tip" ]; then
+            git fetch --depth=1 origin "$UPDATE_BRANCH"
+            fetched_tip=$(git rev-parse FETCH_HEAD)
+            if [ "$fetched_tip" != "$remote_tip" ]; then
+              echo "The grammar update branch moved during preflight from '$remote_tip' to '$fetched_tip'. Re-run the workflow instead of retrying publish." >&2
+              exit 1
+            fi
+            if [ "$(git show -s --format=%ae FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ] ||
+               [ "$(git show -s --format=%ce FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ]; then
+              echo 'The grammar update branch contains a manual commit. Review it before resuming automated updates.' >&2
+              exit 1
+            fi
+            tmp_dir=$(mktemp -d)
+            trap 'rm -rf "$tmp_dir"' EXIT
+            tmp_index="$tmp_dir/index"
+            GIT_INDEX_FILE="$tmp_index" git read-tree HEAD
+            GIT_INDEX_FILE="$tmp_index" git add -A -- assets/grammars assets/catalog.json
+            candidate_tree=$(GIT_INDEX_FILE="$tmp_index" git write-tree)
+            if [ "$candidate_tree" = "$(git rev-parse 'FETCH_HEAD^{tree}')" ]; then
+              exit 0
+            fi
+          fi
+          if [ "${EXPECTED_UPDATE_SHA+set}" = "set" ] && [ "$remote_tip" != "$EXPECTED_UPDATE_SHA" ]; then
+            echo "The grammar update branch moved from '${EXPECTED_UPDATE_SHA:-<none>}' to '${remote_tip:-<none>}' since resolve-base ran. Re-run the workflow instead of retrying publish." >&2
+            exit 1
+          fi
+      # New content-addressed hashes must exist on Bunny CDN before the draft PR
+      # opens because pull-request CI materializes locked payloads from the CDN
+      # by SHA-256 (ADR 0020). Uploads never overwrite existing objects, and no
+      # release references the new hashes until a maintainer merges and releases.
+      - name: Publish immutable source and payload objects
         env:
           BUNNY_STORAGE_HOSTNAME: ${{ vars.BUNNY_STORAGE_HOSTNAME }}
           BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
@@ -87,15 +411,30 @@ jobs:
           node scripts/publish-assets.mjs
           node scripts/verify-assets.mjs
       - name: Open a reviewable update
-        if: steps.prepare.outputs.changed == 'true'
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CANDIDATE: ${{ runner.temp }}/grammar-candidate
+          BASE_SHA: ${{ needs.resolve-base.outputs.sha }}
+          EXPECTED_UPDATE_SHA: ${{ needs.resolve-base.outputs.expected_update_sha }}
+          DIFFS_ARTIFACT: ${{ needs.verify.outputs.diffs_artifact }}
         run: |
-          node scripts/write-grammar-update-report.mjs "$CANDIDATE/report.json" "$CANDIDATE/report.md"
+          if [ -n "${GH_TOKEN:-}" ]; then
+            auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL:-https://github.com}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth"
+          fi
+          node scripts/write-grammar-update-report.mjs --diffs-artifact "${DIFFS_ARTIFACT:-grammar-verified-diffs}" "$CANDIDATE/report.json" "$CANDIDATE/report.md"
           existing=$(gh pr list --head "$UPDATE_BRANCH" --base "$DEFAULT_BRANCH" --state open --json url --jq '.[0].url // empty')
-          remote_tip=$(git ls-remote --heads origin "refs/heads/$UPDATE_BRANCH" | cut -f 1)
+          remote_line=$(git ls-remote --heads origin "refs/heads/$UPDATE_BRANCH")
+          remote_tip=${remote_line%%$'\t'*}
           if [ -n "$remote_tip" ]; then
             git fetch --depth=1 origin "$UPDATE_BRANCH"
+            fetched_tip=$(git rev-parse FETCH_HEAD)
+            if [ "$fetched_tip" != "$remote_tip" ]; then
+              echo "The grammar update branch moved during preflight from '$remote_tip' to '$fetched_tip'. Re-run the workflow instead of retrying publish." >&2
+              exit 1
+            fi
             if [ "$(git show -s --format=%ae FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ] ||
                [ "$(git show -s --format=%ce FETCH_HEAD)" != '41898282+github-actions[bot]@users.noreply.github.com' ]; then
               echo 'The grammar update branch contains a manual commit. Review it before resuming automated updates.' >&2
@@ -107,7 +446,22 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/grammars assets/catalog.json
           git commit -m 'chore(grammars): refresh repository snapshots'
-          if [ -z "$remote_tip" ] || ! git diff --quiet FETCH_HEAD HEAD; then
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Missing or invalid resolved base commit SHA: '${BASE_SHA:-<empty>}'" >&2
+            exit 1
+          fi
+          default_line=$(git ls-remote --heads origin "refs/heads/$DEFAULT_BRANCH")
+          default_tip=${default_line%%$'\t'*}
+          if [ "$default_tip" != "$BASE_SHA" ]; then
+            echo "The default branch moved from '$BASE_SHA' to '${default_tip:-<none>}' since resolve-base ran. Re-run the workflow instead of retrying publish." >&2
+            exit 1
+          fi
+          if [ -n "$remote_tip" ] && git diff --quiet FETCH_HEAD HEAD; then
+            : # Remote branch already matches this candidate tree; refresh PR body only.
+          elif [ "${EXPECTED_UPDATE_SHA+set}" = "set" ] && [ "$remote_tip" != "$EXPECTED_UPDATE_SHA" ]; then
+            echo "The grammar update branch moved from '${EXPECTED_UPDATE_SHA:-<none>}' to '${remote_tip:-<none>}' since resolve-base ran. Re-run the workflow instead of retrying publish." >&2
+            exit 1
+          else
             git push --force-with-lease="refs/heads/$UPDATE_BRANCH:$remote_tip" origin "HEAD:refs/heads/$UPDATE_BRANCH"
           fi
           if [ -n "$existing" ]; then
@@ -115,11 +469,3 @@ jobs:
           else
             gh pr create --draft --base "$DEFAULT_BRANCH" --head "$UPDATE_BRANCH" --title 'chore(grammars): refresh repository snapshots' --body-file "$CANDIDATE/report.md"
           fi
-      - name: Keep the candidate and its report
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: grammar-candidate
-          path: ${{ runner.temp }}/grammar-candidate
-          if-no-files-found: ignore
-          retention-days: 14

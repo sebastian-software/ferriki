@@ -223,8 +223,10 @@ make selection or patch changes in a separate PR against the default branch.
 To activate the schedule, merge the workflow and its scripts onto the default
 branch. Under **Settings → Actions → General → Workflow permissions**, enable
 **Allow GitHub Actions to create and approve pull requests** if it is disabled.
-The workflow declares `contents: write` and `pull-requests: write` and uses the
-repository's automatic `GITHUB_TOKEN`; no additional GitHub token secret is required. Bunny uploads require the
+The workflow defaults to `contents: read` and runs candidate preparation and
+validation without write permissions or Bunny secrets; only the publication job
+declares `contents: write` and `pull-requests: write` and uses the repository's
+automatic `GITHUB_TOKEN`, so no additional GitHub token secret is required. Bunny uploads require the
 repository secret `BUNNY_STORAGE_ACCESS_KEY` and the repository variables
 `BUNNY_STORAGE_ZONE` and `BUNNY_STORAGE_HOSTNAME` (for example,
 `ferriki-assets` and `storage.bunnycdn.com`). Use the Storage Zone upload
@@ -240,8 +242,9 @@ gh run list --workflow grammar-updates.yml --repo sebastian-software/ferriki
 ```
 
 Review source pins, changed grammar IDs, license notices, and catalog hashes
-in the PR. Download the **grammar-candidate** artifact for normalized diffs and
-full candidate data; those large files are not committed. GitHub puts `pull_request` CI runs triggered by
+in the PR. Download the **grammar-verified-diffs** artifact (produced by the
+isolated `verify` job) for verified normalized diffs and `report.json`; those
+large files are not committed. GitHub puts `pull_request` CI runs triggered by
 `GITHUB_TOKEN` in an approval-required state; select **Approve workflows to run**
 on the PR when shown. The update workflow already runs its grammar validation
 before pushing, but the PR's regular required checks must also pass before

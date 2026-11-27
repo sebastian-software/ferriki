@@ -1,10 +1,8 @@
-import { mkdir, mkdtemp, readFile, writeFile, cp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
-import { localGrammarPath, readLocalGrammar } from "./local-grammar.mjs";
 import {
   createGitHubReader,
   digest,
@@ -14,24 +12,37 @@ import {
   resolveRepositorySnapshots,
   selectCandidate,
 } from "./grammar-repositories.mjs";
+import { applyGrammarPatches, normalizeGrammar, parseGrammarSource } from "./grammar-source.mjs";
+import { localGrammarPath, readLocalGrammar } from "./local-grammar.mjs";
+import { parseRepoPins } from "./write-grammar-notices.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const usage =
-  "Usage: node scripts/prepare-grammar-update.mjs [--locked|--locked-repositories] [--output-dir <new-directory>]";
+  "Usage: node scripts/prepare-grammar-update.mjs [--locked|--locked-repositories|--locked-from <sources.json>] [--repo-pins <json>] [--output-dir <new-directory>]";
 let outputRoot;
 let created = false;
 async function prepare() {
   const args = process.argv.slice(2);
   let locked = false;
   let lockedRepositories = false;
+  let lockedFrom = null;
+  let repoPinsRaw;
   for (let index = 0; index < args.length; index++) {
     if (args[index] === "--locked") locked = true;
     else if (args[index] === "--locked-repositories") lockedRepositories = true;
-    else if (args[index] === "--output-dir" && args[index + 1])
+    else if (args[index] === "--locked-from" && args[index + 1])
+      lockedFrom = path.resolve(args[++index]);
+    else if (args[index] === "--repo-pins") {
+      if (index + 1 >= args.length) throw new Error("--repo-pins requires a JSON object value");
+      repoPinsRaw = args[++index];
+    } else if (args[index].startsWith("--repo-pins=")) {
+      repoPinsRaw = args[index].slice("--repo-pins=".length);
+    } else if (args[index] === "--output-dir" && args[index + 1])
       outputRoot = path.resolve(args[++index]);
     else throw new Error(usage);
   }
-  if (locked && lockedRepositories) throw new Error(usage);
+  if ([locked, lockedRepositories, Boolean(lockedFrom)].filter(Boolean).length > 1)
+    throw new Error(usage);
   if (outputRoot) await mkdir(outputRoot); // Refuse an existing destination.
   else outputRoot = await mkdtemp(path.join(tmpdir(), "ferriki-grammar-update-"));
   created = true;
@@ -44,15 +55,52 @@ async function prepare() {
   const previous = JSON.parse(
     await readFile(path.join(root, "assets/grammars/sources.json"), "utf8"),
   );
-  if ((locked || lockedRepositories) && !previous.repositories)
+  const lockTarget = lockedFrom ? JSON.parse(await readFile(lockedFrom, "utf8")) : previous;
+  const enforceLock = locked || Boolean(lockedFrom);
+  if (
+    (enforceLock || lockedRepositories) &&
+    (!lockTarget?.repositories || !Array.isArray(lockTarget?.languages))
+  )
     throw new Error("No repository snapshots are locked yet. Prepare the initial update first.");
+  if (enforceLock || lockedRepositories) {
+    for (const repo of config.repositories) {
+      const lockedCommit = lockTarget.repositories[repo.id]?.commit;
+      if (typeof lockedCommit !== "string" || !/^[0-9a-f]{40}$/u.test(lockedCommit)) {
+        throw new Error(
+          `Missing or invalid locked commit SHA for repository ${repo.id}: ${String(lockedCommit)}`,
+        );
+      }
+    }
+  }
+  const repoPins =
+    repoPinsRaw !== undefined
+      ? parseRepoPins(repoPinsRaw, new Set(config.repositories.map((repo) => repo.id)))
+      : null;
+  if (repoPins && (enforceLock || lockedRepositories)) {
+    for (const repo of config.repositories) {
+      const lockedCommit = lockTarget.repositories[repo.id]?.commit;
+      if (lockedCommit !== repoPins[repo.id]) {
+        throw new Error(
+          `Repository pin drift against resolve-base for ${repo.id}: expected ${repoPins[repo.id]}, got ${lockedCommit}`,
+        );
+      }
+    }
+  }
+  const pinnedRepositories =
+    enforceLock || lockedRepositories
+      ? lockTarget.repositories
+      : repoPins
+        ? Object.fromEntries(
+            config.repositories.map((repo) => [
+              repo.id,
+              { repository: repo.repository, ref: repo.ref, commit: repoPins[repo.id] },
+            ]),
+          )
+        : undefined;
   const reader = createGitHubReader();
-  const snapshots = await resolveRepositorySnapshots(
-    config,
-    reader,
-    locked || lockedRepositories ? previous.repositories : undefined,
-    { allowModuleChanges: lockedRepositories },
-  );
+  const snapshots = await resolveRepositorySnapshots(config, reader, pinnedRepositories, {
+    allowModuleChanges: lockedRepositories || (Boolean(repoPins) && !enforceLock),
+  });
   const inventories = new Map();
   for (const repository of config.repositories) {
     const candidates = await discoverRepository(repository, snapshots[repository.id], reader);
@@ -81,20 +129,20 @@ async function prepare() {
           license: { id: "MIT", path: "LICENSE-MIT" },
         }
       : selectCandidate(inventories.get(selection.repository_id), selection.selector);
-    const previousEntry = previous.languages.find((entry) => entry.id === selection.id);
+    const lockedEntry = lockTarget.languages.find((entry) => entry.id === selection.id);
     if (
-      locked &&
+      enforceLock &&
       local &&
-      (!previousEntry ||
-        previousEntry.repository_id !== "local" ||
-        previousEntry.upstream_path !== candidate.path)
+      (!lockedEntry ||
+        lockedEntry.repository_id !== "local" ||
+        lockedEntry.upstream_path !== candidate.path)
     )
       throw new Error(`Local grammar lock drift: ${selection.id}`);
     const bytes = local
       ? await readLocalGrammar(
           root,
           candidate.path,
-          locked ? previousEntry.upstream_sha256 : undefined,
+          enforceLock ? lockedEntry.upstream_sha256 : undefined,
         )
       : await reader.read(candidate.repository, candidate.commit, candidate.path);
     let grammar = parseGrammarSource(bytes.toString("utf8"), candidate.path);
@@ -221,11 +269,11 @@ async function prepare() {
       : await reader.read(candidate.repository, candidate.commit, license.path);
     const license_file = `assets/grammars/licenses/${digest(licenseBytes)}.txt`;
     if (
-      locked &&
-      (!previousEntry ||
-        previousEntry.upstream_sha256 !== digest(bytes) ||
-        previousEntry.sha256 !== digest(normalized) ||
-        previousEntry.license_file !== license_file)
+      enforceLock &&
+      (!lockedEntry ||
+        lockedEntry.upstream_sha256 !== digest(bytes) ||
+        lockedEntry.sha256 !== digest(normalized) ||
+        lockedEntry.license_file !== license_file)
     )
       throw new Error(`Grammar lock drift: ${selection.id}`);
     await mkdir(path.join(outputRoot, "assets/grammars/licenses"), { recursive: true });
@@ -253,10 +301,10 @@ async function prepare() {
   }
   languages.sort((a, b) => a.id.localeCompare(b.id, "en"));
   if (
-    locked &&
+    enforceLock &&
     JSON.stringify(languages.map((entry) => entry.id)) !==
       JSON.stringify(
-        previous.languages.map((entry) => entry.id).sort((a, b) => a.localeCompare(b, "en")),
+        lockTarget.languages.map((entry) => entry.id).sort((a, b) => a.localeCompare(b, "en")),
       )
   )
     throw new Error("Grammar selection lock drift");
