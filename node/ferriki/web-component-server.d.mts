@@ -6,6 +6,12 @@ export interface CodeElementShadowsOptions {
   readonly stylesheetHref?: string;
   /** Theme aliases used by the runtime's local theme-switching CSS. Defaults to `light` and `dark`. */
   readonly themeAliases?: readonly string[];
+  /**
+   * When `true`, parse `<noscript>` content as HTML and hydrate eligible `<ferriki-code>`
+   * hosts inside it (for scripting-disabled fallbacks). Defaults to `false` (HTML5
+   * scripting-enabled mode, where `<noscript>` is treated as raw text).
+   */
+  readonly includeNoscript?: boolean;
 }
 
 /**

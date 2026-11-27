@@ -116,22 +116,22 @@ export function defineCodeElement(options = {}) {
   const css = options.css === undefined ? "" : options.css;
   if (typeof css !== "string")
     throw new TypeError("defineCodeElement `css` must be a string when provided");
-  const stylesheetHref = validateStylesheetHref(options.stylesheetHref);
+  const registry = globalThis.customElements;
+  const HTMLElementConstructor = globalThis.HTMLElement;
+  const hasBrowserDom = Boolean(
+    registry &&
+    typeof registry.get === "function" &&
+    typeof registry.define === "function" &&
+    typeof HTMLElementConstructor === "function",
+  );
+  const stylesheetHref = validateStylesheetHref(options.stylesheetHref, hasBrowserDom);
   const aliases =
     options.themeAliases === undefined
       ? DEFAULT_THEME_ALIASES
       : validateThemeAliases(options.themeAliases);
   const blocks = validateBlocks(options.blocks);
 
-  const registry = globalThis.customElements;
-  const HTMLElementConstructor = globalThis.HTMLElement;
-  if (
-    !registry ||
-    typeof registry.get !== "function" ||
-    typeof registry.define !== "function" ||
-    typeof HTMLElementConstructor !== "function"
-  )
-    return undefined;
+  if (!hasBrowserDom) return undefined;
 
   const existing = registry.get(FERRIKI_CODE_TAG);
   if (existing) {
@@ -671,7 +671,63 @@ function validateThemeAliases(themeAliases) {
   return [...themeAliases];
 }
 
-function validateStylesheetHref(stylesheetHref) {
+const DISALLOWED_STYLESHEET_PROTOCOLS = new Set([
+  "about:",
+  "blob:",
+  "data:",
+  "filesystem:",
+  "javascript:",
+  "mailto:",
+  "tel:",
+  "vbscript:",
+]);
+
+function hostDocumentUrl() {
+  const candidate =
+    typeof globalThis.location?.href === "string" && globalThis.location.href
+      ? globalThis.location.href
+      : typeof globalThis.document?.baseURI === "string" && globalThis.document.baseURI
+        ? globalThis.document.baseURI
+        : undefined;
+  if (!candidate) return undefined;
+  try {
+    return new URL(candidate);
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeFileHost(hostname) {
+  const lower = hostname.toLowerCase();
+  return lower === "localhost" ? "" : lower;
+}
+
+function isValidPackagedStylesheetSyntax(parsed, raw) {
+  if (DISALLOWED_STYLESHEET_PROTOCOLS.has(parsed.protocol)) return false;
+  if (!raw.slice(parsed.protocol.length).startsWith("//")) return false;
+  if (parsed.protocol === "file:") {
+    if (parsed.hostname === "" && parsed.pathname.startsWith("//")) return false;
+    return parsed.pathname.length > 1;
+  }
+  return parsed.host.length > 0;
+}
+
+function isAllowedPackagedStylesheetUrl(parsed, raw, hasBrowserDom) {
+  if (!isValidPackagedStylesheetSyntax(parsed, raw)) return false;
+  if (!hasBrowserDom) return true;
+  const host = hostDocumentUrl();
+  if (!host || host.protocol !== parsed.protocol) return false;
+  if (parsed.protocol === "file:") {
+    const hostName = normalizeFileHost(host.hostname);
+    if (normalizeFileHost(parsed.hostname) !== hostName) return false;
+    if (hostName === "" && parsed.pathname.startsWith("//")) return false;
+    return parsed.pathname.length > 1;
+  }
+  if (host.origin !== "null" && parsed.origin !== "null") return parsed.origin === host.origin;
+  return parsed.host.length > 0 && parsed.host === host.host;
+}
+
+function validateStylesheetHref(stylesheetHref, hasBrowserDom = true) {
   if (stylesheetHref === undefined) return undefined;
   if (typeof stylesheetHref !== "string" || stylesheetHref.length === 0)
     throw new TypeError("`stylesheetHref` must be a nonempty string when provided");
@@ -680,6 +736,32 @@ function validateStylesheetHref(stylesheetHref) {
     if (codePoint <= 0x1f || codePoint === 0x7f)
       throw new TypeError("`stylesheetHref` cannot contain control characters");
   }
+  const trimmed = stylesheetHref.trim();
+  if (trimmed.length === 0 || trimmed !== stylesheetHref)
+    throw new TypeError(
+      "`stylesheetHref` must be a relative path or an http(s) URL without leading or trailing whitespace",
+    );
+  if (trimmed.startsWith("//") || trimmed.startsWith("\\") || trimmed.startsWith("/\\"))
+    throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/u.test(trimmed)) {
+    let parsed;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
+    }
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      if (!/^https?:\/\//iu.test(trimmed) || !parsed.hostname)
+        throw new TypeError("`stylesheetHref` must use an http(s) URL or a relative path");
+      return stylesheetHref;
+    }
+    if (isAllowedPackagedStylesheetUrl(parsed, trimmed, hasBrowserDom)) return stylesheetHref;
+    throw new TypeError("`stylesheetHref` must use an http(s) URL or a relative path");
+  }
+  const firstDelimiter = trimmed.search(/[/?#]/u);
+  const firstSegment = firstDelimiter === -1 ? trimmed : trimmed.slice(0, firstDelimiter);
+  if (firstSegment.includes(":"))
+    throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
   return stylesheetHref;
 }
 

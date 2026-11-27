@@ -114,3 +114,15 @@ test("token accesses grow linearly with boundaries and themes", () => {
   assert.equal(output[0].length, count * 2);
   assert.ok(reads < count * 100, `expected linear token accesses, got ${reads}`);
 });
+
+test("alignment does not mutate prototypes on __proto__ theme keys and drops unsafe colors", () => {
+  const output = align([
+    result("__proto__", [[{ offset: 0, content: "x", color: "red;position:fixed" }]]),
+    result("light", [[{ offset: 0, content: "x", color: "#123456" }]]),
+  ]);
+  const variants = output[0][0].variants;
+  assert.equal(Object.getPrototypeOf(variants), Object.prototype);
+  assert.equal(Object.hasOwn(variants, "__proto__"), true);
+  assert.deepEqual(Object.getOwnPropertyDescriptor(variants, "__proto__")?.value, {});
+  assert.deepEqual(variants.light, { color: "#123456" });
+});

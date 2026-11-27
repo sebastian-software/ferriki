@@ -2063,11 +2063,8 @@ export function ferriki(options = {}) {
       const stylesheet = buildStylesheets.get(this.environment);
       if (!stylesheet) return this.error("Ferriki's prepared code stylesheet is missing");
       const base = resolvedConfig.base;
-      if (
-        (configuredBase === "./" || configuredBase === "") &&
-        this.environment.config.consumer === "server"
-      )
-        return this.error("Ferriki React macro SSR requires an absolute Vite `base` path or URL");
+      const isServer = this.environment.config.consumer === "server";
+      if (isServer) validateServerConfiguredBase(this, configuredBase);
       const filename = this.getFileName(stylesheet.reference)
         .split("/")
         .map(encodeURIComponent)
@@ -2076,9 +2073,23 @@ export function ferriki(options = {}) {
       const relativeFilename = relativeBase
         ? posix.relative(posix.dirname(chunk.fileName), filename)
         : undefined;
-      const stylesheetUrl = relativeBase
-        ? `new URL(${safeJsLiteral(relativeFilename)}, import.meta.url).href`
-        : safeJsLiteral(`${base.replace(/\/+$/u, "")}/${filename}`);
+      let stylesheetUrl;
+      if (relativeBase) {
+        stylesheetUrl = `new URL(${safeJsLiteral(relativeFilename)}, import.meta.url).href`;
+      } else {
+        const href = /^[a-z][a-z\d+.-]*:\/\//iu.test(base)
+          ? `${base.endsWith("/") ? base : `${base}/`}${filename}`
+          : `${base.replace(/\/+$/u, "")}/${filename}`;
+        let normalizedHref;
+        try {
+          normalizedHref = validateStylesheetHref(href, { allowPackagedProtocols: !isServer });
+        } catch (error) {
+          return this.error(
+            `Ferriki React macro requires an absolute path or http(s) Vite \`base\` URL: ${error.message}`,
+          );
+        }
+        stylesheetUrl = safeJsLiteral(normalizedHref);
+      }
       const magic = new MagicString(code);
       magic.replaceAll(expression, stylesheetUrl);
       return {
@@ -2137,7 +2148,18 @@ export function ferriki(options = {}) {
 
     load(id) {
       if (id === `\0${CODE_STYLESHEET_MODULE}`) {
-        const devHref = devStylesheetHref(resolvedConfig?.base);
+        let devHref = devStylesheetHref(resolvedConfig?.base);
+        if (resolvedConfig?.command !== "build") {
+          const isServer = this.environment?.config?.consumer === "server";
+          if (isServer) validateServerConfiguredBase(this, configuredBase);
+          try {
+            devHref = validateStylesheetHref(devHref, { allowPackagedProtocols: !isServer });
+          } catch (error) {
+            return this.error(
+              `Ferriki React macro requires a relative path or http(s) Vite \`base\` URL: ${error.message}`,
+            );
+          }
+        }
         return {
           code:
             resolvedConfig?.command === "build"
@@ -2817,4 +2839,88 @@ function renderHelperSource(
   }
   return render({ code: ${codeBlocksName}[codeRef], ...presentationProps, ...(theme === undefined ? {} : { theme }), ...(maxLines === undefined ? {} : { maxLines }) });
 }`;
+}
+
+const DISALLOWED_CLIENT_STYLESHEET_PROTOCOLS = new Set([
+  "about:",
+  "blob:",
+  "data:",
+  "filesystem:",
+  "javascript:",
+  "mailto:",
+  "tel:",
+  "vbscript:",
+]);
+
+function validateServerConfiguredBase(context, configuredBase) {
+  if (configuredBase === undefined) return;
+  if (
+    typeof configuredBase !== "string" ||
+    configuredBase.length === 0 ||
+    configuredBase === "./" ||
+    (!configuredBase.startsWith("/") && !/^[a-z][a-z\d+.-]*:/iu.test(configuredBase.trim()))
+  )
+    return context.error("Ferriki React macro SSR requires an absolute Vite `base` path or URL");
+  try {
+    validateStylesheetHref(configuredBase, { allowPackagedProtocols: false });
+  } catch (error) {
+    return context.error(
+      `Ferriki React macro SSR requires an absolute path or http(s) Vite \`base\` URL: ${error.message}`,
+    );
+  }
+}
+
+function validateStylesheetHref(stylesheetHref, { allowPackagedProtocols = false } = {}) {
+  if (typeof stylesheetHref !== "string" || stylesheetHref.length === 0)
+    throw new TypeError("`stylesheetHref` must be a nonempty string when provided");
+  for (const character of stylesheetHref) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint <= 0x1f || codePoint === 0x7f)
+      throw new TypeError("`stylesheetHref` cannot contain control characters");
+  }
+  const trimmed = stylesheetHref.trim();
+  if (trimmed.length === 0 || trimmed !== stylesheetHref)
+    throw new TypeError(
+      "`stylesheetHref` must be a relative path or an http(s) URL without leading or trailing whitespace",
+    );
+  if (trimmed.startsWith("//") || trimmed.startsWith("\\") || trimmed.startsWith("/\\"))
+    throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
+  if (/^[a-z][a-z\d+.-]*:/iu.test(trimmed)) {
+    let parsed;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
+    }
+    if (allowPackagedProtocols) {
+      if (DISALLOWED_CLIENT_STYLESHEET_PROTOCOLS.has(parsed.protocol))
+        throw new TypeError(`\`stylesheetHref\` cannot use the ${parsed.protocol} protocol`);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        if (!parsed.hostname)
+          throw new TypeError("`stylesheetHref` must use an http(s) URL or a relative path");
+      } else if (parsed.protocol === "file:") {
+        if (!trimmed.slice(parsed.protocol.length).startsWith("//"))
+          throw new TypeError("`stylesheetHref` must be a valid file URL");
+        if (
+          (parsed.hostname === "" && parsed.pathname.startsWith("//")) ||
+          parsed.pathname.length <= 1
+        )
+          throw new TypeError("`stylesheetHref` must be a valid file URL");
+        return parsed.href;
+      } else if (!/^[a-z][a-z\d+.-]*:\/\//iu.test(trimmed) || !parsed.hostname) {
+        throw new TypeError("`stylesheetHref` must be a valid packaged URL");
+      }
+      return stylesheetHref;
+    }
+    if (!/^https?:\/\//iu.test(trimmed))
+      throw new TypeError("`stylesheetHref` must use an http(s) URL or a relative path");
+    if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || !parsed.hostname)
+      throw new TypeError("`stylesheetHref` must use an http(s) URL or a relative path");
+    return stylesheetHref;
+  }
+  const firstDelimiter = trimmed.search(/[/?#]/u);
+  const firstSegment = firstDelimiter === -1 ? trimmed : trimmed.slice(0, firstDelimiter);
+  if (firstSegment.includes(":"))
+    throw new TypeError("`stylesheetHref` must be a relative path or an http(s) URL");
+  return stylesheetHref;
 }

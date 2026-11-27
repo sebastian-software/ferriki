@@ -145,14 +145,15 @@ impl FerrikiHighlighter {
             .css_variable_prefix
             .filter(|value| !value.is_empty())
             .unwrap_or_else(|| "--shiki-".to_owned());
-        Ok(ferriki::__private::render_html_with_themes(
+        ferriki::__private::render_html_with_themes(
             &tokens,
             &ferriki::__private::MultiThemeRenderOptions {
                 render,
                 default_color,
                 css_variable_prefix,
             },
-        ))
+        )
+        .map_err(|reason| Error::new(napi::Status::InvalidArg, reason))
     }
 
     /// Highlight and decorate without transporting tokens or a tree to JS.

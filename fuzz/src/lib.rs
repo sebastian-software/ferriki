@@ -840,7 +840,8 @@ fn exercise_theme_render(theme_data: ThemeData, code: &str) -> (bool, bool) {
                 default_color: Some("light".to_owned()),
                 css_variable_prefix: "--shiki-".to_owned(),
             },
-        );
+        )
+        .expect("static valid multi-theme options must render");
         assert!(multi_with_default.starts_with("<pre "));
 
         let multi_css_vars = render_html_with_themes(
@@ -850,7 +851,8 @@ fn exercise_theme_render(theme_data: ThemeData, code: &str) -> (bool, bool) {
                 default_color: None,
                 css_variable_prefix: "--ferriki-".to_owned(),
             },
-        );
+        )
+        .expect("static valid multi-theme options must render");
         assert!(multi_css_vars.starts_with("<pre "));
         rendered_multi = true;
     }

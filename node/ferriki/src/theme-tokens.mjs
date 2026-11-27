@@ -1,3 +1,5 @@
+import { normalizeSafeCssColor } from "../classes.mjs";
+
 export function alignThemeTokens(results) {
   const lineCount = Math.max(...results.map((result) => result.result.tokens.length));
   return Array.from({ length: lineCount }, (_, lineIndex) => {
@@ -30,7 +32,12 @@ export function alignThemeTokens(results) {
         const candidate = line[cursors[themeIndex]];
         const token = candidate && candidate.offset <= start ? candidate : undefined;
         if (token && !baseToken) baseToken = token;
-        variants[result.color] = tokenStyle(token);
+        Object.defineProperty(variants, result.color, {
+          value: tokenStyle(token),
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        });
       }
       if (!baseToken) continue;
       output.push({
@@ -45,10 +52,17 @@ export function alignThemeTokens(results) {
   });
 }
 
-export function tokenStyle(token) {
+export function tokenStyle(token, { sanitizeColor = true } = {}) {
   if (!token) return {};
   const style = {};
-  if (token.color) style.color = token.color;
+  const color = token.color
+    ? sanitizeColor
+      ? normalizeSafeCssColor(token.color)
+      : typeof token.color === "string"
+        ? token.color
+        : undefined
+    : undefined;
+  if (color) style.color = color;
   const fontStyle = token.fontStyle || 0;
   if (fontStyle & 1) style["font-style"] = "italic";
   if (fontStyle & 2) style["font-weight"] = "bold";

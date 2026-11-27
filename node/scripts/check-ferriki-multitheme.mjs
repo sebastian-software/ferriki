@@ -235,7 +235,8 @@ try {
             { rootStyle: false, tabindex: null },
             { rootStyle: "", tabindex: 2 },
             { rootStyle: 'color:var(--x-<&")', tabindex: '<&"' },
-            { cssVariablePrefix: '--custom-<&"', tabindex: "" },
+            { cssVariablePrefix: "--my-theme-", tabindex: "" },
+            { cssVariablePrefix: "--", tabindex: "" },
           ]) {
             const options = {
               lang: "multi-order",
@@ -257,7 +258,6 @@ try {
   for (const extra of [
     { rootStyle: "\uD800" },
     { tabindex: "\uDC00" },
-    { cssVariablePrefix: "--\uD800" },
     { themes: { light: "multi-light", dark: "none" } },
     { structure: "inline" },
     { decorations: [] },
@@ -273,6 +273,92 @@ try {
     assert.equal(custom.codeToHtml("a b c", options), expected);
     assert(!nativeCalls.includes("codeToHtmlWithThemes"));
   }
+  assert.equal(
+    custom.codeToHtml("a b c", {
+      lang: "multi-order",
+      themes: { light: "multi-light", "unused palette": undefined },
+    }),
+    custom.codeToHtml("a b c", {
+      lang: "multi-order",
+      themes: { light: "multi-light" },
+    }),
+  );
+  for (const invalid of [
+    { cssVariablePrefix: "" },
+    { cssVariablePrefix: '--custom-<&"' },
+    { cssVariablePrefix: "--x;color:red" },
+    { cssVariablePrefix: "--\uD800" },
+    { cssVariablePrefix: "shiki-" },
+    { themes: { "bad key": "multi-light" }, defaultColor: false },
+    { themes: { "light;color:red": "multi-light" }, defaultColor: false },
+  ]) {
+    assert.throws(
+      () =>
+        custom.codeToHtml("a b c", {
+          lang: "multi-order",
+          themes: { light: "multi-light", dark: darkName },
+          ...invalid,
+        }),
+      (error) => error.code === "ERR_USAGE",
+    );
+  }
+  // `preprocess` hooks mutating `options.cssVariablePrefix` or `options.themes` to unsafe values
+  // are re-validated before inline CSS variable declarations are emitted.
+  for (const mutate of [
+    (opts) => {
+      opts.cssVariablePrefix = "--bad;color:red;";
+    },
+    (opts) => {
+      opts.themes = { "bad;color:red": "multi-light" };
+      opts.defaultColor = false;
+    },
+  ]) {
+    assert.throws(
+      () =>
+        custom.codeToHtml("a b c", {
+          lang: "multi-order",
+          themes: { light: "multi-light", dark: darkName },
+          transformers: [
+            {
+              preprocess(code, opts) {
+                mutate(opts);
+                return code;
+              },
+            },
+          ],
+        }),
+      (error) => error.code === "ERR_USAGE",
+    );
+    assert.throws(
+      () =>
+        custom.getLastGrammarState("a b c", {
+          lang: "multi-order",
+          themes: { light: "multi-light", dark: darkName },
+          transformers: [
+            {
+              preprocess(code, opts) {
+                mutate(opts);
+                return code;
+              },
+            },
+          ],
+        }),
+      (error) => error.code === "ERR_USAGE",
+    );
+  }
+  // Single-theme calls ignore `cssVariablePrefix: ""` (type check still applies),
+  // allowing shared options objects between single-theme and multi-theme callers.
+  assert.equal(
+    custom.codeToHtml("a b c", {
+      lang: "multi-order",
+      theme: "multi-light",
+      cssVariablePrefix: "",
+    }),
+    custom.codeToHtml("a b c", {
+      lang: "multi-order",
+      theme: "multi-light",
+    }),
+  );
   // A previous sidecar must still use the existing host path.
   prototype.codeToHtmlWithThemes = undefined;
   const options = { lang: "multi-order", themes: { light: "multi-light", dark: darkName } };

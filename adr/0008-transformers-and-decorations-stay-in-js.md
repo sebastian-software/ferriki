@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-10
+Last updated: 2026-11-26
 
 ## Context
 
@@ -70,6 +70,20 @@ CSS-class styling cover current presentation needs.
 - Async and sync constructors retain transformer defaults for
   `codeToHtml` and `codeToHtmlWithCss`. Explicit per-call lists replace them,
   including an empty list. Stable pre/normal/post enforcement tiers remain.
+- Declarative decoration inputs (`DecorationItem.tagName`, `DecorationItem.properties`,
+  and fence metadata attributes) cross an explicit untrusted-data boundary before
+  HTML or CSS emission. Both the native Rust declarative renderer and the Node
+  host replay enforce the same policy upfront: declarative tags are limited to an
+  allowlist of inert HTML elements (excluding custom elements and active/raw-text
+  tags), event-handler and active/resource-fetching attributes (`on*`, `is`,
+  `srcdoc`, `srcset`, `action`, `formaction`, `ping`, `background`,
+  `attributionsrc`) are rejected, URL-bearing attributes require safe string URLs,
+  and inline `style` declarations are canonicalized and sanitized after decoration
+  callbacks complete (preserving shared style-object identity while callbacks run).
+  Trusted JavaScript transformer callbacks (`preprocess`, `tokens`, `span`, `line`,
+  `code`, `pre`, `root`, `postprocess`) and `DecorationItem.transform` return
+  values remain caller-trusted HAST/HTML outputs, subject only to structural HTML
+  tag/attribute syntax validation and class-mode CSS extraction sanitization.
 - The optional Vite adapter forwards callbacks into this same pipeline.
   Supported Shiki notation helpers remain opt-in JavaScript callbacks; no
   parallel code-comment annotation parser is introduced.
@@ -113,3 +127,4 @@ CSS-class styling cover current presentation needs.
 
 - 2026-10-10: Completes the JavaScript callback contract with stage-specific wrapper availability, metadata lifetime, return semantics and focused context tests; retains the frozen mixed-decoration coverage (#241).
 - 2026-10-10: Adds a complete native render lane for plain declarative decorations while preserving callback, opaque-property, and UTF-16 fallback contracts.
+- 2026-11-26: Defines the declarative decoration and fence-metadata trust boundary enforced identically by the native Rust and JavaScript decoration validators while keeping transformer and decoration callback outputs trusted (#383).

@@ -86,6 +86,39 @@ test("registration validates CSS and theme aliases before browser access", () =>
     () => defineCodeElement({ stylesheetHref: "/code.css\nunsafe" }),
     /control characters/,
   );
+  for (const unsafeHref of [
+    "javascript:alert(1)",
+    "data:text/css,body{color:red}",
+    "//evil.example/code.css",
+    "/\\evil.example/code.css",
+    "\\evil.example/code.css",
+    " /code.css",
+    "http:evil.example/code.css",
+    "https://",
+    "file:code.css",
+    "file:///",
+    "file:////remote/share/code.css",
+  ]) {
+    assert.throws(
+      () => defineCodeElement({ stylesheetHref: unsafeHref }),
+      TypeError,
+      `expected unsafe stylesheetHref to throw: ${JSON.stringify(unsafeHref)}`,
+    );
+  }
+  for (const safeHref of [
+    "/code.css",
+    "./code.css",
+    "../code.css",
+    "assets/code.css",
+    "https://cdn.example.com/code.css",
+    "http://localhost:5173/code.css",
+    "file:///app/styles.css",
+    "file://localhost/app/styles.css",
+    "file://server/share/styles.css",
+    "app://bundle/styles.css",
+  ]) {
+    assert.equal(defineCodeElement({ stylesheetHref: safeHref }), undefined);
+  }
   assert.throws(() => defineCodeElement({ themeAliases: ['safe"x'] }), /Unsupported theme alias/);
   assert.throws(
     () => defineCodeElement({ themeAliases: ["light", "light"] }),
@@ -849,6 +882,233 @@ test("disconnected element adopts a newly configured stylesheetHref on reconnect
     host.connectedCallback();
     assert.equal(host.shadowRoot.querySelector("link[data-ferriki-code-css]"), link);
     assert.equal(link.getAttribute("href"), "/late-palette-v2.css");
+  } finally {
+    for (const [name, descriptor] of globalDescriptors) {
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else delete globalThis[name];
+    }
+  }
+});
+
+test("packaged clients accept module-relative stylesheet URLs matching the host scheme and reject mismatches", () => {
+  const globalDescriptors = new Map(
+    ["customElements", "HTMLElement", "document", "location"].map((name) => [
+      name,
+      Object.getOwnPropertyDescriptor(globalThis, name),
+    ]),
+  );
+
+  function withHostLocation(href, fn) {
+    const definitions = new Map();
+    const links = [];
+
+    class FakeElement {
+      constructor(tagName) {
+        this.tagName = tagName;
+        this.parentNode = undefined;
+        this.attributes = new Map();
+        this.childNodes = [];
+        this.textContent = "";
+      }
+
+      get firstChild() {
+        return this.childNodes[0];
+      }
+
+      get nextSibling() {
+        if (!this.parentNode) return undefined;
+        const siblings = this.parentNode.childNodes;
+        return siblings[siblings.indexOf(this) + 1];
+      }
+
+      getAttribute(name) {
+        return this.attributes.get(name) ?? null;
+      }
+
+      setAttribute(name, value) {
+        this.attributes.set(name, String(value));
+      }
+
+      hasAttribute(name) {
+        return this.attributes.has(name);
+      }
+
+      appendChild(node) {
+        node.parentNode?.removeChild(node);
+        this.childNodes.push(node);
+        node.parentNode = this;
+        return node;
+      }
+
+      insertBefore(node, reference) {
+        if (node.tagName === "#fragment") {
+          for (const child of [...node.childNodes]) this.insertBefore(child, reference);
+          return node;
+        }
+        node.parentNode?.removeChild(node);
+        const index = reference ? this.childNodes.indexOf(reference) : this.childNodes.length;
+        this.childNodes.splice(index === -1 ? this.childNodes.length : index, 0, node);
+        node.parentNode = this;
+        return node;
+      }
+
+      removeChild(node) {
+        const index = this.childNodes.indexOf(node);
+        if (index !== -1) {
+          this.childNodes.splice(index, 1);
+          node.parentNode = undefined;
+        }
+        return node;
+      }
+
+      replaceChildren(...nodes) {
+        for (const child of [...this.childNodes]) this.removeChild(child);
+        for (const node of nodes) this.appendChild(node);
+      }
+
+      querySelector(selector) {
+        if (selector === "link[data-ferriki-code-css]")
+          return this.childNodes.find((child) => child.tagName === "LINK") ?? null;
+        if (selector === "style[data-ferriki-code-base]")
+          return this.childNodes.find((child) => child.tagName === "STYLE") ?? null;
+        return null;
+      }
+
+      querySelectorAll() {
+        return [];
+      }
+    }
+
+    class FakeHTMLElement {
+      constructor() {
+        this.attributes = new Map();
+        this.shadowRoot = undefined;
+        this.ownerDocument = globalThis.document;
+      }
+
+      attachShadow() {
+        this.shadowRoot = new FakeElement("#shadow-root");
+        return this.shadowRoot;
+      }
+
+      getAttribute(name) {
+        return this.attributes.get(name) ?? null;
+      }
+
+      setAttribute(name, value) {
+        this.attributes.set(name, String(value));
+      }
+
+      hasAttribute(name) {
+        return this.attributes.has(name);
+      }
+    }
+
+    globalThis.location = { href };
+    globalThis.HTMLElement = FakeHTMLElement;
+    globalThis.customElements = {
+      get: (name) => definitions.get(name),
+      define: (name, ctor) => definitions.set(name, ctor),
+    };
+    globalThis.document = {
+      baseURI: href,
+      createElement(tagName) {
+        const el = new FakeElement(tagName.toUpperCase());
+        if (tagName === "link") links.push(el);
+        if (tagName === "template") {
+          el.content = new FakeElement("#fragment");
+          let html = "";
+          Object.defineProperty(el, "innerHTML", {
+            get() {
+              return html;
+            },
+            set(value) {
+              html = value;
+              const pre = new FakeElement("PRE");
+              pre.textContent = value;
+              el.content.replaceChildren(pre);
+            },
+          });
+        }
+        return el;
+      },
+    };
+
+    return fn({ links });
+  }
+
+  try {
+    withHostLocation("file:///Applications/MyApp/index.html", ({ links }) => {
+      const generatedHref = new URL(
+        "ferriki-code.css",
+        "file:///Applications/MyApp/assets/chunk.js",
+      ).href;
+      const Constructor = defineCodeElement({
+        stylesheetHref: generatedHref,
+        blocks: { sample: "<pre>ok</pre>" },
+      });
+      const host = new Constructor();
+      host.setAttribute("code-ref", "sample");
+      host.connectedCallback();
+      assert.equal(links.length, 1);
+      assert.equal(links[0].getAttribute("href"), generatedHref);
+
+      assert.equal(
+        defineCodeElement({
+          stylesheetHref: "file://localhost/Applications/MyApp/assets/ferriki-code.css",
+        }),
+        Constructor,
+      );
+
+      for (const unsafeHref of [
+        "javascript:alert(1)",
+        "data:text/css,body{}",
+        "vbscript:msgbox(1)",
+        "blob:https://example.com/123",
+        "app://bundle/ferriki-code.css",
+        "file://remote.example/share/a.css",
+        "file:////remote/share/a.css",
+        "file:///",
+        "file:ferriki-code.css",
+      ]) {
+        assert.throws(() => defineCodeElement({ stylesheetHref: unsafeHref }), TypeError);
+      }
+    });
+
+    withHostLocation("app://bundle/index.html", ({ links }) => {
+      const generatedHref = new URL("../assets/ferriki-code.css", "app://bundle/chunks/entry.js")
+        .href;
+      const Constructor = defineCodeElement({
+        stylesheetHref: generatedHref,
+        blocks: { sample: "<pre>ok</pre>" },
+      });
+      const host = new Constructor();
+      host.setAttribute("code-ref", "sample");
+      host.connectedCallback();
+      assert.equal(links.length, 1);
+      assert.equal(links[0].getAttribute("href"), generatedHref);
+
+      for (const unsafeHref of [
+        "app://other/ferriki-code.css",
+        "file:///etc/passwd",
+        "javascript:alert(1)",
+        "data:text/css,body{}",
+        "vbscript:msgbox(1)",
+        "blob:app://bundle/123",
+      ]) {
+        assert.throws(() => defineCodeElement({ stylesheetHref: unsafeHref }), TypeError);
+      }
+    });
+
+    withHostLocation("https://docs.example.com/page", () => {
+      for (const disallowedOnHttps of [
+        "file:///Applications/MyApp/assets/ferriki-code.css",
+        "app://bundle/assets/ferriki-code.css",
+        "chrome-extension://abcdef/assets/ferriki-code.css",
+      ]) {
+        assert.throws(() => defineCodeElement({ stylesheetHref: disallowedOnHttps }), TypeError);
+      }
+    });
   } finally {
     for (const [name, descriptor] of globalDescriptors) {
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);

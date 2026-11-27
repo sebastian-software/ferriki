@@ -1,4 +1,5 @@
 import type { AssetOptions, ShikiTransformer } from "@ferriki/core";
+import type { CodeElementShadowsOptions } from "@ferriki/core/web-component/server";
 import type { Plugin } from "vite";
 
 export type FerrikiViteOptions = {
@@ -31,7 +32,9 @@ export type FerrikiViteApi = {
    */
   renderCodeElements(
     markup: string,
-    options?: { stylesheetHref?: string; environment?: string },
+    options?: Omit<CodeElementShadowsOptions, "blocks" | "themeAliases"> & {
+      environment?: string;
+    },
   ): string;
   /**
    * Shared class-palette CSS for transformed React macros, or empty in inline mode,

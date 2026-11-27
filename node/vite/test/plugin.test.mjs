@@ -1253,7 +1253,7 @@ const h = (type, props) => ({ type, props });
 const block = <Code source="plain" language="text" />;
 export const host = block.type(block.props);`,
     });
-    for (const base of ["./", ""]) {
+    for (const base of ["./", "", "assets/", "../assets/"]) {
       await expect(
         build({
           configFile: false,
@@ -1265,6 +1265,201 @@ export const host = block.type(block.props);`,
           build: { ssr: join(root, "src/main.tsx"), write: false },
         }),
       ).rejects.toThrow(/SSR requires an absolute Vite `base`/);
+    }
+    await expect(
+      build({
+        configFile: false,
+        root,
+        base: "//cdn.example.test/app/",
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: { ssr: join(root, "src/main.tsx"), write: false },
+      }),
+    ).rejects.toThrow(/absolute path or http\(s\) Vite `base` URL/);
+
+    // Packaged-app schemes like `app://bundle/` remain rejected for SSR builds (per ADR 0019),
+    // but are allowed for client builds where the web-component runtime validates same-origin.
+    await expect(
+      build({
+        configFile: false,
+        root,
+        base: "app://bundle/",
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: { ssr: join(root, "src/main.tsx"), write: false },
+      }),
+    ).rejects.toThrow(/absolute path or http\(s\) Vite `base` URL/);
+
+    const packagedClient = await build({
+      configFile: false,
+      root,
+      base: "app://bundle/",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      oxc: { jsx: { runtime: "classic", pragma: "h" } },
+      build: {
+        lib: { entry: join(root, "src/main.tsx"), formats: ["es"] },
+        rollupOptions: { external: ["@ferriki/core/web-component"] },
+        write: false,
+        minify: false,
+      },
+    });
+    const clientOutput = packagedClient.flatMap((item) => item.output);
+    const clientCssAsset = clientOutput.find(
+      (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+    );
+    expect(clientCssAsset).toBeDefined();
+    const clientCode = clientOutput
+      .filter((file) => file.type === "chunk")
+      .map((file) => file.code)
+      .join("\n");
+    expect(clientCode).toContain(`app://bundle/${clientCssAsset.fileName}`);
+
+    // Local `file://localhost/...` client bases normalize to `file:///...` (matching the web
+    // component runtime), while SSR builds continue rejecting `file:` bases.
+    await expect(
+      build({
+        configFile: false,
+        root,
+        base: "file://localhost/Applications/MyApp/",
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: { ssr: join(root, "src/main.tsx"), write: false },
+      }),
+    ).rejects.toThrow(/absolute path or http\(s\) Vite `base` URL/);
+
+    const fileClient = await build({
+      configFile: false,
+      root,
+      base: "file://localhost/Applications/MyApp/",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      oxc: { jsx: { runtime: "classic", pragma: "h" } },
+      build: {
+        lib: { entry: join(root, "src/main.tsx"), formats: ["es"] },
+        rollupOptions: { external: ["@ferriki/core/web-component"] },
+        write: false,
+        minify: false,
+      },
+    });
+    const fileClientOutput = fileClient.flatMap((item) => item.output);
+    const fileCssAsset = fileClientOutput.find(
+      (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+    );
+    expect(fileCssAsset).toBeDefined();
+    const fileClientCode = fileClientOutput
+      .filter((file) => file.type === "chunk")
+      .map((file) => file.code)
+      .join("\n");
+    expect(fileClientCode).toContain(`file:///Applications/MyApp/${fileCssAsset.fileName}`);
+
+    // Root `file:///` client bases preserve their `file:///` delimiter when joining assets.
+    const rootFileClient = await build({
+      configFile: false,
+      root,
+      base: "file:///",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      oxc: { jsx: { runtime: "classic", pragma: "h" } },
+      build: {
+        lib: { entry: join(root, "src/main.tsx"), formats: ["es"] },
+        rollupOptions: { external: ["@ferriki/core/web-component"] },
+        write: false,
+        minify: false,
+      },
+    });
+    const rootFileOutput = rootFileClient.flatMap((item) => item.output);
+    const rootFileCssAsset = rootFileOutput.find(
+      (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+    );
+    expect(rootFileCssAsset).toBeDefined();
+    const rootFileCode = rootFileOutput
+      .filter((file) => file.type === "chunk")
+      .map((file) => file.code)
+      .join("\n");
+    expect(rootFileCode).toContain(`file:///${rootFileCssAsset.fileName}`);
+
+    // Explicit UNC `file://server/share/` client bases stay allowed for same-host runtime
+    // validation in `defineCodeElement`, while SSR builds continue rejecting them.
+    await expect(
+      build({
+        configFile: false,
+        root,
+        base: "file://server/share/",
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: { ssr: join(root, "src/main.tsx"), write: false },
+      }),
+    ).rejects.toThrow(/absolute path or http\(s\) Vite `base` URL/);
+
+    const uncFileClient = await build({
+      configFile: false,
+      root,
+      base: "file://server/share/",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      oxc: { jsx: { runtime: "classic", pragma: "h" } },
+      build: {
+        lib: { entry: join(root, "src/main.tsx"), formats: ["es"] },
+        rollupOptions: { external: ["@ferriki/core/web-component"] },
+        write: false,
+        minify: false,
+      },
+    });
+    const uncFileOutput = uncFileClient.flatMap((item) => item.output);
+    const uncFileCssAsset = uncFileOutput.find(
+      (file) => file.type === "asset" && file.fileName.endsWith(".css"),
+    );
+    expect(uncFileCssAsset).toBeDefined();
+    const uncFileCode = uncFileOutput
+      .filter((file) => file.type === "chunk")
+      .map((file) => file.code)
+      .join("\n");
+    expect(uncFileCode).toContain(`file://server/share/${uncFileCssAsset.fileName}`);
+
+    // Disallowed packaged protocols like `about:` are rejected in both SSR and client builds
+    // (matching `web-component.mjs`).
+    await expect(
+      build({
+        configFile: false,
+        root,
+        base: "about://blank/",
+        logLevel: "silent",
+        plugins: [plugin({ styleMode: "classes" })],
+        oxc: { jsx: { runtime: "classic", pragma: "h" } },
+        build: {
+          lib: { entry: join(root, "src/main.tsx"), formats: ["es"] },
+          rollupOptions: { external: ["@ferriki/core/web-component"] },
+          write: false,
+          minify: false,
+        },
+      }),
+    ).rejects.toThrow(/about:/);
+
+    // Dev SSR validates `configuredBase` identically to production SSR before Vite normalizes it.
+    const devServer = await createServer({
+      configFile: false,
+      root,
+      base: "//cdn.example.test/app/",
+      logLevel: "silent",
+      plugins: [plugin({ styleMode: "classes" })],
+      oxc: { jsx: { runtime: "classic", pragma: "h" } },
+      optimizeDeps: { noDiscovery: true },
+      server: { middlewareMode: true, fs: { allow: [root] } },
+      appType: "custom",
+    });
+    try {
+      await expect(
+        devServer.transformRequest("virtual:ferriki-vite/code-element-stylesheet-url", {
+          ssr: true,
+        }),
+      ).rejects.toThrow(/absolute path or http\(s\) Vite `base` URL/);
+    } finally {
+      await devServer.close();
     }
   });
 
