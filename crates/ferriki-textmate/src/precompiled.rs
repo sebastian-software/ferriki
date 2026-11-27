@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::collections::BTreeSet;
+use std::io::Read;
 
 use crate::RawGrammar;
 use crate::grammar::{Grammar, GrammarConfiguration, ThemeProvider};
@@ -20,6 +21,18 @@ pub const PRECOMPILED_PATTERNS_VERSION: u32 = (3 << 24)
     | (ferroni::scanner::PRECOMPILED_FORMAT_VERSION << 12)
     | ferroni::scanner::PRECOMPILED_EAGER_FORMAT_VERSION;
 pub(crate) const MAX_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_ZSTD_WINDOW_LOG: u32 = 23;
+const MAX_ZSTD_WINDOW_BYTES: u64 = 1_u64 << MAX_ZSTD_WINDOW_LOG;
+/// Maximum decoded-to-compressed expansion ratio for Zstd archives.
+/// The highest observed ratio across the standard catalog is ~38x; 160x leaves
+/// more than 4x headroom while blocking small highly-compressible Zstd bombs
+/// even when they carry a valid container header.
+const MAX_ARCHIVE_EXPANSION_RATIO: u64 = 160;
+/// Baseline decoded allowance for tiny archives so small synthetic/test
+/// grammars are not penalized by Zstd frame overhead.
+const MAX_ARCHIVE_EXPANSION_FLOOR_BYTES: u64 = 1024 * 1024;
+const ARCHIVE_HEADER_BYTES: usize = 32;
+const STREAM_CHUNK_BYTES: usize = 16 * 1024;
 const MAGIC: &[u8; 8] = b"FKBC003\0";
 const LEGACY_MAGIC: &[u8; 8] = b"FKBC002\0";
 
@@ -53,6 +66,12 @@ pub fn decompress_precompiled_patterns(bytes: &[u8]) -> Result<Vec<u8>, Precompi
     Ok(decoded.into_owned())
 }
 
+fn max_allowed_decoded_size(compressed_len: usize) -> u64 {
+    (compressed_len as u64)
+        .saturating_mul(MAX_ARCHIVE_EXPANSION_RATIO)
+        .clamp(MAX_ARCHIVE_EXPANSION_FLOOR_BYTES, MAX_ARCHIVE_BYTES)
+}
+
 fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsError> {
     if decoded_archive(bytes) {
         if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
@@ -64,10 +83,12 @@ fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsErro
         .map_err(|_| PrecompiledPatternsError::new("invalid Zstd frame"))?
         .filter(|size| *size <= MAX_ARCHIVE_BYTES)
         .ok_or_else(|| PrecompiledPatternsError::new("missing or excessive archive size"))?;
-    // One-shot Zstd decoders can ignore WindowLogMax because they can use
-    // the output buffer as their window. Enforce the transport profile before
-    // allocating output (RFC 8878, frame header / Window_Descriptor).
-    let window = if bytes[4] & 0x20 != 0 {
+    // Enforce the 8 MiB transport window profile before allocating or decoding
+    // output (RFC 8878, frame header / Window_Descriptor).
+    let descriptor_byte = *bytes
+        .get(4)
+        .ok_or_else(|| PrecompiledPatternsError::new("invalid Zstd frame"))?;
+    let window = if descriptor_byte & 0x20 != 0 {
         size
     } else {
         let descriptor = *bytes
@@ -76,7 +97,7 @@ fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsErro
         let base = 1_u64 << (10 + (descriptor >> 3));
         base + (base >> 3) * u64::from(descriptor & 7)
     };
-    if window > 8 * 1024 * 1024 {
+    if window > MAX_ZSTD_WINDOW_BYTES {
         return Err(PrecompiledPatternsError::new(
             "Zstd archive window exceeds 8 MiB",
         ));
@@ -88,47 +109,137 @@ fn decode_archive(bytes: &[u8]) -> Result<Cow<'_, [u8]>, PrecompiledPatternsErro
             "trailing archive frames or bytes",
         ));
     }
-    let mut decoder = zstd::bulk::Decompressor::new().map_err(PrecompiledPatternsError::new)?;
+    if size < ARCHIVE_HEADER_BYTES as u64 {
+        return Err(PrecompiledPatternsError::new(
+            "unsupported Ferriki prepared archive",
+        ));
+    }
+    let max_allowed = max_allowed_decoded_size(bytes.len());
+    if size > max_allowed {
+        return Err(PrecompiledPatternsError::new(
+            "archive expansion ratio exceeds limit",
+        ));
+    }
+
+    let mut decoder = zstd::stream::read::Decoder::with_buffer(bytes)
+        .map_err(PrecompiledPatternsError::new)?
+        .single_frame();
     decoder
-        .set_parameter(zstd::zstd_safe::DParameter::WindowLogMax(23))
+        .window_log_max(MAX_ZSTD_WINDOW_LOG)
         .map_err(PrecompiledPatternsError::new)?;
-    let decoded = decoder
-        .decompress(bytes, size as usize)
-        .map_err(PrecompiledPatternsError::new)?;
+
+    // Decode only the 32-byte archive header onto the stack first so forged
+    // Frame_Content_Size frames with invalid magic, version, or section
+    // lengths are rejected before allocating any payload buffer.
+    let mut header = [0_u8; ARCHIVE_HEADER_BYTES];
+    let mut header_read = 0;
+    while header_read < header.len() {
+        match decoder.read(&mut header[header_read..]) {
+            Ok(0) => {
+                return Err(PrecompiledPatternsError::new(
+                    "invalid decoded archive size",
+                ));
+            }
+            Ok(n) => header_read += n,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(PrecompiledPatternsError::new(error)),
+        }
+    }
+    validate_archive_header(&header, size)?;
+
+    let max_len = usize::try_from(size)
+        .map_err(|_| PrecompiledPatternsError::new("excessive archive size"))?;
+    let mut decoded = Vec::new();
+    decoded
+        .try_reserve_exact(header.len())
+        .map_err(|_| PrecompiledPatternsError::new("archive allocation failed"))?;
+    decoded.extend_from_slice(&header);
+
+    // Stream incrementally with bounded growth instead of trusting
+    // Frame_Content_Size for an upfront bulk allocation.
+    let mut chunk = [0_u8; STREAM_CHUNK_BYTES];
+    loop {
+        let read = match decoder.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(PrecompiledPatternsError::new(error)),
+        };
+        let target_len = decoded
+            .len()
+            .checked_add(read)
+            .filter(|&len| {
+                len <= max_len && len as u64 <= max_allowed && len as u64 <= MAX_ARCHIVE_BYTES
+            })
+            .ok_or_else(|| PrecompiledPatternsError::new("invalid decoded archive size"))?;
+        if target_len > decoded.capacity() {
+            let doubled = decoded
+                .capacity()
+                .saturating_mul(2)
+                .max(target_len)
+                .max(STREAM_CHUNK_BYTES);
+            let next_cap = doubled.min(max_len);
+            decoded
+                .try_reserve_exact(next_cap - decoded.len())
+                .map_err(|_| PrecompiledPatternsError::new("archive allocation failed"))?;
+        }
+        decoded.extend_from_slice(&chunk[..read]);
+    }
+
     if decoded.len() as u64 != size {
         return Err(PrecompiledPatternsError::new(
             "invalid decoded archive size",
         ));
     }
+    if !decoder.finish().is_empty() {
+        return Err(PrecompiledPatternsError::new(
+            "trailing archive frames or bytes",
+        ));
+    }
     Ok(Cow::Owned(decoded))
 }
 
-pub(crate) fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
-    if decoded.len() < 32 || !decoded_archive(decoded) {
+fn validate_archive_header(
+    header: &[u8],
+    expected_len: u64,
+) -> Result<(usize, usize), PrecompiledPatternsError> {
+    if header.len() < ARCHIVE_HEADER_BYTES || !decoded_archive(header) {
         return Err(PrecompiledPatternsError::new(
             "unsupported Ferriki prepared archive",
         ));
     }
-    let version = u32::from_le_bytes(decoded[8..12].try_into().unwrap());
-    let scope_len = u32::from_le_bytes(decoded[12..16].try_into().unwrap()) as usize;
-    let program_len = u64::from_le_bytes(decoded[16..24].try_into().unwrap());
-    let group_len = u64::from_le_bytes(decoded[24..32].try_into().unwrap());
-    let total = 32_u64
+    let version = u32::from_le_bytes(header[8..12].try_into().unwrap());
+    let scope_len = u32::from_le_bytes(header[12..16].try_into().unwrap()) as usize;
+    let program_len = u64::from_le_bytes(header[16..24].try_into().unwrap());
+    let group_len = u64::from_le_bytes(header[24..32].try_into().unwrap());
+    let total = (ARCHIVE_HEADER_BYTES as u64)
         .checked_add(scope_len as u64)
         .and_then(|n| n.checked_add(program_len))
         .and_then(|n| n.checked_add(group_len));
-    let expected = if decoded.starts_with(LEGACY_MAGIC) {
+    let expected = if header.starts_with(LEGACY_MAGIC) {
         PRECOMPILED_PATTERNS_VERSION - (1 << 24)
     } else {
         PRECOMPILED_PATTERNS_VERSION
     };
-    if version != expected || total != Some(decoded.len() as u64) {
+    if version != expected || total != Some(expected_len) {
         return Err(PrecompiledPatternsError::new(
             "unsupported archive version or invalid lengths",
         ));
     }
-    let scope_end = 32 + scope_len;
-    Ok((scope_end, scope_end + program_len as usize))
+    let scope_end = ARCHIVE_HEADER_BYTES.checked_add(scope_len).ok_or_else(|| {
+        PrecompiledPatternsError::new("unsupported archive version or invalid lengths")
+    })?;
+    let program_len = usize::try_from(program_len).map_err(|_| {
+        PrecompiledPatternsError::new("unsupported archive version or invalid lengths")
+    })?;
+    let program_end = scope_end.checked_add(program_len).ok_or_else(|| {
+        PrecompiledPatternsError::new("unsupported archive version or invalid lengths")
+    })?;
+    Ok((scope_end, program_end))
+}
+
+pub(crate) fn archive_layout(decoded: &[u8]) -> Result<(usize, usize), PrecompiledPatternsError> {
+    validate_archive_header(decoded, decoded.len() as u64)
 }
 
 pub(crate) fn open_archive(
@@ -303,7 +414,8 @@ fn prepare_package_with_coverage(
             ),
             GrammarConfiguration::default().with_regex_prefilter(prefilter),
             cache.clone(),
-        );
+        )
+        .map_err(PrecompiledPatternsError::new)?;
         if samples.is_empty() {
             if owned_only {
                 grammar.prepare_owned_static_scanners()
@@ -350,39 +462,72 @@ fn prepare_package_with_coverage(
 }
 
 pub(crate) fn compress_archive(bytes: &[u8]) -> Result<Vec<u8>, PrecompiledPatternsError> {
+    if bytes.len() as u64 > MAX_ARCHIVE_BYTES {
+        return Err(PrecompiledPatternsError::new(
+            "precompiled archive exceeds its size limit",
+        ));
+    }
     let mut encoder = zstd::bulk::Compressor::new(19).map_err(PrecompiledPatternsError::new)?;
     encoder
-        .set_parameter(zstd::zstd_safe::CParameter::WindowLog(23))
+        .set_parameter(zstd::zstd_safe::CParameter::WindowLog(MAX_ZSTD_WINDOW_LOG))
         .map_err(PrecompiledPatternsError::new)?;
     encoder
         .set_parameter(zstd::zstd_safe::CParameter::ChecksumFlag(true))
         .map_err(PrecompiledPatternsError::new)?;
-    encoder
+    let compressed = encoder
         .compress(bytes)
-        .map_err(PrecompiledPatternsError::new)
+        .map_err(PrecompiledPatternsError::new)?;
+    if bytes.len() as u64 > max_allowed_decoded_size(compressed.len()) {
+        return Err(PrecompiledPatternsError::new(
+            "archive expansion ratio exceeds limit",
+        ));
+    }
+    Ok(compressed)
 }
 
 fn collect_rule(
     rule: &RawRule,
     patterns: &mut BTreeSet<String>,
 ) -> Result<(), PrecompiledPatternsError> {
-    for pattern in rule.match_pattern.iter().chain(rule.begin.iter()) {
-        collect_pattern(pattern, false, patterns)?;
-    }
-    for pattern in rule.end.iter().chain(rule.while_pattern.iter()) {
-        collect_pattern(pattern, true, patterns)?;
-    }
-    for child in rule
-        .patterns
-        .iter()
-        .flatten()
-        .chain(rule.repository.iter().flat_map(|rules| rules.values()))
-        .chain(rule.captures.iter().flat_map(|rules| rules.values()))
-        .chain(rule.begin_captures.iter().flat_map(|rules| rules.values()))
-        .chain(rule.end_captures.iter().flat_map(|rules| rules.values()))
-        .chain(rule.while_captures.iter().flat_map(|rules| rules.values()))
-    {
-        collect_rule(child, patterns)?;
+    let mut stack = vec![rule];
+    while let Some(rule) = stack.pop() {
+        for pattern in rule.match_pattern.iter().chain(rule.begin.iter()) {
+            collect_pattern(pattern, false, patterns)?;
+        }
+        for pattern in rule.end.iter().chain(rule.while_pattern.iter()) {
+            collect_pattern(pattern, true, patterns)?;
+        }
+        stack.extend(
+            rule.patterns
+                .iter()
+                .flatten()
+                .map(Arc::as_ref)
+                .chain(
+                    rule.repository
+                        .iter()
+                        .flat_map(|rules| rules.values().map(Arc::as_ref)),
+                )
+                .chain(
+                    rule.captures
+                        .iter()
+                        .flat_map(|rules| rules.values().map(Arc::as_ref)),
+                )
+                .chain(
+                    rule.begin_captures
+                        .iter()
+                        .flat_map(|rules| rules.values().map(Arc::as_ref)),
+                )
+                .chain(
+                    rule.end_captures
+                        .iter()
+                        .flat_map(|rules| rules.values().map(Arc::as_ref)),
+                )
+                .chain(
+                    rule.while_captures
+                        .iter()
+                        .flat_map(|rules| rules.values().map(Arc::as_ref)),
+                ),
+        );
     }
     Ok(())
 }
@@ -977,15 +1122,220 @@ mod tests {
     fn archive_preparation_rejects_oversized_unreferenced_static_pattern() {
         let mut raw = grammar();
         let oversized = "a".repeat(MAX_SCANNER_PATTERN_BYTES + 1);
-        raw.repository.insert(
-            "oversized".to_owned(),
-            Arc::new(RawRule {
-                match_pattern: Some(oversized),
-                ..RawRule::default()
-            }),
-        );
+        let mut oversized_rule = RawRule::default();
+        oversized_rule.match_pattern = Some(oversized);
+        raw.repository
+            .insert("oversized".to_owned(), Arc::new(oversized_rule));
         let err = precompile_grammar_patterns(&raw)
             .expect_err("oversized unreferenced repository pattern must fail archive preparation");
         assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn collect_rule_handles_deeply_nested_raw_rule_tree_iteratively() {
+        let mut current = RawRule::default();
+        current.match_pattern = Some("deep_leaf".to_owned());
+        let mut current = Arc::new(current);
+
+        for depth in 0..20_000 {
+            let mut parent = RawRule::default();
+            match depth % 3 {
+                0 => parent.patterns = Some(vec![current]),
+                1 => {
+                    let mut captures = std::collections::BTreeMap::new();
+                    captures.insert("0".to_owned(), current);
+                    parent.captures = Some(captures);
+                }
+                _ => {
+                    let mut repo = std::collections::BTreeMap::new();
+                    repo.insert("nested".to_owned(), current);
+                    parent.repository = Some(repo);
+                }
+            }
+            current = Arc::new(parent);
+        }
+
+        let mut patterns = BTreeSet::new();
+        collect_rule(&current, &mut patterns).expect("iterative rule collection should succeed");
+        assert!(patterns.contains("deep_leaf"));
+        drop(current);
+    }
+
+    #[test]
+    fn rejects_forged_large_frame_content_size_without_bulk_allocation() {
+        // RFC 8878 Zstd frame header:
+        // - Magic: 0xFD2FB528 (LE)
+        // - FHD = 0x80: 4-byte Frame_Content_Size, Single_Segment_flag = 0
+        // - Window_Descriptor = 0x68: 1 << (10 + 13) = 8 MiB (passes window check)
+        let make_frame = |declared_size: u64, block: &[u8]| {
+            let fcs = u32::try_from(declared_size).unwrap().to_le_bytes();
+            let mut frame = vec![0x28, 0xb5, 0x2f, 0xfd, 0x80, 0x68];
+            frame.extend_from_slice(&fcs);
+            frame.extend_from_slice(block);
+            frame
+        };
+
+        // 1) Crafted 17-byte frame declaring Frame_Content_Size = 512 MiB is
+        // rejected immediately by the expansion-ratio guard before decoding.
+        let mut short_raw = vec![(4_u32 << 3 | 1) as u8, 0, 0];
+        short_raw.extend_from_slice(b"boom");
+        let frame_512m = make_frame(MAX_ARCHIVE_BYTES, &short_raw);
+        assert!(frame_512m.len() < 100);
+        assert_eq!(
+            zstd::zstd_safe::get_frame_content_size(&frame_512m).unwrap(),
+            Some(MAX_ARCHIVE_BYTES)
+        );
+        let err = decompress_precompiled_patterns(&frame_512m).unwrap_err();
+        assert!(
+            err.to_string().contains("expansion ratio"),
+            "expected expansion ratio rejection for 512 MiB forged frame: {err}"
+        );
+
+        // 2) Authentic, valid-checksum Zstd bomb carrying a valid 32-byte FKBC003
+        // header whose section lengths sum to 100 MiB of compressed zeros.
+        // Compresses to a few KiB and must be rejected before expanding.
+        let bomb_size: u64 = 100 * 1024 * 1024;
+        let mut valid_bomb_header = Vec::with_capacity(32);
+        valid_bomb_header.extend_from_slice(MAGIC);
+        valid_bomb_header.extend_from_slice(&PRECOMPILED_PATTERNS_VERSION.to_le_bytes());
+        valid_bomb_header.extend_from_slice(&0_u32.to_le_bytes());
+        valid_bomb_header.extend_from_slice(&(bomb_size - 32).to_le_bytes());
+        valid_bomb_header.extend_from_slice(&0_u64.to_le_bytes());
+        // Compress using streaming Zstd with WindowLog=23 (same transport profile as
+        // compress_archive) without needing a 100 MiB uncompressed allocation in the test.
+        let mut bomb_compressed = Vec::new();
+        {
+            let mut encoder = zstd::stream::write::Encoder::new(&mut bomb_compressed, 1).unwrap();
+            encoder.set_pledged_src_size(Some(bomb_size)).unwrap();
+            encoder.window_log(MAX_ZSTD_WINDOW_LOG).unwrap();
+            encoder.include_checksum(true).unwrap();
+            std::io::Write::write_all(&mut encoder, &valid_bomb_header).unwrap();
+            let zeros = [0_u8; 64 * 1024];
+            let mut remaining = (bomb_size - 32) as usize;
+            while remaining > 0 {
+                let chunk = remaining.min(zeros.len());
+                std::io::Write::write_all(&mut encoder, &zeros[..chunk]).unwrap();
+                remaining -= chunk;
+            }
+            encoder.finish().unwrap();
+        }
+        assert!(
+            bomb_compressed.len() < 16 * 1024,
+            "expected highly compressible Zstd bomb, got {} bytes",
+            bomb_compressed.len()
+        );
+        let err = decompress_precompiled_patterns(&bomb_compressed).unwrap_err();
+        assert!(
+            err.to_string().contains("expansion ratio"),
+            "expected expansion ratio rejection for valid-header 100 MiB bomb: {err}"
+        );
+
+        // 3) Within the 1 MiB expansion floor (512 KiB declared), an 18-byte RLE frame
+        // with non-FKBC bytes is rejected at the 32-byte header check before allocating
+        // any payload Vec.
+        let floor_size: u64 = 512 * 1024;
+        let rle_non_final = (65_536_u32 << 3) | (1 << 1);
+        let rle_final = (4_u32 << 3) | (1 << 1) | 1;
+        let rle_blocks = [
+            (rle_non_final & 0xff) as u8,
+            ((rle_non_final >> 8) & 0xff) as u8,
+            ((rle_non_final >> 16) & 0xff) as u8,
+            0x00,
+            (rle_final & 0xff) as u8,
+            ((rle_final >> 8) & 0xff) as u8,
+            ((rle_final >> 16) & 0xff) as u8,
+            0x00,
+        ];
+        let frame_rle = make_frame(floor_size, &rle_blocks);
+        assert!(frame_rle.len() < 100);
+        let err = decompress_precompiled_patterns(&frame_rle).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("unsupported Ferriki prepared archive"),
+            "unexpected error for forged RLE frame: {err}"
+        );
+
+        // 4) Within the 1 MiB expansion floor, a 45-byte frame with a valid 32-byte
+        // FKBC003 header ending prematurely is rejected without allocating 512 KiB.
+        let mut valid_header = Vec::with_capacity(32);
+        valid_header.extend_from_slice(MAGIC);
+        valid_header.extend_from_slice(&PRECOMPILED_PATTERNS_VERSION.to_le_bytes());
+        valid_header.extend_from_slice(&0_u32.to_le_bytes());
+        valid_header.extend_from_slice(&(floor_size - 32).to_le_bytes());
+        valid_header.extend_from_slice(&0_u64.to_le_bytes());
+        let raw_hdr_block_len = (32_u32 << 3) | 1;
+        let mut header_only_block = vec![
+            (raw_hdr_block_len & 0xff) as u8,
+            ((raw_hdr_block_len >> 8) & 0xff) as u8,
+            ((raw_hdr_block_len >> 16) & 0xff) as u8,
+        ];
+        header_only_block.extend_from_slice(&valid_header);
+        let frame_header_only = make_frame(floor_size, &header_only_block);
+        assert!(frame_header_only.len() < 100);
+        let err = decompress_precompiled_patterns(&frame_header_only).unwrap_err();
+        assert!(
+            err.to_string().contains("invalid decoded archive size")
+                || err.to_string().contains("size")
+                || err.to_string().contains("corrupt")
+                || err.to_string().contains("Restored data doesn't match"),
+            "unexpected error for forged header-only frame: {err}"
+        );
+
+        // 5) Frame without Frame_Content_Size is still rejected.
+        let frame_no_fcs = vec![
+            0x28, 0xb5, 0x2f, 0xfd, 0x00, 0x68, 0x21, 0x00, 0x00, b'a', b'b', b'c', b'd',
+        ];
+        let err = decompress_precompiled_patterns(&frame_no_fcs).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("missing or excessive archive size")
+        );
+    }
+
+    #[test]
+    fn streams_multi_chunk_valid_archive_roundtrip() {
+        let mut raw = grammar();
+        for i in 0..80 {
+            let mut rule = RawRule::default();
+            rule.match_pattern = Some(format!("token_pattern_{i}_[a-z]+"));
+            rule.name = Some(format!("keyword.test.{i}"));
+            raw.patterns.push(Arc::new(rule));
+        }
+        let compressed = precompile_grammar_patterns(&raw).unwrap();
+        let decoded = decompress_precompiled_patterns(&compressed).unwrap();
+        assert!(
+            decoded.len() > STREAM_CHUNK_BYTES * 2,
+            "expected multi-chunk archive > {} bytes, got {}",
+            STREAM_CHUNK_BYTES * 2,
+            decoded.len()
+        );
+        let expected = zstd::bulk::decompress(&compressed, MAX_ARCHIVE_BYTES as usize).unwrap();
+        assert_eq!(decoded, expected);
+    }
+
+    #[test]
+    fn compress_archive_enforces_same_expansion_ratio_limit_as_reader() {
+        // A 2 MiB zero payload exceeds the 1 MiB expansion floor and compresses
+        // far beyond the 160x ratio limit, so the writer must reject it rather
+        // than emitting an archive the reader refuses to decode.
+        let payload = vec![0_u8; 2 * 1024 * 1024];
+        let err = compress_archive(&payload).unwrap_err();
+        assert!(
+            err.to_string().contains("expansion ratio"),
+            "expected expansion ratio error from writer, got: {err}"
+        );
+    }
+
+    #[test]
+    fn precompile_grammar_patterns_rejects_overly_deep_root_injection_selector() {
+        let mut raw = grammar();
+        raw.injection_selector = Some(format!(
+            "{}source.precompiled{}",
+            "(".repeat(200),
+            ")".repeat(200)
+        ));
+        let err = precompile_grammar_patterns(&raw)
+            .expect_err("over-depth root injectionSelector must fail precompilation");
+        assert!(err.to_string().contains("depth limit"));
     }
 }

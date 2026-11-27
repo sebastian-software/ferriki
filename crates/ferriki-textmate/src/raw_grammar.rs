@@ -57,6 +57,27 @@ pub struct RawGrammar {
     pub(crate) source_digest: SourceDigest,
 }
 
+impl RawGrammar {
+    /// Enforces the 128-level scope-selector nesting depth limit on every
+    /// selector carried by this grammar (`injectionSelector` and all
+    /// `injections` keys).
+    ///
+    /// Matches upstream vscode-textmate's permissive selector parser rather
+    /// than performing strict selector syntax validation.
+    pub fn validate_scope_selector_depths(&self) -> Result<(), crate::ThemeError> {
+        let invalid_selector = |error: crate::matcher::MatcherError| {
+            crate::ThemeError::InvalidScopeSelector(error.to_string())
+        };
+        if let Some(selector) = self.injection_selector.as_deref() {
+            crate::matcher::create_matchers(selector).map_err(invalid_selector)?;
+        }
+        for selector in self.injections.keys() {
+            crate::matcher::create_matchers(selector).map_err(invalid_selector)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawRule {
@@ -116,6 +137,62 @@ pub(crate) struct RawRule {
         skip_serializing_if = "Option::is_none"
     )]
     pub location: Option<Location>,
+}
+
+impl Drop for RawRule {
+    fn drop(&mut self) {
+        enum ChildIter {
+            Vec(std::vec::IntoIter<Arc<RawRule>>),
+            Map(std::collections::btree_map::IntoValues<String, Arc<RawRule>>),
+        }
+
+        fn push_children(rule: &mut RawRule, stack: &mut Vec<ChildIter>) {
+            if let Some(patterns) = rule.patterns.take()
+                && !patterns.is_empty()
+            {
+                stack.push(ChildIter::Vec(patterns.into_iter()));
+            }
+            for map in [
+                rule.repository.take(),
+                rule.captures.take(),
+                rule.begin_captures.take(),
+                rule.end_captures.take(),
+                rule.while_captures.take(),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                if !map.is_empty() {
+                    stack.push(ChildIter::Map(map.into_values()));
+                }
+            }
+        }
+
+        if self.patterns.is_none()
+            && self.repository.is_none()
+            && self.captures.is_none()
+            && self.begin_captures.is_none()
+            && self.end_captures.is_none()
+            && self.while_captures.is_none()
+        {
+            return;
+        }
+        let mut stack = Vec::new();
+        push_children(self, &mut stack);
+        while let Some(top) = stack.last_mut() {
+            let next = match top {
+                ChildIter::Vec(iter) => iter.next(),
+                ChildIter::Map(iter) => iter.next(),
+            };
+            let Some(child) = next else {
+                stack.pop();
+                continue;
+            };
+            if let Ok(mut inner) = Arc::try_unwrap(child) {
+                push_children(&mut inner, &mut stack);
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -232,15 +309,16 @@ fn deserialize_repository_entry(
 ) -> Result<(String, Arc<RawRule>), serde_json::Error> {
     let rule = match value {
         serde_json::Value::Object(_) => serde_json::from_value(value)?,
-        serde_json::Value::Array(values) => RawRule {
-            patterns: Some(
+        serde_json::Value::Array(values) => {
+            let mut rule = RawRule::default();
+            rule.patterns = Some(
                 values
                     .into_iter()
                     .map(serde_json::from_value)
                     .collect::<Result<Vec<Arc<RawRule>>, _>>()?,
-            ),
-            ..RawRule::default()
-        },
+            );
+            rule
+        }
         value => {
             return Err(serde_json::Error::io(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,

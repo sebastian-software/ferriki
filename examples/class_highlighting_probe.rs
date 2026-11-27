@@ -51,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &store,
             Theme::create_from_raw_theme(None, None)?,
             GrammarConfiguration::default(),
-        );
+        )?;
         let mut state = None;
         let mut lines = Vec::new();
         for line in case.code.split('\n') {

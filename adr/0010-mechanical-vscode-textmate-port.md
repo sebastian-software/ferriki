@@ -92,8 +92,15 @@ named `ferriki-textmate`.
   scanner include expansion tracks active paths to break cycles and rejects
   graphs exceeding 65,536 rule visits or 16 MiB of expanded pattern bytes per
   scanner before cloning regex sources, grammar tokenization rejects
-  state stacks deeper than 4,096 frames, and capture retokenization rejects
-  recursion deeper than 64 levels. Exceeding any bound returns a recoverable
+  state stacks deeper than 4,096 frames, capture retokenization rejects
+  recursion deeper than 64 levels, and `tokenizeTimeLimit` propagates its
+  remaining deadline through `while`-condition checks, injection scanning, and
+  capture retokenization. Property-list parsing and scope-selector parsing cap
+  nesting depth at 128 levels (surfacing selector depth violations through
+  `ThemeError::InvalidScopeSelector`), while selector matching/dropping,
+  theme-trie insertion/lookup/dropping, and raw-rule pattern collection/dropping
+  execute iteratively so deeply nested inputs cannot overflow the call stack.
+  Exceeding any tokenization safety bound returns a recoverable
   `RegexError` rather than emitting truncated continuation states or silently
   skipping scopes.
 - Port code that has no caller in Ferriki stays for upstream parity and is
@@ -157,6 +164,7 @@ this decision.
 
 ## History
 
+- 2026-11-26: Propagates `tokenizeTimeLimit` deadlines through `while`-condition checks, injection scanning, and capture retokenization; bounds plist and scope-selector nesting depth at 128 and makes selector evaluation/drop, theme-trie traversal/drop, and raw-rule collection/drop iterative (#385).
 - 2026-11-26: Adds `SyncRegistry::set_compiled_theme` for O(1) precompiled `Arc<Theme>` switching and `Grammar::tokenize_line_with_themes` for single-pass multi-theme binary encoding without altering grammar traversal (#389).
 - 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit / 16 MiB per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).
 

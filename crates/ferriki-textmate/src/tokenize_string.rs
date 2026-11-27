@@ -9,7 +9,7 @@ use crate::RegexError;
 
 use crate::attributed_scope_stack::{AttributedScopeStack, ScopeAttributesProvider};
 use crate::line_output::{LineFonts, LineTokens};
-use crate::matcher::{Matcher, MatcherPriority, create_matchers};
+use crate::matcher::{Matcher, MatcherError, MatcherPriority, create_matchers};
 use crate::regexp::{CaptureIndex, FindNextMatchResult, OnigString, ScannerFindOptions};
 use crate::rule::{CaptureRule, RuleRegistry, RuleScannerId};
 use crate::state_stack::StateStack;
@@ -23,9 +23,11 @@ pub(crate) struct Injection {
 }
 
 impl Injection {
-    #[must_use]
-    pub(crate) fn from_selector(selector: &str, rule_id: crate::RuleId) -> Vec<Self> {
-        create_matchers(selector)
+    pub(crate) fn from_selector(
+        selector: &str,
+        rule_id: crate::RuleId,
+    ) -> Result<Vec<Self>, MatcherError> {
+        Ok(create_matchers(selector)?
             .into_iter()
             .map(|matcher| Self {
                 debug_selector: selector.to_owned(),
@@ -33,7 +35,7 @@ impl Injection {
                 priority: matcher.priority,
                 rule_id,
             })
-            .collect()
+            .collect())
     }
 }
 
@@ -68,6 +70,9 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
     check_while_conditions: bool,
     time_limit_millis: u64,
 ) -> Result<TokenizeStringResult, RegexError> {
+    let deadline = (time_limit_millis != 0)
+        .then(|| Instant::now().checked_add(Duration::from_millis(time_limit_millis)))
+        .flatten();
     tokenize_string_inner(
         grammar,
         line_text,
@@ -77,7 +82,7 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
         line_tokens,
         line_fonts,
         check_while_conditions,
-        time_limit_millis,
+        deadline,
         0,
     )
 }
@@ -92,12 +97,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
     line_tokens: &mut LineTokens,
     line_fonts: &mut LineFonts,
     check_while_conditions: bool,
-    time_limit_millis: u64,
+    deadline: Option<Instant>,
     capture_depth: usize,
 ) -> Result<TokenizeStringResult, RegexError> {
     let line_length = line_text.utf16_len();
     let mut anchor_position = -1;
-    let start_time = Instant::now();
 
     if check_while_conditions {
         let result = check_while_conditions_impl(
@@ -109,13 +113,14 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
             line_tokens,
             line_fonts,
             capture_depth,
+            deadline,
         )?;
         stack = result.stack;
         line_pos = result.line_pos;
         is_first_line = result.is_first_line;
         anchor_position = result.anchor_position;
 
-        if time_limit_exceeded(start_time, time_limit_millis) {
+        if result.stopped_early || deadline_exceeded(deadline) {
             return Ok(TokenizeStringResult {
                 stack,
                 stopped_early: true,
@@ -124,7 +129,7 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
     }
 
     loop {
-        if time_limit_exceeded(start_time, time_limit_millis) {
+        if deadline_exceeded(deadline) {
             return Ok(TokenizeStringResult {
                 stack,
                 stopped_early: true,
@@ -138,11 +143,12 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
             line_pos,
             &stack,
             anchor_position,
+            deadline,
         )?;
 
         // Ferroni's synchronous Scanner API cannot accept a per-search
         // deadline. Detect an overrun as soon as the current search returns.
-        if time_limit_exceeded(start_time, time_limit_millis) {
+        if deadline_exceeded(deadline) {
             return Ok(TokenizeStringResult {
                 stack,
                 stopped_early: true,
@@ -178,7 +184,7 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     .clone()
                     .expect("grammar state must have name scopes");
                 stack = stack.with_content_name_scopes_list(name_scopes);
-                handle_captures(
+                let capture_stopped_early = handle_captures(
                     grammar,
                     line_text,
                     is_first_line,
@@ -188,8 +194,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     &popped_rule.end_captures,
                     &capture_indices,
                     capture_depth,
+                    deadline,
                 )?;
-                produce(&stack, full_match.end, line_tokens, line_fonts);
+                if !capture_stopped_early {
+                    produce(&stack, full_match.end, line_tokens, line_fonts);
+                }
 
                 let popped = Arc::clone(&stack);
                 stack = stack
@@ -200,10 +209,18 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
 
                 if !has_advanced && popped.enter_pos() == line_pos as isize {
                     stack = popped;
-                    produce(&stack, line_length, line_tokens, line_fonts);
+                    if !capture_stopped_early {
+                        produce(&stack, line_length, line_tokens, line_fonts);
+                    }
                     return Ok(TokenizeStringResult {
                         stack,
-                        stopped_early: false,
+                        stopped_early: capture_stopped_early,
+                    });
+                }
+                if capture_stopped_early {
+                    return Ok(TokenizeStringResult {
+                        stack,
+                        stopped_early: true,
                     });
                 }
             }
@@ -239,7 +256,7 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                 );
 
                 if let Some(pushed_rule) = matched_rule.as_begin_end() {
-                    handle_captures(
+                    let capture_stopped_early = handle_captures(
                         grammar,
                         line_text,
                         is_first_line,
@@ -249,8 +266,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         &pushed_rule.begin_captures,
                         &capture_indices,
                         capture_depth,
+                        deadline,
                     )?;
-                    produce(&stack, full_match.end, line_tokens, line_fonts);
+                    if !capture_stopped_early {
+                        produce(&stack, full_match.end, line_tokens, line_fonts);
+                    }
                     anchor_position = full_match.end as isize;
                     let content_name =
                         matched_rule.get_content_name(line_text.content(), &capture_indices);
@@ -269,14 +289,22 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     }
                     if !has_advanced && before_push.has_same_rule_as(&stack) {
                         stack = stack.pop().expect("newly pushed state must have a parent");
-                        produce(&stack, line_length, line_tokens, line_fonts);
+                        if !capture_stopped_early {
+                            produce(&stack, line_length, line_tokens, line_fonts);
+                        }
                         return Ok(TokenizeStringResult {
                             stack,
-                            stopped_early: false,
+                            stopped_early: capture_stopped_early,
+                        });
+                    }
+                    if capture_stopped_early {
+                        return Ok(TokenizeStringResult {
+                            stack,
+                            stopped_early: true,
                         });
                     }
                 } else if let Some(pushed_rule) = matched_rule.as_begin_while() {
-                    handle_captures(
+                    let capture_stopped_early = handle_captures(
                         grammar,
                         line_text,
                         is_first_line,
@@ -286,8 +314,11 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         &pushed_rule.begin_captures,
                         &capture_indices,
                         capture_depth,
+                        deadline,
                     )?;
-                    produce(&stack, full_match.end, line_tokens, line_fonts);
+                    if !capture_stopped_early {
+                        produce(&stack, full_match.end, line_tokens, line_fonts);
+                    }
                     anchor_position = full_match.end as isize;
                     let content_name =
                         matched_rule.get_content_name(line_text.content(), &capture_indices);
@@ -306,14 +337,22 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                     }
                     if !has_advanced && before_push.has_same_rule_as(&stack) {
                         stack = stack.pop().expect("newly pushed state must have a parent");
-                        produce(&stack, line_length, line_tokens, line_fonts);
+                        if !capture_stopped_early {
+                            produce(&stack, line_length, line_tokens, line_fonts);
+                        }
                         return Ok(TokenizeStringResult {
                             stack,
-                            stopped_early: false,
+                            stopped_early: capture_stopped_early,
+                        });
+                    }
+                    if capture_stopped_early {
+                        return Ok(TokenizeStringResult {
+                            stack,
+                            stopped_early: true,
                         });
                     }
                 } else if let Some(matching_rule) = matched_rule.as_match() {
-                    handle_captures(
+                    let capture_stopped_early = handle_captures(
                         grammar,
                         line_text,
                         is_first_line,
@@ -323,15 +362,26 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
                         &matching_rule.captures,
                         &capture_indices,
                         capture_depth,
+                        deadline,
                     )?;
-                    produce(&stack, full_match.end, line_tokens, line_fonts);
+                    if !capture_stopped_early {
+                        produce(&stack, full_match.end, line_tokens, line_fonts);
+                    }
                     stack = stack.pop().expect("MatchRule state must have a parent");
                     if !has_advanced {
                         stack = stack.safe_pop();
-                        produce(&stack, line_length, line_tokens, line_fonts);
+                        if !capture_stopped_early {
+                            produce(&stack, line_length, line_tokens, line_fonts);
+                        }
                         return Ok(TokenizeStringResult {
                             stack,
-                            stopped_early: false,
+                            stopped_early: capture_stopped_early,
+                        });
+                    }
+                    if capture_stopped_early {
+                        return Ok(TokenizeStringResult {
+                            stack,
+                            stopped_early: true,
                         });
                     }
                 } else {
@@ -350,8 +400,40 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
     }
 }
 
-fn time_limit_exceeded(start_time: Instant, time_limit_millis: u64) -> bool {
-    time_limit_millis != 0 && start_time.elapsed() > Duration::from_millis(time_limit_millis)
+#[cfg(test)]
+thread_local! {
+    /// Optional test-only scanner-call threshold that marks any active (`Some`)
+    /// deadline as expired once `SCANNER_CALL_COUNT` reaches the threshold.
+    static TEST_EXPIRE_AFTER_SCANNER_CALLS: std::cell::Cell<Option<usize>> =
+        const { std::cell::Cell::new(None) };
+    /// Optional test-only countdown of `deadline_exceeded` polls before an
+    /// active (`Some`) deadline reports expiration.
+    static TEST_EXPIRE_AFTER_DEADLINE_CHECKS: std::cell::Cell<Option<usize>> =
+        const { std::cell::Cell::new(None) };
+}
+
+fn deadline_exceeded(deadline: Option<Instant>) -> bool {
+    let Some(limit) = deadline else {
+        return false;
+    };
+    #[cfg(test)]
+    if let Some(threshold) = TEST_EXPIRE_AFTER_SCANNER_CALLS.with(std::cell::Cell::get)
+        && crate::regexp::SCANNER_CALL_COUNT.with(std::cell::Cell::get) >= threshold
+    {
+        return true;
+    }
+    #[cfg(test)]
+    if let Some(remaining) = TEST_EXPIRE_AFTER_DEADLINE_CHECKS.with(std::cell::Cell::get) {
+        if remaining == 0 {
+            return true;
+        }
+        let next = remaining - 1;
+        TEST_EXPIRE_AFTER_DEADLINE_CHECKS.with(|cell| cell.set(Some(next)));
+        if next == 0 {
+            return true;
+        }
+    }
+    Instant::now() > limit
 }
 
 struct WhileCheckResult {
@@ -359,6 +441,7 @@ struct WhileCheckResult {
     line_pos: usize,
     anchor_position: isize,
     is_first_line: bool,
+    stopped_early: bool,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -371,11 +454,33 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
     line_tokens: &mut LineTokens,
     line_fonts: &mut LineFonts,
     capture_depth: usize,
+    deadline: Option<Instant>,
 ) -> Result<WhileCheckResult, RegexError> {
+    const STOP_CHECK_INTERVAL: usize = 64;
     let mut anchor_position = if stack.begin_rule_captured_eol { 0 } else { -1 };
+    if deadline_exceeded(deadline) {
+        return Ok(WhileCheckResult {
+            stack,
+            line_pos,
+            anchor_position,
+            is_first_line,
+            stopped_early: true,
+        });
+    }
     let mut while_rules = Vec::new();
     let mut node = Some(Arc::clone(&stack));
+    let mut steps: usize = 0;
     while let Some(current) = node {
+        steps += 1;
+        if steps & (STOP_CHECK_INTERVAL - 1) == 0 && deadline_exceeded(deadline) {
+            return Ok(WhileCheckResult {
+                stack,
+                line_pos,
+                anchor_position,
+                is_first_line,
+                stopped_early: true,
+            });
+        }
         if current
             .rule(grammar.rule_registry())
             .as_begin_while()
@@ -387,6 +492,15 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
     }
 
     while let Some(while_stack) = while_rules.pop() {
+        if deadline_exceeded(deadline) {
+            return Ok(WhileCheckResult {
+                stack,
+                line_pos,
+                anchor_position,
+                is_first_line,
+                stopped_early: true,
+            });
+        }
         let while_rule = while_stack
             .rule(grammar.rule_registry())
             .as_begin_while()
@@ -397,22 +511,44 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
             is_first_line,
             line_pos as isize == anchor_position,
         )?;
+        if deadline_exceeded(deadline) {
+            return Ok(WhileCheckResult {
+                stack,
+                line_pos,
+                anchor_position,
+                is_first_line,
+                stopped_early: true,
+            });
+        }
         let matched = scanner.find_next_match(line_text, line_pos, ScannerFindOptions::NONE);
-        let Some(matched) = matched else {
+        let Some(matched) = matched.filter(|matched| matched.rule_id == RuleScannerId::While)
+        else {
             stack = while_stack
                 .pop()
                 .expect("BeginWhileRule state must have a parent");
+            if deadline_exceeded(deadline) {
+                return Ok(WhileCheckResult {
+                    stack,
+                    line_pos,
+                    anchor_position,
+                    is_first_line,
+                    stopped_early: true,
+                });
+            }
             break;
         };
-        if matched.rule_id != RuleScannerId::While {
-            stack = while_stack
-                .pop()
-                .expect("BeginWhileRule state must have a parent");
-            break;
+        if deadline_exceeded(deadline) {
+            return Ok(WhileCheckResult {
+                stack,
+                line_pos,
+                anchor_position,
+                is_first_line,
+                stopped_early: true,
+            });
         }
         if let Some(full_match) = matched.capture_indices.first() {
             produce(&while_stack, full_match.start, line_tokens, line_fonts);
-            handle_captures(
+            if handle_captures(
                 grammar,
                 line_text,
                 is_first_line,
@@ -422,7 +558,16 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
                 &while_rule.while_captures,
                 &matched.capture_indices,
                 capture_depth,
-            )?;
+                deadline,
+            )? {
+                return Ok(WhileCheckResult {
+                    stack,
+                    line_pos,
+                    anchor_position,
+                    is_first_line,
+                    stopped_early: true,
+                });
+            }
             produce(&while_stack, full_match.end, line_tokens, line_fonts);
             anchor_position = full_match.end as isize;
             if full_match.end > line_pos {
@@ -437,6 +582,7 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
         line_pos,
         anchor_position,
         is_first_line,
+        stopped_early: false,
     })
 }
 
@@ -453,6 +599,7 @@ fn match_rule_or_injections<G: TokenizerGrammar>(
     line_pos: usize,
     stack: &Arc<StateStack>,
     anchor_position: isize,
+    deadline: Option<Instant>,
 ) -> Result<Option<MatchResult>, RegexError> {
     let match_result = match_rule(
         grammar,
@@ -461,8 +608,9 @@ fn match_rule_or_injections<G: TokenizerGrammar>(
         line_pos,
         stack,
         anchor_position,
+        deadline,
     )?;
-    if grammar.injections().is_empty() {
+    if grammar.injections().is_empty() || deadline_exceeded(deadline) {
         return Ok(match_result);
     }
     let injection_result = match_injections(
@@ -472,6 +620,7 @@ fn match_rule_or_injections<G: TokenizerGrammar>(
         line_pos,
         stack,
         anchor_position,
+        deadline,
     )?;
     let Some(injection_result) = injection_result else {
         return Ok(match_result);
@@ -497,6 +646,7 @@ fn match_rule<G: TokenizerGrammar>(
     line_pos: usize,
     stack: &Arc<StateStack>,
     anchor_position: isize,
+    deadline: Option<Instant>,
 ) -> Result<Option<MatchResult>, RegexError> {
     let rule = stack.rule(grammar.rule_registry());
     let scanner = rule.compile_ag(
@@ -505,6 +655,9 @@ fn match_rule<G: TokenizerGrammar>(
         is_first_line,
         line_pos as isize == anchor_position,
     )?;
+    if deadline_exceeded(deadline) {
+        return Ok(None);
+    }
     Ok(scanner
         .find_next_match(line_text, line_pos, ScannerFindOptions::NONE)
         .map(|matched| MatchResult {
@@ -521,21 +674,43 @@ fn match_injections<G: TokenizerGrammar>(
     line_pos: usize,
     stack: &Arc<StateStack>,
     anchor_position: isize,
+    deadline: Option<Instant>,
 ) -> Result<Option<MatchResult>, RegexError> {
-    let scopes = stack
+    if deadline_exceeded(deadline) {
+        return Ok(None);
+    }
+    let scope_path = &stack
         .content_name_scopes_list
         .as_ref()
         .expect("grammar state must have content-name scopes")
-        .scope_path
-        .get_borrowed_segments();
+        .scope_path;
+    let Some(scopes) =
+        collect_borrowed_segments_with_stop(scope_path, &mut || deadline_exceeded(deadline))
+    else {
+        return Ok(None);
+    };
     let scope_slice = scopes.as_slice();
     let mut best: Option<(usize, FindNextMatchResult<RuleScannerId>, MatcherPriority)> = None;
 
     for injection in grammar.injections() {
-        if !injection
-            .matcher
-            .matches(&scope_slice, &matches_scope_identifiers)
-        {
+        if deadline_exceeded(deadline) {
+            return Ok(None);
+        }
+        let Some(selector_matched) = injection.matcher.matches_with_stop(
+            &scope_slice,
+            &mut |identifiers, scopes| {
+                matches_scope_identifiers_with_stop(identifiers, scopes, &mut || {
+                    deadline_exceeded(deadline)
+                })
+            },
+            &mut || deadline_exceeded(deadline),
+        ) else {
+            return Ok(None);
+        };
+        if deadline_exceeded(deadline) {
+            return Ok(None);
+        }
+        if !selector_matched {
             continue;
         }
         let rule = grammar.rule_registry().get_rule(injection.rule_id);
@@ -545,6 +720,9 @@ fn match_injections<G: TokenizerGrammar>(
             is_first_line,
             line_pos as isize == anchor_position,
         )?;
+        if deadline_exceeded(deadline) {
+            return Ok(None);
+        }
         let Some(matched) = scanner.find_next_match(line_text, line_pos, ScannerFindOptions::NONE)
         else {
             continue;
@@ -580,15 +758,19 @@ fn handle_captures<G: TokenizerGrammar>(
     captures: &[(usize, Arc<CaptureRule>)],
     capture_indices: &[CaptureIndex],
     capture_depth: usize,
-) -> Result<(), RegexError> {
+    deadline: Option<Instant>,
+) -> Result<bool, RegexError> {
     if captures.is_empty() {
-        return Ok(());
+        return Ok(false);
     }
     let line_text_content = line_text.content();
     let mut local_stack: Vec<LocalStackElement> = Vec::new();
     let max_end = capture_indices[0].end;
 
     for &(index, ref capture_rule) in captures {
+        if deadline_exceeded(deadline) {
+            return Ok(true);
+        }
         if index >= capture_indices.len() {
             break;
         }
@@ -604,6 +786,9 @@ fn handle_captures<G: TokenizerGrammar>(
             .last()
             .is_some_and(|local| local.end_pos <= capture_index.start)
         {
+            if deadline_exceeded(deadline) {
+                return Ok(true);
+            }
             let local = local_stack
                 .pop()
                 .expect("checked local capture stack must be nonempty");
@@ -647,7 +832,7 @@ fn handle_captures<G: TokenizerGrammar>(
             );
             let prefix = utf16_prefix(line_text_content, capture_index.end);
             let substring = OnigString::new(prefix);
-            tokenize_string_inner(
+            let retokenized = tokenize_string_inner(
                 grammar,
                 &substring,
                 is_first_line && capture_index.start == 0,
@@ -656,9 +841,12 @@ fn handle_captures<G: TokenizerGrammar>(
                 line_tokens,
                 line_fonts,
                 false,
-                0,
+                deadline,
                 capture_depth + 1,
             )?;
+            if retokenized.stopped_early || deadline_exceeded(deadline) {
+                return Ok(true);
+            }
             continue;
         }
 
@@ -679,9 +867,12 @@ fn handle_captures<G: TokenizerGrammar>(
     }
 
     while let Some(local) = local_stack.pop() {
+        if deadline_exceeded(deadline) {
+            return Ok(true);
+        }
         produce_from_scopes(Some(&local.scopes), local.end_pos, line_tokens, line_fonts);
     }
-    Ok(())
+    Ok(deadline_exceeded(deadline))
 }
 
 struct LocalStackElement {
@@ -709,24 +900,59 @@ fn produce_from_scopes(
     line_fonts.produce_from_scopes(scopes, end_index);
 }
 
-fn matches_scope_identifiers(identifiers: &[String], scopes: &&[&str]) -> bool {
+fn collect_borrowed_segments_with_stop<'a>(
+    scope_path: &'a crate::theme::ScopeStack,
+    should_stop: &mut impl FnMut() -> bool,
+) -> Option<Vec<&'a str>> {
+    const STOP_CHECK_INTERVAL: usize = 64;
+    let mut item = Some(scope_path);
+    let mut result = Vec::new();
+    let mut steps: usize = 0;
+    while let Some(scope) = item {
+        steps += 1;
+        if steps & (STOP_CHECK_INTERVAL - 1) == 0 && should_stop() {
+            return None;
+        }
+        result.push(scope.scope_name.as_str());
+        item = scope.parent.as_deref();
+    }
+    result.reverse();
+    Some(result)
+}
+
+fn matches_scope_identifiers_with_stop(
+    identifiers: &[String],
+    scopes: &&[&str],
+    should_stop: &mut impl FnMut() -> bool,
+) -> Option<bool> {
+    const STOP_CHECK_INTERVAL: usize = 64;
     if scopes.len() < identifiers.len() {
-        return false;
+        return Some(false);
     }
     let mut last_index = 0;
-    identifiers.iter().all(|identifier| {
+    let mut steps: usize = 0;
+    for identifier in identifiers {
+        let mut matched = false;
         for (index, scope) in scopes.iter().enumerate().skip(last_index) {
+            steps += 1;
+            if steps & (STOP_CHECK_INTERVAL - 1) == 0 && should_stop() {
+                return None;
+            }
             if *scope == identifier
                 || scope
                     .strip_prefix(identifier)
                     .is_some_and(|remainder| remainder.starts_with('.'))
             {
                 last_index = index + 1;
-                return true;
+                matched = true;
+                break;
             }
         }
-        false
-    })
+        if !matched {
+            return Some(false);
+        }
+    }
+    Some(true)
 }
 
 fn utf16_prefix(value: &str, end: usize) -> &str {
@@ -823,7 +1049,7 @@ mod tests {
             let rule_id = self.registry.register_rule(|id| {
                 Rule::Match(MatchRule::new(None, id, Some(name), pattern, Vec::new()))
             });
-            self.injections = Injection::from_selector("L:source.test", rule_id);
+            self.injections = Injection::from_selector("L:source.test", rule_id).unwrap();
         }
     }
 
@@ -1276,5 +1502,741 @@ mod tests {
         .err()
         .expect("self-recursive capture retokenization should return an error");
         assert!(err.to_string().contains("depth limit"));
+    }
+
+    struct ExpireAfterScannerCalls;
+
+    impl ExpireAfterScannerCalls {
+        fn new(threshold: usize) -> Self {
+            crate::regexp::SCANNER_CALL_COUNT.with(|count| count.set(0));
+            super::TEST_EXPIRE_AFTER_SCANNER_CALLS.with(|cell| cell.set(Some(threshold)));
+            Self
+        }
+
+        fn calls(&self) -> usize {
+            crate::regexp::SCANNER_CALL_COUNT.with(std::cell::Cell::get)
+        }
+    }
+
+    impl Drop for ExpireAfterScannerCalls {
+        fn drop(&mut self) {
+            super::TEST_EXPIRE_AFTER_SCANNER_CALLS.with(|cell| cell.set(None));
+        }
+    }
+
+    struct ExpireAfterDeadlineChecks;
+
+    impl ExpireAfterDeadlineChecks {
+        fn new(checks: usize) -> Self {
+            crate::regexp::SCANNER_CALL_COUNT.with(|count| count.set(0));
+            super::TEST_EXPIRE_AFTER_DEADLINE_CHECKS.with(|cell| cell.set(Some(checks)));
+            Self
+        }
+
+        fn calls(&self) -> usize {
+            crate::regexp::SCANNER_CALL_COUNT.with(std::cell::Cell::get)
+        }
+    }
+
+    impl Drop for ExpireAfterDeadlineChecks {
+        fn drop(&mut self) {
+            super::TEST_EXPIRE_AFTER_DEADLINE_CHECKS.with(|cell| cell.set(None));
+        }
+    }
+
+    #[test]
+    fn propagates_time_limit_into_capture_retokenization() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "(<)([^>]*)",
+                        "beginCaptures": {
+                            "1": { "name": "punctuation.open" },
+                            "2": {
+                                "name": "meta.capture",
+                                "patterns": [{ "match": "a", "name": "entity.a" }]
+                            }
+                        },
+                        "end": ">",
+                        "name": "meta.tag",
+                        "contentName": "meta.tag.body"
+                    },
+                    { "match": "ok", "name": "keyword.ok" }
+                ]
+            }"#,
+        );
+
+        const CAPTURE_TOKENS: usize = 10;
+        let line_text = format!("<{}\n", "a".repeat(CAPTURE_TOKENS));
+        let onig = crate::OnigString::new(&line_text);
+        let initial = grammar.initial_state();
+        let mut tokens = LineTokens::new(false, &line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        // Expire any active deadline deterministically after 2 scanner calls:
+        // call 1 = outer `begin` match, call 2 = first nested capture match.
+        // If handle_captures dropped the deadline to None, the hook would not
+        // fire and all CAPTURE_TOKENS inner matches would run.
+        let guard = ExpireAfterScannerCalls::new(2);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            Arc::clone(&initial),
+            &mut tokens,
+            &mut fonts,
+            true,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(
+            result.stopped_early,
+            "capture retokenization must honor the caller's tokenizeTimeLimit"
+        );
+        assert_eq!(
+            calls, 2,
+            "expected outer match + 1 nested capture match before stopping early"
+        );
+        // The begin delimiter already matched, so the continuation stack must
+        // retain the pushed BeginEndRule with its contentName scopes.
+        assert_eq!(result.stack.depth, initial.depth + 1);
+        assert_eq!(
+            result
+                .stack
+                .content_name_scopes_list
+                .as_ref()
+                .unwrap()
+                .scope_names(),
+            ["source.test", "meta.tag", "meta.tag.body"]
+        );
+        // The next line closes the begun rule cleanly back to depth 1.
+        let (close_tokens, close_result) = tokenize_line(&grammar, ">ok", Some(result.stack));
+        assert!(!close_result.stopped_early);
+        assert_eq!(close_result.stack.depth, 1);
+        assert!(
+            close_tokens
+                .iter()
+                .any(|token| token.scopes == ["source.test", "keyword.ok"])
+        );
+    }
+
+    #[test]
+    fn preserves_popped_stack_when_end_captures_time_out() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "<",
+                        "end": "(>)(.*)",
+                        "endCaptures": {
+                            "1": { "name": "punctuation.close" },
+                            "2": {
+                                "name": "meta.end.capture",
+                                "patterns": [{ "match": "a", "name": "entity.a" }]
+                            }
+                        },
+                        "name": "meta.tag"
+                    },
+                    { "match": "after", "name": "keyword.after" }
+                ]
+            }"#,
+        );
+
+        let (_, opened) = tokenize_line(&grammar, "<open", None);
+        assert_eq!(opened.stack.depth, 2);
+
+        // Expire after call 1 (end delimiter match) + call 2 (first endCaptures match).
+        let line_text = ">aaaaaaaaaa\n";
+        let onig = crate::OnigString::new(line_text);
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let guard = ExpireAfterScannerCalls::new(2);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            false,
+            0,
+            Arc::clone(&opened.stack),
+            &mut tokens,
+            &mut fonts,
+            true,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(result.stopped_early);
+        assert_eq!(calls, 2);
+        // The end delimiter already matched, so the continuation stack must pop
+        // the closed BeginEndRule instead of leaving it open for the next line.
+        assert_eq!(result.stack.depth, 1);
+        let (next_tokens, next_result) = tokenize_line(&grammar, "after", Some(result.stack));
+        assert!(!next_result.stopped_early);
+        assert_eq!(next_result.stack.depth, 1);
+        assert_eq!(next_tokens[0].scopes, ["source.test", "keyword.after"]);
+    }
+
+    #[test]
+    fn applies_zero_width_safe_pop_when_lookahead_capture_times_out() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "<",
+                    "end": ">",
+                    "name": "meta.block",
+                    "patterns": [{
+                        "match": "(?=(a+))",
+                        "captures": {
+                            "1": {
+                                "name": "meta.lookahead",
+                                "patterns": [{ "match": "a", "name": "entity.a" }]
+                            }
+                        }
+                    }]
+                }]
+            }"#,
+        );
+
+        let (_, opened) = tokenize_line(&grammar, "<", None);
+        assert_eq!(opened.stack.depth, 2);
+
+        // Zero-width lookahead match (call 1) enters capture retokenization for
+        // group 1 (`aaaa`), which expires after call 2. Zero-width recovery
+        // must still run safe_pop() before returning stopped_early: true.
+        let line_text = "aaaa\n";
+        let onig = crate::OnigString::new(line_text);
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let guard = ExpireAfterScannerCalls::new(2);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            false,
+            0,
+            Arc::clone(&opened.stack),
+            &mut tokens,
+            &mut fonts,
+            true,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(result.stopped_early);
+        assert_eq!(calls, 2);
+        assert_eq!(
+            result.stack.depth, 1,
+            "zero-width match capture timeout must still apply safe_pop()"
+        );
+    }
+
+    #[test]
+    fn stops_early_during_wide_injection_selector_evaluation() {
+        let mut grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "match": "x", "name": "keyword.x" }]
+            }"#,
+        );
+        // Place a matching branch (`source.test`) as the last alternative so
+        // evaluating the full selector without early interruption would match
+        // and invoke the injection scanner (producing 2 scanner calls instead of 1).
+        let wide_selector = format!(
+            "L:({} | source.test)",
+            (0..999)
+                .map(|i| format!("scope.miss{i}"))
+                .collect::<Vec<_>>()
+                .join(" | ")
+        );
+        let rule_id = grammar.registry.register_rule(|id| {
+            Rule::Match(MatchRule::new(
+                None,
+                id,
+                Some("injected.test".to_owned()),
+                "x",
+                Vec::new(),
+            ))
+        });
+        grammar.injections = Injection::from_selector(&wide_selector, rule_id).unwrap();
+
+        let line_text = "x\n";
+        let onig = crate::OnigString::new(line_text);
+        let state = grammar.initial_state();
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        // Use a poll threshold strictly above the outer poll count (~6) so that
+        // without periodic inner polls inside `matches_with_stop` the full
+        // selector would reach `source.test` and run the injection scanner
+        // (`calls == 2`). With inner polls every 64 nodes (15 polls across 1,000
+        // branches), poll 10 fires mid-selector and aborts with `calls == 1`.
+        let guard = ExpireAfterDeadlineChecks::new(10);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            state,
+            &mut tokens,
+            &mut fonts,
+            false,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(result.stopped_early);
+        // Only the main rule scanner ran; the wide selector aborted before running the injection scanner.
+        assert_eq!(calls, 1);
+    }
+
+    #[test]
+    fn reports_stopped_early_when_deadline_expires_flushing_capture_scopes() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "<",
+                    "end": ">",
+                    "name": "meta.block",
+                    "patterns": [{
+                        "match": "(?=(a))",
+                        "captures": {
+                            "1": { "name": "entity.lookahead" }
+                        }
+                    }]
+                }]
+            }"#,
+        );
+        let (_, opened) = tokenize_line(&grammar, "<", None);
+        assert_eq!(opened.stack.depth, 2);
+
+        let line_text = "a\n";
+        let onig = crate::OnigString::new(line_text);
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        // Checks before flushing local_stack in handle_captures:
+        // 1: loop start, 2: match_rule after compile, 3: after match_rule_or_injections,
+        // 4: handle_captures loop start for capture 1, 5: local_stack flush check.
+        let guard = ExpireAfterDeadlineChecks::new(5);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            false,
+            0,
+            Arc::clone(&opened.stack),
+            &mut tokens,
+            &mut fonts,
+            false,
+            60_000,
+        )
+        .unwrap();
+        drop(guard);
+
+        assert!(
+            result.stopped_early,
+            "deadline expiring while flushing capture scopes must report stopped_early: true"
+        );
+        assert_eq!(result.stack.depth, 1);
+        let output = tokens.result(&result.stack, onig.utf16_len());
+        assert!(
+            !output
+                .iter()
+                .any(|token| token.scopes.iter().any(|scope| scope == "entity.lookahead")),
+            "capture scope must not be emitted after deadline expiry during flush"
+        );
+    }
+
+    #[test]
+    fn stops_early_during_long_ancestor_selector_scope_walk() {
+        let mut grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "match": "x", "name": "keyword.x" }]
+            }"#,
+        );
+        let rule_id = grammar.registry.register_rule(|id| {
+            Rule::Match(MatchRule::new(
+                None,
+                id,
+                Some("injected.test".to_owned()),
+                "x",
+                Vec::new(),
+            ))
+        });
+        // Single Matcher::Name ancestor selector matching near the end of a long scope stack.
+        grammar.injections =
+            Injection::from_selector("L:meta.level195 meta.level199", rule_id).unwrap();
+
+        let initial = grammar.initial_state();
+        let mut scopes = Arc::clone(initial.content_name_scopes_list.as_ref().unwrap());
+        for i in 0..200 {
+            scopes = scopes.push_attributed(Some(&format!("meta.level{i}")), &grammar);
+        }
+        let deep_stack = initial.push(
+            grammar.root_id,
+            0,
+            -1,
+            false,
+            None,
+            Some(Arc::clone(&scopes)),
+            Some(scopes),
+        );
+
+        let line_text = "x\n";
+        let onig = crate::OnigString::new(line_text);
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        // Checks before periodic poll inside matches_scope_identifiers_with_stop:
+        // 1: loop start, 2: match_rule after compile, 3: match_rule_or_injections,
+        // 4: match_injections entry, 5..7: 3 periodic polls collecting 201 scopes,
+        // 8: match_injections loop start, 9: first periodic poll at step 64.
+        let guard = ExpireAfterDeadlineChecks::new(9);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            deep_stack,
+            &mut tokens,
+            &mut fonts,
+            false,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(result.stopped_early);
+        assert_eq!(calls, 1);
+        let output = tokens.result(&result.stack, line_text.len());
+        assert!(
+            !output
+                .iter()
+                .any(|token| token.scopes.iter().any(|scope| scope == "injected.test")),
+            "injection rule must not run when deadline expires during ancestor scope walk"
+        );
+    }
+
+    #[test]
+    fn reports_stopped_early_when_deadline_expires_draining_sibling_captures() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "match": "(a)(b)",
+                    "captures": {
+                        "1": { "name": "entity.first" },
+                        "2": { "name": "entity.second" }
+                    }
+                }]
+            }"#,
+        );
+        let line_text = "ab\n";
+        let onig = crate::OnigString::new(line_text);
+        let state = grammar.initial_state();
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+
+        // Checks before sibling local_stack drain when handling capture 2:
+        // 1: loop start, 2: match_rule after compile, 3: after match_rule_or_injections,
+        // 4: handle_captures loop start for capture 1,
+        // 5: handle_captures loop start for capture 2,
+        // 6: earlier local_stack drain popping capture 1 before capture 2.
+        let guard = ExpireAfterDeadlineChecks::new(6);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            state,
+            &mut tokens,
+            &mut fonts,
+            false,
+            60_000,
+        )
+        .unwrap();
+        drop(guard);
+
+        assert!(
+            result.stopped_early,
+            "deadline expiring while draining sibling captures must report stopped_early: true"
+        );
+        let output = tokens.result(&result.stack, onig.utf16_len());
+        assert!(
+            !output.iter().any(|token| {
+                token
+                    .scopes
+                    .iter()
+                    .any(|scope| scope == "entity.first" || scope == "entity.second")
+            }),
+            "sibling capture scopes must not be emitted after deadline expiry during drain"
+        );
+    }
+
+    #[test]
+    fn collect_borrowed_segments_with_stop_aborts_mid_walk() {
+        let mut scope = ScopeStack::from(["source.test"]).unwrap();
+        for i in 0..200 {
+            scope = scope.push_scope(format!("meta.level{i}"));
+        }
+        let mut polls = 0_usize;
+        let stopped = super::collect_borrowed_segments_with_stop(&scope, &mut || {
+            polls += 1;
+            true
+        });
+        assert_eq!(stopped, None);
+        assert_eq!(polls, 1);
+
+        let full = super::collect_borrowed_segments_with_stop(&scope, &mut || false).unwrap();
+        assert_eq!(full.len(), 201);
+        assert_eq!(full[0], "source.test");
+        assert_eq!(full[200], "meta.level199");
+    }
+
+    #[test]
+    fn matches_scope_identifiers_with_stop_returns_none_on_expiry() {
+        let owned: Vec<String> = (0..200).map(|i| format!("meta.level{i}")).collect();
+        let borrowed: Vec<&str> = owned.iter().map(String::as_str).collect();
+        let slice = borrowed.as_slice();
+        let identifiers = vec!["scope.miss0".to_owned(), "scope.miss1".to_owned()];
+
+        let mut polls = 0_usize;
+        let result = super::matches_scope_identifiers_with_stop(&identifiers, &slice, &mut || {
+            polls += 1;
+            true
+        });
+        assert_eq!(result, None);
+        assert_eq!(polls, 1);
+
+        let no_match =
+            super::matches_scope_identifiers_with_stop(&identifiers, &slice, &mut || false);
+        assert_eq!(no_match, Some(false));
+    }
+
+    #[test]
+    fn propagates_expired_deadline_through_handle_captures_directly() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "match": "(a+)",
+                    "captures": {
+                        "1": {
+                            "name": "meta.capture",
+                            "patterns": [{ "match": "a", "name": "entity.a" }]
+                        }
+                    }
+                }]
+            }"#,
+        );
+        let line_text = "aaaa\n";
+        let onig = crate::OnigString::new(line_text);
+        let stack = grammar.initial_state();
+        let rule = grammar
+            .registry
+            .get_rule(grammar.root_id)
+            .compile_ag(&grammar.registry, None, true, false)
+            .unwrap();
+        let matched = rule
+            .find_next_match(&onig, 0, crate::regexp::ScannerFindOptions::NONE)
+            .unwrap();
+        let crate::rule::RuleScannerId::Rule(rule_id) = matched.rule_id else {
+            panic!("expected match rule");
+        };
+        let match_rule = grammar.registry.get_rule(rule_id).as_match().unwrap();
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let expired = Instant::now().checked_sub(Duration::from_secs(1));
+
+        let stopped = super::handle_captures(
+            &grammar,
+            &onig,
+            true,
+            &stack,
+            &mut tokens,
+            &mut fonts,
+            &match_rule.captures,
+            &matched.capture_indices,
+            0,
+            expired,
+        )
+        .unwrap();
+
+        assert!(stopped);
+    }
+
+    #[test]
+    fn propagates_time_limit_into_while_condition_checks() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [
+                    {
+                        "begin": "^>",
+                        "while": "^(>)(.*)",
+                        "whileCaptures": {
+                            "1": { "name": "punctuation.quote" },
+                            "2": {
+                                "name": "meta.while.capture",
+                                "patterns": [{ "match": "a", "name": "entity.a" }]
+                            }
+                        },
+                        "name": "markup.quote",
+                        "patterns": [{ "include": "$self" }]
+                    },
+                    { "match": "plain", "name": "keyword.plain" }
+                ]
+            }"#,
+        );
+
+        let (_, first) = tokenize_line(&grammar, ">seed", None);
+        assert_eq!(first.stack.depth, 2);
+        // Warm up the while and whileCaptures scanners.
+        let _ = tokenize_line(&grammar, ">a", Some(Arc::clone(&first.stack)));
+
+        // Deterministic pre-expired deadline check stops before scanning while rules
+        // and preserves a valid state stack.
+        let line_text = ">next\n";
+        let onig = crate::OnigString::new(line_text);
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let expired = Instant::now().checked_sub(Duration::from_secs(1));
+        let early = super::tokenize_string_inner(
+            &grammar,
+            &onig,
+            false,
+            0,
+            Arc::clone(&first.stack),
+            &mut tokens,
+            &mut fonts,
+            true,
+            expired,
+            0,
+        )
+        .unwrap();
+        assert!(early.stopped_early);
+        assert_eq!(early.stack.depth, first.stack.depth);
+
+        // Active budget is honored mid-way inside whileCaptures retokenization:
+        // call 1 = while regex, call 2 = first nested whileCaptures match.
+        const CAPTURE_TOKENS: usize = 10;
+        let heavy_line = format!(">{}\n", "a".repeat(CAPTURE_TOKENS));
+        let heavy_onig = crate::OnigString::new(&heavy_line);
+        let mut heavy_tokens = LineTokens::new(false, &heavy_line, Vec::new(), None);
+        let mut heavy_fonts = LineFonts::new();
+        let guard = ExpireAfterScannerCalls::new(2);
+        let heavy_result = tokenize_string(
+            &grammar,
+            &heavy_onig,
+            false,
+            0,
+            Arc::clone(&first.stack),
+            &mut heavy_tokens,
+            &mut heavy_fonts,
+            true,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+        assert!(heavy_result.stopped_early);
+        assert_eq!(
+            calls, 2,
+            "expected while match + 1 nested whileCaptures match before stopping early"
+        );
+        assert_eq!(heavy_result.stack.depth, first.stack.depth);
+
+        // Returned state remains valid for subsequent lines.
+        let (next_tokens, next_result) = tokenize_line(&grammar, "plain", Some(heavy_result.stack));
+        assert!(!next_result.stopped_early);
+        assert_eq!(next_result.stack.depth, 1);
+        assert_eq!(next_tokens[0].scopes, ["source.test", "keyword.plain"]);
+    }
+
+    #[test]
+    fn pops_failed_while_rule_before_returning_stopped_early() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{
+                    "begin": "^>",
+                    "while": "z",
+                    "name": "markup.quote"
+                }]
+            }"#,
+        );
+        let (_, first) = tokenize_line(&grammar, ">seed", None);
+        assert_eq!(first.stack.depth, 2);
+
+        // Expire the active deadline right after the failed while search (call 1)
+        // and confirm the failed BeginWhileRule is popped before returning stopped_early.
+        let line = "no-match\n";
+        let onig = crate::OnigString::new(line);
+        let mut tokens = LineTokens::new(false, line, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let guard = ExpireAfterScannerCalls::new(1);
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            false,
+            0,
+            Arc::clone(&first.stack),
+            &mut tokens,
+            &mut fonts,
+            true,
+            60_000,
+        )
+        .unwrap();
+        let calls = guard.calls();
+        drop(guard);
+
+        assert!(result.stopped_early);
+        assert_eq!(calls, 1);
+        assert_eq!(
+            result.stack.depth, 1,
+            "a while condition that already failed during an overrunning search must be popped"
+        );
+    }
+
+    #[test]
+    fn handles_u64_max_time_limit_without_overflow() {
+        let grammar = TestGrammar::new(
+            r#"{
+                "scopeName": "source.test",
+                "patterns": [{ "match": "foo", "name": "keyword.test" }]
+            }"#,
+        );
+        let line_text = "foo\n";
+        let onig = crate::OnigString::new(line_text);
+        let state = grammar.initial_state();
+        let mut tokens = LineTokens::new(false, line_text, Vec::new(), None);
+        let mut fonts = LineFonts::new();
+        let result = tokenize_string(
+            &grammar,
+            &onig,
+            true,
+            0,
+            state,
+            &mut tokens,
+            &mut fonts,
+            true,
+            u64::MAX,
+        )
+        .unwrap();
+        assert!(!result.stopped_early);
     }
 }

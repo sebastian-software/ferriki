@@ -343,7 +343,7 @@ impl SyncRegistry {
             self.theme.clone(),
             configuration,
             pattern_cache,
-        ));
+        )?);
         self.grammars.insert(
             scope_name.to_owned(),
             provider.into_compiled(Rc::clone(&grammar)),
@@ -1140,5 +1140,82 @@ mod tests {
             .unwrap()
             .tokens;
         assert_eq!(light_again, light_tokens);
+    }
+
+    #[test]
+    fn rejects_overly_deep_scope_selectors_in_injections_and_configuration() {
+        let deep_selector = format!("{}source.test{}", "(".repeat(200), ")".repeat(200));
+
+        // 1) Over-deep root injection selector surfaces an error.
+        let mut root_inj = SyncRegistry::new(None, None).unwrap();
+        root_inj.add_grammar(
+            grammar(&format!(
+                r#"{{
+                    "scopeName": "source.test",
+                    "patterns": [],
+                    "injections": {{
+                        "{deep_selector}": {{ "match": "x", "name": "keyword.x" }}
+                    }}
+                }}"#
+            )),
+            Vec::new(),
+        );
+        let err = root_inj
+            .grammar_for_scope_name("source.test", GrammarConfiguration::default())
+            .err()
+            .expect("over-deep root injection selector must fail grammar loading");
+        assert!(matches!(err, crate::ThemeError::InvalidScopeSelector(_)));
+        assert!(err.to_string().contains("depth limit"));
+
+        // 2) Over-deep external injection selector surfaces an error.
+        let mut ext_inj = SyncRegistry::new(None, None).unwrap();
+        ext_inj.add_grammar(
+            grammar(r#"{ "scopeName": "source.host", "patterns": [] }"#),
+            vec!["source.ext".to_owned()],
+        );
+        ext_inj.add_grammar(
+            grammar(&format!(
+                r#"{{
+                    "scopeName": "source.ext",
+                    "injectionSelector": "{deep_selector}",
+                    "patterns": [{{ "match": "x", "name": "keyword.x" }}]
+                }}"#
+            )),
+            Vec::new(),
+        );
+        let err = ext_inj
+            .grammar_for_scope_name("source.host", GrammarConfiguration::default())
+            .err()
+            .expect("over-deep external injection selector must fail grammar loading");
+        assert!(matches!(err, crate::ThemeError::InvalidScopeSelector(_)));
+
+        // 3) Over-deep unbalanced bracket selector surfaces an error instead of
+        // silently degenerating into an empty exclusion list (matches_always == true).
+        let mut brackets = SyncRegistry::new(None, None).unwrap();
+        brackets.add_grammar(
+            grammar(r#"{ "scopeName": "source.brackets", "patterns": [] }"#),
+            Vec::new(),
+        );
+        let err = brackets
+            .grammar_for_scope_name(
+                "source.brackets",
+                GrammarConfiguration::default()
+                    .with_balanced_bracket_selectors(Some(vec!["*".to_owned()]))
+                    .with_unbalanced_bracket_selectors(vec![deep_selector.clone()]),
+            )
+            .err()
+            .expect("over-deep unbalanced bracket selector must fail grammar loading");
+        assert!(matches!(err, crate::ThemeError::InvalidScopeSelector(_)));
+
+        // 4) Over-deep token-type override selector surfaces an error.
+        let err = brackets
+            .grammar_for_scope_name(
+                "source.brackets",
+                GrammarConfiguration::default()
+                    .with_token_types(vec![(deep_selector, crate::StandardTokenType::String)]),
+            )
+            .err()
+            .expect("over-deep token-type selector must fail grammar loading");
+        assert!(matches!(err, crate::ThemeError::InvalidScopeSelector(_)));
     }
 }
