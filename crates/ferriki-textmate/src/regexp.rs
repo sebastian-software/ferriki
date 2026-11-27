@@ -1767,6 +1767,11 @@ impl<T> FindNextMatchResult<T> {
     pub(crate) fn captures(&self) -> &[ScannerCaptureIndex] {
         self.matched.captures()
     }
+
+    #[inline]
+    pub(crate) fn into_captures(self) -> Vec<ScannerCaptureIndex> {
+        self.matched.into_captures()
+    }
 }
 
 #[cfg(test)]

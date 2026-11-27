@@ -87,6 +87,164 @@ pub(crate) fn tokenize_string<G: TokenizerGrammar>(
     )
 }
 
+struct TokenizeContext<'a, 'b, G: TokenizerGrammar> {
+    grammar: &'a G,
+    line_tokens: &'a mut LineTokens<'b>,
+    line_fonts: &'a mut LineFonts,
+    injection_cache: InjectionScopeCache,
+    capture_pool: CapturePool,
+    deadline: Option<Instant>,
+}
+
+/// Depth-0 reusable storage for small inline Ferroni capture tuples (2..=8
+/// slots) so nonrecursive multi-capture matches avoid heap allocations while
+/// keeping `tokenize_string_loop`'s recursive stack frames free of
+/// `ScannerMatch`'s 272-byte inline buffer. Wide (>8-slot) matches already live
+/// on the heap inside Ferroni and move their `Vec` directly via
+/// `into_captures()` with zero copying.
+#[derive(Default)]
+struct CapturePool {
+    inline: Option<[ScannerCaptureIndex; 16]>,
+    inline_len: usize,
+}
+
+impl CapturePool {
+    /// Ferroni's `ScannerMatch` stores up to 8 capture slots inline before
+    /// spilling to a heap-backed `Vec`.
+    const FERRONI_INLINE_CAPTURES: usize = 8;
+
+    #[inline]
+    fn mark(&self) -> usize {
+        self.inline_len
+    }
+
+    #[inline]
+    fn restore(&mut self, mark: usize) {
+        self.inline_len = mark;
+    }
+
+    #[inline]
+    fn store_match(&mut self, matched: FindNextMatchResult<RuleScannerId>) -> StepCaptures {
+        let captures = matched.captures();
+        let len = captures.len();
+        if len == 1 {
+            return StepCaptures::Single(captures[0].clone());
+        }
+        if len <= Self::FERRONI_INLINE_CAPTURES && self.inline_len + len <= 16 {
+            let start = self.inline_len;
+            let inline = self
+                .inline
+                .get_or_insert_with(|| std::array::from_fn(|_| captures[0].clone()));
+            inline[start..start + len].clone_from_slice(captures);
+            self.inline_len += len;
+            StepCaptures::Inline { start, len }
+        } else {
+            StepCaptures::Owned(matched.into_captures())
+        }
+    }
+
+    #[cfg(test)]
+    #[inline]
+    fn push_slice(&mut self, captures: &[ScannerCaptureIndex]) -> StepCaptures {
+        let len = captures.len();
+        if len == 1 {
+            return StepCaptures::Single(captures[0].clone());
+        }
+        if len <= Self::FERRONI_INLINE_CAPTURES && self.inline_len + len <= 16 {
+            let start = self.inline_len;
+            let inline = self
+                .inline
+                .get_or_insert_with(|| std::array::from_fn(|_| captures[0].clone()));
+            inline[start..start + len].clone_from_slice(captures);
+            self.inline_len += len;
+            StepCaptures::Inline { start, len }
+        } else {
+            StepCaptures::Owned(captures.to_vec())
+        }
+    }
+}
+
+enum StepCaptures {
+    Empty,
+    Single(ScannerCaptureIndex),
+    Inline { start: usize, len: usize },
+    Owned(Vec<ScannerCaptureIndex>),
+}
+
+impl StepCaptures {
+    #[inline]
+    fn len(&self) -> usize {
+        match self {
+            Self::Empty => 0,
+            Self::Single(_) => 1,
+            Self::Inline { len, .. } => *len,
+            Self::Owned(captures) => captures.len(),
+        }
+    }
+
+    #[inline]
+    fn as_slice<'a>(&'a self, pool: &'a CapturePool) -> &'a [ScannerCaptureIndex] {
+        match self {
+            Self::Empty => &[],
+            Self::Single(capture) => std::slice::from_ref(capture),
+            Self::Inline { start, len } => &pool
+                .inline
+                .as_ref()
+                .expect("inline capture pool initialized")[*start..*start + *len],
+            Self::Owned(captures) => captures.as_slice(),
+        }
+    }
+
+    #[inline]
+    fn get<'a>(&'a self, pool: &'a CapturePool, index: usize) -> &'a ScannerCaptureIndex {
+        match self {
+            Self::Empty => unreachable!("empty captures cannot be indexed"),
+            Self::Single(capture) => {
+                debug_assert_eq!(index, 0);
+                capture
+            }
+            Self::Inline { start, .. } => &pool
+                .inline
+                .as_ref()
+                .expect("inline capture pool initialized")[*start + index],
+            Self::Owned(captures) => &captures[index],
+        }
+    }
+}
+
+struct StepMatch {
+    rule_id: RuleScannerId,
+    match_start: usize,
+    match_end: usize,
+    captures: StepCaptures,
+}
+
+enum NextStep {
+    Matched(StepMatch),
+    EndOfLine,
+    TimedOut,
+}
+
+struct MatchedSpan<'a> {
+    line_text: &'a OnigString,
+    line_is_ascii: bool,
+    line_length: usize,
+    is_first_line: bool,
+    line_pos: usize,
+    has_advanced: bool,
+    match_start: usize,
+    match_end: usize,
+    captures: StepCaptures,
+    capture_depth: usize,
+}
+
+impl MatchedSpan<'_> {
+    #[inline]
+    fn capture_indices<'a>(&'a self, pool: &'a CapturePool) -> &'a [ScannerCaptureIndex] {
+        self.captures.as_slice(pool)
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn tokenize_string_inner<G: TokenizerGrammar>(
     grammar: &G,
@@ -103,21 +261,25 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
     let line_length = line_text.utf16_len();
     let line_is_ascii = line_text.content().len() == line_length;
     let mut anchor_position = -1;
-    let mut injection_cache = InjectionScopeCache::default();
+    let mut ctx = TokenizeContext {
+        grammar,
+        line_tokens,
+        line_fonts,
+        injection_cache: InjectionScopeCache::default(),
+        capture_pool: CapturePool::default(),
+        deadline,
+    };
 
     if check_while_conditions {
         let result = check_while_conditions_impl(
-            grammar,
+            &mut ctx,
             line_text,
             line_is_ascii,
+            line_length,
             is_first_line,
             line_pos,
             stack,
-            line_tokens,
-            line_fonts,
-            &mut injection_cache,
             capture_depth,
-            deadline,
         )?;
         stack = result.stack;
         line_pos = result.line_pos;
@@ -133,7 +295,7 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
     }
 
     tokenize_string_loop(
-        grammar,
+        &mut ctx,
         line_text,
         line_is_ascii,
         line_length,
@@ -141,10 +303,6 @@ fn tokenize_string_inner<G: TokenizerGrammar>(
         line_pos,
         anchor_position,
         stack,
-        line_tokens,
-        line_fonts,
-        &mut injection_cache,
-        deadline,
         capture_depth,
     )
 }
@@ -154,9 +312,69 @@ enum StepOutcome {
     Return { stopped_early: bool },
 }
 
+#[cfg_attr(debug_assertions, inline(never))]
+fn match_next_step<G: TokenizerGrammar>(
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    line_text: &OnigString,
+    is_first_line: bool,
+    line_pos: usize,
+    stack: &Arc<StateStack>,
+    anchor_position: isize,
+) -> Result<NextStep, RegexError> {
+    let matched = match_rule_or_injections(
+        ctx.grammar,
+        line_text,
+        is_first_line,
+        line_pos,
+        stack,
+        anchor_position,
+        &mut ctx.injection_cache,
+        ctx.deadline,
+    )?;
+
+    // Ferroni's synchronous Scanner API cannot accept a per-search
+    // deadline. Detect an overrun as soon as the current search returns.
+    if deadline_exceeded(ctx.deadline) {
+        return Ok(NextStep::TimedOut);
+    }
+
+    let Some(matched) = matched else {
+        return Ok(NextStep::EndOfLine);
+    };
+    let Some(full_match) = matched.matched.captures().first() else {
+        return Ok(NextStep::EndOfLine);
+    };
+    let match_start = full_match.start;
+    let match_end = full_match.end;
+    let rule_id = matched.matched.rule_id;
+    let needs_captures = match rule_id {
+        RuleScannerId::End => stack
+            .rule(ctx.grammar.rule_registry())
+            .as_begin_end()
+            .is_some_and(|rule| !rule.end_captures.is_empty()),
+        RuleScannerId::Rule(id) => ctx
+            .grammar
+            .rule_registry()
+            .get_rule(id)
+            .needs_match_captures(),
+        RuleScannerId::While => false,
+    };
+    let captures = if needs_captures {
+        ctx.capture_pool.store_match(matched.matched)
+    } else {
+        StepCaptures::Empty
+    };
+    Ok(NextStep::Matched(StepMatch {
+        rule_id,
+        match_start,
+        match_end,
+        captures,
+    }))
+}
+
 #[allow(clippy::too_many_arguments)]
 fn tokenize_string_loop<G: TokenizerGrammar>(
-    grammar: &G,
+    ctx: &mut TokenizeContext<'_, '_, G>,
     line_text: &OnigString,
     line_is_ascii: bool,
     line_length: usize,
@@ -164,150 +382,91 @@ fn tokenize_string_loop<G: TokenizerGrammar>(
     mut line_pos: usize,
     mut anchor_position: isize,
     mut stack: Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
-    deadline: Option<Instant>,
     capture_depth: usize,
 ) -> Result<TokenizeStringResult, RegexError> {
     loop {
-        if deadline_exceeded(deadline) {
+        if deadline_exceeded(ctx.deadline) {
             return Ok(TokenizeStringResult {
                 stack,
                 stopped_early: true,
             });
         }
 
-        let matched = match_rule_or_injections(
-            grammar,
+        let capture_mark = ctx.capture_pool.mark();
+        let step = match match_next_step(
+            ctx,
             line_text,
             is_first_line,
             line_pos,
             &stack,
             anchor_position,
-            injection_cache,
-            deadline,
-        )?;
-
-        // Ferroni's synchronous Scanner API cannot accept a per-search
-        // deadline. Detect an overrun as soon as the current search returns.
-        if deadline_exceeded(deadline) {
-            return Ok(TokenizeStringResult {
-                stack,
-                stopped_early: true,
-            });
-        }
-
-        let Some(matched) = matched else {
-            produce(&stack, line_length, line_tokens, line_fonts);
-            return Ok(TokenizeStringResult {
-                stack,
-                stopped_early: false,
-            });
+        )? {
+            NextStep::TimedOut => {
+                ctx.capture_pool.restore(capture_mark);
+                return Ok(TokenizeStringResult {
+                    stack,
+                    stopped_early: true,
+                });
+            }
+            NextStep::EndOfLine => {
+                ctx.capture_pool.restore(capture_mark);
+                produce(&stack, line_length, ctx.line_tokens, ctx.line_fonts);
+                return Ok(TokenizeStringResult {
+                    stack,
+                    stopped_early: false,
+                });
+            }
+            NextStep::Matched(step) => step,
         };
-        let capture_indices = matched.matched.captures();
-        let Some(full_match) = capture_indices.first() else {
-            produce(&stack, line_length, line_tokens, line_fonts);
-            return Ok(TokenizeStringResult {
-                stack,
-                stopped_early: false,
-            });
+        let match_start = step.match_start;
+        let match_end = step.match_end;
+        let span = MatchedSpan {
+            line_text,
+            line_is_ascii,
+            line_length,
+            is_first_line,
+            line_pos,
+            has_advanced: match_end > line_pos,
+            match_start,
+            match_end,
+            captures: step.captures,
+            capture_depth,
         };
-        let match_start = full_match.start;
-        let match_end = full_match.end;
-        let has_advanced = match_end > line_pos;
 
-        let outcome = match matched.matched.rule_id {
-            RuleScannerId::End => apply_end_rule(
-                grammar,
-                line_text,
-                line_is_ascii,
-                line_length,
-                is_first_line,
-                line_pos,
-                has_advanced,
-                match_start,
-                match_end,
-                &mut anchor_position,
-                &mut stack,
-                line_tokens,
-                line_fonts,
-                injection_cache,
-                capture_indices,
-                capture_depth,
-                deadline,
-            )?,
+        let outcome = match step.rule_id {
+            RuleScannerId::End => apply_end_rule(ctx, &span, &mut anchor_position, &mut stack),
             RuleScannerId::Rule(matched_rule_id) => {
-                let matched_rule = grammar.rule_registry().get_rule(matched_rule_id);
+                let matched_rule = ctx.grammar.rule_registry().get_rule(matched_rule_id);
                 if let Some(matching_rule) = matched_rule.as_match() {
                     apply_match_rule(
-                        grammar,
+                        ctx,
+                        &span,
                         matched_rule_id,
                         matched_rule,
                         matching_rule,
-                        line_text,
-                        line_is_ascii,
-                        line_length,
-                        is_first_line,
-                        line_pos,
-                        has_advanced,
-                        match_start,
-                        match_end,
                         anchor_position,
                         &mut stack,
-                        line_tokens,
-                        line_fonts,
-                        injection_cache,
-                        capture_indices,
-                        capture_depth,
-                        deadline,
-                    )?
+                    )
                 } else if let Some(pushed_rule) = matched_rule.as_begin_end() {
                     apply_begin_end_rule(
-                        grammar,
+                        ctx,
+                        &span,
                         matched_rule_id,
                         matched_rule,
                         pushed_rule,
-                        line_text,
-                        line_is_ascii,
-                        line_length,
-                        is_first_line,
-                        line_pos,
-                        has_advanced,
-                        match_start,
-                        match_end,
                         &mut anchor_position,
                         &mut stack,
-                        line_tokens,
-                        line_fonts,
-                        injection_cache,
-                        capture_indices,
-                        capture_depth,
-                        deadline,
-                    )?
+                    )
                 } else if let Some(pushed_rule) = matched_rule.as_begin_while() {
                     apply_begin_while_rule(
-                        grammar,
+                        ctx,
+                        &span,
                         matched_rule_id,
                         matched_rule,
                         pushed_rule,
-                        line_text,
-                        line_is_ascii,
-                        line_length,
-                        is_first_line,
-                        line_pos,
-                        has_advanced,
-                        match_start,
-                        match_end,
                         &mut anchor_position,
                         &mut stack,
-                        line_tokens,
-                        line_fonts,
-                        injection_cache,
-                        capture_indices,
-                        capture_depth,
-                        deadline,
-                    )?
+                    )
                 } else {
                     unreachable!("scanner must resolve to a matchable rule");
                 }
@@ -316,6 +475,8 @@ fn tokenize_string_loop<G: TokenizerGrammar>(
                 unreachable!("while scanner identity is only valid in while checks");
             }
         };
+        ctx.capture_pool.restore(capture_mark);
+        let outcome = outcome?;
 
         if let StepOutcome::Return { stopped_early } = outcome {
             return Ok(TokenizeStringResult {
@@ -332,31 +493,17 @@ fn tokenize_string_loop<G: TokenizerGrammar>(
 }
 
 #[cfg_attr(debug_assertions, inline(never))]
-#[allow(clippy::too_many_arguments)]
 fn apply_end_rule<G: TokenizerGrammar>(
-    grammar: &G,
-    line_text: &OnigString,
-    line_is_ascii: bool,
-    line_length: usize,
-    is_first_line: bool,
-    line_pos: usize,
-    has_advanced: bool,
-    match_start: usize,
-    match_end: usize,
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    span: &MatchedSpan<'_>,
     anchor_position: &mut isize,
     stack: &mut Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
-    capture_indices: &[ScannerCaptureIndex],
-    capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<StepOutcome, RegexError> {
     let popped_rule = stack
-        .rule(grammar.rule_registry())
+        .rule(ctx.grammar.rule_registry())
         .as_begin_end()
         .expect("end scanner identity requires a BeginEndRule");
-    produce(stack, match_start, line_tokens, line_fonts);
+    produce(stack, span.match_start, ctx.line_tokens, ctx.line_fonts);
     let name_scopes = stack
         .name_scopes_list
         .as_ref()
@@ -366,32 +513,29 @@ fn apply_end_rule<G: TokenizerGrammar>(
     } else {
         let mut capture_stack = None;
         handle_captures(
-            grammar,
-            line_text,
-            line_is_ascii,
-            is_first_line,
+            ctx,
+            span,
             &mut capture_stack,
             || stack.with_content_name_scopes_list(Arc::clone(name_scopes)),
             name_scopes,
-            line_tokens,
-            line_fonts,
-            injection_cache,
             &popped_rule.end_captures,
-            capture_indices,
-            capture_depth,
-            deadline,
         )?
     };
     if !capture_stopped_early {
-        produce_from_scopes(Some(name_scopes), match_end, line_tokens, line_fonts);
+        produce_from_scopes(
+            Some(name_scopes),
+            span.match_end,
+            ctx.line_tokens,
+            ctx.line_fonts,
+        );
     }
 
     *anchor_position = stack.anchor_pos();
-    if !has_advanced && stack.enter_pos() == line_pos as isize {
+    if !span.has_advanced && stack.enter_pos() == span.line_pos as isize {
         let name_scopes = Arc::clone(name_scopes);
         *stack = stack.with_content_name_scopes_list(name_scopes);
         if !capture_stopped_early {
-            produce(stack, line_length, line_tokens, line_fonts);
+            produce(stack, span.line_length, ctx.line_tokens, ctx.line_fonts);
         }
         return Ok(StepOutcome::Return {
             stopped_early: capture_stopped_early,
@@ -412,79 +556,64 @@ fn apply_end_rule<G: TokenizerGrammar>(
 #[cfg_attr(debug_assertions, inline(never))]
 #[allow(clippy::too_many_arguments)]
 fn apply_match_rule<G: TokenizerGrammar>(
-    grammar: &G,
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    span: &MatchedSpan<'_>,
     matched_rule_id: crate::RuleId,
     matched_rule: &crate::rule::Rule,
     matching_rule: &crate::rule::MatchRule,
-    line_text: &OnigString,
-    line_is_ascii: bool,
-    line_length: usize,
-    is_first_line: bool,
-    line_pos: usize,
-    has_advanced: bool,
-    match_start: usize,
-    match_end: usize,
     anchor_position: isize,
     stack: &mut Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
-    capture_indices: &[ScannerCaptureIndex],
-    capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<StepOutcome, RegexError> {
-    produce(stack, match_start, line_tokens, line_fonts);
+    produce(stack, span.match_start, ctx.line_tokens, ctx.line_fonts);
     let base_scopes = stack
         .content_name_scopes_list
         .as_ref()
         .expect("grammar state must have content-name scopes");
     let scope_name = matched_rule.resolved_name(
-        Some(line_text.content()),
-        Some(capture_indices),
-        line_is_ascii,
+        Some(span.line_text.content()),
+        Some(span.capture_indices(&ctx.capture_pool)),
+        span.line_is_ascii,
     );
-    let pushed_scopes = scope_name.map(|name| base_scopes.push_resolved(Some(name), grammar));
+    let pushed_scopes = scope_name.map(|name| base_scopes.push_resolved(Some(name), ctx.grammar));
     let active_scopes = pushed_scopes.as_ref().unwrap_or(base_scopes);
 
     let capture_stopped_early = if matching_rule.captures.is_empty() {
         false
     } else {
         let mut capture_stack = None;
+        let theme_id = ctx.grammar.theme_id();
         handle_captures(
-            grammar,
-            line_text,
-            line_is_ascii,
-            is_first_line,
+            ctx,
+            span,
             &mut capture_stack,
             || {
                 stack.push_with_theme_id(
                     matched_rule_id,
-                    grammar.theme_id(),
-                    line_pos as isize,
+                    theme_id,
+                    span.line_pos as isize,
                     anchor_position,
-                    match_end == line_length,
+                    span.match_end == span.line_length,
                     None,
                     Some(Arc::clone(active_scopes)),
                     Some(Arc::clone(active_scopes)),
                 )
             },
             active_scopes,
-            line_tokens,
-            line_fonts,
-            injection_cache,
             &matching_rule.captures,
-            capture_indices,
-            capture_depth,
-            deadline,
         )?
     };
     if !capture_stopped_early {
-        produce_from_scopes(Some(active_scopes), match_end, line_tokens, line_fonts);
+        produce_from_scopes(
+            Some(active_scopes),
+            span.match_end,
+            ctx.line_tokens,
+            ctx.line_fonts,
+        );
     }
-    if !has_advanced {
+    if !span.has_advanced {
         *stack = stack.safe_pop();
         if !capture_stopped_early {
-            produce(stack, line_length, line_tokens, line_fonts);
+            produce(stack, span.line_length, ctx.line_tokens, ctx.line_fonts);
         }
         return Ok(StepOutcome::Return {
             stopped_early: capture_stopped_early,
@@ -501,99 +630,87 @@ fn apply_match_rule<G: TokenizerGrammar>(
 #[cfg_attr(debug_assertions, inline(never))]
 #[allow(clippy::too_many_arguments)]
 fn apply_begin_end_rule<G: TokenizerGrammar>(
-    grammar: &G,
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    span: &MatchedSpan<'_>,
     matched_rule_id: crate::RuleId,
     matched_rule: &crate::rule::Rule,
     pushed_rule: &crate::rule::BeginEndRule,
-    line_text: &OnigString,
-    line_is_ascii: bool,
-    line_length: usize,
-    is_first_line: bool,
-    line_pos: usize,
-    has_advanced: bool,
-    match_start: usize,
-    match_end: usize,
     anchor_position: &mut isize,
     stack: &mut Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
-    capture_indices: &[ScannerCaptureIndex],
-    capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<StepOutcome, RegexError> {
     if stack.depth >= MAX_STATE_STACK_DEPTH {
         return Err(RegexError::depth_limit(
             "grammar state stack depth limit exceeded",
         ));
     }
-    produce(stack, match_start, line_tokens, line_fonts);
+    produce(stack, span.match_start, ctx.line_tokens, ctx.line_fonts);
     let scope_name = matched_rule.resolved_name(
-        Some(line_text.content()),
-        Some(capture_indices),
-        line_is_ascii,
+        Some(span.line_text.content()),
+        Some(span.capture_indices(&ctx.capture_pool)),
+        span.line_is_ascii,
     );
     let name_scopes_list = stack
         .content_name_scopes_list
         .as_ref()
         .expect("grammar state must have content-name scopes")
-        .push_resolved(scope_name, grammar);
+        .push_resolved(scope_name, ctx.grammar);
 
     let mut temp_stack = None;
+    let theme_id = ctx.grammar.theme_id();
     let capture_stopped_early = if pushed_rule.begin_captures.is_empty() {
         false
     } else {
         handle_captures(
-            grammar,
-            line_text,
-            line_is_ascii,
-            is_first_line,
+            ctx,
+            span,
             &mut temp_stack,
             || {
                 stack.push_with_theme_id(
                     matched_rule_id,
-                    grammar.theme_id(),
-                    line_pos as isize,
+                    theme_id,
+                    span.line_pos as isize,
                     *anchor_position,
-                    match_end == line_length,
+                    span.match_end == span.line_length,
                     None,
                     Some(Arc::clone(&name_scopes_list)),
                     Some(Arc::clone(&name_scopes_list)),
                 )
             },
             &name_scopes_list,
-            line_tokens,
-            line_fonts,
-            injection_cache,
             &pushed_rule.begin_captures,
-            capture_indices,
-            capture_depth,
-            deadline,
         )?
     };
     if !capture_stopped_early {
-        produce_from_scopes(Some(&name_scopes_list), match_end, line_tokens, line_fonts);
+        produce_from_scopes(
+            Some(&name_scopes_list),
+            span.match_end,
+            ctx.line_tokens,
+            ctx.line_fonts,
+        );
     }
     let begin_anchor = *anchor_position;
-    *anchor_position = match_end as isize;
-    let content_name =
-        matched_rule.resolved_content_name(line_text.content(), capture_indices, line_is_ascii);
+    *anchor_position = span.match_end as isize;
+    let content_name = matched_rule.resolved_content_name(
+        span.line_text.content(),
+        span.capture_indices(&ctx.capture_pool),
+        span.line_is_ascii,
+    );
     let has_content_name = content_name.is_some();
-    let content_name_scopes_list = name_scopes_list.push_resolved(content_name, grammar);
+    let content_name_scopes_list = name_scopes_list.push_resolved(content_name, ctx.grammar);
     let end_rule = if pushed_rule.end_has_back_references {
         Some(
             pushed_rule.get_end_with_resolved_back_references_with_ascii(
-                line_text.content(),
-                capture_indices,
-                line_is_ascii,
+                span.line_text.content(),
+                span.capture_indices(&ctx.capture_pool),
+                span.line_is_ascii,
             )?,
         )
     } else {
         None
     };
-    if !has_advanced && stack.has_same_rule(matched_rule_id, line_pos as isize) {
+    if !span.has_advanced && stack.has_same_rule(matched_rule_id, span.line_pos as isize) {
         if !capture_stopped_early {
-            produce(stack, line_length, line_tokens, line_fonts);
+            produce(stack, span.line_length, ctx.line_tokens, ctx.line_fonts);
         }
         return Ok(StepOutcome::Return {
             stopped_early: capture_stopped_early,
@@ -607,10 +724,10 @@ fn apply_begin_end_rule<G: TokenizerGrammar>(
     } else {
         stack.push_with_theme_id(
             matched_rule_id,
-            grammar.theme_id(),
-            line_pos as isize,
+            theme_id,
+            span.line_pos as isize,
             begin_anchor,
-            match_end == line_length,
+            span.match_end == span.line_length,
             end_rule,
             Some(name_scopes_list),
             Some(content_name_scopes_list),
@@ -627,99 +744,87 @@ fn apply_begin_end_rule<G: TokenizerGrammar>(
 #[cfg_attr(debug_assertions, inline(never))]
 #[allow(clippy::too_many_arguments)]
 fn apply_begin_while_rule<G: TokenizerGrammar>(
-    grammar: &G,
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    span: &MatchedSpan<'_>,
     matched_rule_id: crate::RuleId,
     matched_rule: &crate::rule::Rule,
     pushed_rule: &crate::rule::BeginWhileRule,
-    line_text: &OnigString,
-    line_is_ascii: bool,
-    line_length: usize,
-    is_first_line: bool,
-    line_pos: usize,
-    has_advanced: bool,
-    match_start: usize,
-    match_end: usize,
     anchor_position: &mut isize,
     stack: &mut Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
-    capture_indices: &[ScannerCaptureIndex],
-    capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<StepOutcome, RegexError> {
     if stack.depth >= MAX_STATE_STACK_DEPTH {
         return Err(RegexError::depth_limit(
             "grammar state stack depth limit exceeded",
         ));
     }
-    produce(stack, match_start, line_tokens, line_fonts);
+    produce(stack, span.match_start, ctx.line_tokens, ctx.line_fonts);
     let scope_name = matched_rule.resolved_name(
-        Some(line_text.content()),
-        Some(capture_indices),
-        line_is_ascii,
+        Some(span.line_text.content()),
+        Some(span.capture_indices(&ctx.capture_pool)),
+        span.line_is_ascii,
     );
     let name_scopes_list = stack
         .content_name_scopes_list
         .as_ref()
         .expect("grammar state must have content-name scopes")
-        .push_resolved(scope_name, grammar);
+        .push_resolved(scope_name, ctx.grammar);
 
     let mut temp_stack = None;
+    let theme_id = ctx.grammar.theme_id();
     let capture_stopped_early = if pushed_rule.begin_captures.is_empty() {
         false
     } else {
         handle_captures(
-            grammar,
-            line_text,
-            line_is_ascii,
-            is_first_line,
+            ctx,
+            span,
             &mut temp_stack,
             || {
                 stack.push_with_theme_id(
                     matched_rule_id,
-                    grammar.theme_id(),
-                    line_pos as isize,
+                    theme_id,
+                    span.line_pos as isize,
                     *anchor_position,
-                    match_end == line_length,
+                    span.match_end == span.line_length,
                     None,
                     Some(Arc::clone(&name_scopes_list)),
                     Some(Arc::clone(&name_scopes_list)),
                 )
             },
             &name_scopes_list,
-            line_tokens,
-            line_fonts,
-            injection_cache,
             &pushed_rule.begin_captures,
-            capture_indices,
-            capture_depth,
-            deadline,
         )?
     };
     if !capture_stopped_early {
-        produce_from_scopes(Some(&name_scopes_list), match_end, line_tokens, line_fonts);
+        produce_from_scopes(
+            Some(&name_scopes_list),
+            span.match_end,
+            ctx.line_tokens,
+            ctx.line_fonts,
+        );
     }
     let begin_anchor = *anchor_position;
-    *anchor_position = match_end as isize;
-    let content_name =
-        matched_rule.resolved_content_name(line_text.content(), capture_indices, line_is_ascii);
+    *anchor_position = span.match_end as isize;
+    let content_name = matched_rule.resolved_content_name(
+        span.line_text.content(),
+        span.capture_indices(&ctx.capture_pool),
+        span.line_is_ascii,
+    );
     let has_content_name = content_name.is_some();
-    let content_name_scopes_list = name_scopes_list.push_resolved(content_name, grammar);
+    let content_name_scopes_list = name_scopes_list.push_resolved(content_name, ctx.grammar);
     let while_rule = if pushed_rule.while_has_back_references {
         Some(
             pushed_rule.get_while_with_resolved_back_references_with_ascii(
-                line_text.content(),
-                capture_indices,
-                line_is_ascii,
+                span.line_text.content(),
+                span.capture_indices(&ctx.capture_pool),
+                span.line_is_ascii,
             )?,
         )
     } else {
         None
     };
-    if !has_advanced && stack.has_same_rule(matched_rule_id, line_pos as isize) {
+    if !span.has_advanced && stack.has_same_rule(matched_rule_id, span.line_pos as isize) {
         if !capture_stopped_early {
-            produce(stack, line_length, line_tokens, line_fonts);
+            produce(stack, span.line_length, ctx.line_tokens, ctx.line_fonts);
         }
         return Ok(StepOutcome::Return {
             stopped_early: capture_stopped_early,
@@ -733,10 +838,10 @@ fn apply_begin_while_rule<G: TokenizerGrammar>(
     } else {
         stack.push_with_theme_id(
             matched_rule_id,
-            grammar.theme_id(),
-            line_pos as isize,
+            theme_id,
+            span.line_pos as isize,
             begin_anchor,
-            match_end == line_length,
+            span.match_end == span.line_length,
             while_rule,
             Some(name_scopes_list),
             Some(content_name_scopes_list),
@@ -796,21 +901,18 @@ struct WhileCheckResult {
 
 #[allow(clippy::too_many_arguments)]
 fn check_while_conditions_impl<G: TokenizerGrammar>(
-    grammar: &G,
+    ctx: &mut TokenizeContext<'_, '_, G>,
     line_text: &OnigString,
     line_is_ascii: bool,
+    line_length: usize,
     mut is_first_line: bool,
     mut line_pos: usize,
     mut stack: Arc<StateStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
     capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<WhileCheckResult, RegexError> {
     const STOP_CHECK_INTERVAL: usize = 64;
     let mut anchor_position = if stack.begin_rule_captured_eol { 0 } else { -1 };
-    if deadline_exceeded(deadline) {
+    if deadline_exceeded(ctx.deadline) {
         return Ok(WhileCheckResult {
             stack,
             line_pos,
@@ -827,12 +929,12 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
         let mut steps: usize = 0;
         while let Some(current) = node {
             steps += 1;
-            if steps & (STOP_CHECK_INTERVAL - 1) == 0 && deadline_exceeded(deadline) {
+            if steps & (STOP_CHECK_INTERVAL - 1) == 0 && deadline_exceeded(ctx.deadline) {
                 stopped_early = true;
                 break;
             }
             if current
-                .rule(grammar.rule_registry())
+                .rule(ctx.grammar.rule_registry())
                 .as_begin_while()
                 .is_some()
             {
@@ -842,21 +944,21 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
         }
 
         while !stopped_early && let Some(while_stack) = while_rules.pop() {
-            if deadline_exceeded(deadline) {
+            if deadline_exceeded(ctx.deadline) {
                 stopped_early = true;
                 break;
             }
             let while_rule = while_stack
-                .rule(grammar.rule_registry())
+                .rule(ctx.grammar.rule_registry())
                 .as_begin_while()
                 .expect("collected while state must reference BeginWhileRule");
             let scanner = while_rule.compile_while_ag_and_record(
-                grammar.rule_registry(),
+                ctx.grammar.rule_registry(),
                 while_stack.end_rule.as_deref(),
                 is_first_line,
                 line_pos as isize == anchor_position,
             )?;
-            if deadline_exceeded(deadline) {
+            if deadline_exceeded(ctx.deadline) {
                 stopped_early = true;
                 break;
             }
@@ -868,48 +970,57 @@ fn check_while_conditions_impl<G: TokenizerGrammar>(
                         .pop()
                         .expect("BeginWhileRule state must have a parent"),
                 );
-                if deadline_exceeded(deadline) {
+                if deadline_exceeded(ctx.deadline) {
                     stopped_early = true;
                 }
                 break;
             };
-            if deadline_exceeded(deadline) {
+            if deadline_exceeded(ctx.deadline) {
                 stopped_early = true;
                 break;
             }
-            let capture_indices = matched.captures();
-            if let Some(full_match) = capture_indices.first() {
-                produce(while_stack, full_match.start, line_tokens, line_fonts);
+            if let Some(full_match) = matched.captures().first() {
+                let full_start = full_match.start;
+                let full_end = full_match.end;
+                produce(while_stack, full_start, ctx.line_tokens, ctx.line_fonts);
                 if !while_rule.while_captures.is_empty() {
                     let while_scopes = while_stack
                         .content_name_scopes_list
                         .as_ref()
                         .expect("grammar state must have content-name scopes");
                     let mut while_capture_stack = None;
-                    if handle_captures(
-                        grammar,
+                    let capture_mark = ctx.capture_pool.mark();
+                    let captures = ctx.capture_pool.store_match(matched);
+                    let span = MatchedSpan {
                         line_text,
                         line_is_ascii,
+                        line_length,
                         is_first_line,
+                        line_pos,
+                        has_advanced: full_end > line_pos,
+                        match_start: full_start,
+                        match_end: full_end,
+                        captures,
+                        capture_depth,
+                    };
+                    let handle_result = handle_captures(
+                        ctx,
+                        &span,
                         &mut while_capture_stack,
                         || Arc::clone(while_stack),
                         while_scopes,
-                        line_tokens,
-                        line_fonts,
-                        injection_cache,
                         &while_rule.while_captures,
-                        capture_indices,
-                        capture_depth,
-                        deadline,
-                    )? {
+                    );
+                    ctx.capture_pool.restore(capture_mark);
+                    if handle_result? {
                         stopped_early = true;
                         break;
                     }
                 }
-                produce(while_stack, full_match.end, line_tokens, line_fonts);
-                anchor_position = full_match.end as isize;
-                if full_match.end > line_pos {
-                    line_pos = full_match.end;
+                produce(while_stack, full_end, ctx.line_tokens, ctx.line_fonts);
+                anchor_position = full_end as isize;
+                if full_end > line_pos {
+                    line_pos = full_end;
                     is_first_line = false;
                 }
             }
@@ -1442,122 +1553,120 @@ fn match_injections_tail<G: TokenizerGrammar, S: AsRef<str>>(
     }))
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_captures<G: TokenizerGrammar>(
-    grammar: &G,
-    line_text: &OnigString,
-    line_is_ascii: bool,
-    is_first_line: bool,
+    ctx: &mut TokenizeContext<'_, '_, G>,
+    span: &MatchedSpan<'_>,
     capture_stack: &mut Option<Arc<StateStack>>,
     mut make_capture_stack: impl FnMut() -> Arc<StateStack>,
     base_scopes: &Arc<AttributedScopeStack>,
-    line_tokens: &mut LineTokens<'_>,
-    line_fonts: &mut LineFonts,
-    injection_cache: &mut InjectionScopeCache,
     captures: &[(usize, Arc<CaptureRule>)],
-    capture_indices: &[ScannerCaptureIndex],
-    capture_depth: usize,
-    deadline: Option<Instant>,
 ) -> Result<bool, RegexError> {
     if captures.is_empty() {
         return Ok(false);
     }
-    let line_text_content = line_text.content();
+    let line_text_content = span.line_text.content();
+    let capture_count = span.captures.len();
     let mut local_stack: Vec<LocalStackElement> = Vec::new();
-    let max_end = capture_indices[0].end;
+    let max_end = span.captures.get(&ctx.capture_pool, 0).end;
 
     for &(index, ref capture_rule) in captures {
-        if deadline_exceeded(deadline) {
+        if deadline_exceeded(ctx.deadline) {
             return Ok(true);
         }
-        if index >= capture_indices.len() {
+        if index >= capture_count {
             break;
         }
-        let capture_index = &capture_indices[index];
-        if capture_index.length == 0 {
+        let capture_index = span.captures.get(&ctx.capture_pool, index);
+        let capture_start = capture_index.start;
+        let capture_end = capture_index.end;
+        let capture_length = capture_index.length;
+        if capture_length == 0 {
             continue;
         }
-        if capture_index.start > max_end {
+        if capture_start > max_end {
             break;
         }
 
         while local_stack
             .last()
-            .is_some_and(|local| local.end_pos <= capture_index.start)
+            .is_some_and(|local| local.end_pos <= capture_start)
         {
-            if deadline_exceeded(deadline) {
+            if deadline_exceeded(ctx.deadline) {
                 return Ok(true);
             }
             let local = local_stack
                 .pop()
                 .expect("checked local capture stack must be nonempty");
-            produce_from_scopes(Some(&local.scopes), local.end_pos, line_tokens, line_fonts);
+            produce_from_scopes(
+                Some(&local.scopes),
+                local.end_pos,
+                ctx.line_tokens,
+                ctx.line_fonts,
+            );
         }
         if let Some(local) = local_stack.last() {
             produce_from_scopes(
                 Some(&local.scopes),
-                capture_index.start,
-                line_tokens,
-                line_fonts,
+                capture_start,
+                ctx.line_tokens,
+                ctx.line_fonts,
             );
         } else {
             produce_from_scopes(
                 Some(base_scopes),
-                capture_index.start,
-                line_tokens,
-                line_fonts,
+                capture_start,
+                ctx.line_tokens,
+                ctx.line_fonts,
             );
         }
 
         if let Some(retokenize_rule_id) = capture_rule.retokenize_captured_with_rule_id {
-            if capture_depth >= MAX_CAPTURE_RETOKENIZE_DEPTH {
+            if span.capture_depth >= MAX_CAPTURE_RETOKENIZE_DEPTH {
                 return Err(RegexError::depth_limit(
                     "capture retokenization depth limit exceeded",
                 ));
             }
+            let capture_slice = span.capture_indices(&ctx.capture_pool);
             let scope_name = capture_rule.resolved_name(
                 Some(line_text_content),
-                Some(capture_indices),
-                line_is_ascii,
+                Some(capture_slice),
+                span.line_is_ascii,
             );
-            let name_scopes_list = base_scopes.push_resolved(scope_name, grammar);
+            let name_scopes_list = base_scopes.push_resolved(scope_name, ctx.grammar);
             let content_name = capture_rule.resolved_content_name(
                 line_text_content,
-                capture_indices,
-                line_is_ascii,
+                capture_slice,
+                span.line_is_ascii,
             );
-            let content_name_scopes_list = name_scopes_list.push_resolved(content_name, grammar);
+            let content_name_scopes_list =
+                name_scopes_list.push_resolved(content_name, ctx.grammar);
             let retokenize_parent = capture_stack.get_or_insert_with(&mut make_capture_stack);
             let stack_clone = retokenize_parent.push_with_theme_id(
                 retokenize_rule_id,
-                grammar.theme_id(),
-                capture_index.start as isize,
+                ctx.grammar.theme_id(),
+                capture_start as isize,
                 -1,
                 false,
                 None,
                 Some(name_scopes_list),
                 Some(content_name_scopes_list),
             );
-            let prefix = utf16_prefix(line_text_content, capture_index.end, line_is_ascii);
+            let prefix = utf16_prefix(line_text_content, capture_end, span.line_is_ascii);
             let substring = OnigString::new(prefix);
             let substring_len = substring.utf16_len();
             let substring_is_ascii = substring.content().len() == substring_len;
             let retokenized = tokenize_string_loop(
-                grammar,
+                ctx,
                 &substring,
                 substring_is_ascii,
                 substring_len,
-                is_first_line && capture_index.start == 0,
-                capture_index.start,
+                span.is_first_line && capture_start == 0,
+                capture_start,
                 -1,
                 stack_clone,
-                line_tokens,
-                line_fonts,
-                injection_cache,
-                deadline,
-                capture_depth + 1,
+                span.capture_depth + 1,
             )?;
-            if retokenized.stopped_early || deadline_exceeded(deadline) {
+            if retokenized.stopped_early || deadline_exceeded(ctx.deadline) {
                 return Ok(true);
             }
             continue;
@@ -1565,28 +1674,33 @@ fn handle_captures<G: TokenizerGrammar>(
 
         let capture_scope_name = capture_rule.resolved_name(
             Some(line_text_content),
-            Some(capture_indices),
-            line_is_ascii,
+            Some(span.capture_indices(&ctx.capture_pool)),
+            span.line_is_ascii,
         );
         if let Some(capture_scope_name) = capture_scope_name {
             let base = local_stack
                 .last()
                 .map_or(base_scopes, |local| &local.scopes);
-            let capture_scopes = base.push_resolved(Some(capture_scope_name), grammar);
+            let capture_scopes = base.push_resolved(Some(capture_scope_name), ctx.grammar);
             local_stack.push(LocalStackElement {
                 scopes: capture_scopes,
-                end_pos: capture_index.end,
+                end_pos: capture_end,
             });
         }
     }
 
     while let Some(local) = local_stack.pop() {
-        if deadline_exceeded(deadline) {
+        if deadline_exceeded(ctx.deadline) {
             return Ok(true);
         }
-        produce_from_scopes(Some(&local.scopes), local.end_pos, line_tokens, line_fonts);
+        produce_from_scopes(
+            Some(&local.scopes),
+            local.end_pos,
+            ctx.line_tokens,
+            ctx.line_fonts,
+        );
     }
-    Ok(deadline_exceeded(deadline))
+    Ok(deadline_exceeded(ctx.deadline))
 }
 
 struct LocalStackElement {
@@ -2880,23 +2994,36 @@ mod tests {
         let expired = Instant::now().checked_sub(Duration::from_secs(1));
 
         let base_scopes = stack.content_name_scopes_list.as_ref().unwrap();
-        let mut injection_cache = super::InjectionScopeCache::default();
+        let captures = matched.captures();
+        let mut ctx = super::TokenizeContext {
+            grammar: &grammar,
+            line_tokens: &mut tokens,
+            line_fonts: &mut fonts,
+            injection_cache: super::InjectionScopeCache::default(),
+            capture_pool: super::CapturePool::default(),
+            deadline: expired,
+        };
+        let step_captures = ctx.capture_pool.push_slice(captures);
+        let span = super::MatchedSpan {
+            line_text: &onig,
+            line_is_ascii: onig.content().len() == onig.utf16_len(),
+            line_length: onig.utf16_len(),
+            is_first_line: true,
+            line_pos: 0,
+            has_advanced: captures[0].end > 0,
+            match_start: captures[0].start,
+            match_end: captures[0].end,
+            captures: step_captures,
+            capture_depth: 0,
+        };
         let mut capture_stack = None;
         let stopped = super::handle_captures(
-            &grammar,
-            &onig,
-            onig.content().len() == onig.utf16_len(),
-            true,
+            &mut ctx,
+            &span,
             &mut capture_stack,
             || Arc::clone(&stack),
             base_scopes,
-            &mut tokens,
-            &mut fonts,
-            &mut injection_cache,
             &match_rule.captures,
-            matched.captures(),
-            0,
-            expired,
         )
         .unwrap();
 
@@ -3766,32 +3893,45 @@ mod tests {
         let base_scopes = init_state.content_name_scopes_list.as_ref().unwrap();
         let mut cap_tokens = LineTokens::new(false, "x", &[], None);
         let mut cap_fonts = LineFonts::new();
-        let mut cap_cache = super::InjectionScopeCache::default();
+        let captures = matched.captures();
+        let mut ctx = super::TokenizeContext {
+            grammar: &grammar,
+            line_tokens: &mut cap_tokens,
+            line_fonts: &mut cap_fonts,
+            injection_cache: super::InjectionScopeCache::default(),
+            capture_pool: super::CapturePool::default(),
+            deadline: None,
+        };
+        let step_captures = ctx.capture_pool.push_slice(captures);
+        let span = super::MatchedSpan {
+            line_text: &onig_one,
+            line_is_ascii: true,
+            line_length: onig_one.utf16_len(),
+            is_first_line: true,
+            line_pos: 0,
+            has_advanced: captures[0].end > 0,
+            match_start: captures[0].start,
+            match_end: captures[0].end,
+            captures: step_captures,
+            capture_depth: 0,
+        };
         let mut lazy_stack = None;
         let mut factory_called = false;
         let stopped = super::handle_captures(
-            &grammar,
-            &onig_one,
-            true,
-            true,
+            &mut ctx,
+            &span,
             &mut lazy_stack,
             || {
                 factory_called = true;
                 Arc::clone(&init_state)
             },
             base_scopes,
-            &mut cap_tokens,
-            &mut cap_fonts,
-            &mut cap_cache,
             &grammar
                 .registry
                 .get_rule(match_id)
                 .as_match()
                 .unwrap()
                 .captures,
-            matched.captures(),
-            0,
-            None,
         )
         .unwrap();
         assert!(!stopped);

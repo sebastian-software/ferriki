@@ -117,8 +117,11 @@ named `ferriki-textmate`.
   throwaway `Arc<StateStack>` allocations on `MatchRule`/`End`/`BeginEnd`/`BeginWhile`
   transitions, reusing per-line injection scope buffers, eagerly pre-interning
   ordinary static scope-name segments (up to 256 bytes / 16 segments) as
-  `Arc<str>`, borrowing `LineTokens` matchers per line, retaining inline
-  Ferroni capture buffers without cloning, passing the O(1) line ASCII flag
+  `Arc<str>`, borrowing `LineTokens` matchers per line, passing only full-match
+  offsets when a rule needs no capture groups while moving wide (>8-slot)
+  heap-backed Ferroni capture buffers directly without copying and pooling
+  small inline capture tuples at depth 0 so recursive capture frames stay
+  compact, passing the O(1) line ASCII flag
   into UTF-16 capture slicing, and checking any active `tokenizeTimeLimit`
   deadline after scanner lookup/compilation right before every synchronous
   regex search (with zero clock reads when `time_limit == 0`).
@@ -186,7 +189,8 @@ this decision.
 
 ## History
 
-- 2026-11-27: Optimizes the TextMate inner tokenization loop (zero-throwaway `StateStack` transitions, pre-interned static `Arc<str>` scope segments, omitted unread `AttributedScopeStack::style_attributes` layout field, borrowed `LineTokens` matchers, inline capture slices, precomputed end guards, cached injection scope walks, reduced redundant deadline clock calls while checking before each search and after selector evaluation or contended cache waits, O(1) line-ASCII capture slicing and ASCII fast paths) and bounds `BasicScopeAttributesProvider::cache` at 8,192 entries (#392).
+- 2026-11-27: Compacts `tokenize_string_loop` recursive capture stack frames to stay within a 384 KiB debug stack across Windows/macOS/Linux by passing only full-match offsets for non-capturing rules, moving wide (>8-slot) Ferroni capture `Vec`s directly, and staging small inline capture tuples in a depth-0 pool (#392).
+- 2026-11-27: Optimizes the TextMate inner tokenization loop (zero-throwaway `StateStack` transitions, pre-interned static `Arc<str>` scope segments, omitted unread `AttributedScopeStack::style_attributes` layout field, borrowed `LineTokens` matchers, precomputed end guards, cached injection scope walks, reduced redundant deadline clock calls while checking before each search and after selector evaluation or contended cache waits, O(1) line-ASCII capture slicing and ASCII fast paths) and bounds `BasicScopeAttributesProvider::cache` at 8,192 entries (#392).
 - 2026-11-27: Masks every bitfield in `EncodedTokenAttributes::set`, enforces 9-bit foreground (max 511) and 8-bit background (max 255) color-map limits via `ThemeError::ColorMapOverflow`, and rejects language IDs above 255 via `ThemeError::InvalidLanguageId` (#388).
 - 2026-11-26: Propagates `tokenizeTimeLimit` deadlines through `while`-condition checks, injection scanning, and capture retokenization; bounds plist and scope-selector nesting depth at 128 and makes selector evaluation/drop, theme-trie traversal/drop, and raw-rule collection/drop iterative (#385).
 - 2026-11-26: Adds `SyncRegistry::set_compiled_theme` for O(1) precompiled `Arc<Theme>` switching and `Grammar::tokenize_line_with_themes` for single-pass multi-theme binary encoding without altering grammar traversal (#389).

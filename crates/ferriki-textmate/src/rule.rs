@@ -699,6 +699,29 @@ impl Rule {
         self.data().get_name(line_text, capture_indices)
     }
 
+    #[inline]
+    #[must_use]
+    pub(crate) fn needs_match_captures(&self) -> bool {
+        let data = self.data();
+        if data.name_is_capturing {
+            return true;
+        }
+        match self {
+            Self::Match(rule) => !rule.captures.is_empty(),
+            Self::BeginEnd(rule) => {
+                !rule.begin_captures.is_empty()
+                    || rule.end_has_back_references
+                    || data.content_name_is_capturing
+            }
+            Self::BeginWhile(rule) => {
+                !rule.begin_captures.is_empty()
+                    || rule.while_has_back_references
+                    || data.content_name_is_capturing
+            }
+            Self::Capture(_) | Self::IncludeOnly(_) => false,
+        }
+    }
+
     #[must_use]
     pub(crate) fn resolved_name<C: CaptureSpan>(
         &self,
