@@ -1040,7 +1040,7 @@ mod tests {
             factory
                 .registry()
                 .get_rule(root)
-                .get_name(None, None)
+                .get_name::<crate::regexp::ScannerCaptureIndex>(None, None)
                 .as_deref(),
             Some("source.test")
         );
@@ -1275,7 +1275,10 @@ mod tests {
         assert_eq!(first.captures.len(), 3);
         assert_eq!(first.captures[0].0, 1);
         assert_eq!(
-            first.captures[0].1.get_name(None, None).as_deref(),
+            first.captures[0]
+                .1
+                .get_name::<crate::regexp::ScannerCaptureIndex>(None, None)
+                .as_deref(),
             Some("valid.test")
         );
         assert_eq!(first.captures[1].0, 1_000_000_000);
@@ -1296,12 +1299,18 @@ mod tests {
         assert_eq!(third.captures.len(), 2);
         assert_eq!(third.captures[0].0, 1_024);
         assert_eq!(
-            third.captures[0].1.get_name(None, None).as_deref(),
+            third.captures[0]
+                .1
+                .get_name::<crate::regexp::ScannerCaptureIndex>(None, None)
+                .as_deref(),
             Some("boundary.test")
         );
         assert_eq!(third.captures[1].0, 1_025);
         assert_eq!(
-            third.captures[1].1.get_name(None, None).as_deref(),
+            third.captures[1]
+                .1
+                .get_name::<crate::regexp::ScannerCaptureIndex>(None, None)
+                .as_deref(),
             Some("over.test")
         );
     }

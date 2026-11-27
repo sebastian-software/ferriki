@@ -23,6 +23,14 @@ impl BasicScopeAttributes {
     };
 }
 
+/// Maximum number of exact scope-name entries retained in
+/// `BasicScopeAttributesProvider::cache`. Capture-derived dynamic scope names
+/// cannot grow a long-lived grammar past this bound.
+const MAX_CACHED_BASIC_SCOPE_ATTRIBUTES: usize = 8_192;
+
+/// Scope names longer than this threshold bypass the cache and compute directly.
+const MAX_CACHED_BASIC_SCOPE_NAME_BYTES: usize = 256;
+
 pub(crate) struct BasicScopeAttributesProvider {
     default_attributes: BasicScopeAttributes,
     embedded_languages_matcher: ScopeMatcher,
@@ -77,11 +85,29 @@ impl BasicScopeAttributesProvider {
         self.default_attributes
     }
 
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) fn cache_len(&self) -> usize {
+        self.cache
+            .lock()
+            .expect("basic scope attribute cache lock poisoned")
+            .len()
+    }
+
     #[must_use]
     pub(crate) fn basic_scope_attributes(&self, scope_name: Option<&str>) -> BasicScopeAttributes {
         let Some(scope_name) = scope_name else {
             return BasicScopeAttributes::NULL_SCOPE;
         };
+        if scope_name.len() > MAX_CACHED_BASIC_SCOPE_NAME_BYTES {
+            return BasicScopeAttributes {
+                language_id: self
+                    .embedded_languages_matcher
+                    .matches(scope_name)
+                    .unwrap_or(0),
+                token_type: standard_token_type(scope_name),
+            };
+        }
         if let Some(cached) = self
             .cache
             .lock()
@@ -99,10 +125,16 @@ impl BasicScopeAttributesProvider {
                 .unwrap_or(0),
             token_type: standard_token_type(scope_name),
         };
-        self.cache
+        let mut cache = self
+            .cache
             .lock()
-            .expect("basic scope attribute cache lock poisoned")
-            .insert(scope_name.to_owned(), attributes);
+            .expect("basic scope attribute cache lock poisoned");
+        if !cache.contains_key(scope_name) {
+            if cache.len() >= MAX_CACHED_BASIC_SCOPE_ATTRIBUTES {
+                cache.clear();
+            }
+            cache.insert(scope_name.to_owned(), attributes);
+        }
         attributes
     }
 }
@@ -276,5 +308,39 @@ mod tests {
                 max_language_id: 255,
             }
         );
+    }
+
+    #[test]
+    fn bounds_dynamic_scope_attribute_cache_and_bypasses_oversized_names() {
+        let embedded = EmbeddedLanguages::from([("source.embedded".into(), 3)]);
+        let provider = BasicScopeAttributesProvider::new(1, Some(&embedded));
+
+        let long_scope = format!(
+            "source.embedded.string.{}",
+            "x".repeat(super::MAX_CACHED_BASIC_SCOPE_NAME_BYTES)
+        );
+        let long_attrs = provider.basic_scope_attributes(Some(&long_scope));
+        assert_eq!(long_attrs.language_id, 3);
+        assert_eq!(long_attrs.token_type, OptionalStandardTokenType::String);
+        assert_eq!(
+            provider.cache_len(),
+            0,
+            "oversized dynamic scope names must bypass the cache"
+        );
+
+        let total = super::MAX_CACHED_BASIC_SCOPE_ATTRIBUTES + 100;
+        for index in 0..total {
+            let scope = format!("source.embedded.comment.dynamic{index}");
+            let attrs = provider.basic_scope_attributes(Some(&scope));
+            assert_eq!(attrs.language_id, 3);
+            assert_eq!(attrs.token_type, OptionalStandardTokenType::Comment);
+            assert!(
+                provider.cache_len() <= super::MAX_CACHED_BASIC_SCOPE_ATTRIBUTES,
+                "cache length {} exceeded bound {}",
+                provider.cache_len(),
+                super::MAX_CACHED_BASIC_SCOPE_ATTRIBUTES
+            );
+        }
+        assert_eq!(provider.cache_len(), 100);
     }
 }

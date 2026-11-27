@@ -106,12 +106,31 @@ named `ferriki-textmate`.
   8-bit background (max ID 255) color-map bounds via
   `ThemeError::ColorMapOverflow`, and grammar compilation rejects 8-bit
   language IDs above 255 via `ThemeError::InvalidLanguageId`.
+  Long-lived dynamic scope caches are bounded (`Theme::cached_match_root` at
+  4,096 entries and `BasicScopeAttributesProvider::cache` at 8,192 entries,
+  both bypassing scope names longer than 256 bytes) so capture-derived scope
+  names cannot grow memory unboundedly.
   Exceeding any tokenization safety bound returns a recoverable
   `RegexError` rather than emitting truncated continuation states or silently
   skipping scopes.
+- Hot-loop tokenization preserves exact upstream semantics while eliminating
+  throwaway `Arc<StateStack>` allocations on `MatchRule`/`End`/`BeginEnd`/`BeginWhile`
+  transitions, reusing per-line injection scope buffers, eagerly pre-interning
+  ordinary static scope-name segments (up to 256 bytes / 16 segments) as
+  `Arc<str>`, borrowing `LineTokens` matchers per line, passing only full-match
+  offsets when a rule needs no capture groups while moving wide (>8-slot)
+  heap-backed Ferroni capture buffers directly without copying and pooling
+  small inline capture tuples at depth 0 so recursive capture frames stay
+  compact, passing the O(1) line ASCII flag
+  into UTF-16 capture slicing, and checking any active `tokenizeTimeLimit`
+  deadline after scanner lookup/compilation right before every synchronous
+  regex search (with zero clock reads when `time_limit == 0`).
 - Port code that has no caller in Ferriki stays for upstream parity and is
   marked with a `dead_code` allowance and its reason, instead of being
-  deleted.
+  deleted. Narrow layout exception: `AttributedScopeStack::style_attributes`
+  is omitted from the Rust struct because it is never read after attribute
+  merging and retaining it would add 56+ bytes (plus an owned `String`
+  header) to every hot-loop `Arc<AttributedScopeStack>` node.
 - The mirrored vscode-textmate suite is the inner oracle. The honestly aliased
   Shiki suite is the end-to-end oracle. Optimizations start only after both are
   green and the four structural gate failure classes have explicit coverage.
@@ -170,6 +189,8 @@ this decision.
 
 ## History
 
+- 2026-11-27: Compacts `tokenize_string_loop` recursive capture stack frames to stay within a 384 KiB debug stack across Windows/macOS/Linux by passing only full-match offsets for non-capturing rules, moving wide (>8-slot) Ferroni capture `Vec`s directly, and staging small inline capture tuples in a depth-0 pool (#392).
+- 2026-11-27: Optimizes the TextMate inner tokenization loop (zero-throwaway `StateStack` transitions, pre-interned static `Arc<str>` scope segments, omitted unread `AttributedScopeStack::style_attributes` layout field, borrowed `LineTokens` matchers, precomputed end guards, cached injection scope walks, reduced redundant deadline clock calls while checking before each search and after selector evaluation or contended cache waits, O(1) line-ASCII capture slicing and ASCII fast paths) and bounds `BasicScopeAttributesProvider::cache` at 8,192 entries (#392).
 - 2026-11-27: Masks every bitfield in `EncodedTokenAttributes::set`, enforces 9-bit foreground (max 511) and 8-bit background (max 255) color-map limits via `ThemeError::ColorMapOverflow`, and rejects language IDs above 255 via `ThemeError::InvalidLanguageId` (#388).
 - 2026-11-26: Propagates `tokenizeTimeLimit` deadlines through `while`-condition checks, injection scanning, and capture retokenization; bounds plist and scope-selector nesting depth at 128 and makes selector evaluation/drop, theme-trie traversal/drop, and raw-rule collection/drop iterative (#385).
 - 2026-11-26: Adds `SyncRegistry::set_compiled_theme` for O(1) precompiled `Arc<Theme>` switching and `Grammar::tokenize_line_with_themes` for single-pass multi-theme binary encoding without altering grammar traversal (#389).
