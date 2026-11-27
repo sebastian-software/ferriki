@@ -41,11 +41,24 @@ pub fn diff_state_stacks_ref_eq(first: &Arc<StateStack>, second: &Arc<StateStack
     StackDiff { pops, new_frames }
 }
 
+/// Applies a [`StackDiff`] produced by [`diff_state_stacks_ref_eq`] to `stack`.
+///
+/// # Panics
+///
+/// Panics if `diff` requires popping more frames than `stack` contains
+/// (matching upstream `vscode-textmate`'s fail-fast behavior when a diff is
+/// applied to an incompatible stack).
 #[must_use]
 pub fn apply_state_stack_diff(
     stack: Option<Arc<StateStack>>,
     diff: &StackDiff,
 ) -> Option<Arc<StateStack>> {
+    let depth = stack.as_ref().map_or(0, |stack| stack.depth);
+    assert!(
+        diff.pops <= depth,
+        "state stack diff contains too many pops ({} > stack depth {depth})",
+        diff.pops
+    );
     let mut current_stack = stack;
     for _ in 0..diff.pops {
         current_stack = current_stack
@@ -126,5 +139,26 @@ mod tests {
                 .unwrap()
                 .equals(&stack)
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "state stack diff contains too many pops (2 > stack depth 1)")]
+    fn panics_when_diff_pops_exceed_stack_depth() {
+        let stack = root(1);
+        let too_many_pops = StackDiff {
+            pops: 2,
+            new_frames: Vec::new(),
+        };
+        let _ = apply_state_stack_diff(Some(stack), &too_many_pops);
+    }
+
+    #[test]
+    #[should_panic(expected = "state stack diff contains too many pops (1 > stack depth 0)")]
+    fn panics_when_popping_from_empty_stack() {
+        let pop_one = StackDiff {
+            pops: 1,
+            new_frames: Vec::new(),
+        };
+        let _ = apply_state_stack_diff(None, &pop_one);
     }
 }

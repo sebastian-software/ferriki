@@ -8,7 +8,7 @@ use std::array;
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
 use crate::{PrecompiledPatternsError, RegexError};
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
@@ -121,12 +121,20 @@ impl ScannerPatternCache {
         }
     }
 
+    fn lock_state(&self) -> MutexGuard<'_, PatternCacheState> {
+        self.shared.lock().unwrap_or_else(|poisoned| {
+            let mut state = poisoned.into_inner();
+            state.cache.clear();
+            state.cache.clear_precompiled();
+            state.active_scope = None;
+            state.active_file_attached = false;
+            self.shared.clear_poison();
+            state
+        })
+    }
+
     pub(crate) fn preparation_owners(&self) -> HashMap<[u8; 32], String> {
-        self.shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned")
-            .preparation_owners
-            .clone()
+        self.lock_state().preparation_owners.clone()
     }
 
     pub(crate) fn with_mode(mut self, mode: crate::RegexMode) -> Self {
@@ -135,10 +143,7 @@ impl ScannerPatternCache {
     }
 
     pub(crate) fn diagnostics(&self) -> crate::RegexDiagnostics {
-        let state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let state = self.lock_state();
         let mut diagnostics = state.diagnostics.clone();
         diagnostics.prepared_archives = state.sources.len();
         for source in state.sources.values() {
@@ -154,10 +159,7 @@ impl ScannerPatternCache {
 
     /// Drops compiled patterns and attached archives.
     pub(crate) fn clear(&self) {
-        let mut state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let mut state = self.lock_state();
         state.cache.clear();
         state.cache.clear_precompiled();
         state.sources.clear();
@@ -180,10 +182,7 @@ impl ScannerPatternCache {
         }
         let source = PrecompiledPatterns::from_bytes(archive)
             .map_err(PrecompiledPatternsError::from_engine)?;
-        let mut state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let mut state = self.lock_state();
         state.ordinary_sources.push(source);
         state.active_scope = None;
         state.active_file_attached = false;
@@ -199,10 +198,7 @@ impl ScannerPatternCache {
             return self.add_precompiled(archive);
         }
         let source = crate::precompiled::open_archive(archive)?;
-        let mut state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let mut state = self.lock_state();
         state
             .sources
             .insert(source.scope.clone(), PreparedSource::Memory(source));
@@ -221,20 +217,14 @@ impl ScannerPatternCache {
                 ferroni::scanner::PrecompiledBytes::new(archive),
             )
             .map_err(PrecompiledPatternsError::from_engine)?;
-            let mut state = self
-                .shared
-                .lock()
-                .expect("scanner pattern cache lock poisoned");
+            let mut state = self.lock_state();
             state.ordinary_sources.push(source);
             state.active_scope = None;
             state.active_file_attached = false;
             state.cache.clear_precompiled();
         } else {
             let source = crate::precompiled::open_owned_archive(archive)?;
-            let mut state = self
-                .shared
-                .lock()
-                .expect("scanner pattern cache lock poisoned");
+            let mut state = self.lock_state();
             state
                 .sources
                 .insert(source.scope.clone(), PreparedSource::Memory(source));
@@ -251,10 +241,7 @@ impl ScannerPatternCache {
         index: &[u8],
     ) -> Result<(), PrecompiledPatternsError> {
         let source = crate::indexed_precompiled::IndexedArchive::open(file, index)?;
-        let mut state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let mut state = self.lock_state();
         state
             .sources
             .insert(source.scope.clone(), PreparedSource::File(source));
@@ -265,9 +252,7 @@ impl ScannerPatternCache {
     }
 
     pub(crate) fn export_precompiled(&self) -> Result<Vec<u8>, PrecompiledPatternsError> {
-        self.shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned")
+        self.lock_state()
             .cache
             .export_precompiled()
             .map_err(PrecompiledPatternsError::from_engine)
@@ -276,9 +261,7 @@ impl ScannerPatternCache {
     pub(crate) fn export_prepared(
         &self,
     ) -> Result<ferroni::scanner::PrecompiledEager, crate::PrecompiledPatternsError> {
-        self.shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned")
+        self.lock_state()
             .cache
             .export_precompiled_eager()
             .map_err(crate::PrecompiledPatternsError::from_engine)
@@ -292,11 +275,7 @@ impl ScannerPatternCache {
         Scanner::with_pattern_cache(
             &[pattern],
             &scanner_config(prefilter),
-            &mut self
-                .shared
-                .lock()
-                .expect("scanner pattern cache lock poisoned")
-                .cache,
+            &mut self.lock_state().cache,
         )
         .map(|_| ())
         .map_err(crate::PrecompiledPatternsError::new)
@@ -309,10 +288,7 @@ impl ScannerPatternCache {
         share_patterns: bool,
         prefilter: bool,
     ) -> Result<Scanner, ferroni::error::RegexError> {
-        let mut state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let mut state = self.lock_state();
         if self.preparing && share_patterns {
             let fingerprint =
                 crate::indexed_precompiled::pattern_fingerprint(patterns.iter().copied());
@@ -444,33 +420,23 @@ impl ScannerPatternCache {
 
     #[cfg(test)]
     pub(crate) fn precompiled_rebuilds(&self) -> usize {
-        self.shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned")
-            .precompiled_rebuilds
+        self.lock_state().precompiled_rebuilds
     }
 
     #[cfg(test)]
     pub(crate) fn assembly_fallbacks(&self) -> usize {
-        self.shared.lock().unwrap().diagnostics.assembly_fallbacks
+        self.lock_state().diagnostics.assembly_fallbacks
     }
 
     #[cfg(test)]
     pub(crate) fn prepared_stats(&self, scope: &str) -> (usize, usize) {
-        let state = self
-            .shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned");
+        let state = self.lock_state();
         state.sources.get(scope).unwrap().stats()
     }
 
     #[cfg(test)]
     pub(crate) fn len(&self) -> usize {
-        self.shared
-            .lock()
-            .expect("scanner pattern cache lock poisoned")
-            .cache
-            .len()
+        self.lock_state().cache.len()
     }
 }
 
@@ -1195,12 +1161,7 @@ impl<T> RegExpSourceList<T> {
         self.cached
             .iter()
             .chain(self.anchor_cache.iter().flatten())
-            .map(|rule| {
-                rule.scanner
-                    .lock()
-                    .expect("compiled scanner lock poisoned")
-                    .prefilter_stats()
-            })
+            .map(|rule| rule.lock_scanner().prefilter_stats())
             .collect()
     }
 
@@ -1497,6 +1458,15 @@ struct CompiledBacktrackingWarning<T> {
     warning: FerroniBacktrackWarning,
 }
 
+impl<T> CompiledRule<T> {
+    fn lock_scanner(&self) -> MutexGuard<'_, Scanner> {
+        self.scanner.lock().unwrap_or_else(|poisoned| {
+            self.scanner.clear_poison();
+            poisoned.into_inner()
+        })
+    }
+}
+
 impl<T: Copy> CompiledRule<T> {
     fn new(
         reg_exps: Vec<String>,
@@ -1587,9 +1557,7 @@ impl<T: Copy> CompiledRule<T> {
         #[cfg(test)]
         SCANNER_CALL_COUNT.with(|count| count.set(count.get() + 1));
         let matched = self
-            .scanner
-            .lock()
-            .expect("compiled scanner lock poisoned")
+            .lock_scanner()
             .find_next_match_utf16(string, start_position, options)?;
 
         // Ferroni reports line-guard matches at the synthetic end position
@@ -2413,5 +2381,46 @@ mod tests {
             ),
             "tag.Foo"
         );
+    }
+
+    #[test]
+    fn recovers_pattern_cache_and_compiled_scanner_after_poisoned_locks() {
+        let pattern_cache = ScannerPatternCache::new();
+        let mut list = RegExpSourceList::with_pattern_cache(true, pattern_cache.clone());
+        list.push(RegExpSource::new("alpha", 1u32));
+        let compiled = list.compile().expect("initial compile");
+        assert!(pattern_cache.len() > 0);
+
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = pattern_cache.shared.lock().unwrap();
+            panic!("simulate poisoned scanner pattern cache");
+        }));
+        assert!(pattern_cache.shared.is_poisoned());
+
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = compiled.scanner.lock().unwrap();
+            panic!("simulate poisoned compiled scanner");
+        }));
+        assert!(compiled.scanner.is_poisoned());
+
+        // Pattern cache clears stale cache state and poison bit on recovery.
+        assert_eq!(pattern_cache.len(), 0);
+        assert!(!pattern_cache.shared.is_poisoned());
+
+        // New compilations and existing compiled scanners remain usable.
+        let mut list2 = RegExpSourceList::with_pattern_cache(true, pattern_cache.clone());
+        list2.push(RegExpSource::new("beta", 2u32));
+        let compiled2 = list2.compile().expect("compile after poison");
+        assert!(
+            compiled2
+                .find_next_match(&OnigString::new("beta"), 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
+        assert!(
+            compiled
+                .find_next_match(&OnigString::new("alpha"), 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
+        assert!(!compiled.scanner.is_poisoned());
     }
 }

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Rust (stable toolchain with `cargo`, `clippy`, `rustfmt`)
+- Rust (stable toolchain with `cargo`, `clippy`, `rustfmt`; MSRV is declared by `rust-version` in `Cargo.toml`)
 - Node.js >= 22.13.0 (the floor declared by `node/ferriki/package.json`)
 - pnpm (the pinned version in `node/package.json` is picked up via corepack)
 
@@ -25,7 +25,7 @@ cd node
 pnpm install --ignore-scripts
 pnpm run prepare:compat
 pnpm run build:native
-pnpm run test:ferriki-compat:textmate
+pnpm run test:ferriki-compat:core
 ```
 
 `build:native` compiles `crates/ferriki-core` in release mode and copies
@@ -97,10 +97,17 @@ Both corpora share the same measurement and profiling harness.
 
 The [Blacksmith workflow](docs/benchmarks/blacksmith.md) measures both corpora
 and the repository corpus on Linux x86-64 and macOS ARM64. Published figures
-come from the [checksummed measurement archive](docs/benchmarks/blacksmith/2026-10-10/README.md).
-Run `node scripts/publish-blacksmith-evidence.mjs --check` before publishing
-benchmark changes; the homepage build also runs this check. It validates all
-twelve reports and the compact website data against the preserved originals.
+come from the checksummed measurement archives — the
+[October 24, 2026 archive](docs/benchmarks/blacksmith/2026-10-24-prepared-eager/README.md)
+for the dated timing and memory baselines and the
+[October 27, 2026 full capture](docs/benchmarks/blacksmith/2026-10-27-ferroni-2.8/README.md)
+for the current regex-policy tables and README claims. Run `node scripts/publish-blacksmith-evidence.mjs --check`,
+`node scripts/publish-memory-evidence.mjs --check`,
+`node scripts/publish-regex-mode-evidence.mjs --check`, and
+`node scripts/publish-decoded-cache-evidence.mjs --check` before publishing
+benchmark changes; the homepage build runs all four evidence checks too. They
+validate the archived reports and compact website data against the preserved
+originals.
 
 ## Update the standard grammars
 
@@ -205,10 +212,16 @@ pins and outputs together. Never edit generated family text by hand.
 ## Commits and releases
 
 Use conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`, `ci:`,
-`chore:` — scopes like `fix(node):` are fine). release-please derives
-versions and changelogs from them; the publishable package is
-`node/ferriki`, released through the shared ferramenta workflow with
-multi-platform binaries and npm Trusted Publishing.
+`chore:` — scopes like `fix(node):` are fine). release-please derives one
+shared version and changelog (`node/ferriki/CHANGELOG.md`) from them for all
+publishable artifacts:
+
+- npm packages: `node/ferriki` (`@ferriki/core`), `node/platforms/*`
+  (`@ferriki/<platform>`), and `node/vite` (`@ferriki/vite`), packed with
+  `pnpm pack` and published with `npm publish` + OIDC Trusted Publishing via
+  `ferramenta-native/actions/release-native`
+- Rust crates: `ferriki`, `ferriki-textmate`, and `ferriki-asset-gen`,
+  published to crates.io via Trusted Publishing (`ferriki-core` stays private)
 
 ## Where things are decided
 
@@ -216,9 +229,7 @@ multi-platform binaries and npm Trusted Publishing.
   [`adr/README.md`](adr/README.md)). Records are living documents: a pull
   request that changes a recorded decision updates the record in the same
   pull request.
-- Delivery work: the GitHub issues and epics of the v1.0.0 milestone.
+- Delivery work: GitHub issues and epics.
   [`plans/`](plans/) keeps the migration history as context, not as a
   status ledger.
 - Project language is US English, everywhere.
-
-#

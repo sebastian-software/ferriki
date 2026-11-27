@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 use crate::encoded_token_attributes::{MAX_LANGUAGE_ID, OptionalStandardTokenType};
 use crate::theme::ThemeError;
@@ -85,13 +85,19 @@ impl BasicScopeAttributesProvider {
         self.default_attributes
     }
 
+    fn lock_cache(&self) -> MutexGuard<'_, HashMap<String, BasicScopeAttributes>> {
+        self.cache.lock().unwrap_or_else(|poisoned| {
+            let mut guard = poisoned.into_inner();
+            guard.clear();
+            self.cache.clear_poison();
+            guard
+        })
+    }
+
     #[cfg(test)]
     #[must_use]
     pub(crate) fn cache_len(&self) -> usize {
-        self.cache
-            .lock()
-            .expect("basic scope attribute cache lock poisoned")
-            .len()
+        self.lock_cache().len()
     }
 
     #[must_use]
@@ -108,13 +114,7 @@ impl BasicScopeAttributesProvider {
                 token_type: standard_token_type(scope_name),
             };
         }
-        if let Some(cached) = self
-            .cache
-            .lock()
-            .expect("basic scope attribute cache lock poisoned")
-            .get(scope_name)
-            .copied()
-        {
+        if let Some(cached) = self.lock_cache().get(scope_name).copied() {
             return cached;
         }
 
@@ -125,10 +125,7 @@ impl BasicScopeAttributesProvider {
                 .unwrap_or(0),
             token_type: standard_token_type(scope_name),
         };
-        let mut cache = self
-            .cache
-            .lock()
-            .expect("basic scope attribute cache lock poisoned");
+        let mut cache = self.lock_cache();
         if !cache.contains_key(scope_name) {
             if cache.len() >= MAX_CACHED_BASIC_SCOPE_ATTRIBUTES {
                 cache.clear();
@@ -342,5 +339,26 @@ mod tests {
             );
         }
         assert_eq!(provider.cache_len(), 100);
+    }
+
+    #[test]
+    fn recovers_and_clears_cache_after_poisoned_lock() {
+        let embedded = EmbeddedLanguages::from([("source.embedded".into(), 4)]);
+        let provider = BasicScopeAttributesProvider::new(1, Some(&embedded));
+
+        let _ = provider.basic_scope_attributes(Some("source.embedded.comment"));
+        assert_eq!(provider.cache_len(), 1);
+
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = provider.cache.lock().unwrap();
+            panic!("simulate poisoned basic scope cache");
+        }));
+        assert!(provider.cache.is_poisoned());
+
+        let attrs = provider.basic_scope_attributes(Some("source.embedded.string"));
+        assert_eq!(attrs.language_id, 4);
+        assert_eq!(attrs.token_type, OptionalStandardTokenType::String);
+        assert!(!provider.cache.is_poisoned());
+        assert_eq!(provider.cache_len(), 1);
     }
 }

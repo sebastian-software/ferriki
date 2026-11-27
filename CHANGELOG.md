@@ -1,6 +1,8 @@
 # Changelog
 
-Ferriki's release notes live with the published package.
+Ferriki's published npm packages (`@ferriki/core` with its platform sidecars and
+`@ferriki/vite`) and Rust crates (`ferriki`, `ferriki-textmate`, and
+`ferriki-asset-gen`) share one version and release changelog.
 
 - Package changelog: [`node/ferriki/CHANGELOG.md`](node/ferriki/CHANGELOG.md)
 - Tagged releases and their assets:

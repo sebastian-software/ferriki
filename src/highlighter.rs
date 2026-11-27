@@ -1,4 +1,6 @@
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -6,11 +8,13 @@ use ferriki_textmate::{
     BacktrackingWarning, EncodedTokenAttributes, FontStyle, GrammarConfiguration, RawGrammar,
     StandardTokenType, SyncRegistry, Theme, parse_raw_grammar,
 };
+use serde::Deserialize;
+use serde::de::{self, DeserializeSeed, IntoDeserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::Value;
 
 use crate::asset_catalog::StandardAssetCatalogs;
 use crate::render::{RenderOptions, render_html_lines};
-use crate::theme_data::{ThemeData, parse_theme_data};
+use crate::theme_data::{ThemeData, parse_theme_data, parse_theme_object};
 use crate::tokens::{
     HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
     HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions, Utf16ToByteMap,
@@ -623,47 +627,59 @@ impl HighlighterCore {
     /// decoder as shipped grammars, while aliases and injection metadata are
     /// kept in the shared lookup model.
     pub fn load_custom_language(&mut self, source: &str) -> Result<Option<String>> {
-        let value: Value = serde_json::from_str(source).map_err(|error| {
-            Error::new(
-                ErrorKind::InvalidRegistration,
-                format!("Failed to parse custom language registration: {error}"),
-            )
+        let mut captured_name = None;
+        let mut deserializer = serde_json::Deserializer::from_str(source);
+        let parsed = CustomLanguageJsonSeed {
+            captured_name: &mut captured_name,
+        }
+        .deserialize(&mut deserializer)
+        .and_then(|value| {
+            deserializer.end()?;
+            Ok(value)
+        })
+        .map_err(|error| {
+            let message = match captured_name.as_ref().and_then(Option::as_deref) {
+                Some(id) if !id.is_empty() => {
+                    format!("Failed to parse custom grammar `{id}`: invalid JSON grammar: {error}")
+                }
+                _ => format!("Failed to parse custom language registration: {error}"),
+            };
+            Error::new(ErrorKind::InvalidRegistration, message)
         })?;
-        let object = value.as_object().ok_or_else(|| {
-            Error::new(
+        let CustomLanguageJson::Object {
+            name,
+            aliases,
+            inject_to,
+            mut grammar,
+        } = parsed
+        else {
+            return Err(Error::new(
                 ErrorKind::InvalidRegistration,
                 "Language registration must be a JSON object.",
-            )
-        })?;
-        let id = object
-            .get("name")
-            .and_then(Value::as_str)
+            ));
+        };
+        let id = name
+            .flatten()
             .filter(|name| !name.is_empty())
             .ok_or_else(|| {
                 Error::new(
                     ErrorKind::InvalidRegistration,
                     "Language registration requires a non-empty `name`.",
                 )
-            })?
-            .to_owned();
-        let grammar = parse_raw_grammar(source, Some("custom-grammar.json")).map_err(|error| {
-            Error::new(
-                ErrorKind::InvalidRegistration,
-                format!("Failed to parse custom grammar `{id}`: {error}"),
-            )
-        })?;
+            })?;
         if grammar.scope_name.is_empty() {
             return Err(Error::new(
                 ErrorKind::InvalidRegistration,
                 format!("Language registration `{id}` requires a non-empty `scopeName`."),
             ));
         }
-        let aliases = string_array(object, "aliases")?;
-        let inject_to = string_array(object, "injectTo")?;
+        let aliases = take_string_array(aliases, "aliases")?;
+        let inject_to = take_string_array(inject_to, "injectTo")?;
+        grammar.name = Some(id.clone());
 
         self.register_language(LanguageRegistration {
             id,
-            grammar,
+            grammar: *grammar,
             aliases,
             inject_to,
         })
@@ -737,12 +753,12 @@ impl HighlighterCore {
                 format!("Failed to parse custom theme registration: {error}"),
             )
         })?;
-        let object = value.as_object().ok_or_else(|| {
-            Error::new(
+        let Value::Object(mut object) = value else {
+            return Err(Error::new(
                 ErrorKind::InvalidRegistration,
                 "Theme registration must be a JSON object.",
-            )
-        })?;
+            ));
+        };
         let id = object
             .get("name")
             .and_then(Value::as_str)
@@ -754,8 +770,23 @@ impl HighlighterCore {
                 )
             })?
             .to_owned();
-        let mut theme = parse_theme_data(&id, source)?;
-        if let Some(include) = object.get("include") {
+        let include = object.remove("include");
+        let explicit_foreground = object.get("fg").and_then(Value::as_str).is_some()
+            || object
+                .get("colors")
+                .and_then(Value::as_object)
+                .and_then(|colors| colors.get("editor.foreground"))
+                .and_then(Value::as_str)
+                .is_some();
+        let explicit_background = object.get("bg").and_then(Value::as_str).is_some()
+            || object
+                .get("colors")
+                .and_then(Value::as_object)
+                .and_then(|colors| colors.get("editor.background"))
+                .and_then(Value::as_str)
+                .is_some();
+        let mut theme = parse_theme_object(&id, object)?;
+        if let Some(include) = include {
             let include = include.as_str().ok_or_else(|| {
                 Error::new(
                     ErrorKind::InvalidRegistration,
@@ -773,20 +804,6 @@ impl HighlighterCore {
                 .get(include)
                 .cloned()
                 .ok_or_else(|| Error::from_reason("Included Ferriki theme disappeared."))?;
-            let explicit_foreground = object.get("fg").and_then(Value::as_str).is_some()
-                || object
-                    .get("colors")
-                    .and_then(Value::as_object)
-                    .and_then(|colors| colors.get("editor.foreground"))
-                    .and_then(Value::as_str)
-                    .is_some();
-            let explicit_background = object.get("bg").and_then(Value::as_str).is_some()
-                || object
-                    .get("colors")
-                    .and_then(Value::as_object)
-                    .and_then(|colors| colors.get("editor.background"))
-                    .and_then(Value::as_str)
-                    .is_some();
             if !explicit_foreground {
                 theme.foreground = base.foreground.clone();
             }
@@ -1641,25 +1658,186 @@ fn scope_matches(candidate: &str, scope_name: &str) -> bool {
             .is_some_and(|suffix| suffix.starts_with('.'))
 }
 
-fn string_array(object: &serde_json::Map<String, Value>, key: &str) -> Result<Vec<String>> {
-    let Some(value) = object.get(key) else {
+enum CustomLanguageJson {
+    NotObject,
+    Object {
+        name: Option<Option<String>>,
+        aliases: Option<Value>,
+        inject_to: Option<Value>,
+        grammar: Box<RawGrammar>,
+    },
+}
+
+struct CustomLanguageJsonSeed<'a> {
+    captured_name: &'a mut Option<Option<String>>,
+}
+
+impl<'de> DeserializeSeed<'de> for CustomLanguageJsonSeed<'_> {
+    type Value = CustomLanguageJson;
+
+    fn deserialize<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(CustomLanguageVisitor {
+            captured_name: self.captured_name,
+        })
+    }
+}
+
+struct CustomLanguageVisitor<'a> {
+    captured_name: &'a mut Option<Option<String>>,
+}
+
+impl<'de> Visitor<'de> for CustomLanguageVisitor<'_> {
+    type Value = CustomLanguageJson;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a JSON object representing a custom language registration")
+    }
+
+    fn visit_bool<E>(self, _: bool) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_i64<E>(self, _: i64) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_u64<E>(self, _: u64) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_f64<E>(self, _: f64) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_str<E>(self, _: &str) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_unit<E>(self) -> std::result::Result<Self::Value, E> {
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        while seq.next_element::<de::IgnoredAny>()?.is_some() {}
+        Ok(CustomLanguageJson::NotObject)
+    }
+
+    fn visit_map<A>(self, map: A) -> std::result::Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        let mut aliases = None;
+        let mut inject_to = None;
+        let grammar = RawGrammar::deserialize(SingleMapDeserializer(InterceptingMapAccess {
+            inner: map,
+            name: self.captured_name,
+            aliases: &mut aliases,
+            inject_to: &mut inject_to,
+        }))?;
+        Ok(CustomLanguageJson::Object {
+            name: self.captured_name.take(),
+            aliases,
+            inject_to,
+            grammar: Box::new(grammar),
+        })
+    }
+}
+
+struct InterceptingMapAccess<'a, A> {
+    inner: A,
+    name: &'a mut Option<Option<String>>,
+    aliases: &'a mut Option<Value>,
+    inject_to: &'a mut Option<Value>,
+}
+
+impl<'de, A> MapAccess<'de> for InterceptingMapAccess<'_, A>
+where
+    A: MapAccess<'de>,
+{
+    type Error = A::Error;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> std::result::Result<Option<K::Value>, Self::Error>
+    where
+        K: DeserializeSeed<'de>,
+    {
+        while let Some(key) = self.inner.next_key::<Cow<'de, str>>()? {
+            match key.as_ref() {
+                "name" => {
+                    if self.name.is_some() {
+                        return Err(de::Error::duplicate_field("name"));
+                    }
+                    let value = self.inner.next_value::<Value>()?;
+                    *self.name = Some(match value {
+                        Value::String(name) => Some(name),
+                        _ => None,
+                    });
+                }
+                "aliases" => {
+                    *self.aliases = Some(self.inner.next_value::<Value>()?);
+                }
+                "injectTo" => {
+                    *self.inject_to = Some(self.inner.next_value::<Value>()?);
+                }
+                _ => return seed.deserialize(key.into_deserializer()).map(Some),
+            }
+        }
+        Ok(None)
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> std::result::Result<V::Value, Self::Error>
+    where
+        V: DeserializeSeed<'de>,
+    {
+        self.inner.next_value_seed(seed)
+    }
+}
+
+struct SingleMapDeserializer<A>(A);
+
+impl<'de, A> serde::Deserializer<'de> for SingleMapDeserializer<A>
+where
+    A: MapAccess<'de>,
+{
+    type Error = A::Error;
+
+    fn deserialize_any<V>(self, visitor: V) -> std::result::Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_map(self.0)
+    }
+
+    serde::forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+        bytes byte_buf option unit unit_struct newtype_struct seq tuple
+        tuple_struct map struct enum identifier ignored_any
+    }
+}
+
+fn take_string_array(value: Option<Value>, key: &str) -> Result<Vec<String>> {
+    let Some(value) = value else {
         return Ok(Vec::new());
     };
-    let values = value.as_array().ok_or_else(|| {
-        Error::new(
+    let Value::Array(values) = value else {
+        return Err(Error::new(
             ErrorKind::InvalidRegistration,
             format!("Language registration `{key}` must be an array."),
-        )
-    })?;
+        ));
+    };
     values
-        .iter()
-        .map(|value| {
-            value.as_str().map(str::to_owned).ok_or_else(|| {
-                Error::new(
-                    ErrorKind::InvalidRegistration,
-                    format!("Language registration `{key}` must contain strings."),
-                )
-            })
+        .into_iter()
+        .map(|value| match value {
+            Value::String(item) => Ok(item),
+            _ => Err(Error::new(
+                ErrorKind::InvalidRegistration,
+                format!("Language registration `{key}` must contain strings."),
+            )),
         })
         .collect()
 }
@@ -3479,5 +3657,158 @@ mod tests {
             .expect("host loaded");
         let result = host_grammar.tokenize_line("HOST", None, 0).expect("tokens");
         assert_eq!(result.tokens[0].scopes, ["source.host", "keyword.host"]);
+    }
+
+    #[test]
+    fn custom_language_and_theme_single_pass_registration_preserves_contracts() {
+        let mut highlighter = HighlighterCore::new().expect("highlighter");
+
+        // Register a host language with aliases and verify alias + injection lookup.
+        let scope = highlighter
+            .load_custom_language(
+                r#"{
+                    "name": "demo-host",
+                    "scopeName": "source.demo-host",
+                    "aliases": ["dh"],
+                    "patterns": [{"match": "\\bhello\\b", "name": "keyword.demo"}]
+                }"#,
+            )
+            .expect("host language");
+        assert_eq!(scope.as_deref(), Some("source.demo-host"));
+
+        highlighter
+            .load_custom_language(
+                r#"{
+                    "name": "demo-inject",
+                    "scopeName": "source.demo-inject",
+                    "injectionSelector": "L:source.demo-host",
+                    "injectTo": ["source.demo-host"],
+                    "patterns": [{"match": "\\bTODO\\b", "name": "comment.todo"}]
+                }"#,
+            )
+            .expect("injection language");
+
+        // Base theme + included custom theme inheriting background while overriding foreground.
+        highlighter
+            .load_custom_theme(
+                r##"{
+                    "name": "base-custom",
+                    "fg": "#111111",
+                    "bg": "#222222",
+                    "tokenColors": [
+                        {"scope": "keyword.demo", "settings": {"foreground": "#aa0000"}}
+                    ]
+                }"##,
+            )
+            .expect("base theme");
+        highlighter
+            .load_custom_theme(
+                r##"{
+                    "name": "overlay-custom",
+                    "include": "base-custom",
+                    "fg": "#333333",
+                    "tokenColors": [
+                        {"scope": "comment.todo", "settings": {"foreground": "#00aa00"}}
+                    ]
+                }"##,
+            )
+            .expect("overlay theme");
+
+        let tokens = highlighter
+            .tokenize(
+                "hello TODO",
+                "dh",
+                "overlay-custom",
+                &TokenizeOptions::default(),
+            )
+            .expect("tokens");
+        assert_eq!(tokens.foreground, "#333333");
+        assert_eq!(tokens.background, "#222222");
+        assert_eq!(tokens.tokens[0][0].color.as_deref(), Some("#AA0000"));
+        assert_eq!(tokens.tokens[0][2].color.as_deref(), Some("#00AA00"));
+
+        // Validation error contracts remain intact.
+        let err = highlighter
+            .load_custom_language(r#"{"name":"bad","scopeName":"","patterns":[]}"#)
+            .expect_err("empty scopeName");
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(err.to_string().contains("non-empty `scopeName`"));
+
+        let err = highlighter
+            .load_custom_language(
+                r#"{"name":"bad","scopeName":"source.bad","aliases":"not-array","patterns":[]}"#,
+            )
+            .expect_err("non-array aliases");
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(err.to_string().contains("`aliases` must be an array"));
+
+        let err = highlighter
+            .load_custom_language(
+                r#"{"name":"bad","scopeName":"source.bad","injectTo":[123],"patterns":[]}"#,
+            )
+            .expect_err("non-string injectTo");
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(err.to_string().contains("`injectTo` must contain strings"));
+
+        let err = highlighter
+            .load_custom_theme(r#"{"name":"bad-inc","include":123}"#)
+            .expect_err("non-string include");
+        assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+        assert!(err.to_string().contains("`include` must be a theme name"));
+
+        // Single-pass streaming deserialization rejects duplicate fields and retains line/column info.
+        let dup_match = highlighter
+            .load_custom_language(
+                "{\n  \"name\": \"dup-match\",\n  \"scopeName\": \"source.dup\",\n  \"patterns\": [\n    {\"match\": \"a\", \"match\": \"b\"}\n  ]\n}",
+            )
+            .expect_err("duplicate match field must be rejected");
+        assert_eq!(dup_match.kind(), ErrorKind::InvalidRegistration);
+        assert!(dup_match.to_string().contains("duplicate field `match`"));
+        assert!(dup_match.to_string().contains("line 5"));
+        assert!(dup_match.to_string().contains("column "));
+
+        let dup_top_level = highlighter
+            .load_custom_language(
+                "{\n  \"name\": \"dup-top\",\n  \"scopeName\": \"source.a\",\n  \"scopeName\": \"source.b\"\n}",
+            )
+            .expect_err("duplicate top-level scopeName must be rejected");
+        assert_eq!(dup_top_level.kind(), ErrorKind::InvalidRegistration);
+        assert!(
+            dup_top_level
+                .to_string()
+                .contains("duplicate field `scopeName`")
+        );
+        assert!(dup_top_level.to_string().contains("line 4"));
+
+        // Non-object JSON values and missing/non-string names keep their exact contracts.
+        for non_object in ["[]", "[1, 2]", "\"text\"", "42", "true", "null"] {
+            let err = highlighter
+                .load_custom_language(non_object)
+                .expect_err("non-object registration must fail");
+            assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+            assert!(
+                err.to_string()
+                    .contains("Language registration must be a JSON object.")
+            );
+        }
+        for bad_name in [
+            r#"{"scopeName":"source.missing"}"#,
+            r#"{"name":"","scopeName":"source.empty"}"#,
+            r#"{"name":123,"scopeName":"source.num"}"#,
+        ] {
+            let err = highlighter
+                .load_custom_language(bad_name)
+                .expect_err("missing/empty/non-string name must fail");
+            assert_eq!(err.kind(), ErrorKind::InvalidRegistration);
+            assert!(
+                err.to_string()
+                    .contains("Language registration requires a non-empty `name`.")
+            );
+        }
+        let trailing = highlighter
+            .load_custom_language(r#"{"name":"ok","scopeName":"source.ok","patterns":[]} trailing"#)
+            .expect_err("trailing tokens after JSON must fail");
+        assert_eq!(trailing.kind(), ErrorKind::InvalidRegistration);
+        assert!(trailing.to_string().contains("line 1"));
     }
 }

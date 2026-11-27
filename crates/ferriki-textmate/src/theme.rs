@@ -483,7 +483,7 @@ impl Theme {
     pub(crate) fn cached_match_count(&self) -> usize {
         self.cached_match_root
             .read()
-            .expect("theme match cache lock poisoned")
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .len()
     }
 
@@ -491,21 +491,19 @@ impl Theme {
         if scope_name.len() > MAX_CACHED_SCOPE_NAME_BYTES {
             return self.root.match_scope(scope_name);
         }
+        if let Ok(cache) = self.cached_match_root.read()
+            && let Some(rules) = cache.get(scope_name)
         {
-            let cache = self
-                .cached_match_root
-                .read()
-                .expect("theme match cache lock poisoned");
-            if let Some(rules) = cache.get(scope_name) {
-                return Arc::clone(rules);
-            }
+            return Arc::clone(rules);
         }
         let rules = self.root.match_scope(scope_name);
         {
-            let mut cache = self
-                .cached_match_root
-                .write()
-                .expect("theme match cache lock poisoned");
+            let mut cache = self.cached_match_root.write().unwrap_or_else(|poisoned| {
+                let mut guard = poisoned.into_inner();
+                guard.clear();
+                self.cached_match_root.clear_poison();
+                guard
+            });
             if !cache.contains_key(scope_name) {
                 if cache.len() >= MAX_CACHED_SCOPE_MATCHES {
                     cache.clear();
@@ -1916,5 +1914,34 @@ mod tests {
                 max_id: super::MAX_FOREGROUND_COLOR_ID,
             }
         );
+    }
+
+    #[test]
+    fn recovers_and_clears_match_cache_after_poisoned_lock() {
+        let theme = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: vec![setting(
+                    string_scope("keyword.control"),
+                    style(Some("bold"), Some("#FF0000"), None),
+                )],
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .unwrap();
+
+        let scope = ScopeStack::from(["keyword.control"]).unwrap();
+        let expected = theme.match_scope(Some(scope.as_ref()));
+        assert_eq!(theme.cached_match_count(), 1);
+
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = theme.cached_match_root.write().unwrap();
+            panic!("simulate poisoned theme match cache");
+        }));
+        assert!(theme.cached_match_root.is_poisoned());
+
+        assert_eq!(theme.match_scope(Some(scope.as_ref())), expected);
+        assert!(!theme.cached_match_root.is_poisoned());
+        assert_eq!(theme.cached_match_count(), 1);
     }
 }
