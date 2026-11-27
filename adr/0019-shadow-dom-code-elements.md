@@ -58,16 +58,22 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   direct HTML takes precedence when both content properties are present at
   upgrade. Replayed `codeRef` values reflect on connection without changing
   the selected source.
-- Inline-mode colors remain in the prepared HTML's style attributes. Each root
-  gets a small `<style data-ferriki-code-base>` element for layout, scrolling,
-  line annotations, and multi-theme switching; it has no external CSS asset or
-  URL requirement. In classes mode, one aggregated external asset contains the
-  resolved token and theme rules. Each root links that asset before JavaScript,
-  and the link remains after upgrade. Client-created roots add the same link.
-- No constructed or adopted stylesheet is required. One tag definition uses
-  one theme alias configuration; conflicting alias sets fail. Manual local CSS
-  must use that same theme mapping and compatible presentation rules. External
-  class rules are shared by URL, and stylesheet links remain in the roots.
+- Inline-mode colors remain in the prepared HTML's style attributes. Server-rendered
+  Declarative Shadow DOM roots keep their small `<style data-ferriki-code-base>`
+  element for layout, scrolling, line annotations, and multi-theme switching so
+  they paint styled before JavaScript loads; client-created roots adopt a shared
+  per-document constructable `CSSStyleSheet` via `shadowRoot.adoptedStyleSheets`
+  when supported (preserving non-Ferriki adopted stylesheets and falling back to
+  `<style data-ferriki-code-base>` when unsupported). Neither path has an external
+  CSS asset or URL requirement in inline mode. In classes mode, one aggregated
+  external asset contains the resolved token and theme rules. Each root links that
+  asset before JavaScript, and the link remains after upgrade. Client-created roots
+  add the same link.
+- Constructable stylesheets are an automatic optimization for client-created roots,
+  not a hard runtime requirement. One tag definition uses one theme alias
+  configuration; conflicting alias sets fail. Manual local CSS must use that same
+  theme mapping and compatible presentation rules. External class rules are shared
+  by URL, and stylesheet links remain in the roots.
 - Public semantic color custom properties inherit from normal page CSS on
   `:root`, a theme container, or the host. `--ferriki-foreground` and
   `--ferriki-background-color` are the root controls. Category overrides follow
@@ -136,8 +142,11 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   Ordinary complete-page `renderToString` hydration is verified. Defining the
   element before the parser reaches DSD, streaming SSR, and React Server
   Components are outside the verified contract.
-- Each root receives the component's small base and theme-switching rules in a
-  local style element. Inline mode uses no external CSS asset and imposes no
+- Each root receives the component's small base and theme-switching rules (via
+  its inline `<style data-ferriki-code-base>` element for server-rendered DSD
+  roots and environments without constructable stylesheets, or a shared
+  per-document `CSSStyleSheet` via `adoptedStyleSheets` for client-created roots).
+  Inline mode uses no external CSS asset and imposes no
   Vite `base` restriction. In classes mode, Vite combines descriptor rules into
   one aggregated asset; the DSD template links it before JavaScript, and CSR
   roots link it after registration. `code()` and React calls with a declared
@@ -251,3 +260,10 @@ to own the synchronized package and crate version updates.
   explicit `http:`/`https:` URL `base`, and adds opt-in `includeNoscript` on
   `renderCodeElementShadows` while keeping HTML5 scripting-enabled `<noscript>`
   rawtext skipping as the default (#383).
+- 2026-11-27: Adopts a shared per-document constructable `CSSStyleSheet` via
+  `shadowRoot.adoptedStyleSheets` for client-created roots when supported
+  (wrapping only the `:where(pre)` fallback color rule in `@layer ferriki-base`
+  so unlayered linked class-mode palettes beat fallback colors while keeping
+  layout/scrolling rules, theme-alias overrides, and caller CSS unlayered),
+  preserving server-rendered DSD `<style data-ferriki-code-base>` nodes and the
+  `<style>` fallback (#396).

@@ -5,8 +5,10 @@ const BLOCKS_CHANGED = Symbol.for("ferriki.code-element.blocks-changed.v1");
 const STYLES_CHANGED = Symbol.for("ferriki.code-element.styles-changed.v1");
 const BASE_STYLE_ATTRIBUTE = "data-ferriki-code-base";
 const CSS_LINK_ATTRIBUTE = "data-ferriki-code-css";
+const MAX_CODE_ELEMENT_STYLES_CACHE = 64;
+const codeElementStylesCache = new Map();
 
-const BASE_STYLES = `
+const BASE_HOST_STYLES = `
 :host {
   display: block;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -18,12 +20,16 @@ const BASE_STYLES = `
 :host *::after {
   box-sizing: border-box;
 }
+`;
 
+const BASE_PRE_FALLBACK_STYLES = `
 :where(pre) {
   color: var(--ferriki-foreground, inherit);
   background-color: var(--ferriki-background-color, transparent);
 }
+`;
 
+const BASE_LAYOUT_STYLES = `
 :host pre {
   margin: 0;
   max-block-size: var(--ferriki-code-max-block-size, none);
@@ -56,6 +62,8 @@ const BASE_STYLES = `
   background: color-mix(in srgb, currentColor 10%, transparent);
 }
 `;
+
+const BASE_STYLES = `${BASE_HOST_STYLES}${BASE_PRE_FALLBACK_STYLES}${BASE_LAYOUT_STYLES}`;
 
 /** The host tag used by Ferriki's browser custom element. */
 export const FERRIKI_CODE_TAG = "ferriki-code";
@@ -96,7 +104,14 @@ export function codeElementSizing(lineCount, maxLines) {
  */
 export function codeElementStyles(themeAliases = DEFAULT_THEME_ALIASES) {
   const aliases = validateThemeAliases(themeAliases);
-  return [BASE_STYLES, ...aliases.map(themeAliasStyles)].join("\n");
+  const key = aliases.join(",");
+  const cached = codeElementStylesCache.get(key);
+  if (cached !== undefined) return cached;
+  const css = [BASE_STYLES, ...aliases.map(themeAliasStyles)].join("\n");
+  if (codeElementStylesCache.size >= MAX_CODE_ELEMENT_STYLES_CACHE)
+    codeElementStylesCache.delete(codeElementStylesCache.keys().next().value);
+  codeElementStylesCache.set(key, css);
+  return css;
 }
 
 /**
@@ -146,8 +161,74 @@ export function defineCodeElement(options = {}) {
   const cssChunks = new Set();
   const blockRegistry = new Map();
   const connectedElements = new Set();
+  const sharedStyleSheets = new WeakMap();
+  const baseCss = codeElementStyles(aliases);
+  // Constructable `adoptedStyleSheets` cascade after DOM `<link rel="stylesheet">`
+  // elements. Wrap only the `:where(pre)` fallback color rule in `@layer ferriki-base`
+  // so unlayered linked class-mode rules (`:where(.ferriki-style-...)`) beat the
+  // fallback colors, while keeping layout/scrolling rules, theme-alias overrides,
+  // and caller `css` unlayered so host layout invariants and theme switching hold.
+  const adoptedBaseCss = [
+    BASE_HOST_STYLES,
+    `@layer ferriki-base {\n${BASE_PRE_FALLBACK_STYLES}\n}`,
+    BASE_LAYOUT_STYLES,
+    ...aliases.map(themeAliasStyles),
+  ].join("\n");
+  let cachedCombinedCss = baseCss;
+  let cachedAdoptedCss = adoptedBaseCss;
   let configuredProfile;
   let configuredStylesheetHref = stylesheetHref;
+
+  function computeCombinedCss() {
+    if (cssChunks.size === 0) return baseCss;
+    return [baseCss, ...cssChunks].filter((chunk) => chunk.trim()).join("\n");
+  }
+
+  function computeAdoptedCss() {
+    if (cssChunks.size === 0) return adoptedBaseCss;
+    return [adoptedBaseCss, ...cssChunks].filter((chunk) => chunk.trim()).join("\n");
+  }
+
+  function supportsConstructableStyleSheets(root, doc) {
+    const StyleSheetConstructor = doc?.defaultView?.CSSStyleSheet ?? globalThis.CSSStyleSheet;
+    return (
+      typeof StyleSheetConstructor === "function" &&
+      "replaceSync" in StyleSheetConstructor.prototype &&
+      typeof StyleSheetConstructor.prototype.replaceSync === "function" &&
+      root != null &&
+      "adoptedStyleSheets" in root &&
+      Array.isArray(root.adoptedStyleSheets)
+    );
+  }
+
+  function getOrCreateSharedStyleSheet(doc) {
+    const StyleSheetConstructor = doc?.defaultView?.CSSStyleSheet ?? globalThis.CSSStyleSheet;
+    if (
+      typeof StyleSheetConstructor !== "function" ||
+      typeof StyleSheetConstructor.prototype?.replaceSync !== "function"
+    )
+      return undefined;
+    let entry = sharedStyleSheets.get(doc);
+    if (!entry) {
+      try {
+        const sheet = new StyleSheetConstructor();
+        sheet.replaceSync(cachedAdoptedCss);
+        entry = { sheet, css: cachedAdoptedCss };
+        sharedStyleSheets.set(doc, entry);
+      } catch {
+        return undefined;
+      }
+    } else if (entry.css !== cachedAdoptedCss) {
+      try {
+        entry.sheet.replaceSync(cachedAdoptedCss);
+        entry.css = cachedAdoptedCss;
+      } catch {
+        sharedStyleSheets.delete(doc);
+        return undefined;
+      }
+    }
+    return entry.sheet;
+  }
 
   function assertProfile(nextAliases) {
     const nextProfile = JSON.stringify(nextAliases);
@@ -158,12 +239,35 @@ export function defineCodeElement(options = {}) {
     configuredProfile = nextProfile;
   }
 
-  function configureStyles(nextCss, nextAliases, _doc, nextBlocks = new Map(), nextStylesheetHref) {
+  function configureStyles(nextCss, nextAliases, doc, nextBlocks = new Map(), nextStylesheetHref) {
     assertProfile(nextAliases);
     assertBlocksCompatible(blockRegistry, nextBlocks);
-    if (nextCss) cssChunks.add(nextCss);
-    if (nextStylesheetHref !== undefined) configuredStylesheetHref = nextStylesheetHref;
-    for (const element of connectedElements) element[STYLES_CHANGED]();
+    let cssChanged = false;
+    if (nextCss && nextCss.trim() && !cssChunks.has(nextCss)) {
+      cssChunks.add(nextCss);
+      cachedCombinedCss = computeCombinedCss();
+      cachedAdoptedCss = computeAdoptedCss();
+      cssChanged = true;
+      if (doc) {
+        const entry = sharedStyleSheets.get(doc);
+        if (entry && entry.css !== cachedAdoptedCss) {
+          try {
+            entry.sheet.replaceSync(cachedAdoptedCss);
+            entry.css = cachedAdoptedCss;
+          } catch {
+            sharedStyleSheets.delete(doc);
+          }
+        }
+      }
+    }
+    let hrefChanged = false;
+    if (nextStylesheetHref !== undefined && nextStylesheetHref !== configuredStylesheetHref) {
+      configuredStylesheetHref = nextStylesheetHref;
+      hrefChanged = true;
+    }
+    if (cssChanged || hrefChanged) {
+      for (const element of connectedElements) element[STYLES_CHANGED](cssChanged, hrefChanged);
+    }
     const changedBlockIds = mergeBlocks(blockRegistry, nextBlocks);
     if (changedBlockIds.size > 0) {
       for (const element of connectedElements) element[BLOCKS_CHANGED](changedBlockIds);
@@ -191,6 +295,8 @@ export function defineCodeElement(options = {}) {
     #pendingMaxLinesReflection = false;
     #managedTabIndexTarget;
     #managedStylesheetHref;
+    #baseStyleNode;
+    #adoptedStyleSheet;
 
     static get observedAttributes() {
       return ["highlightedcode", "highlighted-code", "code-ref", "max-lines", "maxlines"];
@@ -444,55 +550,114 @@ export function defineCodeElement(options = {}) {
       }
     }
 
-    #installStyles() {
+    #detachAdoptedStyleSheet(root) {
+      if (!this.#adoptedStyleSheet) return;
+      if (root && Array.isArray(root.adoptedStyleSheets)) {
+        try {
+          const filtered = root.adoptedStyleSheets.filter(
+            (sheet) => sheet !== this.#adoptedStyleSheet,
+          );
+          if (filtered.length !== root.adoptedStyleSheets.length)
+            root.adoptedStyleSheets = filtered;
+        } catch {
+          // Ignore non-writable adoptedStyleSheets when falling back to <style>.
+        }
+      }
+      this.#adoptedStyleSheet = undefined;
+    }
+
+    #installStyles(cssChanged = true, hrefChanged = true) {
       const root = this.shadowRoot;
       const doc = this.ownerDocument;
       if (!root || !doc) return;
 
-      let style = root.querySelector?.(`style[${BASE_STYLE_ATTRIBUTE}]`);
-      if (!style) {
-        style = doc.createElement("style");
-        style.setAttribute(BASE_STYLE_ATTRIBUTE, "");
-      }
-      const css = [codeElementStyles(aliases), ...cssChunks]
-        .filter((chunk) => chunk.trim())
-        .join("\n");
-      if (style.textContent !== css) style.textContent = css;
+      const documentChanged = this.#installedDocument !== doc;
+      let style = this.#baseStyleNode;
+      if (style && style.parentNode !== root) style = undefined;
+      if (!style && !this.#adoptedStyleSheet)
+        style = root.querySelector?.(`style[${BASE_STYLE_ATTRIBUTE}]`);
 
       const marker = isServerMarkerNode(root.firstChild) ? root.firstChild : undefined;
       const styleReference = marker ? marker.nextSibling : root.firstChild;
-      moveNodeBefore(root, style, styleReference);
 
-      let link = root.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
-      if (!link && configuredStylesheetHref !== undefined) {
-        link = doc.createElement("link");
-        link.setAttribute("rel", "stylesheet");
-        link.setAttribute("href", configuredStylesheetHref);
-        link.setAttribute(CSS_LINK_ATTRIBUTE, "");
-        this.#managedStylesheetHref = configuredStylesheetHref;
-      } else if (link) {
-        const currentHref = link.getAttribute("href");
-        if (configuredStylesheetHref === undefined) {
-          if (
+      if (
+        cssChanged ||
+        documentChanged ||
+        !this.#installedDocument ||
+        (!style && !this.#adoptedStyleSheet)
+      ) {
+        if (style) {
+          this.#baseStyleNode = style;
+          if (style.textContent !== cachedCombinedCss) style.textContent = cachedCombinedCss;
+          moveNodeBefore(root, style, styleReference);
+        } else {
+          const sharedSheet = supportsConstructableStyleSheets(root, doc)
+            ? getOrCreateSharedStyleSheet(doc)
+            : undefined;
+          if (sharedSheet) {
+            if (
+              this.#adoptedStyleSheet !== sharedSheet ||
+              documentChanged ||
+              !root.adoptedStyleSheets.includes(sharedSheet)
+            ) {
+              try {
+                const filtered = this.#adoptedStyleSheet
+                  ? root.adoptedStyleSheets.filter((sheet) => sheet !== this.#adoptedStyleSheet)
+                  : root.adoptedStyleSheets;
+                root.adoptedStyleSheets = filtered.includes(sharedSheet)
+                  ? filtered
+                  : [...filtered, sharedSheet];
+                this.#adoptedStyleSheet = sharedSheet;
+                this.#baseStyleNode = undefined;
+              } catch {
+                this.#detachAdoptedStyleSheet(root);
+              }
+            }
+          } else {
+            this.#detachAdoptedStyleSheet(root);
+          }
+          if (!this.#adoptedStyleSheet) {
+            style = doc.createElement("style");
+            style.setAttribute(BASE_STYLE_ATTRIBUTE, "");
+            style.textContent = cachedCombinedCss;
+            moveNodeBefore(root, style, styleReference);
+            this.#baseStyleNode = style;
+          }
+        }
+      }
+
+      if (hrefChanged || documentChanged || !this.#installedDocument) {
+        let link = root.querySelector?.(`link[${CSS_LINK_ATTRIBUTE}]`);
+        if (!link && configuredStylesheetHref !== undefined) {
+          link = doc.createElement("link");
+          link.setAttribute("rel", "stylesheet");
+          link.setAttribute("href", configuredStylesheetHref);
+          link.setAttribute(CSS_LINK_ATTRIBUTE, "");
+          this.#managedStylesheetHref = configuredStylesheetHref;
+        } else if (link) {
+          const currentHref = link.getAttribute("href");
+          if (configuredStylesheetHref === undefined) {
+            if (
+              this.#managedStylesheetHref !== undefined &&
+              currentHref === this.#managedStylesheetHref
+            ) {
+              link.remove();
+              link = undefined;
+              this.#managedStylesheetHref = undefined;
+            }
+          } else if (currentHref === configuredStylesheetHref) {
+            this.#managedStylesheetHref = configuredStylesheetHref;
+          } else if (
             this.#managedStylesheetHref !== undefined &&
             currentHref === this.#managedStylesheetHref
           ) {
-            link.remove();
-            link = undefined;
-            this.#managedStylesheetHref = undefined;
+            link.setAttribute("href", configuredStylesheetHref);
+            this.#managedStylesheetHref = configuredStylesheetHref;
           }
-        } else if (currentHref === configuredStylesheetHref) {
-          this.#managedStylesheetHref = configuredStylesheetHref;
-        } else if (
-          this.#managedStylesheetHref !== undefined &&
-          currentHref === this.#managedStylesheetHref
-        ) {
-          link.setAttribute("href", configuredStylesheetHref);
-          this.#managedStylesheetHref = configuredStylesheetHref;
         }
+        if (link) moveNodeBefore(root, link, style ? style.nextSibling : styleReference);
       }
-      if (link) moveNodeBefore(root, link, style.nextSibling);
-      this.#installedDocument = this.ownerDocument;
+      this.#installedDocument = doc;
     }
 
     #render() {
@@ -567,9 +732,9 @@ export function defineCodeElement(options = {}) {
       }
     }
 
-    [STYLES_CHANGED]() {
+    [STYLES_CHANGED](cssChanged = true, hrefChanged = true) {
       if (!this.#connected) return;
-      this.#installStyles();
+      this.#installStyles(cssChanged, hrefChanged);
     }
 
     [BLOCKS_CHANGED](changedBlockIds) {
@@ -587,7 +752,11 @@ export function defineCodeElement(options = {}) {
   Object.defineProperty(FerrikiCodeElement, CONFIGURE_STYLES, { value: configureStyles });
 
   assertProfile(aliases);
-  if (css) cssChunks.add(css);
+  if (css && css.trim()) {
+    cssChunks.add(css);
+    cachedCombinedCss = computeCombinedCss();
+    cachedAdoptedCss = computeAdoptedCss();
+  }
   mergeBlocks(blockRegistry, blocks);
   registry.define(FERRIKI_CODE_TAG, FerrikiCodeElement);
   return FerrikiCodeElement;

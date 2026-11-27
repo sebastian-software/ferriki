@@ -191,18 +191,18 @@ export const second = code("two", { language: "rust" });`;
       source,
       "/src/two-macros.ts",
     );
-    await firstMacroStarted.promise;
+    await Promise.all([firstMacroStarted.promise, secondMacroStarted.promise]);
 
-    // Begin shutdown while macro #1 is still loading.
+    // Begin shutdown while both distinct language loads are in flight concurrently.
     let closeFinished = false;
     const closing = vitePlugin.closeBundle().then(() => {
       closeFinished = true;
     });
 
     firstMacroRelease.resolve();
-    await secondMacroStarted.promise;
+    await Promise.resolve();
 
-    // Macro #2 must reuse the same session without creating a second highlighter or disposing early.
+    // Macro #2 must keep the same session alive without creating a second highlighter or disposing early.
     expect(createHighlighterMock).toHaveBeenCalledTimes(1);
     expect(highlighter.dispose).not.toHaveBeenCalled();
     expect(closeFinished).toBe(false);
@@ -214,6 +214,7 @@ export const second = code("two", { language: "rust" });`;
     await closing;
     expect(closeFinished).toBe(true);
     expect(createHighlighterMock).toHaveBeenCalledTimes(1);
+    expect(highlighter.codeToHtml).toHaveBeenCalledTimes(2);
     expect(highlighter.dispose).toHaveBeenCalledTimes(1);
   });
 
@@ -4791,5 +4792,305 @@ export const block = <Code source="v2" language="ts" />;`;
     expect(vitePlugin.load.call({ environment: clientEnv }, `\0${sharedCssId}`)).toBeNull();
     expect(vitePlugin.resolveId.call({ environment: ssrEnv }, sharedCssId)).toBeNull();
     expect(vitePlugin.load.call({ environment: ssrEnv }, `\0${sharedCssId}`)).toBeNull();
+  });
+
+  it("loads distinct languages concurrently per transform without blocking unrelated transforms or duplicating unsupported retries", async () => {
+    const loadCalls = [];
+    const rustStarted = deferred();
+    const rustRelease = deferred();
+    const highlighter = makeFakeHighlighter({
+      loadLanguage: async (language) => {
+        loadCalls.push(language);
+        if (language === "rust") {
+          rustStarted.resolve();
+          await rustRelease.promise;
+          return;
+        }
+        if (language === "unknown-lang") {
+          const error = new Error("Language `unknown-lang` not found");
+          error.code = "ERR_UNSUPPORTED";
+          throw error;
+        }
+      },
+    });
+    createHighlighterMock.mockResolvedValueOnce(highlighter);
+
+    const vitePlugin = ferriki({ theme: "nord" });
+    const ctxA = context();
+    const sourceA = `import { code } from "@ferriki/core/macro";
+export const a = code("const a = 1", { language: "ts" });
+export const b = code("fn main() {}", { language: "rust" });
+export const c = code("const b = 2", { language: "ts" });
+export const d = code("plain text", { language: "unknown-lang" });`;
+    const sourceB = `import { code } from "@ferriki/core/macro";
+export const fast = code("const fast = true", { language: "ts" });`;
+
+    const transformA = vitePlugin.transform.handler.call(ctxA, sourceA, "/src/batched-fallback.ts");
+    await rustStarted.promise;
+
+    // A concurrent TypeScript-only transform must finish immediately without waiting for Module A's slow Rust load.
+    const resultB = await vitePlugin.transform.handler.call(
+      context(),
+      sourceB,
+      "/src/fast-ts-only.ts",
+    );
+    expect(resultB.code).toContain('"code":"const fast = true"');
+
+    rustRelease.resolve();
+    const resultA = await transformA;
+    // Each distinct language is loaded once concurrently (no duplicate retries on unsupported languages).
+    expect(loadCalls).toEqual(["ts", "rust", "unknown-lang"]);
+    expect(ctxA.warn).toHaveBeenCalledTimes(1);
+    expect(ctxA.warn.mock.calls[0][0]).toContain('"unknown-lang"');
+    expect(resultA.code).toContain(
+      '\\u003cpre class=\\"shiki\\">\\u003ccode class=\\"language-unknown-lang\\">plain text\\u003c/code>\\u003c/pre>',
+    );
+    expect(highlighter.codeToHtml).toHaveBeenCalledTimes(4);
+    await vitePlugin.closeBundle();
+  });
+
+  it("maintains incremental CSS rule counts across many dev modules without redundant palette rebuilds", async () => {
+    const highlighter = makeFakeHighlighter({
+      codeToHtmlWithCss: (code) => ({
+        html: `<pre class="ferriki"><code>${code}</code></pre>`,
+        css: ".ferriki-shared{color:red}",
+      }),
+    });
+    createHighlighterMock.mockResolvedValueOnce(highlighter);
+
+    const vitePlugin = ferriki({ theme: "nord", styleMode: "classes" });
+    const wsSend = vi.fn();
+    const server = {
+      config: { base: "/" },
+      middlewares: { use() {} },
+      ws: { send: wsSend },
+      httpServer: { once() {}, off() {} },
+      close: async () => {},
+    };
+    vitePlugin.configResolved({ command: "serve", base: "/" });
+    vitePlugin.configureServer(server);
+
+    const clientEnv = { name: "client", config: { consumer: "client" } };
+    for (let index = 0; index < 200; index++) {
+      await vitePlugin.transform.handler.call(
+        { ...context(), environment: clientEnv },
+        `import { Code } from "@ferriki/core/react/macro";
+export const M = () => <Code language="ts" source="mod-${index}" />;`,
+        `/src/mod-${index}.tsx`,
+      );
+    }
+
+    // Only the first module introduces `.ferriki-shared{color:red}`; the remaining 199 commits
+    // keep refcount > 0 without marking the palette dirty or pushing duplicate WS updates.
+    expect(wsSend).toHaveBeenCalledTimes(1);
+    expect(vitePlugin.api.codeElementCss("client")).toBe(".ferriki-shared{color:red}");
+
+    // Deleting 199 modules keeps the shared rule alive until the final owner is removed.
+    for (let index = 0; index < 199; index++) {
+      await vitePlugin.hotUpdate.call(
+        { environment: clientEnv },
+        { type: "delete", file: `/src/mod-${index}.tsx` },
+      );
+    }
+    expect(wsSend).toHaveBeenCalledTimes(1);
+    expect(vitePlugin.api.codeElementCss("client")).toBe(".ferriki-shared{color:red}");
+
+    await vitePlugin.hotUpdate.call(
+      { environment: clientEnv },
+      { type: "delete", file: "/src/mod-199.tsx" },
+    );
+    expect(wsSend).toHaveBeenCalledTimes(2);
+    expect(vitePlugin.api.codeElementCss("client")).toBe("");
+    await server.close();
+  });
+
+  it("keeps newly added base style rules before retained theme-override rules during HMR", async () => {
+    const highlighter = makeFakeHighlighter({
+      codeToHtmlWithCss: (code) => ({
+        html: `<pre class="ferriki"><code>${code}</code></pre>`,
+        css: [
+          `:where(.ferriki-style-${code}){color:var(--ferriki-color)}`,
+          ":where(.ferriki-themes-1){--ferriki-color:var(--shiki-light)}",
+          "@media (prefers-color-scheme:dark){:where(.ferriki-themes-1){--ferriki-color:var(--shiki-dark)}}",
+          ':where(.ferriki-themes-1[data-ferriki-theme="dark"],[data-ferriki-theme="dark"] .ferriki-themes-1:not([data-ferriki-theme])){--ferriki-color:var(--shiki-dark)}',
+        ].join("\n"),
+      }),
+    });
+    createHighlighterMock.mockResolvedValueOnce(highlighter);
+
+    const vitePlugin = ferriki({ theme: "nord", styleMode: "classes" });
+    const clientEnv = { name: "client", config: { consumer: "client" } };
+
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      `import { Code } from "@ferriki/core/react/macro";
+export const A = () => <Code language="ts" source="first" />;`,
+      "/src/a.tsx",
+    );
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      `import { Code } from "@ferriki/core/react/macro";
+export const B = () => <Code language="ts" source="second" />;`,
+      "/src/b.tsx",
+    );
+
+    const css = vitePlugin.api.codeElementCss("client");
+    const newStyleIndex = css.indexOf(":where(.ferriki-style-second)");
+    const themeDefaultIndex = css.indexOf(":where(.ferriki-themes-1){");
+    const mediaIndex = css.indexOf("@media (prefers-color-scheme:dark)");
+    const explicitThemeIndex = css.indexOf('[data-ferriki-theme="dark"]');
+    expect(newStyleIndex).toBeGreaterThanOrEqual(0);
+    expect(newStyleIndex).toBeLessThan(themeDefaultIndex);
+    expect(themeDefaultIndex).toBeLessThan(mediaIndex);
+    expect(mediaIndex).toBeLessThan(explicitThemeIndex);
+    await vitePlugin.closeBundle();
+  });
+
+  it("surfaces a fatal error on an earlier macro language immediately without waiting for a slow sibling load", async () => {
+    const slowRustStarted = deferred();
+    const slowRustRelease = deferred();
+    const fatalError = Object.assign(new Error("network down"), { code: "ERR_ASSET" });
+    const highlighter = makeFakeHighlighter({
+      loadLanguage: (language) => {
+        if (language === "ts") return Promise.reject(fatalError);
+        if (language === "rust") {
+          slowRustStarted.resolve();
+          return slowRustRelease.promise;
+        }
+        return Promise.resolve();
+      },
+    });
+    createHighlighterMock.mockResolvedValueOnce(highlighter);
+
+    const vitePlugin = ferriki({ theme: "nord" });
+    const source = `import { code } from "@ferriki/core/macro";
+export const a = code("const a = 1", { language: "ts" });
+export const b = code("fn main() {}", { language: "rust" });`;
+
+    let rustStillPending = true;
+    slowRustRelease.promise.then(() => {
+      rustStillPending = false;
+    });
+
+    await expect(
+      vitePlugin.transform.handler.call(context(), source, "/src/fatal-first.ts"),
+    ).rejects.toBe(fatalError);
+    await slowRustStarted.promise;
+    // Transform rejected while rust was still pending.
+    expect(rustStillPending).toBe(true);
+    slowRustRelease.resolve();
+    await vitePlugin.closeBundle();
+  });
+
+  it("caches prepared React blocks and deduplicated CSS snapshots and invalidates them on update, removal, and server close", async () => {
+    const highlighter = makeFakeHighlighter({
+      codeToHtmlWithCss: (code) => ({
+        html: `<pre class="ferriki"><code>${code}</code></pre>`,
+        css: `.ferriki-style-${code}{color:red}\n.ferriki-shared{font-weight:bold}`,
+      }),
+    });
+    createHighlighterMock.mockResolvedValueOnce(highlighter);
+
+    const vitePlugin = ferriki({ theme: "nord", styleMode: "classes" });
+    const wsSend = vi.fn();
+    let cssMiddleware;
+    const closeListeners = new Set();
+    const server = {
+      config: { base: "/" },
+      middlewares: {
+        use: (fn) => {
+          cssMiddleware = fn;
+        },
+      },
+      ws: { send: wsSend },
+      httpServer: {
+        once: (event, fn) => {
+          if (event === "close") closeListeners.add(fn);
+        },
+        off: (event, fn) => {
+          if (event === "close") closeListeners.delete(fn);
+        },
+      },
+      close: async () => {
+        for (const fn of [...closeListeners]) fn();
+      },
+    };
+    vitePlugin.configResolved({ command: "serve", base: "/" });
+    vitePlugin.configureServer(server);
+
+    const clientEnv = { name: "client", config: { consumer: "client" } };
+    const sourceA = `import { Code } from "@ferriki/core/react/macro";
+export const A = () => <Code language="ts" source="alpha" />;`;
+    const sourceB = `import { Code } from "@ferriki/core/react/macro";
+export const B = () => <Code language="ts" source="beta" />;`;
+
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      sourceA,
+      "/src/a.tsx",
+    );
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      sourceB,
+      "/src/b.tsx",
+    );
+
+    // Mutating the object returned by `codeElementBlocks()` must not corrupt the cached snapshot.
+    const blocksSnapshot = vitePlugin.api.codeElementBlocks("client");
+    expect(Object.keys(blocksSnapshot)).toHaveLength(2);
+    blocksSnapshot.injected = "<pre>mutated</pre>";
+    expect(vitePlugin.api.codeElementBlocks("client").injected).toBeUndefined();
+
+    // Shared CSS rules are deduplicated once and served consistently via middleware.
+    const initialCss = vitePlugin.api.codeElementCss("client");
+    expect(initialCss.split(".ferriki-shared{font-weight:bold}")).toHaveLength(2);
+    expect(initialCss).toContain(".ferriki-style-alpha{color:red}");
+    expect(initialCss).toContain(".ferriki-style-beta{color:red}");
+    expect(wsSend).toHaveBeenCalledTimes(2);
+    const secondHref = wsSend.mock.calls[1][0].data.href;
+
+    let servedCss = "";
+    cssMiddleware(
+      { url: "/@ferriki/code-elements.css" },
+      { setHeader() {}, end: (body) => (servedCss = body) },
+      () => {},
+    );
+    expect(servedCss).toBe(initialCss);
+
+    // Re-transforming /src/a.tsx with the same content keeps the palette hash unchanged (no extra WS push).
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      sourceA,
+      "/src/a.tsx",
+    );
+    expect(wsSend).toHaveBeenCalledTimes(2);
+
+    // Updating /src/a.tsx invalidates both the blocks and CSS caches.
+    await vitePlugin.transform.handler.call(
+      { ...context(), environment: clientEnv },
+      `import { Code } from "@ferriki/core/react/macro";
+export const A = () => <Code language="ts" source="gamma" />;`,
+      "/src/a.tsx",
+    );
+    const updatedCss = vitePlugin.api.codeElementCss("client");
+    expect(updatedCss).not.toContain(".ferriki-style-alpha{color:red}");
+    expect(updatedCss).toContain(".ferriki-style-gamma{color:red}");
+    expect(updatedCss).toContain(".ferriki-style-beta{color:red}");
+    expect(wsSend).toHaveBeenCalledTimes(3);
+    expect(wsSend.mock.calls[2][0].data.href).not.toBe(secondHref);
+
+    // Deleting /src/b.tsx invalidates both caches cleanly.
+    await vitePlugin.hotUpdate.call(
+      { environment: clientEnv },
+      { type: "delete", file: "/src/b.tsx" },
+    );
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("client"))).toHaveLength(1);
+    expect(vitePlugin.api.codeElementCss("client")).not.toContain(".ferriki-style-beta{color:red}");
+    expect(vitePlugin.api.codeElementCss("client")).toContain(".ferriki-style-gamma{color:red}");
+
+    // Closing the server clears dev React caches cleanly.
+    await server.close();
+    expect(Object.keys(vitePlugin.api.codeElementBlocks("client"))).toHaveLength(0);
+    expect(vitePlugin.api.codeElementCss("client")).toBe("");
   });
 });

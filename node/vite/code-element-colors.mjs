@@ -121,6 +121,14 @@ const MAX_COMPOSED_LIGHT_DARK_LENGTH = 2 * (2 * MAX_CSS_VALUE_LENGTH + 160) + 32
 const MAX_COMPOSED_VAR_COLOR_LENGTH = MAX_COMPOSED_LIGHT_DARK_LENGTH + 128;
 const MAX_VAR_COLOR_WRAPPER_DEPTH = 6;
 const MAX_COMPOSED_COLOR_DEPTH = 4;
+const MAX_SCOPE_CATEGORY_CACHE = 4096;
+const MAX_COLOR_CACHE = 1024;
+const MAX_DECLARATIONS_CACHE = 1024;
+const NO_SCOPE_CATEGORY = Symbol("ferriki.no-scope-category");
+const UNSAFE_CSS_COLOR = Symbol("ferriki.unsafe-css-color");
+const scopeCategoryCache = new Map();
+const normalizedColorCache = new Map();
+const splitDeclarationsCache = new Map();
 
 const SCOPE_MATCHERS = [
   ["escape", /(?:^|\.)constant\.character\.escape(?:\.|$)|(?:^|\.)escape(?:\.|$)/u],
@@ -364,6 +372,35 @@ export function createCodeElementColorTransformer() {
   };
 }
 
+function resolveScopeCategoryEntry(scope) {
+  let cached = scopeCategoryCache.get(scope);
+  if (cached !== undefined) return cached;
+
+  if (/^punctuation\.definition\.string(?:\.|$)/u.test(scope)) cached = "string";
+  else if (/^punctuation\.definition\.comment(?:\.|$)/u.test(scope)) cached = "comment";
+  else if (/^punctuation\.definition\.regexp(?:\.|$)/u.test(scope)) cached = "regexp";
+  else {
+    const isConstantLanguage = /(?:^|\.)constant\.language(?:\.|$)/u.test(scope);
+    let matched;
+    for (const [category, matcher] of SCOPE_MATCHERS) {
+      if (matcher.test(scope)) {
+        matched = category;
+        break;
+      }
+    }
+    if (isConstantLanguage && matched !== "boolean") {
+      cached = { category: matched, checkBoolean: true };
+    } else {
+      cached = matched ?? NO_SCOPE_CATEGORY;
+    }
+  }
+
+  if (scopeCategoryCache.size >= MAX_SCOPE_CATEGORY_CACHE)
+    scopeCategoryCache.delete(scopeCategoryCache.keys().next().value);
+  scopeCategoryCache.set(scope, cached);
+  return cached;
+}
+
 function categoryForToken(token) {
   const scopes =
     Array.isArray(token?.scopeNames) && token.scopeNames.length
@@ -375,18 +412,11 @@ function categoryForToken(token) {
     const scope = scopes[index];
     if (typeof scope !== "string") continue;
 
-    if (/^punctuation\.definition\.string(?:\.|$)/u.test(scope)) return "string";
-    if (/^punctuation\.definition\.comment(?:\.|$)/u.test(scope)) return "comment";
-    if (/^punctuation\.definition\.regexp(?:\.|$)/u.test(scope)) return "regexp";
-    if (
-      /(?:^|\.)constant\.language(?:\.|$)/u.test(scope) &&
-      /^(?:true|false)$/iu.test(token.content || "")
-    )
-      return "boolean";
-
-    for (const [category, matcher] of SCOPE_MATCHERS) {
-      if (matcher.test(scope)) return category;
-    }
+    const entry = resolveScopeCategoryEntry(scope);
+    if (entry === NO_SCOPE_CATEGORY) continue;
+    if (typeof entry === "string") return entry;
+    if (entry.checkBoolean && /^(?:true|false)$/iu.test(token.content || "")) return "boolean";
+    if (entry.category !== undefined) return entry.category;
   }
   return undefined;
 }
@@ -1204,14 +1234,8 @@ function isSafeComposedCssColor(expr, depth = 0) {
   );
 }
 
-function normalizeSafeCssColor(value) {
-  if (
-    typeof value !== "string" ||
-    value.length === 0 ||
-    value.length > MAX_COMPOSED_VAR_COLOR_LENGTH ||
-    /<\/style/iu.test(value)
-  )
-    return undefined;
+function computeNormalizedSafeCssColor(value) {
+  if (/<\/style/iu.test(value)) return undefined;
   for (let index = 0; index < value.length; index++) {
     const code = value.charCodeAt(index);
     if ((code <= 0x1f && !isAsciiCssWhitespaceCode(code)) || (code >= 0x7f && code <= 0x9f))
@@ -1221,6 +1245,22 @@ function normalizeSafeCssColor(value) {
   if (stripped === undefined) return undefined;
   const normalized = normalizeCssColorWhitespace(stripped, stripped !== value);
   return normalized !== undefined && isSafeComposedCssColor(normalized, 0) ? normalized : undefined;
+}
+
+function normalizeSafeCssColor(value) {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > MAX_COMPOSED_VAR_COLOR_LENGTH
+  )
+    return undefined;
+  const cached = normalizedColorCache.get(value);
+  if (cached !== undefined) return cached === UNSAFE_CSS_COLOR ? undefined : cached;
+  const normalized = computeNormalizedSafeCssColor(value);
+  if (normalizedColorCache.size >= MAX_COLOR_CACHE)
+    normalizedColorCache.delete(normalizedColorCache.keys().next().value);
+  normalizedColorCache.set(value, normalized === undefined ? UNSAFE_CSS_COLOR : normalized);
+  return normalized;
 }
 
 function isSafeCssColor(value) {
@@ -1263,6 +1303,12 @@ function setStyleProperties(style, updates) {
 }
 
 function splitDeclarations(style) {
+  if (!style) return [];
+  const cacheable = style.length <= MAX_COMPOSED_VAR_COLOR_LENGTH;
+  if (cacheable) {
+    const cached = splitDeclarationsCache.get(style);
+    if (cached !== undefined) return cached;
+  }
   const declarations = [];
   let start = 0;
   let depth = 0;
@@ -1292,12 +1338,19 @@ function splitDeclarations(style) {
     } else if ("([{".includes(character)) depth++;
     else if (")]}".includes(character)) depth = Math.max(0, depth - 1);
     else if (character === ";" && depth === 0) {
-      declarations.push(style.slice(start, index).trim());
+      const part = style.slice(start, index).trim();
+      if (part) declarations.push(part);
       start = index + 1;
     }
   }
-  declarations.push(style.slice(start).trim());
-  return declarations.filter(Boolean);
+  const trailing = style.slice(start).trim();
+  if (trailing) declarations.push(trailing);
+  if (cacheable) {
+    if (splitDeclarationsCache.size >= MAX_DECLARATIONS_CACHE)
+      splitDeclarationsCache.delete(splitDeclarationsCache.keys().next().value);
+    splitDeclarationsCache.set(style, declarations);
+  }
+  return declarations;
 }
 
 function canAssignOwnDataProperty(obj, key) {

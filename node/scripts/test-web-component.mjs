@@ -1116,3 +1116,310 @@ test("packaged clients accept module-relative stylesheet URLs matching the host 
     }
   }
 });
+
+test("adopts a shared constructable CSSStyleSheet when supported and skips redundant [STYLES_CHANGED] work", () => {
+  const globalDescriptors = new Map(
+    ["customElements", "HTMLElement", "document", "CSSStyleSheet"].map((name) => [
+      name,
+      Object.getOwnPropertyDescriptor(globalThis, name),
+    ]),
+  );
+
+  class FakeCSSStyleSheet {
+    static instances = 0;
+
+    constructor() {
+      FakeCSSStyleSheet.instances++;
+      this.cssText = "";
+      this.replaceSyncCalls = 0;
+    }
+
+    replaceSync(text) {
+      this.replaceSyncCalls++;
+      this.cssText = String(text);
+    }
+  }
+
+  class FakeNode {
+    constructor(tagName, nodeType = 1) {
+      this.nodeType = nodeType;
+      this.tagName = tagName;
+      this.parentNode = undefined;
+      this.childNodes = [];
+      this.attributes = new Map();
+      this.textContent = "";
+    }
+
+    get firstChild() {
+      return this.childNodes[0];
+    }
+
+    get nextSibling() {
+      if (!this.parentNode) return undefined;
+      const siblings = this.parentNode.childNodes;
+      return siblings[siblings.indexOf(this) + 1];
+    }
+
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+
+    hasAttribute(name) {
+      return this.attributes.has(name);
+    }
+
+    setAttribute(name, value) {
+      this.attributes.set(name, String(value));
+    }
+
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    }
+
+    remove() {
+      this.parentNode?.removeChild(this);
+    }
+  }
+
+  class FakeComment extends FakeNode {
+    constructor(data) {
+      super(undefined, 8);
+      this.data = data;
+    }
+  }
+
+  class FakeShadowRoot extends FakeNode {
+    constructor(children = [], adopted = []) {
+      super(undefined, 11);
+      this.adoptedStyleSheets = [...adopted];
+      this.queryCount = 0;
+      for (const child of children) this.appendChild(child);
+    }
+
+    insertBefore(node, reference) {
+      if (node.nodeType === 11) {
+        for (const child of [...node.childNodes]) this.insertBefore(child, reference);
+        return node;
+      }
+      if (node === reference) return node;
+      node.parentNode?.removeChild(node);
+      const index =
+        reference === null ? this.childNodes.length : this.childNodes.indexOf(reference);
+      this.childNodes.splice(index, 0, node);
+      node.parentNode = this;
+      return node;
+    }
+
+    appendChild(node) {
+      return this.insertBefore(node, null);
+    }
+
+    removeChild(node) {
+      const index = this.childNodes.indexOf(node);
+      if (index === -1) throw new TypeError("The node is not in this shadow root");
+      this.childNodes.splice(index, 1);
+      node.parentNode = undefined;
+      return node;
+    }
+
+    querySelector(selector) {
+      this.queryCount++;
+      if (selector === "pre") return this.childNodes.find((node) => node.tagName === "PRE");
+      if (selector === "style[data-ferriki-code-base]")
+        return this.childNodes.find(
+          (node) => node.tagName === "STYLE" && node.hasAttribute("data-ferriki-code-base"),
+        );
+      if (selector === "link[data-ferriki-code-css]")
+        return this.childNodes.find(
+          (node) => node.tagName === "LINK" && node.hasAttribute("data-ferriki-code-css"),
+        );
+      throw new TypeError(`Unexpected selector: ${selector}`);
+    }
+  }
+
+  function makeDocument(StyleSheetCtor) {
+    return {
+      defaultView: { CSSStyleSheet: StyleSheetCtor },
+      createElement(tagName) {
+        if (tagName === "template") {
+          const template = new FakeNode("TEMPLATE");
+          template.content = new FakeShadowRoot();
+          Object.defineProperty(template, "innerHTML", {
+            get() {
+              return template._html;
+            },
+            set(markup) {
+              template._html = markup;
+              const node = new FakeNode("PRE");
+              node.markup = markup;
+              template.content.appendChild(node);
+            },
+          });
+          return template;
+        }
+        return new FakeNode(tagName.toUpperCase());
+      },
+    };
+  }
+
+  const docA = makeDocument(FakeCSSStyleSheet);
+  const docB = makeDocument(FakeCSSStyleSheet);
+  const definitions = new Map();
+
+  try {
+    Object.defineProperty(globalThis, "CSSStyleSheet", {
+      configurable: true,
+      value: FakeCSSStyleSheet,
+    });
+    Object.defineProperty(globalThis, "document", { configurable: true, value: docA });
+    Object.defineProperty(globalThis, "customElements", {
+      configurable: true,
+      value: {
+        get: (name) => definitions.get(name),
+        define: (name, ctor) => definitions.set(name, ctor),
+      },
+    });
+    Object.defineProperty(globalThis, "HTMLElement", {
+      configurable: true,
+      value: class {
+        constructor() {
+          this.ownerDocument = docA;
+          this.shadowRoot = new FakeShadowRoot();
+          this.attributes = new Map();
+          this.style = { setProperty() {}, removeProperty() {} };
+        }
+
+        getAttribute(name) {
+          return this.attributes.get(name) ?? null;
+        }
+
+        setAttribute(name, value) {
+          const previous = this.getAttribute(name);
+          const next = String(value);
+          this.attributes.set(name, next);
+          if (this.constructor.observedAttributes.includes(name))
+            this.attributeChangedCallback(name, previous, next);
+        }
+
+        removeAttribute(name) {
+          const previous = this.getAttribute(name);
+          if (previous === null) return;
+          this.attributes.delete(name);
+          if (this.constructor.observedAttributes.includes(name))
+            this.attributeChangedCallback(name, previous, null);
+        }
+      },
+    });
+
+    const Constructor = defineCodeElement({
+      stylesheetHref: "/assets/code.css",
+      blocks: { one: "<pre>one</pre>" },
+    });
+
+    // Host 1 preserves a pre-existing non-Ferriki adopted stylesheet alongside the shared Ferriki sheet.
+    const userSheet = new FakeCSSStyleSheet();
+    userSheet.replaceSync(".user-custom{opacity:0.9}");
+    const host1 = new Constructor();
+    host1.shadowRoot = new FakeShadowRoot([], [userSheet]);
+    host1.setAttribute("code-ref", "one");
+    host1.connectedCallback();
+
+    // Host 2 shares the exact same constructable CSSStyleSheet instance with Host 1 and creates no <style> node.
+    const host2 = new Constructor();
+    host2.setAttribute("code-ref", "one");
+    host2.connectedCallback();
+
+    assert.equal(host1.shadowRoot.querySelector("style[data-ferriki-code-base]"), undefined);
+    assert.equal(host2.shadowRoot.querySelector("style[data-ferriki-code-base]"), undefined);
+    assert.equal(host1.shadowRoot.adoptedStyleSheets.length, 2);
+    assert.equal(host1.shadowRoot.adoptedStyleSheets[0], userSheet);
+    assert.equal(host2.shadowRoot.adoptedStyleSheets.length, 1);
+    const sharedSheet = host1.shadowRoot.adoptedStyleSheets[1];
+    assert.equal(host2.shadowRoot.adoptedStyleSheets[0], sharedSheet);
+    // Only the `:where(pre)` fallback color rule is wrapped in `@layer ferriki-base`
+    // so unlayered linked class-mode palettes beat fallback colors while layout/scrolling
+    // (`:host pre`) and theme-alias overrides remain unlayered.
+    const layerStart = sharedSheet.cssText.indexOf("@layer ferriki-base {");
+    assert.ok(layerStart > 0);
+    const layerEnd = sharedSheet.cssText.indexOf("\n}\n", layerStart);
+    assert.ok(layerEnd > layerStart);
+    const layeredSection = sharedSheet.cssText.slice(layerStart, layerEnd);
+    const unlayeredAfter = sharedSheet.cssText.slice(layerEnd);
+    assert.match(layeredSection, /:where\(pre\)/u);
+    assert.doesNotMatch(layeredSection, /:host pre/u);
+    assert.match(unlayeredAfter, /:host pre\s*\{[\s\S]*overflow:\s*auto/u);
+    assert.match(unlayeredAfter, /:host\(\[data-ferriki-theme="dark"\]\)/u);
+    assert.equal(sharedSheet.replaceSyncCalls, 1);
+    assert.equal(
+      host1.shadowRoot.querySelector("link[data-ferriki-code-css]").getAttribute("href"),
+      "/assets/code.css",
+    );
+
+    // DSD host that already contains a server-rendered <style data-ferriki-code-base> preserves it in place.
+    const dsdMarker = new FakeComment("ferriki-code:one");
+    const dsdStyle = new FakeNode("STYLE");
+    dsdStyle.setAttribute("data-ferriki-code-base", "");
+    dsdStyle.textContent = codeElementStyles();
+    const dsdPre = new FakeNode("PRE");
+    const dsdHost = new Constructor();
+    dsdHost.shadowRoot = new FakeShadowRoot([dsdMarker, dsdStyle, dsdPre]);
+    dsdHost.setAttribute("code-ref", "one");
+    dsdHost.connectedCallback();
+    assert.equal(dsdHost.shadowRoot.querySelector("style[data-ferriki-code-base]"), dsdStyle);
+    assert.equal(dsdHost.shadowRoot.adoptedStyleSheets.length, 0);
+
+    // No-op configureStyles calls (empty CSS, whitespace CSS, identical href, new unrelated blocks)
+    // must NOT trigger redundant [STYLES_CHANGED] DOM queries on connected hosts.
+    host1.shadowRoot.queryCount = 0;
+    host2.shadowRoot.queryCount = 0;
+    dsdHost.shadowRoot.queryCount = 0;
+    defineCodeElement({ stylesheetHref: "/assets/code.css", blocks: { two: "<pre>two</pre>" } });
+    defineCodeElement({ css: "   ", stylesheetHref: "/assets/code.css" });
+    assert.equal(host1.shadowRoot.queryCount, 0);
+    assert.equal(host2.shadowRoot.queryCount, 0);
+    assert.equal(dsdHost.shadowRoot.queryCount, 0);
+
+    // Adding a genuinely new CSS chunk updates the shared CSSStyleSheet once and updates DSD <style>.
+    defineCodeElement({ css: ".extra-rule{color:green}" });
+    assert.equal(sharedSheet.replaceSyncCalls, 2);
+    assert.equal(sharedSheet.cssText.includes(".extra-rule{color:green}"), true);
+    assert.equal(dsdStyle.textContent.includes(".extra-rule{color:green}"), true);
+    // Repeated identical CSS chunk is a no-op.
+    host1.shadowRoot.queryCount = 0;
+    defineCodeElement({ css: ".extra-rule{color:green}" });
+    assert.equal(sharedSheet.replaceSyncCalls, 2);
+    assert.equal(host1.shadowRoot.queryCount, 0);
+
+    // Cross-document adoption swaps to the destination document's shared CSSStyleSheet while keeping userSheet.
+    host1.ownerDocument = docB;
+    host1.adoptedCallback();
+    assert.equal(host1.shadowRoot.adoptedStyleSheets.length, 2);
+    assert.equal(host1.shadowRoot.adoptedStyleSheets[0], userSheet);
+    assert.notEqual(host1.shadowRoot.adoptedStyleSheets[1], sharedSheet);
+    assert.equal(
+      host1.shadowRoot.adoptedStyleSheets[1].cssText.includes(".extra-rule{color:green}"),
+      true,
+    );
+
+    // When constructable stylesheet adoption fails, the element falls back cleanly to <style>.
+    const brokenDoc = makeDocument(
+      class BrokenCSSStyleSheet {
+        replaceSync() {
+          throw new Error("unsupported");
+        }
+      },
+    );
+    const fallbackHost = new Constructor();
+    fallbackHost.ownerDocument = brokenDoc;
+    fallbackHost.setAttribute("code-ref", "one");
+    fallbackHost.connectedCallback();
+    const fallbackStyle = fallbackHost.shadowRoot.querySelector("style[data-ferriki-code-base]");
+    assert.ok(fallbackStyle);
+    assert.equal(fallbackStyle.textContent.includes(".extra-rule{color:green}"), true);
+  } finally {
+    for (const [name, descriptor] of globalDescriptors) {
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else delete globalThis[name];
+    }
+  }
+});

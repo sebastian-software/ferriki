@@ -552,10 +552,7 @@ export function createHighlighterCoreSync(options = {}) {
 
   function grammarLanguage(options) {
     const requested = resolveAlias(registrationName(options?.lang) || "text");
-    return (
-      languageCatalog.find((entry) => entry.id === requested || entry.aliases.includes(requested))
-        ?.id || requested
-    );
+    return standardLanguageEntry(requested)?.id || requested;
   }
 
   function grammarThemes(options, result) {
@@ -645,15 +642,13 @@ export function createHighlighterCoreSync(options = {}) {
           "ERR_USAGE",
         );
     }
-    decodeGrammarStateSource(state);
-    return state;
+    return decodeGrammarStateSource(state);
   }
 
   function prepareGrammarInput(code, options) {
     const state = options?.grammarState;
     if (!state) return { source: code, prefixLength: 0, prefixLines: 0 };
-    validateGrammarState(state, options);
-    const continuationState = decodeGrammarStateSource(state);
+    const continuationState = validateGrammarState(state, options);
     if (continuationState !== undefined)
       return { source: code, prefixLength: 0, prefixLines: 0, continuationState };
     const separator = state.source.endsWith("\n") ? "" : "\n";
@@ -1018,13 +1013,30 @@ export function createCssVariablesTheme(options = {}) {
 }
 
 function hastToHtml(tree) {
-  return (tree.children || []).map(nodeToHtml).join("");
+  const children = tree.children;
+  if (!children || children.length === 0) return "";
+  let html = "";
+  for (let index = 0; index < children.length; index++) {
+    if (!(index in children)) continue;
+    html += nodeToHtml(children[index]);
+  }
+  return html;
 }
 
 export const bundledLanguages = createLanguageBundle(languageCatalog);
 export const bundledThemes = createThemeBundle(themeCatalog);
 export const bundledLanguagesAlias = createLanguageAliasBundle(languageCatalog);
 
+const standardLanguageEntries = new Map();
+for (const entry of languageCatalog) {
+  if (!standardLanguageEntries.has(entry.id)) standardLanguageEntries.set(entry.id, entry);
+  for (const alias of entry.aliases) {
+    if (!standardLanguageEntries.has(alias)) standardLanguageEntries.set(alias, entry);
+  }
+}
+function standardLanguageEntry(name) {
+  return standardLanguageEntries.get(name);
+}
 const standardLanguageKeys = new Set(
   languageCatalog.flatMap((entry) => [entry.id, ...entry.aliases]),
 );
@@ -1870,6 +1882,18 @@ function themePropertyStyle(
   return declarations.join(";");
 }
 
+function hasSameMergeableStyle(previous, token) {
+  if (previous.htmlStyle || token.htmlStyle) return previous.htmlStyle === token.htmlStyle;
+  if (((previous.fontStyle || 0) & 3) !== ((token.fontStyle || 0) & 3)) return false;
+  const previousColor = previous.color;
+  const tokenColor = token.color;
+  if (previousColor === tokenColor) return true;
+  return (
+    (previousColor ? normalizeSafeCssColor(previousColor) : undefined) ===
+    (tokenColor ? normalizeSafeCssColor(tokenColor) : undefined)
+  );
+}
+
 // Rendering normalization follows Shiki's HTML contract and applies before
 // transformer token callbacks.
 function prepareRenderTokens(tokens, options) {
@@ -1903,12 +1927,11 @@ function prepareRenderTokens(tokens, options) {
     const merged = [];
     for (const token of output) {
       const previous = merged.at(-1);
-      const style = (value) => value.htmlStyle || JSON.stringify(tokenStyle(value));
       if (
         previous &&
         !((previous.fontStyle || 0) & 12) &&
         !((token.fontStyle || 0) & 12) &&
-        style(previous) === style(token)
+        hasSameMergeableStyle(previous, token)
       )
         previous.content += token.content;
       else merged.push({ ...token });
@@ -2125,10 +2148,7 @@ function isSpecialLanguage(language) {
 }
 
 function scopeNameForLanguage(language) {
-  return (
-    languageCatalog.find((entry) => entry.id === language || entry.aliases.includes(language))
-      ?.scopeName || `source.${language}`
-  );
+  return standardLanguageEntries.get(language)?.scopeName || `source.${language}`;
 }
 
 function assertAnsiInput(code, options) {
@@ -2319,25 +2339,50 @@ async function resolveRegistrations(inputs) {
 
 function nodeToHtml(node) {
   if (node.type === "text") return escapeHtml(node.value || "");
-  if (node.type !== "element") return (node.children || []).map(nodeToHtml).join("");
+  const children = node.children;
+  if (node.type !== "element") {
+    if (!children || children.length === 0) return "";
+    let content = "";
+    for (let index = 0; index < children.length; index++) {
+      if (!(index in children)) continue;
+      content += nodeToHtml(children[index]);
+    }
+    return content;
+  }
   if (!isValidHtmlTagName(node.tagName))
     throw new ShikiError(`Invalid HTML tag name ${JSON.stringify(node.tagName)}`, "ERR_USAGE");
-  const properties = Object.entries(node.properties || {})
-    .map(([key, value]) => {
+  let html = `<${node.tagName}`;
+  const props = node.properties;
+  if (props) {
+    for (const key in props) {
+      if (!Object.hasOwn(props, key)) continue;
       if (!isValidHtmlAttributeName(key))
         throw new ShikiError(`Invalid HTML attribute name ${JSON.stringify(key)}`, "ERR_USAGE");
-      return ` ${key}="${escapeAttribute(propertyValue(value))}"`;
-    })
-    .join("");
-  return `<${node.tagName}${properties}>${(node.children || []).map(nodeToHtml).join("")}</${node.tagName}>`;
+      html += ` ${key}="${escapeAttribute(propertyValue(props[key]))}"`;
+    }
+  }
+  html += ">";
+  if (children) {
+    for (let index = 0; index < children.length; index++) {
+      if (!(index in children)) continue;
+      html += nodeToHtml(children[index]);
+    }
+  }
+  html += `</${node.tagName}>`;
+  return html;
 }
 
 function propertyValue(value) {
   if (Array.isArray(value)) return value.join(" ");
-  if (value && typeof value === "object")
-    return Object.entries(value)
-      .map(([key, entry]) => `${key}:${entry}`)
-      .join(";");
+  if (value && typeof value === "object") {
+    let result = "";
+    for (const key in value) {
+      if (!Object.hasOwn(value, key)) continue;
+      if (result) result += ";";
+      result += `${key}:${value[key]}`;
+    }
+    return result;
+  }
   return String(value);
 }
 

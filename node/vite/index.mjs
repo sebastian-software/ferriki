@@ -38,6 +38,9 @@ const ABANDONED_CSS_TTL_MS = 5 * 60_000;
 const SPILL_RETRY_BACKOFF_MS = 5_000;
 const MAX_PENDING_CSS = 256;
 const MAX_PENDING_CLAIMS_PER_ENV = 64;
+const MAX_CSS_RULES_CACHE = 512;
+const MAX_CACHED_CSS_RULES_LENGTH = 65_536;
+const ALL_ENVIRONMENTS = Symbol("ferriki.vite.all-environments");
 const VIRTUAL_CSS_ID_PATTERN = /^virtual:ferriki-vite\/([0-9a-f]{64})\.css$/;
 const SPILL_DIR_PREFIX = "ferriki-vite-css-";
 const SPILL_DIR_PATTERN = /^ferriki-vite-css-(\d+)-.+$/;
@@ -123,12 +126,140 @@ export function ferriki(options = {}) {
   const reactModulesByObject = new WeakMap();
   const supersededReactCssByObject = new WeakMap();
   const reactLifetimesByObject = new WeakMap();
+  const cssRulesCache = new Map();
+  const reactBlocksCache = new Map();
+  const reactCssCountersByEnvironment = new Map();
+  const allReactCssCounter = createRuleCounter();
   let resolvedConfig;
   let configuredBase;
   let activeServer;
   let devServer;
   let hmrDisabled = false;
   const buildStylesheets = new WeakMap();
+
+  function cssRuleBucket(rule) {
+    if (rule.includes("[data-ferriki-theme=")) return 3;
+    if (rule.startsWith("@media")) return 2;
+    if (rule.includes(".ferriki-themes-")) return 1;
+    return 0;
+  }
+
+  function createRuleCounter() {
+    return {
+      // Partition into cascade buckets so newly added `.ferriki-style-*` rules
+      // during HMR always precede retained theme defaults, `@media`, and
+      // `[data-ferriki-theme=...]` override rules in O(1) incremental time.
+      buckets: [new Map(), new Map(), new Map(), new Map()],
+      size: 0,
+      dirty: false,
+      css: "",
+      hash: undefined,
+    };
+  }
+
+  function addRulesToCounter(counter, rules) {
+    if (!rules || rules.length === 0) return;
+    for (const rule of rules) {
+      const bucket = counter.buckets[cssRuleBucket(rule)];
+      const next = (bucket.get(rule) ?? 0) + 1;
+      bucket.set(rule, next);
+      if (next === 1) {
+        counter.size++;
+        counter.dirty = true;
+      }
+    }
+  }
+
+  function removeRulesFromCounter(counter, rules) {
+    if (!rules || rules.length === 0) return;
+    for (const rule of rules) {
+      const bucket = counter.buckets[cssRuleBucket(rule)];
+      const count = bucket.get(rule);
+      if (count === undefined) continue;
+      if (count <= 1) {
+        bucket.delete(rule);
+        counter.size--;
+        counter.dirty = true;
+      } else {
+        bucket.set(rule, count - 1);
+      }
+    }
+  }
+
+  function readRuleCounterEntry(counter) {
+    if (!counter) return { css: "", hash: undefined };
+    if (counter.dirty) {
+      if (counter.size === 0) {
+        counter.css = "";
+      } else {
+        const ordered = [];
+        for (const bucket of counter.buckets) {
+          for (const rule of bucket.keys()) ordered.push(rule);
+        }
+        counter.css = ordered.join("\n");
+      }
+      counter.hash = undefined;
+      counter.dirty = false;
+    }
+    return counter;
+  }
+
+  function addEnvReactRules(environmentName, rules) {
+    if (styleMode !== "classes" || !rules || rules.length === 0) return;
+    let counter = reactCssCountersByEnvironment.get(environmentName);
+    if (!counter) {
+      counter = createRuleCounter();
+      reactCssCountersByEnvironment.set(environmentName, counter);
+    }
+    addRulesToCounter(counter, rules);
+    addRulesToCounter(allReactCssCounter, rules);
+  }
+
+  function removeEnvReactRules(environmentName, rules) {
+    if (styleMode !== "classes" || !rules || rules.length === 0) return;
+    const counter = reactCssCountersByEnvironment.get(environmentName);
+    if (counter) {
+      removeRulesFromCounter(counter, rules);
+      if (counter.size === 0) reactCssCountersByEnvironment.delete(environmentName);
+    }
+    removeRulesFromCounter(allReactCssCounter, rules);
+  }
+
+  function collectUniqueBlockRules(blockEntries) {
+    if (styleMode !== "classes") return [];
+    const seen = new Set();
+    for (const block of blockEntries.values()) {
+      const rules = block.rules ?? (block.css ? parseCssRules(block.css) : undefined);
+      if (rules) for (const rule of rules) seen.add(rule);
+    }
+    return [...seen];
+  }
+
+  function parseCssRules(css) {
+    if (!css) return [];
+    let rules = cssRulesCache.get(css);
+    if (rules !== undefined) {
+      cssRulesCache.delete(css);
+      cssRulesCache.set(css, rules);
+      return rules;
+    }
+    rules = cssRules(css);
+    if (css.length <= MAX_CACHED_CSS_RULES_LENGTH) {
+      cssRulesCache.set(css, rules);
+      while (cssRulesCache.size > MAX_CSS_RULES_CACHE)
+        cssRulesCache.delete(cssRulesCache.keys().next().value);
+    }
+    return rules;
+  }
+
+  function invalidateReactBlocksCache(environmentName) {
+    if (environmentName === undefined) {
+      reactBlocksCache.clear();
+      return;
+    }
+    reactBlocksCache.delete(environmentName);
+    reactBlocksCache.delete(ALL_ENVIRONMENTS);
+  }
 
   function environmentNameOf(context) {
     return context?.environment?.name ?? "default";
@@ -143,34 +274,31 @@ export function ferriki(options = {}) {
   }
 
   function preparedReactBlocks(environmentName) {
-    return Object.fromEntries(
-      reactModuleMaps(environmentName).flatMap((modules) =>
-        [...modules.values()].flatMap(({ blocks }) =>
-          [...blocks].map(([ref, block]) => [ref, block.html]),
-        ),
-      ),
-    );
+    const cacheKey = environmentName ?? ALL_ENVIRONMENTS;
+    let cached = reactBlocksCache.get(cacheKey);
+    if (!cached) {
+      cached = {};
+      for (const modules of reactModuleMaps(environmentName)) {
+        for (const { blocks } of modules.values()) {
+          for (const [ref, block] of blocks) cached[ref] = block.html;
+        }
+      }
+      reactBlocksCache.set(cacheKey, cached);
+    }
+    return cached;
+  }
+
+  function preparedReactCssEntry(environmentName) {
+    if (styleMode !== "classes") return { css: "", hash: undefined };
+    const counter =
+      environmentName !== undefined
+        ? reactCssCountersByEnvironment.get(environmentName)
+        : allReactCssCounter;
+    return readRuleCounterEntry(counter);
   }
 
   function preparedReactCss(environmentName) {
-    if (styleMode !== "classes") return "";
-    const css = new Set();
-    for (const modules of reactModuleMaps(environmentName)) {
-      for (const { blocks } of modules.values()) {
-        for (const block of blocks.values())
-          if (block.css) for (const rule of cssRules(block.css)) css.add(rule);
-      }
-    }
-    const supersededCaches =
-      environmentName !== undefined
-        ? [supersededReactCssByEnvironment.get(environmentName)].filter(Boolean)
-        : [...supersededReactCssByEnvironment.values()];
-    for (const cache of supersededCaches) {
-      for (const entry of cache.values()) {
-        if (entry.css) for (const rule of cssRules(entry.css)) css.add(rule);
-      }
-    }
-    return [...css].join("\n");
+    return preparedReactCssEntry(environmentName).css;
   }
 
   function hasPreparedReactBlocksForEnvironment(environment, environmentName) {
@@ -183,7 +311,12 @@ export function ferriki(options = {}) {
       }
       return false;
     }
-    return Object.keys(preparedReactBlocks(environmentName)).length > 0;
+    for (const modules of reactModuleMaps(environmentName)) {
+      for (const { blocks } of modules.values()) {
+        if (blocks.size > 0) return true;
+      }
+    }
+    return false;
   }
 
   function preparedReactCssForEnvironment(environment, environmentName) {
@@ -193,14 +326,17 @@ export function ferriki(options = {}) {
       const modules = reactModulesByObject.get(environment);
       if (modules) {
         for (const { blocks } of modules.values()) {
-          for (const block of blocks.values())
-            if (block.css) for (const rule of cssRules(block.css)) css.add(rule);
+          for (const block of blocks.values()) {
+            const rules = block.rules ?? (block.css ? parseCssRules(block.css) : undefined);
+            if (rules) for (const rule of rules) css.add(rule);
+          }
         }
       }
       const superseded = supersededReactCssByObject.get(environment);
       if (superseded) {
         for (const entry of superseded.values()) {
-          if (entry.css) for (const rule of cssRules(entry.css)) css.add(rule);
+          const rules = entry.rules ?? (entry.css ? parseCssRules(entry.css) : undefined);
+          if (rules) for (const rule of rules) css.add(rule);
         }
       }
       return [...css].join("\n");
@@ -294,23 +430,27 @@ export function ferriki(options = {}) {
     if (styleMode !== "classes" || renderedReactCss.size === 0) return;
     const deduplicated = new Set();
     for (const css of renderedReactCss.values()) {
-      if (css) for (const rule of cssRules(css)) deduplicated.add(rule);
+      if (css) for (const rule of parseCssRules(css)) deduplicated.add(rule);
     }
     if (deduplicated.size === 0) return;
-    const cssText = [...deduplicated].join("\n");
+    const rules = [...deduplicated];
+    const cssText = rules.join("\n");
     const generation = ++nextCssClaimGeneration;
     let cache = supersededReactCssByEnvironment.get(environmentName);
     if (!cache) {
       cache = new Map();
       supersededReactCssByEnvironment.set(environmentName, cache);
     }
-    cache.set(generation, { id, css: cssText, lifetimeId });
+    cache.set(generation, { id, css: cssText, rules, lifetimeId });
+    addEnvReactRules(environmentName, rules);
     while (cache.size > MAX_SUPERSEDED_CSS) {
       const oldestGeneration = cache.keys().next().value;
       const oldestEntry = cache.get(oldestGeneration);
       cache.delete(oldestGeneration);
-      if (oldestEntry)
+      if (oldestEntry) {
+        removeEnvReactRules(environmentName, oldestEntry.rules);
         pruneUnusedModuleKey(moduleCssKey(environmentName, oldestEntry.lifetimeId, oldestEntry.id));
+      }
     }
     if (environment && typeof environment === "object") {
       rememberReactLifetimeForObject(environment, lifetimeId);
@@ -319,7 +459,7 @@ export function ferriki(options = {}) {
         objectCache = new Map();
         supersededReactCssByObject.set(environment, objectCache);
       }
-      objectCache.set(generation, { id, css: cssText, lifetimeId });
+      objectCache.set(generation, { id, css: cssText, rules, lifetimeId });
       while (objectCache.size > MAX_SUPERSEDED_CSS)
         objectCache.delete(objectCache.keys().next().value);
     }
@@ -346,6 +486,7 @@ export function ferriki(options = {}) {
       for (const [generation, entry] of [...cache.entries()]) {
         if (entry.id === id && (lifetimeId === undefined || entry.lifetimeId === lifetimeId)) {
           cache.delete(generation);
+          removeEnvReactRules(environmentName, entry.rules);
           removed = true;
         }
       }
@@ -378,6 +519,7 @@ export function ferriki(options = {}) {
           (lifetimeId === undefined || entry.lifetimeId === lifetimeId)
         ) {
           cache.delete(generation);
+          removeEnvReactRules(env, entry.rules);
           removed = true;
         }
       }
@@ -408,13 +550,16 @@ export function ferriki(options = {}) {
       if (!cache) continue;
       const retiredKeys = new Set();
       if (maxGeneration === undefined && !closingScope) {
-        for (const entry of cache.values())
+        for (const entry of cache.values()) {
+          removeEnvReactRules(env, entry.rules);
           retiredKeys.add(moduleCssKey(env, entry.lifetimeId, entry.id));
+        }
         supersededReactCssByEnvironment.delete(env);
       } else {
         for (const [generation, entry] of [...cache.entries()]) {
           if (shouldClearClaim(generation, entry.lifetimeId, maxGeneration, closingScope)) {
             cache.delete(generation);
+            removeEnvReactRules(env, entry.rules);
             retiredKeys.add(moduleCssKey(env, entry.lifetimeId, entry.id));
           }
         }
@@ -426,15 +571,18 @@ export function ferriki(options = {}) {
 
   function refreshReactCss(previousPalette) {
     if (!devServer) return;
-    const palette = preparedReactCss();
-    if (palette !== previousPalette)
+    const entry = preparedReactCssEntry();
+    if (entry.css !== previousPalette) {
+      if (entry.hash === undefined)
+        entry.hash = createHash("sha256").update(entry.css).digest("hex");
       devServer.ws.send({
         type: "custom",
         event: "ferriki:code-element-css",
         data: {
-          href: `${devStylesheetHref(devServer.config.base)}?v=${createHash("sha256").update(palette).digest("hex")}`,
+          href: `${devStylesheetHref(devServer.config.base)}?v=${entry.hash}`,
         },
       });
+    }
   }
 
   function removeReactModules(entries, notify = true, environment) {
@@ -446,7 +594,9 @@ export function ferriki(options = {}) {
         const existing = modules.get(id);
         if (existing && (lifetimeId === undefined || existing.lifetimeId === lifetimeId)) {
           modules.delete(id);
+          removeEnvReactRules(environmentName, existing.rules);
           if (modules.size === 0) reactModulesByEnvironment.delete(environmentName);
+          invalidateReactBlocksCache(environmentName);
         }
       }
       if (environment && typeof environment === "object") {
@@ -480,40 +630,52 @@ export function ferriki(options = {}) {
     if (nextObjectModules?.size) {
       const published = new Map();
       for (const [id, entry] of nextObjectModules.entries()) {
+        const rules = entry.rules ?? collectUniqueBlockRules(entry.blocks);
         published.set(id, {
           blocks: entry.blocks,
+          rules,
           lifetimeId: entry.lifetimeId,
           isDevServer: false,
         });
+        addEnvReactRules(environmentName, rules);
       }
       if (previousModules) {
         for (const [id, entry] of previousModules.entries()) {
+          removeEnvReactRules(environmentName, entry.rules);
           if (!published.has(id) || published.get(id).lifetimeId !== entry.lifetimeId)
             removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, id));
         }
       }
       reactModulesByEnvironment.set(environmentName, published);
     } else if (previousModules) {
-      for (const [id, entry] of previousModules.entries())
+      for (const [id, entry] of previousModules.entries()) {
+        removeEnvReactRules(environmentName, entry.rules);
         removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, id));
+      }
       reactModulesByEnvironment.delete(environmentName);
     }
     const previousSuperseded = supersededReactCssByEnvironment.get(environmentName);
     const nextSuperseded = supersededReactCssByObject.get(environment);
     if (nextSuperseded?.size) {
       const publishedSuperseded = new Map(nextSuperseded);
+      for (const entry of publishedSuperseded.values())
+        addEnvReactRules(environmentName, entry.rules);
       if (previousSuperseded) {
         for (const [generation, entry] of previousSuperseded.entries()) {
+          removeEnvReactRules(environmentName, entry.rules);
           if (!publishedSuperseded.has(generation))
             removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, entry.id));
         }
       }
       supersededReactCssByEnvironment.set(environmentName, publishedSuperseded);
     } else if (previousSuperseded) {
-      for (const entry of previousSuperseded.values())
+      for (const entry of previousSuperseded.values()) {
+        removeEnvReactRules(environmentName, entry.rules);
         removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, entry.id));
+      }
       supersededReactCssByEnvironment.delete(environmentName);
     }
+    invalidateReactBlocksCache(environmentName);
     for (const key of removedKeys) pruneUnusedModuleKey(key);
   }
 
@@ -528,10 +690,12 @@ export function ferriki(options = {}) {
       for (const [id, entry] of [...modules.entries()]) {
         if (entry.isDevServer && matchesClosingLifetime(entry.lifetimeId, closingScope)) {
           modules.delete(id);
+          removeEnvReactRules(env, entry.rules);
           removedKeys.push(moduleCssKey(env, entry.lifetimeId, id));
         }
       }
       if (modules.size === 0) reactModulesByEnvironment.delete(env);
+      if (removedKeys.length > 0) invalidateReactBlocksCache(env);
       for (const key of removedKeys) pruneModuleKeyIndex(key);
     }
   }
@@ -724,6 +888,47 @@ export function ferriki(options = {}) {
     return loads;
   }
 
+  function ensureLanguageLoaded(highlighter, language) {
+    const loads = languageLoadsFor(highlighter);
+    let loading = loads.get(language);
+    if (!loading) {
+      loading = Promise.resolve().then(() => highlighter.loadLanguage(language));
+      loads.set(language, loading);
+    }
+    return loading.catch((error) => {
+      if (loads.get(language) === loading) loads.delete(language);
+      throw error;
+    });
+  }
+
+  async function preloadLanguages(session, calls, lifetimeId) {
+    if (calls.length <= 1) return undefined;
+    const highlighter = session.highlighter ?? (await session.promise);
+    const preloaded = new Map();
+    for (const call of calls) {
+      const language = call.language;
+      if (!language || preloaded.has(language)) continue;
+      // Start each distinct language load concurrently without awaiting all of them
+      // up front, so an immediate fatal failure on an earlier macro surfaces without
+      // waiting for a slow sibling load, while retaining the session until the
+      // sibling preload finishes so shutdown never disposes an in-flight download.
+      const promise = ensureLanguageLoaded(highlighter, language);
+      session.activeUsers++;
+      if (lifetimeId !== undefined) {
+        session.activeUsersByLifetime.set(
+          lifetimeId,
+          (session.activeUsersByLifetime.get(lifetimeId) ?? 0) + 1,
+        );
+      }
+      promise.then(
+        () => releaseHighlighterSession(session, lifetimeId),
+        () => releaseHighlighterSession(session, lifetimeId),
+      );
+      preloaded.set(language, promise);
+    }
+    return preloaded.size > 0 ? preloaded : undefined;
+  }
+
   function warnOnce(context, id, language, cause, isCurrent) {
     if (isCurrent && !isCurrent()) return;
     const key = id.split("?", 1)[0];
@@ -744,18 +949,12 @@ export function ferriki(options = {}) {
     effectiveLineNumbers,
     codeElement,
     isCurrent,
+    preloadedLanguages,
   ) {
     const highlighter = session.highlighter ?? (await session.promise);
-    const loads = languageLoadsFor(highlighter);
-    let loading = loads.get(language);
-    if (!loading) {
-      loading = Promise.resolve().then(() => highlighter.loadLanguage(language));
-      loads.set(language, loading);
-    }
     try {
-      await loading;
+      await (preloadedLanguages?.get(language) ?? ensureLanguageLoaded(highlighter, language));
     } catch (error) {
-      if (loads.get(language) === loading) loads.delete(language);
       if (error?.code === "ERR_UNSUPPORTED") {
         warnOnce(context, id, language, error, isCurrent);
         return { html: plainCodeHtml(code, language, meta, effectiveLineNumbers), css: "" };
@@ -1690,7 +1889,7 @@ export function ferriki(options = {}) {
     enforce: "pre",
     api: {
       codeElementBlocks(environmentName) {
-        return preparedReactBlocks(environmentName);
+        return { ...preparedReactBlocks(environmentName) };
       },
       renderCodeElements(markup, options = {}) {
         const { environment, ...renderOptions } = options;
@@ -1751,6 +1950,8 @@ export function ferriki(options = {}) {
               retireDevReactModules(closingScope);
               retireClosingLifetimeModules(undefined, closingScope);
               clearSupersededVirtualCss(undefined, closingScope);
+              cssRulesCache.clear();
+              invalidateReactBlocksCache();
             };
             const hasInFlightTransforms =
               (activeSession?.activeUsers ?? 0) > 0 || pendingDisposals.size > 0;
@@ -1837,10 +2038,12 @@ export function ferriki(options = {}) {
             for (const [id, entry] of [...modules.entries()]) {
               if (matchesClosingLifetime(entry.lifetimeId, previousScope)) {
                 modules.delete(id);
+                removeEnvReactRules(environmentName, entry.rules);
                 removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, id));
               }
             }
             if (modules.size === 0) reactModulesByEnvironment.delete(environmentName);
+            if (removedKeys.length > 0) invalidateReactBlocksCache(environmentName);
             for (const key of removedKeys) pruneModuleKeyIndex(key);
           }
           clearSupersededReactCss(environmentName, undefined, previousScope);
@@ -1853,11 +2056,18 @@ export function ferriki(options = {}) {
       const modules = reactModulesByEnvironment.get(environmentName);
       const removedKeys = [];
       if (modules) {
-        for (const [id, entry] of modules.entries())
+        for (const [id, entry] of modules.entries()) {
+          removeEnvReactRules(environmentName, entry.rules);
           removedKeys.push(moduleCssKey(environmentName, entry.lifetimeId, id));
+        }
         reactModulesByEnvironment.delete(environmentName);
       }
-      supersededReactCssByEnvironment.delete(environmentName);
+      const superseded = supersededReactCssByEnvironment.get(environmentName);
+      if (superseded) {
+        for (const entry of superseded.values()) removeEnvReactRules(environmentName, entry.rules);
+        supersededReactCssByEnvironment.delete(environmentName);
+      }
+      invalidateReactBlocksCache(environmentName);
       const effectiveScope = previousScope.lifetimeIds.size > 0 ? previousScope : undefined;
       retireClosingLifetimeModules(environmentName, effectiveScope);
       clearSupersededVirtualCss(environmentName, effectiveScope);
@@ -2325,6 +2535,9 @@ export function ferriki(options = {}) {
           if (calls.length > 0)
             inFlightTransformsByFile.set(path, (inFlightTransformsByFile.get(path) ?? 0) + 1);
           try {
+            const preloadedLanguages = session
+              ? await preloadLanguages(session, calls, envLifetimeId)
+              : undefined;
             for (const call of calls) {
               const parsedMeta = parseMeta(call.meta ?? "");
               // A call-level setting replaces the Vite default, while an explicit
@@ -2343,6 +2556,7 @@ export function ferriki(options = {}) {
                 () =>
                   canCommitModuleGeneration(key, generation, invalidationEpoch) &&
                   (fileEditGeneration.get(path) ?? 0) === editGeneration,
+                preloadedLanguages,
               );
               const descriptorCss = [
                 rendered.css,
@@ -2394,11 +2608,19 @@ export function ferriki(options = {}) {
             lastSucceededGenerationByKey.set(key, generation);
             if (reactBlocks.size > 0) {
               const blockEntries = new Map(
-                [...reactBlocks].map(([ref, block]) => [
-                  ref,
-                  { html: block.html, css: renderedReactCss.get(ref) },
-                ]),
+                [...reactBlocks].map(([ref, block]) => {
+                  const css = renderedReactCss.get(ref);
+                  return [
+                    ref,
+                    {
+                      html: block.html,
+                      css,
+                      rules: styleMode === "classes" && css ? parseCssRules(css) : undefined,
+                    },
+                  ];
+                }),
               );
+              const moduleRules = collectUniqueBlockRules(blockEntries);
               let environmentModules = reactModulesByEnvironment.get(environmentName);
               if (!environmentModules) {
                 environmentModules = new Map();
@@ -2406,11 +2628,17 @@ export function ferriki(options = {}) {
               }
               const existingShared = environmentModules.get(id);
               if (!existingShared || envLifetimeId >= existingShared.lifetimeId) {
+                // Add incoming rules before removing outgoing rules so unchanged
+                // shared rules keep count >= 1 and avoid marking the palette dirty.
+                addEnvReactRules(environmentName, moduleRules);
+                if (existingShared) removeEnvReactRules(environmentName, existingShared.rules);
                 environmentModules.set(id, {
                   blocks: blockEntries,
+                  rules: moduleRules,
                   lifetimeId: envLifetimeId,
                   isDevServer: isDevTransform,
                 });
+                invalidateReactBlocksCache(environmentName);
               }
               if (!isDevTransform && environment && typeof environment === "object") {
                 rememberReactLifetimeForObject(environment, envLifetimeId);
@@ -2419,15 +2647,22 @@ export function ferriki(options = {}) {
                   objectModules = new Map();
                   reactModulesByObject.set(environment, objectModules);
                 }
-                objectModules.set(id, { blocks: blockEntries, lifetimeId: envLifetimeId });
+                objectModules.set(id, {
+                  blocks: blockEntries,
+                  rules: moduleRules,
+                  lifetimeId: envLifetimeId,
+                });
               }
               indexModuleKey(key);
             } else {
               const environmentModules = reactModulesByEnvironment.get(environmentName);
-              if (environmentModules?.get(id)?.lifetimeId === envLifetimeId) {
+              const existingShared = environmentModules?.get(id);
+              if (existingShared?.lifetimeId === envLifetimeId) {
                 environmentModules.delete(id);
+                removeEnvReactRules(environmentName, existingShared.rules);
                 if (environmentModules.size === 0)
                   reactModulesByEnvironment.delete(environmentName);
+                invalidateReactBlocksCache(environmentName);
               }
               if (environment && typeof environment === "object") {
                 const objectModules = reactModulesByObject.get(environment);

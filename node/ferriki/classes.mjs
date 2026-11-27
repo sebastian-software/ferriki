@@ -1313,17 +1313,6 @@ export function extractClassStylesFromTree(tree) {
           : String(raw),
     );
   }
-  function canMutateProperties(props, keysToDelete) {
-    if (!Object.isExtensible(props)) return false;
-    for (const key of keysToDelete) {
-      const descriptor = Object.getOwnPropertyDescriptor(props, key);
-      if (descriptor && !descriptor.configurable) return false;
-    }
-    const classDescriptor = Object.getOwnPropertyDescriptor(props, "class");
-    if (classDescriptor && (!Object.hasOwn(classDescriptor, "value") || !classDescriptor.writable))
-      return false;
-    return true;
-  }
   function canAssignProp(obj, key) {
     const descriptor = Object.getOwnPropertyDescriptor(obj, key);
     if (descriptor) {
@@ -1337,9 +1326,29 @@ export function extractClassStylesFromTree(tree) {
     if (!node || typeof node !== "object") return node;
     let nextNode = node;
     if (node.type === "element" && node.properties) {
-      const styleKeys = Object.keys(node.properties).filter((key) => key.toLowerCase() === "style");
-      if (styleKeys.length > 0) {
-        const raw = node.properties[styleKeys[0]];
+      const props = node.properties;
+      let firstStyleKey;
+      let hasStyle = false;
+      let hasExtraKeys = false;
+      let hasNonCanonicalClass = false;
+      let classKeys;
+      for (const key in props) {
+        if (!Object.hasOwn(props, key)) continue;
+        const lower = key.toLowerCase();
+        if (lower === "style") {
+          if (!hasStyle) {
+            firstStyleKey = key;
+            hasStyle = true;
+          }
+        } else if (lower === "class" || lower === "classname") {
+          if (key !== "class") hasNonCanonicalClass = true;
+          (classKeys ??= []).push(key);
+        } else {
+          hasExtraKeys = true;
+        }
+      }
+      if (hasStyle) {
+        const raw = props[firstStyleKey];
         const style = raw == null ? "" : sanitizeRawStyle(raw);
         let generatedClassName;
         if (style) {
@@ -1350,58 +1359,90 @@ export function extractClassStylesFromTree(tree) {
             rules.set(generatedClassName, `:where(.${generatedClassName}){${style}}`);
           }
         }
-        const classKeys = generatedClassName
-          ? Object.keys(node.properties).filter((key) => {
-              const lower = key.toLowerCase();
-              return lower === "class" || lower === "classname";
-            })
-          : [];
-        const keysToDelete = [...styleKeys, ...classKeys.filter((key) => key !== "class")];
-        const mergedClasses = [];
+        let mergedClass;
         if (generatedClassName) {
-          for (const key of classKeys) {
-            const rawClass = node.properties[key];
-            if (Array.isArray(rawClass)) {
-              for (const item of rawClass) {
-                if (item != null && String(item)) mergedClasses.push(String(item));
+          if (!classKeys) {
+            mergedClass = generatedClassName;
+          } else if (classKeys.length === 1 && typeof props[classKeys[0]] === "string") {
+            const rawClass = props[classKeys[0]];
+            mergedClass = rawClass ? `${rawClass} ${generatedClassName}` : generatedClassName;
+          } else {
+            const mergedClasses = [];
+            for (const key of classKeys) {
+              const rawClass = props[key];
+              if (Array.isArray(rawClass)) {
+                for (const item of rawClass) {
+                  if (item != null && String(item)) mergedClasses.push(String(item));
+                }
+              } else if (rawClass != null && String(rawClass)) {
+                mergedClasses.push(String(rawClass));
               }
-            } else if (rawClass != null && String(rawClass)) {
-              mergedClasses.push(String(rawClass));
             }
+            mergedClasses.push(generatedClassName);
+            mergedClass = mergedClasses.join(" ");
           }
-          mergedClasses.push(generatedClassName);
         }
-        if (canMutateProperties(node.properties, keysToDelete)) {
-          for (const key of keysToDelete) delete node.properties[key];
-          if (generatedClassName) node.properties.class = mergedClasses.join(" ");
+        const symbols = Object.getOwnPropertySymbols(props);
+        let nextProperties;
+        if (!hasExtraKeys && !hasNonCanonicalClass && symbols.length === 0) {
+          // Allocate a fresh fast-mode object rather than calling `delete` on
+          // `node.properties`, which forces V8 objects into slow dictionary mode.
+          if (generatedClassName) {
+            nextProperties = { class: mergedClass };
+          } else if (classKeys) {
+            nextProperties = { class: props.class };
+          } else {
+            nextProperties = {};
+          }
         } else {
-          const skip = new Set(keysToDelete);
-          const nextProperties = {};
-          for (const [key, value] of Object.entries(node.properties)) {
-            if (skip.has(key)) continue;
+          nextProperties = {};
+          let wroteClass = false;
+          for (const key in props) {
+            if (!Object.hasOwn(props, key)) continue;
+            const lower = key.toLowerCase();
+            if (lower === "style") continue;
+            if (generatedClassName && (lower === "class" || lower === "classname")) {
+              if (key === "class" && !wroteClass) {
+                Object.defineProperty(nextProperties, "class", {
+                  value: mergedClass,
+                  enumerable: true,
+                  writable: true,
+                  configurable: true,
+                });
+                wroteClass = true;
+              }
+              continue;
+            }
             Object.defineProperty(nextProperties, key, {
-              value,
+              value: props[key],
               enumerable: true,
               writable: true,
               configurable: true,
             });
           }
-          for (const symbol of Object.getOwnPropertySymbols(node.properties)) {
-            if (Object.prototype.propertyIsEnumerable.call(node.properties, symbol)) {
+          for (const symbol of symbols) {
+            if (Object.prototype.propertyIsEnumerable.call(props, symbol)) {
               Object.defineProperty(nextProperties, symbol, {
-                value: node.properties[symbol],
+                value: props[symbol],
                 enumerable: true,
                 writable: true,
                 configurable: true,
               });
             }
           }
-          if (generatedClassName) nextProperties.class = mergedClasses.join(" ");
-          if (canAssignProp(node, "properties")) {
-            node.properties = nextProperties;
-          } else {
-            nextNode = { ...node, properties: nextProperties };
+          if (generatedClassName && !wroteClass) {
+            Object.defineProperty(nextProperties, "class", {
+              value: mergedClass,
+              enumerable: true,
+              writable: true,
+              configurable: true,
+            });
           }
+        }
+        if (canAssignProp(node, "properties")) {
+          node.properties = nextProperties;
+        } else {
+          nextNode = { ...node, properties: nextProperties };
         }
       }
     }
