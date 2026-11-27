@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-10
+Last updated: 2026-11-27
 
 ## Context
 
@@ -75,7 +75,7 @@ one product, one version, one release signal.
   through typed `extra-files`. The Vite package shares the product version and
   depends on the matching `@ferriki/core` version.
 - The separate fuzz workspace keeps its own dependency lockfile. Typed TOML
-  `extra-files` update only its local `ferriki-asset-gen` and
+  `extra-files` update only its local `ferriki`, `ferriki-asset-gen`, and
   `ferriki-textmate` package versions in the release PR; registry dependencies
   and the private fuzz package version stay pinned. Fuzz CI verifies that
   `cargo fetch --locked` can use the generated release candidate.
@@ -142,3 +142,4 @@ one product, one version, one release signal.
 - 2026-10-10: Requires exact release-commit CI before either registry publisher and binds manual recovery to the release tag and OIDC event SHA (#245).
 - 2026-10-10: Require source-pinned recovery for partial npm publication and both registries in the final product outcome (#246, #247).
 - 2026-11-10: Marks the original standards blueprint as historical provenance and links current project-infra guidance; executable release contracts are unchanged.
+- 2026-11-27: Include the local `ferriki` crate version in the separate fuzz lockfile release updates alongside `ferriki-asset-gen` and `ferriki-textmate` (#395).

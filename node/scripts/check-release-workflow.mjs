@@ -1739,7 +1739,7 @@ export function assertReleaseWorkflow({ workflow, checklist, releaseConfig, node
   );
   // The pinned Release Please TOML parser wraps scalar names in `.value`.
   // A registry copy of the same crate must keep its separately pinned version.
-  for (const crate of ["ferriki-textmate", "ferriki-asset-gen"])
+  for (const crate of ["ferriki", "ferriki-textmate", "ferriki-asset-gen"])
     assert(
       extraFiles.some(
         (file) =>

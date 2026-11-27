@@ -42,6 +42,7 @@
     "check:docs-drift": "node ./scripts/check-docs-drift.mjs && node ./scripts/test-docs-drift.mjs",
     "test:vite": "vitest run vite/test",
     "test:web-component": "node --test scripts/test-web-component.mjs scripts/test-web-component-server.mjs",
+    "test:cross-platform": "node ./scripts/run-cross-platform-node-tests.mjs",
     "check:packed-vite": "node ./scripts/check-packed-vite-consumer.mjs",
     "publish:ci": "pnpm -C ferriki publish --access public --no-git-checks",
     "bench:tiobe": "node scripts/bench-tiobe.mjs",

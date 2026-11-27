@@ -1,7 +1,9 @@
 # Rust fuzzing
 
-These cargo-fuzz targets exercise Ferriki's raw TextMate grammar parser,
-fkgram asset decoder, line tokenizer, and theme application. They live in a
+These cargo-fuzz targets exercise Ferriki's raw TextMate grammar parser and
+compiler, fkgram asset decoder, line tokenizer, theme application, serialized
+state-stack continuation decoder, `.fkbc`/`.fkix` precompiled archive decoders,
+decoration planner/renderer, and theme HTML/CSS rendering. They live in a
 standalone Cargo workspace with their own lockfile, so fuzz dependencies do not
 change the release workspace.
 
@@ -23,28 +25,51 @@ Run one target for a minute:
       -malloc_limit_mb=256 \
       -rss_limit_mb=1024
 
-The targets are parse_raw_grammar, decode_fkgram, tokenize_line, and
-theme_application. Each target reads its seed corpus from
-fuzz/corpus/<target>/. Minimized crashes are written under
-fuzz/artifacts/<target>/; rerun a crash by passing its file path after the
+The targets are `parse_raw_grammar`, `decode_fkgram`, `tokenize_line`,
+`theme_application`, `deserialize_state_stack`, `decode_precompiled_archives`,
+`decorations`, and `theme_render`. Each target reads its seed corpus from
+`fuzz/corpus/<target>/`. Minimized crashes are written under
+`fuzz/artifacts/<target>/`; rerun a crash by passing its file path after the
 target name. Panics, sanitizer findings, assertions, and libFuzzer timeouts
-fail the run. Rejected JSON and asset codec errors are expected for malformed
-input.
+fail the run. Rejected JSON, plist, state-stack, and archive codec errors are
+expected for malformed input.
 
-The grammar and fkgram targets cap inputs at 64 KiB. Theme input is capped
-at 16 KiB. Tokenization converts arbitrary bytes to bounded UTF-8, processes at
-most eight lines of 4 KiB each, and gives each line 100 ms. It uses a fixed
-grammar with simple regular expressions so the line target explores tokenizer
-state and the combined scope/binary output without compiling attacker-controlled
-regexes. The target checks UTF-16 offset bounds and binary token pairing. The
-theme target parses each candidate theme and applies it to that same bounded
-grammar. A tokenizer time-limit result is retained as a valid outcome; the
-outer libFuzzer timeout reports a genuinely stuck input as a failure.
+Bounds and coverage:
 
-Keep small, meaningful examples in each corpus. The checked-in seed-* files
-cover valid JSON, plist, encoded grammar, UTF-8 lines, and themes. libFuzzer's
-generated hash-named inputs are ignored; add a new named seed when it reaches a
-useful path that the existing corpus misses.
+- `parse_raw_grammar` caps raw input at 64 KiB, dispatches JSON and XML
+  property lists (including bare `<dict>`/`<array>` and BOM-prefixed roots),
+  compiles valid grammars up to 16 KiB (`compile_all_scanners`), and tokenizes
+  sample lines with a 10 ms per-line time limit.
+- `decode_fkgram` caps input at 64 KiB and parses any decoded embedded grammar.
+- `tokenize_line` converts arbitrary bytes to bounded UTF-8 (16 KiB, up to 8
+  lines of 4 KiB each, 100 ms per line) against a fixed grammar and asserts
+  UTF-16 offset bounds and binary token pairing.
+- `theme_application` caps input at 16 KiB, parses candidate `RawTheme` JSON,
+  and applies it to the fixed grammar.
+- `deserialize_state_stack` caps input at 64 KiB, fuzzes
+  `Grammar::deserialize_state_stack` on both raw input and live
+  fingerprint-matched JSON objects against a fixed grammar with nested rules,
+  `while` rules, and dynamic backreferences, then resumes tokenization with a
+  10 ms time limit and round-trips serialization.
+- `decode_precompiled_archives` caps input at 64 KiB and exercises
+  `decompress_precompiled_patterns`, `SyncRegistry::add_precompiled_patterns_owned`,
+  `index_precompiled_patterns`, and `IndexedArchive::open` (via
+  `SyncRegistry::add_precompiled_patterns_file`) plus lazy tokenization on
+  attached archives.
+- `decorations` caps structured input at 4 KiB and exercises UTF-8/UTF-16
+  `resolve_ranges`, `DecorationBoundaries::split_tokens`, `decoration_sections`,
+  `plan_decoration_mutations` (including arbitrary node graphs), and
+  `render_html_with_decorations`.
+- `theme_render` caps input at 16 KiB and exercises `parse_theme_data`,
+  `Theme::create_from_raw_theme`, `render_html`, `render_html_with_css`, and
+  `render_html_with_themes`.
+
+Keep small, meaningful examples in each corpus. The checked-in `seed-*` files
+cover valid JSON, plist (including bare `<dict>`/`<array>`), encoded grammars,
+UTF-8 lines, themes, serialized state stacks, precompiled/indexed archives, and
+structured decoration inputs. libFuzzer's generated hash-named inputs are
+ignored; add a new named seed when it reaches a useful path that the existing
+corpus misses.
 
 Pull requests run each target for 30 seconds. The weekly scheduled run uses
 10 minutes per target. CI runs on Linux with cargo-fuzz's default Address

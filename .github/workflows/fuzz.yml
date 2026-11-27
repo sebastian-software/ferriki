@@ -18,6 +18,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  fuzz-tests:
+    name: Fuzz harness unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set nightly Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: nightly-2026-07-20
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: |
+            fuzz -> target
+
+      - name: Check fuzz lockfile and fetch dependencies
+        run: cargo +nightly-2026-07-20 fetch --manifest-path fuzz/Cargo.toml --locked
+
+      - name: Check fuzz target formatting
+        run: cargo +nightly-2026-07-20 fmt --manifest-path fuzz/Cargo.toml --all -- --check
+
+      - name: Run fuzz harness unit and corpus tests
+        run: cargo +nightly-2026-07-20 test --manifest-path fuzz/Cargo.toml --locked --lib
+
+      - name: Check lockfiles stayed pinned
+        if: always()
+        run: git diff --exit-code -- Cargo.lock fuzz/Cargo.lock
+
   fuzz:
     name: ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -30,6 +63,10 @@ jobs:
           - decode_fkgram
           - tokenize_line
           - theme_application
+          - deserialize_state_stack
+          - decode_precompiled_archives
+          - decorations
+          - theme_render
     env:
       FUZZ_SECONDS: ${{ github.event_name == 'schedule' && '600' || '30' }}
     steps:

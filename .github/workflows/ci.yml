@@ -544,6 +544,14 @@ jobs:
         if: ${{ matrix.libc != 'musl' }}
         run: node --input-type=module -e "const m = await import('./ferriki/index.mjs'); const v = m.ferrikiVersion(); if (!v) throw new Error('native binding did not load'); console.log('ferriki native core', v)"
 
+      # Full core compatibility runs on Ubuntu. Reuse the macOS and Windows
+      # native builds to exercise Node runtime compatibility, asset cache
+      # concurrency and hardening, web components, and the Vite adapter on
+      # those operating systems as well.
+      - name: Run cross-platform Node compatibility, cache, web component, and Vite tests
+        if: ${{ matrix.id == 'darwin-arm64' || matrix.id == 'win32-x64-msvc' }}
+        run: pnpm run test:cross-platform
+
       # Size and cold-load evidence for every sidecar target (#225), compared
       # with the latest published sidecar. It reports and never gates.
       - name: Measure native addon size and cold require

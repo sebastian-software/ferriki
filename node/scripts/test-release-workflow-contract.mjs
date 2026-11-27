@@ -1573,7 +1573,7 @@ assert.throws(
   /must update the Vite integration version/,
 );
 
-for (const crate of ["ferriki-textmate", "ferriki-asset-gen"]) {
+for (const crate of ["ferriki", "ferriki-textmate", "ferriki-asset-gen"]) {
   const requiredSelector = `$.package[?(@.name.value=='${crate}' && !@.source)].version`;
   const withoutCrateLockEntry = {
     ...releaseConfig,

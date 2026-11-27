@@ -4,8 +4,9 @@ import expectations from "./fixtures/loaded-languages.json";
 // Preserve every immutable HTML fixture. Only the six tests with historical
 // catalog assumptions use Ferriki-owned ID/alias sets or a reviewed count.
 export function adaptCatalogSnapshots(code: string, filename: string): string | undefined {
+  const normalizedFilename = filename.replaceAll("\\", "/");
   const entry = Object.entries(expectations).find(([path]) =>
-    filename.endsWith(`/compat/upstream/shiki/packages/${path}`),
+    normalizedFilename.endsWith(`/compat/upstream/shiki/packages/${path}`),
   );
   if (!entry) return;
   const tests = entry[1] as Record<string, (string[] | number)[]>;

@@ -1,0 +1,1 @@
+{"version":1,"grammarFingerprint":"0000","rootScope":"source.fuzz.state","frames":[{"ruleId":1,"beginRuleCapturedEol":false,"endRule":null,"nameScopes":[["source.fuzz.state"]],"contentNameScopes":[]},{"ruleId":9999,"beginRuleCapturedEol":true,"endRule":"^EOF$","nameScopes":[["meta.invalid"]],"contentNameScopes":[]}]}

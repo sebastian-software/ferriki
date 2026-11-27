@@ -1,0 +1,2 @@
+{"name":"Fuzz VS Code Dark","type":"dark","colors":{"editor.foreground":"#d4d4d4","editor.background":"#1e1e1e"},"tokenColors":[{"scope":"word.fuzz","settings":{"foreground":"#569cd6","fontStyle":"bold"}},{"scope":["number.fuzz","string.quoted.fuzz"],"settings":{"foreground":"#ce9178","fontStyle":"italic underline"}}]}
+word 42 "hello world"

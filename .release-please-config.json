@@ -11,6 +11,11 @@
         {
           "type": "toml",
           "path": "/fuzz/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='ferriki' && !@.source)].version"
+        },
+        {
+          "type": "toml",
+          "path": "/fuzz/Cargo.lock",
           "jsonpath": "$.package[?(@.name.value=='ferriki-asset-gen' && !@.source)].version"
         },
         {
