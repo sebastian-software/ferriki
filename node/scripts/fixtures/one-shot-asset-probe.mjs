@@ -55,19 +55,31 @@ switch (scenario) {
   case "singleton-retry": {
     const originalFetch = globalThis.fetch;
     let failedFetches = 0;
+    let releaseAllFetches;
+    const allFetchesStarted = new Promise((resolve) => {
+      releaseAllFetches = resolve;
+    });
+    const releaseFallback = setTimeout(releaseAllFetches, 2_000);
+    releaseFallback.unref();
     globalThis.fetch = async () => {
       failedFetches++;
+      if (failedFetches >= 3) {
+        clearTimeout(releaseFallback);
+        releaseAllFetches();
+      }
+      await allFetchesStarted;
       throw new Error("controlled first-download failure");
     };
     const attempts = await Promise.allSettled([
       codeToHtml('{"x":1}', { lang: "json", theme: "nord" }),
       codeToHtmlWithCss('{"x":1}', { lang: "json", theme: "nord" }),
     ]);
+    clearTimeout(releaseFallback);
     globalThis.fetch = originalFetch;
     assert.equal(
       failedFetches,
-      2,
-      "concurrent first calls share one failed grammar/bytecode download batch",
+      3,
+      "concurrent first calls share one failed grammar/bytecode/theme download batch",
     );
     assert(attempts.every((attempt) => attempt.status === "rejected"));
     assert.strictEqual(attempts[0].reason, attempts[1].reason);

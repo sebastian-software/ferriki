@@ -2,10 +2,12 @@
 //! custom sources cannot accidentally bypass the release integrity contract.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use ferriki_asset_gen::FORMAT_VERSION;
 use sha2::{Digest, Sha256};
@@ -28,7 +30,24 @@ impl AssetDigest {
     }
 }
 
+#[cfg(test)]
+std::thread_local! {
+    static SHA256_HASH_COUNT: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+pub(crate) fn reset_sha256_count() {
+    SHA256_HASH_COUNT.with(|count| count.set(0));
+}
+
+#[cfg(test)]
+pub(crate) fn sha256_count() -> usize {
+    SHA256_HASH_COUNT.with(std::cell::Cell::get)
+}
+
 pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
+    #[cfg(test)]
+    SHA256_HASH_COUNT.with(|count| count.set(count.get() + 1));
     const HEX: &[u8; 16] = b"0123456789abcdef";
     Sha256::digest(bytes)
         .into_iter()
@@ -113,11 +132,6 @@ impl AssetMetadata {
         Ok(())
     }
 
-    pub(crate) fn verify(&self, bytes: &[u8]) -> Result<()> {
-        self.validate_format()?;
-        self.verify_bytes(bytes)
-    }
-
     pub(crate) fn verify_bytes(&self, bytes: &[u8]) -> Result<()> {
         if bytes.len() as u64 != self.size || AssetDigest::of(bytes) != self.digest {
             return Err(Error::new(
@@ -155,6 +169,260 @@ pub trait AssetSource: Send + Sync {
             ));
         }
         Ok(bytes)
+    }
+}
+
+/// Proof-carrying payload whose byte length and SHA-256 digest were verified in
+/// this process against the pinned release digest and size.
+///
+/// Fields stay private so no internal source can bypass SHA-256 verification.
+pub(crate) struct VerifiedBytes {
+    bytes: Vec<u8>,
+    digest: AssetDigest,
+}
+
+impl VerifiedBytes {
+    pub(crate) fn verify(
+        bytes: Vec<u8>,
+        expected_digest: &AssetDigest,
+        expected_size: u64,
+    ) -> Result<Self> {
+        if bytes.len() as u64 != expected_size || AssetDigest::of(&bytes) != *expected_digest {
+            return Err(Error::new(
+                ErrorKind::AssetIntegrity,
+                format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    expected_digest.as_str()
+                ),
+            ));
+        }
+        Ok(Self {
+            bytes,
+            digest: expected_digest.clone(),
+        })
+    }
+
+    #[cfg(any(test, all(feature = "remote", not(target_arch = "wasm32"))))]
+    pub(crate) fn as_slice(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub(crate) fn digest(&self) -> &AssetDigest {
+        &self.digest
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    pub(crate) fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+}
+
+/// Crate-internal source returning proof-carrying [`VerifiedBytes`] so catalogs
+/// avoid re-hashing the exact same in-memory buffer while external
+/// [`AssetSource`] implementations retain unconditional catalog verification.
+pub(crate) trait InternalVerifiedSource: Send + Sync {
+    fn read_verified(&self, digest: &AssetDigest, expected_size: u64) -> Result<VerifiedBytes>;
+}
+
+const MAX_VERIFIED_CACHE_BYTES: usize = 32 * 1024 * 1024;
+const MAX_VERIFIED_CACHE_ENTRIES: usize = 256;
+
+/// Bounded one-shot handoff cache between planning/prefetch and immediate
+/// catalog decoding. Entries are consumed on `take` and bounded in both entry
+/// count and total bytes so unused entries never leak memory.
+pub(crate) struct VerifiedPayloadCache {
+    entries: HashMap<AssetDigest, (VerifiedBytes, u64)>,
+    order: VecDeque<(AssetDigest, u64)>,
+    next_generation: u64,
+    total_bytes: usize,
+    max_bytes: usize,
+    max_entries: usize,
+    closed: bool,
+}
+
+impl Default for VerifiedPayloadCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl VerifiedPayloadCache {
+    pub(crate) fn new() -> Self {
+        Self::with_limits(MAX_VERIFIED_CACHE_BYTES, MAX_VERIFIED_CACHE_ENTRIES)
+    }
+
+    pub(crate) fn with_limits(max_bytes: usize, max_entries: usize) -> Self {
+        Self {
+            entries: HashMap::new(),
+            order: VecDeque::new(),
+            next_generation: 0,
+            total_bytes: 0,
+            max_bytes,
+            max_entries,
+            closed: false,
+        }
+    }
+
+    pub(crate) fn insert(&mut self, payload: VerifiedBytes) {
+        let len = payload.len();
+        if self.closed || len > self.max_bytes || self.max_entries == 0 {
+            return;
+        }
+        let digest = payload.digest().clone();
+        if let Some((previous, _)) = self.entries.remove(&digest) {
+            self.total_bytes = self.total_bytes.saturating_sub(previous.len());
+        }
+        while self.entries.len() >= self.max_entries
+            || self.total_bytes.saturating_add(len) > self.max_bytes
+        {
+            let Some((oldest, generation)) = self.order.pop_front() else {
+                break;
+            };
+            if self
+                .entries
+                .get(&oldest)
+                .is_some_and(|(_, live_generation)| *live_generation == generation)
+                && let Some((evicted, _)) = self.entries.remove(&oldest)
+            {
+                self.total_bytes = self.total_bytes.saturating_sub(evicted.len());
+            }
+        }
+        // Keep the FIFO queue bounded even if entries were replaced or taken.
+        if self.order.len() > self.max_entries.saturating_mul(2) {
+            self.order.retain(|(key, generation)| {
+                self.entries
+                    .get(key)
+                    .is_some_and(|(_, live_generation)| *live_generation == *generation)
+            });
+        }
+        let generation = self.next_generation;
+        self.next_generation = self.next_generation.wrapping_add(1);
+        self.total_bytes = self.total_bytes.saturating_add(len);
+        self.entries.insert(digest.clone(), (payload, generation));
+        self.order.push_back((digest, generation));
+    }
+
+    pub(crate) fn take(&mut self, digest: &AssetDigest) -> Option<VerifiedBytes> {
+        let (payload, _) = self.entries.remove(digest)?;
+        self.total_bytes = self.total_bytes.saturating_sub(payload.len());
+        Some(payload)
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.entries.clear();
+        self.order.clear();
+        self.total_bytes = 0;
+    }
+
+    /// Permanently empties and closes the cache so in-flight background
+    /// planners cannot refill it after disposal.
+    pub(crate) fn close(&mut self) {
+        self.closed = true;
+        self.clear();
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// Consumes this bounded cache and returns its live payloads in FIFO order.
+    pub(crate) fn into_payloads(mut self) -> Vec<VerifiedBytes> {
+        let mut payloads = Vec::with_capacity(self.entries.len());
+        while let Some((digest, generation)) = self.order.pop_front() {
+            if self
+                .entries
+                .get(&digest)
+                .is_some_and(|(_, live_generation)| *live_generation == generation)
+                && let Some((payload, _)) = self.entries.remove(&digest)
+            {
+                payloads.push(payload);
+            }
+        }
+        payloads
+    }
+
+    #[cfg(test)]
+    pub(crate) fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn total_bytes(&self) -> usize {
+        self.total_bytes
+    }
+}
+
+/// Synchronized wrapper around [`VerifiedPayloadCache`] with a lock-free
+/// `is_empty()` fast path for hot paths that do not hold staged payloads.
+pub(crate) struct SharedVerifiedPayloadCache {
+    count: AtomicUsize,
+    inner: Mutex<VerifiedPayloadCache>,
+}
+
+impl SharedVerifiedPayloadCache {
+    pub(crate) fn new() -> Self {
+        Self {
+            count: AtomicUsize::new(0),
+            inner: Mutex::new(VerifiedPayloadCache::new()),
+        }
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.count.load(Ordering::Acquire) == 0
+    }
+
+    pub(crate) fn insert_batch(&self, payloads: impl IntoIterator<Item = VerifiedBytes>) {
+        if let Ok(mut cache) = self.inner.lock() {
+            for payload in payloads {
+                cache.insert(payload);
+            }
+            self.count.store(cache.entries.len(), Ordering::Release);
+        }
+    }
+
+    pub(crate) fn take(&self, digest: &AssetDigest) -> Option<VerifiedBytes> {
+        if self.is_empty() {
+            return None;
+        }
+        let mut cache = self.inner.lock().ok()?;
+        let taken = cache.take(digest);
+        self.count.store(cache.entries.len(), Ordering::Release);
+        taken
+    }
+
+    pub(crate) fn take_many(&self, digests: &[AssetDigest]) {
+        if digests.is_empty() || self.is_empty() {
+            return;
+        }
+        if let Ok(mut cache) = self.inner.lock() {
+            for digest in digests {
+                let _ = cache.take(digest);
+            }
+            self.count.store(cache.entries.len(), Ordering::Release);
+        }
+    }
+
+    pub(crate) fn clear(&self) {
+        if let Ok(mut cache) = self.inner.lock() {
+            cache.clear();
+            self.count.store(0, Ordering::Release);
+        }
+    }
+
+    pub(crate) fn close(&self) {
+        if let Ok(mut cache) = self.inner.lock() {
+            cache.close();
+            self.count.store(0, Ordering::Release);
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn stats(&self) -> (usize, usize) {
+        let cache = self.inner.lock().expect("verified cache lock");
+        (cache.len(), cache.total_bytes())
     }
 }
 
@@ -448,5 +716,150 @@ mod tests {
                 ErrorKind::AssetIntegrity
             );
         }
+    }
+
+    #[test]
+    fn verified_payload_cache_bounds_memory_consumes_on_take_and_rejects_oversized() {
+        let a_bytes = b"aaaa".to_vec();
+        let b_bytes = b"bbbb".to_vec();
+        let c_bytes = b"cccc".to_vec();
+        let a_digest = AssetDigest::of(&a_bytes);
+        let b_digest = AssetDigest::of(&b_bytes);
+        let c_digest = AssetDigest::of(&c_bytes);
+
+        // Tampered bytes or mismatched lengths must fail verification.
+        assert_eq!(
+            VerifiedBytes::verify(b"xxxx".to_vec(), &a_digest, 4)
+                .err()
+                .expect("tampered payload must fail")
+                .kind(),
+            ErrorKind::AssetIntegrity
+        );
+        assert_eq!(
+            VerifiedBytes::verify(a_bytes.clone(), &a_digest, 5)
+                .err()
+                .expect("wrong size must fail")
+                .kind(),
+            ErrorKind::AssetIntegrity
+        );
+
+        let mut cache = VerifiedPayloadCache::with_limits(8, 2);
+        cache.insert(VerifiedBytes::verify(a_bytes.clone(), &a_digest, 4).unwrap());
+        cache.insert(VerifiedBytes::verify(b_bytes.clone(), &b_digest, 4).unwrap());
+        assert_eq!(cache.len(), 2);
+        assert_eq!(cache.total_bytes(), 8);
+
+        // Inserting a third 4-byte entry evicts the oldest (`a`) to stay within limits.
+        cache.insert(VerifiedBytes::verify(c_bytes.clone(), &c_digest, 4).unwrap());
+        assert_eq!(cache.len(), 2);
+        assert_eq!(cache.total_bytes(), 8);
+        assert!(cache.take(&a_digest).is_none());
+
+        // `take` consumes the entry once and decrements tracked bytes.
+        let taken = cache.take(&b_digest).expect("cached b");
+        assert_eq!(taken.as_slice(), b_bytes.as_slice());
+        assert!(cache.take(&b_digest).is_none());
+        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.total_bytes(), 4);
+
+        // Oversized payloads exceeding max_bytes are not retained.
+        let huge = vec![0_u8; 16];
+        let huge_digest = AssetDigest::of(&huge);
+        cache.insert(VerifiedBytes::verify(huge, &huge_digest, 16).unwrap());
+        assert!(cache.take(&huge_digest).is_none());
+        assert_eq!(cache.len(), 1);
+
+        cache.clear();
+        assert_eq!(cache.len(), 0);
+        assert_eq!(cache.total_bytes(), 0);
+    }
+
+    #[test]
+    fn verified_payload_cache_close_clears_and_discards_later_inserts() {
+        let a_bytes = b"aaaa".to_vec();
+        let b_bytes = b"bbbb".to_vec();
+        let a_digest = AssetDigest::of(&a_bytes);
+        let b_digest = AssetDigest::of(&b_bytes);
+
+        let mut cache = VerifiedPayloadCache::with_limits(16, 4);
+        cache.insert(VerifiedBytes::verify(a_bytes, &a_digest, 4).unwrap());
+        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.total_bytes(), 4);
+
+        cache.close();
+        assert_eq!(cache.len(), 0);
+        assert_eq!(cache.total_bytes(), 0);
+        assert!(cache.take(&a_digest).is_none());
+
+        // Late inserts (e.g. from an in-flight background planner) must be discarded.
+        cache.insert(VerifiedBytes::verify(b_bytes, &b_digest, 4).unwrap());
+        assert_eq!(cache.len(), 0);
+        assert_eq!(cache.total_bytes(), 0);
+        assert!(cache.take(&b_digest).is_none());
+    }
+
+    #[test]
+    fn verified_payload_cache_stale_fifo_entries_do_not_evict_reinserted_digests() {
+        let a_bytes = b"aaaa".to_vec();
+        let b_bytes = b"bbbb".to_vec();
+        let c_bytes = b"cccc".to_vec();
+        let a_digest = AssetDigest::of(&a_bytes);
+        let b_digest = AssetDigest::of(&b_bytes);
+        let c_digest = AssetDigest::of(&c_bytes);
+
+        // 2-entry cache: insert A, take A, insert B, re-insert A, insert C.
+        // The stale queue slot for the first A must be skipped so B is evicted
+        // and the newly inserted A remains cached alongside C.
+        let mut cache = VerifiedPayloadCache::with_limits(8, 2);
+        cache.insert(VerifiedBytes::verify(a_bytes.clone(), &a_digest, 4).unwrap());
+        assert!(cache.take(&a_digest).is_some());
+        cache.insert(VerifiedBytes::verify(b_bytes, &b_digest, 4).unwrap());
+        cache.insert(VerifiedBytes::verify(a_bytes.clone(), &a_digest, 4).unwrap());
+        cache.insert(VerifiedBytes::verify(c_bytes.clone(), &c_digest, 4).unwrap());
+
+        assert_eq!(cache.len(), 2);
+        assert_eq!(cache.total_bytes(), 8);
+        assert!(
+            cache.take(&b_digest).is_none(),
+            "B should have been evicted"
+        );
+        assert_eq!(
+            cache
+                .take(&a_digest)
+                .expect("reinserted A must stay cached")
+                .as_slice(),
+            a_bytes.as_slice()
+        );
+        assert_eq!(
+            cache
+                .take(&c_digest)
+                .expect("C must stay cached")
+                .as_slice(),
+            c_bytes.as_slice()
+        );
+    }
+
+    #[test]
+    fn verified_payload_cache_into_payloads_preserves_bounded_fifo_order() {
+        let a_bytes = b"aaaa".to_vec();
+        let b_bytes = b"bbbb".to_vec();
+        let c_bytes = b"cccc".to_vec();
+        let a_digest = AssetDigest::of(&a_bytes);
+        let b_digest = AssetDigest::of(&b_bytes);
+        let c_digest = AssetDigest::of(&c_bytes);
+
+        let mut staged = VerifiedPayloadCache::with_limits(8, 2);
+        staged.insert(VerifiedBytes::verify(a_bytes, &a_digest, 4).unwrap());
+        staged.insert(VerifiedBytes::verify(b_bytes.clone(), &b_digest, 4).unwrap());
+        staged.insert(VerifiedBytes::verify(c_bytes.clone(), &c_digest, 4).unwrap());
+        assert_eq!(staged.len(), 2);
+        assert_eq!(staged.total_bytes(), 8);
+
+        let drained: Vec<Vec<u8>> = staged
+            .into_payloads()
+            .into_iter()
+            .map(VerifiedBytes::into_bytes)
+            .collect();
+        assert_eq!(drained, vec![b_bytes, c_bytes]);
     }
 }

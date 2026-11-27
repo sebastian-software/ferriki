@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 ## Context
 
@@ -177,6 +177,12 @@ migration; protected mode fails closed rather than falling back to it.
   themes. The dated 0.4 package-size measurements above remain historical evidence.
 
 ## History
+
+- 2026-11-27: Reuse SHA-256-verified payloads through a bounded one-shot handoff
+  between planning/prefetch and immediate catalog decoding in the internal Node
+  and Rust remote hosts, eliminate duplicate in-memory SHA-256 passes without
+  weakening external `AssetSource` verification, and batch language and theme
+  prefetching in Node `createHighlighter` (#394).
 
 - 2026-11-26: Require `https://` (or loopback `http://`) without credentials,
   query strings, or fragments for asset mirror URLs, refuse HTTP redirects in

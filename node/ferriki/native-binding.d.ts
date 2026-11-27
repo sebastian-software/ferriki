@@ -28,6 +28,8 @@ export declare class FerrikiHighlighter {
   /** Plans missing standard payloads for Node to fetch and install. */
   planAssets(languages: Array<string>, themes: Array<string>): Promise<Array<AssetPlanEntry>>;
   assetCacheDir(): string | null;
+  isStandardLanguageReady(language: string): boolean;
+  evictVerifiedAssets(languages: Array<string>, themes: Array<string>): void;
   dispose(): void;
 }
 

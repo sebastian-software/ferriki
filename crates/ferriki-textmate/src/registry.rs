@@ -239,6 +239,11 @@ impl SyncRegistry {
         self.scanner_pattern_cache.prepared_stats(scope)
     }
 
+    #[cfg(test)]
+    pub(crate) fn precompiled_rebuilds(&self) -> usize {
+        self.scanner_pattern_cache.precompiled_rebuilds()
+    }
+
     /// Replaces the theme of this registry and of every grammar it compiled.
     ///
     /// As upstream, compiled grammars stay cached and read the theme at

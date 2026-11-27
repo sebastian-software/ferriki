@@ -12,7 +12,7 @@ use crate::regexp::{MAX_SCANNER_PATTERN_BYTES, RegExpSource, normalize_ferroni_p
 use crate::rule_factory::{GrammarProvider, GrammarStore};
 use crate::theme::Theme;
 use ferroni::scanner::PrecompiledEager;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 /// Combined container/program/group format carried by `.fkbc` sidecars.
 /// The high 8 bits identify the container; two 12-bit fields identify programs
@@ -51,7 +51,40 @@ fn decoded_archive(bytes: &[u8]) -> bool {
 pub(crate) struct PreparedArchive {
     pub(crate) scope: String,
     pub(crate) eager: PrecompiledEager,
-    pub(crate) groups: Option<std::collections::HashSet<[u8; 32]>>,
+    groups: Arc<
+        OnceLock<Option<std::collections::HashSet<crate::indexed_precompiled::PatternListKey>>>,
+    >,
+}
+
+impl PreparedArchive {
+    fn new(scope: String, eager: PrecompiledEager) -> Self {
+        Self {
+            scope,
+            eager,
+            groups: Arc::new(OnceLock::new()),
+        }
+    }
+
+    pub(crate) fn groups(
+        &self,
+    ) -> Option<&std::collections::HashSet<crate::indexed_precompiled::PatternListKey>> {
+        self.groups
+            .get_or_init(|| crate::indexed_precompiled::group_lookup(&self.eager).ok())
+            .as_ref()
+    }
+
+    pub(crate) fn contains_group(&self, patterns: &[&str]) -> bool {
+        self.groups().is_none_or(|groups| {
+            groups.contains(&crate::indexed_precompiled::pattern_list_key(
+                patterns.iter().copied(),
+            ))
+        })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn groups_initialized(&self) -> bool {
+        self.groups.get().is_some()
+    }
 }
 
 /// Decompress a prepared container for a persistent, verified asset cache.
@@ -253,12 +286,7 @@ pub(crate) fn open_archive(
     let eager =
         PrecompiledEager::from_bytes(&decoded[scope_end..program_end], &decoded[program_end..])
             .map_err(PrecompiledPatternsError::from_engine)?;
-    let groups = crate::indexed_precompiled::group_lookup(&eager).ok();
-    Ok(PreparedArchive {
-        scope,
-        eager,
-        groups,
-    })
+    Ok(PreparedArchive::new(scope, eager))
 }
 
 pub(crate) fn open_owned_archive(
@@ -287,12 +315,7 @@ pub(crate) fn open_owned_archive(
             .map_err(PrecompiledPatternsError::from_engine)?,
     )
     .map_err(PrecompiledPatternsError::from_engine)?;
-    let groups = crate::indexed_precompiled::group_lookup(&eager).ok();
-    Ok(PreparedArchive {
-        scope,
-        eager,
-        groups,
-    })
+    Ok(PreparedArchive::new(scope, eager))
 }
 
 /// A failure to generate or open a precompiled pattern archive.
@@ -608,6 +631,10 @@ mod tests {
         let programs = decoded[scope_end..program_end].as_ptr();
         let groups = decoded[program_end..].as_ptr();
         let source = open_owned_archive(decoded).unwrap();
+        assert!(
+            !source.groups_initialized(),
+            "open_owned_archive must not eagerly build group lookup"
+        );
         assert_eq!(source.eager.program_bytes().as_ptr(), programs);
         assert_eq!(source.eager.group_bytes().as_ptr(), groups);
         source.eager.validate_groups().unwrap();
@@ -699,12 +726,17 @@ mod tests {
             "the host must stop duplicating intrinsic leaf groups"
         );
         assert!(
-            old.groups.as_ref().unwrap().iter().all(|key| local
-                .groups
-                .as_ref()
+            !old.groups_initialized()
+                && !local.groups_initialized()
+                && !foreign.groups_initialized(),
+            "opening archives must build group lookup lazily on demand"
+        );
+        assert!(
+            old.groups()
                 .unwrap()
-                .contains(key)
-                || foreign.groups.as_ref().unwrap().contains(key)),
+                .iter()
+                .all(|key| local.groups().unwrap().contains(key)
+                    || foreign.groups().unwrap().contains(key)),
             "delegation must preserve complete static group coverage"
         );
         let mut full = SyncRegistry::new(None, None).unwrap();
@@ -1337,5 +1369,69 @@ mod tests {
         let err = precompile_grammar_patterns(&raw)
             .expect_err("over-depth root injectionSelector must fail precompilation");
         assert!(err.to_string().contains("depth limit"));
+    }
+
+    #[test]
+    fn indexed_archive_cache_hit_and_same_scope_loads_do_not_thrash_precompiled_sources() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT: AtomicUsize = AtomicUsize::new(200);
+        let raw = grammar();
+        let decoded =
+            decompress_precompiled_patterns(&precompile_grammar_patterns(&raw).unwrap()).unwrap();
+        let index = crate::index_precompiled_patterns(&decoded).unwrap();
+        let path = std::env::temp_dir().join(format!(
+            "ferriki-indexed-no-thrash-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::write(&path, &decoded).unwrap();
+
+        let mut prepared = SyncRegistry::new(None, None).unwrap();
+        prepared
+            .add_precompiled_patterns_file(std::fs::File::open(&path).unwrap(), &index)
+            .unwrap();
+        prepared.add_grammar(raw.clone(), vec![]);
+
+        let mut source = SyncRegistry::new(None, None).unwrap();
+        source.add_grammar(raw.clone(), vec![]);
+
+        let sample = "first next last\n<<END\nword TODO 😀\nEND\n>quote\n>continued\naaaa : word\nxxx\nalpha beta gamma";
+        let tokenize = |registry: &mut SyncRegistry| {
+            let grammar = registry
+                .grammar_for_scope_name(&raw.scope_name, GrammarConfiguration::default())
+                .unwrap()
+                .unwrap();
+            let mut stack = None;
+            sample
+                .lines()
+                .map(|line| {
+                    let result = grammar.tokenize_line(line, stack.take(), 0).unwrap();
+                    stack = Some(result.rule_stack);
+                    result.tokens
+                })
+                .collect::<Vec<_>>()
+        };
+
+        let expected = tokenize(&mut source);
+        assert_eq!(tokenize(&mut prepared), expected);
+        let after_first = prepared.regex_diagnostics();
+        assert!(after_first.static_scanners > 1);
+        assert!(after_first.loaded_prepared_groups > 0);
+        assert_eq!(after_first.invalid_prepared_groups, 0);
+        assert_eq!(after_first.assembly_fallbacks, 0);
+        // The indexed file source must be attached once for the scope, never
+        // cleared and rebuilt on incremental same-scope loads or cache hits.
+        assert_eq!(prepared.precompiled_rebuilds(), 1);
+
+        // Repeated tokenization hits in-memory caches with zero additional rebuilds or bytes read.
+        assert_eq!(tokenize(&mut prepared), expected);
+        assert_eq!(prepared.precompiled_rebuilds(), 1);
+        assert_eq!(
+            prepared.regex_diagnostics().prepared_bytes_read,
+            after_first.prepared_bytes_read
+        );
+
+        prepared.dispose();
+        std::fs::remove_file(path).unwrap();
     }
 }

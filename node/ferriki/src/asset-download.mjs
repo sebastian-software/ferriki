@@ -34,54 +34,204 @@ const inFlight = new Map();
 
 /** Plans native manifest assets, then downloads cache misses with Node fetch. */
 export function createAssetDownloader(native) {
-  return async (languages, themes) => {
-    const plan = await native.planAssets(languages, themes);
+  return async (languages, themes, options = {}) => {
+    let plan;
+    try {
+      plan = await native.planAssets(languages, themes);
+    } catch (planError) {
+      if (languages.length > 0 && themes.length > 0) {
+        // Combined planning can fail on a theme cache error before required
+        // languages are planned or downloaded. Run the language-only path so
+        // any language planning/download error takes precedence.
+        const langPlan = await native.planAssets(languages, []);
+        if (Array.isArray(langPlan) && langPlan.length > 0) {
+          const cacheDir = native.assetCacheDir();
+          if (typeof cacheDir !== "string" || !cacheDir)
+            throw new Error("Native asset planner did not provide a cache directory.");
+          await downloadAssets(langPlan, cacheDir);
+        }
+        if (options.onLanguagesReady) options.onLanguagesReady();
+      }
+      throw planError;
+    }
     if (!Array.isArray(plan)) throw new Error("Native asset planner returned an invalid plan.");
-    if (plan.length === 0) return;
+    if (plan.length === 0) return { failedSidecars: new Set() };
 
     const cacheDir = native.assetCacheDir();
     if (typeof cacheDir !== "string" || !cacheDir)
       throw new Error("Native asset planner did not provide a cache directory.");
-    await downloadAssets(plan, cacheDir);
+    return downloadAssets(plan, cacheDir, options);
   };
 }
 
-async function downloadAssets(plan, cacheDir) {
-  let next = 0;
-  let firstError;
-  const workerCount = Math.min(plan.length, MAX_DOWNLOAD_WORKERS);
-  const workers = Array.from({ length: workerCount }, async () => {
-    while (!firstError) {
-      const asset = plan[next++];
-      if (!asset) return;
-      try {
-        await downloadOnce(asset, cacheDir);
-      } catch (error) {
-        // A missing or corrupt optional bytecode sidecar falls back to compiling
-        // the grammar source. Required grammar and theme downloads still fail.
-        if (/^languages\/[a-z0-9-]+\.fkbc$/.test(asset.path)) continue;
-        firstError ??= error;
+function downloadAssets(plan, cacheDir, options = {}) {
+  return new Promise((resolve, reject) => {
+    let next = 0;
+    let activeLanguageDownloads = 0;
+    let remainingLanguageAssets = plan.filter((asset) => isLanguagePath(asset?.path)).length;
+    let languagesReadyCalled = false;
+    let firstLanguageError;
+    let firstOtherError;
+    let settled = false;
+    const failedSidecars = new Set();
+    const activeLeases = new Set();
+    const releaseAllLeases = (abortAbandoned = false) => {
+      const aborted = [];
+      for (const lease of activeLeases) {
+        const cleanup = lease.release(abortAbandoned);
+        if (cleanup) aborted.push(cleanup);
       }
-    }
-  });
+      activeLeases.clear();
+      return aborted;
+    };
+    const failEarly = (error) => {
+      if (settled) return;
+      settled = true;
+      firstLanguageError ??= error;
+      const aborted = releaseAllLeases(true);
+      if (aborted.length > 0) {
+        Promise.all(aborted).finally(() => reject(error));
+      } else {
+        reject(error);
+      }
+    };
+    const checkLanguagesReady = () => {
+      if (
+        languagesReadyCalled ||
+        settled ||
+        firstLanguageError ||
+        remainingLanguageAssets > 0 ||
+        !options.onLanguagesReady
+      ) {
+        return;
+      }
+      languagesReadyCalled = true;
+      try {
+        options.onLanguagesReady();
+      } catch (error) {
+        failEarly(error);
+      }
+    };
 
-  // Each worker records failures and settles before this async boundary rejects.
-  await Promise.all(workers);
-  if (firstError) throw firstError;
+    checkLanguagesReady();
+    if (settled) return;
+
+    const workerCount = Math.min(plan.length, MAX_DOWNLOAD_WORKERS);
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (!firstLanguageError) {
+        const asset = plan[next++];
+        if (!asset) return;
+        if (firstOtherError && !isRequiredLanguagePath(asset.path)) {
+          const sidecarId = optionalBytecodeLanguageId(asset.path);
+          if (sidecarId) {
+            failedSidecars.add(sidecarId);
+            remainingLanguageAssets -= 1;
+            checkLanguagesReady();
+          }
+          continue;
+        }
+        const languageAsset = isLanguagePath(asset.path);
+        if (languageAsset) activeLanguageDownloads += 1;
+        let lease;
+        try {
+          lease = acquireDownload(asset, cacheDir);
+          activeLeases.add(lease);
+          await lease.promise;
+        } catch (error) {
+          // A missing or corrupt optional bytecode sidecar falls back to compiling
+          // the grammar source. Required grammar and theme downloads still fail.
+          const sidecarId = optionalBytecodeLanguageId(asset.path);
+          if (sidecarId) {
+            failedSidecars.add(sidecarId);
+            continue;
+          }
+          if (isRequiredLanguagePath(asset.path)) firstLanguageError ??= error;
+          else firstOtherError ??= error;
+        } finally {
+          if (lease) {
+            activeLeases.delete(lease);
+            lease.release();
+          }
+          if (languageAsset) {
+            activeLanguageDownloads -= 1;
+            remainingLanguageAssets -= 1;
+            if (firstLanguageError && activeLanguageDownloads === 0 && !settled) {
+              failEarly(firstLanguageError);
+            } else {
+              checkLanguagesReady();
+            }
+          }
+        }
+      }
+    });
+
+    // Reject once all in-flight language downloads settle after a required
+    // language download fails, without waiting on slow unrelated theme
+    // downloads or canceling shared in-flight downloads. Unshared abandoned
+    // theme entries are evicted from `inFlight` immediately on early reject so
+    // an explicit retry starts a fresh download.
+    Promise.all(workers)
+      .then(() => {
+        if (settled) return;
+        settled = true;
+        releaseAllLeases();
+        if (firstLanguageError) reject(firstLanguageError);
+        else if (firstOtherError) reject(firstOtherError);
+        else resolve({ failedSidecars });
+      })
+      .catch((error) => {
+        if (settled) return;
+        settled = true;
+        releaseAllLeases();
+        reject(error);
+      });
+  });
 }
 
-function downloadOnce(asset, cacheDir) {
+function optionalBytecodeLanguageId(path) {
+  if (typeof path !== "string") return undefined;
+  return path.match(/^languages\/([a-z0-9-]+)\.fkbc$/)?.[1];
+}
+
+function isLanguagePath(path) {
+  return typeof path === "string" && path.startsWith("languages/");
+}
+
+function isRequiredLanguagePath(path) {
+  return isLanguagePath(path) && !optionalBytecodeLanguageId(path);
+}
+
+function acquireDownload(asset, cacheDir) {
   validatePlanAsset(asset);
   const target = resolve(cacheDir, asset.digest);
   const key = `${target}:${protectedSelected() ? "protected" : "public"}`;
-  const existing = inFlight.get(key);
-  if (existing) return existing;
-
-  const pending = downloadAsset(asset, target).finally(() => {
-    if (inFlight.get(key) === pending) inFlight.delete(key);
-  });
-  inFlight.set(key, pending);
-  return pending;
+  let entry = inFlight.get(key);
+  if (!entry) {
+    const controller = new AbortController();
+    entry = { controller, promise: null, waiters: 0, tempCleanup: undefined };
+    entry.promise = downloadAsset(asset, target, controller.signal, entry).finally(() => {
+      if (inFlight.get(key) === entry) inFlight.delete(key);
+    });
+    inFlight.set(key, entry);
+  }
+  entry.waiters += 1;
+  let released = false;
+  return {
+    promise: entry.promise,
+    release(abortIfAbandoned = false) {
+      if (released) return undefined;
+      released = true;
+      entry.waiters -= 1;
+      if (entry.waiters === 0) {
+        if (inFlight.get(key) === entry) inFlight.delete(key);
+        if (abortIfAbandoned) {
+          entry.controller.abort();
+          return entry.tempCleanup;
+        }
+      }
+      return undefined;
+    },
+  };
 }
 
 function hasControlOrSpace(value) {
@@ -217,13 +367,13 @@ function validatePlanAsset(asset) {
     throw new Error("Native asset planner returned an invalid payload descriptor.");
 }
 
-async function downloadAsset(asset, target) {
-  const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS);
+async function downloadAsset(asset, target, cancelSignal, entry) {
+  const signal = AbortSignal.any([cancelSignal, AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)]);
   const isProtected = protectedSelected();
   const url = isProtected ? await protectedUrl(asset, signal) : asset.url;
   for (let attempt = 0; ; attempt++) {
     try {
-      return await downloadAttempt(asset, target, signal, url, isProtected);
+      return await downloadAttempt(asset, target, signal, url, isProtected, entry);
     } catch (error) {
       if (signal.aborted || attempt + 1 >= DOWNLOAD_ATTEMPTS) throw error;
       const wait = retryDelay(error, attempt);
@@ -269,8 +419,20 @@ function isTransientNetworkError(error) {
   );
 }
 
-async function downloadAttempt(asset, target, signal, url, isProtected) {
+async function downloadAttempt(asset, target, signal, url, isProtected, entry) {
   const temporary = `${target}.${process.pid}-${randomUUID()}.tmp`;
+  let resolveTempCleanup;
+  let tempOpened = false;
+  let tempCleaned = false;
+  let abortCleanup;
+  let onAbort;
+  const finishTempCleanup = () => {
+    if (!resolveTempCleanup) return;
+    const resolve = resolveTempCleanup;
+    resolveTempCleanup = undefined;
+    entry.tempCleanup = undefined;
+    resolve();
+  };
   try {
     await mkdir(dirname(target), { recursive: true });
     const response = await fetch(url, {
@@ -297,11 +459,46 @@ async function downloadAttempt(asset, target, signal, url, isProtected) {
         callback(null, chunk);
       },
     });
-    await pipeline(
-      Readable.fromWeb(response.body),
-      verifyAndBound,
-      createWriteStream(temporary, { flags: "wx" }),
-    );
+    if (signal.aborted) {
+      await response.body.cancel().catch(() => {});
+      throw signal.reason ?? new Error("Aborted");
+    }
+    tempOpened = true;
+    entry.tempCleanup = new Promise((resolve) => {
+      resolveTempCleanup = resolve;
+    });
+    const writer = createWriteStream(temporary, { flags: "wx" });
+    onAbort = () => {
+      abortCleanup = (async () => {
+        try {
+          if (!writer.closed) {
+            await new Promise((resolve) => {
+              writer.once("close", resolve);
+              writer.destroy();
+            });
+          }
+          await rm(temporary, { force: true });
+          tempCleaned = true;
+        } catch {
+          // Best-effort local unlink on early abandonment; normal `finally`
+          // still surfaces any cleanup error if `pipeline` settles.
+        } finally {
+          finishTempCleanup();
+        }
+      })();
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) onAbort();
+    await pipeline(Readable.fromWeb(response.body), verifyAndBound, writer, { signal });
+    // Detach the abort-unlink handler once streaming finishes so an abort
+    // arriving during publication never deletes `temporary` out from under
+    // `publishTemporaryAsset`; `entry.tempCleanup` still resolves in `finally`.
+    signal.removeEventListener("abort", onAbort);
+    onAbort = undefined;
+    if (abortCleanup) {
+      await abortCleanup;
+      throw signal.reason ?? new Error("Aborted");
+    }
     if (size !== asset.size || hash.digest("hex") !== asset.digest)
       throw new Error(
         `${asset.url} did not match its release-pinned SHA-256 and size; it was not cached.`,
@@ -312,9 +509,18 @@ async function downloadAttempt(asset, target, signal, url, isProtected) {
     if (isProtected) throw new Error("Protected asset download failed.");
     throw error;
   } finally {
+    if (onAbort) signal.removeEventListener("abort", onAbort);
+    if (abortCleanup) await abortCleanup;
     // A successful rename consumes the temporary path. On a concurrent-cache
-    // hit, this also removes the redundant file left by our completed download.
-    await rm(temporary, { force: true });
+    // hit or error, remove the temporary file without hiding non-ENOENT I/O
+    // errors that should stop retries.
+    if (tempOpened && (resolveTempCleanup || !tempCleaned)) {
+      try {
+        await rm(temporary, { force: true });
+      } finally {
+        finishTempCleanup();
+      }
+    }
   }
 }
 

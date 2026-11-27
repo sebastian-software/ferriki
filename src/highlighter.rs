@@ -506,6 +506,56 @@ impl HighlighterCore {
         self.load_standard_language_with_retry(requested, true)
     }
 
+    /// Whether `requested` (and its cooperating embedded languages when
+    /// delegated) is already loaded with every applicable prepared sidecar
+    /// attached, so an async host can skip re-planning without suppressing
+    /// sidecar recovery after synchronous or corrupt-sidecar fallback loads.
+    pub fn is_standard_language_ready(&self, requested: &str) -> bool {
+        let Some(catalogs) = self.standard_assets.as_ref() else {
+            return false;
+        };
+        let Some(root_id) = catalogs.languages.resolve_id(requested) else {
+            return false;
+        };
+        if !self.loaded_language_ids.contains(root_id) {
+            return false;
+        }
+        if self.regex_mode != ferriki_textmate::RegexMode::Prepared {
+            return true;
+        }
+        // Mirror `NodeAssetHost::plan`'s `(id, prepared)` walk so readiness
+        // requires sidecars only along edges where the planner requests them.
+        let mut pending = vec![(root_id, true)];
+        let mut visited = BTreeSet::new();
+        while let Some((requested_id, prepared)) = pending.pop() {
+            let Some(id) = catalogs.languages.resolve_id(requested_id) else {
+                continue;
+            };
+            if !visited.insert((id, prepared)) {
+                continue;
+            }
+            if !self.loaded_language_ids.contains(id) {
+                return false;
+            }
+            let Some(scope) = catalogs.languages.scope_name(id) else {
+                return false;
+            };
+            let format_version = catalogs.languages.precompiled_format_version(id);
+            let delegated = prepared && format_version.is_some_and(|version| version >> 24 >= 3);
+            if prepared
+                && format_version
+                    .is_some_and(ferriki_textmate::supports_precompiled_patterns_version)
+                && !self.prepared_language_scopes.contains(scope)
+            {
+                return false;
+            }
+            if let Some(embedded) = catalogs.languages.embedded_langs(id) {
+                pending.extend(embedded.iter().map(|child| (child.as_str(), delegated)));
+            }
+        }
+        true
+    }
+
     fn load_standard_language_with_retry(
         &mut self,
         requested: &str,

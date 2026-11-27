@@ -15,7 +15,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ferriki_asset_gen::{ReleaseManifest, decode_language_manifest, decode_theme_manifest};
@@ -24,7 +24,10 @@ pub use crate::asset_settings::DEFAULT_ASSETS_BASE_URL;
 use crate::asset_settings::{
     AssetSettingsInput, ResolvedAssetSettings, catalog_path, resolve_asset_settings,
 };
-use crate::asset_source::{AssetDigest, AssetSource};
+use crate::asset_source::{
+    AssetDigest, AssetSource, InternalVerifiedSource, VerifiedBytes, VerifiedPayloadCache,
+    open_nonblocking,
+};
 use crate::{Error, ErrorKind, Result, StandardAssetCatalogs};
 
 #[cfg(test)]
@@ -128,6 +131,9 @@ pub(crate) struct RemoteAssetSource {
     /// Rust's `remote()` downloads while it loads. Node plans downloads in Rust
     /// and lets the JavaScript host fetch and install bytes asynchronously.
     download_on_read: bool,
+    /// Bounded one-shot handoff of verified payloads populated by `fetch()` so
+    /// immediate catalog loads avoid re-reading and re-hashing the same bytes.
+    verified_cache: Mutex<VerifiedPayloadCache>,
 }
 
 impl RemoteAssetSource {
@@ -161,19 +167,34 @@ impl RemoteAssetSource {
             storage_layout: release.storage_layout.clone(),
             agent,
             download_on_read,
+            verified_cache: Mutex::new(VerifiedPayloadCache::new()),
         })
     }
 
-    /// Makes sure a payload is in the cache, downloading it when allowed.
-    pub(crate) fn fetch(&self, digest: &AssetDigest) -> Result<()> {
+    /// Makes sure a payload is in the cache, downloading it when allowed, and
+    /// returns the verified bytes so a batch can stage them atomically on success.
+    pub(crate) fn fetch(&self, digest: &AssetDigest) -> Result<VerifiedBytes> {
         let (path, size) = self.payload(digest)?;
-        if self.read_cached(digest, size).is_some() {
-            return Ok(());
+        if let Some(verified) = self.read_cached(digest, size) {
+            Ok(verified)
+        } else if !self.settings.remote {
+            Err(self.remote_off(path))
+        } else {
+            self.download(digest, path, size)
         }
-        if !self.settings.remote {
-            return Err(self.remote_off(path));
+    }
+
+    pub(crate) fn clear_verified_cache(&self) {
+        if let Ok(mut cache) = self.verified_cache.lock() {
+            cache.clear();
         }
-        self.download(digest, path, size).map(|_| ())
+    }
+
+    #[cfg(test)]
+    fn verified_cache_stats(&self) -> (usize, usize) {
+        self.verified_cache
+            .lock()
+            .map_or((0, 0), |cache| (cache.len(), cache.total_bytes()))
     }
 
     fn payload(&self, digest: &AssetDigest) -> Result<(&str, u64)> {
@@ -203,9 +224,9 @@ impl RemoteAssetSource {
         self.settings.cache_dir.join(digest.as_str())
     }
 
-    fn read_cached(&self, digest: &AssetDigest, size: u64) -> Option<Vec<u8>> {
+    fn read_cached(&self, digest: &AssetDigest, size: u64) -> Option<VerifiedBytes> {
         let path = self.cache_path(digest);
-        let file = std::fs::File::open(&path).ok()?;
+        let file = open_nonblocking(&path).ok()?;
         let metadata = file.metadata().ok()?;
         if !metadata.is_file() || metadata.len() != size {
             // Reject a malformed cache entry before allocating based on its
@@ -214,7 +235,9 @@ impl RemoteAssetSource {
             let _ = std::fs::remove_file(path);
             return None;
         }
-        let mut bytes = Vec::with_capacity(usize::try_from(size).ok()?);
+        let capacity = usize::try_from(size).ok()?;
+        let mut bytes = Vec::new();
+        bytes.try_reserve_exact(capacity).ok()?;
         if file
             .take(size.saturating_add(1))
             .read_to_end(&mut bytes)
@@ -222,15 +245,15 @@ impl RemoteAssetSource {
         {
             return None;
         }
-        if bytes.len() as u64 == size && AssetDigest::of(&bytes) == *digest {
-            return Some(bytes);
+        if let Ok(verified) = VerifiedBytes::verify(bytes, digest, size) {
+            return Some(verified);
         }
         // A truncated or foreign file is replaced by a fresh download.
         let _ = std::fs::remove_file(path);
         None
     }
 
-    fn download(&self, digest: &AssetDigest, path: &str, size: u64) -> Result<Vec<u8>> {
+    fn download(&self, digest: &AssetDigest, path: &str, size: u64) -> Result<VerifiedBytes> {
         let url = crate::asset_settings::asset_url(
             self.storage_layout.as_deref(),
             &self.settings,
@@ -250,8 +273,8 @@ impl RemoteAssetSource {
         } else {
             self.read_remote_until(&url, size, Instant::now() + DOWNLOAD_TIMEOUT)?
         };
-        if bytes.len() as u64 != size || AssetDigest::of(&bytes) != *digest {
-            return Err(Error::new(
+        let verified = VerifiedBytes::verify(bytes, digest, size).map_err(|_| {
+            Error::new(
                 ErrorKind::AssetIntegrity,
                 if protected {
                     "Protected asset did not match its release-pinned SHA-256 and size; it was not cached.".to_owned()
@@ -260,10 +283,10 @@ impl RemoteAssetSource {
                         "{url} did not match its release-pinned SHA-256 and size; it was not cached."
                     )
                 },
-            ));
-        }
-        self.store(digest, &bytes)?;
-        Ok(bytes)
+            )
+        })?;
+        self.store(digest, verified.as_slice())?;
+        Ok(verified)
     }
 
     fn authorize_protected(
@@ -712,11 +735,31 @@ fn retry_after_delay(value: &str, now: SystemTime) -> Option<Duration> {
         .map(|date| date.duration_since(now).unwrap_or_default())
 }
 
-impl AssetSource for RemoteAssetSource {
-    fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
+impl RemoteAssetSource {
+    fn read_verified_inner(
+        &self,
+        digest: &AssetDigest,
+        expected_size: Option<u64>,
+    ) -> Result<VerifiedBytes> {
         let (path, size) = self.payload(digest)?;
-        if let Some(bytes) = self.read_cached(digest, size) {
-            return Ok(Cow::Owned(bytes));
+        if expected_size.is_some_and(|expected| expected != size) {
+            return Err(Error::new(
+                ErrorKind::AssetIntegrity,
+                format!(
+                    "Asset {} failed its SHA-256 or byte-size check.",
+                    digest.as_str()
+                ),
+            ));
+        }
+        if let Ok(mut cache) = self.verified_cache.lock()
+            && let Some(verified) = cache.take(digest)
+            && verified.digest() == digest
+            && verified.len() as u64 == size
+        {
+            return Ok(verified);
+        }
+        if let Some(verified) = self.read_cached(digest, size) {
+            return Ok(verified);
         }
         if !self.download_on_read {
             return Err(Error::new(
@@ -731,12 +774,31 @@ impl AssetSource for RemoteAssetSource {
         if !self.settings.remote {
             return Err(self.remote_off(path));
         }
-        self.download(digest, path, size).map(Cow::Owned)
+        self.download(digest, path, size)
+    }
+}
+
+impl InternalVerifiedSource for RemoteAssetSource {
+    fn read_verified(&self, digest: &AssetDigest, expected_size: u64) -> Result<VerifiedBytes> {
+        self.read_verified_inner(digest, Some(expected_size))
+    }
+}
+
+impl AssetSource for RemoteAssetSource {
+    fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
+        self.read_verified_inner(digest, None)
+            .map(|verified| Cow::Owned(verified.into_bytes()))
     }
 }
 
 /// Shares one remote source between the catalogs and a blocking prefetch host.
 struct SharedRemoteSource(Arc<RemoteAssetSource>);
+
+impl InternalVerifiedSource for SharedRemoteSource {
+    fn read_verified(&self, digest: &AssetDigest, expected_size: u64) -> Result<VerifiedBytes> {
+        self.0.read_verified(digest, expected_size)
+    }
+}
 
 impl AssetSource for SharedRemoteSource {
     fn read(&self, digest: &AssetDigest) -> Result<Cow<'_, [u8]>> {
@@ -826,7 +888,7 @@ impl RemoteAssetHost {
 
     /// Catalogs over the shared source; loading a payload never downloads.
     pub fn catalogs(&self) -> Result<StandardAssetCatalogs> {
-        StandardAssetCatalogs::from_release_manifest(
+        StandardAssetCatalogs::from_verified_release_manifest(
             &self.language_manifest,
             &self.theme_manifest,
             &self.release,
@@ -904,8 +966,11 @@ impl RemoteAssetHost {
             .collect::<Result<Vec<_>>>()?;
         // A language with its embedded languages is a dozen small files; fetch
         // them concurrently, a few at a time, and report the first failure.
+        // Stage verified payloads in a bounded per-batch cache and publish them
+        // into the shared handoff cache only after the entire batch succeeds.
         let workers = digests.len().min(PREFETCH_WORKERS);
         let next = std::sync::atomic::AtomicUsize::new(0);
+        let staged = Mutex::new(VerifiedPayloadCache::new());
         std::thread::scope(|scope| {
             let handles: Vec<_> = (0..workers)
                 .map(|_| {
@@ -915,10 +980,14 @@ impl RemoteAssetHost {
                             let Some((digest, optional)) = digests.get(index) else {
                                 return Ok(());
                             };
-                            if let Err(error) = self.source.fetch(digest)
-                                && !optional
-                            {
-                                return Err(error);
+                            match self.source.fetch(digest) {
+                                Ok(verified) => {
+                                    if let Ok(mut batch) = staged.lock() {
+                                        batch.insert(verified);
+                                    }
+                                }
+                                Err(error) if !optional => return Err(error),
+                                Err(_) => {}
                             }
                         }
                     })
@@ -930,7 +999,25 @@ impl RemoteAssetHost {
                     Err(Error::from_reason("An asset download thread panicked."))
                 })
             })
-        })
+        })?;
+        if let Ok(staged) = staged.into_inner()
+            && !staged.is_empty()
+            && let Ok(mut cache) = self.source.verified_cache.lock()
+        {
+            for verified in staged.into_payloads() {
+                cache.insert(verified);
+            }
+        }
+        Ok(())
+    }
+
+    /// Releases any unconsumed verified payloads staged by [`Self::prefetch`].
+    ///
+    /// Callers that prefetch assets for languages or themes which turn out to
+    /// be already loaded can call this once loading settles to reclaim memory
+    /// immediately.
+    pub fn clear_verified_cache(&self) {
+        self.source.clear_verified_cache();
     }
 }
 
@@ -1330,5 +1417,232 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::AssetDownload);
         assert!(error.to_string().contains("Invalid asset base URL"));
         std::fs::remove_dir_all(cache).expect("remove cache");
+    }
+
+    #[test]
+    fn remote_verified_source_hashes_once_and_prefetch_avoids_redundant_reads() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("verified-once-root");
+        let cache = temp_dir("verified-once-cache");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let release = ReleaseManifest::from_json(
+            &std::fs::read_to_string(root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        let js_asset = &release.assets["languages/javascript.fkgram"];
+        let theme_asset = &release.assets["themes/vitesse-light.fktheme"];
+        std::fs::copy(
+            root.join("languages/javascript.fkgram"),
+            cache.join(&js_asset.sha256),
+        )
+        .expect("seed js grammar");
+        std::fs::copy(
+            root.join("themes/vitesse-light.fktheme"),
+            cache.join(&theme_asset.sha256),
+        )
+        .expect("seed theme");
+
+        // Part 1: Direct catalog load without prefetch hashes each asset exactly once.
+        let host_direct = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(cache.clone())),
+        )
+        .expect("direct remote host");
+        let direct_catalogs = host_direct.catalogs().expect("direct catalogs");
+        crate::asset_source::reset_sha256_count();
+        assert!(
+            direct_catalogs
+                .languages
+                .load_asset("javascript")
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            direct_catalogs
+                .themes
+                .load_asset("vitesse-light")
+                .unwrap()
+                .is_some()
+        );
+        assert_eq!(
+            crate::asset_source::sha256_count(),
+            2,
+            "verified remote catalog load must hash each payload once, not twice"
+        );
+
+        // Part 2: Prefetch populates the one-shot verified handoff cache so
+        // immediate catalog load performs zero extra disk reads and zero SHA-256 hashes.
+        let host_prefetched = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(cache.clone())),
+        )
+        .expect("prefetched remote host");
+        let prefetched_catalogs = host_prefetched.catalogs().expect("prefetched catalogs");
+        host_prefetched
+            .prefetch(&["javascript".to_owned()], &["vitesse-light".to_owned()])
+            .expect("prefetch cached assets");
+        std::fs::remove_file(cache.join(&js_asset.sha256)).expect("evict js from disk");
+        std::fs::remove_file(cache.join(&theme_asset.sha256)).expect("evict theme from disk");
+        crate::asset_source::reset_sha256_count();
+        assert!(
+            prefetched_catalogs
+                .languages
+                .load_asset("javascript")
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            prefetched_catalogs
+                .themes
+                .load_asset("vitesse-light")
+                .unwrap()
+                .is_some()
+        );
+        assert_eq!(
+            crate::asset_source::sha256_count(),
+            0,
+            "catalog load after prefetch must reuse verified bytes without re-hashing"
+        );
+
+        // Part 3: Unprefetched tampered files on disk are still rejected and unlinked.
+        let mut tampered = std::fs::read(root.join("themes/vitesse-light.fktheme")).unwrap();
+        tampered[0] ^= 0xff;
+        let tampered_path = cache.join(&theme_asset.sha256);
+        std::fs::write(&tampered_path, &tampered).unwrap();
+        let fresh_catalogs = host_prefetched.catalogs().expect("fresh catalogs");
+        let error = fresh_catalogs
+            .themes
+            .load_asset("vitesse-light")
+            .expect_err("tampered cache entry must be rejected");
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert!(!tampered_path.exists());
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn failed_prefetch_discards_staged_verified_payloads() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("prefetch-fail-root");
+        let cache = temp_dir("prefetch-fail-cache");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let release = ReleaseManifest::from_json(
+            &std::fs::read_to_string(root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        // Seed only javascript; leave vitesse-light uncached so offline prefetch fails.
+        let js_asset = &release.assets["languages/javascript.fkgram"];
+        std::fs::copy(
+            root.join("languages/javascript.fkgram"),
+            cache.join(&js_asset.sha256),
+        )
+        .expect("seed js grammar");
+
+        let host = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(cache.clone())),
+        )
+        .expect("remote host");
+        let error = host
+            .prefetch(&["javascript".to_owned()], &["vitesse-light".to_owned()])
+            .expect_err("missing required theme must fail prefetch");
+        assert_eq!(error.kind(), ErrorKind::AssetUnavailable);
+        assert_eq!(
+            host.source.verified_cache_stats(),
+            (0, 0),
+            "failed prefetch must not leave verified payloads staged in the shared cache"
+        );
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn clear_verified_cache_releases_unused_prefetched_payloads() {
+        let upstream_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("crates/ferriki-asset-gen/tests/fixtures/upstream/textmate-grammars-themes");
+        let root = temp_dir("clear-verified-root");
+        let cache = temp_dir("clear-verified-cache");
+        std::fs::create_dir_all(&cache).expect("cache directory");
+        generate_catalogs_from_upstream(
+            &upstream_dir,
+            &root,
+            AssetSourceRef::new(
+                "textmate-grammars-themes".to_owned(),
+                Some("1.0.0".to_owned()),
+                Some("abc123".to_owned()),
+            ),
+        )
+        .expect("generate catalog fixture");
+
+        let release = ReleaseManifest::from_json(
+            &std::fs::read_to_string(root.join(ferriki_asset_gen::RELEASE_MANIFEST_FILE))
+                .expect("release manifest"),
+        )
+        .expect("parse release manifest");
+        let js_asset = &release.assets["languages/javascript.fkgram"];
+        let theme_asset = &release.assets["themes/vitesse-light.fktheme"];
+        std::fs::copy(
+            root.join("languages/javascript.fkgram"),
+            cache.join(&js_asset.sha256),
+        )
+        .expect("seed js grammar");
+        std::fs::copy(
+            root.join("themes/vitesse-light.fktheme"),
+            cache.join(&theme_asset.sha256),
+        )
+        .expect("seed theme");
+
+        let host = RemoteAssetHost::from_root(
+            &root,
+            &RemoteAssets::default()
+                .with_remote(Some(false))
+                .with_cache_dir(Some(cache.clone())),
+        )
+        .expect("remote host");
+        host.prefetch(&["javascript".to_owned()], &["vitesse-light".to_owned()])
+            .expect("prefetch cached assets");
+        let (entries, bytes) = host.source.verified_cache_stats();
+        assert_eq!(entries, 2);
+        assert!(bytes > 0);
+
+        host.clear_verified_cache();
+        assert_eq!(host.source.verified_cache_stats(), (0, 0));
+
+        std::fs::remove_dir_all(&cache).expect("cleanup cache");
+        std::fs::remove_dir_all(&root).expect("cleanup root");
     }
 }
