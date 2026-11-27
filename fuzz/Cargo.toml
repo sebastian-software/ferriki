@@ -17,6 +17,7 @@ resolver = "2"
 path = "src/lib.rs"
 
 [dependencies]
+ferriki = { path = ".." }
 ferriki-asset-gen = { path = "../crates/ferriki-asset-gen" }
 ferriki-textmate = { path = "../crates/ferriki-textmate" }
 libfuzzer-sys = "0.4"
@@ -46,6 +47,34 @@ bench = false
 [[bin]]
 name = "theme_application"
 path = "fuzz_targets/theme_application.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "deserialize_state_stack"
+path = "fuzz_targets/deserialize_state_stack.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decode_precompiled_archives"
+path = "fuzz_targets/decode_precompiled_archives.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decorations"
+path = "fuzz_targets/decorations.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "theme_render"
+path = "fuzz_targets/theme_render.rs"
 test = false
 doc = false
 bench = false

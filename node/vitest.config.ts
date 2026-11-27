@@ -1,4 +1,5 @@
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
@@ -6,10 +7,10 @@ import { adaptCatalogSnapshots } from "./compat/harness/catalog-snapshots";
 import { TEST_ASSET_CACHE_DIR } from "./scripts/test-asset-env.mjs";
 
 function compatPackage(entry: string) {
-  return new URL(`./compat/upstream/shiki/packages/${entry}`, import.meta.url).pathname;
+  return fileURLToPath(new URL(`./compat/upstream/shiki/packages/${entry}`, import.meta.url));
 }
 
-const ferrikiEntry = new URL("./ferriki/index.mjs", import.meta.url).pathname;
+const ferrikiEntry = fileURLToPath(new URL("./ferriki/index.mjs", import.meta.url));
 const virtualLangPrefix = "\0ferriki:lang:";
 const virtualThemePrefix = "\0ferriki:theme:";
 
@@ -22,7 +23,9 @@ function defaultExportInteropExpression(source: string) {
   ].join(" ?? ");
 }
 
-const backendEntry = new URL("./compat/harness/shiki-backend-entry.ts", import.meta.url).pathname;
+const backendEntry = fileURLToPath(
+  new URL("./compat/harness/shiki-backend-entry.ts", import.meta.url),
+);
 
 export default defineConfig({
   plugins: [
@@ -46,11 +49,12 @@ export default defineConfig({
         ) {
           return backendEntry;
         }
+        const normalizedImporter = importer?.replaceAll("\\", "/");
         if (
           source === "../src" &&
-          importer &&
-          (importer.includes("/compat/upstream/shiki/packages/shiki/test/") ||
-            importer.includes("/compat/upstream/shiki/packages/core/test/"))
+          normalizedImporter &&
+          (normalizedImporter.includes("/compat/upstream/shiki/packages/shiki/test/") ||
+            normalizedImporter.includes("/compat/upstream/shiki/packages/core/test/"))
         ) {
           return backendEntry;
         }
@@ -95,7 +99,7 @@ export default ${defaultExportInteropExpression("loaded")}
     alias: [
       {
         find: /^shiki$/,
-        replacement: new URL("./compat/harness/shiki-backend-entry.ts", import.meta.url).pathname,
+        replacement: backendEntry,
       },
       {
         find: /^@shikijs\/primitive$/,
@@ -145,7 +149,7 @@ export default ${defaultExportInteropExpression("loaded")}
       },
       {
         find: /^@ferriki\/core$/,
-        replacement: new URL("./ferriki/index.mjs", import.meta.url).pathname,
+        replacement: ferrikiEntry,
       },
     ],
   },

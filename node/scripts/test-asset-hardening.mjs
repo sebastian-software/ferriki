@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, open, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, open, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -453,5 +453,216 @@ test("grammar fetch rejects all HTTP URLs and GitHub path traversal before fetch
     }
   } finally {
     await rm(localDir, { recursive: true, force: true });
+  }
+});
+
+test("concurrent cross-process cache publication succeeds cleanly on host filesystem paths", async () => {
+  const rootDir = await mkdtemp(join(tmpdir(), "ferriki-concurrent-publish-"));
+  const cacheDir = join(rootDir, "nested cache dir", "assets");
+  const barrierDir = join(rootDir, "barrier");
+  const goFile = join(barrierDir, "go");
+  const target = join(cacheDir, digest);
+  const descriptor = {
+    path: "themes/nord.fktheme",
+    url: "https://assets.ferriki.dev/themes/nord/DVzhgQds",
+    digest,
+    size: body.length,
+  };
+  const moduleUrl = new URL("../ferriki/src/asset-download.mjs", import.meta.url).href;
+  const childEnv = { ...process.env };
+  delete childEnv.FERRIKI_ASSETS_PROTECTED;
+  let settled;
+  try {
+    await mkdir(barrierDir, { recursive: true });
+    const workerCount = 6;
+    const workers = Array.from({ length: workerCount }, (_, index) => {
+      const readyFile = join(barrierDir, `ready-${index}`);
+      const script = `
+        import { Buffer } from "node:buffer";
+        import { access, writeFile } from "node:fs/promises";
+        import { setTimeout as delay } from "node:timers/promises";
+        import { createAssetDownloader } from ${JSON.stringify(moduleUrl)};
+        const payload = Buffer.from(${JSON.stringify(body.toString("utf8"))});
+        globalThis.fetch = async () => {
+          await writeFile(${JSON.stringify(readyFile)}, "1");
+          const deadline = Date.now() + 10_000;
+          while (Date.now() < deadline) {
+            try {
+              await access(${JSON.stringify(goFile)});
+              break;
+            } catch {
+              await delay(5);
+            }
+          }
+          return new Response(payload);
+        };
+        const native = {
+          planAssets: async () => [${JSON.stringify(descriptor)}],
+          assetCacheDir: () => ${JSON.stringify(cacheDir)},
+        };
+        await createAssetDownloader(native)([], ["nord"]);
+      `;
+      return run(process.execPath, ["--input-type=module", "-e", script], {
+        env: childEnv,
+        timeout: 15_000,
+      });
+    });
+    settled = Promise.allSettled(workers);
+
+    // Wait until every child process has booted and entered fetch before
+    // releasing all 6 responses together so they genuinely race into publish.
+    const barrierDeadline = Date.now() + 10_000;
+    let readyCount = 0;
+    while (Date.now() < barrierDeadline) {
+      readyCount = (await readdir(barrierDir)).filter((name) => name.startsWith("ready-")).length;
+      if (readyCount === workerCount) break;
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 5));
+    }
+    await writeFile(goFile, "1");
+
+    const outcomes = await settled;
+    const failed = outcomes.find((outcome) => outcome.status === "rejected");
+    if (failed) throw failed.reason;
+    assert.equal(readyCount, workerCount, "all concurrent cache workers must reach the barrier");
+
+    assert.deepEqual(await readFile(target), body);
+    assert.equal(await matchesCachedAsset(target, descriptor), true);
+    const entries = await readdir(cacheDir);
+    assert.deepEqual(
+      entries.filter((name) => name.endsWith(".tmp")),
+      [],
+      "concurrent cache publication must leave no temporary files behind",
+    );
+  } finally {
+    await writeFile(goFile, "1").catch(() => {});
+    if (settled) await settled;
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+async function holdWindowsShareReadLock(filePath) {
+  const psCommand = [
+    "$stream = [System.IO.File]::Open($env:FERRIKI_LOCK_TARGET, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read);",
+    "try { [Console]::Out.WriteLine('LOCKED'); [Console]::Out.Flush(); [void][Console]::In.ReadLine() } finally { $stream.Dispose() }",
+  ].join(" ");
+  const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", psCommand], {
+    env: { ...process.env, FERRIKI_LOCK_TARGET: filePath },
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  await new Promise((resolvePromise, rejectPromise) => {
+    let stdout = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      rejectPromise(new Error(`Timed out waiting for Windows file lock. stderr: ${stderr}`));
+    }, 15_000);
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+      if (stdout.includes("LOCKED")) {
+        clearTimeout(timer);
+        resolvePromise();
+      }
+    });
+    child.once("error", (error) => {
+      clearTimeout(timer);
+      rejectPromise(error);
+    });
+    child.once("exit", (code) => {
+      if (!stdout.includes("LOCKED")) {
+        clearTimeout(timer);
+        rejectPromise(
+          new Error(`Windows lock holder exited early with code ${code}. stderr: ${stderr}`),
+        );
+      }
+    });
+  });
+  return async () => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    await new Promise((resolvePromise) => {
+      let settled = false;
+      let softTimer;
+      let hardTimer;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(softTimer);
+        clearTimeout(hardTimer);
+        resolvePromise();
+      };
+      softTimer = setTimeout(() => {
+        child.kill();
+      }, 5_000);
+      hardTimer = setTimeout(() => {
+        child.kill("SIGKILL");
+        finish();
+      }, 10_000);
+      child.once("close", finish);
+      child.stdin.end("\n");
+    });
+  };
+}
+
+test("cache publication handles an actively held destination cache file without leaving temp files", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "ferriki-lock-contention-"));
+  const target = join(dir, digest);
+  const descriptor = {
+    path: "themes/nord.fktheme",
+    url: "https://assets.ferriki.dev/themes/nord/DVzhgQds",
+    digest,
+    size: body.length,
+  };
+  const previousFetch = globalThis.fetch;
+  const previousProtected = process.env.FERRIKI_ASSETS_PROTECTED;
+  delete process.env.FERRIKI_ASSETS_PROTECTED;
+  globalThis.fetch = async () => new Response(body);
+  let releaseLock;
+  try {
+    await writeFile(target, body);
+    if (process.platform === "win32") {
+      releaseLock = await holdWindowsShareReadLock(target);
+      // Prove the destination is genuinely locked against rename on Windows.
+      const probeTmp = join(dir, `${digest}.probe.tmp`);
+      await writeFile(probeTmp, body);
+      try {
+        await assert.rejects(
+          rename(probeTmp, target),
+          (error) => isAlreadyPresent(error),
+          "Windows FileShare.Read lock must block rename onto the destination cache file",
+        );
+      } finally {
+        await rm(probeTmp, { force: true });
+      }
+    } else {
+      const handle = await open(target, "r");
+      releaseLock = async () => {
+        await handle.close();
+      };
+    }
+
+    const native = {
+      planAssets: async () => [descriptor],
+      assetCacheDir: () => dir,
+    };
+    await createAssetDownloader(native)([], ["nord"]);
+
+    assert.deepEqual(await readFile(target), body);
+    assert.equal(await matchesCachedAsset(target, descriptor), true);
+    const entries = await readdir(dir);
+    assert.deepEqual(
+      entries.filter((name) => name.endsWith(".tmp")),
+      [],
+      "locked-destination cache reuse must remove the temporary download file",
+    );
+  } finally {
+    if (releaseLock) await releaseLock();
+    globalThis.fetch = previousFetch;
+    if (previousProtected === undefined) delete process.env.FERRIKI_ASSETS_PROTECTED;
+    else process.env.FERRIKI_ASSETS_PROTECTED = previousProtected;
+    await rm(dir, { recursive: true, force: true });
   }
 });

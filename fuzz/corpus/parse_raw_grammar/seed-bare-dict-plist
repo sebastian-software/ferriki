@@ -1,0 +1,21 @@
+<dict>
+  <key>scopeName</key>
+  <string>source.bare.plist</string>
+  <key>patterns</key>
+  <array>
+    <dict>
+      <key>match</key>
+      <string>[a-zA-Z_]+</string>
+      <key>name</key>
+      <string>word.bare</string>
+    </dict>
+    <dict>
+      <key>begin</key>
+      <string>"</string>
+      <key>end</key>
+      <string>"</string>
+      <key>name</key>
+      <string>string.quoted.bare</string>
+    </dict>
+  </array>
+</dict>

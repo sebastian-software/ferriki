@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runInNewContext } from "node:vm";
 import { originalPositionFor, TraceMap } from "@jridgewell/trace-mapping";
@@ -231,7 +232,7 @@ async function createProject(files) {
   await symlink(
     fileURLToPath(new URL("../../ferriki", import.meta.url)),
     join(root, "node_modules/@ferriki/core"),
-    "dir",
+    process.platform === "win32" ? "junction" : "dir",
   );
   for (const [path, content] of Object.entries(files)) {
     await mkdir(join(root, path, ".."), { recursive: true });
@@ -1236,8 +1237,12 @@ export const host = block.type(block.props);`,
         .map((file) => JSON.parse(String(file.source)));
       expect(maps.length).toBeGreaterThan(0);
       expect(maps.flatMap((map) => map.sources).every((source) => source.length > 0)).toBe(true);
-      expect(maps.flatMap((map) => map.sources).join("\n")).toContain("src/first.tsx");
-      expect(maps.flatMap((map) => map.sources).join("\n")).toContain("src/second.tsx");
+      const normalizedSources = maps
+        .flatMap((map) => map.sources)
+        .map((source) => source.replaceAll("\\", "/"))
+        .join("\n");
+      expect(normalizedSources).toContain("src/first.tsx");
+      expect(normalizedSources).toContain("src/second.tsx");
     }
   });
 
@@ -1526,8 +1531,12 @@ const second = <Code source="const two = 'two'" language="js" render={({ code })
       };
       return vitePlugin;
     };
+    const normalizedRoot = root.replaceAll("\\", "/");
     const projectIds = (ids) =>
-      ids.filter((id) => id.startsWith(root)).map((id) => id.slice(root.length));
+      ids
+        .map((id) => id.replaceAll("\\", "/"))
+        .filter((id) => id.startsWith(normalizedRoot))
+        .map((id) => id.slice(normalizedRoot.length));
 
     parsedIds.length = 0;
     const output = buildOutputText(
@@ -1697,8 +1706,7 @@ export const block = (code) => code("x", { language: "ts" });
         '<!doctype html><html><head></head><body><script type="module" src="/src/invalid.ts"></script></body></html>',
       "src/invalid.ts": file,
     });
-    const id = join(root, "src/invalid.ts");
-    const expectedLoc = { file: id, line: 2, column: 22 };
+    const id = join(root, "src/invalid.ts").replaceAll("\\", "/");
 
     const server = await createServer({
       configFile: false,
@@ -1720,9 +1728,10 @@ export const block = (code) => code("x", { language: "ts" });
       name: "FerrikiMacroError",
       code: "FERRIKI_MACRO",
       plugin: "@ferriki/vite",
-      id,
-      loc: expectedLoc,
+      loc: { line: 2, column: 22 },
     });
+    expect(devError.id.replaceAll("\\", "/")).toBe(id);
+    expect(devError.loc.file.replaceAll("\\", "/")).toBe(id);
     expect(devError.message).toContain("`code` is reserved in this module");
     expect(devError.frame).toContain("export const block = (code) =>");
 
@@ -1738,9 +1747,10 @@ export const block = (code) => code("x", { language: "ts" });
     expect(reported).toMatchObject({
       plugin: "@ferriki/vite",
       pluginCode: "FERRIKI_MACRO",
-      id,
-      loc: expectedLoc,
+      loc: { line: 2, column: 22 },
     });
+    expect(reported.id.replaceAll("\\", "/")).toBe(id);
+    expect(reported.loc.file.replaceAll("\\", "/")).toBe(id);
     expect(reported.message).toContain("`code` is reserved in this module");
     expect(reported.frame).toContain("export const block = (code) =>");
   });

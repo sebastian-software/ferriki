@@ -1,0 +1,2 @@
+{"name":"Fuzz TextMate Light","type":"light","fg":"#24292e","bg":"#ffffff","settings":[{"scope":"word.fuzz","foreground":"#d73a49","fontStyle":"bold"},{"scope":"string.quoted.fuzz","settings":{"foreground":"#032f62","fontFamily":"monospace"}}]}
+alpha 123 "text <&>"

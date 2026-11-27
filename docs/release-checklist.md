@@ -123,10 +123,11 @@ part of release verification.
       manifest and `optionalDependency`, plus `@ferriki/vite`, its matching
       `@ferriki/core` dependency, and the Vite importer in `pnpm-lock.yaml`; no
       workflow step is needed to repair versions after generation.
-- [ ] `fuzz/Cargo.lock` carries the product version for `ferriki-textmate` and
-      `ferriki-asset-gen`. Using the fuzz workflow's pinned nightly,
-      `cargo fetch --manifest-path fuzz/Cargo.toml --locked` and all four fuzz
-      smoke jobs pass on the release PR without rewriting either lockfile.
+- [ ] `fuzz/Cargo.lock` carries the product version for `ferriki`,
+      `ferriki-textmate`, and `ferriki-asset-gen`. Using the fuzz workflow's
+      pinned nightly, `cargo fetch --manifest-path fuzz/Cargo.toml --locked`,
+      the `fuzz-tests` harness unit-test job, and all eight fuzz smoke jobs
+      pass on the release PR without rewriting either lockfile.
 - [ ] `pnpm run test:ferriki-compat:core`, `pnpm run lint`, and
       `pnpm run typecheck` pass from a clean checkout.
 - [ ] The action SHAs in `.github/workflows/publish.yml` were reviewed and its
