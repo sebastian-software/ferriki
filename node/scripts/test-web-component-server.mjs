@@ -573,3 +573,33 @@ test("scanner matches HTML5 short comments, bogus comments, rawtext slash closes
   assert.equal(statefulOut.includes("/assets/ferriki.css"), true);
   assert.equal(statefulOut.includes("javascript:"), false);
 });
+
+test("fast path skips full scanning when no <ferriki-code tag exists while keeping validation and case-insensitive matching", () => {
+  const largeHtml = `<main>${"<section><p>Ordinary server-rendered HTML</p></section>".repeat(2000)}</main>`;
+  assert.equal(renderCodeElementShadows(largeHtml, { blocks: {} }), largeHtml);
+
+  // Validation still runs before the fast path returns.
+  assert.throws(
+    () => renderCodeElementShadows("<main>no hosts</main>", { blocks: { "bad key": "<pre />" } }),
+    /Unsupported code-ref ID/,
+  );
+  assert.throws(
+    () =>
+      renderCodeElementShadows("<main>no hosts</main>", {
+        blocks: {},
+        stylesheetHref: "javascript:alert(1)",
+      }),
+    TypeError,
+  );
+  assert.throws(
+    () => renderCodeElementShadows("<main>no hosts</main>", { blocks: {}, themeAliases: null }),
+    /themeAliases/,
+  );
+
+  // Case-insensitive `<FERRIKI-CODE>` still enters the scanner and hydrates cleanly.
+  const upperHost = '<main><FERRIKI-CODE code-ref="upper"></FERRIKI-CODE></main>';
+  assert.equal(
+    renderCodeElementShadows(upperHost, { blocks: { upper: "<pre>UPPER</pre>" } }),
+    `<main><FERRIKI-CODE code-ref="upper"><template shadowrootmode="open"><!--ferriki-code:upper--><style data-ferriki-code-base>${codeElementStyles()}</style><pre>UPPER</pre></template></FERRIKI-CODE></main>`,
+  );
+});

@@ -867,7 +867,9 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         before,
         text: host.shadowRoot.querySelector("pre code")?.textContent,
         slot: Boolean(host.shadowRoot.querySelector("slot")),
-        baseStyleCount: host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length,
+        baseStyleCount:
+          host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length +
+          (host.shadowRoot.adoptedStyleSheets?.length ?? 0),
         links: [...host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]")].map((link) =>
           link.getAttribute("href"),
         ),
@@ -900,14 +902,18 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
           root: host.shadowRoot,
           pre: host.shadowRoot.querySelector("pre"),
           token: host.shadowRoot.querySelector("code span"),
-          style: host.shadowRoot.querySelector("style[data-ferriki-code-base]"),
+          style:
+            host.shadowRoot.adoptedStyleSheets?.[0] ??
+            host.shadowRoot.querySelector("style[data-ferriki-code-base]"),
           link: host.shadowRoot.querySelector("link[data-ferriki-code-css]"),
         };
         return {
           reference: host.getAttribute("code-ref"),
           text: host.shadowRoot.querySelector("pre code")?.textContent,
           root: Boolean(host.shadowRoot),
-          baseStyleCount: host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length,
+          baseStyleCount:
+            host.shadowRoot.querySelectorAll("style[data-ferriki-code-base]").length +
+            (host.shadowRoot.adoptedStyleSheets?.length ?? 0),
           linkCount: host.shadowRoot.querySelectorAll("link[data-ferriki-code-css]").length,
           linkHref: host.shadowRoot
             .querySelector("link[data-ferriki-code-css]")
@@ -932,7 +938,8 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         pre: host.shadowRoot.querySelector("pre") === window.__referenceCsrNodes.pre,
         token: host.shadowRoot.querySelector("code span") === window.__referenceCsrNodes.token,
         style:
-          host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+          (host.shadowRoot.adoptedStyleSheets?.[0] ??
+            host.shadowRoot.querySelector("style[data-ferriki-code-base]")) ===
           window.__referenceCsrNodes.style,
         link:
           host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
@@ -962,7 +969,8 @@ async function checkReferencePaths(browser, baseUrl, styleMode, initialBlock, up
         tokenReplaced:
           host.shadowRoot.querySelector("code span") !== window.__referenceCsrNodes.token,
         style:
-          host.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+          (host.shadowRoot.adoptedStyleSheets?.[0] ??
+            host.shadowRoot.querySelector("style[data-ferriki-code-base]")) ===
           window.__referenceCsrNodes.style,
         link:
           host.shadowRoot.querySelector("link[data-ferriki-code-css]") ===
@@ -1734,9 +1742,14 @@ async function checkFontAliases(context, baseUrl, styleMode) {
       const baseStyle = await host.evaluate((element, color) => {
         const root = element.shadowRoot;
         window.__fontBaseStyles ??= new Map();
-        window.__fontBaseStyles.set(color, root.querySelector("style[data-ferriki-code-base]"));
+        window.__fontBaseStyles.set(
+          color,
+          root.adoptedStyleSheets?.[0] ?? root.querySelector("style[data-ferriki-code-base]"),
+        );
         return {
-          count: root.querySelectorAll("style[data-ferriki-code-base]").length,
+          count:
+            root.querySelectorAll("style[data-ferriki-code-base]").length +
+            (root.adoptedStyleSheets?.length ?? 0),
           links: root.querySelectorAll("link[data-ferriki-code-css]").length,
         };
       }, defaultColor);
@@ -1764,7 +1777,8 @@ async function checkFontAliases(context, baseUrl, styleMode) {
       assert.equal(
         await host.evaluate(
           (element, color) =>
-            element.shadowRoot.querySelector("style[data-ferriki-code-base]") ===
+            (element.shadowRoot.adoptedStyleSheets?.[0] ??
+              element.shadowRoot.querySelector("style[data-ferriki-code-base]")) ===
             window.__fontBaseStyles.get(color),
           defaultColor,
         ),
@@ -1909,14 +1923,21 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
       latestWrite,
     ];
     const roots = hosts.map((host) => host.shadowRoot);
-    const localStyles = roots.map((root) => root.querySelector("style[data-ferriki-code-base]"));
+    const styleHandles = roots.map(
+      (root) => root.adoptedStyleSheets?.[0] ?? root.querySelector("style[data-ferriki-code-base]"),
+    );
+    const inlineStyles = roots
+      .map((root) => root.querySelector("style[data-ferriki-code-base]"))
+      .filter(Boolean);
+    const adoptedSheets = roots.flatMap((root) => root.adoptedStyleSheets ?? []);
+    const ruleCountsBefore = adoptedSheets.map((sheet) => sheet.cssRules.length);
     const registeredCss = window.__csrProbeModule.initialBlock.css;
     const definition = customElements.get("ferriki-code");
     const repeatedDefinition = window.__csrProbeModule.defineCodeElement({
       css: window.__csrProbeModule.initialBlock.css,
       themeAliases: ["light", "dark"],
     });
-    const registeredCssOccurrences = localStyles.map((style) =>
+    const registeredCssOccurrences = inlineStyles.map((style) =>
       registeredCss ? style.textContent.split(registeredCss).length - 1 : 0,
     );
     return {
@@ -1929,13 +1950,20 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
         camelAttributeReturns,
         clearedToFallback,
       },
-      localBaseStyles: localStyles.every(Boolean),
-      distinctRootStyles: new Set(localStyles).size === localStyles.length,
+      localBaseStyles: styleHandles.every(Boolean),
+      sharedAdoptedSheet: adoptedSheets.length === 0 || new Set(adoptedSheets).size === 1,
+      adoptedRuleCountStable: adoptedSheets.every(
+        (sheet, index) => sheet.cssRules.length === ruleCountsBefore[index],
+      ),
       registeredCssOccurrences,
       localStylesPreserved: roots.every(
-        (root, index) => root.querySelector("style[data-ferriki-code-base]") === localStyles[index],
+        (root, index) =>
+          (root.adoptedStyleSheets?.[0] ?? root.querySelector("style[data-ferriki-code-base]")) ===
+          styleHandles[index],
       ),
-      shadowStyleTags: roots.map((root) => root.querySelectorAll("style").length),
+      shadowStyleCounts: roots.map(
+        (root) => root.querySelectorAll("style").length + (root.adoptedStyleSheets?.length ?? 0),
+      ),
       idempotentRegistration: definition === repeatedDefinition,
     };
   });
@@ -1952,10 +1980,14 @@ async function checkClientPropertyContract(page, initialBlock, updatedBlock) {
         clearedToFallback: true,
       },
       localBaseStyles: true,
-      distinctRootStyles: true,
-      registeredCssOccurrences: Array.from({ length: 6 }, () => (initialBlock.css ? 1 : 0)),
+      sharedAdoptedSheet: true,
+      adoptedRuleCountStable: true,
+      registeredCssOccurrences: Array.from(
+        { length: evidence.registeredCssOccurrences.length },
+        () => (initialBlock.css ? 1 : 0),
+      ),
       localStylesPreserved: true,
-      shadowStyleTags: [1, 1, 1, 1, 1, 1],
+      shadowStyleCounts: [1, 1, 1, 1, 1, 1],
       idempotentRegistration: true,
     },
     "highlightedCode attributes, per-root base styles, or local CSS registration failed",

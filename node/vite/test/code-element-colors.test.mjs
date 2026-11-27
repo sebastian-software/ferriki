@@ -1104,4 +1104,51 @@ describe("vite prepared code element colors", () => {
       highlighter.dispose();
     }
   });
+
+  it("memoizes scope categorization and safe color normalization without conflating constant.language booleans and non-booleans", () => {
+    const transformer = createCodeElementColorTransformer();
+    const options = { styleMode: "inline" };
+    const makeSpan = (content, color) => ({
+      type: "element",
+      tagName: "span",
+      properties: { style: `color:${color}` },
+      children: [{ type: "text", value: content }],
+    });
+    const trueSpan = makeSpan("true", "#79c0ff");
+    const nullSpan = makeSpan("null", "#79c0ff");
+    const falseSpan = makeSpan("FALSE", "#79c0ff");
+    const badColorSpan = makeSpan("true", "url(https://evil.test/x)");
+    const pre = {
+      type: "element",
+      tagName: "pre",
+      properties: { style: "color:#e6edf3;background-color:#0d1117" },
+      children: [trueSpan, nullSpan, falseSpan, badColorSpan],
+    };
+
+    // Call twice with the same `constant.language.js` scope and different token contents
+    // so both cache-miss and cache-hit paths are exercised.
+    for (const [span, content, color] of [
+      [trueSpan, "true", "#79c0ff"],
+      [nullSpan, "null", "#79c0ff"],
+      [falseSpan, "FALSE", "#79c0ff"],
+      [badColorSpan, "true", "url(https://evil.test/x)"],
+    ]) {
+      transformer.span.call({ options }, span, 1, 0, pre, {
+        content,
+        color,
+        scopeNames: ["source.js", "constant.language.js"],
+      });
+    }
+    transformer.root.call({ options }, { type: "root", children: [pre] });
+
+    expect(trueSpan.properties.style).toContain("--ferriki-boolean-color");
+    expect(trueSpan.properties.style).toContain("#79c0ff");
+    expect(nullSpan.properties.style).not.toContain("--ferriki-boolean-color");
+    expect(nullSpan.properties.style).toContain("--ferriki-constant-color");
+    expect(falseSpan.properties.style).toContain("--ferriki-boolean-color");
+    expect(badColorSpan.properties.style).toContain(
+      "--_ferriki-token-color:var(--ferriki-boolean-color, var(--ferriki-constant-color, inherit))",
+    );
+    expect(badColorSpan.properties.style).not.toContain("url(");
+  });
 });

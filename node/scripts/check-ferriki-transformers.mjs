@@ -620,6 +620,26 @@ try {
     ],
   });
   assert(trustedTokenColorHtml.includes("color:var(--foo\\+bar)"));
+
+  // Sparse HAST child arrays (e.g. `delete node.children[0]` in a `code` or `root` transformer)
+  // are skipped cleanly during HTML serialization without crashing.
+  const sparseChildHtml = contextHighlighter.codeToHtml("first\nsecond", {
+    lang: "text",
+    theme: renderTheme.name,
+    transformers: [
+      {
+        code(node) {
+          delete node.children[0];
+        },
+        root(node) {
+          delete node.children[99];
+          node.children.length = 2;
+        },
+      },
+    ],
+  });
+  assert.equal(sparseChildHtml.includes("first"), false);
+  assert.equal(sparseChildHtml.includes("second"), true);
 } finally {
   contextHighlighter.dispose();
 }

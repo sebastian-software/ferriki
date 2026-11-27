@@ -1,6 +1,7 @@
 import { codeElementStyles } from "./web-component.mjs";
 
 const CODE_REF_PATTERN = /^[\w-]+$/u;
+const FERRIKI_CODE_TAG_PATTERN = /<ferriki-code/i;
 const DEFAULT_THEME_ALIASES = Object.freeze(["light", "dark"]);
 const HTML_WHITESPACE_PATTERN = /^[\t\n\f\r ]+$/u;
 const RAW_TEXT_ELEMENTS = new Set([
@@ -123,6 +124,7 @@ export function renderCodeElementShadows(markup, options) {
   const baseCss = codeElementStyles(
     themeAliases === undefined ? DEFAULT_THEME_ALIASES : themeAliases,
   );
+  if (!FERRIKI_CODE_TAG_PATTERN.test(markup)) return markup;
 
   let outputCursor = 0;
   let scanCursor = 0;
