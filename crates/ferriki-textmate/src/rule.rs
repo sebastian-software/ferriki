@@ -5,7 +5,7 @@
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use ferroni::backtrack_lint::BacktrackRisk as FerroniBacktrackRisk;
 
@@ -642,9 +642,7 @@ impl Rule {
     #[cfg(test)]
     pub(crate) fn prefilter_stats(&self) -> Vec<ferroni::scanner::PrefilterStats> {
         let stats = |cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>| {
-            cache
-                .lock()
-                .expect("compiled pattern cache lock poisoned")
+            lock_pattern_cache(cache)
                 .as_ref()
                 .map_or_else(Vec::new, RegExpSourceList::prefilter_stats)
         };
@@ -1116,10 +1114,19 @@ impl RuleRegistry {
         self.rules.get(rule_index(id)?).and_then(Option::as_ref)
     }
 
-    pub(crate) fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
+    fn lock_backtracking_warnings(
+        &self,
+    ) -> MutexGuard<'_, BTreeMap<BacktrackingWarningKey, BacktrackingWarning>> {
         self.backtracking_warnings
             .lock()
-            .expect("backtracking warning lock poisoned")
+            .unwrap_or_else(|poisoned| {
+                self.backtracking_warnings.clear_poison();
+                poisoned.into_inner()
+            })
+    }
+
+    pub(crate) fn backtracking_warnings(&self) -> Vec<BacktrackingWarning> {
+        self.lock_backtracking_warnings()
             .values()
             .cloned()
             .collect()
@@ -1162,10 +1169,7 @@ impl RuleRegistry {
         if findings.is_empty() {
             return;
         }
-        let mut recorded = self
-            .backtracking_warnings
-            .lock()
-            .expect("backtracking warning lock poisoned");
+        let mut recorded = self.lock_backtracking_warnings();
         for (key, warning) in findings {
             recorded.entry(key).or_insert(warning);
         }
@@ -1316,9 +1320,19 @@ impl Drop for PatternCacheContentionHookGuard {
     }
 }
 
+fn recover_pattern_cache<'a>(
+    cache: &'a Mutex<Option<RegExpSourceList<RuleScannerId>>>,
+    poisoned: PoisonError<MutexGuard<'a, Option<RegExpSourceList<RuleScannerId>>>>,
+) -> MutexGuard<'a, Option<RegExpSourceList<RuleScannerId>>> {
+    let mut guard = poisoned.into_inner();
+    *guard = None;
+    cache.clear_poison();
+    guard
+}
+
 fn lock_pattern_cache(
     cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
-) -> std::sync::MutexGuard<'_, Option<RegExpSourceList<RuleScannerId>>> {
+) -> MutexGuard<'_, Option<RegExpSourceList<RuleScannerId>>> {
     #[cfg(test)]
     match cache.try_lock() {
         Ok(guard) => guard,
@@ -1328,14 +1342,16 @@ fn lock_pattern_cache(
                     hook();
                 }
             });
-            cache.lock().expect("compiled pattern cache lock poisoned")
+            cache
+                .lock()
+                .unwrap_or_else(|poisoned| recover_pattern_cache(cache, poisoned))
         }
-        Err(std::sync::TryLockError::Poisoned(_)) => {
-            panic!("compiled pattern cache lock poisoned")
-        }
+        Err(std::sync::TryLockError::Poisoned(poisoned)) => recover_pattern_cache(cache, poisoned),
     }
     #[cfg(not(test))]
-    cache.lock().expect("compiled pattern cache lock poisoned")
+    cache
+        .lock()
+        .unwrap_or_else(|poisoned| recover_pattern_cache(cache, poisoned))
 }
 
 fn compile_patterns(
@@ -1381,7 +1397,11 @@ fn compile_patterns(
     reason = "part of the vscode-textmate port, kept for upstream parity"
 )]
 fn clear_cache(cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>) {
-    *cache.lock().expect("compiled pattern cache lock poisoned") = None;
+    let mut guard = cache.lock().unwrap_or_else(|poisoned| {
+        cache.clear_poison();
+        poisoned.into_inner()
+    });
+    *guard = None;
 }
 
 #[cfg(test)]
@@ -1929,5 +1949,46 @@ mod tests {
             Some(super::ResolvedScopeName::Dynamic(std::borrow::Cow::Borrowed(resolved)))
                 if resolved == many_segments
         ));
+    }
+
+    #[test]
+    fn recovers_compiled_pattern_cache_and_warnings_after_poisoned_locks() {
+        let mut registry = RuleRegistry::new();
+        let rule_id = registry.register_rule(|id| {
+            Rule::Match(MatchRule::new(
+                None,
+                id,
+                Some("keyword.demo".into()),
+                "foo",
+                Vec::new(),
+            ))
+        });
+
+        let rule = registry.get_rule(rule_id);
+        let compiled = rule.compile(&registry, None).expect("initial compile");
+        assert!(
+            compiled
+                .find_next_match(&OnigString::new("foo"), 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
+
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = rule.lock_cached_patterns_for_test();
+            panic!("simulate poisoned pattern cache");
+        }));
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = registry.backtracking_warnings.lock().unwrap();
+            panic!("simulate poisoned backtracking warnings");
+        }));
+        assert!(registry.backtracking_warnings.is_poisoned());
+
+        let rebuilt = rule.compile(&registry, None).expect("rebuilt after poison");
+        assert!(
+            rebuilt
+                .find_next_match(&OnigString::new("foo"), 0, ScannerFindOptions::NONE)
+                .is_some()
+        );
+        assert!(registry.backtracking_warnings().is_empty());
+        assert!(!registry.backtracking_warnings.is_poisoned());
     }
 }

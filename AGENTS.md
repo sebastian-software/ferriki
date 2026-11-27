@@ -38,7 +38,7 @@
 ```sh
 node scripts/materialize-assets.mjs --payloads # Test data; Rust builds are offline
 cargo test --workspace                       # Rust (also: fmt --check, clippy -D warnings)
-cd node && pnpm install && pnpm run build:native
+cd node && pnpm install --ignore-scripts && pnpm run build:native
 # Mandatory release gate (includes the honest native compatibility checks)
 pnpm run test:ferriki-compat:core
 ```
@@ -47,19 +47,22 @@ Rerun `build:native` after any Rust change before Node checks.
 
 ## Package facts
 
-- Publishable package: `node/ferriki` (npm `@ferriki/core`, platform sidecars
-  `@ferriki/<platform>`), ESM-only, Node >= 22.13.0, backed by the native Rust
+- Publishable npm packages: `node/ferriki` (npm `@ferriki/core`), platform
+  sidecars `node/platforms/*` (`@ferriki/<platform>`), and `node/vite`
+  (`@ferriki/vite`), ESM-only, Node >= 22.13.0, backed by the native Rust
   runtime and platform addon.
 - Publishable crates: `ferriki` (the repository root package),
   `ferriki-textmate` and `ferriki-asset-gen`. They share one version with the
-  npm package; Release Please (`release-type: rust`) bumps all of them and
+  npm packages; Release Please (`release-type: rust`) bumps all of them and
   `publish.yml` publishes both registries via Trusted Publishing (ADR 0012).
   `ferriki-core` stays private.
-- Publishing runs `pnpm publish` (catalog: specifiers must be rewritten;
-  plain `npm publish` would leak them).
+- npm publishing packs tarballs with `pnpm pack` (rewriting `catalog:`
+  specifiers) and publishes those tarballs with `npm publish` using OIDC
+  Trusted Publishing and provenance via `ferramenta-native/actions/release-native`
+  (ADR 0012, ADR 0023).
 
 ## Delivery source of truth
 
-Current API and release work is tracked in the GitHub issues and epics for
-Ferriki 1.0. Historical migration plans remain useful context, but they are
-not a status ledger; check the linked issue before relying on an old finding.
+Current API and release work is tracked in GitHub issues and epics. Historical
+migration plans remain useful context, but they are not a status ledger; check
+the linked issue before relying on an old finding.
