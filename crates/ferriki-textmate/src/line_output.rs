@@ -171,7 +171,7 @@ struct MultiThemeSlot {
     /// `MultiThemeTokens::active_nodes` (empty when `reuse_active_attributes`).
     /// Packing both grammar (`language_id`, `token_type`) and theme (`font_style`,
     /// `foreground`, `background`) fields via `EncodedTokenAttributes::set` at
-    /// every scope matches `AttributedScopeStack` bit-for-bit, including overflow bits.
+    /// every scope matches `AttributedScopeStack` bit-for-bit.
     active_attrs: Vec<EncodedTokenAttributes>,
 }
 

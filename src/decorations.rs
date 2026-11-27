@@ -96,7 +96,15 @@ impl DecorationSource {
                     ));
                 };
                 let character = if character < 0 {
-                    length as isize + character
+                    let Some(resolved) = isize::try_from(length)
+                        .ok()
+                        .and_then(|len| len.checked_add(character))
+                    else {
+                        return Err(format!(
+                            "Invalid decoration character: {character}. Line {line} length: {length}"
+                        ));
+                    };
+                    resolved
                 } else {
                     character
                 };
@@ -106,10 +114,13 @@ impl DecorationSource {
                     ));
                 }
                 let character = character as usize;
+                let offset = self.starts[line].checked_add(character).ok_or_else(|| {
+                    format!("Decoration offset overflow on line {line} at character {character}")
+                })?;
                 Ok(ResolvedPosition {
                     line,
                     character,
-                    offset: self.starts[line] + character,
+                    offset,
                 })
             }
         }
@@ -179,9 +190,18 @@ impl DecorationBoundaries {
 
     /// Emit slices directly so the host can build its packed output without
     /// allocating a second intermediate list. Tokens need not be ordered.
-    pub fn split_tokens(&self, tokens: &[DecorationToken], mut emit: impl FnMut(DecorationSlice)) {
+    pub fn split_tokens(
+        &self,
+        tokens: &[DecorationToken],
+        mut emit: impl FnMut(DecorationSlice) -> Result<(), String>,
+    ) -> Result<(), String> {
         for (index, token) in tokens.iter().enumerate() {
-            let end = token.offset + token.length;
+            let end = token.offset.checked_add(token.length).ok_or_else(|| {
+                format!(
+                    "Decoration token offset overflow at token {index}: offset {} + length {}",
+                    token.offset, token.length
+                )
+            })?;
             let mut start = token.offset;
             let first = self.0.partition_point(|point| *point <= token.offset);
             for point in self.0[first..]
@@ -196,11 +216,12 @@ impl DecorationBoundaries {
                         start: start - token.offset,
                         end: point - token.offset,
                         offset: start,
-                    });
+                    })?;
                 }
                 start = point;
             }
         }
+        Ok(())
     }
 }
 
@@ -270,13 +291,22 @@ pub fn next_decoration_section(
             false,
             DecorationCursor::AfterStart,
         ),
-        DecorationCursor::AfterStart => {
-            return next_decoration_section(
-                range,
-                decoration,
-                DecorationCursor::Middle(range.start.line + 1),
-            );
-        }
+        DecorationCursor::AfterStart => match range.start.line.checked_add(1) {
+            Some(next_line) => {
+                return next_decoration_section(
+                    range,
+                    decoration,
+                    DecorationCursor::Middle(next_line),
+                );
+            }
+            None => (
+                range.end.line,
+                0,
+                Some(range.end.character),
+                false,
+                DecorationCursor::Done,
+            ),
+        },
         DecorationCursor::Middle(line) if line < range.end.line => {
             (line, 0, None, true, DecorationCursor::Middle(line + 1))
         }
@@ -383,6 +413,7 @@ pub fn plan_decoration_mutations(
     lines: &[usize],
     sections: &[DecorationSection],
 ) -> DecorationPlan {
+    let input_node_count = nodes.len();
     let mut mutations = Vec::with_capacity(sections.len());
     let mut lengths = match text_lengths(&nodes) {
         Ok(lengths) => lengths,
@@ -403,15 +434,33 @@ pub fn plan_decoration_mutations(
             }
             continue;
         };
-        let children = &nodes[line].children;
+        let Some(line_node) = (line < input_node_count).then(|| nodes.get(line)).flatten() else {
+            return DecorationPlan {
+                mutations,
+                error: Some(format!("Invalid decoration line node reference {line}")),
+            };
+        };
+        let children = &line_node.children;
         let (start, end) = if section.whole_line {
             (0, children.len())
         } else {
-            let mut cursor = 0;
+            let mut cursor = 0usize;
             let mut start = (section.start == 0).then_some(0);
             let mut end = section.end.is_none().then_some(children.len());
-            for (index, child) in children.iter().enumerate() {
-                cursor += lengths[*child];
+            for (index, &child) in children.iter().enumerate() {
+                let Some(&child_length) = lengths.get(child) else {
+                    return DecorationPlan {
+                        mutations,
+                        error: Some(format!("Invalid decoration node reference {child}")),
+                    };
+                };
+                let Some(next_cursor) = cursor.checked_add(child_length) else {
+                    return DecorationPlan {
+                        mutations,
+                        error: Some("Decoration text length overflow".into()),
+                    };
+                };
+                cursor = next_cursor;
                 if start.is_none() && cursor >= section.start {
                     start = Some(if cursor == section.start {
                         index + 1
@@ -442,7 +491,10 @@ pub fn plan_decoration_mutations(
         let count = end.saturating_sub(start);
         let target = if section.whole_line || (!section.always_wrap && count == children.len()) {
             DecorationTarget::Line
-        } else if !section.always_wrap && count == 1 && nodes[children[start]].element {
+        } else if !section.always_wrap
+            && count == 1
+            && nodes.get(children[start]).is_some_and(|node| node.element)
+        {
             DecorationTarget::Token
         } else {
             DecorationTarget::Wrapper
@@ -453,7 +505,25 @@ pub fn plan_decoration_mutations(
             DecorationTarget::Wrapper => {
                 let node = nodes.len();
                 let selected = children[start..end.max(start)].to_vec();
-                lengths.push(selected.iter().map(|child| lengths[*child]).sum());
+                let wrapper_length = match selected.iter().try_fold(0usize, |sum, &child| {
+                    lengths
+                        .get(child)
+                        .copied()
+                        .ok_or_else(|| format!("Invalid decoration node reference {child}"))
+                        .and_then(|len| {
+                            sum.checked_add(len)
+                                .ok_or_else(|| "Decoration text length overflow".to_string())
+                        })
+                }) {
+                    Ok(length) => length,
+                    Err(error) => {
+                        return DecorationPlan {
+                            mutations,
+                            error: Some(error),
+                        };
+                    }
+                };
+                lengths.push(wrapper_length);
                 nodes.push(DecorationNode {
                     element: true,
                     text_length: 0,
@@ -697,19 +767,24 @@ mod tests {
         };
         let boundaries = DecorationBoundaries::new(&[range]);
         let mut slices = Vec::new();
-        boundaries.split_tokens(
-            &[
-                DecorationToken {
-                    offset: 0,
-                    length: 4,
+        boundaries
+            .split_tokens(
+                &[
+                    DecorationToken {
+                        offset: 0,
+                        length: 4,
+                    },
+                    DecorationToken {
+                        offset: 4,
+                        length: 0,
+                    },
+                ],
+                |slice| {
+                    slices.push(slice);
+                    Ok(())
                 },
-                DecorationToken {
-                    offset: 4,
-                    length: 0,
-                },
-            ],
-            |slice| slices.push(slice),
-        );
+            )
+            .unwrap();
         assert_eq!(
             slices
                 .iter()
@@ -763,7 +838,12 @@ mod tests {
             }],
         ] {
             slices.clear();
-            boundaries.split_tokens(&tokens, |slice| slices.push(slice));
+            boundaries
+                .split_tokens(&tokens, |slice| {
+                    slices.push(slice);
+                    Ok(())
+                })
+                .unwrap();
             let actual = slices
                 .iter()
                 .map(|slice| (slice.token, slice.start, slice.end, slice.offset))
@@ -840,5 +920,136 @@ mod tests {
             .error
             .is_some()
         );
+    }
+
+    #[test]
+    fn rejects_out_of_range_line_node_indices_without_panicking() {
+        let nodes = vec![
+            DecorationNode {
+                element: true,
+                text_length: 0,
+                children: vec![1],
+            },
+            DecorationNode {
+                element: true,
+                text_length: 3,
+                children: vec![],
+            },
+        ];
+        let section = DecorationSection {
+            decoration: 0,
+            line: 0,
+            start: 0,
+            end: Some(3),
+            whole_line: false,
+            always_wrap: false,
+        };
+        let invalid = plan_decoration_mutations(nodes.clone(), &[99], &[section]);
+        assert!(invalid.mutations.is_empty());
+        assert!(
+            invalid
+                .error
+                .as_deref()
+                .is_some_and(|message| message.contains("Invalid decoration line node reference"))
+        );
+
+        // Partial prefix is retained when a subsequent line references an out-of-range node.
+        let partial = plan_decoration_mutations(
+            nodes.clone(),
+            &[0, 99],
+            &[
+                section,
+                DecorationSection {
+                    decoration: 1,
+                    line: 1,
+                    ..section
+                },
+            ],
+        );
+        assert_eq!(partial.mutations.len(), 1);
+        assert!(partial.error.is_some());
+
+        // An initially out-of-range line reference (`2` for a 2-node arena) must stay
+        // invalid even after an earlier section appends wrapper node `2`.
+        let aliased = plan_decoration_mutations(
+            nodes,
+            &[0, 2],
+            &[
+                DecorationSection {
+                    always_wrap: true,
+                    ..section
+                },
+                DecorationSection {
+                    decoration: 1,
+                    line: 1,
+                    ..section
+                },
+            ],
+        );
+        assert_eq!(aliased.mutations.len(), 1);
+        assert_eq!(aliased.mutations[0].node, 2);
+        assert_eq!(aliased.mutations[0].target, DecorationTarget::Wrapper);
+        assert!(
+            aliased
+                .error
+                .as_deref()
+                .is_some_and(|message| message.contains("Invalid decoration line node reference 2"))
+        );
+    }
+
+    #[test]
+    fn rejects_overflowing_token_offsets_and_extreme_coordinates() {
+        let boundaries = DecorationBoundaries::new(&[]);
+        let err = boundaries
+            .split_tokens(
+                &[DecorationToken {
+                    offset: usize::MAX,
+                    length: 1,
+                }],
+                |_| Ok(()),
+            )
+            .unwrap_err();
+        assert!(err.contains("overflow"));
+
+        let err = boundaries
+            .split_tokens(
+                &[DecorationToken {
+                    offset: usize::MAX - 4,
+                    length: 10,
+                }],
+                |_| Ok(()),
+            )
+            .unwrap_err();
+        assert!(err.contains("overflow"));
+
+        // Extreme negative character offset fails cleanly without overflow.
+        let source = DecorationSource::utf8("abc");
+        assert!(
+            source
+                .resolve(DecorationPosition::Line {
+                    line: 0,
+                    character: isize::MIN,
+                })
+                .is_err()
+        );
+
+        // Callback cursor advancement at usize::MAX does not overflow.
+        let max_range = ResolvedDecoration {
+            start: ResolvedPosition {
+                line: usize::MAX,
+                character: 0,
+                offset: 0,
+            },
+            end: ResolvedPosition {
+                line: usize::MAX,
+                character: 1,
+                offset: 1,
+            },
+            always_wrap: false,
+        };
+        let (section, next) =
+            next_decoration_section(max_range, 0, DecorationCursor::AfterStart).unwrap();
+        assert_eq!(section.line, usize::MAX);
+        assert_eq!(next, DecorationCursor::Done);
     }
 }

@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 ## Context
 
@@ -100,6 +100,12 @@ named `ferriki-textmate`.
   `ThemeError::InvalidScopeSelector`), while selector matching/dropping,
   theme-trie insertion/lookup/dropping, and raw-rule pattern collection/dropping
   execute iteratively so deeply nested inputs cannot overflow the call stack.
+  `EncodedTokenAttributes::set` masks every packed field to its exact bit width
+  before shifting so out-of-range inputs cannot bleed into adjacent fields;
+  `Theme::create_from_raw_theme` enforces the 9-bit foreground (max ID 511) and
+  8-bit background (max ID 255) color-map bounds via
+  `ThemeError::ColorMapOverflow`, and grammar compilation rejects 8-bit
+  language IDs above 255 via `ThemeError::InvalidLanguageId`.
   Exceeding any tokenization safety bound returns a recoverable
   `RegexError` rather than emitting truncated continuation states or silently
   skipping scopes.
@@ -164,6 +170,7 @@ this decision.
 
 ## History
 
+- 2026-11-27: Masks every bitfield in `EncodedTokenAttributes::set`, enforces 9-bit foreground (max 511) and 8-bit background (max 255) color-map limits via `ThemeError::ColorMapOverflow`, and rejects language IDs above 255 via `ThemeError::InvalidLanguageId` (#388).
 - 2026-11-26: Propagates `tokenizeTimeLimit` deadlines through `while`-condition checks, injection scanning, and capture retokenization; bounds plist and scope-selector nesting depth at 128 and makes selector evaluation/drop, theme-trie traversal/drop, and raw-rule collection/drop iterative (#385).
 - 2026-11-26: Adds `SyncRegistry::set_compiled_theme` for O(1) precompiled `Arc<Theme>` switching and `Grammar::tokenize_line_with_themes` for single-pass multi-theme binary encoding without altering grammar traversal (#389).
 - 2026-11-26: Records explicit runtime safety bounds (active-path cycle breaking with a 65,536-visit / 16 MiB per-scanner include-expansion budget, 4,096-frame state stack depth cap, and 64-level capture retokenization recursion cap) returning recoverable `RegexError`s (#384).

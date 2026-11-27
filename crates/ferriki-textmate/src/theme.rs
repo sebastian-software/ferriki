@@ -15,6 +15,8 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use serde::{Deserialize, Serialize};
 
+use crate::encoded_token_attributes::{MAX_BACKGROUND_COLOR_ID, MAX_FOREGROUND_COLOR_ID};
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -360,6 +362,15 @@ impl RawThemeStyle {
 pub enum ThemeError {
     MissingFrozenColor(String),
     InvalidScopeSelector(String),
+    ColorMapOverflow {
+        color: String,
+        id: u32,
+        max_id: u32,
+    },
+    InvalidLanguageId {
+        language_id: u32,
+        max_language_id: u32,
+    },
 }
 
 impl fmt::Display for ThemeError {
@@ -370,6 +381,21 @@ impl fmt::Display for ThemeError {
             }
             Self::InvalidScopeSelector(message) => {
                 write!(formatter, "invalid scope selector - {message}")
+            }
+            Self::ColorMapOverflow { color, id, max_id } => {
+                write!(
+                    formatter,
+                    "color map capacity exceeded for {color}: color id {id} exceeds maximum encodable id {max_id}"
+                )
+            }
+            Self::InvalidLanguageId {
+                language_id,
+                max_language_id,
+            } => {
+                write!(
+                    formatter,
+                    "language id {language_id} exceeds maximum encodable id {max_language_id}"
+                )
             }
         }
     }
@@ -698,8 +724,8 @@ fn resolve_parsed_theme_rules(
     let mut color_map = ColorMap::new(frozen_color_map);
     let defaults = StyleAttributes {
         font_style: default_font_style,
-        foreground_id: color_map.get_id(Some(&default_foreground))?,
-        background_id: color_map.get_id(Some(&default_background))?,
+        foreground_id: color_map.get_id(Some(&default_foreground), MAX_FOREGROUND_COLOR_ID)?,
+        background_id: color_map.get_id(Some(&default_background), MAX_BACKGROUND_COLOR_ID)?,
         font_family: default_font_family.clone(),
         font_size: default_font_size,
         line_height: default_line_height,
@@ -716,8 +742,8 @@ fn resolve_parsed_theme_rules(
         default_line_height,
     ));
     for rule in parsed_theme_rules {
-        let foreground = color_map.get_id(rule.foreground.as_deref())?;
-        let background = color_map.get_id(rule.background.as_deref())?;
+        let foreground = color_map.get_id(rule.foreground.as_deref(), MAX_FOREGROUND_COLOR_ID)?;
+        let background = color_map.get_id(rule.background.as_deref(), MAX_BACKGROUND_COLOR_ID)?;
         root.insert(
             0,
             &rule.scope,
@@ -778,7 +804,7 @@ impl ColorMap {
         color_map
     }
 
-    fn get_id(&mut self, color: Option<&str>) -> Result<u32, ThemeError> {
+    fn get_id(&mut self, color: Option<&str>, max_id: u32) -> Result<u32, ThemeError> {
         let Some(color) = color else {
             return Ok(0);
         };
@@ -789,14 +815,27 @@ impl ColorMap {
             .copied()
             .filter(|value| *value != 0)
         {
+            if value > max_id {
+                return Err(ThemeError::ColorMapOverflow {
+                    color,
+                    id: value,
+                    max_id,
+                });
+            }
             return Ok(value);
         }
         if self.is_frozen {
             return Err(ThemeError::MissingFrozenColor(color));
         }
 
-        self.last_color_id += 1;
-        let value = self.last_color_id;
+        let Some(value) = self.last_color_id.checked_add(1).filter(|&id| id <= max_id) else {
+            return Err(ThemeError::ColorMapOverflow {
+                color,
+                id: self.last_color_id.saturating_add(1),
+                max_id,
+            });
+        };
+        self.last_color_id = value;
         let index = usize::try_from(value).expect("color ID exceeds addressable memory");
         if self.id_to_color.len() <= index {
             self.id_to_color.resize(index + 1, String::new());
@@ -1661,5 +1700,213 @@ mod tests {
             ("not set".to_owned(), None, None)
         );
         drop(theme);
+    }
+
+    fn hex_color(index: u32) -> String {
+        format!("#{index:06X}")
+    }
+
+    #[test]
+    fn allows_up_to_511_foreground_colors_and_rejects_512th() {
+        // Default foreground (#000000 -> ID 1) and default background (#FFFFFF -> ID 2)
+        // leave 509 additional foreground slots (IDs 3..=511).
+        let mut settings: Vec<RawThemeSetting> = (3..=511)
+            .map(|id| {
+                setting(
+                    string_scope(&format!("scope.fg{id:03}")),
+                    style(None, Some(&hex_color(id)), None),
+                )
+            })
+            .collect();
+
+        let valid_theme = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: settings.clone(),
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .expect("511 foreground colors with default background ID 2 must fit in 9-bit foreground");
+        assert_eq!(valid_theme.color_map().len(), 512);
+        let stack = ScopeStack::from(["scope.fg511"]).unwrap();
+        let matched = valid_theme.match_scope(Some(&stack)).unwrap();
+        assert_eq!(matched.foreground_id, 511);
+        assert_eq!(matched.background_id, 0);
+        assert_eq!(valid_theme.color_map()[511], hex_color(511));
+
+        // Adding a 512th distinct foreground color exceeds the 9-bit foreground capacity.
+        settings.push(setting(
+            string_scope("scope.fg512"),
+            style(None, Some(&hex_color(512)), None),
+        ));
+        let err = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings,
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            super::ThemeError::ColorMapOverflow {
+                color: hex_color(512),
+                id: 512,
+                max_id: super::MAX_FOREGROUND_COLOR_ID,
+            }
+        );
+    }
+
+    #[test]
+    fn enforces_8_bit_background_color_capacity_for_new_and_reused_colors() {
+        // Default foreground (ID 1) and background (ID 2), plus 253 background colors -> IDs 3..=255.
+        let mut settings: Vec<RawThemeSetting> = (3..=255)
+            .map(|id| {
+                setting(
+                    string_scope(&format!("scope.bg{id:03}")),
+                    style(None, None, Some(&hex_color(id))),
+                )
+            })
+            .collect();
+
+        let valid_theme = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: settings.clone(),
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .expect("255 background colors must fit in 8-bit background");
+        let stack = ScopeStack::from(["scope.bg255"]).unwrap();
+        let matched = valid_theme.match_scope(Some(&stack)).unwrap();
+        assert_eq!(matched.background_id, 255);
+
+        // Adding a 256th distinct background color exceeds the 8-bit background capacity.
+        let mut overflow_new_bg = settings.clone();
+        overflow_new_bg.push(setting(
+            string_scope("scope.bg256"),
+            style(None, None, Some(&hex_color(256))),
+        ));
+        let err = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: overflow_new_bg,
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            super::ThemeError::ColorMapOverflow {
+                color: hex_color(256),
+                id: 256,
+                max_id: super::MAX_BACKGROUND_COLOR_ID,
+            }
+        );
+
+        // Registering ID 256 as a foreground color succeeds, but reusing that same
+        // ID 256 color as a background color in a later rule must fail.
+        settings.push(setting(
+            string_scope("scope.fg256"),
+            style(None, Some(&hex_color(256)), None),
+        ));
+        assert!(
+            Theme::create_from_raw_theme(
+                Some(&RawTheme {
+                    settings: settings.clone(),
+                    ..RawTheme::default()
+                }),
+                None,
+            )
+            .is_ok()
+        );
+
+        settings.push(setting(
+            string_scope("scope.z_reuse_bg256"),
+            style(None, None, Some(&hex_color(256))),
+        ));
+        let err = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings,
+                ..RawTheme::default()
+            }),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            super::ThemeError::ColorMapOverflow {
+                color: hex_color(256),
+                id: 256,
+                max_id: super::MAX_BACKGROUND_COLOR_ID,
+            }
+        );
+    }
+
+    #[test]
+    fn enforces_color_bitfield_bounds_for_frozen_color_maps() {
+        let mut frozen = vec![String::new(), "#000000".to_owned(), "#FFFFFF".to_owned()];
+        for id in 3..=512 {
+            frozen.push(hex_color(id));
+        }
+
+        // Foreground at ID 300 and background at ID 255 fit in their respective bitfields.
+        let valid = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: vec![setting(
+                    string_scope("scope.valid"),
+                    style(None, Some(&hex_color(300)), Some(&hex_color(255))),
+                )],
+                ..RawTheme::default()
+            }),
+            Some(frozen.clone()),
+        )
+        .expect("frozen foreground 300 and background 255 must be accepted");
+        let stack = ScopeStack::from(["scope.valid"]).unwrap();
+        let matched = valid.match_scope(Some(&stack)).unwrap();
+        assert_eq!(matched.foreground_id, 300);
+        assert_eq!(matched.background_id, 255);
+
+        // Frozen background at ID 256 exceeds 8 bits.
+        let bg_err = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: vec![setting(
+                    string_scope("scope.bad_bg"),
+                    style(None, None, Some(&hex_color(256))),
+                )],
+                ..RawTheme::default()
+            }),
+            Some(frozen.clone()),
+        )
+        .unwrap_err();
+        assert_eq!(
+            bg_err,
+            super::ThemeError::ColorMapOverflow {
+                color: hex_color(256),
+                id: 256,
+                max_id: super::MAX_BACKGROUND_COLOR_ID,
+            }
+        );
+
+        // Frozen foreground at ID 512 exceeds 9 bits.
+        let fg_err = Theme::create_from_raw_theme(
+            Some(&RawTheme {
+                settings: vec![setting(
+                    string_scope("scope.bad_fg"),
+                    style(None, Some(&hex_color(512)), None),
+                )],
+                ..RawTheme::default()
+            }),
+            Some(frozen),
+        )
+        .unwrap_err();
+        assert_eq!(
+            fg_err,
+            super::ThemeError::ColorMapOverflow {
+                color: hex_color(512),
+                id: 512,
+                max_id: super::MAX_FOREGROUND_COLOR_ID,
+            }
+        );
     }
 }
