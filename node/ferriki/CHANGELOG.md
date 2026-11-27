@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.1](https://github.com/sebastian-software/ferriki/compare/v1.4.0...v1.4.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **assets:** harden asset downloads, cache writes, and grammar importer ([#401](https://github.com/sebastian-software/ferriki/issues/401)) ([16ea6b4](https://github.com/sebastian-software/ferriki/commit/16ea6b4359758d7e795f7c567c3c5eb91fecffbd))
+* bound parser/selector recursion, propagate tokenizeTimeLimit, and stream-cap Zstd archives ([#404](https://github.com/sebastian-software/ferriki/issues/404)) ([ede4a01](https://github.com/sebastian-software/ferriki/commit/ede4a013667b4e484b187af31baf4839b7681bf3))
+* enforce bitfield bounds in EncodedTokenAttributes/ColorMap and bounds-check decoration planning ([#405](https://github.com/sebastian-software/ferriki/issues/405)) ([f2f0a22](https://github.com/sebastian-software/ferriki/commit/f2f0a220e560ff7e9a20398f6c287a548c924cbd))
+* **lifecycle:** clean up Vite HMR caches, highlighter disposal, and web-component state ([#411](https://github.com/sebastian-software/ferriki/issues/411)) ([b6df1e3](https://github.com/sebastian-software/ferriki/commit/b6df1e3c9f8b0bdfdb2ef3d004f9de1d100ddc12))
+* **release:** accept the decoded asset cache ([#378](https://github.com/sebastian-software/ferriki/issues/378)) ([533929f](https://github.com/sebastian-software/ferriki/commit/533929f8fec9c118a21cf7a3aa607055bb5b8572))
+* **security:** harden CSS/HTML/Shadow DOM rendering against XSS and injection ([#410](https://github.com/sebastian-software/ferriki/issues/410)) ([69aa61d](https://github.com/sebastian-software/ferriki/commit/69aa61dbeccebafea3e410124da683696538f4d4))
+* **textmate:** prevent crashes, OOM, and stack overflows on adversarial inputs ([#400](https://github.com/sebastian-software/ferriki/issues/400)) ([45ef11f](https://github.com/sebastian-software/ferriki/commit/45ef11fe367ab100c41c95e9b3764e4e40aca1ef))
+
+
+### Performance Improvements
+
+* **assets:** eliminate double verification reads and parallelize cold startup ([#409](https://github.com/sebastian-software/ferriki/issues/409)) ([91f41b7](https://github.com/sebastian-software/ferriki/commit/91f41b7f6e5544176abe076733e079ff042ce6c7))
+* eliminate quadratic scope scans, cache compiled themes, and tokenize multi-theme in one pass ([#403](https://github.com/sebastian-software/ferriki/issues/403)) ([e08ff1c](https://github.com/sebastian-software/ferriki/commit/e08ff1c3ffba0ee534288063f74857c01eac8804))
+* **node:** optimize Vite CSS/block caching, web-component stylesheets, and JS facade ([#414](https://github.com/sebastian-software/ferriki/issues/414)) ([9449795](https://github.com/sebastian-software/ferriki/commit/94497958e68c40e0f3333165a8ed7a5c34ccc43e))
+* **render:** optimize Rust HTML/CSS rendering, N-API DTOs, and Node class fast path ([#413](https://github.com/sebastian-software/ferriki/issues/413)) ([a1c0d82](https://github.com/sebastian-software/ferriki/commit/a1c0d828939254446b479a96a37f04a068f32c49))
+* **textmate:** optimize tokenizer hot loop and scope-stack transitions ([#407](https://github.com/sebastian-software/ferriki/issues/407)) ([221cc9b](https://github.com/sebastian-software/ferriki/commit/221cc9b47462510438cb85281b6a3a37ff1f3f02))
+
 ## [1.4.0](https://github.com/sebastian-software/ferriki/compare/v1.3.0...v1.4.0) (2026-11-23)
 
 
