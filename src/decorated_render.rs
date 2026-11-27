@@ -4,10 +4,13 @@ use crate::decorations::{
     DecorationBoundaries, DecorationNode, DecorationRange, DecorationSource, DecorationTarget,
     DecorationToken, decoration_sections, plan_decoration_mutations,
 };
+#[cfg(test)]
+use crate::render::escape_attribute;
 use crate::render::{
-    default_root_style, escape_attribute, escape_html, is_safe_decoration_attribute_name,
+    bounded_source_html_capacity, default_root_style, is_safe_decoration_attribute_name,
     is_safe_decoration_attribute_value, is_safe_decoration_tag_name, is_valid_html_attribute_name,
     is_valid_html_tag_name, prepare_tokens, sanitize_css_declarations, token_style,
+    write_escaped_attribute, write_escaped_html,
 };
 use crate::{HighlightTokensResult, RenderOptions};
 use std::borrow::Cow;
@@ -82,12 +85,16 @@ pub fn render_html_with_decorations(
         metadata.clear();
         metadata.extend(line.iter().map(|token| DecorationToken {
             offset: token.offset,
-            length: token.content.encode_utf16().count(),
+            length: utf16_len(&token.content),
         }));
         let mut unsupported = false;
         boundaries.split_tokens(&metadata, |slice| {
             let token = &line[slice.token];
-            let Some(content) = utf16_slice(&token.content, slice.start, slice.end) else {
+            let content = if slice.start == 0 && slice.end == metadata[slice.token].length {
+                token.content.as_str()
+            } else if let Some(sliced) = utf16_slice(&token.content, slice.start, slice.end) {
+                sliced
+            } else {
                 unsupported = true;
                 return Ok(());
             };
@@ -116,7 +123,7 @@ pub fn render_html_with_decorations(
         .iter()
         .map(|node| DecorationNode {
             element: node.tag.is_some(),
-            text_length: node.text.encode_utf16().count(),
+            text_length: utf16_len(&node.text),
             children: node.children.clone(),
         })
         .collect();
@@ -170,8 +177,9 @@ pub fn render_html_with_decorations(
                 .splice(edit.start..edit.start + edit.count, [edit.node]);
         }
     }
-    let mut html = String::from("<pre class=\"");
-    html.push_str(&escape_attribute(&format!("shiki {}", result.theme_name)));
+    let mut html = String::with_capacity(bounded_source_html_capacity(source.len()));
+    html.push_str("<pre class=\"shiki ");
+    write_escaped_attribute(&mut html, &result.theme_name);
     html.push('"');
     if options.include_root_style {
         let default = default_root_style(&result.background, &result.foreground);
@@ -182,13 +190,13 @@ pub fn render_html_with_decorations(
             .unwrap_or(&default);
         if !style.is_empty() {
             html.push_str(" style=\"");
-            html.push_str(&escape_attribute(style));
+            write_escaped_attribute(&mut html, style);
             html.push('"');
         }
     }
     if let Some(tabindex) = &options.tabindex {
         html.push_str(" tabindex=\"");
-        html.push_str(&escape_attribute(tabindex));
+        write_escaped_attribute(&mut html, tabindex);
         html.push('"');
     }
     html.push_str("><code>");
@@ -200,6 +208,14 @@ pub fn render_html_with_decorations(
     }
     html.push_str("</code></pre>");
     Ok(Some(html))
+}
+
+fn utf16_len(text: &str) -> usize {
+    if text.is_ascii() {
+        text.len()
+    } else {
+        text.encode_utf16().count()
+    }
 }
 
 fn prepare_decoration_properties<'a>(raw: &'a [(String, String)]) -> PreparedProperties<'a> {
@@ -227,13 +243,19 @@ fn prepare_decoration_properties<'a>(raw: &'a [(String, String)]) -> PreparedPro
 }
 
 fn utf16_slice(text: &str, start: usize, end: usize) -> Option<&str> {
+    if start > end {
+        return None;
+    }
+    if text.is_ascii() {
+        return text.get(start..end);
+    }
+    if start == 0 && end == 0 {
+        return Some("");
+    }
     let mut units = 0;
-    let mut start_byte = None;
+    let mut start_byte = (start == 0).then_some(0);
     let mut end_byte = None;
-    for (byte, character) in text
-        .char_indices()
-        .chain(std::iter::once((text.len(), '\0')))
-    {
+    for (byte, character) in text.char_indices() {
         if units == start {
             start_byte = Some(byte);
         }
@@ -242,6 +264,14 @@ fn utf16_slice(text: &str, start: usize, end: usize) -> Option<&str> {
             break;
         }
         units += character.len_utf16();
+    }
+    if end_byte.is_none() {
+        if units == start && start_byte.is_none() {
+            start_byte = Some(text.len());
+        }
+        if units == end {
+            end_byte = Some(text.len());
+        }
     }
     Some(&text[start_byte?..end_byte?])
 }
@@ -253,7 +283,7 @@ struct WriteFrame {
 
 fn write_open_node(node: &Node, html: &mut String) -> bool {
     let Some(tag) = &node.tag else {
-        html.push_str(&escape_html(&node.text));
+        write_escaped_html(html, &node.text);
         return false;
     };
     if !is_valid_html_tag_name(tag) {
@@ -270,7 +300,7 @@ fn write_open_node(node: &Node, html: &mut String) -> bool {
         html.push(' ');
         html.push_str(key);
         html.push_str("=\"");
-        html.push_str(&escape_attribute(value));
+        write_escaped_attribute(html, value);
         html.push('"');
     }
     html.push('>');
@@ -350,9 +380,17 @@ mod tests {
     }
     #[test]
     fn unicode_slicing_preserves_boundaries_and_rejects_surrogate_halves() {
+        assert_eq!(utf16_slice("abcdef", 0, 6), Some("abcdef"));
+        assert_eq!(utf16_slice("abcdef", 1, 4), Some("bcd"));
+        assert_eq!(utf16_slice("abcdef", 4, 2), None);
+        assert_eq!(utf16_slice("abcdef", 0, 7), None);
+        assert_eq!(utf16_slice("aé漢z", 1, 3), Some("é漢"));
         assert_eq!(utf16_slice("a😀z", 1, 3), Some("😀"));
+        assert_eq!(utf16_slice("a😀z", 0, 4), Some("a😀z"));
+        assert_eq!(utf16_slice("a😀z", 4, 4), Some(""));
         assert_eq!(utf16_slice("a😀z", 2, 3), None);
         assert_eq!(utf16_slice("a😀z", 0, 2), None);
+        assert_eq!(utf16_slice("a😀z", 3, 1), None);
         assert_eq!(utf16_slice("", 0, 0), Some(""));
         assert_eq!(utf16_slice("a", 2, 3), None);
     }

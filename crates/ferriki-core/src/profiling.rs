@@ -99,8 +99,8 @@ fn convert<T: ToNapiValue>(env: &Env, value: T) -> Result<BoundaryPhase> {
 }
 
 enum Converted {
-    Single(HtmlRenderData),
-    Multi(HtmlRenderDataWithThemes),
+    Single(NativeHtmlRenderData),
+    Multi(NativeHtmlRenderDataWithThemes),
 }
 
 /// The Rust-side phases of one call, before any JavaScript value exists.
@@ -123,8 +123,8 @@ impl FerrikiHighlighter {
     fn rust_phases(&self, code: &str, options: NativeTokenOptions) -> Result<RustPhases> {
         if options.theme_entries.is_some() {
             let (result, tokenize) = phase(|| self.tokenize_with_themes(code, options))?;
-            let (data, dto) = phase(|| Ok(HtmlRenderDataWithThemes::from(result)))?;
-            let (lines, tokens) = counts(&data.tokens);
+            let (data, dto) = phase(|| Ok(NativeHtmlRenderDataWithThemes::from(result)))?;
+            let (lines, tokens) = counts(&data.result.tokens);
             return Ok(RustPhases {
                 data: Converted::Multi(data),
                 tokenize,
@@ -134,8 +134,8 @@ impl FerrikiHighlighter {
             });
         }
         let (result, tokenize) = phase(|| self.tokenize(code, options))?;
-        let (data, dto) = phase(|| Ok(HtmlRenderData::from(result)))?;
-        let (lines, tokens) = counts(&data.tokens);
+        let (data, dto) = phase(|| Ok(NativeHtmlRenderData::from(result)))?;
+        let (lines, tokens) = counts(&data.result.tokens);
         Ok(RustPhases {
             data: Converted::Single(data),
             tokenize,
@@ -318,6 +318,6 @@ mod tests {
             .expect("multi");
         assert!(matches!(multi.data, Converted::Multi(_)));
         assert_eq!(multi.lines, 1);
-        assert!(multi.dto.allocations > 0.0);
+        assert_eq!(multi.dto.allocations, 0.0);
     }
 }

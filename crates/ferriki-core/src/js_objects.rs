@@ -152,7 +152,137 @@ impl<'a, S: Sink> Writer<'a, S> {
     }
 
     fn scope_names(&mut self, names: &'a [String]) -> Result<S::Value> {
-        self.array(names, |writer, name| writer.sink.string(name))
+        self.array(names, |writer, name| writer.shared(name))
+    }
+
+    fn highlight_token(&mut self, token: &'a ferriki::HighlightToken) -> Result<S::Value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.content, self.sink.string(&token.content)?)),
+            Some((keys.offset, self.sink.number(token.offset as f64)?)),
+            match &token.color {
+                Some(color) => Some((keys.color, self.shared(color)?)),
+                None => None,
+            },
+            match token.font_style {
+                Some(style) => Some((keys.font_style, self.sink.int(style.bits())?)),
+                None => None,
+            },
+            match token.token_type {
+                Some(kind) => Some((keys.token_type, self.sink.uint(kind as u32)?)),
+                None => None,
+            },
+            match &token.scope_names {
+                Some(names) => Some((keys.scope_names, self.scope_names(names)?)),
+                None => None,
+            },
+        ];
+        self.object(entries)
+    }
+
+    fn highlight_style(
+        &mut self,
+        style: &'a ferriki::HighlightThemeTokenStyle,
+    ) -> Result<S::Value> {
+        let keys = self.keys;
+        let entries = [
+            match &style.color {
+                Some(color) => Some((keys.color, self.shared(color)?)),
+                None => None,
+            },
+            match style.font_style {
+                Some(value) => Some((keys.font_style, self.sink.int(value.bits())?)),
+                None => None,
+            },
+        ];
+        self.object(entries)
+    }
+
+    fn highlight_variants(
+        &mut self,
+        variants: &'a std::collections::BTreeMap<String, ferriki::HighlightThemeTokenStyle>,
+    ) -> Result<S::Value> {
+        // Reuse one entry buffer instead of allocating one per token.
+        let mut entries = std::mem::take(&mut self.variants);
+        entries.clear();
+        for (name, style) in variants {
+            entries.push((self.shared(name)?, self.highlight_style(style)?));
+        }
+        let value = self.sink.object(&entries);
+        self.variants = entries;
+        value
+    }
+
+    fn highlight_theme_token(
+        &mut self,
+        token: &'a ferriki::HighlightThemeToken,
+    ) -> Result<S::Value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.content, self.sink.string(&token.content)?)),
+            Some((keys.offset, self.sink.number(token.offset as f64)?)),
+            Some((keys.variants, self.highlight_variants(&token.variants)?)),
+            match token.token_type {
+                Some(kind) => Some((keys.token_type, self.sink.uint(kind as u32)?)),
+                None => None,
+            },
+            match &token.scope_names {
+                Some(names) => Some((keys.scope_names, self.scope_names(names)?)),
+                None => None,
+            },
+        ];
+        self.object(entries)
+    }
+
+    fn highlight_theme(&mut self, theme: &'a ferriki::HighlightThemeMetadata) -> Result<S::Value> {
+        let keys = self.keys;
+        let entries = [
+            Some((keys.color, self.shared(&theme.color)?)),
+            Some((keys.name, self.sink.string(&theme.name)?)),
+            Some((keys.foreground, self.sink.string(&theme.foreground)?)),
+            Some((keys.background, self.sink.string(&theme.background)?)),
+        ];
+        self.object(entries)
+    }
+
+    fn native_render_data(&mut self, value: &'a NativeHtmlRenderData) -> Result<S::Value> {
+        let tokens = self.array(&value.result.tokens, |writer, line| {
+            writer.array(line, |writer, token| writer.highlight_token(token))
+        })?;
+        let keys = self.keys;
+        let entries = [
+            Some((keys.tokens, tokens)),
+            Some((keys.fg, self.sink.string(&value.result.foreground)?)),
+            Some((keys.bg, self.sink.string(&value.result.background)?)),
+            Some((keys.theme_name, self.sink.string(&value.result.theme_name)?)),
+            match &value.continuation_state {
+                Some(state) => Some((keys.continuation_state, self.sink.string(state)?)),
+                None => None,
+            },
+        ];
+        self.object(entries)
+    }
+
+    fn native_render_data_with_themes(
+        &mut self,
+        value: &'a NativeHtmlRenderDataWithThemes,
+    ) -> Result<S::Value> {
+        let tokens = self.array(&value.result.tokens, |writer, line| {
+            writer.array(line, |writer, token| writer.highlight_theme_token(token))
+        })?;
+        let themes = self.array(&value.result.themes, |writer, theme| {
+            writer.highlight_theme(theme)
+        })?;
+        let keys = self.keys;
+        let continuation_state = match &value.continuation_state {
+            Some(state) => Some((keys.continuation_state, self.sink.string(state)?)),
+            None => None,
+        };
+        self.object([
+            Some((keys.tokens, tokens)),
+            Some((keys.themes, themes)),
+            continuation_state,
+        ])
     }
 
     fn token(&mut self, token: &'a HtmlToken) -> Result<S::Value> {
@@ -386,9 +516,12 @@ unsafe fn key_names(env: sys::napi_env) -> Result<sys::napi_value> {
     })?;
     let mut reference = ptr::null_mut();
     check_status!(unsafe { sys::napi_create_reference(env, array, 1, &mut reference) })?;
-    check_status!(unsafe {
-        sys::napi_add_env_cleanup_hook(env, Some(release_key_names), env.cast())
-    })?;
+    let hook_status =
+        unsafe { sys::napi_add_env_cleanup_hook(env, Some(release_key_names), env.cast()) };
+    if hook_status != sys::Status::napi_ok {
+        unsafe { sys::napi_delete_reference(env, reference) };
+        check_status!(hook_status)?;
+    }
     KEY_ARRAYS.with(|cache| cache.borrow_mut().push((env as usize, reference)));
     Ok(array)
 }
@@ -447,6 +580,18 @@ fn napi_writer<'a>(env: sys::napi_env) -> Result<Writer<'a, Napi>> {
 // The napi(object) structs still own the generated TypeScript shape. These
 // adapters only customize allocation, with missing optional fields omitted
 // exactly as in the former JSON results.
+impl ToNapiValue for NativeHtmlRenderData {
+    unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
+        napi_writer(env)?.native_render_data(&value)
+    }
+}
+
+impl ToNapiValue for NativeHtmlRenderDataWithThemes {
+    unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
+        napi_writer(env)?.native_render_data_with_themes(&value)
+    }
+}
+
 impl ToNapiValue for HtmlRenderData {
     unsafe fn to_napi_value(env: sys::napi_env, value: Self) -> Result<sys::napi_value> {
         napi_writer(env)?.render_data(&value)
@@ -689,6 +834,133 @@ mod tests {
         .map(|value| build.hash_one(value));
         for (index, hash) in hashes.iter().enumerate() {
             assert!(!hashes[index + 1..].contains(hash));
+        }
+    }
+
+    #[test]
+    fn direct_writer_matches_json_and_interns_repeated_scope_names() {
+        let highlighter =
+            crate::create_highlighter(NativeHighlighterOptions::default()).expect("bare");
+        highlighter
+            .load_custom_grammar(
+                r#"{
+                    "name": "intern-probe",
+                    "scopeName": "source.intern",
+                    "patterns": [
+                        { "match": "\\b(let|const)\\b", "name": "keyword.storage.intern" },
+                        { "match": "\\b[a-z]+\\b", "name": "variable.other.intern" }
+                    ]
+                }"#
+                .into(),
+            )
+            .expect("grammar");
+        highlighter
+            .load_custom_theme(
+                r##"{
+                    "name": "intern-dark",
+                    "type": "dark",
+                    "fg": "#D8DEE9",
+                    "bg": "#2E3440",
+                    "settings": [
+                        { "scope": "keyword", "settings": { "foreground": "#81A1C1" } },
+                        { "scope": "variable", "settings": { "foreground": "#A3BE8C" } }
+                    ]
+                }"##
+                .into(),
+            )
+            .expect("dark theme");
+        highlighter
+            .load_custom_theme(
+                r##"{
+                    "name": "intern-light",
+                    "type": "light",
+                    "fg": "#24292E",
+                    "bg": "#FFFFFF",
+                    "settings": [
+                        { "scope": "keyword", "settings": { "foreground": "#D73A49" } },
+                        { "scope": "variable", "settings": { "foreground": "#24292E" } }
+                    ]
+                }"##
+                .into(),
+            )
+            .expect("light theme");
+
+        let code = "let a\nconst b\nlet c\nconst d";
+        let single = highlighter
+            .get_html_render_data(
+                code.into(),
+                NativeTokenOptions {
+                    lang: "intern-probe".into(),
+                    theme: "intern-dark".into(),
+                    include_explanation: Some(napi::bindgen_prelude::Either::A("scopeName".into())),
+                    tokenize_time_limit: Some(0.0),
+                    ..Default::default()
+                },
+            )
+            .expect("single");
+        let expected_single = serde_json::to_string(&single.result).expect("json");
+        let mut recorder = Recorder::default();
+        let root = Writer::new(&mut recorder)
+            .and_then(|mut writer| writer.native_render_data(&single))
+            .expect("written");
+        assert_eq!(recorder.json(root), expected_single);
+        // Repeated scope names across lines and tokens are interned once.
+        for scope in [
+            "source.intern",
+            "keyword.storage.intern",
+            "variable.other.intern",
+        ] {
+            let count = recorder
+                .strings
+                .iter()
+                .filter(|s| s.as_str() == scope)
+                .count();
+            assert_eq!(count, 1, "expected scope {scope:?} to be interned once");
+        }
+
+        let multi = highlighter
+            .get_html_render_data_with_themes(
+                code.into(),
+                NativeTokenOptions {
+                    lang: "intern-probe".into(),
+                    theme: "intern-dark".into(),
+                    include_explanation: Some(napi::bindgen_prelude::Either::A("scopeName".into())),
+                    tokenize_time_limit: Some(0.0),
+                    theme_entries: Some(vec![
+                        ThemeEntry {
+                            color: "__proto__".into(),
+                            name: "intern-dark".into(),
+                        },
+                        ThemeEntry {
+                            color: "light".into(),
+                            name: "intern-light".into(),
+                        },
+                    ]),
+                    ..Default::default()
+                },
+            )
+            .expect("multi");
+        let expected_multi = serde_json::to_string(&multi.result).expect("json");
+        let mut multi_recorder = Recorder::default();
+        let multi_root = Writer::new(&mut multi_recorder)
+            .and_then(|mut writer| writer.native_render_data_with_themes(&multi))
+            .expect("written");
+        assert_eq!(multi_recorder.json(multi_root), expected_multi);
+        for interned in [
+            "source.intern",
+            "keyword.storage.intern",
+            "__proto__",
+            "light",
+        ] {
+            let count = multi_recorder
+                .strings
+                .iter()
+                .filter(|s| s.as_str() == interned)
+                .count();
+            assert_eq!(
+                count, 1,
+                "expected {interned:?} to be interned once in multi-theme output"
+            );
         }
     }
 }

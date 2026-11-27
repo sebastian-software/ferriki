@@ -13,6 +13,8 @@ export declare class FerrikiHighlighter {
   getHtmlRenderData(code: string, options: NativeTokenOptions): HtmlRenderData;
   getHtmlRenderDataWithThemes(code: string, options: NativeTokenOptions): HtmlRenderDataWithThemes;
   codeToHtml(code: string, options: NativeHighlightOptions): string;
+  /** Render class-based HTML and resolved theme CSS without transporting tokens to JS. */
+  codeToHtmlWithCss(code: string, options: NativeHighlightOptions): HtmlWithCss;
   /** Render inline multi-theme HTML without creating JavaScript token objects. */
   codeToHtmlWithThemes(
     code: string,
@@ -78,6 +80,11 @@ export interface HtmlToken {
   fontStyle?: number;
   type?: number;
   scopeNames?: Array<string>;
+}
+
+export interface HtmlWithCss {
+  html: string;
+  css: string;
 }
 
 export interface NativeAssetOptions {

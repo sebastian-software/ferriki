@@ -404,12 +404,14 @@ export function createHighlighterCoreSync(options = {}) {
 
   function prepareOptions(options) {
     assertActive();
-    const prepared = { ...validateHighlightOptions(options) };
-    if (prepared.lang && typeof prepared.lang !== "string") loadLanguageSync(prepared.lang);
-    if (prepared.theme && typeof prepared.theme !== "string") loadThemeSync(prepared.theme);
-    const language = resolveAlias(registrationName(prepared.lang) || "text");
+    const validated = validateHighlightOptions(options);
+    const rawLang = validated.lang;
+    const rawTheme = validated.theme;
+    if (rawLang && typeof rawLang !== "string") loadLanguageSync(rawLang);
+    if (rawTheme && typeof rawTheme !== "string") loadThemeSync(rawTheme);
+    const language = resolveAlias(registrationName(rawLang) || "text");
     const requestedTheme =
-      registrationName(prepared.theme) || registrationName(selectDefaultTheme(prepared));
+      registrationName(rawTheme) || registrationName(selectDefaultTheme(validated));
     const theme = requestedTheme === "none" ? NONE_THEME_BACKING : requestedTheme;
     if (!theme)
       throw new ShikiError(
@@ -417,57 +419,70 @@ export function createHighlighterCoreSync(options = {}) {
         "ERR_USAGE",
       );
     assertActive();
-    if (
-      !isSpecialLanguage(language) &&
-      !callNativeOperation(`Ferriki could not load language \`${language}\``, () =>
-        native.resolveGrammarScope(language),
+    if (!isSpecialLanguage(language)) {
+      const canonical = canonicalStandardLanguage(language);
+      if (
+        !loadedLanguages.has(language) &&
+        !(canonical && loadedStandardLanguages.has(canonical))
+      ) {
+        if (
+          !callNativeOperation(`Ferriki could not load language \`${language}\``, () =>
+            native.resolveGrammarScope(language),
+          )
+        )
+          throw new ShikiError(
+            `Language \`${language}\` not found, you may need to load it first`,
+            "ERR_UNSUPPORTED",
+          );
+      }
+      loadedLanguages.add(language);
+    }
+    if (!loadedThemes.has(theme) && !loadedStandardThemes.has(theme)) {
+      if (
+        !callNativeOperation(`Ferriki could not load theme \`${theme}\``, () =>
+          native.loadStandardTheme(theme),
+        )
       )
-    )
-      throw new ShikiError(
-        `Language \`${language}\` not found, you may need to load it first`,
-        "ERR_UNSUPPORTED",
-      );
-    if (
-      !callNativeOperation(`Ferriki could not load theme \`${theme}\``, () =>
-        native.loadStandardTheme(theme),
-      )
-    )
-      throw new ShikiError(
-        `Theme \`${theme}\` not found, you may need to load it first`,
-        "ERR_UNSUPPORTED",
-      );
-    if (!isSpecialLanguage(language)) loadedLanguages.add(language);
+        throw new ShikiError(
+          `Theme \`${theme}\` not found, you may need to load it first`,
+          "ERR_UNSUPPORTED",
+        );
+    }
     loadedThemes.add(theme);
-    prepared.lang = language;
-    prepared.theme = theme;
-    delete prepared.themes;
-    delete prepared.continuationState;
-    delete prepared.captureContinuationState;
-    if (options?.[GRAMMAR_STATE_CONTINUATION] !== undefined)
-      prepared.continuationState = options[GRAMMAR_STATE_CONTINUATION];
-    if (options?.[GRAMMAR_STATE_CAPTURE]) prepared.captureContinuationState = true;
+    const rawTabindex = validated.tabindex;
+    // The typed native boundary receives normalized tabindex controls.
+    const tabindex =
+      rawTabindex === null
+        ? false
+        : typeof rawTabindex === "number"
+          ? String(rawTabindex)
+          : rawTabindex;
     // The build-time code element transformer needs scope identity in inline
     // output too. Keep this control private to the native presentation bridge.
-    if (
-      options.transformers?.some(
-        (transformer) => transformer?.[Symbol.for("ferriki.preserve-scope-boundaries.v1")] === true,
-      )
+    const preserveScopeBoundaries = options?.transformers?.some(
+      (transformer) => transformer?.[Symbol.for("ferriki.preserve-scope-boundaries.v1")] === true,
     )
-      prepared.preserveScopeBoundaries = true;
-    else delete prepared.preserveScopeBoundaries;
-    // Transformer callbacks and HAST-only options stay in the JS facade.
-    delete prepared.transformers;
-    delete prepared.decorations;
-    delete prepared.structure;
-    delete prepared.meta;
-    delete prepared.data;
-    delete prepared.grammarState;
-    delete prepared[GRAMMAR_STATE_CONTINUATION];
-    delete prepared[GRAMMAR_STATE_CAPTURE];
-    // The typed native boundary receives normalized tabindex controls.
-    if (prepared.tabindex === null) prepared.tabindex = false;
-    else if (typeof prepared.tabindex === "number") prepared.tabindex = String(prepared.tabindex);
-    return prepared;
+      ? true
+      : undefined;
+    assertActive();
+    // Construct the native option shape explicitly with fixed properties so
+    // V8 keeps a single monomorphic hidden class without dictionary transitions.
+    return {
+      lang: language,
+      theme,
+      includeExplanation: validated.includeExplanation,
+      tokenizeTimeLimit: validated.tokenizeTimeLimit,
+      tokenizeMaxLineLength: validated.tokenizeMaxLineLength,
+      mergeWhitespaces: validated.mergeWhitespaces,
+      mergeSameStyleTokens: validated.mergeSameStyleTokens,
+      rootStyle: validated.rootStyle,
+      tabindex,
+      styleMode: validated.styleMode,
+      preserveScopeBoundaries,
+      themeEntries: undefined,
+      continuationState: options?.[GRAMMAR_STATE_CONTINUATION],
+      captureContinuationState: options?.[GRAMMAR_STATE_CAPTURE] ? true : undefined,
+    };
   }
 
   function getHtmlRenderData(code, options = {}) {
@@ -801,12 +816,40 @@ export function createHighlighterCoreSync(options = {}) {
     );
   }
 
+  function canUseNativeClassRender(code, options) {
+    assertActive();
+    if (typeof native.codeToHtmlWithCss !== "function") return false;
+    if (typeof code !== "string" || !code.isWellFormed()) return false;
+    const themeName = registrationName(options?.theme);
+    const rootStyle = options?.rootStyle;
+    const tabindex = options?.tabindex;
+    const eligible =
+      !hasThemes(options) &&
+      !hasHastPipeline(options) &&
+      !options?.grammarState &&
+      themeName !== "none" &&
+      (typeof themeName !== "string" || themeName.isWellFormed()) &&
+      (typeof rootStyle !== "string" || rootStyle.isWellFormed()) &&
+      (typeof tabindex !== "string" || tabindex.isWellFormed());
+    assertActive();
+    return eligible;
+  }
+
   const highlighter = {
     codeToHtmlWithCss(code, options) {
       assertActive();
       options = withTransformerDefaults(options);
       const validated = validateHighlightOptions(options);
+      assertActive();
+      assertAnsiInput(code, validated);
       const classOptions = { ...validated, styleMode: "classes" };
+      if (canUseNativeClassRender(code, classOptions)) {
+        return callNativeOperation("Ferriki HTML rendering failed", () => {
+          const prepared = prepareOptions(classOptions);
+          assertActive();
+          return native.codeToHtmlWithCss(code, prepared);
+        });
+      }
       const tree = buildHast(code, classOptions);
       return {
         html: applyPostprocess(hastToHtml(tree), classOptions, code),
@@ -817,8 +860,16 @@ export function createHighlighterCoreSync(options = {}) {
       assertActive();
       options = withTransformerDefaults(options);
       assertAnsiInput(code, options);
-      if (options?.styleMode === "classes")
+      if (options?.styleMode === "classes") {
+        if (canUseNativeClassRender(code, options)) {
+          return callNativeOperation("Ferriki HTML rendering failed", () => {
+            const prepared = prepareOptions(options);
+            assertActive();
+            return native.codeToHtml(code, prepared);
+          });
+        }
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
+      }
       if (options?.grammarState)
         return applyPostprocess(hastToHtml(buildHast(code, options)), options, code);
       const decorations = nativeDecorationInputs(code, options);

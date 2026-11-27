@@ -4,7 +4,13 @@ use serde_json::{Map, Value, json};
 use crate::asset_source::sha256_hex;
 use crate::{HighlightToken, HighlightTokensResult};
 use std::borrow::Cow;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::Write as _;
+
+const EFFECTIVE_FONT_STYLE_MASK: i32 = FontStyle::ITALIC.bits()
+    | FontStyle::BOLD.bits()
+    | FontStyle::UNDERLINE.bits()
+    | FontStyle::STRIKETHROUGH.bits();
 
 /// Controls how theme styles are emitted.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -48,36 +54,26 @@ impl Default for RenderOptions {
 
 pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> String {
     if options.style_mode == StyleMode::Classes {
-        return render_hast(result, options)
-            .get("children")
-            .and_then(Value::as_array)
-            .and_then(|children| children.first())
-            .map_or_else(String::new, hast_node_to_html);
+        return render_class_html_and_css(
+            result,
+            options,
+            ClassTokenCssMode::Minimal,
+            false,
+            false,
+        )
+        .html;
     }
 
     // Match the HAST serializer's property order without constructing a tree.
-    let mut html = String::from("<pre class=\"");
-    html.push_str(&escape_attribute(&format!("shiki {}", result.theme_name)));
-    html.push('"');
-    if options.include_root_style {
-        let style = options
-            .root_style
-            .clone()
-            .unwrap_or_else(|| default_root_style(&result.background, &result.foreground));
-        if options.root_style.is_some() || !style.is_empty() {
-            html.push_str(" style=\"");
-            html.push_str(&escape_attribute(&style));
-            html.push('"');
-        }
-    }
-    if let Some(tabindex) = options.tabindex.as_ref() {
-        html.push_str(" tabindex=\"");
-        html.push_str(&escape_attribute(tabindex));
-        html.push('"');
-    }
-    html.push_str("><code>");
-    let lines = prepare_inline_tokens(&result.tokens, options);
-    for (line_index, line) in lines.iter().enumerate() {
+    let mut html = String::with_capacity(estimate_inline_html_capacity(&result.tokens));
+    write_inline_pre_open(
+        &mut html,
+        &result.theme_name,
+        &result.background,
+        &result.foreground,
+        options,
+    );
+    for (line_index, line) in result.tokens.iter().enumerate() {
         if line_index > 0 {
             html.push('\n');
         }
@@ -97,49 +93,194 @@ pub fn render_html(result: &HighlightTokensResult, options: &RenderOptions) -> S
 /// fragments matches `result.tokens.len()`, including trailing empty lines.
 pub fn render_html_lines(result: &HighlightTokensResult, options: &RenderOptions) -> Vec<String> {
     if options.style_mode == StyleMode::Classes {
-        let hast = render_hast(result, options);
-        return hast["children"][0]["children"][0]["children"]
-            .as_array()
-            .expect("code children")
-            .iter()
-            .filter(|node| node["type"] == "element")
-            .map(|line| {
-                line["children"]
-                    .as_array()
-                    .expect("line children")
-                    .iter()
-                    .map(hast_node_to_html)
-                    .collect()
-            })
-            .collect();
+        return render_class_html_lines(result);
     }
-    prepare_inline_tokens(&result.tokens, options)
+    result
+        .tokens
         .iter()
         .map(|line| {
-            let mut html = String::new();
+            let mut content_bytes = 0usize;
+            for token in line {
+                content_bytes = content_bytes.saturating_add(token.content.len());
+            }
+            let overhead = if options.merge_same_style_tokens {
+                64
+            } else {
+                line.len().saturating_mul(32)
+            };
+            let cap = bounded_token_html_capacity(content_bytes, overhead);
+            let mut html = String::with_capacity(cap);
             render_inline_tokens(&mut html, line, options);
             html
         })
         .collect()
 }
 
-fn prepare_inline_tokens<'a>(
-    source: &'a [Vec<HighlightToken>],
+const MAX_ESTIMATED_TOKEN_HTML_OVERHEAD: usize = 4 * 1024 * 1024;
+const MAX_SPECULATIVE_SOURCE_HTML_OVERHEAD: usize = 1024 * 1024;
+
+pub(crate) fn bounded_token_html_capacity(content_bytes: usize, overhead: usize) -> usize {
+    content_bytes.saturating_add(overhead.min(MAX_ESTIMATED_TOKEN_HTML_OVERHEAD))
+}
+
+pub(crate) fn bounded_source_html_capacity(source_bytes: usize) -> usize {
+    let overhead = source_bytes
+        .saturating_mul(3)
+        .saturating_add(128)
+        .min(MAX_SPECULATIVE_SOURCE_HTML_OVERHEAD);
+    source_bytes.saturating_add(overhead)
+}
+
+fn estimate_inline_html_capacity(lines: &[Vec<HighlightToken>]) -> usize {
+    let mut content_bytes = 0usize;
+    let mut overhead = 128usize;
+    for line in lines {
+        overhead = overhead
+            .saturating_add(28)
+            .saturating_add(line.len().saturating_mul(32));
+        for token in line {
+            content_bytes = content_bytes.saturating_add(token.content.len());
+        }
+    }
+    bounded_token_html_capacity(content_bytes, overhead)
+}
+
+fn estimate_class_html_capacity(lines: &[Vec<HighlightToken>]) -> usize {
+    let mut content_bytes = 0usize;
+    let mut overhead = 256usize;
+    for line in lines {
+        overhead = overhead
+            .saturating_add(28)
+            .saturating_add(line.len().saturating_mul(96));
+        for token in line {
+            content_bytes = content_bytes.saturating_add(token.content.len());
+        }
+    }
+    bounded_token_html_capacity(content_bytes, overhead)
+}
+
+pub(crate) fn write_inline_pre_open(
+    html: &mut String,
+    theme_name: &str,
+    background: &str,
+    foreground: &str,
     options: &RenderOptions,
-) -> Cow<'a, [Vec<HighlightToken>]> {
-    if options.merge_same_style_tokens {
-        Cow::Owned(prepare_tokens(source, options))
-    } else {
-        // Whitespace can borrow the following token's style during serialization.
-        Cow::Borrowed(source)
+) {
+    html.push_str("<pre class=\"shiki ");
+    write_escaped_attribute(html, theme_name);
+    html.push('"');
+    if options.include_root_style {
+        match options.root_style.as_deref() {
+            Some(style) => {
+                html.push_str(" style=\"");
+                write_escaped_attribute(html, style);
+                html.push('"');
+            }
+            None => {
+                let style = default_root_style(background, foreground);
+                if !style.is_empty() {
+                    html.push_str(" style=\"");
+                    write_escaped_attribute(html, &style);
+                    html.push('"');
+                }
+            }
+        }
+    }
+    if let Some(tabindex) = options.tabindex.as_ref() {
+        html.push_str(" tabindex=\"");
+        write_escaped_attribute(html, tabindex);
+        html.push('"');
+    }
+    html.push_str("><code>");
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct BorrowedInlineToken<'a> {
+    pub(crate) content: &'a str,
+    pub(crate) color: Option<&'a str>,
+    pub(crate) font_style: FontStyle,
+}
+
+fn font_style_has_decoration(style: FontStyle) -> bool {
+    style.contains(FontStyle::UNDERLINE) || style.contains(FontStyle::STRIKETHROUGH)
+}
+
+fn write_inline_style_declarations(html: &mut String, color: Option<&str>, style: FontStyle) {
+    let mut has_style = false;
+    let mut push_decl = |name: &str, value: &str| {
+        if has_style {
+            html.push(';');
+        } else {
+            html.push_str(" style=\"");
+            has_style = true;
+        }
+        html.push_str(name);
+        html.push(':');
+        write_escaped_attribute(html, value);
+    };
+    if let Some(color) = color {
+        push_decl("color", color);
+    }
+    if style.contains(FontStyle::ITALIC) {
+        push_decl("font-style", "italic");
+    }
+    if style.contains(FontStyle::BOLD) {
+        push_decl("font-weight", "bold");
+    }
+    match (
+        style.contains(FontStyle::UNDERLINE),
+        style.contains(FontStyle::STRIKETHROUGH),
+    ) {
+        (true, true) => push_decl("text-decoration", "underline line-through"),
+        (true, false) => push_decl("text-decoration", "underline"),
+        (false, true) => push_decl("text-decoration", "line-through"),
+        (false, false) => {}
+    }
+    if has_style {
+        html.push('"');
     }
 }
 
-fn render_inline_tokens(html: &mut String, line: &[HighlightToken], options: &RenderOptions) {
-    let merge_whitespaces = options.merge_whitespaces && !options.merge_same_style_tokens;
-    let mut start = 0;
+/// Renders one line of pre-sanitized borrowed inline tokens directly into `html`
+/// without intermediate `HighlightToken` or per-token `String` allocations.
+pub(crate) fn render_borrowed_inline_tokens<'a>(
+    html: &mut String,
+    line: &[BorrowedInlineToken<'a>],
+    options: &RenderOptions,
+) {
+    let merge_whitespaces = options.merge_whitespaces;
+    let merge_same = options.merge_same_style_tokens;
+    let mut start = 0usize;
+    let mut open_span: Option<(Option<&'a str>, i32, bool)> = None;
+
+    let mut emit = |color: Option<&'a str>,
+                    font_style: FontStyle,
+                    decorated: bool,
+                    slice: &[BorrowedInlineToken<'a>]| {
+        let style_bits = font_style.bits() & EFFECTIVE_FONT_STYLE_MASK;
+        let can_merge = merge_same
+            && !decorated
+            && matches!(
+                open_span,
+                Some((prev_color, prev_bits, false))
+                    if prev_color == color && prev_bits == style_bits
+            );
+        if !can_merge {
+            if open_span.is_some() {
+                html.push_str("</span>");
+            }
+            html.push_str("<span");
+            write_inline_style_declarations(html, color, font_style);
+            html.push('>');
+            open_span = Some((color, style_bits, decorated));
+        }
+        for token in slice {
+            write_escaped_html(html, token.content);
+        }
+    };
+
     for (index, token) in line.iter().enumerate() {
-        let decorated = has_decoration(token);
+        let decorated = font_style_has_decoration(token.font_style);
         if merge_whitespaces
             && !decorated
             && !token.content.is_empty()
@@ -150,42 +291,430 @@ fn render_inline_tokens(html: &mut String, line: &[HighlightToken], options: &Re
         }
         if start < index && decorated {
             // Carried whitespace before an underlined/struck token stays unstyled.
-            render_inline_span(html, None, &line[start..index]);
+            emit(None, FontStyle::NONE, false, &line[start..index]);
             start = index;
         }
-        render_inline_span(html, Some(token), &line[start..=index]);
+        emit(
+            token.color,
+            token.font_style,
+            decorated,
+            &line[start..=index],
+        );
         start = index + 1;
+    }
+    if open_span.is_some() {
+        html.push_str("</span>");
     }
 }
 
-fn render_inline_span(
+fn render_inline_tokens<'a>(
     html: &mut String,
-    style: Option<&HighlightToken>,
-    content: &[HighlightToken],
+    line: &'a [HighlightToken],
+    options: &RenderOptions,
 ) {
-    html.push_str("<span");
-    if let Some(token) = style {
-        let mut has_style = false;
-        for_each_token_style(token, |name, value| {
-            if has_style {
-                html.push(';');
-            } else {
-                html.push_str(" style=\"");
-                has_style = true;
+    let merge_whitespaces = options.merge_whitespaces;
+    let merge_same = options.merge_same_style_tokens;
+    let mut start = 0usize;
+    let mut open_span: Option<(Option<Cow<'a, str>>, i32, bool)> = None;
+
+    let mut emit = |color: Option<Cow<'a, str>>,
+                    font_style: FontStyle,
+                    decorated: bool,
+                    slice: &'a [HighlightToken]| {
+        let style_bits = font_style.bits() & EFFECTIVE_FONT_STYLE_MASK;
+        let can_merge = merge_same
+            && !decorated
+            && matches!(
+                &open_span,
+                Some((prev_color, prev_bits, false))
+                    if prev_color.as_deref() == color.as_deref() && *prev_bits == style_bits
+            );
+        if !can_merge {
+            if open_span.is_some() {
+                html.push_str("</span>");
             }
-            html.push_str(name);
-            html.push(':');
-            html.push_str(&escape_attribute(value));
-        });
-        if has_style {
-            html.push('"');
+            html.push_str("<span");
+            write_inline_style_declarations(html, color.as_deref(), font_style);
+            html.push('>');
+            open_span = Some((color, style_bits, decorated));
         }
+        for token in slice {
+            write_escaped_html(html, &token.content);
+        }
+    };
+
+    for (index, token) in line.iter().enumerate() {
+        let font_style = token.font_style.unwrap_or_default();
+        let decorated = font_style_has_decoration(font_style);
+        if merge_whitespaces
+            && !decorated
+            && !token.content.is_empty()
+            && token.content.chars().all(char::is_whitespace)
+            && index + 1 < line.len()
+        {
+            continue;
+        }
+        if start < index && decorated {
+            // Carried whitespace before an underlined/struck token stays unstyled.
+            emit(None, FontStyle::NONE, false, &line[start..index]);
+            start = index;
+        }
+        let color = token.color.as_deref().and_then(normalize_safe_css_color);
+        emit(color, font_style, decorated, &line[start..=index]);
+        start = index + 1;
     }
-    html.push('>');
-    for token in content {
-        html.push_str(&escape_html(&token.content));
+    if open_span.is_some() {
+        html.push_str("</span>");
     }
-    html.push_str("</span>");
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ClassTokenCssMode {
+    Minimal,
+    ExplicitDefaults,
+}
+
+fn token_css_explicit_defaults(color: Option<&str>, font_style: FontStyle) -> String {
+    let mut output = String::with_capacity(96);
+    if let Some(color) = color.and_then(normalize_safe_css_color) {
+        output.push_str("color:");
+        output.push_str(&color);
+        output.push(';');
+    }
+    output.push_str("font-style:");
+    output.push_str(if font_style.contains(FontStyle::ITALIC) {
+        "italic"
+    } else {
+        "normal"
+    });
+    output.push_str(";font-weight:");
+    output.push_str(if font_style.contains(FontStyle::BOLD) {
+        "bold"
+    } else {
+        "normal"
+    });
+    output.push_str(";text-decoration:");
+    output.push_str(
+        match (
+            font_style.contains(FontStyle::UNDERLINE),
+            font_style.contains(FontStyle::STRIKETHROUGH),
+        ) {
+            (true, true) => "underline line-through",
+            (true, false) => "underline",
+            (false, true) => "line-through",
+            (false, false) => "none",
+        },
+    );
+    output
+}
+
+#[derive(Default)]
+struct StyleExtractor<'a> {
+    raw_to_class: HashMap<String, Option<String>>,
+    token_to_class: HashMap<(Option<&'a str>, i32), Option<String>>,
+    sanitized_to_class: HashMap<String, String>,
+    rules: BTreeMap<String, String>,
+}
+
+impl<'a> StyleExtractor<'a> {
+    fn intern_sanitized(&mut self, sanitized: String, collect_css: bool) -> String {
+        if let Some(existing) = self.sanitized_to_class.get(&sanitized) {
+            return existing.clone();
+        }
+        let name = format!("ferriki-style-{}", sha256_hex(sanitized.as_bytes()));
+        if collect_css {
+            self.rules
+                .insert(name.clone(), format!(":where(.{name}){{{sanitized}}}"));
+        }
+        self.sanitized_to_class.insert(sanitized, name.clone());
+        name
+    }
+
+    fn class_for_raw_style(&mut self, raw: &str, collect_css: bool) -> Option<&str> {
+        if !self.raw_to_class.contains_key(raw) {
+            let sanitized = sanitize_css_declarations(raw);
+            let class_name = if sanitized.is_empty() {
+                None
+            } else {
+                Some(self.intern_sanitized(sanitized, collect_css))
+            };
+            self.raw_to_class.insert(raw.to_owned(), class_name);
+        }
+        self.raw_to_class.get(raw).and_then(Option::as_deref)
+    }
+
+    fn class_for_token(
+        &mut self,
+        raw_color: Option<&'a str>,
+        font_style: FontStyle,
+        css_mode: ClassTokenCssMode,
+        collect_css: bool,
+    ) -> Option<&str> {
+        let key = (raw_color, font_style.bits() & EFFECTIVE_FONT_STYLE_MASK);
+        if !self.token_to_class.contains_key(&key) {
+            let raw_css = match css_mode {
+                ClassTokenCssMode::Minimal => token_style_from_parts(raw_color, font_style),
+                ClassTokenCssMode::ExplicitDefaults => {
+                    token_css_explicit_defaults(raw_color, font_style)
+                }
+            };
+            let class_name = if raw_css.is_empty() {
+                None
+            } else {
+                self.class_for_raw_style(&raw_css, collect_css)
+                    .map(str::to_owned)
+            };
+            self.token_to_class.insert(key, class_name);
+        }
+        self.token_to_class.get(&key).and_then(Option::as_deref)
+    }
+
+    fn into_css(self) -> String {
+        let mut css = String::new();
+        for (index, rule) in self.rules.into_values().enumerate() {
+            if index > 0 {
+                css.push('\n');
+            }
+            css.push_str(&rule);
+        }
+        css
+    }
+}
+
+struct CachedScopeClasses {
+    token: Vec<String>,
+    leaf: Vec<String>,
+    wrapper: String,
+}
+
+#[derive(Default)]
+struct ScopeClassCache<'a> {
+    entries: HashMap<&'a str, CachedScopeClasses>,
+    token_classes: HashMap<&'a [String], String>,
+}
+
+impl<'a> ScopeClassCache<'a> {
+    fn get(&mut self, scope: &'a str) -> &CachedScopeClasses {
+        self.entries.entry(scope).or_insert_with(|| {
+            let mut encoded = String::with_capacity(scope.len() + 8);
+            let mut token = Vec::new();
+            let mut leaf = Vec::new();
+            let mut wrapper = String::new();
+            for (index, segment) in scope.split('.').enumerate() {
+                if index > 0 {
+                    encoded.push('-');
+                }
+                write_scope_class_segment(&mut encoded, segment);
+
+                let mut tok_cls = String::with_capacity(4 + encoded.len());
+                tok_cls.push_str("tok-");
+                tok_cls.push_str(&encoded);
+                token.push(tok_cls);
+
+                let mut leaf_cls = String::with_capacity(5 + encoded.len());
+                leaf_cls.push_str("leaf-");
+                leaf_cls.push_str(&encoded);
+                leaf.push(leaf_cls);
+
+                if !wrapper.is_empty() {
+                    wrapper.push(' ');
+                }
+                wrapper.push_str("scope-");
+                wrapper.push_str(&encoded);
+            }
+            if !wrapper.is_empty() {
+                wrapper.push(' ');
+            }
+            wrapper.push_str("exact-");
+            wrapper.push_str(&encoded);
+            CachedScopeClasses {
+                token,
+                leaf,
+                wrapper,
+            }
+        })
+    }
+
+    fn token_class_for_scopes(&mut self, scopes: &'a [String]) -> &str {
+        if scopes.is_empty() {
+            return "token";
+        }
+        if !self.token_classes.contains_key(scopes) {
+            for scope in scopes {
+                let _ = self.get(scope.as_str());
+            }
+            let mut seen: Vec<&str> = Vec::new();
+            let mut joined = String::from("token");
+            for scope in scopes {
+                for class in &self.entries[scope.as_str()].token {
+                    let s = class.as_str();
+                    if !seen.contains(&s) {
+                        seen.push(s);
+                        joined.push(' ');
+                        joined.push_str(s);
+                    }
+                }
+            }
+            if let Some(last) = scopes.last() {
+                for class in &self.entries[last.as_str()].leaf {
+                    joined.push(' ');
+                    joined.push_str(class);
+                }
+            }
+            self.token_classes.insert(scopes, joined);
+        }
+        self.token_classes[scopes].as_str()
+    }
+}
+
+fn render_class_line<'a>(
+    html: &mut String,
+    line: &'a [HighlightToken],
+    scope_cache: &mut ScopeClassCache<'a>,
+    extractor: &mut StyleExtractor<'a>,
+    css_mode: ClassTokenCssMode,
+    collect_css: bool,
+) {
+    let mut open: &[String] = &[];
+    for token in line {
+        let scopes = token.scope_names.as_deref().unwrap_or_default();
+        let shared = open
+            .iter()
+            .zip(scopes)
+            .take_while(|(left, right)| left == right)
+            .count();
+        for _ in shared..open.len() {
+            html.push_str("</span>");
+        }
+        for scope in &scopes[shared..] {
+            let wrapper = scope_cache.get(scope.as_str()).wrapper.as_str();
+            html.push_str("<span class=\"");
+            html.push_str(wrapper);
+            html.push_str("\">");
+        }
+        let token_classes = scope_cache.token_class_for_scopes(scopes);
+        let style_class = extractor.class_for_token(
+            token.color.as_deref(),
+            token.font_style.unwrap_or_default(),
+            css_mode,
+            collect_css,
+        );
+        html.push_str("<span class=\"");
+        html.push_str(token_classes);
+        if let Some(style_class) = style_class {
+            html.push(' ');
+            html.push_str(style_class);
+        }
+        html.push_str("\">");
+        write_escaped_html(html, &token.content);
+        html.push_str("</span>");
+        open = scopes;
+    }
+    for _ in 0..open.len() {
+        html.push_str("</span>");
+    }
+}
+
+fn render_class_html_and_css(
+    result: &HighlightTokensResult,
+    options: &RenderOptions,
+    css_mode: ClassTokenCssMode,
+    empty_root_style_uses_default: bool,
+    collect_css: bool,
+) -> HtmlWithCss {
+    let mut scope_cache = ScopeClassCache::default();
+    let mut extractor = StyleExtractor::default();
+    let mut html = String::with_capacity(estimate_class_html_capacity(&result.tokens));
+
+    let root_style_class = if options.include_root_style {
+        let explicit = options
+            .root_style
+            .as_deref()
+            .filter(|style| !empty_root_style_uses_default || !style.is_empty());
+        match explicit {
+            Some(style) => extractor
+                .class_for_raw_style(style, collect_css)
+                .map(str::to_owned),
+            None => {
+                let default_style = default_root_style(&result.background, &result.foreground);
+                if default_style.is_empty() {
+                    None
+                } else {
+                    extractor
+                        .class_for_raw_style(&default_style, collect_css)
+                        .map(str::to_owned)
+                }
+            }
+        }
+    } else {
+        None
+    };
+
+    html.push_str("<pre class=\"ferriki ");
+    write_escaped_attribute(&mut html, &result.theme_name);
+    if let Some(root_class) = root_style_class.as_deref() {
+        html.push(' ');
+        html.push_str(root_class);
+    }
+    html.push('"');
+    if let Some(tabindex) = options.tabindex.as_ref() {
+        html.push_str(" tabindex=\"");
+        write_escaped_attribute(&mut html, tabindex);
+        html.push('"');
+    }
+    html.push_str("><code>");
+
+    for (line_index, line) in result.tokens.iter().enumerate() {
+        if line_index > 0 {
+            html.push('\n');
+        }
+        html.push_str("<span class=\"line\">");
+        render_class_line(
+            &mut html,
+            line,
+            &mut scope_cache,
+            &mut extractor,
+            css_mode,
+            collect_css,
+        );
+        html.push_str("</span>");
+    }
+    html.push_str("</code></pre>");
+
+    HtmlWithCss {
+        html,
+        css: if collect_css {
+            extractor.into_css()
+        } else {
+            String::new()
+        },
+    }
+}
+
+fn render_class_html_lines(result: &HighlightTokensResult) -> Vec<String> {
+    let mut scope_cache = ScopeClassCache::default();
+    let mut extractor = StyleExtractor::default();
+    result
+        .tokens
+        .iter()
+        .map(|line| {
+            let mut content_bytes = 0usize;
+            for token in line {
+                content_bytes = content_bytes.saturating_add(token.content.len());
+            }
+            let cap = bounded_token_html_capacity(content_bytes, line.len().saturating_mul(96));
+            let mut html = String::with_capacity(cap);
+            render_class_line(
+                &mut html,
+                line,
+                &mut scope_cache,
+                &mut extractor,
+                ClassTokenCssMode::Minimal,
+                false,
+            );
+            html
+        })
+        .collect()
 }
 
 fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
@@ -213,6 +742,7 @@ fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -
     }
 
     let mut code_children = Vec::new();
+    let mut scope_cache = ScopeClassCache::default();
     for (line_index, line) in tokens.iter().enumerate() {
         if line_index > 0 {
             code_children.push(json!({ "type": "text", "value": "\n" }));
@@ -237,7 +767,7 @@ fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -
             })
             .collect::<Vec<_>>();
         if options.style_mode == StyleMode::Classes {
-            children = nest_scope_tokens(line, children);
+            children = nest_scope_tokens(line, children, &mut scope_cache);
         }
         code_children.push(json!({
             "type": "element",
@@ -267,7 +797,8 @@ fn render_styled_hast(result: &HighlightTokensResult, options: &RenderOptions) -
 pub fn render_hast(result: &HighlightTokensResult, options: &RenderOptions) -> Value {
     let mut tree = render_styled_hast(result, options);
     if options.style_mode == StyleMode::Classes {
-        extract_styles(&mut tree, &mut BTreeMap::new());
+        let mut extractor = StyleExtractor::default();
+        extract_styles_with_extractor(&mut tree, &mut extractor, false);
     }
     tree
 }
@@ -278,69 +809,87 @@ pub fn render_html_with_css(
     result: &HighlightTokensResult,
     options: &RenderOptions,
 ) -> HtmlWithCss {
-    let options = options.clone().with_style_mode(StyleMode::Classes);
-    let mut tree = render_styled_hast(result, &options);
-    let mut rules = BTreeMap::new();
-    extract_styles(&mut tree, &mut rules);
-    HtmlWithCss {
-        html: hast_node_to_html(&tree["children"][0]),
-        css: rules.into_values().collect::<Vec<_>>().join("\n"),
-    }
+    render_class_html_and_css(result, options, ClassTokenCssMode::Minimal, false, true)
 }
 
+/// Private Node bridge class renderer matching JS `codeToHtmlWithCss` byte-for-byte.
+pub fn render_html_with_css_node(
+    result: &HighlightTokensResult,
+    options: &RenderOptions,
+) -> HtmlWithCss {
+    render_class_html_and_css(
+        result,
+        options,
+        ClassTokenCssMode::ExplicitDefaults,
+        true,
+        true,
+    )
+}
+
+/// Private Node bridge class HTML renderer without stylesheet assembly.
+pub fn render_html_node_classes(result: &HighlightTokensResult, options: &RenderOptions) -> String {
+    render_class_html_and_css(
+        result,
+        options,
+        ClassTokenCssMode::ExplicitDefaults,
+        true,
+        false,
+    )
+    .html
+}
+
+#[cfg(test)]
 fn extract_styles(node: &mut Value, rules: &mut BTreeMap<String, String>) {
+    let mut extractor = StyleExtractor::default();
+    extract_styles_with_extractor(node, &mut extractor, true);
+    rules.extend(extractor.rules);
+}
+
+fn extract_styles_with_extractor(
+    node: &mut Value,
+    extractor: &mut StyleExtractor<'_>,
+    collect_css: bool,
+) {
     if let Some(properties) = node.get_mut("properties").and_then(Value::as_object_mut)
         && let Some(style) = properties
             .remove("style")
             .and_then(|value| value.as_str().map(str::to_owned))
+        && let Some(name) = extractor.class_for_raw_style(&style, collect_css)
     {
-        let sanitized = sanitize_css_declarations(&style);
-        if !sanitized.is_empty() {
-            let name = format!("ferriki-style-{}", sha256_hex(sanitized.as_bytes()));
-            let class = properties
-                .get("class")
-                .and_then(Value::as_str)
-                .unwrap_or("");
-            properties.insert(
-                "class".to_owned(),
-                Value::String(format!("{class} {name}").trim().to_owned()),
-            );
-            rules.insert(name.clone(), format!(":where(.{name}){{{sanitized}}}"));
-        }
+        let class = properties
+            .get("class")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        properties.insert(
+            "class".to_owned(),
+            Value::String(format!("{class} {name}").trim().to_owned()),
+        );
     }
     if let Some(children) = node.get_mut("children").and_then(Value::as_array_mut) {
         for child in children {
-            extract_styles(child, rules);
+            extract_styles_with_extractor(child, extractor, collect_css);
         }
     }
 }
 
-fn scope_class(scope: &str) -> String {
-    scope
-        .chars()
-        .map(|character| {
-            if character == '.' {
-                "-".to_owned()
-            } else if character.is_ascii_alphanumeric() {
-                character.to_string()
-            } else {
-                format!("_{:x}_", u32::from(character))
-            }
-        })
-        .collect()
+fn write_scope_class_segment(output: &mut String, segment: &str) {
+    for character in segment.chars() {
+        if character.is_ascii_alphanumeric() {
+            output.push(character);
+        } else {
+            let _ = write!(output, "_{:x}_", u32::from(character));
+        }
+    }
 }
 
-fn scope_prefixes(scope: &str, prefix: &str) -> Vec<String> {
-    let parts: Vec<_> = scope.split('.').collect();
-    (1..=parts.len())
-        .map(|end| format!("{prefix}-{}", scope_class(&parts[..end].join("."))))
-        .collect()
-}
-
-fn nest_scope_tokens(tokens: &[HighlightToken], nodes: Vec<Value>) -> Vec<Value> {
+fn nest_scope_tokens<'a>(
+    tokens: &'a [HighlightToken],
+    nodes: Vec<Value>,
+    scope_cache: &mut ScopeClassCache<'a>,
+) -> Vec<Value> {
     let mut output = Vec::new();
     let mut stack: Vec<Value> = Vec::new();
-    let mut open: Vec<String> = Vec::new();
+    let mut open: &[String] = &[];
     fn append(output: &mut Vec<Value>, stack: &mut [Value], node: Value) {
         if let Some(parent) = stack.last_mut() {
             parent["children"]
@@ -363,24 +912,13 @@ fn nest_scope_tokens(tokens: &[HighlightToken], nodes: Vec<Value>) -> Vec<Value>
             append(&mut output, &mut stack, wrapper);
         }
         for scope in &scopes[shared..] {
-            let mut classes = scope_prefixes(scope, "scope");
-            classes.push(format!("exact-{}", scope_class(scope)));
-            stack.push(json!({"type":"element", "tagName":"span", "properties":{"class":classes.join(" ")}, "children":[]}));
+            let wrapper_class = scope_cache.get(scope.as_str()).wrapper.as_str();
+            stack.push(json!({"type":"element", "tagName":"span", "properties":{"class":wrapper_class}, "children":[]}));
         }
-        let mut classes = vec!["token".to_owned()];
-        for scope in scopes {
-            for class in scope_prefixes(scope, "tok") {
-                if !classes.contains(&class) {
-                    classes.push(class);
-                }
-            }
-        }
-        if let Some(scope) = scopes.last() {
-            classes.extend(scope_prefixes(scope, "leaf"));
-        }
-        node["properties"]["class"] = Value::String(classes.join(" "));
+        let token_classes = scope_cache.token_class_for_scopes(scopes);
+        node["properties"]["class"] = Value::String(token_classes.to_owned());
         append(&mut output, &mut stack, node);
-        open = scopes.to_vec();
+        open = scopes;
     }
     while let Some(wrapper) = stack.pop() {
         append(&mut output, &mut stack, wrapper);
@@ -411,7 +949,7 @@ fn merge_whitespace_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightT
     source
         .iter()
         .map(|line| {
-            let mut output = Vec::new();
+            let mut output = Vec::with_capacity(line.len());
             let mut carried = String::new();
             let mut first_offset = None;
             for (index, token) in line.iter().enumerate() {
@@ -431,7 +969,10 @@ fn merge_whitespace_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightT
                 } else if !decorated {
                     let mut merged = token.clone();
                     merged.offset = first_offset.expect("carried whitespace has an offset");
-                    merged.content = format!("{carried}{}", token.content);
+                    let mut content = String::with_capacity(carried.len() + token.content.len());
+                    content.push_str(&carried);
+                    content.push_str(&token.content);
+                    merged.content = content;
                     output.push(merged);
                     carried.clear();
                     first_offset = None;
@@ -454,23 +995,35 @@ fn merge_whitespace_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightT
         .collect()
 }
 
+fn token_style_key(token: &HighlightToken) -> (Option<Cow<'_, str>>, i32) {
+    let color = token.color.as_deref().and_then(normalize_safe_css_color);
+    let style_bits = token.font_style.unwrap_or_default().bits() & EFFECTIVE_FONT_STYLE_MASK;
+    (color, style_bits)
+}
+
 fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<HighlightToken>> {
     source
         .iter()
         .map(|line| {
-            let mut output: Vec<HighlightToken> = Vec::new();
+            let mut output: Vec<HighlightToken> = Vec::with_capacity(line.len());
+            let mut prev_key: Option<(Option<Cow<'_, str>>, i32, bool)> = None;
             for token in line {
-                let Some(previous) = output.last_mut() else {
-                    output.push(token.clone());
-                    continue;
-                };
-                if !has_decoration(previous)
-                    && !has_decoration(token)
-                    && token_style(previous) == token_style(token)
-                {
-                    previous.content.push_str(&token.content);
+                let decorated = has_decoration(token);
+                let (color, style_bits) = token_style_key(token);
+                let merged = matches!(
+                    &prev_key,
+                    Some((prev_color, prev_bits, false))
+                        if !decorated
+                            && prev_color.as_deref() == color.as_deref()
+                            && *prev_bits == style_bits
+                );
+                if merged {
+                    if let Some(previous) = output.last_mut() {
+                        previous.content.push_str(&token.content);
+                    }
                 } else {
                     output.push(token.clone());
+                    prev_key = Some((color, style_bits, decorated));
                 }
             }
             output
@@ -479,8 +1032,12 @@ fn merge_adjacent_styled_tokens(source: &[Vec<HighlightToken>]) -> Vec<Vec<Highl
 }
 
 pub(crate) fn token_style(token: &HighlightToken) -> String {
+    token_style_from_parts(token.color.as_deref(), token.font_style.unwrap_or_default())
+}
+
+fn token_style_from_parts(color: Option<&str>, style: FontStyle) -> String {
     let mut declarations = String::new();
-    for_each_token_style(token, |name, value| {
+    for_each_style_part(color, style, |name, value| {
         let has_declarations = !declarations.is_empty();
         declarations.reserve(usize::from(has_declarations) + name.len() + 1 + value.len());
         if has_declarations {
@@ -493,11 +1050,10 @@ pub(crate) fn token_style(token: &HighlightToken) -> String {
     declarations
 }
 
-fn for_each_token_style(token: &HighlightToken, mut append: impl FnMut(&str, &str)) {
-    if let Some(color) = token.color.as_deref().and_then(normalize_safe_css_color) {
+fn for_each_style_part(color: Option<&str>, style: FontStyle, mut append: impl FnMut(&str, &str)) {
+    if let Some(color) = color.and_then(normalize_safe_css_color) {
         append("color", &color);
     }
-    let style = token.font_style.unwrap_or_default();
     if style.contains(FontStyle::ITALIC) {
         append("font-style", "italic");
     }
@@ -516,27 +1072,34 @@ fn for_each_token_style(token: &HighlightToken, mut append: impl FnMut(&str, &st
 }
 
 fn has_decoration(token: &HighlightToken) -> bool {
-    let style = token.font_style.unwrap_or_default();
-    style.contains(FontStyle::UNDERLINE) || style.contains(FontStyle::STRIKETHROUGH)
+    font_style_has_decoration(token.font_style.unwrap_or_default())
 }
 
+#[cfg(test)]
 fn hast_node_to_html(node: &Value) -> String {
+    let mut output = String::new();
+    write_hast_node_html(node, &mut output);
+    output
+}
+
+#[cfg(test)]
+fn write_hast_node_html(node: &Value, output: &mut String) {
     match node.get("type").and_then(Value::as_str) {
-        Some("text") => escape_html(
-            node.get("value")
-                .and_then(Value::as_str)
-                .unwrap_or_default(),
-        )
-        .into_owned(),
+        Some("text") => {
+            if let Some(value) = node.get("value").and_then(Value::as_str) {
+                write_escaped_html(output, value);
+            }
+        }
         Some("element") => {
             let tag_name = node
                 .get("tagName")
                 .and_then(Value::as_str)
                 .unwrap_or_default();
             if !is_valid_html_tag_name(tag_name) {
-                return String::new();
+                return;
             }
-            let mut output = format!("<{tag_name}");
+            output.push('<');
+            output.push_str(tag_name);
             if let Some(properties) = node.get("properties").and_then(Value::as_object) {
                 for (key, value) in properties {
                     if !is_valid_html_attribute_name(key) {
@@ -546,7 +1109,7 @@ fn hast_node_to_html(node: &Value) -> String {
                         output.push(' ');
                         output.push_str(key);
                         output.push_str("=\"");
-                        output.push_str(&escape_attribute(value));
+                        write_escaped_attribute(output, value);
                         output.push('"');
                     }
                 }
@@ -554,15 +1117,14 @@ fn hast_node_to_html(node: &Value) -> String {
             output.push('>');
             if let Some(children) = node.get("children").and_then(Value::as_array) {
                 for child in children {
-                    output.push_str(&hast_node_to_html(child));
+                    write_hast_node_html(child, output);
                 }
             }
             output.push_str("</");
             output.push_str(tag_name);
             output.push('>');
-            output
         }
-        _ => String::new(),
+        _ => {}
     }
 }
 
@@ -1489,6 +2051,12 @@ fn is_safe_normalized_css_color(normalized: &str, depth: usize) -> bool {
 }
 
 pub(crate) fn normalize_safe_css_color(value: &str) -> Option<Cow<'_, str>> {
+    if let Some(hex) = value.strip_prefix('#')
+        && matches!(hex.len(), 3 | 4 | 6 | 8)
+        && hex.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Some(Cow::Borrowed(value));
+    }
     if value.is_empty()
         || value.encode_utf16().count() > MAX_COMPOSED_VAR_COLOR_LEN
         || contains_closing_style_tag(value)
@@ -1903,21 +2471,73 @@ pub(crate) fn is_safe_decoration_attribute_value(name: &str, value: &str) -> boo
     true
 }
 
-pub(crate) fn escape_html(input: &str) -> Cow<'_, str> {
-    if input.contains(['&', '<']) {
-        Cow::Owned(input.replace('&', "&#x26;").replace('<', "&#x3C;"))
-    } else {
-        Cow::Borrowed(input)
+pub(crate) fn write_escaped_html(output: &mut String, input: &str) {
+    let bytes = input.as_bytes();
+    let mut last = 0;
+    for (index, &byte) in bytes.iter().enumerate() {
+        let replacement = match byte {
+            b'&' => "&#x26;",
+            b'<' => "&#x3C;",
+            _ => continue,
+        };
+        if last < index {
+            output.push_str(&input[last..index]);
+        }
+        output.push_str(replacement);
+        last = index + 1;
+    }
+    if last < bytes.len() {
+        output.push_str(&input[last..]);
     }
 }
 
-pub(crate) fn escape_attribute(input: &str) -> Cow<'_, str> {
-    let escaped = escape_html(input);
-    if escaped.contains('"') {
-        Cow::Owned(escaped.replace('"', "&#x22;"))
-    } else {
-        escaped
+pub(crate) fn write_escaped_attribute(output: &mut String, input: &str) {
+    let bytes = input.as_bytes();
+    let mut last = 0;
+    for (index, &byte) in bytes.iter().enumerate() {
+        let replacement = match byte {
+            b'&' => "&#x26;",
+            b'<' => "&#x3C;",
+            b'"' => "&#x22;",
+            _ => continue,
+        };
+        if last < index {
+            output.push_str(&input[last..index]);
+        }
+        output.push_str(replacement);
+        last = index + 1;
     }
+    if last < bytes.len() {
+        output.push_str(&input[last..]);
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn escape_html(input: &str) -> Cow<'_, str> {
+    if !input
+        .as_bytes()
+        .iter()
+        .any(|&byte| byte == b'&' || byte == b'<')
+    {
+        return Cow::Borrowed(input);
+    }
+    let mut output = String::with_capacity(input.len() + 16);
+    write_escaped_html(&mut output, input);
+    Cow::Owned(output)
+}
+
+#[cfg(test)]
+pub(crate) fn escape_attribute(input: &str) -> Cow<'_, str> {
+    if !input
+        .as_bytes()
+        .iter()
+        .any(|&byte| byte == b'&' || byte == b'<' || byte == b'"')
+    {
+        return Cow::Borrowed(input);
+    }
+    let mut output = String::with_capacity(input.len() + 16);
+    write_escaped_attribute(&mut output, input);
+    Cow::Owned(output)
 }
 
 impl RenderOptions {
@@ -2912,5 +3532,163 @@ mod tests {
             );
             assert_eq!(sanitize_css_declarations(&format!("color:{invalid}")), "");
         }
+    }
+
+    #[test]
+    fn direct_class_mode_matches_hast_and_extract_styles_byte_for_byte() {
+        let mut line = Vec::new();
+        let scope_paths = [
+            vec![],
+            vec!["source.probe".to_owned()],
+            vec![
+                "source.probe".to_owned(),
+                "meta.a".to_owned(),
+                "meta.a".to_owned(),
+                "entity.name.probe".to_owned(),
+            ],
+            vec![
+                "source.probe".to_owned(),
+                "meta.a-b".to_owned(),
+                "meta.😀_\"".to_owned(),
+                "entity.name.probe".to_owned(),
+            ],
+            vec![
+                "source.probe".to_owned(),
+                "meta.a-b".to_owned(),
+                "keyword.control".to_owned(),
+            ],
+        ];
+        let colors = [
+            None,
+            Some(""),
+            Some("#81A1C1"),
+            Some("rgb(12, 34, 56)"),
+            Some("red;position:fixed"),
+        ];
+        for (i, scopes) in scope_paths.iter().enumerate() {
+            for (j, color) in colors.iter().enumerate() {
+                for bits in [-1, 0, 1, 2, 3, 4, 8, 12, 15, 32] {
+                    line.push(HighlightToken {
+                        content: format!("tok_{i}_{j}_<&\"😀"),
+                        offset: 0,
+                        color: color.map(str::to_owned),
+                        font_style: Some(FontStyle::from_bits(bits)),
+                        token_type: None,
+                        scope_names: Some(scopes.clone()),
+                    });
+                }
+            }
+        }
+        let result = HighlightTokensResult {
+            tokens: vec![line, Vec::new()],
+            foreground: "#d8dee9".to_owned(),
+            background: "#2e3440".to_owned(),
+            theme_name: "probe<&\"".to_owned(),
+        };
+
+        for include_root_style in [false, true] {
+            for root_style in [
+                None,
+                Some(""),
+                Some("color:#111;font-weight:bold"),
+                Some("background:url(https://evil.test)"),
+            ] {
+                for tabindex in [None, Some(""), Some("0"), Some("-1<&\"")] {
+                    let options = RenderOptions::default()
+                        .with_style_mode(StyleMode::Classes)
+                        .with_include_root_style(include_root_style)
+                        .with_root_style(root_style.map(str::to_owned))
+                        .with_tabindex(tabindex.map(str::to_owned));
+
+                    assert_html_matches_hast(&result, &options);
+
+                    let mut tree = render_styled_hast(&result, &options);
+                    let mut rules = BTreeMap::new();
+                    extract_styles(&mut tree, &mut rules);
+                    let expected_css = rules.into_values().collect::<Vec<_>>().join("\n");
+                    let expected_html = hast_node_to_html(&tree["children"][0]);
+
+                    let rendered = render_html_with_css(&result, &options);
+                    assert_eq!(rendered.html, expected_html, "{options:?}");
+                    assert_eq!(rendered.css, expected_css, "{options:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn node_class_renderer_emits_explicit_font_defaults_and_empty_root_style_fallback() {
+        let result = HighlightTokensResult {
+            tokens: vec![vec![
+                HighlightToken {
+                    content: "plain".to_owned(),
+                    offset: 0,
+                    color: None,
+                    font_style: None,
+                    token_type: None,
+                    scope_names: Some(vec!["source.test".to_owned()]),
+                },
+                HighlightToken {
+                    content: "kw".to_owned(),
+                    offset: 5,
+                    color: Some("#81A1C1".to_owned()),
+                    font_style: Some(FontStyle::ITALIC | FontStyle::BOLD | FontStyle::UNDERLINE),
+                    token_type: None,
+                    scope_names: Some(vec!["source.test".to_owned(), "keyword.test".to_owned()]),
+                },
+                HighlightToken {
+                    content: "bad".to_owned(),
+                    offset: 7,
+                    color: Some("url(https://evil.test)".to_owned()),
+                    font_style: Some(FontStyle::STRIKETHROUGH),
+                    token_type: None,
+                    scope_names: Some(vec!["source.test".to_owned()]),
+                },
+            ]],
+            foreground: "#d8dee9".to_owned(),
+            background: "#2e3440".to_owned(),
+            theme_name: "nord".to_owned(),
+        };
+
+        let opts = RenderOptions::default()
+            .with_style_mode(StyleMode::Classes)
+            .with_root_style(Some(String::new()));
+        let rendered = render_html_with_css_node(&result, &opts);
+        assert_eq!(rendered.html, render_html_node_classes(&result, &opts));
+        assert!(
+            rendered
+                .css
+                .contains("{background-color:#2e3440;color:#d8dee9}")
+        );
+        assert!(
+            rendered
+                .css
+                .contains("{font-style:normal;font-weight:normal;text-decoration:none}")
+        );
+        assert!(rendered.css.contains(
+            "{color:#81A1C1;font-style:italic;font-weight:bold;text-decoration:underline}"
+        ));
+        assert!(
+            rendered
+                .css
+                .contains("{font-style:normal;font-weight:normal;text-decoration:line-through}")
+        );
+        assert!(!rendered.css.contains("url("));
+    }
+
+    #[test]
+    fn html_capacity_estimates_stay_bounded_for_large_inputs() {
+        // Normal files retain full 4x speculative capacity.
+        assert_eq!(bounded_source_html_capacity(1024), 1024 * 4 + 128);
+        // Huge 16 MiB source clamps speculative overhead to 1 MiB instead of 48 MiB.
+        assert_eq!(
+            bounded_source_html_capacity(16 * 1024 * 1024),
+            17 * 1024 * 1024
+        );
+        // Token-based overhead clamps at 4 MiB while preserving full content bytes.
+        assert_eq!(
+            bounded_token_html_capacity(16 * 1024 * 1024, 64 * 1024 * 1024),
+            20 * 1024 * 1024
+        );
     }
 }

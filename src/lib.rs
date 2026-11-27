@@ -46,6 +46,7 @@ pub mod __private {
     pub use crate::node_assets::{NodeAssetHost, NodeAssetOptions, PlannedAsset};
     #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
     pub use crate::remote::RemoteAssetHost;
+    pub use crate::render::{render_html_node_classes, render_html_with_css_node};
     pub use crate::tokens::{
         HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle,
         HighlightTokensWithThemesResult,

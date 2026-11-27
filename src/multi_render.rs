@@ -1,19 +1,29 @@
 //! Inline multi-theme HTML for the private Node render operation.
 
 use crate::render::{
-    escape_attribute, escape_html, is_valid_inline_css_variable_prefix,
-    is_valid_inline_theme_custom_property, normalize_safe_css_color,
+    bounded_token_html_capacity, is_valid_inline_css_variable_prefix,
+    is_valid_inline_theme_custom_property, normalize_safe_css_color, write_escaped_attribute,
+    write_escaped_html,
 };
-use crate::{
-    FontStyle, HighlightThemeToken, HighlightThemeTokenStyle, HighlightTokensWithThemesResult,
-    RenderOptions,
-};
+use crate::{FontStyle, HighlightThemeToken, HighlightTokensWithThemesResult, RenderOptions};
 use std::borrow::Cow;
 
 pub struct MultiThemeRenderOptions {
     pub render: RenderOptions,
     pub default_color: Option<String>,
     pub css_variable_prefix: String,
+}
+
+struct ResolvedThemeToken<'a> {
+    color: Option<Cow<'a, str>>,
+    font: FontStyle,
+}
+
+struct MultiRenderScratch {
+    current_style: String,
+    previous_style: String,
+    light_index: Option<usize>,
+    dark_index: Option<usize>,
 }
 
 pub fn render_html_with_themes(
@@ -33,13 +43,23 @@ pub fn render_html_with_themes(
             ));
         }
     }
-    let mut html = String::from("<pre class=\"");
-    let mut class = String::from("shiki shiki-themes");
-    for theme in &result.themes {
-        class.push(' ');
-        class.push_str(&theme.name);
+    let theme_factor = 48usize.saturating_mul(result.themes.len().max(1));
+    let mut content_bytes = 0usize;
+    let mut overhead = 160usize;
+    for line in &result.tokens {
+        overhead = overhead
+            .saturating_add(28)
+            .saturating_add(line.len().saturating_mul(theme_factor));
+        for token in line {
+            content_bytes = content_bytes.saturating_add(token.content.len());
+        }
     }
-    html.push_str(&escape_attribute(&class));
+    let mut html = String::with_capacity(bounded_token_html_capacity(content_bytes, overhead));
+    html.push_str("<pre class=\"shiki shiki-themes");
+    for theme in &result.themes {
+        html.push(' ');
+        write_escaped_attribute(&mut html, &theme.name);
+    }
     html.push('"');
     if options.render.include_root_style {
         let style = options
@@ -62,35 +82,59 @@ pub fn render_html_with_themes(
             }
         };
         html.push_str(" style=\"");
-        html.push_str(&escape_attribute(style));
+        write_escaped_attribute(&mut html, style);
         html.push('"');
     }
     if let Some(tabindex) = &options.render.tabindex {
         html.push_str(" tabindex=\"");
-        html.push_str(&escape_attribute(tabindex));
+        write_escaped_attribute(&mut html, tabindex);
         html.push('"');
     }
     html.push_str("><code>");
+    let mut scratch = MultiRenderScratch {
+        current_style: String::with_capacity(theme_factor),
+        previous_style: if options.render.merge_same_style_tokens {
+            String::with_capacity(theme_factor)
+        } else {
+            String::new()
+        },
+        light_index: result
+            .themes
+            .iter()
+            .position(|theme| theme.color == "light"),
+        dark_index: result.themes.iter().position(|theme| theme.color == "dark"),
+    };
+    let mut resolved = Vec::with_capacity(result.themes.len());
     for (index, line) in result.tokens.iter().enumerate() {
         if index > 0 {
             html.push('\n');
         }
         html.push_str("<span class=\"line\">");
-        render_line(&mut html, line, result, options);
+        render_line(
+            &mut html,
+            line,
+            result,
+            options,
+            &mut scratch,
+            &mut resolved,
+        );
         html.push_str("</span>");
     }
     html.push_str("</code></pre>");
     Ok(html)
 }
 
-fn render_line(
+fn render_line<'a>(
     html: &mut String,
-    line: &[HighlightThemeToken],
+    line: &'a [HighlightThemeToken],
     result: &HighlightTokensWithThemesResult,
     options: &MultiThemeRenderOptions,
+    scratch: &mut MultiRenderScratch,
+    resolved: &mut Vec<ResolvedThemeToken<'a>>,
 ) {
     let mut carried = None;
-    let mut previous_style: Option<String> = None;
+    let mut has_open_span = false;
+    let merge_same = options.render.merge_same_style_tokens;
     for (index, token) in line.iter().enumerate() {
         // Combined theme tokens have no top-level fontStyle in the JS
         // pipeline: whitespace takes the following token's complete CSS.
@@ -102,26 +146,38 @@ fn render_line(
             carried.get_or_insert(index);
             continue;
         }
-        let style = token_style(token, result, options);
-        if !options.render.merge_same_style_tokens || previous_style.as_ref() != Some(&style) {
-            if previous_style.is_some() {
+        scratch.current_style.clear();
+        write_token_style(
+            &mut scratch.current_style,
+            token,
+            result,
+            options,
+            scratch.light_index,
+            scratch.dark_index,
+            resolved,
+        );
+        if !merge_same || !has_open_span || scratch.previous_style != scratch.current_style {
+            if has_open_span {
                 html.push_str("</span>");
             }
             html.push_str("<span");
-            if !style.is_empty() {
+            if !scratch.current_style.is_empty() {
                 html.push_str(" style=\"");
-                html.push_str(&escape_attribute(&style));
+                write_escaped_attribute(html, &scratch.current_style);
                 html.push('"');
             }
             html.push('>');
-            previous_style = Some(style);
+            if merge_same {
+                std::mem::swap(&mut scratch.previous_style, &mut scratch.current_style);
+            }
+            has_open_span = true;
         }
         let start = carried.take().unwrap_or(index);
         for piece in &line[start..=index] {
-            html.push_str(&escape_html(&piece.content));
+            write_escaped_html(html, &piece.content);
         }
     }
-    if previous_style.is_some() {
+    if has_open_span {
         html.push_str("</span>");
     }
 }
@@ -158,24 +214,18 @@ impl Property {
             Self::Decoration => "-text-decoration",
         }
     }
-    fn value(self, style: Option<&HighlightThemeTokenStyle>) -> Option<Cow<'_, str>> {
-        let style = style?;
-        let font = style.font_style.unwrap_or_default();
+    fn value<'a>(self, style: &'a ResolvedThemeToken<'a>) -> Option<&'a str> {
         match self {
-            Self::Color => style.color.as_deref().and_then(normalize_safe_css_color),
-            Self::Italic => font
-                .contains(FontStyle::ITALIC)
-                .then_some(Cow::Borrowed("italic")),
-            Self::Bold => font
-                .contains(FontStyle::BOLD)
-                .then_some(Cow::Borrowed("bold")),
+            Self::Color => style.color.as_deref(),
+            Self::Italic => style.font.contains(FontStyle::ITALIC).then_some("italic"),
+            Self::Bold => style.font.contains(FontStyle::BOLD).then_some("bold"),
             Self::Decoration => match (
-                font.contains(FontStyle::UNDERLINE),
-                font.contains(FontStyle::STRIKETHROUGH),
+                style.font.contains(FontStyle::UNDERLINE),
+                style.font.contains(FontStyle::STRIKETHROUGH),
             ) {
-                (true, true) => Some(Cow::Borrowed("underline line-through")),
-                (true, false) => Some(Cow::Borrowed("underline")),
-                (false, true) => Some(Cow::Borrowed("line-through")),
+                (true, true) => Some("underline line-through"),
+                (true, false) => Some("underline"),
+                (false, true) => Some("line-through"),
                 (false, false) => None,
             },
         }
@@ -188,63 +238,98 @@ fn separator(output: &mut String) {
     }
 }
 
-fn token_style(
-    token: &HighlightThemeToken,
+fn write_token_style<'a>(
+    output: &mut String,
+    token: &'a HighlightThemeToken,
     result: &HighlightTokensWithThemesResult,
     options: &MultiThemeRenderOptions,
-) -> String {
+    light_index: Option<usize>,
+    dark_index: Option<usize>,
+    resolved: &mut Vec<ResolvedThemeToken<'a>>,
+) {
     // JS Set preserves the first occurrence of each property across themes.
     // Four slots suffice for the fixed property set, without per-token keys.
+    resolved.clear();
     let mut keys = [Property::Color; 4];
     let mut count = 0;
     for theme in &result.themes {
-        let style = token.variants.get(&theme.color);
+        let entry = match token.variants.get(&theme.color) {
+            Some(style) => ResolvedThemeToken {
+                color: style.color.as_deref().and_then(normalize_safe_css_color),
+                font: style.font_style.unwrap_or_default(),
+            },
+            None => ResolvedThemeToken {
+                color: None,
+                font: FontStyle::NONE,
+            },
+        };
         for key in Property::ALL {
-            if key.value(style).is_some() && !keys[..count].contains(&key) {
+            if key.value(&entry).is_some() && !keys[..count].contains(&key) {
                 keys[count] = key;
                 count += 1;
             }
         }
+        resolved.push(entry);
     }
-    let mut output = String::new();
+    if count == 0 {
+        return;
+    }
     let light_dark = options.default_color.as_deref() == Some("light-dark()");
     for (index, theme) in result.themes.iter().enumerate() {
+        let entry = &resolved[index];
         for &key in &keys[..count] {
-            let value = key
-                .value(token.variants.get(&theme.color))
-                .unwrap_or(Cow::Borrowed("inherit"));
+            let value = key.value(entry).unwrap_or("inherit");
             if index == 0 && options.default_color.is_some() && key == Property::Color {
-                separator(&mut output);
+                separator(output);
                 output.push_str(key.name());
                 output.push(':');
                 if light_dark {
-                    let light = key
-                        .value(token.variants.get("light"))
-                        .unwrap_or(Cow::Borrowed("inherit"));
-                    let dark = key
-                        .value(token.variants.get("dark"))
-                        .unwrap_or(Cow::Borrowed("inherit"));
+                    let light = match light_index {
+                        Some(idx) => resolved[idx]
+                            .color
+                            .as_deref()
+                            .map(Cow::Borrowed)
+                            .unwrap_or(Cow::Borrowed("inherit")),
+                        None => token
+                            .variants
+                            .get("light")
+                            .and_then(|style| style.color.as_deref())
+                            .and_then(normalize_safe_css_color)
+                            .unwrap_or(Cow::Borrowed("inherit")),
+                    };
+                    let dark = match dark_index {
+                        Some(idx) => resolved[idx]
+                            .color
+                            .as_deref()
+                            .map(Cow::Borrowed)
+                            .unwrap_or(Cow::Borrowed("inherit")),
+                        None => token
+                            .variants
+                            .get("dark")
+                            .and_then(|style| style.color.as_deref())
+                            .and_then(normalize_safe_css_color)
+                            .unwrap_or(Cow::Borrowed("inherit")),
+                    };
                     output.push_str("light-dark(");
                     output.push_str(&light);
                     output.push_str(", ");
                     output.push_str(&dark);
                     output.push(')');
                 } else {
-                    output.push_str(&value);
+                    output.push_str(value);
                 }
             }
             if index > 0 || options.default_color.is_none() || key != Property::Color || light_dark
             {
-                separator(&mut output);
+                separator(output);
                 output.push_str(&options.css_variable_prefix);
                 output.push_str(&theme.color);
                 output.push_str(key.suffix());
                 output.push(':');
-                output.push_str(&value);
+                output.push_str(value);
             }
         }
     }
-    output
 }
 
 fn theme_property(
@@ -304,7 +389,7 @@ fn theme_property(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::HighlightThemeMetadata;
+    use crate::{HighlightThemeMetadata, HighlightThemeTokenStyle};
     use std::collections::BTreeMap;
 
     fn fixture() -> HighlightTokensWithThemesResult {
