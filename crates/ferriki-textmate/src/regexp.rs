@@ -13,7 +13,9 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::{PrecompiledPatternsError, RegexError};
 use ferroni::backtrack_lint::BacktrackWarning as FerroniBacktrackWarning;
 use ferroni::oniguruma::ONIG_OPTION_CAPTURE_GROUP;
-pub(crate) use ferroni::scanner::{OnigString, ScannerFindOptions};
+pub(crate) use ferroni::scanner::{
+    CaptureIndex as ScannerCaptureIndex, OnigString, ScannerFindOptions, ScannerMatch,
+};
 use ferroni::scanner::{
     PrecompiledPatterns, Scanner, ScannerConfig, ScannerPatternCache as FerroniScannerPatternCache,
     ScannerSyntax,
@@ -434,11 +436,42 @@ pub(crate) fn scanner_config(regex_prefilter: bool) -> ScannerConfig {
         .prefilter(regex_prefilter)
 }
 
+pub(crate) trait CaptureSpan {
+    fn start(&self) -> usize;
+    fn end(&self) -> usize;
+}
+
+impl CaptureSpan for ScannerCaptureIndex {
+    #[inline]
+    fn start(&self) -> usize {
+        self.start
+    }
+
+    #[inline]
+    fn end(&self) -> usize {
+        self.end
+    }
+}
+
+#[cfg(test)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CaptureIndex {
     pub(crate) start: usize,
     pub(crate) end: usize,
     pub(crate) length: usize,
+}
+
+#[cfg(test)]
+impl CaptureSpan for CaptureIndex {
+    #[inline]
+    fn start(&self) -> usize {
+        self.start
+    }
+
+    #[inline]
+    fn end(&self) -> usize {
+        self.end
+    }
 }
 
 #[cfg(test)]
@@ -523,10 +556,20 @@ impl<T> RegExpSource<T> {
         self.normalized_lens = new_lens;
     }
 
-    pub(crate) fn resolve_back_references(
+    #[cfg(test)]
+    pub(crate) fn resolve_back_references<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
+        capture_indices: &[C],
+    ) -> Result<String, RegexError> {
+        self.resolve_back_references_with_ascii(line_text, capture_indices, false)
+    }
+
+    pub(crate) fn resolve_back_references_with_ascii<C: CaptureSpan>(
+        &self,
+        line_text: &str,
+        capture_indices: &[C],
+        line_is_ascii: bool,
     ) -> Result<String, RegexError> {
         if self.is_oversized() {
             return Err(RegexError::depth_limit(
@@ -538,6 +581,7 @@ impl<T> RegExpSource<T> {
             line_text,
             capture_indices,
             MAX_SCANNER_PATTERN_BYTES,
+            line_is_ascii,
         )
     }
 
@@ -835,11 +879,12 @@ fn has_back_references(source: &str) -> bool {
         .any(|pair| pair[0] == b'\\' && pair[1].is_ascii_digit())
 }
 
-fn replace_numeric_back_references(
+fn replace_numeric_back_references<C: CaptureSpan>(
     source: &str,
     line_text: &str,
-    capture_indices: &[CaptureIndex],
+    capture_indices: &[C],
     max_bytes: usize,
+    line_is_ascii: bool,
 ) -> Result<String, RegexError> {
     if source.len() > max_bytes {
         return Err(RegexError::depth_limit(
@@ -871,7 +916,7 @@ fn replace_numeric_back_references(
             .ok()
             .and_then(|capture_index| capture_indices.get(capture_index))
             .map_or("", |capture| {
-                substring_utf16(line_text, capture.start, capture.end)
+                substring_utf16(line_text, capture.start(), capture.end(), line_is_ascii)
             });
 
         let literal = &source[last_pushed_position..position];
@@ -915,24 +960,41 @@ fn push_escaped_reg_exp_characters(
     Ok(())
 }
 
-fn substring_utf16(value: &str, start: usize, end: usize) -> &str {
-    let start = utf16_offset_to_utf8(value, start);
-    let end = utf16_offset_to_utf8(value, end);
-    &value[start.min(end)..end]
-}
-
-fn utf16_offset_to_utf8(value: &str, offset: usize) -> usize {
+/// Slices `value` by UTF-16 code-unit offsets `[start..end)`.
+///
+/// When `is_ascii` is known true from the enclosing `OnigString` (i.e.
+/// `value.len() == utf16_len`), slicing is O(1). Otherwise this scans in a
+/// single pass and stops immediately at `end` without scanning the tail.
+fn substring_utf16(value: &str, start: usize, end: usize, is_ascii: bool) -> &str {
+    if is_ascii {
+        let end = end.min(value.len());
+        return &value[start.min(end)..end];
+    }
+    if start >= end {
+        return "";
+    }
     let mut utf16_position = 0;
+    let mut start_byte = None;
     for (byte_position, character) in value.char_indices() {
-        if utf16_position >= offset {
-            return byte_position;
+        if start_byte.is_none() && utf16_position >= start {
+            start_byte = Some(byte_position);
+        }
+        if utf16_position >= end {
+            return &value[start_byte.unwrap_or(byte_position)..byte_position];
         }
         utf16_position += character.len_utf16();
-        if utf16_position > offset {
-            return byte_position + character.len_utf8();
+        if start_byte.is_none() && utf16_position > start {
+            start_byte = Some(byte_position + character.len_utf8());
+        }
+        if utf16_position > end {
+            let end_byte = byte_position + character.len_utf8();
+            let clamped_start = start_byte.unwrap_or(end_byte).min(end_byte);
+            return &value[clamped_start..end_byte];
         }
     }
-    value.len()
+    let end_byte = value.len();
+    let clamped_start = start_byte.unwrap_or(end_byte).min(end_byte);
+    &value[clamped_start..end_byte]
 }
 
 #[must_use]
@@ -944,10 +1006,20 @@ pub(crate) fn has_captures(regex_source: Option<&str>) -> bool {
 }
 
 #[must_use]
-pub(crate) fn replace_captures(
+pub(crate) fn replace_captures<C: CaptureSpan>(
     regex_source: &str,
     capture_source: &str,
-    capture_indices: &[CaptureIndex],
+    capture_indices: &[C],
+) -> String {
+    replace_captures_with_ascii(regex_source, capture_source, capture_indices, false)
+}
+
+#[must_use]
+pub(crate) fn replace_captures_with_ascii<C: CaptureSpan>(
+    regex_source: &str,
+    capture_source: &str,
+    capture_indices: &[C],
+    source_is_ascii: bool,
 ) -> String {
     let mut result = String::with_capacity(regex_source.len());
     let mut position = 0;
@@ -959,8 +1031,13 @@ pub(crate) fn replace_captures(
             continue;
         };
 
-        let captured =
-            substring_utf16(capture_source, capture.start, capture.end).trim_start_matches('.');
+        let captured = substring_utf16(
+            capture_source,
+            capture.start(),
+            capture.end(),
+            source_is_ascii,
+        )
+        .trim_start_matches('.');
         match placeholder.command {
             Some(CaptureCommand::Downcase) => result.push_str(&captured.to_lowercase()),
             Some(CaptureCommand::Upcase) => result.push_str(&captured.to_uppercase()),
@@ -1298,9 +1375,70 @@ impl<T: Copy> RegExpSourceList<T> {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum EndGuard {
+    None,
+    EmptyLineOnly,
+    RejectArtificialEnd,
+}
+
+impl EndGuard {
+    fn from_pattern(pattern: &str) -> Self {
+        let trimmed = pattern.trim();
+        if trimmed == "^$" {
+            Self::EmptyLineOnly
+        } else if rejects_artificial_end(trimmed) {
+            Self::RejectArtificialEnd
+        } else {
+            Self::None
+        }
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    static ON_BACKTRACKING_BEFORE_INIT: std::cell::RefCell<Option<Box<dyn FnMut()>>> =
+        const { std::cell::RefCell::new(None) };
+    static ON_BACKTRACKING_INSIDE_INIT: std::cell::RefCell<Option<Box<dyn FnMut()>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) struct BacktrackingInitHookGuard;
+
+#[cfg(test)]
+impl BacktrackingInitHookGuard {
+    pub(crate) fn on_before_init(hook: impl FnMut() + 'static) -> Self {
+        ON_BACKTRACKING_BEFORE_INIT.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(hook));
+        });
+        Self
+    }
+
+    pub(crate) fn on_inside_init(hook: impl FnMut() + 'static) -> Self {
+        ON_BACKTRACKING_INSIDE_INIT.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(hook));
+        });
+        Self
+    }
+}
+
+#[cfg(test)]
+impl Drop for BacktrackingInitHookGuard {
+    fn drop(&mut self) {
+        ON_BACKTRACKING_BEFORE_INIT.with(|slot| {
+            *slot.borrow_mut() = None;
+        });
+        ON_BACKTRACKING_INSIDE_INIT.with(|slot| {
+            *slot.borrow_mut() = None;
+        });
+    }
+}
+
 pub(crate) struct CompiledRule<T> {
     scanner: Mutex<Scanner>,
     reg_exps: Vec<String>,
+    end_guards: Vec<EndGuard>,
     rules: Vec<T>,
     backtracking_warnings: Vec<CompiledBacktrackingWarning<T>>,
     backtracking_warnings_recorded: OnceLock<()>,
@@ -1340,9 +1478,14 @@ impl<T: Copy> CompiledRule<T> {
                 });
             }
         }
+        let end_guards = reg_exps
+            .iter()
+            .map(|pattern| EndGuard::from_pattern(pattern))
+            .collect();
         Ok(Self {
             scanner: Mutex::new(scanner),
             reg_exps,
+            end_guards,
             rules,
             backtracking_warnings,
             backtracking_warnings_recorded: OnceLock::new(),
@@ -1363,10 +1506,24 @@ impl<T: Copy> CompiledRule<T> {
         &self,
         mut visit: impl FnMut(T, &str, &FerroniBacktrackWarning),
     ) {
-        if self.backtracking_warnings.is_empty() {
+        if self.backtracking_warnings.is_empty()
+            || self.backtracking_warnings_recorded.get().is_some()
+        {
             return;
         }
+        #[cfg(test)]
+        ON_BACKTRACKING_BEFORE_INIT.with(|slot| {
+            if let Some(hook) = slot.borrow_mut().as_mut() {
+                hook();
+            }
+        });
         self.backtracking_warnings_recorded.get_or_init(|| {
+            #[cfg(test)]
+            ON_BACKTRACKING_INSIDE_INIT.with(|slot| {
+                if let Some(hook) = slot.borrow_mut().as_mut() {
+                    hook();
+                }
+            });
             for finding in &self.backtracking_warnings {
                 visit(finding.rule, &finding.pattern, &finding.warning);
             }
@@ -1393,25 +1550,19 @@ impl<T: Copy> CompiledRule<T> {
         // logical line start, but not after the line terminator. Keep the
         // TextMate distinction here rather than weakening shared Scanner
         // semantics for regular expression consumers.
-        let pattern = self.reg_exps[matched.index].trim();
-        if matched.captures()[0].start == string.utf16_len()
-            && (pattern == "^$"
-                || (start_position < string.utf16_len() && rejects_artificial_end(pattern)))
-        {
-            return None;
+        let line_end = string.utf16_len();
+        if matched.captures()[0].start == line_end {
+            match self.end_guards[matched.index] {
+                EndGuard::None => {}
+                EndGuard::EmptyLineOnly => return None,
+                EndGuard::RejectArtificialEnd if start_position < line_end => return None,
+                EndGuard::RejectArtificialEnd => {}
+            }
         }
 
         Some(FindNextMatchResult {
             rule_id: self.rules[matched.index],
-            capture_indices: matched
-                .into_captures()
-                .into_iter()
-                .map(|capture| CaptureIndex {
-                    start: capture.start,
-                    end: capture.end,
-                    length: capture.length,
-                })
-                .collect(),
+            matched,
         })
     }
 }
@@ -1608,7 +1759,14 @@ impl<T: fmt::Debug> fmt::Display for CompiledRule<T> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct FindNextMatchResult<T> {
     pub rule_id: T,
-    pub capture_indices: Vec<CaptureIndex>,
+    matched: ScannerMatch,
+}
+
+impl<T> FindNextMatchResult<T> {
+    #[inline]
+    pub(crate) fn captures(&self) -> &[ScannerCaptureIndex] {
+        self.matched.captures()
+    }
 }
 
 #[cfg(test)]
@@ -1746,8 +1904,8 @@ mod tests {
             .find_next_match(&line, 0, ScannerFindOptions::NONE)
             .unwrap();
         assert_eq!(result.rule_id, 10);
-        assert_eq!(result.capture_indices[0].start, 4);
-        assert_eq!(result.capture_indices[0].end, 5);
+        assert_eq!(result.captures()[0].start, 4);
+        assert_eq!(result.captures()[0].end, 5);
     }
 
     #[test]
@@ -1766,26 +1924,12 @@ mod tests {
             .unwrap();
 
         assert_eq!(result.rule_id, 1);
-        assert_eq!(
-            result.capture_indices,
-            [
-                CaptureIndex {
-                    start: 4,
-                    end: 8,
-                    length: 4,
-                },
-                CaptureIndex {
-                    start: 0,
-                    end: 0,
-                    length: 0,
-                },
-                CaptureIndex {
-                    start: 4,
-                    end: 8,
-                    length: 4,
-                },
-            ]
-        );
+        let spans: Vec<_> = result
+            .captures()
+            .iter()
+            .map(|c| (c.start, c.end, c.length))
+            .collect();
+        assert_eq!(spans, [(4, 8, 4), (0, 0, 0), (4, 8, 4)]);
     }
 
     #[test]
@@ -1819,8 +1963,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(result.rule_id, 2);
-        assert_eq!(result.capture_indices[0].start, 0);
-        assert_eq!(result.capture_indices[0].end, 1);
+        assert_eq!(result.captures()[0].start, 0);
+        assert_eq!(result.captures()[0].end, 1);
     }
 
     #[test]
@@ -1841,8 +1985,8 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(result.capture_indices[2].start, 0);
-        assert_eq!(result.capture_indices[2].end, 5);
+        assert_eq!(result.captures()[2].start, 0);
+        assert_eq!(result.captures()[2].end, 5);
     }
 
     #[test]
@@ -1868,10 +2012,10 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(result.capture_indices[1].start, 0);
-        assert_eq!(result.capture_indices[1].end, 6);
-        assert_eq!(result.capture_indices[3].start, 7);
-        assert_eq!(result.capture_indices[3].end, 14);
+        assert_eq!(result.captures()[1].start, 0);
+        assert_eq!(result.captures()[1].end, 6);
+        assert_eq!(result.captures()[3].start, 7);
+        assert_eq!(result.captures()[3].end, 14);
     }
 
     #[test]
@@ -1891,11 +2035,11 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(result.capture_indices.len(), 4);
-        assert_eq!(result.capture_indices[0].start, 5);
-        assert_eq!(result.capture_indices[0].end, 12);
-        assert_eq!(result.capture_indices[1].start, 5);
-        assert_eq!(result.capture_indices[1].end, 12);
+        assert_eq!(result.captures().len(), 4);
+        assert_eq!(result.captures()[0].start, 5);
+        assert_eq!(result.captures()[0].end, 12);
+        assert_eq!(result.captures()[1].start, 5);
+        assert_eq!(result.captures()[1].end, 12);
     }
 
     #[test]
@@ -1912,8 +2056,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(result.rule_id, 2);
-        assert_eq!(result.capture_indices[0].start, 5);
-        assert_eq!(result.capture_indices[0].end, 10);
+        assert_eq!(result.captures()[0].start, 5);
+        assert_eq!(result.captures()[0].end, 10);
     }
 
     #[test]
@@ -1928,10 +2072,10 @@ mod tests {
             .find_next_match(&OnigString::new("abb\n"), 0, ScannerFindOptions::NONE)
             .unwrap();
 
-        assert_eq!(result.capture_indices[0].start, 0);
-        assert_eq!(result.capture_indices[0].end, 3);
-        assert_eq!(result.capture_indices[2].start, 1);
-        assert_eq!(result.capture_indices[2].end, 2);
+        assert_eq!(result.captures()[0].start, 0);
+        assert_eq!(result.captures()[0].end, 3);
+        assert_eq!(result.captures()[2].start, 1);
+        assert_eq!(result.captures()[2].end, 2);
     }
 
     #[test]
@@ -2036,7 +2180,7 @@ mod tests {
                     .find_next_match(&line, 0, ScannerFindOptions::NONE)
                     .unwrap();
                 assert_eq!(actual.rule_id, expected.rule_id);
-                assert_eq!(actual.capture_indices, expected.capture_indices);
+                assert_eq!(actual.captures(), expected.captures());
             }
             assert!(enabled.scanner.lock().unwrap().prefilter_stats().built);
             let stats = disabled.scanner.lock().unwrap().prefilter_stats();
@@ -2173,5 +2317,49 @@ mod tests {
             .err()
             .expect("brace normalization exceeding 16 MiB must fail");
         assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn slices_utf16_captures_consistently_with_and_without_ascii_hint() {
+        // Pure ASCII: `is_ascii = true` and `is_ascii = false` must agree across all ranges.
+        let ascii = "abcdef";
+        for start in 0..=8 {
+            for end in 0..=8 {
+                assert_eq!(
+                    super::substring_utf16(ascii, start, end, true),
+                    super::substring_utf16(ascii, start, end, false),
+                    "ascii mismatch for {start}..{end}"
+                );
+            }
+        }
+
+        // Non-ASCII with BMP and astral (surrogate-pair) characters.
+        let unicode = "💻 a.é🦀z";
+        assert_eq!(super::substring_utf16(unicode, 0, 2, false), "💻");
+        assert_eq!(super::substring_utf16(unicode, 0, 1, false), "💻");
+        assert_eq!(super::substring_utf16(unicode, 1, 3, false), " ");
+        assert_eq!(super::substring_utf16(unicode, 3, 6, false), "a.é");
+        assert_eq!(super::substring_utf16(unicode, 3, 7, false), "a.é🦀");
+        assert_eq!(super::substring_utf16(unicode, 6, 8, false), "🦀");
+        assert_eq!(super::substring_utf16(unicode, 8, 9, false), "z");
+        assert_eq!(super::substring_utf16(unicode, 5, 5, false), "");
+        assert_eq!(super::substring_utf16(unicode, 6, 3, false), "");
+        assert_eq!(super::substring_utf16(unicode, 50, 60, false), "");
+
+        // Capture replacement with precomputed ASCII flag vs non-ASCII scan.
+        let capture = CaptureIndex {
+            start: 1,
+            end: 4,
+            length: 3,
+        };
+        assert_eq!(
+            super::replace_captures_with_ascii(
+                "tag.$1",
+                "xFooBar",
+                &[capture.clone(), capture],
+                true
+            ),
+            "tag.Foo"
+        );
     }
 }

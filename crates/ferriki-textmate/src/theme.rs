@@ -155,7 +155,7 @@ pub(crate) struct StyleAttributes {
 #[derive(Debug)]
 pub(crate) struct ScopeStack {
     pub parent: Option<Arc<Self>>,
-    pub scope_name: String,
+    pub scope_name: Arc<str>,
 }
 
 impl ScopeStack {
@@ -163,7 +163,7 @@ impl ScopeStack {
     pub(crate) fn push<I, S>(mut path: Option<Arc<Self>>, scope_names: I) -> Option<Arc<Self>>
     where
         I: IntoIterator<Item = S>,
-        S: Into<String>,
+        S: Into<Arc<str>>,
     {
         for scope_name in scope_names {
             path = Some(Arc::new(Self {
@@ -175,6 +175,14 @@ impl ScopeStack {
     }
 
     #[must_use]
+    pub(crate) fn push_arc(self: &Arc<Self>, scope_name: Arc<str>) -> Arc<Self> {
+        Arc::new(Self {
+            parent: Some(Arc::clone(self)),
+            scope_name,
+        })
+    }
+
+    #[must_use]
     #[allow(
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"
@@ -182,7 +190,7 @@ impl ScopeStack {
     pub(crate) fn from<I, S>(segments: I) -> Option<Arc<Self>>
     where
         I: IntoIterator<Item = S>,
-        S: Into<String>,
+        S: Into<Arc<str>>,
     {
         Self::push(None, segments)
     }
@@ -192,11 +200,8 @@ impl ScopeStack {
         dead_code,
         reason = "part of the vscode-textmate port, kept for upstream parity"
     )]
-    pub(crate) fn push_scope(self: &Arc<Self>, scope_name: impl Into<String>) -> Arc<Self> {
-        Arc::new(Self {
-            parent: Some(Arc::clone(self)),
-            scope_name: scope_name.into(),
-        })
+    pub(crate) fn push_scope(self: &Arc<Self>, scope_name: impl Into<Arc<str>>) -> Arc<Self> {
+        self.push_arc(scope_name.into())
     }
 
     #[must_use]
@@ -204,7 +209,7 @@ impl ScopeStack {
         let mut item = Some(self);
         let mut result = Vec::new();
         while let Some(scope) = item {
-            result.push(scope.scope_name.clone());
+            result.push((*scope.scope_name).to_owned());
             item = scope.parent.as_deref();
         }
         result.reverse();
@@ -233,17 +238,17 @@ impl ScopeStack {
         base: Option<&Arc<Self>>,
     ) -> Option<Vec<String>> {
         let mut result = Vec::new();
-        let mut item = Some(Arc::clone(self));
+        let mut item = Some(self);
 
-        while let Some(scope) = item.as_ref() {
+        while let Some(scope) = item {
             if base.is_some_and(|base| Arc::ptr_eq(scope, base)) {
                 break;
             }
-            result.push(scope.scope_name.clone());
-            item = scope.parent.clone();
+            result.push((*scope.scope_name).to_owned());
+            item = scope.parent.as_ref();
         }
 
-        let reached_base = match (item.as_ref(), base) {
+        let reached_base = match (item, base) {
             (None, None) => true,
             (Some(item), Some(base)) => Arc::ptr_eq(item, base),
             _ => false,
@@ -482,18 +487,21 @@ impl Theme {
             .len()
     }
 
-    fn match_scope_rules(&self, scope_name: &str) -> Arc<[ThemeTrieElementRule]> {
+    fn cached_scope_rules(&self, scope_name: &str) -> Arc<[ThemeTrieElementRule]> {
         if scope_name.len() > MAX_CACHED_SCOPE_NAME_BYTES {
             return self.root.match_scope(scope_name);
         }
-        let cached_rules = self
-            .cached_match_root
-            .read()
-            .expect("theme match cache lock poisoned")
-            .get(scope_name)
-            .cloned();
-        cached_rules.unwrap_or_else(|| {
-            let rules = self.root.match_scope(scope_name);
+        {
+            let cache = self
+                .cached_match_root
+                .read()
+                .expect("theme match cache lock poisoned");
+            if let Some(rules) = cache.get(scope_name) {
+                return Arc::clone(rules);
+            }
+        }
+        let rules = self.root.match_scope(scope_name);
+        {
             let mut cache = self
                 .cached_match_root
                 .write()
@@ -504,8 +512,8 @@ impl Theme {
                 }
                 cache.insert(scope_name.to_owned(), Arc::clone(&rules));
             }
-            rules
-        })
+        }
+        rules
     }
 
     #[must_use]
@@ -513,7 +521,7 @@ impl Theme {
         &self,
         scope_path: &ScopeStack,
     ) -> Option<(FontStyle, u32, u32)> {
-        let matching_trie_elements = self.match_scope_rules(&scope_path.scope_name);
+        let matching_trie_elements = self.cached_scope_rules(&scope_path.scope_name);
         let effective_rule = matching_trie_elements.iter().find(|rule| {
             scope_path_matches_parent_scopes(scope_path.parent.as_deref(), &rule.parent_scopes)
         })?;
@@ -530,7 +538,7 @@ impl Theme {
             return Some(self.defaults.clone());
         };
 
-        let matching_trie_elements = self.match_scope_rules(&scope_path.scope_name);
+        let matching_trie_elements = self.cached_scope_rules(&scope_path.scope_name);
         let effective_rule = matching_trie_elements.iter().find(|rule| {
             scope_path_matches_parent_scopes(scope_path.parent.as_deref(), &rule.parent_scopes)
         })?;

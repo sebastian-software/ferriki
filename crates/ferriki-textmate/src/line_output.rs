@@ -491,26 +491,51 @@ impl MultiThemeTokens {
     }
 }
 
-pub(crate) struct LineTokens {
+pub(crate) struct LineTokens<'a> {
     emit_binary_tokens: bool,
     emit_scope_tokens: bool,
     tokens: Vec<Token>,
     binary_tokens: Vec<u32>,
     multi_theme: Option<MultiThemeTokens>,
     last_token_end_index: isize,
-    token_type_overrides: Vec<TokenTypeMatcher>,
-    balanced_bracket_selectors: Option<BalancedBracketSelectors>,
+    token_type_overrides: &'a [TokenTypeMatcher],
+    balanced_bracket_selectors: Option<&'a BalancedBracketSelectors>,
+    always_balanced_brackets: bool,
+    needs_scope_overrides: bool,
     merge_consecutive_tokens_with_equal_metadata: bool,
 }
 
-impl LineTokens {
+impl<'a> LineTokens<'a> {
+    #[cfg(test)]
     #[must_use]
     pub(crate) fn new(
         emit_binary_tokens: bool,
         line_text: &str,
-        token_type_overrides: Vec<TokenTypeMatcher>,
-        balanced_bracket_selectors: Option<BalancedBracketSelectors>,
+        token_type_overrides: &'a [TokenTypeMatcher],
+        balanced_bracket_selectors: Option<&'a BalancedBracketSelectors>,
     ) -> Self {
+        Self::new_with_ascii(
+            emit_binary_tokens,
+            line_text,
+            line_text.is_ascii(),
+            token_type_overrides,
+            balanced_bracket_selectors,
+        )
+    }
+
+    #[must_use]
+    pub(crate) fn new_with_ascii(
+        emit_binary_tokens: bool,
+        line_text: &str,
+        line_is_ascii: bool,
+        token_type_overrides: &'a [TokenTypeMatcher],
+        balanced_bracket_selectors: Option<&'a BalancedBracketSelectors>,
+    ) -> Self {
+        let always_balanced_brackets =
+            balanced_bracket_selectors.is_some_and(BalancedBracketSelectors::matches_always);
+        let needs_scope_overrides = !token_type_overrides.is_empty()
+            || balanced_bracket_selectors
+                .is_some_and(|selectors| !selectors.matches_always() && !selectors.matches_never());
         Self {
             emit_binary_tokens,
             emit_scope_tokens: !emit_binary_tokens,
@@ -520,7 +545,9 @@ impl LineTokens {
             last_token_end_index: 0,
             token_type_overrides,
             balanced_bracket_selectors,
-            merge_consecutive_tokens_with_equal_metadata: !contains_rtl(line_text),
+            always_balanced_brackets,
+            needs_scope_overrides,
+            merge_consecutive_tokens_with_equal_metadata: line_is_ascii || !contains_rtl(line_text),
         }
     }
 
@@ -584,31 +611,26 @@ impl LineTokens {
         &self,
         scopes_list: Option<&Arc<AttributedScopeStack>>,
     ) -> (OptionalStandardTokenType, bool) {
+        if !self.needs_scope_overrides {
+            return (
+                OptionalStandardTokenType::NotSet,
+                self.always_balanced_brackets,
+            );
+        }
         let mut override_token_type = OptionalStandardTokenType::NotSet;
-        let mut contains_balanced_brackets = self
-            .balanced_bracket_selectors
-            .as_ref()
-            .is_some_and(BalancedBracketSelectors::matches_always);
-        let needs_scopes = !self.token_type_overrides.is_empty()
-            || self
-                .balanced_bracket_selectors
-                .as_ref()
-                .is_some_and(|selectors| !selectors.matches_always() && !selectors.matches_never());
-
-        if needs_scopes {
-            let scopes = scopes_list.map_or_else(Vec::new, |scopes| scopes.scope_names());
-            let scope_slice = scopes.as_slice();
-            for token_type in &self.token_type_overrides {
-                if token_type
-                    .matcher
-                    .matches(&scope_slice, &matches_scope_identifiers)
-                {
-                    override_token_type = to_optional_token_type(token_type.token_type);
-                }
+        let mut contains_balanced_brackets = self.always_balanced_brackets;
+        let scopes = scopes_list.map_or_else(Vec::new, |scopes| scopes.scope_names());
+        let scope_slice = scopes.as_slice();
+        for token_type in self.token_type_overrides {
+            if token_type
+                .matcher
+                .matches(&scope_slice, &matches_scope_identifiers)
+            {
+                override_token_type = to_optional_token_type(token_type.token_type);
             }
-            if let Some(selectors) = self.balanced_bracket_selectors.as_ref() {
-                contains_balanced_brackets = selectors.matches(&scopes);
-            }
+        }
+        if let Some(selectors) = self.balanced_bracket_selectors {
+            contains_balanced_brackets = selectors.matches(&scopes);
         }
         (override_token_type, contains_balanced_brackets)
     }
@@ -934,8 +956,8 @@ impl LineFonts {
     }
 
     #[must_use]
-    pub(crate) fn result(&self) -> Vec<FontInfo> {
-        self.fonts.clone()
+    pub(crate) fn result(&mut self) -> Vec<FontInfo> {
+        std::mem::take(&mut self.fonts)
     }
 }
 
@@ -967,6 +989,9 @@ const fn is_truthy_number(value: f64) -> bool {
 }
 
 fn contains_rtl(value: &str) -> bool {
+    if value.is_ascii() {
+        return false;
+    }
     value.chars().any(|character| {
         matches!(
             character,
@@ -1049,7 +1074,6 @@ mod tests {
                     .unwrap(),
                 token_attributes: metadata,
                 font_attributes: scopes.font_attributes.clone(),
-                style_attributes: None,
             });
         }
         scopes
@@ -1089,7 +1113,7 @@ mod tests {
             FontAttribute::default(),
         );
         let stack = state(Arc::clone(&scopes));
-        let mut tokens = LineTokens::new(false, "ab\n", Vec::new(), None);
+        let mut tokens = LineTokens::new(false, "ab\n", &[], None);
         tokens.produce_from_scopes(Some(&scopes), 2);
         tokens.produce_from_scopes(Some(&scopes), 3);
 
@@ -1106,12 +1130,12 @@ mod tests {
         let scopes = scopes("source.test", metadata, FontAttribute::default());
         let stack = state(Arc::clone(&scopes));
 
-        let mut ltr = LineTokens::new(true, "ab\n", Vec::new(), None);
+        let mut ltr = LineTokens::new(true, "ab\n", &[], None);
         ltr.produce_from_scopes(Some(&scopes), 1);
         ltr.produce_from_scopes(Some(&scopes), 2);
         assert_eq!(ltr.binary_result(&stack, 3), [0, 1]);
 
-        let mut rtl = LineTokens::new(true, "אb\n", Vec::new(), None);
+        let mut rtl = LineTokens::new(true, "אb\n", &[], None);
         rtl.produce_from_scopes(Some(&scopes), 1);
         rtl.produce_from_scopes(Some(&scopes), 2);
         assert_eq!(rtl.binary_result(&stack, 3), [0, 1, 1, 1]);
@@ -1132,7 +1156,7 @@ mod tests {
         let stack = state(Arc::clone(&second));
         for line in ["ab\n", "אb\n", "\n"] {
             for binary_first in [false, true] {
-                let mut tokens = LineTokens::new(true, line, Vec::new(), None).with_scopes();
+                let mut tokens = LineTokens::new(true, line, &[], None).with_scopes();
                 let length = line.encode_utf16().count();
                 if length > 1 {
                     tokens.produce_from_scopes(Some(&first), 1);
@@ -1190,7 +1214,7 @@ mod tests {
         let overrides =
             TokenTypeMatcher::from_selector("meta.embedded", StandardTokenType::String).unwrap();
         let selectors = BalancedBracketSelectors::new(&["*".into()], &[]).unwrap();
-        let mut tokens = LineTokens::new(true, "x\n", overrides, Some(selectors));
+        let mut tokens = LineTokens::new(true, "x\n", &overrides, Some(&selectors));
         tokens.produce_from_scopes(Some(&scopes), 1);
 
         let result = tokens.binary_result(&stack, 2);
@@ -1258,12 +1282,11 @@ mod tests {
                     .unwrap(),
                 token_attributes: EncodedTokenAttributes::default(),
                 font_attributes: None,
-                style_attributes: None,
             })
         };
 
         let basic_provider = Arc::new(crate::BasicScopeAttributesProvider::new(0, None));
-        let mut line_tokens = LineTokens::new(false, "abab\n", Vec::new(), None).with_themes(
+        let mut line_tokens = LineTokens::new(false, "abab\n", &[], None).with_themes(
             &themes,
             false,
             Arc::clone(&basic_provider),
@@ -1328,7 +1351,6 @@ mod tests {
                 .unwrap(),
             token_attributes: EncodedTokenAttributes::default(),
             font_attributes: None,
-            style_attributes: None,
         });
         let mut deep = Arc::clone(&child);
         for _ in 0..300 {
@@ -1341,12 +1363,11 @@ mod tests {
                 .unwrap(),
                 token_attributes: EncodedTokenAttributes::default(),
                 font_attributes: None,
-                style_attributes: None,
             });
         }
 
         // Unwinding from depth 302 down to depth 2 shrinks over-allocated capacities.
-        let mut unwound = LineTokens::new(false, "ab\n", Vec::new(), None).with_themes(
+        let mut unwound = LineTokens::new(false, "ab\n", &[], None).with_themes(
             &[Arc::clone(&theme)],
             false,
             Arc::clone(&basic_provider),
@@ -1365,7 +1386,7 @@ mod tests {
         assert!(ancestry.active_attrs[0].capacity() <= 64);
 
         // Unwinding all the way to depth 1 (root only) drops the ancestry entry.
-        let mut root_only = LineTokens::new(false, "ab\n", Vec::new(), None).with_themes(
+        let mut root_only = LineTokens::new(false, "ab\n", &[], None).with_themes(
             &[Arc::clone(&theme)],
             false,
             basic_provider,
@@ -1390,5 +1411,15 @@ mod tests {
             "MultiThemeAncestry must store Weak<ScopeStack> so prefix chains drop with the caller's stack"
         );
         assert_eq!(ancestry.active_nodes.len(), 2);
+    }
+
+    #[test]
+    fn detects_rtl_with_ascii_fast_path() {
+        assert!(!super::contains_rtl(""));
+        assert!(!super::contains_rtl("const x = 42;\n"));
+        assert!(!super::contains_rtl("café 日本語 🦀\n"));
+        assert!(super::contains_rtl("hello שלום\n"));
+        assert!(super::contains_rtl("مرحبا\n"));
+        assert!(super::contains_rtl("a\u{200f}b\n"));
     }
 }

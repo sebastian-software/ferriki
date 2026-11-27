@@ -189,7 +189,11 @@ pub(crate) fn utf16_to_byte_map(input: &str) -> Utf16ToByteMap {
     if input.is_ascii() {
         return Utf16ToByteMap::Ascii(input.len());
     }
-    let mut map = Vec::with_capacity(input.encode_utf16().count() + 1);
+    utf16_to_byte_map_non_ascii(input, input.encode_utf16().count())
+}
+
+pub(crate) fn utf16_to_byte_map_non_ascii(input: &str, utf16_len: usize) -> Utf16ToByteMap {
+    let mut map = Vec::with_capacity(utf16_len + 1);
     for (byte_index, character) in input.char_indices() {
         map.push(byte_index);
         if character.len_utf16() == 2 {
@@ -205,20 +209,30 @@ pub(crate) fn split_lines(input: &str) -> Vec<(&str, usize)> {
         return vec![("", 0)];
     }
 
+    let bytes = input.as_bytes();
+    let is_ascii = input.is_ascii();
     let mut lines = Vec::new();
     let mut start_byte = 0;
     let mut start_utf16 = 0;
     for (newline_byte, _) in input.match_indices('\n') {
-        let line_end = if newline_byte > start_byte
-            && input.as_bytes().get(newline_byte - 1) == Some(&b'\r')
-        {
+        let line_end = if newline_byte > start_byte && bytes[newline_byte - 1] == b'\r' {
             newline_byte - 1
         } else {
             newline_byte
         };
         lines.push((&input[start_byte..line_end], start_utf16));
-        start_utf16 += input[start_byte..=newline_byte].encode_utf16().count();
-        start_byte = newline_byte + 1;
+        let next_start = newline_byte + 1;
+        if is_ascii {
+            start_utf16 = next_start;
+        } else {
+            let segment = &input[start_byte..next_start];
+            start_utf16 += if segment.is_ascii() {
+                segment.len()
+            } else {
+                segment.encode_utf16().count()
+            };
+        }
+        start_byte = next_start;
     }
     lines.push((&input[start_byte..], start_utf16));
     lines
@@ -280,6 +294,14 @@ mod tests {
         assert_eq!(
             split_lines("😀a\r\nb\n"),
             vec![("😀a", 0), ("b", 5), ("", 7)]
+        );
+        assert_eq!(
+            split_lines("abc\ndef\r\nghi"),
+            vec![("abc", 0), ("def", 4), ("ghi", 9)]
+        );
+        assert_eq!(
+            split_lines("ascii\n😀\nmore\r\nend"),
+            vec![("ascii", 0), ("😀", 6), ("more", 9), ("end", 15)]
         );
     }
 

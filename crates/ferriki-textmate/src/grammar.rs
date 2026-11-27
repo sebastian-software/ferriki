@@ -2,6 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex, PoisonError, RwLock};
 
@@ -908,13 +909,13 @@ impl Grammar {
         })
     }
 
-    fn tokenize(
-        &self,
+    fn tokenize<'a>(
+        &'a self,
         line_text: &str,
         previous_state: Option<Arc<StateStack>>,
         output: TokenOutput<'_>,
         time_limit_millis: u64,
-    ) -> Result<TokenizedLine, RegexError> {
+    ) -> Result<TokenizedLine<'a>, RegexError> {
         let owned_theme = match &output {
             TokenOutput::MultiTheme { .. } => None,
             _ => Some(self.theme_provider.theme()),
@@ -933,14 +934,18 @@ impl Grammar {
             _ => (true, self.initial_state_with_theme(pinned_theme)),
         };
 
-        let line_text = format!("{line_text}\n");
-        let onig_line_text = OnigString::new(&line_text);
+        let mut line_buf = String::with_capacity(line_text.len() + 1);
+        line_buf.push_str(line_text);
+        line_buf.push('\n');
+        let onig_line_text = OnigString::new(&line_buf);
         let line_length = onig_line_text.utf16_len();
-        let mut line_tokens = LineTokens::new(
+        let line_is_ascii = line_buf.len() == line_length;
+        let mut line_tokens = LineTokens::new_with_ascii(
             matches!(output, TokenOutput::Binary | TokenOutput::Both),
-            &line_text,
-            self.token_type_matchers.clone(),
-            self.balanced_bracket_selectors.clone(),
+            &line_buf,
+            line_is_ascii,
+            &self.token_type_matchers,
+            self.balanced_bracket_selectors.as_ref(),
         );
         match output {
             TokenOutput::Both => {
@@ -1011,14 +1016,14 @@ impl Grammar {
         let root_scope_name = self
             .registry
             .get_rule(self.root_id)
-            .get_name(None, None)
-            .unwrap_or_else(|| "unknown".into());
+            .get_name::<crate::regexp::ScannerCaptureIndex>(None, None)
+            .unwrap_or(Cow::Borrowed("unknown"));
         let pinned = PinnedThemeGrammar {
             grammar: self,
             theme,
         };
         let scope_list = AttributedScopeStack::create_root_and_lookup_scope_name(
-            root_scope_name,
+            root_scope_name.as_ref(),
             default_metadata,
             font_attribute,
             &pinned,
@@ -1206,9 +1211,9 @@ fn validate_static_scope_extensions(
     frame: &SerializedStateStackFrame,
     parent_frame: &SerializedStateStackFrame,
 ) -> Result<(), String> {
-    let name = rule.get_name(None, None);
+    let name = rule.get_name::<crate::regexp::ScannerCaptureIndex>(None, None);
     let mut inherited_name_scopes = scope_names(&parent_frame.content_name_scopes);
-    if let Some(expected) = static_scope_names(name) {
+    if let Some(expected) = static_scope_names(name.as_deref()) {
         inherited_name_scopes.extend(expected);
         if scope_names(&frame.name_scopes) != inherited_name_scopes {
             return Err(invalid_serialized_state(
@@ -1221,8 +1226,8 @@ fn validate_static_scope_extensions(
         ));
     }
 
-    let content_name = rule.get_content_name("", &[]);
-    if let Some(expected) = static_scope_names(content_name)
+    let content_name = rule.get_content_name::<crate::regexp::ScannerCaptureIndex>("", &[]);
+    if let Some(expected) = static_scope_names(content_name.as_deref())
         && scope_names(&frame.content_name_scopes) != expected
     {
         return Err(invalid_serialized_state(
@@ -1232,11 +1237,11 @@ fn validate_static_scope_extensions(
     Ok(())
 }
 
-fn static_scope_names(name: Option<String>) -> Option<Vec<String>> {
+fn static_scope_names(name: Option<&str>) -> Option<Vec<String>> {
     let Some(name) = name else {
         return Some(Vec::new());
     };
-    if has_captures(Some(&name)) {
+    if has_captures(Some(name)) {
         None
     } else {
         Some(name.split(' ').map(str::to_owned).collect())
@@ -1367,9 +1372,9 @@ impl TokenizerGrammar for Grammar {
     }
 }
 
-struct TokenizedLine {
+struct TokenizedLine<'a> {
     line_length: usize,
-    line_tokens: LineTokens,
+    line_tokens: LineTokens<'a>,
     line_fonts: LineFonts,
     result: TokenizeStringResult,
 }

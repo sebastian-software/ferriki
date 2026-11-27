@@ -122,12 +122,12 @@ impl StateStack {
         Arc::clone(self)
     }
 
-    pub(crate) fn reset(self: &Arc<Self>) {
-        let mut current = Some(Arc::clone(self));
+    pub(crate) fn reset(&self) {
+        let mut current = Some(self);
         while let Some(element) = current {
             element.enter_pos.store(-1, Ordering::Relaxed);
             element.anchor_pos.store(-1, Ordering::Relaxed);
-            current = element.parent.clone();
+            current = element.parent.as_deref();
         }
     }
 
@@ -248,6 +248,10 @@ impl StateStack {
     }
 
     #[must_use]
+    #[allow(
+        dead_code,
+        reason = "part of the vscode-textmate port, kept for upstream parity"
+    )]
     pub(crate) fn with_end_rule(self: &Arc<Self>, end_rule: impl Into<String>) -> Arc<Self> {
         let end_rule = end_rule.into();
         if self.end_rule.as_deref() == Some(&end_rule) {
@@ -267,18 +271,24 @@ impl StateStack {
     }
 
     #[must_use]
-    pub(crate) fn has_same_rule_as(&self, other: &Self) -> bool {
+    pub(crate) fn has_same_rule(&self, rule_id: RuleId, enter_pos: isize) -> bool {
         let mut current = Some(self);
         while let Some(element) = current {
-            if element.enter_pos() != other.enter_pos() {
+            if element.enter_pos() != enter_pos {
                 break;
             }
-            if element.rule_id == other.rule_id {
+            if element.rule_id == rule_id {
                 return true;
             }
             current = element.parent.as_deref();
         }
         false
+    }
+
+    #[cfg(test)]
+    #[must_use]
+    pub(crate) fn has_same_rule_as(&self, other: &Self) -> bool {
+        self.has_same_rule(other.rule_id, other.enter_pos())
     }
 
     #[must_use]
@@ -386,11 +396,12 @@ pub(crate) struct StateStackFrame {
     pub content_name_scopes_list: Vec<AttributedScopeStackFrame>,
 }
 
-fn structural_equals(left: Option<&Arc<StateStack>>, right: Option<&Arc<StateStack>>) -> bool {
-    let mut left = left.cloned();
-    let mut right = right.cloned();
+fn structural_equals(
+    mut left: Option<&Arc<StateStack>>,
+    mut right: Option<&Arc<StateStack>>,
+) -> bool {
     loop {
-        match (left.as_ref(), right.as_ref()) {
+        match (left, right) {
             (Some(left_stack), Some(right_stack)) => {
                 if Arc::ptr_eq(left_stack, right_stack) {
                     return true;
@@ -401,8 +412,8 @@ fn structural_equals(left: Option<&Arc<StateStack>>, right: Option<&Arc<StateSta
                 {
                     return false;
                 }
-                left = left_stack.parent.clone();
-                right = right_stack.parent.clone();
+                left = left_stack.parent.as_ref();
+                right = right_stack.parent.as_ref();
             }
             (None, None) => return true,
             _ => return false,

@@ -2,6 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -14,9 +15,39 @@ use crate::RegexError;
 
 use crate::raw_grammar::{Location, RuleId};
 use crate::regexp::{
-    CaptureIndex, CompiledRule, MAX_SCANNER_PATTERN_BYTES, RegExpSource, RegExpSourceList,
+    CaptureSpan, CompiledRule, MAX_SCANNER_PATTERN_BYTES, RegExpSource, RegExpSourceList,
     ScannerPatternCache, has_captures, normalized_pattern_byte_len, replace_captures,
+    replace_captures_with_ascii,
 };
+
+/// A resolved TextMate scope name: either pre-split static `Arc<str>` segments
+/// (zero allocations per token) or a borrowed/owned string split on demand
+/// (used for dynamic capture-substituted names and unusually large static names).
+pub(crate) enum ResolvedScopeName<'a> {
+    Static(&'a [Arc<str>]),
+    Dynamic(Cow<'a, str>),
+}
+
+/// Maximum byte length of a static scope name eagerly pre-split into shared
+/// `Arc<str>` segments at grammar load time.
+const MAX_EAGER_STATIC_SCOPE_NAME_BYTES: usize = 256;
+/// Maximum number of space-separated segments eagerly pre-split into shared
+/// `Arc<str>` segments at grammar load time.
+const MAX_EAGER_STATIC_SCOPE_SEGMENTS: usize = 16;
+
+fn pre_split_static_scope_name(value: &str) -> Option<Box<[Arc<str>]>> {
+    if value.len() > MAX_EAGER_STATIC_SCOPE_NAME_BYTES {
+        return None;
+    }
+    let mut segments = Vec::new();
+    for segment in value.split(' ') {
+        if segments.len() >= MAX_EAGER_STATIC_SCOPE_SEGMENTS {
+            return None;
+        }
+        segments.push(Arc::<str>::from(segment));
+    }
+    Some(segments.into_boxed_slice())
+}
 
 /// The scanner identity for a compiled grammar pattern.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -37,8 +68,10 @@ struct RuleData {
     id: RuleId,
     name: Option<String>,
     name_is_capturing: bool,
+    static_name_segments: Option<Box<[Arc<str>]>>,
     content_name: Option<String>,
     content_name_is_capturing: bool,
+    static_content_name_segments: Option<Box<[Arc<str>]>>,
 }
 
 impl RuleData {
@@ -49,15 +82,27 @@ impl RuleData {
         content_name: Option<String>,
     ) -> Self {
         let name_is_capturing = has_captures(name.as_deref());
+        let static_name_segments = (!name_is_capturing)
+            .then(|| name.as_deref().and_then(pre_split_static_scope_name))
+            .flatten();
         let content_name_is_capturing = has_captures(content_name.as_deref());
+        let static_content_name_segments = (!content_name_is_capturing)
+            .then(|| {
+                content_name
+                    .as_deref()
+                    .and_then(pre_split_static_scope_name)
+            })
+            .flatten();
         Self {
             location,
             source_scope_name: String::new(),
             id,
             name,
             name_is_capturing,
+            static_name_segments,
             content_name,
             content_name_is_capturing,
+            static_content_name_segments,
         }
     }
 
@@ -79,31 +124,78 @@ impl RuleData {
         format!("{rule_name}#{} @ {location}", self.id.get())
     }
 
-    fn get_name(
+    fn get_name<C: CaptureSpan>(
         &self,
         line_text: Option<&str>,
-        capture_indices: Option<&[CaptureIndex]>,
-    ) -> Option<String> {
-        let name = self.name.as_ref()?;
+        capture_indices: Option<&[C]>,
+    ) -> Option<Cow<'_, str>> {
+        let name = self.name.as_deref()?;
         if !self.name_is_capturing {
-            return Some(name.clone());
+            return Some(Cow::Borrowed(name));
         }
         let (Some(line_text), Some(capture_indices)) = (line_text, capture_indices) else {
-            return Some(name.clone());
+            return Some(Cow::Borrowed(name));
         };
-        Some(replace_captures(name, line_text, capture_indices))
+        Some(Cow::Owned(replace_captures(
+            name,
+            line_text,
+            capture_indices,
+        )))
     }
 
-    fn get_content_name(
+    fn resolved_name<C: CaptureSpan>(
+        &self,
+        line_text: Option<&str>,
+        capture_indices: Option<&[C]>,
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        if let Some(segments) = self.static_name_segments.as_deref() {
+            return Some(ResolvedScopeName::Static(segments));
+        }
+        let name = self.name.as_deref()?;
+        if !self.name_is_capturing {
+            return Some(ResolvedScopeName::Dynamic(Cow::Borrowed(name)));
+        }
+        let (Some(line_text), Some(capture_indices)) = (line_text, capture_indices) else {
+            return Some(ResolvedScopeName::Dynamic(Cow::Borrowed(name)));
+        };
+        Some(ResolvedScopeName::Dynamic(Cow::Owned(
+            replace_captures_with_ascii(name, line_text, capture_indices, line_is_ascii),
+        )))
+    }
+
+    fn get_content_name<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
-    ) -> Option<String> {
-        let content_name = self.content_name.as_ref()?;
+        capture_indices: &[C],
+    ) -> Option<Cow<'_, str>> {
+        let content_name = self.content_name.as_deref()?;
         if !self.content_name_is_capturing {
-            return Some(content_name.clone());
+            return Some(Cow::Borrowed(content_name));
         }
-        Some(replace_captures(content_name, line_text, capture_indices))
+        Some(Cow::Owned(replace_captures(
+            content_name,
+            line_text,
+            capture_indices,
+        )))
+    }
+
+    fn resolved_content_name<C: CaptureSpan>(
+        &self,
+        line_text: &str,
+        capture_indices: &[C],
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        if let Some(segments) = self.static_content_name_segments.as_deref() {
+            return Some(ResolvedScopeName::Static(segments));
+        }
+        let content_name = self.content_name.as_deref()?;
+        if !self.content_name_is_capturing {
+            return Some(ResolvedScopeName::Dynamic(Cow::Borrowed(content_name)));
+        }
+        Some(ResolvedScopeName::Dynamic(Cow::Owned(
+            replace_captures_with_ascii(content_name, line_text, capture_indices, line_is_ascii),
+        )))
     }
 
     fn backtracking_rule_name(&self) -> String {
@@ -144,22 +236,36 @@ impl CaptureRule {
         }
     }
 
+    #[cfg(test)]
     #[must_use]
-    pub(crate) fn get_name(
+    pub(crate) fn get_name<C: CaptureSpan>(
         &self,
         line_text: Option<&str>,
-        capture_indices: Option<&[CaptureIndex]>,
-    ) -> Option<String> {
+        capture_indices: Option<&[C]>,
+    ) -> Option<Cow<'_, str>> {
         self.data.get_name(line_text, capture_indices)
     }
 
     #[must_use]
-    pub(crate) fn get_content_name(
+    pub(crate) fn resolved_name<C: CaptureSpan>(
+        &self,
+        line_text: Option<&str>,
+        capture_indices: Option<&[C]>,
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        self.data
+            .resolved_name(line_text, capture_indices, line_is_ascii)
+    }
+
+    #[must_use]
+    pub(crate) fn resolved_content_name<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
-    ) -> Option<String> {
-        self.data.get_content_name(line_text, capture_indices)
+        capture_indices: &[C],
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        self.data
+            .resolved_content_name(line_text, capture_indices, line_is_ascii)
     }
 }
 
@@ -293,12 +399,23 @@ impl BeginEndRule {
         &self.end.source
     }
 
-    pub(crate) fn get_end_with_resolved_back_references(
+    #[cfg(test)]
+    pub(crate) fn get_end_with_resolved_back_references<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
+        capture_indices: &[C],
     ) -> Result<String, RegexError> {
-        self.end.resolve_back_references(line_text, capture_indices)
+        self.get_end_with_resolved_back_references_with_ascii(line_text, capture_indices, false)
+    }
+
+    pub(crate) fn get_end_with_resolved_back_references_with_ascii<C: CaptureSpan>(
+        &self,
+        line_text: &str,
+        capture_indices: &[C],
+        line_is_ascii: bool,
+    ) -> Result<String, RegexError> {
+        self.end
+            .resolve_back_references_with_ascii(line_text, capture_indices, line_is_ascii)
     }
 
     pub(crate) fn has_valid_resolved_end_pattern(&self, pattern: &str, work: &mut usize) -> bool {
@@ -373,13 +490,26 @@ impl BeginWhileRule {
         &self.while_source.source
     }
 
-    pub(crate) fn get_while_with_resolved_back_references(
+    #[cfg(test)]
+    pub(crate) fn get_while_with_resolved_back_references<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
+        capture_indices: &[C],
     ) -> Result<String, RegexError> {
-        self.while_source
-            .resolve_back_references(line_text, capture_indices)
+        self.get_while_with_resolved_back_references_with_ascii(line_text, capture_indices, false)
+    }
+
+    pub(crate) fn get_while_with_resolved_back_references_with_ascii<C: CaptureSpan>(
+        &self,
+        line_text: &str,
+        capture_indices: &[C],
+        line_is_ascii: bool,
+    ) -> Result<String, RegexError> {
+        self.while_source.resolve_back_references_with_ascii(
+            line_text,
+            capture_indices,
+            line_is_ascii,
+        )
     }
 
     pub(crate) fn has_valid_resolved_while_pattern(&self, pattern: &str, work: &mut usize) -> bool {
@@ -406,10 +536,7 @@ impl BeginWhileRule {
         allow_a: bool,
         allow_g: bool,
     ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
-        let mut cached = self
-            .cached_compiled_while_patterns
-            .lock()
-            .expect("compiled while-pattern cache lock poisoned");
+        let mut cached = lock_pattern_cache(&self.cached_compiled_while_patterns);
         let resolved_while = self
             .while_has_back_references
             .then(|| end_regex_source.unwrap_or("\u{ffff}"));
@@ -564,21 +691,43 @@ impl Rule {
     }
 
     #[must_use]
-    pub(crate) fn get_name(
+    pub(crate) fn get_name<C: CaptureSpan>(
         &self,
         line_text: Option<&str>,
-        capture_indices: Option<&[CaptureIndex]>,
-    ) -> Option<String> {
+        capture_indices: Option<&[C]>,
+    ) -> Option<Cow<'_, str>> {
         self.data().get_name(line_text, capture_indices)
     }
 
     #[must_use]
-    pub(crate) fn get_content_name(
+    pub(crate) fn resolved_name<C: CaptureSpan>(
+        &self,
+        line_text: Option<&str>,
+        capture_indices: Option<&[C]>,
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        self.data()
+            .resolved_name(line_text, capture_indices, line_is_ascii)
+    }
+
+    #[must_use]
+    pub(crate) fn get_content_name<C: CaptureSpan>(
         &self,
         line_text: &str,
-        capture_indices: &[CaptureIndex],
-    ) -> Option<String> {
+        capture_indices: &[C],
+    ) -> Option<Cow<'_, str>> {
         self.data().get_content_name(line_text, capture_indices)
+    }
+
+    #[must_use]
+    pub(crate) fn resolved_content_name<C: CaptureSpan>(
+        &self,
+        line_text: &str,
+        capture_indices: &[C],
+        line_is_ascii: bool,
+    ) -> Option<ResolvedScopeName<'_>> {
+        self.data()
+            .resolved_content_name(line_text, capture_indices, line_is_ascii)
     }
 
     #[allow(
@@ -664,10 +813,7 @@ impl Rule {
         let compiled = match self {
             Self::Capture(_) => panic!("capture rules cannot compile scanner patterns"),
             Self::Match(rule) => {
-                let mut cached = rule
-                    .cached_compiled_patterns
-                    .lock()
-                    .expect("compiled pattern cache lock poisoned");
+                let mut cached = lock_pattern_cache(&rule.cached_compiled_patterns);
                 if cached.is_none() {
                     if rule.match_source.normalized_byte_len(allow_a, allow_g)
                         > MAX_SCANNER_PATTERN_BYTES
@@ -700,10 +846,7 @@ impl Rule {
                 allow_g,
             ),
             Self::BeginEnd(rule) => {
-                let mut cached = rule
-                    .cached_compiled_patterns
-                    .lock()
-                    .expect("compiled pattern cache lock poisoned");
+                let mut cached = lock_pattern_cache(&rule.cached_compiled_patterns);
                 let resolved_end = rule
                     .end_has_back_references
                     .then(|| end_regex_source.unwrap_or("\u{ffff}"));
@@ -780,6 +923,19 @@ impl Rule {
             registry.record_backtracking_warnings(self.id(), compiled);
         }
         compiled
+    }
+
+    #[cfg(test)]
+    pub(crate) fn lock_cached_patterns_for_test(
+        &self,
+    ) -> std::sync::MutexGuard<'_, Option<RegExpSourceList<RuleScannerId>>> {
+        match self {
+            Self::Capture(_) => panic!("capture rules have no pattern cache"),
+            Self::Match(rule) => rule.cached_compiled_patterns.lock().unwrap(),
+            Self::IncludeOnly(rule) => rule.cached_compiled_patterns.lock().unwrap(),
+            Self::BeginEnd(rule) => rule.cached_compiled_patterns.lock().unwrap(),
+            Self::BeginWhile(rule) => rule.cached_compiled_patterns.lock().unwrap(),
+        }
     }
 
     #[must_use]
@@ -1109,6 +1265,56 @@ fn collect_pattern_ids(
     Ok(())
 }
 
+#[cfg(test)]
+thread_local! {
+    static ON_PATTERN_CACHE_CONTENTION: std::cell::RefCell<Option<Box<dyn FnMut()>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) struct PatternCacheContentionHookGuard;
+
+#[cfg(test)]
+impl PatternCacheContentionHookGuard {
+    pub(crate) fn install(hook: impl FnMut() + 'static) -> Self {
+        ON_PATTERN_CACHE_CONTENTION.with(|slot| {
+            *slot.borrow_mut() = Some(Box::new(hook));
+        });
+        Self
+    }
+}
+
+#[cfg(test)]
+impl Drop for PatternCacheContentionHookGuard {
+    fn drop(&mut self) {
+        ON_PATTERN_CACHE_CONTENTION.with(|slot| {
+            *slot.borrow_mut() = None;
+        });
+    }
+}
+
+fn lock_pattern_cache(
+    cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
+) -> std::sync::MutexGuard<'_, Option<RegExpSourceList<RuleScannerId>>> {
+    #[cfg(test)]
+    match cache.try_lock() {
+        Ok(guard) => guard,
+        Err(std::sync::TryLockError::WouldBlock) => {
+            ON_PATTERN_CACHE_CONTENTION.with(|slot| {
+                if let Some(hook) = slot.borrow_mut().as_mut() {
+                    hook();
+                }
+            });
+            cache.lock().expect("compiled pattern cache lock poisoned")
+        }
+        Err(std::sync::TryLockError::Poisoned(_)) => {
+            panic!("compiled pattern cache lock poisoned")
+        }
+    }
+    #[cfg(not(test))]
+    cache.lock().expect("compiled pattern cache lock poisoned")
+}
+
 fn compile_patterns(
     cache: &Mutex<Option<RegExpSourceList<RuleScannerId>>>,
     registry: &RuleRegistry,
@@ -1118,7 +1324,7 @@ fn compile_patterns(
     allow_a: bool,
     allow_g: bool,
 ) -> Result<Arc<CompiledRule<RuleScannerId>>, RegexError> {
-    let mut cached = cache.lock().expect("compiled pattern cache lock poisoned");
+    let mut cached = lock_pattern_cache(cache);
     if cached.is_none() {
         let mut sources = RegExpSourceList::with_pattern_cache(
             registry.regex_prefilter,
@@ -1141,8 +1347,10 @@ fn compile_patterns(
         }
         *cached = Some(sources);
     }
-    let sources = cached.as_mut().expect("cached sources must be populated");
-    sources.compile_ag(allow_a, allow_g)
+    cached
+        .as_mut()
+        .expect("cached sources must be populated")
+        .compile_ag(allow_a, allow_g)
 }
 
 #[allow(
@@ -1606,5 +1814,97 @@ mod tests {
             .err()
             .expect("oversized resolved while pattern must fail");
         assert!(err.to_string().contains("size limit"));
+    }
+
+    #[test]
+    fn bounds_eager_static_scope_name_pre_splitting_while_preserving_resolution() {
+        let mut registry = RuleRegistry::new();
+
+        // Ordinary static scope name (within byte and segment caps) is pre-split eagerly.
+        let normal_id = registry.register_rule(|id| {
+            Rule::Match(MatchRule::new(
+                None,
+                id,
+                Some("meta.block keyword.control".to_owned()),
+                "foo",
+                Vec::new(),
+            ))
+        });
+        assert!(matches!(
+            registry
+                .get_rule(normal_id)
+                .resolved_name::<CaptureIndex>(None, None, true),
+            Some(super::ResolvedScopeName::Static(segments))
+                if segments.len() == 2
+                    && &*segments[0] == "meta.block"
+                    && &*segments[1] == "keyword.control"
+        ));
+
+        // Oversized by byte length (> 256 bytes) is deferred instead of eagerly allocating.
+        let long_name = (0..40)
+            .map(|i| format!("scope.segment.{i:02}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(long_name.len() > super::MAX_EAGER_STATIC_SCOPE_NAME_BYTES);
+        let long_id = registry.register_rule(|id| {
+            Rule::Match(MatchRule::new(
+                None,
+                id,
+                Some(long_name.clone()),
+                "bar",
+                Vec::new(),
+            ))
+        });
+        assert!(
+            registry
+                .get_rule(long_id)
+                .data()
+                .static_name_segments
+                .is_none(),
+            "oversized static scope names must not eagerly pre-split into per-segment Arcs"
+        );
+        assert!(matches!(
+            registry
+                .get_rule(long_id)
+                .resolved_name::<CaptureIndex>(Some("bar"), Some(&[]), true),
+            Some(super::ResolvedScopeName::Dynamic(std::borrow::Cow::Borrowed(resolved)))
+                if resolved == long_name
+        ));
+
+        // Oversized by segment count (> 16 segments even if <= 256 bytes) is also deferred.
+        let many_segments = (0..17)
+            .map(|i| format!("s{i}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(many_segments.len() <= super::MAX_EAGER_STATIC_SCOPE_NAME_BYTES);
+        let many_id = registry.register_rule(|id| {
+            Rule::BeginEnd(BeginEndRule::new(BeginEndRuleOptions {
+                location: None,
+                id,
+                name: None,
+                content_name: Some(many_segments.clone()),
+                begin: "<",
+                begin_captures: Vec::new(),
+                end: Some(">"),
+                end_captures: Vec::new(),
+                apply_end_pattern_last: false,
+                patterns: CompilePatternsResult::default(),
+            }))
+        });
+        assert!(
+            registry
+                .get_rule(many_id)
+                .data()
+                .static_content_name_segments
+                .is_none(),
+            "static scope names exceeding segment cap must not eagerly pre-split"
+        );
+        assert!(matches!(
+            registry
+                .get_rule(many_id)
+                .resolved_content_name::<CaptureIndex>("<", &[], true),
+            Some(super::ResolvedScopeName::Dynamic(std::borrow::Cow::Borrowed(resolved)))
+                if resolved == many_segments
+        ));
     }
 }

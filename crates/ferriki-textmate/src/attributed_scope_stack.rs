@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::basic_scope_attributes::{BasicScopeAttributes, BasicScopeAttributesProvider};
 use crate::encoded_token_attributes::{EncodedTokenAttributes, FontAttribute};
+use crate::rule::ResolvedScopeName;
 use crate::theme::{FontStyle, ScopeStack, StyleAttributes, Theme};
 
 pub(crate) trait ScopeAttributesProvider {
@@ -46,11 +47,6 @@ pub(crate) struct AttributedScopeStack {
     pub scope_path: Arc<ScopeStack>,
     pub token_attributes: EncodedTokenAttributes,
     pub font_attributes: Option<FontAttribute>,
-    #[allow(
-        dead_code,
-        reason = "part of the vscode-textmate port, kept for upstream parity"
-    )]
-    pub style_attributes: Option<StyleAttributes>,
 }
 
 impl AttributedScopeStack {
@@ -62,7 +58,8 @@ impl AttributedScopeStack {
         let mut current = names_scope_list;
         let mut scope_names = current.as_ref().map(|scope| Arc::clone(&scope.scope_path));
         for frame in content_name_scopes_list {
-            scope_names = ScopeStack::push(scope_names, frame.scope_names.iter().cloned());
+            scope_names =
+                ScopeStack::push(scope_names, frame.scope_names.iter().map(String::as_str));
             current = Some(Arc::new(Self {
                 parent: current,
                 scope_path: Arc::clone(
@@ -72,7 +69,6 @@ impl AttributedScopeStack {
                 ),
                 token_attributes: frame.encoded_token_attributes,
                 font_attributes: None,
-                style_attributes: None,
             }));
         }
         current
@@ -84,7 +80,7 @@ impl AttributedScopeStack {
         reason = "part of the vscode-textmate port, kept for upstream parity"
     )]
     pub(crate) fn create_root(
-        scope_name: impl Into<String>,
+        scope_name: impl Into<Arc<str>>,
         token_attributes: EncodedTokenAttributes,
         font_attribute: FontAttribute,
     ) -> Arc<Self> {
@@ -96,18 +92,17 @@ impl AttributedScopeStack {
             }),
             token_attributes,
             font_attributes: Some(font_attribute),
-            style_attributes: None,
         })
     }
 
     #[must_use]
     pub(crate) fn create_root_and_lookup_scope_name(
-        scope_name: impl Into<String>,
+        scope_name: impl Into<Arc<str>>,
         token_attributes: EncodedTokenAttributes,
         font_attribute: FontAttribute,
         provider: &impl ScopeAttributesProvider,
     ) -> Arc<Self> {
-        let scope_name = scope_name.into();
+        let scope_name: Arc<str> = scope_name.into();
         let raw_root_metadata = provider.metadata_for_scope(&scope_name);
         let scope_path = Arc::new(ScopeStack {
             parent: None,
@@ -123,7 +118,6 @@ impl AttributedScopeStack {
             scope_path,
             token_attributes: resolved_token_attributes,
             font_attributes: Some(resolved_font_attributes),
-            style_attributes: root_style,
         })
     }
 
@@ -133,11 +127,9 @@ impl AttributedScopeStack {
     }
 
     #[must_use]
-    pub(crate) fn equals(left: Option<&Arc<Self>>, right: Option<&Arc<Self>>) -> bool {
-        let mut left = left.cloned();
-        let mut right = right.cloned();
+    pub(crate) fn equals(mut left: Option<&Arc<Self>>, mut right: Option<&Arc<Self>>) -> bool {
         loop {
-            match (left.as_ref(), right.as_ref()) {
+            match (left, right) {
                 (Some(left_scope), Some(right_scope)) => {
                     if Arc::ptr_eq(left_scope, right_scope) {
                         return true;
@@ -147,8 +139,8 @@ impl AttributedScopeStack {
                     {
                         return false;
                     }
-                    left = left_scope.parent.clone();
-                    right = right_scope.parent.clone();
+                    left = left_scope.parent.as_ref();
+                    right = right_scope.parent.as_ref();
                 }
                 (None, None) => return true,
                 _ => return false,
@@ -167,19 +159,43 @@ impl AttributedScopeStack {
         };
         let mut result = Arc::clone(self);
         for scope_name in scope_path.split(' ') {
-            result = Self::push_single_attributed(&result, scope_name, provider);
+            result = Self::push_single_arc(&result, Arc::from(scope_name), provider);
         }
         result
     }
 
-    fn push_single_attributed(
-        target: &Arc<Self>,
-        scope_name: &str,
+    #[must_use]
+    pub(crate) fn push_resolved(
+        self: &Arc<Self>,
+        scope_name: Option<ResolvedScopeName<'_>>,
         provider: &impl ScopeAttributesProvider,
     ) -> Arc<Self> {
-        let raw_metadata = provider.metadata_for_scope(scope_name);
-        let new_path = ScopeStack::push(Some(Arc::clone(&target.scope_path)), [scope_name])
-            .expect("pushing a scope must produce a scope path");
+        let Some(scope_name) = scope_name else {
+            return Arc::clone(self);
+        };
+        let mut result = Arc::clone(self);
+        match scope_name {
+            ResolvedScopeName::Static(segments) => {
+                for segment in segments {
+                    result = Self::push_single_arc(&result, Arc::clone(segment), provider);
+                }
+            }
+            ResolvedScopeName::Dynamic(scope_path) => {
+                for segment in scope_path.split(' ') {
+                    result = Self::push_single_arc(&result, Arc::from(segment), provider);
+                }
+            }
+        }
+        result
+    }
+
+    fn push_single_arc(
+        target: &Arc<Self>,
+        scope_name: Arc<str>,
+        provider: &impl ScopeAttributesProvider,
+    ) -> Arc<Self> {
+        let raw_metadata = provider.metadata_for_scope(&scope_name);
+        let new_path = target.scope_path.push_arc(scope_name);
         let scope_theme_match_result = provider.theme_match(&new_path);
         let metadata = merge_attributes(
             target.token_attributes,
@@ -195,7 +211,6 @@ impl AttributedScopeStack {
             scope_path: new_path,
             token_attributes: metadata,
             font_attributes,
-            style_attributes: scope_theme_match_result,
         })
     }
 
@@ -210,9 +225,9 @@ impl AttributedScopeStack {
         base: Option<&Arc<Self>>,
     ) -> Option<Vec<AttributedScopeStackFrame>> {
         let mut result = Vec::new();
-        let mut current = Some(Arc::clone(self));
+        let mut current = Some(self);
 
-        while let Some(scope) = current.as_ref() {
+        while let Some(scope) = current {
             if base.is_some_and(|base| Arc::ptr_eq(scope, base)) {
                 break;
             }
@@ -225,10 +240,10 @@ impl AttributedScopeStack {
                     )
                     .expect("attributed scope path must extend its parent"),
             });
-            current = scope.parent.clone();
+            current = scope.parent.as_ref();
         }
 
-        let reached_base = match (current.as_ref(), base) {
+        let reached_base = match (current, base) {
             (None, None) => true,
             (Some(current), Some(base)) => Arc::ptr_eq(current, base),
             _ => false,
@@ -252,19 +267,18 @@ impl AttributedScopeStack {
         provider: &impl ScopeAttributesProvider,
     ) -> Arc<Self> {
         let mut nodes = Vec::new();
-        let mut current = Some(Arc::clone(self));
+        let mut current = Some(self);
         let mut rebuilt = None;
         while let Some(node) = current {
             if let Some(&(_, new_base)) = bases
                 .iter()
-                .find(|(old_base, _)| Arc::ptr_eq(&node, old_base))
+                .find(|(old_base, _)| Arc::ptr_eq(node, old_base))
             {
                 rebuilt = Some(Arc::clone(new_base));
                 break;
             }
-            let parent = node.parent.clone();
             nodes.push(node);
-            current = parent;
+            current = node.parent.as_ref();
         }
         nodes.reverse();
 
@@ -285,7 +299,6 @@ impl AttributedScopeStack {
                         scope_path: Arc::clone(&old_node.scope_path),
                         token_attributes: metadata,
                         font_attributes,
-                        style_attributes: style,
                     })
                 }
                 None => {
@@ -297,7 +310,6 @@ impl AttributedScopeStack {
                         scope_path: Arc::clone(&old_node.scope_path),
                         token_attributes: metadata,
                         font_attributes: Some(font_attributes),
-                        style_attributes: style,
                     })
                 }
             });
@@ -367,7 +379,7 @@ mod tests {
         }
 
         fn theme_match(&self, scope_path: &ScopeStack) -> Option<StyleAttributes> {
-            (scope_path.scope_name == "string.quoted").then(|| StyleAttributes {
+            (&*scope_path.scope_name == "string.quoted").then(|| StyleAttributes {
                 font_style: FontStyle::ITALIC,
                 foreground_id: 7,
                 background_id: 0,

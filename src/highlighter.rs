@@ -13,8 +13,8 @@ use crate::render::{RenderOptions, render_html_lines};
 use crate::theme_data::{ThemeData, parse_theme_data};
 use crate::tokens::{
     HighlightThemeMetadata, HighlightThemeToken, HighlightThemeTokenStyle, HighlightToken,
-    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions,
-    convert_token_offsets_to_utf8, split_lines, token_from_metadata, utf16_to_byte_map,
+    HighlightTokensResult, HighlightTokensWithThemesResult, TokenizeOptions, Utf16ToByteMap,
+    convert_token_offsets_to_utf8, split_lines, token_from_metadata, utf16_to_byte_map_non_ascii,
 };
 use crate::{Error, ErrorKind, Result};
 
@@ -1013,11 +1013,18 @@ impl HighlighterCore {
             .map(|serialized| grammar.deserialize_state_stack(serialized))
             .transpose()
             .map_err(|reason| Error::new(ErrorKind::Tokenization, reason))?;
-        let mut output_lines = Vec::new();
+        let lines = split_lines(code);
+        let mut output_lines = Vec::with_capacity(lines.len());
+        let mut boundaries = Vec::new();
 
-        for (line, line_offset) in split_lines(code) {
+        for (line, line_offset) in lines {
             // Empty lines still advance TextMate rules, even though they emit no output tokens.
-            let line_length = line.encode_utf16().count();
+            let line_is_ascii = line.is_ascii();
+            let line_length = if line_is_ascii {
+                line.len()
+            } else {
+                line.encode_utf16().count()
+            };
             if options.max_line_length > 0 && line_length >= options.max_line_length {
                 output_lines.push(vec![HighlightToken {
                     content: line.to_owned(),
@@ -1054,15 +1061,21 @@ impl HighlighterCore {
                         })?;
                     (None, result.tokens, result.rule_stack)
                 };
-            let utf16_map = utf16_to_byte_map(line);
+            let utf16_map = if line_is_ascii {
+                Utf16ToByteMap::Ascii(line.len())
+            } else {
+                utf16_to_byte_map_non_ascii(line, line_length)
+            };
             let mut line_tokens = Vec::with_capacity(binary_tokens.len() / 2);
-            let mut boundaries: Vec<usize> = binary_tokens
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|token| token[0] as usize)
-                .filter(|start| *start < line_length)
-                .collect();
+            boundaries.clear();
+            boundaries.extend(
+                binary_tokens
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|token| token[0] as usize)
+                    .filter(|start| *start < line_length),
+            );
             boundaries.push(line_length);
             if options.preserve_scope_boundaries {
                 for token in scope_tokens
@@ -1330,10 +1343,22 @@ impl HighlighterCore {
 
         let need_scopes = deferred_theme_error.is_none()
             && (options.include_scopes || options.preserve_scope_boundaries);
-        let mut output_lines = Vec::new();
-        for (line, line_offset) in split_lines(code) {
+        let lines = split_lines(code);
+        let mut output_lines = if deferred_theme_error.is_none() {
+            Vec::with_capacity(lines.len())
+        } else {
+            Vec::new()
+        };
+        let mut boundaries = Vec::new();
+        let mut cursors = vec![0usize; compiled_themes.len()];
+        for (line, line_offset) in lines {
             // Empty lines still advance TextMate rules, even though they emit no output tokens.
-            let line_length = line.encode_utf16().count();
+            let line_is_ascii = line.is_ascii();
+            let line_length = if line_is_ascii {
+                line.len()
+            } else {
+                line.encode_utf16().count()
+            };
             if options.max_line_length > 0 && line_length >= options.max_line_length {
                 if deferred_theme_error.is_none() {
                     let mut variants = BTreeMap::new();
@@ -1388,11 +1413,15 @@ impl HighlighterCore {
                 continue;
             }
 
-            let utf16_map = utf16_to_byte_map(line);
+            let utf16_map = if line_is_ascii {
+                Utf16ToByteMap::Ascii(line.len())
+            } else {
+                utf16_to_byte_map_non_ascii(line, line_length)
+            };
             let binary_sets = &line_result.binary_tokens;
             let scope_tokens = line_result.tokens.as_deref();
 
-            let mut boundaries = Vec::new();
+            boundaries.clear();
             for binary_tokens in binary_sets {
                 boundaries.extend(
                     binary_tokens
@@ -1413,7 +1442,7 @@ impl HighlighterCore {
             boundaries.sort_unstable();
             boundaries.dedup();
 
-            let mut cursors = vec![0usize; binary_sets.len()];
+            cursors.fill(0);
             let mut scope_index = 0usize;
             let mut line_tokens = Vec::with_capacity(boundaries.len().saturating_sub(1));
 
@@ -1641,6 +1670,7 @@ impl LanguageRegistration {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tokens::utf16_to_byte_map;
 
     fn standard_highlighter() -> HighlighterCore {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/standard");
