@@ -1,10 +1,14 @@
 //! Inline multi-theme HTML for the private Node render operation.
 
-use crate::render::{escape_attribute, escape_html};
+use crate::render::{
+    escape_attribute, escape_html, is_valid_inline_css_variable_prefix,
+    is_valid_inline_theme_custom_property, normalize_safe_css_color,
+};
 use crate::{
     FontStyle, HighlightThemeToken, HighlightThemeTokenStyle, HighlightTokensWithThemesResult,
     RenderOptions,
 };
+use std::borrow::Cow;
 
 pub struct MultiThemeRenderOptions {
     pub render: RenderOptions,
@@ -15,7 +19,20 @@ pub struct MultiThemeRenderOptions {
 pub fn render_html_with_themes(
     result: &HighlightTokensWithThemesResult,
     options: &MultiThemeRenderOptions,
-) -> String {
+) -> Result<String, String> {
+    if !is_valid_inline_css_variable_prefix(&options.css_variable_prefix) {
+        return Err(
+            "Highlight option `cssVariablePrefix` must be a CSS custom property prefix".to_owned(),
+        );
+    }
+    for theme in &result.themes {
+        if !is_valid_inline_theme_custom_property(&options.css_variable_prefix, &theme.color) {
+            return Err(format!(
+                "Theme key `{}` must produce valid CSS custom property names",
+                theme.color
+            ));
+        }
+    }
     let mut html = String::from("<pre class=\"");
     let mut class = String::from("shiki shiki-themes");
     for theme in &result.themes {
@@ -63,7 +80,7 @@ pub fn render_html_with_themes(
         html.push_str("</span>");
     }
     html.push_str("</code></pre>");
-    html
+    Ok(html)
 }
 
 fn render_line(
@@ -141,20 +158,24 @@ impl Property {
             Self::Decoration => "-text-decoration",
         }
     }
-    fn value(self, style: Option<&HighlightThemeTokenStyle>) -> Option<&str> {
+    fn value(self, style: Option<&HighlightThemeTokenStyle>) -> Option<Cow<'_, str>> {
         let style = style?;
         let font = style.font_style.unwrap_or_default();
         match self {
-            Self::Color => style.color.as_deref().filter(|color| !color.is_empty()),
-            Self::Italic => font.contains(FontStyle::ITALIC).then_some("italic"),
-            Self::Bold => font.contains(FontStyle::BOLD).then_some("bold"),
+            Self::Color => style.color.as_deref().and_then(normalize_safe_css_color),
+            Self::Italic => font
+                .contains(FontStyle::ITALIC)
+                .then_some(Cow::Borrowed("italic")),
+            Self::Bold => font
+                .contains(FontStyle::BOLD)
+                .then_some(Cow::Borrowed("bold")),
             Self::Decoration => match (
                 font.contains(FontStyle::UNDERLINE),
                 font.contains(FontStyle::STRIKETHROUGH),
             ) {
-                (true, true) => Some("underline line-through"),
-                (true, false) => Some("underline"),
-                (false, true) => Some("line-through"),
+                (true, true) => Some(Cow::Borrowed("underline line-through")),
+                (true, false) => Some(Cow::Borrowed("underline")),
+                (false, true) => Some(Cow::Borrowed("line-through")),
                 (false, false) => None,
             },
         }
@@ -191,21 +212,25 @@ fn token_style(
         for &key in &keys[..count] {
             let value = key
                 .value(token.variants.get(&theme.color))
-                .unwrap_or("inherit");
+                .unwrap_or(Cow::Borrowed("inherit"));
             if index == 0 && options.default_color.is_some() && key == Property::Color {
                 separator(&mut output);
                 output.push_str(key.name());
                 output.push(':');
                 if light_dark {
-                    let light = key.value(token.variants.get("light")).unwrap_or("inherit");
-                    let dark = key.value(token.variants.get("dark")).unwrap_or("inherit");
+                    let light = key
+                        .value(token.variants.get("light"))
+                        .unwrap_or(Cow::Borrowed("inherit"));
+                    let dark = key
+                        .value(token.variants.get("dark"))
+                        .unwrap_or(Cow::Borrowed("inherit"));
                     output.push_str("light-dark(");
-                    output.push_str(light);
+                    output.push_str(&light);
                     output.push_str(", ");
-                    output.push_str(dark);
+                    output.push_str(&dark);
                     output.push(')');
                 } else {
-                    output.push_str(value);
+                    output.push_str(&value);
                 }
             }
             if index > 0 || options.default_color.is_none() || key != Property::Color || light_dark
@@ -215,7 +240,7 @@ fn token_style(
                 output.push_str(&theme.color);
                 output.push_str(key.suffix());
                 output.push(':');
-                output.push_str(value);
+                output.push_str(&value);
             }
         }
     }
@@ -234,11 +259,7 @@ fn theme_property(
         } else {
             &theme.foreground
         };
-        if value.is_empty() {
-            "inherit"
-        } else {
-            value.as_str()
-        }
+        normalize_safe_css_color(value).unwrap_or(Cow::Borrowed("inherit"))
     };
     let mut output = String::new();
     let light_dark = options.default_color.as_deref() == Some("light-dark()");
@@ -250,20 +271,20 @@ fn theme_property(
                     .iter()
                     .position(|theme| theme.color == "light")
                     .map(read)
-                    .unwrap_or("inherit");
+                    .unwrap_or(Cow::Borrowed("inherit"));
                 let dark = result
                     .themes
                     .iter()
                     .position(|theme| theme.color == "dark")
                     .map(read)
-                    .unwrap_or("inherit");
+                    .unwrap_or(Cow::Borrowed("inherit"));
                 output.push_str("light-dark(");
-                output.push_str(light);
+                output.push_str(&light);
                 output.push_str(", ");
-                output.push_str(dark);
+                output.push_str(&dark);
                 output.push(')');
             } else {
-                output.push_str(read(index));
+                output.push_str(&read(index));
             }
         }
         if index > 0 || options.default_color.is_none() || light_dark {
@@ -274,7 +295,7 @@ fn theme_property(
                 output.push_str("-bg");
             }
             output.push(':');
-            output.push_str(read(index));
+            output.push_str(&read(index));
         }
     }
     output
@@ -342,7 +363,7 @@ mod tests {
 
     #[test]
     fn ordered_css_union_escapes_html_and_keeps_empty_lines() {
-        let html = render_html_with_themes(&fixture(), &options(None));
+        let html = render_html_with_themes(&fixture(), &options(None)).unwrap();
         assert!(html.starts_with(concat!(
             "<pre class=\"shiki shiki-themes light dark&#x3C;&#x26;&#x22;\" ",
             "style=\"--shiki-light:#111;--shiki-dark:#eee;--shiki-light-bg:inherit;--shiki-dark-bg:#222\" tabindex=\"0\"><code>"
@@ -359,13 +380,13 @@ mod tests {
     #[test]
     fn default_color_and_light_dark_keep_literal_and_variable_order() {
         let result = fixture();
-        let html = render_html_with_themes(&result, &options(Some("light")));
+        let html = render_html_with_themes(&result, &options(Some("light"))).unwrap();
         assert!(html.contains(
             "style=\"background-color:inherit;--shiki-dark-bg:#222;color:#111;--shiki-dark:#eee\""
         ));
         assert!(html.contains("<span style=\"color:#123;--shiki-light-text-decoration:underline;"));
         assert!(!html.contains("--shiki-light:#123"));
-        let html = render_html_with_themes(&result, &options(Some("light-dark()")));
+        let html = render_html_with_themes(&result, &options(Some("light-dark()"))).unwrap();
         assert!(html.contains("background-color:light-dark(inherit, #222);--shiki-light-bg:inherit;--shiki-dark-bg:#222;color:light-dark(#111, #eee);--shiki-light:#111;--shiki-dark:#eee"));
         assert!(html.contains("color:light-dark(#123, inherit);--shiki-light:#123;"));
         // A named variant other than light/dark still has inherited values
@@ -373,7 +394,7 @@ mod tests {
         let mut missing_pair = result.clone();
         missing_pair.themes[0].color = "custom".into();
         missing_pair.themes.pop();
-        let html = render_html_with_themes(&missing_pair, &options(Some("light-dark()")));
+        let html = render_html_with_themes(&missing_pair, &options(Some("light-dark()"))).unwrap();
         assert!(html.contains("background-color:light-dark(inherit, inherit)"));
     }
 
@@ -384,19 +405,84 @@ mod tests {
         let mut opts = options(None);
         opts.render.root_style = Some("<&\"".into());
         opts.render.tabindex = Some("<&\"".into());
-        let html = render_html_with_themes(&result, &opts);
+        let html = render_html_with_themes(&result, &opts).unwrap();
         assert!(html.contains("style=\"&#x3C;&#x26;&#x22;\" tabindex=\"&#x3C;&#x26;&#x22;\""));
         assert!(html.contains("<span>&#x3C;&#x26;></span>"));
         opts.render.include_root_style = false;
         opts.render.tabindex = None;
-        let html = render_html_with_themes(&result, &opts);
+        let html = render_html_with_themes(&result, &opts).unwrap();
         assert!(!html.contains(" style="));
         assert!(!html.contains("tabindex="));
         opts.render.include_root_style = true;
         opts.render.root_style = Some(String::new());
-        opts.css_variable_prefix = "--custom-<&\"".into();
-        let html = render_html_with_themes(&result, &opts);
-        assert!(html.contains("--custom-&#x3C;&#x26;&#x22;light:#111"));
+        opts.css_variable_prefix = "--my-theme-".into();
+        let html = render_html_with_themes(&result, &opts).unwrap();
+        assert!(html.contains("--my-theme-light:#111"));
+    }
+
+    #[test]
+    fn rejects_invalid_prefixes_and_theme_keys_and_sanitizes_hostile_colors() {
+        let result = fixture();
+        // Bare `--` prefix is valid in inline multi-theme mode when every generated custom
+        // property name (`--light`, `--light-bg`, `--dark`, etc.) is valid.
+        let mut bare_prefix_opts = options(None);
+        bare_prefix_opts.css_variable_prefix = "--".into();
+        let bare_html = render_html_with_themes(&result, &bare_prefix_opts).unwrap();
+        assert!(bare_html.contains("--light:#111;--dark:#eee;--light-bg:inherit;--dark-bg:#222"));
+        assert!(bare_html.contains("--light:#123;"));
+        assert!(bare_html.contains("--dark-font-weight:bold"));
+
+        // Multiline theme colors are whitespace-normalized and preserved across root and tokens.
+        let mut multiline = fixture();
+        multiline.themes[0].foreground = "rgb(\n  10,\n  20,\n  30\n)".into();
+        multiline.tokens[0][0]
+            .variants
+            .get_mut("light")
+            .unwrap()
+            .color = Some("rgb(\n  1,\n  2,\n  3\n)".into());
+        let multiline_html = render_html_with_themes(&multiline, &options(Some("light"))).unwrap();
+        assert!(multiline_html.contains("color:rgb( 10, 20, 30 );--shiki-dark:#eee"));
+        assert!(multiline_html.contains("color:rgb( 1, 2, 3 );"));
+
+        for prefix in [
+            "",
+            "shiki-",
+            "--custom-<&\"",
+            "--s-;color:red",
+            "--s-}body{",
+        ] {
+            let mut opts = options(None);
+            opts.css_variable_prefix = prefix.into();
+            assert!(
+                render_html_with_themes(&result, &opts).is_err(),
+                "expected invalid prefix error for {prefix:?}"
+            );
+        }
+
+        for key in ["", "bad key", "light;color:red", "dark}body{"] {
+            let mut bad = fixture();
+            bad.themes[0].color = key.into();
+            assert!(
+                render_html_with_themes(&bad, &options(None)).is_err(),
+                "expected invalid theme key error for {key:?}"
+            );
+        }
+
+        let mut hostile = fixture();
+        hostile.themes[0].foreground = "red;position:fixed".into();
+        hostile.themes[1].background = "#222}body{background:url(evil)</style>".into();
+        hostile.tokens[0][0]
+            .variants
+            .get_mut("light")
+            .unwrap()
+            .color = Some("url(https://evil.test)".into());
+        let html = render_html_with_themes(&hostile, &options(Some("light"))).unwrap();
+        assert!(!html.contains("position:fixed"));
+        assert!(!html.contains("url("));
+        assert!(!html.contains("</style>"));
+        assert!(html.contains("color:inherit;--shiki-dark:#eee"));
+        assert!(html.contains("--shiki-dark-bg:inherit"));
+        assert!(html.contains("<span style=\"--shiki-light-text-decoration:underline;"));
     }
 
     #[test]
@@ -408,12 +494,13 @@ mod tests {
         plain.variants.clear();
         result.tokens = vec![vec![plain.clone(), styled.clone()]];
         let mut opts = options(None);
-        let html = render_html_with_themes(&result, &opts);
+        let html = render_html_with_themes(&result, &opts).unwrap();
         assert!(html.contains(">\u{feff}&#x3C;&#x26;></span>"));
         assert_eq!(html.matches("<span").count(), 2);
         opts.render.merge_whitespaces = false;
         assert_eq!(
             render_html_with_themes(&result, &opts)
+                .unwrap()
                 .matches("<span")
                 .count(),
             3
@@ -422,6 +509,7 @@ mod tests {
         result.tokens[0][0].content = "\u{85}".into();
         assert_eq!(
             render_html_with_themes(&result, &opts)
+                .unwrap()
                 .matches("<span")
                 .count(),
             3
@@ -430,6 +518,7 @@ mod tests {
         opts.render.merge_same_style_tokens = true;
         assert_eq!(
             render_html_with_themes(&result, &opts)
+                .unwrap()
                 .matches("<span")
                 .count(),
             2
@@ -438,6 +527,7 @@ mod tests {
         result.tokens[0].push(plain);
         assert_eq!(
             render_html_with_themes(&result, &opts)
+                .unwrap()
                 .matches("<span")
                 .count(),
             3

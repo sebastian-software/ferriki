@@ -44,6 +44,16 @@ for (const script of [
   );
   if (result.status !== 0) process.exit(result.status || 1);
 }
+const securityHardeningTest = spawnSync(
+  process.execPath,
+  ["--test", "./scripts/test-security-hardening.mjs"],
+  {
+    cwd: nodeRoot,
+    env: process.env,
+    stdio: "inherit",
+  },
+);
+if (securityHardeningTest.status !== 0) process.exit(securityHardeningTest.status || 1);
 const vitestArgs = ["exec", "vitest"];
 const testNamePattern =
   "^(?!.*should have correct offset)(should|langAlias|getSingletonHighlighter|vue-injections|injections-side-effects|bundle-(full|web))";

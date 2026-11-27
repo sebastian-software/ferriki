@@ -6,6 +6,15 @@ import { fileURLToPath } from "node:url";
 import { types } from "node:util";
 
 import { languageCatalog, themeCatalog } from "../assets/standard/catalog.mjs";
+import {
+  isValidCssIdentifier,
+  isValidCssVariablePrefix,
+  isValidHtmlAttributeName,
+  isValidHtmlTagName,
+  isValidInlineCssVariablePrefix,
+  isValidInlineThemeAlias,
+  normalizeSafeCssColor,
+} from "../classes.mjs";
 import { loadFerrikiNativeBinding, tryLoadFerrikiNativeBinding } from "../native.mjs";
 import {
   addClassToHast,
@@ -103,7 +112,7 @@ export function createHighlighterCoreSync(options = {}) {
   const loadedThemes = new Set();
   const loadedStandardThemes = new Set();
   let downloadStandardAssets = createAssetDownloader(native, assertActive);
-  const languageAliases = { ...(options.langAlias || {}) };
+  const languageAliases = new Map(Object.entries(options.langAlias || {}));
   const pendingPrefetchLangCounts = new Map();
   const pendingPrefetchThemeCounts = new Map();
   let disposed = false;
@@ -115,14 +124,14 @@ export function createHighlighterCoreSync(options = {}) {
   function resolveAlias(language) {
     assertActive();
     const visited = new Set();
-    while (languageAliases[language]) {
+    while (languageAliases.has(language)) {
       if (visited.has(language))
         throw new ShikiError(
           `Circular alias \`${[...visited, language].join(" -> ")}\``,
           "ERR_USAGE",
         );
       visited.add(language);
-      language = languageAliases[language];
+      language = languageAliases.get(language);
     }
     return language;
   }
@@ -155,7 +164,7 @@ export function createHighlighterCoreSync(options = {}) {
       if (custom) {
         for (const alias of registration.aliases || []) {
           if (!isStandardLanguageKey(alias)) {
-            languageAliases[alias] = resolved;
+            languageAliases.set(alias, resolved);
             loadedLanguages.add(alias);
           }
         }
@@ -715,9 +724,14 @@ export function createHighlighterCoreSync(options = {}) {
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
     assertActive();
+    validateHighlightOptions(validated);
     context.source = source;
     const result = renderHtmlDataRaw(source, validated);
-    result.tokens = applyTokenTransformers(result.tokens, transformers, context);
+    result.tokens = applyTokenTransformers(
+      sanitizeThemeTokenColors(result.tokens),
+      transformers,
+      context,
+    );
     return result;
   }
 
@@ -731,6 +745,7 @@ export function createHighlighterCoreSync(options = {}) {
     for (const transformer of transformers)
       source = transformer?.preprocess?.call(context, source, validated) || source;
     assertActive();
+    validateHighlightOptions(validated);
     context.source = source;
     assertAnsiInput(source, validated);
     const input = prepareGrammarInput(source, validated);
@@ -743,7 +758,7 @@ export function createHighlighterCoreSync(options = {}) {
       input.prefixLines,
     );
     result.tokens = applyTokenTransformers(
-      prepareRenderTokens(result.tokens, validated),
+      prepareRenderTokens(sanitizeThemeTokenColors(result.tokens), validated),
       transformers,
       context,
     );
@@ -760,6 +775,7 @@ export function createHighlighterCoreSync(options = {}) {
   }
 
   function renderHtmlWithThemes(code, options) {
+    options = validateHighlightOptions(options);
     const themes = resolveThemeEntries(options);
     const strings = [options.rootStyle, options.tabindex, options.cssVariablePrefix];
     assertActive();
@@ -833,7 +849,7 @@ export function createHighlighterCoreSync(options = {}) {
     getLoadedLanguages() {
       assertActive();
       const nativeLanguages = native.getLoadedLanguages();
-      const configuredAliases = Object.entries(languageAliases)
+      const configuredAliases = [...languageAliases.entries()]
         .filter(([, target]) => nativeLanguages.includes(resolveAlias(target)))
         .map(([alias]) => alias);
       return [...new Set([...nativeLanguages, ...configuredAliases])];
@@ -864,7 +880,7 @@ export function createHighlighterCoreSync(options = {}) {
         loadedStandardThemes.clear();
         pendingPrefetchLangCounts.clear();
         pendingPrefetchThemeCounts.clear();
-        for (const key of Object.keys(languageAliases)) delete languageAliases[key];
+        languageAliases.clear();
         defaultTransformers = [];
         const handle = native;
         native = undefined;
@@ -1066,18 +1082,6 @@ function validateHighlightOptions(options) {
 
   if (options.styleMode !== undefined && !["inline", "classes"].includes(options.styleMode))
     throw new ShikiError("Highlight option `styleMode` must be inline or classes", "ERR_USAGE");
-  if (options.styleMode === "classes" && options.themes) {
-    if (Object.keys(options.themes).some((key) => !/^[a-zA-Z_][\w-]*$/u.test(key)))
-      throw new ShikiError("Class theme keys must be CSS identifiers", "ERR_USAGE");
-    if (
-      options.cssVariablePrefix !== undefined &&
-      !/^--[a-zA-Z_][\w-]*$/u.test(options.cssVariablePrefix)
-    )
-      throw new ShikiError(
-        "Class cssVariablePrefix must be a CSS custom property prefix",
-        "ERR_USAGE",
-      );
-  }
   const registrationFields = ["lang", "theme"];
   for (const field of registrationFields) {
     const value = options[field];
@@ -1104,6 +1108,32 @@ function validateHighlightOptions(options) {
     throw new ShikiError("Highlight option `defaultColor` must be a string or false", "ERR_USAGE");
   if (options.cssVariablePrefix !== undefined && typeof options.cssVariablePrefix !== "string")
     throw new ShikiError("Highlight option `cssVariablePrefix` must be a string", "ERR_USAGE");
+  if (options.themes) {
+    const isClassesMode = options.styleMode === "classes";
+    const effectivePrefix = options.cssVariablePrefix ?? "--shiki-";
+    if (options.cssVariablePrefix !== undefined) {
+      const validPrefix = isClassesMode
+        ? isValidCssVariablePrefix(options.cssVariablePrefix)
+        : isValidInlineCssVariablePrefix(options.cssVariablePrefix);
+      if (!validPrefix)
+        throw new ShikiError(
+          "Highlight option `cssVariablePrefix` must be a CSS custom property prefix",
+          "ERR_USAGE",
+        );
+    }
+    for (const [key, value] of Object.entries(options.themes)) {
+      if (value == null || value === false) continue;
+      if (isClassesMode) {
+        if (!isValidCssIdentifier(key))
+          throw new ShikiError("Theme keys must be CSS identifiers", "ERR_USAGE");
+      } else if (!isValidInlineThemeAlias(effectivePrefix, key)) {
+        throw new ShikiError(
+          "Theme keys must produce valid CSS custom property names",
+          "ERR_USAGE",
+        );
+      }
+    }
+  }
   if (
     options.includeExplanation !== undefined &&
     typeof options.includeExplanation !== "boolean" &&
@@ -1538,11 +1568,36 @@ function normalizeNoneThemeResult(result) {
   };
 }
 
+function sanitizeThemeTokenColors(tokens) {
+  return tokens.map((line) =>
+    line.map((token) => {
+      let next = token;
+      if (token.color !== undefined && token.color !== "") {
+        const safeColor = normalizeSafeCssColor(token.color);
+        if (safeColor !== token.color) {
+          next = { ...next };
+          if (safeColor) next.color = safeColor;
+          else delete next.color;
+        }
+      }
+      if (token.bgColor !== undefined && token.bgColor !== "") {
+        const safeBg = normalizeSafeCssColor(token.bgColor);
+        if (safeBg !== token.bgColor) {
+          if (next === token) next = { ...next };
+          if (safeBg) next.bgColor = safeBg;
+          else delete next.bgColor;
+        }
+      }
+      return next;
+    }),
+  );
+}
+
 function prepareHastRenderResult(result, options) {
   if (
     options.styleMode === "classes" ||
     result.themeName === "none" ||
-    result.themeName.startsWith("shiki-themes ")
+    result.isMultiTheme === true
   )
     return result;
 
@@ -1552,7 +1607,7 @@ function prepareHastRenderResult(result, options) {
     tokens: result.tokens.map((line) =>
       line.map((token) => {
         if (Object.hasOwn(token, "htmlStyle")) return token;
-        const htmlStyle = Object.entries(tokenStyle(token))
+        const htmlStyle = Object.entries(tokenStyle(token, { sanitizeColor: false }))
           .map(([key, value]) => `${key}:${value}`)
           .join(";");
         return htmlStyle ? { ...token, htmlStyle } : token;
@@ -1595,6 +1650,7 @@ function combineThemeResults(results, options) {
     fg: foreground,
     bg: background,
     themeName: `shiki-themes ${results.map((result) => result.name).join(" ")}`,
+    isMultiTheme: true,
     ...(defaultColor ? {} : { rootStyle: `${foreground};${background}` }),
     ...(results[0]?.result.continuationState
       ? { continuationState: results[0].result.continuationState }
@@ -1656,13 +1712,15 @@ function combineNativeThemeResult(result, options) {
     fg: foreground,
     bg: background,
     themeName: `shiki-themes ${results.map((result) => result.name).join(" ")}`,
+    isMultiTheme: true,
     ...(defaultColor ? {} : { rootStyle: `${foreground};${background}` }),
   };
 }
 
 function tokenStyleFromNative(style) {
   const output = {};
-  if (style.color) output.color = style.color;
+  const color = style.color ? normalizeSafeCssColor(style.color) : undefined;
+  if (color) output.color = color;
   const fontStyle = style.fontStyle || 0;
   if (fontStyle & 1) output["font-style"] = "italic";
   if (fontStyle & 2) output["font-weight"] = "bold";
@@ -1680,12 +1738,14 @@ function tokenHtmlStyle(
   cssVariablePrefix,
   includeDefaultVariant = false,
 ) {
-  const styles = results.map((result) => variants[result.color] || {});
+  const styles = results.map((result) =>
+    Object.hasOwn(variants, result.color) ? variants[result.color] : {},
+  );
   const keys = new Set(styles.flatMap((style) => Object.keys(style)));
   const declarations = [];
   for (let index = 0; index < results.length; index++) {
     for (const key of keys) {
-      const value = styles[index][key] || "inherit";
+      const value = (Object.hasOwn(styles[index], key) && styles[index][key]) || "inherit";
       const color = results[index].color;
       const isColor = key === "color" || key === "background-color";
       if (index === 0 && defaultColor && isColor && !includeDefaultVariant) {
@@ -1693,8 +1753,10 @@ function tokenHtmlStyle(
           const lightIndex = results.findIndex((result) => result.color === "light");
           const darkIndex = results.findIndex((result) => result.color === "dark");
           if (lightIndex !== -1 && darkIndex !== -1) {
-            const light = styles[lightIndex][key] || "inherit";
-            const dark = styles[darkIndex][key] || "inherit";
+            const light =
+              (Object.hasOwn(styles[lightIndex], key) && styles[lightIndex][key]) || "inherit";
+            const dark =
+              (Object.hasOwn(styles[darkIndex], key) && styles[darkIndex][key]) || "inherit";
             declarations.push(`${key}:light-dark(${light}, ${dark})`);
           }
         } else {
@@ -1720,6 +1782,10 @@ function tokenHtmlStyle(
   return declarations.join(";");
 }
 
+function safeThemeColor(value) {
+  return normalizeSafeCssColor(value) ?? "inherit";
+}
+
 function themePropertyStyle(
   results,
   property,
@@ -1728,19 +1794,18 @@ function themePropertyStyle(
   includeDefaultVariant = false,
 ) {
   const declarations = [];
+  const field = property === "foreground" ? "fg" : "bg";
   for (let index = 0; index < results.length; index++) {
-    const value = results[index].result[property === "foreground" ? "fg" : "bg"] || "inherit";
+    const value = safeThemeColor(results[index].result[field]);
     const color = results[index].color;
     if (index === 0 && defaultColor) {
       if (defaultColor === "light-dark()") {
-        const light =
-          results.find((result) => result.color === "light")?.result[
-            property === "foreground" ? "fg" : "bg"
-          ] || "inherit";
-        const dark =
-          results.find((result) => result.color === "dark")?.result[
-            property === "foreground" ? "fg" : "bg"
-          ] || "inherit";
+        const light = safeThemeColor(
+          results.find((result) => result.color === "light")?.result[field],
+        );
+        const dark = safeThemeColor(
+          results.find((result) => result.color === "dark")?.result[field],
+        );
         declarations.push(`light-dark(${light}, ${dark})`);
       } else {
         declarations.push(value);
@@ -1806,13 +1871,23 @@ function renderTokenResultHast(result, options = {}) {
   const properties = {
     class:
       result.hastClass ||
-      (result.themeName.startsWith("shiki-themes ")
-        ? `shiki ${result.themeName}`
-        : result.themeName),
+      (result.isMultiTheme === true ? `shiki ${result.themeName}` : result.themeName),
   };
   if (options.rootStyle !== false) {
-    properties.style =
-      options.rootStyle || result.rootStyle || `background-color:${result.bg};color:${result.fg}`;
+    let rootStyle = options.rootStyle || result.rootStyle;
+    if (!rootStyle) {
+      if (result.isMultiTheme === true) {
+        rootStyle = `background-color:${result.bg};color:${result.fg}`;
+      } else {
+        const parts = [];
+        const bg = normalizeSafeCssColor(result.bg);
+        const fg = normalizeSafeCssColor(result.fg);
+        if (bg) parts.push(`background-color:${bg}`);
+        if (fg) parts.push(`color:${fg}`);
+        rootStyle = parts.join(";");
+      }
+    }
+    if (rootStyle) properties.style = rootStyle;
   }
   if (options.tabindex !== false && options.tabindex !== null)
     properties.tabindex = String(options.tabindex ?? 0);
@@ -1977,9 +2052,17 @@ function applyPostprocess(html, options, source) {
 
 function selectDefaultTheme(options) {
   if (!options.themes) return undefined;
-  if (options.defaultColor && options.themes[options.defaultColor])
+  if (
+    options.defaultColor &&
+    Object.hasOwn(options.themes, options.defaultColor) &&
+    options.themes[options.defaultColor]
+  )
     return options.themes[options.defaultColor];
-  return options.themes.light || options.themes.dark || Object.values(options.themes)[0];
+  return (
+    (Object.hasOwn(options.themes, "light") && options.themes.light) ||
+    (Object.hasOwn(options.themes, "dark") && options.themes.dark) ||
+    Object.values(options.themes)[0]
+  );
 }
 
 function isHighlighter(value, method) {
@@ -2186,8 +2269,14 @@ async function resolveRegistrations(inputs) {
 function nodeToHtml(node) {
   if (node.type === "text") return escapeHtml(node.value || "");
   if (node.type !== "element") return (node.children || []).map(nodeToHtml).join("");
+  if (!isValidHtmlTagName(node.tagName))
+    throw new ShikiError(`Invalid HTML tag name ${JSON.stringify(node.tagName)}`, "ERR_USAGE");
   const properties = Object.entries(node.properties || {})
-    .map(([key, value]) => ` ${key}="${escapeAttribute(propertyValue(value))}"`)
+    .map(([key, value]) => {
+      if (!isValidHtmlAttributeName(key))
+        throw new ShikiError(`Invalid HTML attribute name ${JSON.stringify(key)}`, "ERR_USAGE");
+      return ` ${key}="${escapeAttribute(propertyValue(value))}"`;
+    })
     .join("");
   return `<${node.tagName}${properties}>${(node.children || []).map(nodeToHtml).join("")}</${node.tagName}>`;
 }

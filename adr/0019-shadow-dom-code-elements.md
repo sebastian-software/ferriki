@@ -4,7 +4,7 @@
 
 Accepted
 
-Last updated: 2026-10-12
+Last updated: 2026-11-27
 
 ## Context
 
@@ -117,11 +117,13 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   including trailing blank lines; empty source reserves one line. Theme aliases
   are validated as CSS-safe identifiers at build time.
 - `@ferriki/core/web-component/server` exports the framework-free
-  `renderCodeElementShadows(markup, { blocks, themeAliases, stylesheetHref })`
+  `renderCodeElementShadows(markup, { blocks, themeAliases, stylesheetHref, includeNoscript })`
   helper. It fills eligible empty reference hosts in complete, well-formed
   server HTML with Declarative Shadow DOM, a reference marker, the matching
   local base-style element, and an optional class CSS link. It skips
-  manual/property hosts and inert contexts, rejects unknown eligible references,
+  manual/property hosts and inert contexts (treating `<noscript>` as HTML5
+  scripting-enabled raw text by default unless `includeNoscript: true` is
+  passed for scripting-disabled fallbacks), rejects unknown eligible references,
   and is idempotent. This stage runs outside React.
 - Register after the browser has parsed the DSD HTML and before hydration.
   Upgrade reuses the parser-created root and retains nodes for a matching
@@ -148,9 +150,11 @@ show the build, parser, upgrade, hydration, and later client-rendered paths.
   `assets/ferriki-code-*.css` file in production. The SSR build re-emits that
   asset even when Vite suppresses ordinary SSR assets; applications deploy the
   CSS emitted by the SSR build because client and server graphs can use
-  different hashes. Direct class-mode macro SSR requires an absolute path or URL
-  `base`; relative bases are rejected because the DSD URL would be ambiguous on
-  nested routes.
+  different hashes. Direct class-mode macro SSR requires a root-relative path
+  starting with `/` (not protocol-relative `//`) or an explicit `http:` /
+  `https:` URL `base`; relative and protocol-relative bases are rejected
+  because the DSD stylesheet URL would be ambiguous on nested routes or inherit
+  an untrusted authority/scheme.
 - The Vite plugin API exposes `renderCodeElements`, `codeElementBlocks`, and
   `codeElementCss` for already transformed React modules. `renderCodeElements`
   remains an explicit complete-HTML path for manually authored reference hosts;
@@ -242,3 +246,8 @@ to own the synchronized package and crate version updates.
 - 2026-10-12: Clarifies automatic macro SSR versus manual reference hosts and
   pre-definition property precedence; fixes replayed reference reflection and
   removes saved class rules when HMR removes the last macro import (#263).
+- 2026-11-27: Clarifies that direct class-mode macro SSR requires either a
+  root-relative path starting with `/` (excluding protocol-relative `//`) or an
+  explicit `http:`/`https:` URL `base`, and adds opt-in `includeNoscript` on
+  `renderCodeElementShadows` while keeping HTML5 scripting-enabled `<noscript>`
+  rawtext skipping as the default (#383).

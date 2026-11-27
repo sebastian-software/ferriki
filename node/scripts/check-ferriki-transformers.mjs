@@ -309,6 +309,23 @@ try {
   assert.match(changedTokenStyle, /font-weight:bold/);
   assert.doesNotMatch(changedTokenStyle, /color:#ff00aa|font-style:italic|text-decoration:/i);
 
+  const escapedCustomPropTokenStyle = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        tokens(lines) {
+          return lines.map((line) =>
+            line.map((token) => ({
+              ...token,
+              htmlStyle: { "--brand\\:accent": "red", "--brand\\3a muted": "blue" },
+            })),
+          );
+        },
+      },
+    ],
+  });
+  assert.match(escapedCustomPropTokenStyle, /style="--brand\\:accent:red;--brand\\3a muted:blue"/u);
+
   const grammarState = renderHighlighter.getLastGrammarState("styled", baseOptions);
   assertSingleThemeStyles(renderHighlighter.codeToHtml("styled", { ...baseOptions, grammarState }));
   const grammarStateHtml = renderHighlighter.codeToHtml("styled", {
@@ -357,6 +374,90 @@ try {
   );
   assert.match(multiTheme, /color:#ff00aa/i);
   assert.match(multiTheme, /--shiki-dark:#55aaff/i);
+
+  // A single custom theme whose name starts with "shiki-themes " must not bypass
+  // single-theme root color validation when transformers are enabled.
+  renderHighlighter.loadThemeSync({
+    name: "shiki-themes spoof",
+    type: "dark",
+    fg: "red;position:fixed",
+    bg: "#111111",
+    settings: [],
+  });
+  const spoofedSingle = renderHighlighter.codeToHtml("styled", {
+    lang: renderLanguage.name,
+    theme: "shiki-themes spoof",
+    transformers: [{}],
+  });
+  assert.doesNotMatch(spoofedSingle, /position:fixed/);
+  assert.match(spoofedSingle, /style="background-color:#111111"/);
+
+  // Fence metadata `style` is sanitized, while enumerable symbol metadata on `token.htmlAttrs`
+  // reaches `span` hooks without leaking into HTML.
+  const attrSymbol = Symbol("ferriki.test.htmlAttrs");
+  let seenAttrSymbol;
+  const metaStyleHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    meta: {
+      style: "background:url(https://evil.test);padding:1rem",
+      is: "x-evil",
+      srcdoc: "<script>",
+      srcset: "https://evil.test/x 1x",
+      action: "https://evil.test/post",
+      background: "https://evil.test/bg.png",
+      attributionsrc: "https://evil.test/ping",
+      href: "javascript:alert(1)",
+      title: "ok",
+    },
+    transformers: [
+      {
+        tokens(lines) {
+          return lines.map((line) =>
+            line.map((token) => ({
+              ...token,
+              htmlAttrs: {
+                [attrSymbol]: "token-meta",
+                prototype: "proto-val",
+                constructor: "ctor-val",
+              },
+              htmlStyle: { backgroundImage: "url(/local.png)" },
+            })),
+          );
+        },
+        span(node) {
+          seenAttrSymbol = node.properties[attrSymbol];
+          return node;
+        },
+      },
+    ],
+  });
+  assert.equal(seenAttrSymbol, "token-meta");
+  assert.doesNotMatch(metaStyleHtml, /evil\.test/);
+  assert.doesNotMatch(
+    metaStyleHtml,
+    /\s(?:is|srcdoc|srcset|action|background|attributionsrc|href)=/i,
+  );
+  assert.match(metaStyleHtml, /title="ok"/);
+  assert.match(metaStyleHtml, /style="padding:1rem"/);
+  // Trusted `tokens`-hook `htmlStyle` objects and own `htmlAttrs` (`prototype`, `constructor`)
+  // survive in inline HTML per ADR 0008.
+  assert.match(metaStyleHtml, /style="backgroundImage:url\(\/local\.png\)"/);
+  assert.match(metaStyleHtml, /prototype="proto-val"/);
+  assert.match(metaStyleHtml, /constructor="ctor-val"/);
+
+  // Trusted `span`-hook `node.properties.style` objects also survive in inline HTML per ADR 0008.
+  const spanObjStyleHtml = renderHighlighter.codeToHtml("styled", {
+    ...baseOptions,
+    transformers: [
+      {
+        span(node) {
+          node.properties.style = { backgroundImage: "url(/local.png)" };
+          return node;
+        },
+      },
+    ],
+  });
+  assert.match(spanObjStyleHtml, /style="backgroundImage:url\(\/local\.png\)"/);
 } finally {
   renderHighlighter.dispose();
 }
@@ -501,6 +602,24 @@ try {
     contextHighlighter.codeToHtml("text", { lang: "text", theme: renderTheme.name }),
     /text/,
   );
+
+  // Trusted `tokens` hooks can assign arbitrary CSS `token.color` values (including escaped
+  // custom property names like `var(--foo\+bar)`) in single-theme inline mode while theme-supplied
+  // colors are still sanitized before `tokens` hooks run.
+  const trustedTokenColorHtml = contextHighlighter.codeToHtml("text", {
+    lang: "text",
+    theme: renderTheme.name,
+    styleMode: "inline",
+    transformers: [
+      {
+        tokens(lines) {
+          lines[0][0].color = "var(--foo\\+bar)";
+          return lines;
+        },
+      },
+    ],
+  });
+  assert(trustedTokenColorHtml.includes("color:var(--foo\\+bar)"));
 } finally {
   contextHighlighter.dispose();
 }
